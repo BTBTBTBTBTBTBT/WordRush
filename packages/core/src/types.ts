@@ -1,0 +1,88 @@
+export enum GameMode {
+  DUEL = 'DUEL',
+  MULTI_DUEL = 'MULTI_DUEL',
+  GAUNTLET = 'GAUNTLET',
+  QUORDLE = 'QUORDLE',
+  OCTORDLE = 'OCTORDLE',
+  SEQUENCE = 'SEQUENCE',
+  RESCUE = 'RESCUE',
+  TOURNAMENT = 'TOURNAMENT'
+}
+
+export enum TileState {
+  CORRECT = 'CORRECT',
+  PRESENT = 'PRESENT',
+  ABSENT = 'ABSENT',
+  EMPTY = 'EMPTY'
+}
+
+export enum GameStatus {
+  PLAYING = 'PLAYING',
+  WON = 'WON',
+  LOST = 'LOST',
+  ABANDONED = 'ABANDONED'
+}
+
+export interface TileResult {
+  letter: string;
+  state: TileState;
+}
+
+export interface GuessResult {
+  tiles: TileResult[];
+  isCorrect: boolean;
+}
+
+export interface PrefilledGuess {
+  word: string;
+  evaluation: GuessResult;
+}
+
+export interface BoardState {
+  solution: string;
+  guesses: string[];
+  maxGuesses: number;
+  status: GameStatus;
+  prefilledGuesses?: PrefilledGuess[];
+}
+
+export interface GauntletProgress {
+  currentRound: number;
+  totalRounds: number;
+  boards: BoardState[];
+}
+
+export interface GameState {
+  mode: GameMode;
+  seed: string;
+  startTime: number;
+  boards: BoardState[];
+  currentBoardIndex: number;
+  status: GameStatus;
+  gauntlet?: GauntletProgress;
+}
+
+export interface ScoreBreakdown {
+  winBonus: number;
+  guessDiff: number;
+  timeDiff: number;
+  dnfPenalty: number;
+  total: number;
+}
+
+export interface MatchResult {
+  playerWon: boolean;
+  playerGuesses: number;
+  opponentGuesses: number;
+  playerTime: number;
+  opponentTime: number;
+  playerStatus: GameStatus;
+  opponentStatus: GameStatus;
+  score: ScoreBreakdown;
+}
+
+export type GameAction =
+  | { type: 'SUBMIT_GUESS'; guess: string; boardIndex?: number }
+  | { type: 'NEXT_BOARD' }
+  | { type: 'ABANDON' }
+  | { type: 'RESET'; seed: string; mode: GameMode };
