@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: spellstrike-server
+    runtime: node
+    buildCommand: npm install -g pnpm@8.15.0 && pnpm install
+    startCommand: cd apps/server && npx tsx src/index.ts
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: PORT
+        value: 3001
+      - key: CLIENT_URL
+        value: https://spellstrike.vercel.app
