@@ -52,7 +52,7 @@ export default function HomePage() {
       id: 'rescue',
       title: 'Rescue',
       icon: Timer,
-      description: 'Beat the clock! 3 minutes',
+      description: 'Decode pre-filled clues, solve 4 boards',
       color: 'from-red-500 to-orange-500',
       href: '/rescue',
       difficulty: 'Intense',
