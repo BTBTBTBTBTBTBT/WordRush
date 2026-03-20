@@ -184,18 +184,16 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
     setExpandedIndex(null);
   }, [expandedIndex]);
 
-  // Compute the expanded board's target rect (centered in the container area)
-  const getExpandedStyle = () => {
-    if (!containerRef.current) return {};
+  // Compute the expanded board's fixed rect (final rendered size)
+  const getExpandedRect = () => {
+    if (!containerRef.current) return { left: 0, top: 0, width: 300, height: 400 };
     const container = containerRef.current.getBoundingClientRect();
     const padding = 12;
     const availW = container.width - padding * 2;
     const availH = container.height - padding * 2;
-    // Use 90% of available space, capped at reasonable max
     const targetW = Math.min(availW * 0.9, 384);
     const targetH = Math.min(availH * 0.95, targetW * 2.2);
     return {
-      position: 'fixed' as const,
       left: container.left + (container.width - targetW) / 2,
       top: container.top + (container.height - targetH) / 2,
       width: targetW,
@@ -203,15 +201,17 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
     };
   };
 
-  const getSourceStyle = () => {
-    if (!sourceRect) return {};
-    return {
-      position: 'fixed' as const,
-      left: sourceRect.left,
-      top: sourceRect.top,
-      width: sourceRect.width,
-      height: sourceRect.height,
-    };
+  // Compute scale + translate to make the expanded-size element appear at the source position
+  const getSourceTransform = () => {
+    if (!sourceRect) return { scale: 0.3, x: 0, y: 0 };
+    const expanded = getExpandedRect();
+    const scaleX = sourceRect.width / expanded.width;
+    const scaleY = sourceRect.height / expanded.height;
+    const scale = Math.min(scaleX, scaleY);
+    // Offset: source center minus expanded center
+    const x = (sourceRect.left + sourceRect.width / 2) - (expanded.left + expanded.width / 2);
+    const y = (sourceRect.top + sourceRect.height / 2) - (expanded.top + expanded.height / 2);
+    return { scale, x, y };
   };
 
   return (
@@ -249,12 +249,18 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
               onClick={handleCloseExpanded}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 rounded-lg"
             />
-            {/* Expanded board — animates from source position */}
+            {/* Expanded board — uses scale transform for smooth text scaling */}
             <motion.div
-              initial={getSourceStyle()}
-              animate={getExpandedStyle()}
-              exit={getSourceStyle()}
+              initial={getSourceTransform()}
+              animate={{ scale: 1, x: 0, y: 0 }}
+              exit={getSourceTransform()}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              style={{
+                position: 'fixed',
+                ...getExpandedRect(),
+                transformOrigin: 'center center',
+                willChange: 'transform',
+              }}
               className="z-50"
               onClick={handleCloseExpanded}
             >
