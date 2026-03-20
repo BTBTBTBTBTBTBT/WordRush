@@ -203,15 +203,14 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
 
   // Compute scale + translate to make the expanded-size element appear at the source position
   const getSourceTransform = () => {
-    if (!sourceRect) return { scale: 0.3, x: 0, y: 0 };
+    if (!sourceRect) return { scaleX: 0.3, scaleY: 0.3, x: 0, y: 0 };
     const expanded = getExpandedRect();
     const scaleX = sourceRect.width / expanded.width;
     const scaleY = sourceRect.height / expanded.height;
-    const scale = Math.min(scaleX, scaleY);
     // Offset: source center minus expanded center
     const x = (sourceRect.left + sourceRect.width / 2) - (expanded.left + expanded.width / 2);
     const y = (sourceRect.top + sourceRect.height / 2) - (expanded.top + expanded.height / 2);
-    return { scale, x, y };
+    return { scaleX, scaleY, x, y };
   };
 
   return (
@@ -252,7 +251,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
             {/* Expanded board — uses scale transform for smooth text scaling */}
             <motion.div
               initial={getSourceTransform()}
-              animate={{ scale: 1, x: 0, y: 0 }}
+              animate={{ scaleX: 1, scaleY: 1, x: 0, y: 0 }}
               exit={getSourceTransform()}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               style={{
