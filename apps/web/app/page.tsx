@@ -194,19 +194,13 @@ export default function HomePage() {
                   className={`
                     relative overflow-hidden rounded-3xl p-6 h-full
                     bg-gradient-to-br ${mode.color}
-                    border-4 border-white/20
+                    ring-4 ring-inset ring-white/20
                     shadow-2xl
                     transition-shadow duration-300
                     group-hover:shadow-yellow-400/40
                   `}
                 >
                   <div className="absolute inset-0 bg-black/20" />
-
-                  <div className="absolute top-3 right-3">
-                    <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-white">
-                      {mode.difficulty}
-                    </span>
-                  </div>
 
                   <div className="relative z-10 space-y-4">
                     <mode.icon className="w-16 h-16 text-white drop-shadow-lg transition-transform duration-300 group-hover:scale-110" />
@@ -218,11 +212,6 @@ export default function HomePage() {
                       <p className="text-white/90 text-lg font-medium">
                         {mode.description}
                       </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-white font-bold transition-transform duration-300 group-hover:translate-x-2">
-                      <span>PLAY NOW</span>
-                      <Sparkles className="w-5 h-5" fill="currentColor" />
                     </div>
                   </div>
                 </div>
