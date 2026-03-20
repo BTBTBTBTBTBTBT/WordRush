@@ -72,8 +72,8 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
 
   const isWon = board.status === 'WON';
   const isLost = board.status === 'LOST';
-  // The most recently submitted row (for flip animation)
-  const lastSubmittedRow = board.guesses.length > 0 ? board.guesses.length - 1 : -1;
+  // The most recently submitted row — only animate flip on the winning guess
+  const lastSubmittedRow = isWon && board.guesses.length > 0 ? board.guesses.length - 1 : -1;
 
   return (
     <div

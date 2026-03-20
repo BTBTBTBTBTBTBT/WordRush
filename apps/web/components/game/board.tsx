@@ -24,7 +24,7 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
           guess={guess}
           evaluation={evaluations[rowIndex]}
           darkMode={darkMode}
-          animate={rowIndex === guesses.length - 1}
+          animate={rowIndex === guesses.length - 1 && evaluations[rowIndex]?.isCorrect === true}
         />
       ))}
       {guesses.length < maxGuesses && <Row guess={currentGuess} darkMode={darkMode} />}
