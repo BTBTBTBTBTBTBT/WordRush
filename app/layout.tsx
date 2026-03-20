@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/lib/theme-context';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Wordle Duel - Multiplayer Word Game',
+  title: 'SpellStrike - Multiplayer Word Game',
   description: 'Compete head-to-head in fast-paced word battles',
 };
 

@@ -154,7 +154,7 @@ export default function HomePage() {
             className="inline-block"
           >
             <h1 className="text-8xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-2xl mb-4">
-              WORD BATTLE
+              SPELLSTRIKE
             </h1>
           </motion.div>
 

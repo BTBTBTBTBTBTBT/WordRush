@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'WordRush - Epic Word Battles',
+  title: 'SpellStrike - Epic Word Battles',
   description: 'Compete in vibrant multiplayer word challenges - Quordle, Octordle, and more!',
 };
 

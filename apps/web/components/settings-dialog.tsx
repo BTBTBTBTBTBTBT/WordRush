@@ -25,7 +25,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>Customize your Wordle Duel experience</DialogDescription>
+          <DialogDescription>Customize your SpellStrike experience</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
