@@ -7,6 +7,7 @@ import {
   initializeGame,
   GameMode,
   GameStatus,
+  TileState,
   GAUNTLET_STAGES,
   isValidWord,
   evaluateGuess,
@@ -65,8 +66,40 @@ export function GauntletGame() {
   const isSingleBoard = currentStageConfig.boardCount === 1;
   const isInBlackout = blackoutBoardIndex !== null;
 
-  // Build letter states only from boards still in play
-  const letterStates = useMemo(() => computeActiveLetterStates(state.boards), [state.boards]);
+  // For sequence stages, track the active board (first unsolved in order)
+  const sequenceActiveBoardIndex = useMemo(() => {
+    if (!isSequential) return -1;
+    for (let i = 0; i < state.boards.length; i++) {
+      if (state.boards[i]?.status === GameStatus.PLAYING) return i;
+    }
+    return -1;
+  }, [isSequential, state.boards]);
+
+  // Build letter states only from boards still in play (+ completed boards for sequence hints)
+  const letterStates = useMemo(() => {
+    if (isSequential) {
+      // For sequence: show hints from active board + completed boards (not locked future boards)
+      const states: Record<string, 'correct' | 'present' | 'absent'> = {};
+      for (let i = 0; i < state.boards.length; i++) {
+        const board = state.boards[i];
+        const isActive = i === sequenceActiveBoardIndex;
+        const isCompleted = board.status === GameStatus.WON;
+        if (!isActive && !isCompleted) continue;
+
+        for (const guess of board.guesses) {
+          const result = evaluateGuess(board.solution, guess);
+          for (const tile of result.tiles) {
+            const letter = tile.letter.toUpperCase();
+            if (tile.state === 'CORRECT') states[letter] = 'correct';
+            else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
+            else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
+          }
+        }
+      }
+      return states;
+    }
+    return computeActiveLetterStates(state.boards);
+  }, [state.boards, isSequential, sequenceActiveBoardIndex]);
 
   // Evaluations for single-board view
   const currentBoard = state.boards[state.currentBoardIndex];
@@ -168,9 +201,10 @@ export function GauntletGame() {
         return;
       }
 
-      if (isSingleBoard || isSequential) {
+      if (isSingleBoard) {
         dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: state.currentBoardIndex });
       } else {
+        // For quordle, sequence, octordle, rescue — submit to all playing boards
         state.boards.forEach((board, index) => {
           if (board.status === GameStatus.PLAYING) {
             dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
@@ -184,7 +218,7 @@ export function GauntletGame() {
     } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
       setCurrentGuess(prev => prev + key);
     }
-  }, [state, currentGuess, showTransition, isSingleBoard, isSequential, isInBlackout, blackedOutLetters]);
+  }, [state, currentGuess, showTransition, isSingleBoard, isInBlackout, blackedOutLetters]);
 
   // Keyboard event listener
   useEffect(() => {
@@ -203,21 +237,6 @@ export function GauntletGame() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKey]);
-
-  // Handle sequential board advancement within a stage
-  useEffect(() => {
-    if (!isSequential) return;
-    if (state.status !== GameStatus.PLAYING) return;
-    if (isInBlackout) return;
-
-    const board = state.boards[state.currentBoardIndex];
-    if (board?.status === GameStatus.WON && state.currentBoardIndex < state.boards.length - 1) {
-      const timer = setTimeout(() => {
-        dispatch({ type: 'NEXT_BOARD' });
-      }, 800);
-      return () => clearTimeout(timer);
-    }
-  }, [state.boards, state.currentBoardIndex, isSequential, state.status, isInBlackout]);
 
   const handleTransitionComplete = useCallback(() => {
     setShowTransition(false);
@@ -279,17 +298,12 @@ export function GauntletGame() {
 
   // Determine which board component to render
   const renderGameArea = () => {
-    if (isSingleBoard || isSequential) {
+    if (isSingleBoard) {
       const board = state.boards[state.currentBoardIndex];
       if (!board) return null;
 
       return (
         <div className="flex flex-col items-center gap-1 w-full justify-center">
-          {isSequential && (
-            <div className="text-white/50 text-xs font-medium">
-              Board {state.currentBoardIndex + 1} of {state.boards.length}
-            </div>
-          )}
           <Board
             guesses={board.guesses}
             currentGuess={isInBlackout ? '' : currentGuess}
@@ -299,6 +313,24 @@ export function GauntletGame() {
             showSolution={board.status === GameStatus.LOST}
             darkMode
           />
+        </div>
+      );
+    } else if (isSequential) {
+      // Sequence-style 2x2 grid with sequential board unlocking
+      return (
+        <div className="grid grid-cols-2 gap-2 w-full h-full max-w-lg mx-auto">
+          {state.boards.map((board, idx) => (
+            <GauntletSequenceMiniBoard
+              key={idx}
+              board={board}
+              boardIndex={idx}
+              isActive={idx === sequenceActiveBoardIndex}
+              isCompleted={board.status === GameStatus.WON}
+              isFailed={board.status === GameStatus.LOST}
+              isLocked={idx !== sequenceActiveBoardIndex && board.status === GameStatus.PLAYING}
+              currentGuess={idx === sequenceActiveBoardIndex && !isInBlackout ? currentGuess : ''}
+            />
+          ))}
         </div>
       );
     } else {
@@ -422,6 +454,126 @@ export function GauntletGame() {
           <VictoryAnimation onComplete={handleVictoryComplete} />
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// Mini board for sequence stages in gauntlet — 2x2 grid with sequential unlock
+function GauntletSequenceMiniBoard({
+  board,
+  boardIndex,
+  isActive,
+  isCompleted,
+  isFailed,
+  isLocked,
+  currentGuess,
+}: {
+  board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
+  boardIndex: number;
+  isActive: boolean;
+  isCompleted: boolean;
+  isFailed: boolean;
+  isLocked: boolean;
+  currentGuess: string;
+}) {
+  const evalGuess = (guess: string, solution: string): TileState[] => {
+    const result: TileState[] = Array(5).fill(TileState.EMPTY);
+    const solutionArr = solution.split('');
+    const guessArr = guess.split('');
+    const used = Array(5).fill(false);
+
+    guessArr.forEach((letter, i) => {
+      if (letter === solutionArr[i]) { result[i] = TileState.CORRECT; used[i] = true; }
+    });
+    guessArr.forEach((letter, i) => {
+      if (result[i] === TileState.EMPTY) {
+        const f = solutionArr.findIndex((l, idx) => l === letter && !used[idx]);
+        if (f !== -1) { result[i] = TileState.PRESENT; used[f] = true; }
+        else { result[i] = TileState.ABSENT; }
+      }
+    });
+    return result;
+  };
+
+  const getTileColor = (state: TileState) => {
+    switch (state) {
+      case TileState.CORRECT: return 'bg-green-600 border-green-400';
+      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
+      case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
+      default: return 'bg-zinc-800 border-zinc-600';
+    }
+  };
+
+  const showColors = isActive || isCompleted || isFailed;
+
+  const allGuesses = [...board.guesses];
+  if (isActive && currentGuess.length > 0 && board.guesses.length < board.maxGuesses) {
+    allGuesses.push(currentGuess);
+  }
+
+  return (
+    <div
+      className={`relative p-1 rounded-lg border-2 h-full flex flex-col transition-all duration-300 ${
+        isCompleted
+          ? 'border-green-400 bg-green-900/20'
+          : isFailed
+          ? 'border-red-400 bg-red-900/20'
+          : isActive
+          ? 'border-yellow-400 bg-zinc-900/50 shadow-lg shadow-yellow-500/20'
+          : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
+      }`}
+    >
+      {/* Board number / status */}
+      <div className={`absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold z-10 ${
+        isCompleted ? 'bg-green-500 text-white' :
+        isActive ? 'bg-yellow-400 text-black' :
+        'bg-zinc-700 text-zinc-400'
+      }`}>
+        {isCompleted ? '✓' : boardIndex + 1}
+      </div>
+
+      <div className="flex flex-col gap-[2px] flex-1">
+        {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
+          const guess = allGuesses[rowIndex] || '';
+          const isPastGuess = rowIndex < board.guesses.length;
+          const isCurrentRow = rowIndex === board.guesses.length && isActive;
+          const tiles = isPastGuess && showColors
+            ? evalGuess(guess, board.solution)
+            : Array(5).fill(TileState.EMPTY);
+
+          return (
+            <div key={rowIndex} className="flex gap-[2px] flex-1">
+              {Array.from({ length: 5 }).map((_, letterIndex) => {
+                const letter = guess[letterIndex] || '';
+                const tileState = tiles[letterIndex];
+
+                return (
+                  <div
+                    key={letterIndex}
+                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold text-[10px] sm:text-xs ${
+                      isPastGuess && showColors
+                        ? getTileColor(tileState)
+                        : isPastGuess && !showColors
+                        ? 'bg-zinc-700/50 border-zinc-600/50'
+                        : letter
+                        ? 'bg-zinc-800 border-zinc-500'
+                        : 'bg-zinc-800/50 border-zinc-700/30'
+                    }`}
+                  >
+                    {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : ''}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      {isFailed && (
+        <div className="text-center text-xs text-red-300 mt-1 font-bold">
+          {board.solution.toUpperCase()}
+        </div>
+      )}
     </div>
   );
 }
