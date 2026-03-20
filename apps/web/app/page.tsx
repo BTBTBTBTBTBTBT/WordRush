@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Trophy, Zap, Flame, Timer, Grid3x3, Grid2x2, User, LogOut, Swords } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { Button } from '@/components/ui/button';
@@ -14,10 +15,29 @@ import solutionWords from '@/data/solutions.json';
 export default function HomePage() {
   const { user, profile, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingVsHref, setPendingVsHref] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     initDictionary(allowedWords, solutionWords);
   }, []);
+
+  // After auth completes, navigate to pending VS route
+  useEffect(() => {
+    if (user && pendingVsHref) {
+      router.push(pendingVsHref);
+      setPendingVsHref(null);
+    }
+  }, [user, pendingVsHref, router]);
+
+  const handleVsClick = (vsHref: string) => {
+    if (user) {
+      router.push(vsHref);
+    } else {
+      setPendingVsHref(vsHref);
+      setAuthModalOpen(true);
+    }
+  };
 
   const gameModes = [
     {
@@ -27,7 +47,7 @@ export default function HomePage() {
       description: 'Solve one puzzle, 6 tries',
       color: 'from-blue-500 to-cyan-500',
       href: '/practice',
-      difficulty: 'Easy',
+      vsHref: '/practice/vs',
     },
     {
       id: 'quordle',
@@ -36,7 +56,7 @@ export default function HomePage() {
       description: 'Solve 4 puzzles at once, 9 tries',
       color: 'from-purple-500 to-pink-500',
       href: '/quordle',
-      difficulty: 'Hard',
+      vsHref: '/quordle/vs',
     },
     {
       id: 'octordle',
@@ -45,7 +65,7 @@ export default function HomePage() {
       description: 'Ultimate challenge! 8 boards, 13 tries',
       color: 'from-yellow-500 to-orange-500',
       href: '/octordle',
-      difficulty: 'Extreme',
+      vsHref: '/octordle/vs',
     },
     {
       id: 'sequence',
@@ -54,7 +74,7 @@ export default function HomePage() {
       description: '4 puzzles, one at a time, 10 guesses total!',
       color: 'from-orange-500 to-red-500',
       href: '/sequence',
-      difficulty: 'Medium',
+      vsHref: '/sequence/vs',
     },
     {
       id: 'rescue',
@@ -63,7 +83,7 @@ export default function HomePage() {
       description: 'Decode pre-filled clues, solve 4 boards',
       color: 'from-red-500 to-orange-500',
       href: '/rescue',
-      difficulty: 'Intense',
+      vsHref: '/rescue/vs',
     },
     {
       id: 'gauntlet',
@@ -72,7 +92,7 @@ export default function HomePage() {
       description: '5 stages of escalating word challenges!',
       color: 'from-red-600 via-yellow-500 to-red-600',
       href: '/gauntlet',
-      difficulty: 'Ultimate',
+      vsHref: '/gauntlet/vs',
     },
   ];
 
@@ -185,37 +205,47 @@ export default function HomePage() {
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 + index * 0.08 }}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
               className="relative group will-change-transform"
             >
-              <Link href={mode.href}>
-                <div
-                  className={`
-                    relative overflow-hidden rounded-3xl p-6 h-full
-                    bg-gradient-to-br ${mode.color}
-                    ring-4 ring-inset ring-white/20
-                    shadow-2xl
-                    transition-shadow duration-300
-                    group-hover:shadow-yellow-400/40
-                  `}
-                >
-                  <div className="absolute inset-0 bg-black/20" />
+              <div
+                className={`
+                  relative overflow-hidden rounded-3xl p-6 h-full
+                  bg-gradient-to-br ${mode.color}
+                  ring-4 ring-inset ring-white/20
+                  shadow-2xl
+                  transition-shadow duration-300
+                  group-hover:shadow-yellow-400/40
+                `}
+              >
+                <div className="absolute inset-0 bg-black/20" />
 
-                  <div className="relative z-10 space-y-4">
-                    <mode.icon className="w-16 h-16 text-white drop-shadow-lg transition-transform duration-300 group-hover:scale-110" />
+                <div className="relative z-10 space-y-4">
+                  <mode.icon className="w-12 h-12 text-white drop-shadow-lg" />
 
-                    <div>
-                      <h2 className="text-4xl font-black text-white mb-2 drop-shadow-lg">
-                        {mode.title}
-                      </h2>
-                      <p className="text-white/90 text-lg font-medium">
-                        {mode.description}
-                      </p>
-                    </div>
+                  <div>
+                    <h2 className="text-3xl font-black text-white mb-1 drop-shadow-lg">
+                      {mode.title}
+                    </h2>
+                    <p className="text-white/90 text-sm font-medium mb-4">
+                      {mode.description}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Link href={mode.href} className="flex-1">
+                      <button className="w-full py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-sm transition-colors backdrop-blur-sm border border-white/20">
+                        Solo
+                      </button>
+                    </Link>
+                    <button
+                      onClick={() => handleVsClick(mode.vsHref)}
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold text-sm transition-colors border border-white/20 shadow-lg"
+                    >
+                      VS
+                    </button>
                   </div>
                 </div>
-              </Link>
+              </div>
             </motion.div>
           ))}
         </div>

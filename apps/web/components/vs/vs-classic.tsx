@@ -1,29 +1,27 @@
 'use client';
 
 import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
-import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, isValidWord } from '@wordle-duel/core';
+import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
-import { VictoryAnimation } from '@/components/effects/victory-animation';
-import { AnimatePresence } from 'framer-motion';
-import { Trophy, RotateCcw, Home, Clock } from 'lucide-react';
-import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
-import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import { OpponentHUD } from './opponent-hud';
+import { Clock } from 'lucide-react';
 
-interface PracticeGameProps {
+export interface VsGameComponentProps {
+  seed: string;
   mode: GameMode;
-  onBack: () => void;
+  onBoardSolved: (boardIndex: number) => void;
+  onCompleted: (status: 'won' | 'lost', totalGuesses: number, timeMs: number) => void;
+  opponentProgress: { attempts: number; boardsSolved: number; totalBoards: number };
+  startTime: number;
 }
 
-export function PracticeGame({ mode, onBack }: PracticeGameProps) {
-  ensureDictionaryInitialized();
-  const { profile } = useAuth();
-  const [state, dispatch] = useReducer(gameReducer, createInitialState(generateMatchSeed(), mode));
+export function VsClassic({ seed, mode, onBoardSolved, onCompleted, opponentProgress, startTime }: VsGameComponentProps) {
+  const [state, dispatch] = useReducer(gameReducer, createInitialState(seed, mode));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
-  const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [hasReported, setHasReported] = useState(false);
 
   const currentBoard = state.boards[state.currentBoardIndex];
 
@@ -47,20 +45,23 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
   useEffect(() => {
     if (state.status === GameStatus.PLAYING) {
       const interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - state.startTime) / 1000));
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [state.status, state.startTime]);
+  }, [state.status, startTime]);
 
   useEffect(() => {
-    if (state.status === GameStatus.WON) setShowVictory(true);
-    if (profile && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
-      const timeMs = Date.now() - state.startTime;
-      const guesses = currentBoard.guesses.length;
-      recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs);
+    if (hasReported) return;
+    if (state.status === GameStatus.WON) {
+      setHasReported(true);
+      onBoardSolved(0);
+      onCompleted('won', currentBoard.guesses.length, Date.now() - startTime);
+    } else if (state.status === GameStatus.LOST) {
+      setHasReported(true);
+      onCompleted('lost', currentBoard.guesses.length, Date.now() - startTime);
     }
-  }, [state.status]);
+  }, [state.status, hasReported, currentBoard.guesses.length, startTime, onBoardSolved, onCompleted]);
 
   const handleKey = useCallback((key: string) => {
     if (currentBoard.status !== GameStatus.PLAYING) return;
@@ -100,28 +101,13 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
   }, [handleKey]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-
-  const handleReset = () => {
-    dispatch({ type: 'RESET', seed: generateMatchSeed(), mode });
-    setCurrentGuess('');
-    setMessage('');
-    setElapsedTime(0);
-  };
-
   const guessesUsed = currentBoard.guesses.length;
   const maxGuesses = currentBoard.maxGuesses;
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-blue-900 via-cyan-800 to-teal-700 relative">
-      <AnimatePresence>
-        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
-      </AnimatePresence>
-
+    <div className="h-full flex flex-col">
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
-        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-teal-400">
-          CLASSIC
-        </h1>
         <div className="flex justify-center gap-3 mt-1">
           <span className="text-white/70 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
@@ -131,18 +117,15 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
             <span className="bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
-        {state.status === GameStatus.WON && (
-          <div className="mt-1 flex items-center justify-center gap-3">
-            <span className="text-green-300 text-xs font-bold">Solved in {guessesUsed}!</span>
-            <button onClick={handleReset} className="text-yellow-400 text-xs font-bold underline">Play Again</button>
-          </div>
-        )}
-        {state.status === GameStatus.LOST && (
-          <div className="mt-1 flex items-center justify-center gap-3">
-            <span className="text-red-300 text-xs font-bold">The word was {currentBoard.solution.toUpperCase()}</span>
-            <button onClick={handleReset} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
-          </div>
-        )}
+      </div>
+
+      {/* Opponent HUD */}
+      <div className="flex justify-center px-4 mb-2">
+        <OpponentHUD
+          attempts={opponentProgress.attempts}
+          boardsSolved={opponentProgress.boardsSolved}
+          totalBoards={opponentProgress.totalBoards}
+        />
       </div>
 
       {/* Board */}
@@ -156,16 +139,6 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
           solution={currentBoard.solution}
           darkMode
         />
-      </div>
-
-      {/* Bottom bar */}
-      <div className="shrink-0 px-4 pb-1 flex justify-center gap-4">
-        <button onClick={onBack} className="text-white/50 text-xs font-bold flex items-center gap-1">
-          <Home className="w-3 h-3" /> Home
-        </button>
-        <button onClick={handleReset} className="text-white/50 text-xs font-bold flex items-center gap-1">
-          <RotateCcw className="w-3 h-3" /> New Puzzle
-        </button>
       </div>
 
       {/* Keyboard */}

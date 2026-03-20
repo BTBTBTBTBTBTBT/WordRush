@@ -5,7 +5,12 @@ export class MatchmakingQueue {
   private queues: Map<GameMode, QueueEntry[]> = new Map([
     [GameMode.DUEL, []],
     [GameMode.MULTI_DUEL, []],
-    [GameMode.GAUNTLET, []]
+    [GameMode.GAUNTLET, []],
+    [GameMode.QUORDLE, []],
+    [GameMode.OCTORDLE, []],
+    [GameMode.SEQUENCE, []],
+    [GameMode.RESCUE, []],
+    [GameMode.TOURNAMENT, []]
   ]);
 
   addToQueue(player: Player, mode: GameMode): number {

@@ -55,6 +55,7 @@ export interface Database {
           id: string
           user_id: string
           game_mode: string
+          play_type: string
           wins: number
           losses: number
           total_games: number
@@ -66,6 +67,7 @@ export interface Database {
           id?: string
           user_id: string
           game_mode: string
+          play_type?: string
           wins?: number
           losses?: number
           total_games?: number
@@ -77,6 +79,7 @@ export interface Database {
           id?: string
           user_id?: string
           game_mode?: string
+          play_type?: string
           wins?: number
           losses?: number
           total_games?: number

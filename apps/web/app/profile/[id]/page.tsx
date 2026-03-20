@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useAuth } from '@/lib/auth-context';
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Trophy,
   Target,
@@ -16,13 +16,14 @@ import {
   User,
   Check,
   X,
-  Pencil,
+  ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import type { Database } from '@/lib/database.types';
 
+type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'];
 
@@ -37,117 +38,62 @@ const gameModeTitles: Record<string, string> = {
   TOURNAMENT: 'Tournament',
 };
 
-export default function ProfilePage() {
-  const { profile, loading, refreshProfile } = useAuth();
+export default function PublicProfilePage() {
+  const params = useParams();
+  const profileId = params.id as string;
+
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<UserStats[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
 
-  // Editable username state
-  const [editingUsername, setEditingUsername] = useState(false);
-  const [usernameValue, setUsernameValue] = useState('');
-  const [usernameError, setUsernameError] = useState('');
-  const [savingUsername, setSavingUsername] = useState(false);
-  const usernameInputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
-    if (profile) {
-      fetchStats();
-      fetchMatches();
-      setUsernameValue(profile.username);
+    if (profileId) {
+      fetchAll();
     }
-  }, [profile]);
+  }, [profileId]);
 
-  useEffect(() => {
-    if (editingUsername && usernameInputRef.current) {
-      usernameInputRef.current.focus();
-      usernameInputRef.current.select();
-    }
-  }, [editingUsername]);
+  const fetchAll = async () => {
+    setLoading(true);
 
-  const fetchStats = async () => {
-    if (!profile) return;
-
-    const { data } = await supabase
-      .from('user_stats')
-      .select('*')
-      .eq('user_id', profile.id);
-
-    if (data) {
-      setStats(data);
-    }
-
-    setLoadingStats(false);
-  };
-
-  const fetchMatches = async () => {
-    if (!profile) return;
-
-    const { data } = await supabase
-      .from('matches')
-      .select('*')
-      .or(`player1_id.eq.${profile.id},player2_id.eq.${profile.id}`)
-      .order('created_at', { ascending: false })
-      .limit(10);
-
-    if (data) {
-      setMatches(data);
-    }
-  };
-
-  const saveUsername = async () => {
-    if (!profile) return;
-
-    const trimmed = usernameValue.trim();
-
-    if (trimmed.length < 3 || trimmed.length > 20) {
-      setUsernameError('Username must be 3-20 characters');
-      return;
-    }
-
-    if (trimmed === profile.username) {
-      setEditingUsername(false);
-      setUsernameError('');
-      return;
-    }
-
-    setSavingUsername(true);
-    setUsernameError('');
-
-    const { error } = await (supabase as any)
+    const { data: profileData, error } = await supabase
       .from('profiles')
-      .update({ username: trimmed })
-      .eq('id', profile.id);
+      .select('*')
+      .eq('id', profileId)
+      .maybeSingle();
 
-    if (error) {
-      if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
-        setUsernameError('Username already taken');
-      } else {
-        setUsernameError('Failed to update username');
-      }
-      setSavingUsername(false);
+    if (!profileData || error) {
+      setNotFound(true);
+      setLoading(false);
       return;
     }
 
-    await refreshProfile();
-    setEditingUsername(false);
-    setSavingUsername(false);
-  };
+    setProfile(profileData);
 
-  const handleUsernameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      saveUsername();
-    } else if (e.key === 'Escape') {
-      setEditingUsername(false);
-      setUsernameValue(profile?.username ?? '');
-      setUsernameError('');
-    }
+    const [statsRes, matchesRes] = await Promise.all([
+      supabase
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', profileId),
+      supabase
+        .from('matches')
+        .select('*')
+        .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ]);
+
+    if (statsRes.data) setStats(statsRes.data);
+    if (matchesRes.data) setMatches(matchesRes.data);
+
+    setLoading(false);
   };
 
   const filteredStats = stats.filter((s) => s.play_type === activeTab);
 
-  if (loading || loadingStats) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center">
         <div className="text-white text-2xl font-bold">Loading...</div>
@@ -155,17 +101,22 @@ export default function ProfilePage() {
     );
   }
 
-  if (!profile) {
+  if (notFound || !profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-black text-white">Please sign in to view your profile</h1>
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center space-y-4"
+        >
+          <h1 className="text-4xl font-black text-white">Player not found</h1>
+          <p className="text-white/70">This profile doesn't exist or may have been removed.</p>
           <Link href="/">
             <Button className="bg-gradient-to-r from-yellow-400 to-pink-500">
               Go Home
             </Button>
           </Link>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -186,42 +137,17 @@ export default function ProfilePage() {
           animate={{ y: 0, opacity: 1 }}
           className="flex flex-col items-center gap-4"
         >
-          <AvatarUpload size={112} />
+          <AvatarUpload
+            size={112}
+            editable={false}
+            avatarUrl={profile.avatar_url}
+            username={profile.username}
+          />
 
           <div className="text-center">
-            {editingUsername ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={usernameInputRef}
-                    type="text"
-                    value={usernameValue}
-                    onChange={(e) => setUsernameValue(e.target.value)}
-                    onBlur={saveUsername}
-                    onKeyDown={handleUsernameKeyDown}
-                    maxLength={20}
-                    disabled={savingUsername}
-                    className="text-3xl font-black text-center bg-white/10 border-2 border-white/30 rounded-xl px-4 py-2 text-white placeholder-white/50 outline-none focus:border-yellow-400/60 transition-colors w-64"
-                  />
-                  {savingUsername && (
-                    <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  )}
-                </div>
-                {usernameError && (
-                  <p className="text-red-400 text-sm font-medium">{usernameError}</p>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={() => setEditingUsername(true)}
-                className="group flex items-center gap-2 cursor-pointer"
-              >
-                <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-lg">
-                  {profile.username}
-                </h1>
-                <Pencil className="w-5 h-5 text-white/40 group-hover:text-white/80 transition-colors" />
-              </button>
-            )}
+            <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-lg">
+              {profile.username}
+            </h1>
 
             {/* Level Badge & XP Bar */}
             <div className="mt-3 flex flex-col items-center gap-2">
@@ -245,7 +171,8 @@ export default function ProfilePage() {
 
           <Link href="/">
             <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-              Back to Home
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
             </Button>
           </Link>
         </motion.div>
@@ -373,8 +300,8 @@ export default function ProfilePage() {
           {filteredStats.length === 0 ? (
             <div className="text-center text-white/70 py-8">
               {activeTab === 'solo'
-                ? 'Play some solo games to see your stats here!'
-                : 'Play some VS matches to see your stats here!'}
+                ? 'No solo stats yet.'
+                : 'No VS stats yet.'}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -430,7 +357,7 @@ export default function ProfilePage() {
 
           {matches.length === 0 ? (
             <div className="text-center text-white/70 py-8">
-              No matches played yet. Start a game!
+              No matches played yet.
             </div>
           ) : (
             <div className="space-y-3">
@@ -438,7 +365,6 @@ export default function ProfilePage() {
                 const isSolo = !match.player2_id;
                 const isWinner = match.winner_id === profile.id;
                 const isPlayer1 = match.player1_id === profile.id;
-                const playerScore = isPlayer1 ? match.player1_score : (match.player2_score ?? 0);
                 const playerTime = isPlayer1 ? match.player1_time : (match.player2_time ?? 0);
                 const matchDate = new Date(match.created_at);
 

@@ -7,8 +7,11 @@ import { Keyboard } from '../game/keyboard';
 import { VictoryAnimation } from '../effects/victory-animation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Clock } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { recordGameResult } from '@/lib/stats-service';
 
 export function QuordleGame() {
+  const { profile } = useAuth();
   const [state, dispatch] = useReducer(
     gameReducer,
     initializeGame(Date.now().toString(), GameMode.QUORDLE)
@@ -30,6 +33,11 @@ export function QuordleGame() {
 
   useEffect(() => {
     if (state.status === 'WON') setShowVictory(true);
+    if (profile && (state.status === 'WON' || state.status === 'LOST')) {
+      const timeMs = Date.now() - state.startTime;
+      const guesses = state.boards[0]?.guesses.length || 0;
+      recordGameResult(profile.id, 'QUORDLE', 'solo', state.status === 'WON', guesses, timeMs);
+    }
   }, [state.status]);
 
   const handleKeyPress = useCallback((key: string) => {

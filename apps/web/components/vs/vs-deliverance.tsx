@@ -1,44 +1,55 @@
 'use client';
 
-import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
-import { GameMode, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
-import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '../game/multi-board';
-import { Keyboard } from '../game/keyboard';
-import { VictoryAnimation } from '../effects/victory-animation';
-import { AnimatePresence } from 'framer-motion';
+import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { GameMode, GameStatus, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
+import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
+import { Keyboard } from '@/components/game/keyboard';
+import { OpponentHUD } from './opponent-hud';
 import { Trophy, Clock } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import type { VsGameComponentProps } from './vs-classic';
 
-export function RescueGame() {
-  const { profile } = useAuth();
+export function VsDeliverance({ seed, mode, onBoardSolved, onCompleted, opponentProgress, startTime }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(Date.now().toString(), GameMode.RESCUE)
+    initializeGame(seed, GameMode.RESCUE)
   );
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
-  const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [hasReported, setHasReported] = useState(false);
+  const prevSolvedRef = useRef(0);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
       const interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - state.startTime) / 1000));
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [state.status, state.startTime]);
+  }, [state.status, startTime]);
 
+  // Track board solves
   useEffect(() => {
-    if (state.status === 'WON') setShowVictory(true);
-    if (profile && (state.status === 'WON' || state.status === 'LOST')) {
-      const timeMs = Date.now() - state.startTime;
-      const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
-      recordGameResult(profile.id, 'RESCUE', 'solo', state.status === 'WON', guesses, timeMs);
+    const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
+    if (solvedCount > prevSolvedRef.current) {
+      for (let i = prevSolvedRef.current; i < solvedCount; i++) {
+        const solvedIdx = state.boards.findIndex((b, idx) => b.status === GameStatus.WON && idx >= i);
+        if (solvedIdx !== -1) onBoardSolved(solvedIdx);
+      }
+      prevSolvedRef.current = solvedCount;
     }
-  }, [state.status]);
+  }, [state.boards, onBoardSolved]);
+
+  // Report completion
+  useEffect(() => {
+    if (hasReported) return;
+    if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
+      setHasReported(true);
+      const guessesUsed = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
+      onCompleted(state.status === GameStatus.WON ? 'won' : 'lost', guessesUsed, Date.now() - startTime);
+    }
+  }, [state.status, hasReported, state.boards, startTime, onCompleted]);
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
@@ -55,9 +66,9 @@ export function RescueGame() {
       });
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {
-      setCurrentGuess((prev) => prev.slice(0, -1));
+      setCurrentGuess(prev => prev.slice(0, -1));
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
-      setCurrentGuess((prev) => prev + key);
+      setCurrentGuess(prev => prev + key);
     }
   }, [state, currentGuess]);
 
@@ -80,40 +91,25 @@ export function RescueGame() {
   const maxGuesses = state.boards[0]?.maxGuesses || 6;
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-  const handleRestart = () => {
-    dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.RESCUE });
-    setCurrentGuess(''); setError(''); setElapsedTime(0);
-  };
-
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-indigo-900 via-purple-800 to-fuchsia-700 relative">
-      <AnimatePresence>
-        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
-      </AnimatePresence>
-
-      {/* Compact Header */}
+    <div className="h-full flex flex-col">
+      {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
-        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400">
-          DELIVERANCE
-        </h1>
         <div className="flex justify-center gap-3 mt-1">
           <span className="text-white/70 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-yellow-400" />{completedBoards}/4</span>
           <span className="text-white/70 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
         {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
-        {state.status === 'WON' && (
-          <div className="mt-1">
-            <span className="text-green-300 text-xs font-bold">Deliverance complete! </span>
-            <button onClick={handleRestart} className="text-yellow-400 text-xs font-bold underline">Play Again</button>
-          </div>
-        )}
-        {state.status === 'LOST' && (
-          <div className="mt-1">
-            <span className="text-red-300 text-xs font-bold">Failed! {completedBoards}/4 </span>
-            <button onClick={handleRestart} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
-          </div>
-        )}
+      </div>
+
+      {/* Opponent HUD */}
+      <div className="flex justify-center px-4 mb-1">
+        <OpponentHUD
+          attempts={opponentProgress.attempts}
+          boardsSolved={opponentProgress.boardsSolved}
+          totalBoards={opponentProgress.totalBoards}
+        />
       </div>
 
       {/* Boards */}

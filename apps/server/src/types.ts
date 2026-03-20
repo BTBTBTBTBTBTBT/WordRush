@@ -12,6 +12,15 @@ export interface QueueEntry {
   joinedAt: number;
 }
 
+export interface PlayerMatchState {
+  guesses: number;
+  status: GameStatus;
+  completedAt?: number;
+  boardsSolved: number;
+  totalBoards: number;
+  currentStage?: number;
+}
+
 export interface Match {
   id: string;
   mode: GameMode;
@@ -20,16 +29,8 @@ export interface Match {
   player2: Player;
   solutions: string[];
   serverStartAt: number;
-  player1State: {
-    guesses: number;
-    status: GameStatus;
-    completedAt?: number;
-  };
-  player2State: {
-    guesses: number;
-    status: GameStatus;
-    completedAt?: number;
-  };
+  player1State: PlayerMatchState;
+  player2State: PlayerMatchState;
   rematchOffers: Set<string>;
 }
 
@@ -41,6 +42,9 @@ export interface ClientToServerEvents {
   offer_rematch: () => void;
   accept_rematch: () => void;
   decline_rematch: () => void;
+  board_solved: (data: { boardIndex: number }) => void;
+  player_completed: (data: { status: string; totalGuesses: number; timeMs: number }) => void;
+  stage_completed: (data: { stageIndex: number }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -58,7 +62,12 @@ export interface ServerToClientEvents {
     isCorrect: boolean;
     reason?: string;
   }) => void;
-  opponent_progress: (data: { attempts: number; solved: boolean }) => void;
+  opponent_progress: (data: {
+    attempts: number;
+    solved: boolean;
+    boardsSolved: number;
+    totalBoards: number;
+  }) => void;
   match_ended: (data: {
     winner: 'player' | 'opponent' | 'draw' | null;
     playerGuesses: number;
@@ -66,6 +75,7 @@ export interface ServerToClientEvents {
     playerTime: number;
     opponentTime: number;
   }) => void;
+  opponent_stage_completed: (data: { stageIndex: number }) => void;
   rematch_offered: () => void;
   rematch_declined: () => void;
   rematch_start: (data: { matchId: string; seed: string }) => void;

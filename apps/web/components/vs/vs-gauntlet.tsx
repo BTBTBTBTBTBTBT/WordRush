@@ -15,61 +15,35 @@ import {
 import { Board } from '@/components/game/board';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import { Keyboard } from '@/components/game/keyboard';
-import { VictoryAnimation } from '@/components/effects/victory-animation';
-import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
-import { StageTransition } from './stage-transition';
-import { GauntletResults } from './gauntlet-results';
-import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import { GauntletProgress, GauntletStageHeader } from '@/components/gauntlet/gauntlet-progress';
+import { StageTransition } from '@/components/gauntlet/stage-transition';
+import { OpponentHUD } from './opponent-hud';
+import { Lock } from 'lucide-react';
 
-const BLACKOUT_DURATION_MS = 15_000;
-const BLACKOUT_LETTER_COUNT = 3;
-const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-
-function generateSeed(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+export interface VsGauntletProps {
+  seed: string;
+  mode: GameMode;
+  onBoardSolved: (boardIndex: number) => void;
+  onCompleted: (status: 'won' | 'lost', totalGuesses: number, timeMs: number) => void;
+  opponentProgress: { attempts: number; boardsSolved: number; totalBoards: number; currentStage?: number };
+  startTime: number;
+  onStageCompleted?: (stageIndex: number) => void;
 }
 
-function pickBlackoutLetters(
-  letterStates: Record<string, 'correct' | 'present' | 'absent'>,
-  count: number
-): string[] {
-  // Pick random letters that haven't been confirmed correct/present
-  const candidates = ALL_LETTERS.filter(
-    l => letterStates[l] !== 'correct' && letterStates[l] !== 'present'
-  );
-  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, shuffled.length));
-}
-
-export function GauntletGame() {
-  const { profile } = useAuth();
-  const [seed, setSeed] = useState(generateSeed);
+export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, opponentProgress, startTime, onStageCompleted }: VsGauntletProps) {
   const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showTransition, setShowTransition] = useState(false);
-  const [showVictory, setShowVictory] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [gameStartTime] = useState(Date.now());
-
-  // Letter Blackout state
-  const [blackedOutLetters, setBlackedOutLetters] = useState<Set<string>>(new Set());
-  const [blackoutBoardIndex, setBlackoutBoardIndex] = useState<number | null>(null);
-  const [blackoutTimeLeft, setBlackoutTimeLeft] = useState(0);
-  const blackoutTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const blackoutCountdownRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Stolen Guess visual feedback
-  const [showStolenGuess, setShowStolenGuess] = useState(false);
+  const [hasReported, setHasReported] = useState(false);
+  const prevSolvedRef = useRef(0);
 
   const gauntlet = state.gauntlet!;
   const currentStageConfig = gauntlet.stages[gauntlet.currentStage];
   const isSequential = currentStageConfig.sequential;
   const isSingleBoard = currentStageConfig.boardCount === 1;
-  const isInBlackout = blackoutBoardIndex !== null;
 
-  // For sequence stages, track the active board (first unsolved in order)
+  // For sequence stages, track the active board
   const sequenceActiveBoardIndex = useMemo(() => {
     if (!isSequential) return -1;
     for (let i = 0; i < state.boards.length; i++) {
@@ -78,11 +52,9 @@ export function GauntletGame() {
     return -1;
   }, [isSequential, state.boards]);
 
-  // Build letter states only from boards still in play
+  // Build letter states
   const letterStates = useMemo(() => {
     if (isSequential && sequenceActiveBoardIndex >= 0) {
-      // For sequence: show hints ONLY from the active board's perspective
-      // All previous guesses are evaluated against the ACTIVE board's solution
       const states: Record<string, 'correct' | 'present' | 'absent'> = {};
       const activeBoard = state.boards[sequenceActiveBoardIndex];
       if (activeBoard) {
@@ -101,7 +73,6 @@ export function GauntletGame() {
     return computeActiveLetterStates(state.boards);
   }, [state.boards, isSequential, sequenceActiveBoardIndex]);
 
-  // Per-board letter states for quadrant keyboard (multi-board, non-sequential stages)
   const boardLetterStates = useMemo(() => {
     if (isSingleBoard || isSequential) return undefined;
     return computePerBoardLetterStates(state.boards);
@@ -114,90 +85,58 @@ export function GauntletGame() {
     return currentBoard.guesses.map(g => evaluateGuess(currentBoard.solution, g));
   }, [currentBoard]);
 
-  // Detect board failure → trigger Letter Blackout
-  // Uses a ref to track whether we've already triggered for this failure,
-  // so the effect doesn't depend on letterStates (which would cause cleanup/restart).
-  const blackoutTriggeredRef = useRef(false);
+  // Track board solves across all stages
+  useEffect(() => {
+    const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
+    if (solvedCount > prevSolvedRef.current) {
+      for (let i = prevSolvedRef.current; i < solvedCount; i++) {
+        onBoardSolved(i);
+      }
+      prevSolvedRef.current = solvedCount;
+    }
+  }, [state.boards, onBoardSolved]);
 
+  // Check for stage completion (no blackout in VS)
   useEffect(() => {
     if (state.status !== GameStatus.PLAYING) return;
-    if (blackoutTriggeredRef.current) return; // Already handling a blackout
-
-    const failedIndex = state.boards.findIndex(b => b.status === GameStatus.LOST);
-    if (failedIndex === -1) return;
-
-    // Mark as triggered so re-renders don't restart timers
-    blackoutTriggeredRef.current = true;
-
-    // Start blackout
-    const letters = pickBlackoutLetters(letterStates, BLACKOUT_LETTER_COUNT);
-    setBlackedOutLetters(new Set(letters));
-    setBlackoutBoardIndex(failedIndex);
-    setBlackoutTimeLeft(BLACKOUT_DURATION_MS / 1000);
-    setCurrentGuess('');
-    setMessage('LETTER BLACKOUT! Board restarting...');
-
-    // Countdown timer (visual)
-    const countdownId = setInterval(() => {
-      setBlackoutTimeLeft(prev => {
-        if (prev <= 1) return 0;
-        return prev - 1;
-      });
-    }, 1000);
-    blackoutCountdownRef.current = countdownId;
-
-    // Main blackout timer — restart board after duration
-    const timerId = setTimeout(() => {
-      clearInterval(countdownId);
-      dispatch({ type: 'BLACKOUT_RESTART', boardIndex: failedIndex });
-      setBlackedOutLetters(new Set());
-      setBlackoutBoardIndex(null);
-      setBlackoutTimeLeft(0);
-      setMessage('');
-      blackoutTriggeredRef.current = false;
-    }, BLACKOUT_DURATION_MS);
-    blackoutTimerRef.current = timerId;
-
-    return () => {
-      clearTimeout(timerId);
-      clearInterval(countdownId);
-      blackoutTriggeredRef.current = false;
-    };
-  }, [state.boards, state.status]);
-
-  // Check for stage completion
-  useEffect(() => {
-    if (state.status !== GameStatus.PLAYING) return;
-    if (isInBlackout) return;
 
     const allBoardsDone = state.boards.every(b => b.status !== GameStatus.PLAYING);
     const allBoardsWon = state.boards.every(b => b.status === GameStatus.WON);
 
     if (allBoardsDone && allBoardsWon) {
       setShowTransition(true);
+      onStageCompleted?.(gauntlet.currentStage);
     }
-  }, [state.boards, state.status, isInBlackout]);
+
+    // In VS gauntlet, if any board is lost, the stage is failed (no blackout restart)
+    if (allBoardsDone && !allBoardsWon) {
+      if (!hasReported) {
+        setHasReported(true);
+        const totalGuesses = state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
+        onCompleted('lost', totalGuesses, Date.now() - startTime);
+      }
+    }
+  }, [state.boards, state.status, gauntlet.currentStage, onStageCompleted, hasReported, onCompleted, startTime]);
 
   // Check for game over
   useEffect(() => {
+    if (hasReported) return;
     if (state.status === GameStatus.WON) {
-      setShowVictory(true);
+      setHasReported(true);
+      const totalGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0) +
+        state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
+      onCompleted('won', totalGuesses, Date.now() - startTime);
     } else if (state.status === GameStatus.LOST) {
-      setShowResults(true);
+      setHasReported(true);
+      const totalGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0) +
+        state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
+      onCompleted('lost', totalGuesses, Date.now() - startTime);
     }
-    if (profile && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
-      const timeMs = Date.now() - state.startTime;
-      const totalGuesses = state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
-      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs);
-    }
-  }, [state.status]);
+  }, [state.status, hasReported, gauntlet.stageResults, state.boards, startTime, onCompleted]);
 
   const handleKey = useCallback((key: string) => {
     if (state.status !== GameStatus.PLAYING) return;
-    if (showTransition || isInBlackout) return;
-
-    // Block blacked-out letters
-    if (blackedOutLetters.has(key)) return;
+    if (showTransition) return;
 
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
@@ -206,7 +145,6 @@ export function GauntletGame() {
         setTimeout(() => setMessage(''), 1500);
         return;
       }
-
       if (!isValidWord(currentGuess)) {
         setMessage('Not in word list');
         setCurrentGuess('');
@@ -217,36 +155,27 @@ export function GauntletGame() {
       if (isSingleBoard) {
         dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: state.currentBoardIndex });
       } else {
-        // For quordle, sequence, octordle, rescue — submit to all playing boards
         state.boards.forEach((board, index) => {
           if (board.status === GameStatus.PLAYING) {
             dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
           }
         });
       }
-
       setCurrentGuess('');
     } else if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
     } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
       setCurrentGuess(prev => prev + key);
     }
-  }, [state, currentGuess, showTransition, isSingleBoard, isInBlackout, blackedOutLetters]);
+  }, [state, currentGuess, showTransition, isSingleBoard]);
 
-  // Keyboard event listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-
-      if (e.key === 'Enter') {
-        handleKey('ENTER');
-      } else if (e.key === 'Backspace') {
-        handleKey('BACK');
-      } else if (/^[a-zA-Z]$/.test(e.key)) {
-        handleKey(e.key.toUpperCase());
-      }
+      if (e.key === 'Enter') handleKey('ENTER');
+      else if (e.key === 'Backspace') handleKey('BACK');
+      else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKey]);
@@ -255,61 +184,9 @@ export function GauntletGame() {
     setShowTransition(false);
     dispatch({ type: 'NEXT_STAGE' });
     setCurrentGuess('');
+    prevSolvedRef.current = 0; // Reset for new stage boards
   }, []);
 
-  const handleVictoryComplete = useCallback(() => {
-    setShowVictory(false);
-    setShowResults(true);
-  }, []);
-
-  const handlePlayAgain = useCallback(() => {
-    const newSeed = generateSeed();
-    setSeed(newSeed);
-    dispatch({ type: 'RESET', seed: newSeed, mode: GameMode.GAUNTLET });
-    setCurrentGuess('');
-    setMessage('');
-    setShowTransition(false);
-    setShowVictory(false);
-    setShowResults(false);
-    setBlackedOutLetters(new Set());
-    setBlackoutBoardIndex(null);
-    setBlackoutTimeLeft(0);
-    blackoutTriggeredRef.current = false;
-    if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
-    if (blackoutCountdownRef.current) clearInterval(blackoutCountdownRef.current);
-  }, []);
-
-  const handleHome = useCallback(() => {
-    window.location.href = '/';
-  }, []);
-
-  // Public method for multiplayer: opponent completed a stage ahead
-  // (Will be wired up when multiplayer gauntlet is implemented)
-  const handleStolenGuess = useCallback(() => {
-    dispatch({ type: 'STEAL_GUESS' });
-    setShowStolenGuess(true);
-    setMessage('STOLEN GUESS! Opponent cleared a stage first!');
-    setTimeout(() => {
-      setShowStolenGuess(false);
-      setMessage('');
-    }, 3000);
-  }, []);
-
-  // Show results screen
-  if (showResults) {
-    return (
-      <GauntletResults
-        won={state.status === GameStatus.WON}
-        stages={gauntlet.stages}
-        stageResults={gauntlet.stageResults}
-        totalTimeMs={Date.now() - gameStartTime}
-        onPlayAgain={handlePlayAgain}
-        onHome={handleHome}
-      />
-    );
-  }
-
-  // Determine which board component to render
   const renderGameArea = () => {
     if (isSingleBoard) {
       const board = state.boards[state.currentBoardIndex];
@@ -319,7 +196,7 @@ export function GauntletGame() {
         <div className="flex flex-col items-center gap-1 w-full justify-center">
           <Board
             guesses={board.guesses}
-            currentGuess={isInBlackout ? '' : currentGuess}
+            currentGuess={currentGuess}
             maxGuesses={board.maxGuesses}
             evaluations={evaluations}
             solution={board.solution}
@@ -329,7 +206,6 @@ export function GauntletGame() {
         </div>
       );
     } else if (isSequential) {
-      // Sequence-style 2x2 grid with sequential board unlocking
       return (
         <div className="grid grid-cols-2 gap-2 w-full h-full max-w-lg mx-auto">
           {state.boards.map((board, idx) => (
@@ -341,7 +217,7 @@ export function GauntletGame() {
               isCompleted={board.status === GameStatus.WON}
               isFailed={board.status === GameStatus.LOST}
               isLocked={idx !== sequenceActiveBoardIndex && board.status === GameStatus.PLAYING}
-              currentGuess={idx === sequenceActiveBoardIndex && !isInBlackout ? currentGuess : ''}
+              currentGuess={idx === sequenceActiveBoardIndex ? currentGuess : ''}
             />
           ))}
         </div>
@@ -350,14 +226,14 @@ export function GauntletGame() {
       return (
         <MultiBoard
           boards={state.boards}
-          currentGuess={isInBlackout ? '' : currentGuess}
+          currentGuess={currentGuess}
         />
       );
     }
   };
 
   return (
-    <div className="h-[100dvh] bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex flex-col relative">
+    <div className="h-full flex flex-col relative">
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0">
         <GauntletProgress
@@ -368,7 +244,17 @@ export function GauntletGame() {
         <GauntletStageHeader stage={currentStageConfig} />
       </div>
 
-      {/* Message / Blackout Warning — absolutely positioned so it doesn't shift layout */}
+      {/* Opponent HUD */}
+      <div className="flex justify-center px-4 mb-1">
+        <OpponentHUD
+          attempts={opponentProgress.attempts}
+          boardsSolved={opponentProgress.boardsSolved}
+          totalBoards={opponentProgress.totalBoards}
+          currentStage={opponentProgress.currentStage}
+        />
+      </div>
+
+      {/* Message */}
       <AnimatePresence>
         {message && (
           <motion.div
@@ -376,61 +262,11 @@ export function GauntletGame() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             className="absolute left-0 right-0 z-20 flex justify-center"
-            style={{ top: '140px' }}
+            style={{ top: '180px' }}
           >
-            <span className={`backdrop-blur-sm font-bold px-4 py-2 rounded-lg text-sm shadow-lg ${
-              isInBlackout
-                ? 'bg-red-500/30 text-red-200 border border-red-400/40'
-                : showStolenGuess
-                  ? 'bg-orange-500/30 text-orange-200 border border-orange-400/40'
-                  : 'bg-black/70 text-white'
-            }`}>
+            <span className="bg-black/70 text-white font-bold px-4 py-2 rounded-lg text-sm shadow-lg">
               {message}
-              {isInBlackout && blackoutTimeLeft > 0 && (
-                <span className="ml-2 font-mono">{blackoutTimeLeft}s</span>
-              )}
             </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Stolen Guess Flash */}
-      <AnimatePresence>
-        {showStolenGuess && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.3, 0] }}
-            transition={{ duration: 0.6, times: [0, 0.3, 1] }}
-            className="fixed inset-0 bg-orange-500 pointer-events-none z-40"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Blackout Screen Overlay */}
-      <AnimatePresence>
-        {isInBlackout && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"
-          >
-            <div className="absolute inset-0 bg-black/40 animate-pulse" />
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="relative z-10"
-            >
-              <div className="text-center space-y-3">
-                <div className="text-9xl font-black text-red-400 drop-shadow-[0_0_30px_rgba(248,113,113,0.6)] animate-pulse">
-                  {blackoutTimeLeft}
-                </div>
-                <div className="text-red-300 text-lg font-bold uppercase tracking-widest">
-                  Letters Blacked Out
-                </div>
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -446,11 +282,10 @@ export function GauntletGame() {
           onKey={handleKey}
           letterStates={letterStates}
           boardLetterStates={boardLetterStates}
-          blackedOutLetters={blackedOutLetters.size > 0 ? blackedOutLetters : undefined}
         />
       </div>
 
-      {/* Overlays */}
+      {/* Stage Transition Overlay */}
       <AnimatePresence>
         {showTransition && (
           <StageTransition
@@ -463,17 +298,10 @@ export function GauntletGame() {
           />
         )}
       </AnimatePresence>
-
-      <AnimatePresence>
-        {showVictory && (
-          <VictoryAnimation onComplete={handleVictoryComplete} />
-        )}
-      </AnimatePresence>
     </div>
   );
 }
 
-// Mini board for sequence stages in gauntlet — 2x2 grid with sequential unlock
 function GauntletSequenceMiniBoard({
   board,
   boardIndex,
@@ -520,7 +348,6 @@ function GauntletSequenceMiniBoard({
   };
 
   const showColors = isActive || isCompleted || isFailed;
-
   const allGuesses = [...board.guesses];
   if (isActive && currentGuess.length > 0 && board.guesses.length < board.maxGuesses) {
     allGuesses.push(currentGuess);
@@ -538,6 +365,12 @@ function GauntletSequenceMiniBoard({
           : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
       }`}
     >
+      {isLocked && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <Lock className="w-8 h-8 text-zinc-500/50" />
+        </div>
+      )}
+
       <div className="flex flex-col gap-[2px] flex-1">
         {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
           const guess = allGuesses[rowIndex] || '';
@@ -566,7 +399,7 @@ function GauntletSequenceMiniBoard({
                         : 'bg-zinc-800/50 border-zinc-700/30'
                     }`}
                   >
-                    {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : ''}
+                    {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '\u2022' : ''}
                   </div>
                 );
               })}
