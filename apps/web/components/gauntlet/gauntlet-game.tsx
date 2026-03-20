@@ -191,12 +191,14 @@ export function GauntletGame() {
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
         setMessage('Not enough letters');
+        setCurrentGuess('');
         setTimeout(() => setMessage(''), 1500);
         return;
       }
 
       if (!isValidWord(currentGuess)) {
         setMessage('Not in word list');
+        setCurrentGuess('');
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -344,7 +346,7 @@ export function GauntletGame() {
   };
 
   return (
-    <div className="h-[100dvh] bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex flex-col">
+    <div className="h-[100dvh] bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex flex-col relative">
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0">
         <GauntletProgress
@@ -355,21 +357,22 @@ export function GauntletGame() {
         <GauntletStageHeader stage={currentStageConfig} />
       </div>
 
-      {/* Message / Blackout Warning */}
+      {/* Message / Blackout Warning — absolutely positioned so it doesn't shift layout */}
       <AnimatePresence>
         {message && (
           <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -20, opacity: 0 }}
-            className="text-center"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute left-0 right-0 z-20 flex justify-center"
+            style={{ top: '140px' }}
           >
-            <span className={`backdrop-blur-sm font-bold px-4 py-2 rounded-lg text-sm ${
+            <span className={`backdrop-blur-sm font-bold px-4 py-2 rounded-lg text-sm shadow-lg ${
               isInBlackout
                 ? 'bg-red-500/30 text-red-200 border border-red-400/40'
                 : showStolenGuess
                   ? 'bg-orange-500/30 text-orange-200 border border-orange-400/40'
-                  : 'bg-white/20 text-white'
+                  : 'bg-black/70 text-white'
             }`}>
               {message}
               {isInBlackout && blackoutTimeLeft > 0 && (

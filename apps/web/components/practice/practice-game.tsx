@@ -41,13 +41,14 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
         setMessage('Word must be 5 letters');
+        setCurrentGuess('');
+        setTimeout(() => setMessage(''), 1500);
         return;
       }
 
-      const result = dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess });
-
       try {
         const evaluation = evaluateGuess(currentBoard.solution, currentGuess);
+        dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess });
         setEvaluations([...evaluations, evaluation]);
 
         const newLetterStates = { ...letterStates };
@@ -68,6 +69,8 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
         setCurrentGuess('');
       } catch (error) {
         setMessage('Not in word list');
+        setCurrentGuess('');
+        setTimeout(() => setMessage(''), 1500);
       }
     } else if (key === 'BACK') {
       setCurrentGuess(currentGuess.slice(0, -1));

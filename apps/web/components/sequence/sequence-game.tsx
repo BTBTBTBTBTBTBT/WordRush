@@ -83,11 +83,15 @@ export function SequenceGame() {
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
         setError('Word must be 5 letters');
+        setCurrentGuess('');
+        setTimeout(() => setError(''), 1500);
         return;
       }
 
       if (!isValidWord(currentGuess)) {
         setError('Not in word list');
+        setCurrentGuess('');
+        setTimeout(() => setError(''), 1500);
         return;
       }
 
@@ -140,7 +144,7 @@ export function SequenceGame() {
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-orange-900 via-red-800 to-pink-700">
+    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-orange-900 via-red-800 to-pink-700 relative">
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
       </AnimatePresence>
@@ -155,7 +159,7 @@ export function SequenceGame() {
           <span className="text-white/70 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
-        {error && <div className="text-red-300 text-xs font-bold mt-1">{error}</div>}
+        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
         {state.status === 'WON' && (
           <div className="mt-1">
             <span className="text-green-300 text-xs font-bold">All 4 solved in {guessesUsed} guesses! </span>
