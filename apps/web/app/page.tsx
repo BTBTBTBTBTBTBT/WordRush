@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Trophy, Zap, Flame, Timer, Grid3x3, Grid2x2, User, LogOut } from 'lucide-react';
+import { Sparkles, Trophy, Zap, Flame, Timer, Grid3x3, Grid2x2, User, LogOut, Swords } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/auth/auth-modal';
@@ -65,6 +65,15 @@ export default function HomePage() {
       color: 'from-yellow-500 to-orange-500',
       href: '/octordle',
       difficulty: 'Extreme',
+    },
+    {
+      id: 'gauntlet',
+      title: 'The Gauntlet',
+      icon: Swords,
+      description: '5 stages of escalating word challenges!',
+      color: 'from-red-600 via-yellow-500 to-red-600',
+      href: '/gauntlet',
+      difficulty: 'Ultimate',
     },
   ];
 

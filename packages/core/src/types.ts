@@ -46,11 +46,41 @@ export interface BoardState {
   prefilledGuesses?: PrefilledGuess[];
 }
 
-export interface GauntletProgress {
-  currentRound: number;
-  totalRounds: number;
-  boards: BoardState[];
+export interface GauntletStageConfig {
+  stageIndex: number;
+  name: string;
+  baseMode: GameMode;
+  boardCount: number;
+  maxGuesses: number;
+  sequential: boolean;
+  hasPrefill: boolean;
 }
+
+export interface GauntletStageResult {
+  stageIndex: number;
+  status: GameStatus;
+  guesses: number;
+  timeMs: number;
+}
+
+export interface GauntletProgress {
+  currentStage: number;
+  totalStages: number;
+  stages: GauntletStageConfig[];
+  stageResults: GauntletStageResult[];
+  stageStartTime: number;
+  allSolutions: string[];
+}
+
+export const GAUNTLET_STAGES: GauntletStageConfig[] = [
+  { stageIndex: 0, name: 'The Opening',  baseMode: GameMode.DUEL,     boardCount: 1, maxGuesses: 6,  sequential: false, hasPrefill: false },
+  { stageIndex: 1, name: 'The Quartet',  baseMode: GameMode.QUORDLE,  boardCount: 4, maxGuesses: 9,  sequential: false, hasPrefill: false },
+  { stageIndex: 2, name: 'The Gauntlet', baseMode: GameMode.SEQUENCE, boardCount: 5, maxGuesses: 6,  sequential: true,  hasPrefill: false },
+  { stageIndex: 3, name: 'The Rescue',   baseMode: GameMode.RESCUE,   boardCount: 4, maxGuesses: 6,  sequential: false, hasPrefill: true  },
+  { stageIndex: 4, name: 'The Finale',   baseMode: GameMode.OCTORDLE, boardCount: 8, maxGuesses: 13, sequential: false, hasPrefill: false },
+];
+
+export const GAUNTLET_TOTAL_SOLUTIONS = GAUNTLET_STAGES.reduce((sum, s) => sum + s.boardCount, 0);
 
 export interface GameState {
   mode: GameMode;
@@ -84,5 +114,6 @@ export interface MatchResult {
 export type GameAction =
   | { type: 'SUBMIT_GUESS'; guess: string; boardIndex?: number }
   | { type: 'NEXT_BOARD' }
+  | { type: 'NEXT_STAGE' }
   | { type: 'ABANDON' }
   | { type: 'RESET'; seed: string; mode: GameMode };
