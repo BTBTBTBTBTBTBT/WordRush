@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useEffect } from 'react';
 import { OctordleGame } from '@/components/octordle/octordle-game';
 import { initDictionary } from '@wordle-duel/core';

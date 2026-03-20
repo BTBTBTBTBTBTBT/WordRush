@@ -4,10 +4,12 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
 
+export const dynamic = 'force-dynamic';
+
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Wordle Duel - Epic Word Battles',
+  title: 'WordRush - Epic Word Battles',
   description: 'Compete in vibrant multiplayer word challenges - Quordle, Octordle, and more!',
 };
 

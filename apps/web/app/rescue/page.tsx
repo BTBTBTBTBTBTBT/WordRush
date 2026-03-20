@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect } from 'react';
 import { RescueGame } from '@/components/rescue/rescue-game';
 import { initDictionary } from '@wordle-duel/core';
