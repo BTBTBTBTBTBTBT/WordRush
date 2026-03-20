@@ -2,7 +2,7 @@ import { GameState, GameAction, GameMode, GameStatus, BoardState, GauntletStageC
 import { generateSolutionsFromSeed } from './seed';
 import { evaluateGuess } from './evaluator';
 import { isValidWord, getAllowedWords } from './dictionary';
-import { generatePrefillGuesses } from './prefill';
+import { generatePrefillGuesses, generatePrefillWords } from './prefill';
 
 export function initializeGame(seed: string, mode: GameMode): GameState {
   return createInitialState(seed, mode);
@@ -26,8 +26,9 @@ function createStageBoardsFromSolutions(
 
   if (stage.hasPrefill) {
     const allowedWords = getAllowedWords();
-    boards.forEach((board, i) => {
-      board.prefilledGuesses = generatePrefillGuesses(seed, board.solution, i, allowedWords);
+    const prefillWords = generatePrefillWords(seed, solutions, allowedWords);
+    boards.forEach((board) => {
+      board.prefilledGuesses = generatePrefillGuesses(prefillWords, board.solution);
     });
   }
 
@@ -106,8 +107,9 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
 
   if (mode === GameMode.RESCUE) {
     const allowedWords = getAllowedWords();
-    boards.forEach((board, i) => {
-      board.prefilledGuesses = generatePrefillGuesses(seed, board.solution, i, allowedWords);
+    const prefillWords = generatePrefillWords(seed, solutions, allowedWords);
+    boards.forEach((board) => {
+      board.prefilledGuesses = generatePrefillGuesses(prefillWords, board.solution);
     });
   }
 
@@ -307,7 +309,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       if (stageConfig.hasPrefill) {
         const allowedWords = getAllowedWords();
-        newBoard.prefilledGuesses = generatePrefillGuesses(replacementSeed, newSolution, boardIndex, allowedWords);
+        const prefillWords = generatePrefillWords(replacementSeed, [newSolution], allowedWords);
+        newBoard.prefilledGuesses = generatePrefillGuesses(prefillWords, newSolution);
       }
 
       const newBoards = [...state.boards];

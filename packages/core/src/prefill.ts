@@ -11,30 +11,47 @@ function simpleHash(str: string): number {
   return Math.abs(hash);
 }
 
-export function generatePrefillGuesses(
+/**
+ * Pick the 3 shared prefill words for a given seed.
+ * Every board in a Rescue game uses the same words,
+ * just evaluated against its own solution.
+ */
+export function generatePrefillWords(
   seed: string,
-  solution: string,
-  boardIndex: number,
+  solutions: string[],
   allowedWords: string[]
-): PrefilledGuess[] {
-  const prefills: PrefilledGuess[] = [];
-  const solutionUpper = solution.toUpperCase();
+): string[] {
+  const solutionSet = new Set(solutions.map(s => s.toUpperCase()));
+  const words: string[] = [];
 
   for (let i = 0; i < 3; i++) {
     let attempt = 0;
     let word: string;
 
     do {
-      const hashKey = `${seed}-prefill-${boardIndex}-${i}-${attempt}`;
+      const hashKey = `${seed}-prefill-${i}-${attempt}`;
       const hash = simpleHash(hashKey);
       const index = hash % allowedWords.length;
       word = allowedWords[index];
       attempt++;
-    } while (word === solutionUpper && attempt < 100);
+    } while (solutionSet.has(word) && attempt < 100);
 
-    const evaluation = evaluateGuess(solutionUpper, word);
-    prefills.push({ word, evaluation });
+    words.push(word);
   }
 
-  return prefills;
+  return words;
+}
+
+/**
+ * Generate prefill guesses for a single board using shared words.
+ */
+export function generatePrefillGuesses(
+  words: string[],
+  solution: string
+): PrefilledGuess[] {
+  const solutionUpper = solution.toUpperCase();
+  return words.map(word => ({
+    word,
+    evaluation: evaluateGuess(solutionUpper, word),
+  }));
 }
