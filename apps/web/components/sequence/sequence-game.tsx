@@ -1,12 +1,14 @@
 'use client';
 
-import { useReducer, useState, useEffect } from 'react';
-import { GameMode, gameReducer, initializeGame, isWordValid, evaluateGuess } from '@wordle-duel/core';
-import { Board } from '../game/board';
+import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
+import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess, TileState } from '@wordle-duel/core';
 import { Keyboard } from '../game/keyboard';
 import { VictoryAnimation } from '../effects/victory-animation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Flame, Clock, ArrowRight } from 'lucide-react';
+import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
+
+// Board order: TL(0) → TR(1) → BL(2) → BR(3)
+const BOARD_ORDER = [0, 1, 2, 3];
 
 export function SequenceGame() {
   const [state, dispatch] = useReducer(
@@ -19,6 +21,14 @@ export function SequenceGame() {
   const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [streak, setStreak] = useState(0);
+
+  // The active board is the first unsolved board in sequence order
+  const activeBoardIndex = useMemo(() => {
+    for (const idx of BOARD_ORDER) {
+      if (state.boards[idx]?.status === GameStatus.PLAYING) return idx;
+    }
+    return -1; // all solved or lost
+  }, [state.boards]);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
@@ -38,22 +48,34 @@ export function SequenceGame() {
     }
   }, [state.status]);
 
-  // Advance to next board when current board is solved
-  useEffect(() => {
-    if (state.status !== 'PLAYING') return;
-    const board = state.boards[state.currentBoardIndex];
-    if (board?.status === 'WON' && state.currentBoardIndex < state.boards.length - 1) {
-      const timer = setTimeout(() => {
-        dispatch({ type: 'NEXT_BOARD' });
-      }, 800);
-      return () => clearTimeout(timer);
+  // Build letter states from active + completed boards
+  const letterStates = useMemo(() => {
+    const states: Record<string, 'correct' | 'present' | 'absent'> = {};
+
+    // Only show letter states from boards that are active or completed (not locked)
+    for (const idx of BOARD_ORDER) {
+      const board = state.boards[idx];
+      if (!board) continue;
+
+      const isCompleted = board.status === GameStatus.WON;
+      const isActive = idx === activeBoardIndex;
+      if (!isCompleted && !isActive) continue;
+
+      for (const guess of board.guesses) {
+        const result = evaluateGuess(board.solution, guess);
+        for (const tile of result.tiles) {
+          const letter = tile.letter.toUpperCase();
+          if (tile.state === 'CORRECT') states[letter] = 'correct';
+          else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
+          else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
+        }
+      }
     }
-  }, [state.boards, state.currentBoardIndex, state.status]);
 
-  const currentBoard = state.boards[state.currentBoardIndex];
-  const completedBoards = state.boards.filter((b) => b.status === 'WON').length;
+    return states;
+  }, [state.boards, activeBoardIndex]);
 
-  const handleKeyPress = (key: string) => {
+  const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
 
     setError('');
@@ -64,22 +86,29 @@ export function SequenceGame() {
         return;
       }
 
-      if (!isWordValid(currentGuess)) {
+      if (!isValidWord(currentGuess)) {
         setError('Not in word list');
         return;
       }
 
-      dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess });
+      // Submit guess to ALL boards (like quordle)
+      state.boards.forEach((board, index) => {
+        if (board.status === GameStatus.PLAYING) {
+          dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
+        }
+      });
+
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess((prev) => prev.slice(0, -1));
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess((prev) => prev + key);
     }
-  };
+  }, [state, currentGuess]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') {
         handleKeyPress('ENTER');
       } else if (e.key === 'Backspace') {
@@ -91,7 +120,7 @@ export function SequenceGame() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentGuess, state]);
+  }, [handleKeyPress]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -106,40 +135,43 @@ export function SequenceGame() {
     setElapsedTime(0);
   };
 
+  const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
+  const guessesUsed = state.boards[0]?.guesses.length || 0;
+  const maxGuesses = state.boards[0]?.maxGuesses || 10;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-800 to-pink-700 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-800 to-pink-700 flex flex-col">
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
       </AnimatePresence>
 
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-2 py-4">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="text-center space-y-4"
+          className="text-center space-y-3 mb-4"
         >
-          <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 drop-shadow-lg">
+          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 drop-shadow-lg">
             SEQUENCE
           </h1>
 
-          <div className="flex justify-center gap-4">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white">
-                <Flame className="w-5 h-5 text-orange-400" fill="currentColor" />
-                <span className="font-bold">{streak} Streak</span>
+          <div className="flex justify-center gap-3">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
+              <div className="flex items-center gap-2 text-white text-sm">
+                <Trophy className="w-4 h-4 text-yellow-400" />
+                <span className="font-bold">{solvedCount}/4</span>
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white">
-                <Trophy className="w-5 h-5 text-yellow-400" />
-                <span className="font-bold">Puzzle {completedBoards + 1}/5</span>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
+              <div className="flex items-center gap-2 text-white text-sm">
+                <span className="font-bold">{guessesUsed}/{maxGuesses} guesses</span>
               </div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-6 py-3 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white">
-                <Clock className="w-5 h-5 text-blue-400" />
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
+              <div className="flex items-center gap-2 text-white text-sm">
+                <Clock className="w-4 h-4 text-blue-400" />
                 <span className="font-bold">{formatTime(elapsedTime)}</span>
               </div>
             </div>
@@ -149,7 +181,7 @@ export function SequenceGame() {
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="bg-red-500/20 border-2 border-red-500 text-white px-6 py-3 rounded-xl font-bold inline-block"
+              className="bg-red-500/20 border-2 border-red-500 text-white px-6 py-2 rounded-xl font-bold inline-block text-sm"
             >
               {error}
             </motion.div>
@@ -159,10 +191,10 @@ export function SequenceGame() {
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="space-y-4"
+              className="space-y-3"
             >
-              <div className="bg-green-500/20 border-2 border-green-400 text-white px-8 py-4 rounded-xl font-bold inline-block">
-                🔥 All 5 puzzles completed! Streak: {streak} 🔥
+              <div className="bg-green-500/20 border-2 border-green-400 text-white px-6 py-3 rounded-xl font-bold inline-block">
+                All 4 puzzles solved in {guessesUsed} guesses!
               </div>
               <button
                 onClick={handleNextPuzzle}
@@ -177,10 +209,10 @@ export function SequenceGame() {
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="space-y-4"
+              className="space-y-3"
             >
-              <div className="bg-red-500/20 border-2 border-red-400 text-white px-8 py-4 rounded-xl font-bold inline-block">
-                Streak broken! Solution: {currentBoard.solution.toUpperCase()}
+              <div className="bg-red-500/20 border-2 border-red-400 text-white px-6 py-3 rounded-xl font-bold inline-block">
+                Out of guesses! Solved {solvedCount}/4
               </div>
               <button
                 onClick={handleNextPuzzle}
@@ -192,19 +224,185 @@ export function SequenceGame() {
           )}
         </motion.div>
 
-        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}>
-          <Board
-            guesses={currentBoard.guesses}
-            currentGuess={currentGuess}
-            maxGuesses={currentBoard.maxGuesses}
-            evaluations={currentBoard.guesses.map((g) => evaluateGuess(currentBoard.solution, g))}
-            solution={currentBoard.solution}
-            showSolution={currentBoard.status === 'LOST'}
-          />
-        </motion.div>
+        {/* 2x2 Board Grid */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="grid grid-cols-2 gap-2 w-full max-w-lg">
+            {BOARD_ORDER.map((boardIdx) => {
+              const board = state.boards[boardIdx];
+              if (!board) return null;
 
-        <Keyboard onKey={handleKeyPress} />
+              const isActive = boardIdx === activeBoardIndex;
+              const isCompleted = board.status === GameStatus.WON;
+              const isFailed = board.status === GameStatus.LOST;
+              // A board is "locked" if it comes after the active board in sequence and isn't solved
+              const isLocked = !isActive && !isCompleted && !isFailed;
+
+              return (
+                <SequenceMiniBoard
+                  key={boardIdx}
+                  board={board}
+                  boardIndex={boardIdx}
+                  isActive={isActive}
+                  isCompleted={isCompleted}
+                  isFailed={isFailed}
+                  isLocked={isLocked}
+                  currentGuess={isActive ? currentGuess : ''}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Keyboard */}
+        <div className="pb-4 px-2 mt-4">
+          <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
+        </div>
       </div>
     </div>
+  );
+}
+
+// Mini board for sequence mode — shows/hides colors based on active state
+function SequenceMiniBoard({
+  board,
+  boardIndex,
+  isActive,
+  isCompleted,
+  isFailed,
+  isLocked,
+  currentGuess,
+}: {
+  board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
+  boardIndex: number;
+  isActive: boolean;
+  isCompleted: boolean;
+  isFailed: boolean;
+  isLocked: boolean;
+  currentGuess: string;
+}) {
+  const evalGuess = (guess: string, solution: string): TileState[] => {
+    const result: TileState[] = Array(5).fill(TileState.EMPTY);
+    const solutionArr = solution.split('');
+    const guessArr = guess.split('');
+    const used = Array(5).fill(false);
+
+    guessArr.forEach((letter, i) => {
+      if (letter === solutionArr[i]) {
+        result[i] = TileState.CORRECT;
+        used[i] = true;
+      }
+    });
+
+    guessArr.forEach((letter, i) => {
+      if (result[i] === TileState.EMPTY) {
+        const foundIndex = solutionArr.findIndex((l, idx) => l === letter && !used[idx]);
+        if (foundIndex !== -1) {
+          result[i] = TileState.PRESENT;
+          used[foundIndex] = true;
+        } else {
+          result[i] = TileState.ABSENT;
+        }
+      }
+    });
+
+    return result;
+  };
+
+  const getTileColor = (state: TileState) => {
+    switch (state) {
+      case TileState.CORRECT: return 'bg-green-600 border-green-400';
+      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
+      case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
+      default: return 'bg-zinc-800 border-zinc-600';
+    }
+  };
+
+  // Show colors only for active or completed boards
+  const showColors = isActive || isCompleted || isFailed;
+
+  const allGuesses = [...board.guesses];
+  if (isActive && currentGuess.length > 0 && board.guesses.length < board.maxGuesses) {
+    allGuesses.push(currentGuess);
+  }
+
+  return (
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ delay: boardIndex * 0.1 }}
+      className={`relative p-2 rounded-xl border-2 transition-all duration-300 ${
+        isCompleted
+          ? 'border-green-400 bg-green-900/20 shadow-lg shadow-green-500/20'
+          : isFailed
+          ? 'border-red-400 bg-red-900/20'
+          : isActive
+          ? 'border-yellow-400 bg-zinc-900/50 shadow-lg shadow-yellow-500/20'
+          : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
+      }`}
+    >
+      {/* Board number indicator */}
+      <div className={`absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+        isCompleted ? 'bg-green-500 text-white' :
+        isActive ? 'bg-yellow-400 text-black' :
+        'bg-zinc-700 text-zinc-400'
+      }`}>
+        {isCompleted ? '✓' : boardIndex + 1}
+      </div>
+
+      {/* Lock icon for locked boards */}
+      {isLocked && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <Lock className="w-8 h-8 text-zinc-500/50" />
+        </div>
+      )}
+
+      <div className="space-y-0.5">
+        {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
+          const guess = allGuesses[rowIndex] || '';
+          const isPastGuess = rowIndex < board.guesses.length;
+          const isCurrentRow = rowIndex === board.guesses.length && isActive;
+          const tiles = isPastGuess && showColors
+            ? evalGuess(guess, board.solution)
+            : Array(5).fill(TileState.EMPTY);
+
+          return (
+            <div key={rowIndex} className="flex gap-0.5">
+              {Array.from({ length: 5 }).map((_, letterIndex) => {
+                const letter = guess[letterIndex] || '';
+                const tileState = tiles[letterIndex];
+                const hasLetter = letter !== '';
+
+                return (
+                  <div
+                    key={letterIndex}
+                    className={`
+                      flex-1 aspect-square flex items-center justify-center
+                      border rounded text-white font-bold text-xs sm:text-sm
+                      ${isPastGuess && showColors
+                        ? getTileColor(tileState)
+                        : isPastGuess && !showColors
+                        ? 'bg-zinc-700/50 border-zinc-600/50'
+                        : hasLetter
+                        ? 'bg-zinc-800 border-zinc-500'
+                        : 'bg-zinc-800/50 border-zinc-700/30'
+                      }
+                    `}
+                  >
+                    {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : ''}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Show solution on failed boards */}
+      {isFailed && (
+        <div className="text-center text-xs text-red-300 mt-1 font-bold">
+          {board.solution.toUpperCase()}
+        </div>
+      )}
+    </motion.div>
   );
 }

@@ -34,7 +34,7 @@ export default function HomePage() {
       id: 'sequence',
       title: 'Sequence',
       icon: Flame,
-      description: 'Consecutive puzzles, build your streak!',
+      description: '4 puzzles, one at a time, 10 guesses total!',
       color: 'from-orange-500 to-red-500',
       href: '/sequence',
       difficulty: 'Medium',

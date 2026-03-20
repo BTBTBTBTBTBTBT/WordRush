@@ -88,8 +88,8 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
       maxGuesses = 13;
       break;
     case GameMode.SEQUENCE:
-      boardCount = 5;
-      maxGuesses = 6;
+      boardCount = 4;
+      maxGuesses = 10;
       break;
     case GameMode.RESCUE:
       boardCount = 4;
@@ -176,13 +176,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         // In gauntlet mode, losing a board triggers Letter Blackout instead of game over.
         // The board stays LOST — the UI detects it, shows blackout, then dispatches BLACKOUT_RESTART.
         // Game status stays PLAYING until all boards are WON (stage complete) or the game is abandoned.
-      } else if (state.mode === GameMode.QUORDLE || state.mode === GameMode.OCTORDLE) {
+      } else if (state.mode === GameMode.QUORDLE || state.mode === GameMode.OCTORDLE || state.mode === GameMode.SEQUENCE) {
+        // All these modes: every guess goes to all boards, win when all solved, lose when out of guesses
         const allComplete = newBoards.every(b => b.status !== GameStatus.PLAYING);
         if (allComplete) {
           const allWon = newBoards.every(b => b.status === GameStatus.WON);
           gameStatus = allWon ? GameStatus.WON : GameStatus.LOST;
         }
-      } else if (state.mode === GameMode.SEQUENCE || state.mode === GameMode.RESCUE || state.mode === GameMode.TOURNAMENT) {
+      } else if (state.mode === GameMode.RESCUE || state.mode === GameMode.TOURNAMENT) {
         if (newStatus === GameStatus.LOST) {
           gameStatus = GameStatus.LOST;
         } else if (newStatus === GameStatus.WON) {
