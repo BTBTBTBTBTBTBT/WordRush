@@ -2,7 +2,7 @@
 
 import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
 import { GameMode, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
-import { MultiBoard, computeActiveLetterStates } from '../game/multi-board';
+import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '../game/multi-board';
 import { Keyboard } from '../game/keyboard';
 import { VictoryAnimation } from '../effects/victory-animation';
 import { AnimatePresence } from 'framer-motion';
@@ -55,6 +55,7 @@ export function RescueGame() {
   }, [handleKeyPress]);
 
   const letterStates = useMemo(() => computeActiveLetterStates(state.boards), [state.boards]);
+  const boardLetterStates = useMemo(() => computePerBoardLetterStates(state.boards), [state.boards]);
 
   const completedBoards = state.boards.filter(b => b.status === 'WON').length;
   const guessesUsed = state.boards.reduce((max, board) => Math.max(max, board.guesses.length), 0);
@@ -104,7 +105,7 @@ export function RescueGame() {
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2">
-        <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
+        <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} />
       </div>
     </div>
   );

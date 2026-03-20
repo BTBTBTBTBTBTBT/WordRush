@@ -13,7 +13,7 @@ import {
   evaluateGuess,
 } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
-import { MultiBoard, computeActiveLetterStates } from '@/components/game/multi-board';
+import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
@@ -97,6 +97,12 @@ export function GauntletGame() {
     }
     return computeActiveLetterStates(state.boards);
   }, [state.boards, isSequential, sequenceActiveBoardIndex]);
+
+  // Per-board letter states for quadrant keyboard (multi-board, non-sequential stages)
+  const boardLetterStates = useMemo(() => {
+    if (isSingleBoard || isSequential) return undefined;
+    return computePerBoardLetterStates(state.boards);
+  }, [state.boards, isSingleBoard, isSequential]);
 
   // Evaluations for single-board view
   const currentBoard = state.boards[state.currentBoardIndex];
@@ -431,6 +437,7 @@ export function GauntletGame() {
         <Keyboard
           onKey={handleKey}
           letterStates={letterStates}
+          boardLetterStates={boardLetterStates}
           blackedOutLetters={blackedOutLetters.size > 0 ? blackedOutLetters : undefined}
         />
       </div>

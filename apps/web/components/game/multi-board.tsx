@@ -162,57 +162,82 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
   );
 }
 
-// Utility: compute keyboard letter states only from PLAYING boards
+/** Compute letter states for a single board */
+function computeBoardLetterStates(
+  board: BoardState
+): Record<string, 'correct' | 'present' | 'absent'> {
+  const states: Record<string, 'correct' | 'present' | 'absent'> = {};
+
+  // Include prefilled guess hints
+  if (board.prefilledGuesses) {
+    for (const prefill of board.prefilledGuesses) {
+      for (const tile of prefill.evaluation.tiles) {
+        const letter = tile.letter.toUpperCase();
+        if (tile.state === 'CORRECT') states[letter] = 'correct';
+        else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
+        else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
+      }
+    }
+  }
+
+  // Include player guess hints
+  for (const guess of board.guesses) {
+    const solutionArray = board.solution.toUpperCase().split('');
+    const guessArray = guess.toUpperCase().split('');
+    const used = Array(5).fill(false);
+    const tileStates: ('CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY')[] = Array(5).fill('EMPTY');
+
+    guessArray.forEach((letter, i) => {
+      if (letter === solutionArray[i]) {
+        tileStates[i] = 'CORRECT';
+        used[i] = true;
+      }
+    });
+
+    guessArray.forEach((letter, i) => {
+      if (tileStates[i] === 'EMPTY') {
+        const f = solutionArray.findIndex((l, idx) => l === letter && !used[idx]);
+        if (f !== -1) { tileStates[i] = 'PRESENT'; used[f] = true; }
+        else { tileStates[i] = 'ABSENT'; }
+      }
+    });
+
+    guessArray.forEach((letter, i) => {
+      if (tileStates[i] === 'CORRECT') states[letter] = 'correct';
+      else if (tileStates[i] === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
+      else if (tileStates[i] === 'ABSENT' && !states[letter]) states[letter] = 'absent';
+    });
+  }
+
+  return states;
+}
+
+/** Compute combined letter states from all playing boards */
 export function computeActiveLetterStates(
   boards: BoardState[]
 ): Record<string, 'correct' | 'present' | 'absent'> {
   const states: Record<string, 'correct' | 'present' | 'absent'> = {};
-
   for (const board of boards) {
-    // Only include letter hints from boards still in play
     if (board.status !== 'PLAYING') continue;
-
-    // Include prefilled guess hints
-    if (board.prefilledGuesses) {
-      for (const prefill of board.prefilledGuesses) {
-        for (const tile of prefill.evaluation.tiles) {
-          const letter = tile.letter.toUpperCase();
-          if (tile.state === 'CORRECT') states[letter] = 'correct';
-          else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
-          else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
-        }
-      }
-    }
-
-    // Include player guess hints
-    for (const guess of board.guesses) {
-      const solutionArray = board.solution.toUpperCase().split('');
-      const guessArray = guess.toUpperCase().split('');
-      const used = Array(5).fill(false);
-      const tileStates: ('CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY')[] = Array(5).fill('EMPTY');
-
-      guessArray.forEach((letter, i) => {
-        if (letter === solutionArray[i]) {
-          tileStates[i] = 'CORRECT';
-          used[i] = true;
-        }
-      });
-
-      guessArray.forEach((letter, i) => {
-        if (tileStates[i] === 'EMPTY') {
-          const f = solutionArray.findIndex((l, idx) => l === letter && !used[idx]);
-          if (f !== -1) { tileStates[i] = 'PRESENT'; used[f] = true; }
-          else { tileStates[i] = 'ABSENT'; }
-        }
-      });
-
-      guessArray.forEach((letter, i) => {
-        if (tileStates[i] === 'CORRECT') states[letter] = 'correct';
-        else if (tileStates[i] === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
-        else if (tileStates[i] === 'ABSENT' && !states[letter]) states[letter] = 'absent';
-      });
+    const boardStates = computeBoardLetterStates(board);
+    for (const [letter, state] of Object.entries(boardStates)) {
+      if (state === 'correct') states[letter] = 'correct';
+      else if (state === 'present' && states[letter] !== 'correct') states[letter] = 'present';
+      else if (state === 'absent' && !states[letter]) states[letter] = 'absent';
     }
   }
-
   return states;
+}
+
+/**
+ * Compute per-board letter states for quadrant keyboard display.
+ * Solved boards return empty states (quadrant goes dark).
+ */
+export function computePerBoardLetterStates(
+  boards: BoardState[]
+): Record<string, 'correct' | 'present' | 'absent'>[] {
+  return boards.map(board => {
+    if (board.status !== 'PLAYING') return {};
+    return computeBoardLetterStates(board);
+  });
 }
