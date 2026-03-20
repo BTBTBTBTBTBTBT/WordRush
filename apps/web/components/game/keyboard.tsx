@@ -7,7 +7,7 @@ import { Delete } from 'lucide-react';
 const ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
+  ['BACK', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'ENTER']
 ];
 
 interface KeyboardProps {
