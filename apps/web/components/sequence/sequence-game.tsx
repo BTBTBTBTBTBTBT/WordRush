@@ -48,27 +48,22 @@ export function SequenceGame() {
     }
   }, [state.status]);
 
-  // Build letter states from active + completed boards
+  // Build letter states ONLY from the active board's perspective
+  // Previous guesses are evaluated against the current active board's solution
   const letterStates = useMemo(() => {
     const states: Record<string, 'correct' | 'present' | 'absent'> = {};
+    if (activeBoardIndex < 0) return states;
 
-    // Only show letter states from boards that are active or completed (not locked)
-    for (const idx of BOARD_ORDER) {
-      const board = state.boards[idx];
-      if (!board) continue;
+    const activeBoard = state.boards[activeBoardIndex];
+    if (!activeBoard) return states;
 
-      const isCompleted = board.status === GameStatus.WON;
-      const isActive = idx === activeBoardIndex;
-      if (!isCompleted && !isActive) continue;
-
-      for (const guess of board.guesses) {
-        const result = evaluateGuess(board.solution, guess);
-        for (const tile of result.tiles) {
-          const letter = tile.letter.toUpperCase();
-          if (tile.state === 'CORRECT') states[letter] = 'correct';
-          else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
-          else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
-        }
+    for (const guess of activeBoard.guesses) {
+      const result = evaluateGuess(activeBoard.solution, guess);
+      for (const tile of result.tiles) {
+        const letter = tile.letter.toUpperCase();
+        if (tile.state === 'CORRECT') states[letter] = 'correct';
+        else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
+        else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
       }
     }
 
@@ -289,15 +284,6 @@ function SequenceMiniBoard({
           : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
       }`}
     >
-      {/* Board number indicator */}
-      <div className={`absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-        isCompleted ? 'bg-green-500 text-white' :
-        isActive ? 'bg-yellow-400 text-black' :
-        'bg-zinc-700 text-zinc-400'
-      }`}>
-        {isCompleted ? '✓' : boardIndex + 1}
-      </div>
-
       {/* Lock icon for locked boards */}
       {isLocked && (
         <div className="absolute inset-0 flex items-center justify-center z-10">

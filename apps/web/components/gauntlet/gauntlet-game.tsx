@@ -75,19 +75,16 @@ export function GauntletGame() {
     return -1;
   }, [isSequential, state.boards]);
 
-  // Build letter states only from boards still in play (+ completed boards for sequence hints)
+  // Build letter states only from boards still in play
   const letterStates = useMemo(() => {
-    if (isSequential) {
-      // For sequence: show hints from active board + completed boards (not locked future boards)
+    if (isSequential && sequenceActiveBoardIndex >= 0) {
+      // For sequence: show hints ONLY from the active board's perspective
+      // All previous guesses are evaluated against the ACTIVE board's solution
       const states: Record<string, 'correct' | 'present' | 'absent'> = {};
-      for (let i = 0; i < state.boards.length; i++) {
-        const board = state.boards[i];
-        const isActive = i === sequenceActiveBoardIndex;
-        const isCompleted = board.status === GameStatus.WON;
-        if (!isActive && !isCompleted) continue;
-
-        for (const guess of board.guesses) {
-          const result = evaluateGuess(board.solution, guess);
+      const activeBoard = state.boards[sequenceActiveBoardIndex];
+      if (activeBoard) {
+        for (const guess of activeBoard.guesses) {
+          const result = evaluateGuess(activeBoard.solution, guess);
           for (const tile of result.tiles) {
             const letter = tile.letter.toUpperCase();
             if (tile.state === 'CORRECT') states[letter] = 'correct';
@@ -526,15 +523,6 @@ function GauntletSequenceMiniBoard({
           : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
       }`}
     >
-      {/* Board number / status */}
-      <div className={`absolute -top-2 -left-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold z-10 ${
-        isCompleted ? 'bg-green-500 text-white' :
-        isActive ? 'bg-yellow-400 text-black' :
-        'bg-zinc-700 text-zinc-400'
-      }`}>
-        {isCompleted ? '✓' : boardIndex + 1}
-      </div>
-
       <div className="flex flex-col gap-[2px] flex-1">
         {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
           const guess = allGuesses[rowIndex] || '';
