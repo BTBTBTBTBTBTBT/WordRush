@@ -1,7 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { BoardState, TileState, PrefilledGuess } from '@wordle-duel/core';
+import { BoardState, TileState, PrefilledGuess, evaluateGuess as coreEvaluateGuess } from '@wordle-duel/core';
 
 interface MultiBoardProps {
   boards: BoardState[];
@@ -73,6 +72,8 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
 
   const isWon = board.status === 'WON';
   const isLost = board.status === 'LOST';
+  // The most recently submitted row (for flip animation)
+  const lastSubmittedRow = board.guesses.length > 0 ? board.guesses.length - 1 : -1;
 
   return (
     <div
@@ -114,6 +115,7 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
           const guess = allGuesses[playerRowIndex] || '';
           const isCurrentGuess = playerRowIndex === board.guesses.length && board.status === 'PLAYING';
           const isPastGuess = playerRowIndex < board.guesses.length;
+          const isLastSubmitted = isPastGuess && playerRowIndex === lastSubmittedRow;
           const tiles = isPastGuess ? evaluateGuess(guess, board.solution) : Array(5).fill(TileState.EMPTY);
 
           return (
@@ -125,7 +127,10 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
                 return (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold text-[10px] sm:text-xs ${getTileColor(tileState)} ${isCurrentGuess && letter ? 'animate-pop' : ''}`}
+                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold text-[10px] sm:text-xs ${getTileColor(tileState)} ${
+                      isLastSubmitted ? 'animate-tile-flip-mini' : ''
+                    }`}
+                    style={isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : undefined}
                   >
                     {letter.toUpperCase()}
                   </div>
@@ -155,4 +160,59 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
       ))}
     </div>
   );
+}
+
+// Utility: compute keyboard letter states only from PLAYING boards
+export function computeActiveLetterStates(
+  boards: BoardState[]
+): Record<string, 'correct' | 'present' | 'absent'> {
+  const states: Record<string, 'correct' | 'present' | 'absent'> = {};
+
+  for (const board of boards) {
+    // Only include letter hints from boards still in play
+    if (board.status !== 'PLAYING') continue;
+
+    // Include prefilled guess hints
+    if (board.prefilledGuesses) {
+      for (const prefill of board.prefilledGuesses) {
+        for (const tile of prefill.evaluation.tiles) {
+          const letter = tile.letter.toUpperCase();
+          if (tile.state === 'CORRECT') states[letter] = 'correct';
+          else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
+          else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
+        }
+      }
+    }
+
+    // Include player guess hints
+    for (const guess of board.guesses) {
+      const solutionArray = board.solution.toUpperCase().split('');
+      const guessArray = guess.toUpperCase().split('');
+      const used = Array(5).fill(false);
+      const tileStates: ('CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY')[] = Array(5).fill('EMPTY');
+
+      guessArray.forEach((letter, i) => {
+        if (letter === solutionArray[i]) {
+          tileStates[i] = 'CORRECT';
+          used[i] = true;
+        }
+      });
+
+      guessArray.forEach((letter, i) => {
+        if (tileStates[i] === 'EMPTY') {
+          const f = solutionArray.findIndex((l, idx) => l === letter && !used[idx]);
+          if (f !== -1) { tileStates[i] = 'PRESENT'; used[f] = true; }
+          else { tileStates[i] = 'ABSENT'; }
+        }
+      });
+
+      guessArray.forEach((letter, i) => {
+        if (tileStates[i] === 'CORRECT') states[letter] = 'correct';
+        else if (tileStates[i] === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
+        else if (tileStates[i] === 'ABSENT' && !states[letter]) states[letter] = 'absent';
+      });
+    }
+  }
+
+  return states;
 }

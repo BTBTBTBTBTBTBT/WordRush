@@ -8,11 +8,11 @@ import {
   GameMode,
   GameStatus,
   GAUNTLET_STAGES,
-  evaluateGuess,
   isValidWord,
+  evaluateGuess,
 } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
-import { MultiBoard } from '@/components/game/multi-board';
+import { MultiBoard, computeActiveLetterStates } from '@/components/game/multi-board';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
@@ -65,35 +65,8 @@ export function GauntletGame() {
   const isSingleBoard = currentStageConfig.boardCount === 1;
   const isInBlackout = blackoutBoardIndex !== null;
 
-  // Build letter states from all guesses on current boards
-  const letterStates = useMemo(() => {
-    const states: Record<string, 'correct' | 'present' | 'absent'> = {};
-
-    for (const board of state.boards) {
-      if (board.prefilledGuesses) {
-        for (const pg of board.prefilledGuesses) {
-          for (const tile of pg.evaluation.tiles) {
-            const letter = tile.letter.toUpperCase();
-            if (tile.state === 'CORRECT') states[letter] = 'correct';
-            else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
-            else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
-          }
-        }
-      }
-
-      for (const guess of board.guesses) {
-        const result = evaluateGuess(board.solution, guess);
-        for (const tile of result.tiles) {
-          const letter = tile.letter.toUpperCase();
-          if (tile.state === 'CORRECT') states[letter] = 'correct';
-          else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
-          else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
-        }
-      }
-    }
-
-    return states;
-  }, [state.boards]);
+  // Build letter states only from boards still in play
+  const letterStates = useMemo(() => computeActiveLetterStates(state.boards), [state.boards]);
 
   // Evaluations for single-board view
   const currentBoard = state.boards[state.currentBoardIndex];

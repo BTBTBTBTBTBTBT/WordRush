@@ -1,8 +1,8 @@
 'use client';
 
 import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
-import { GameMode, TileState, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
-import { MultiBoard } from '../game/multi-board';
+import { GameMode, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
+import { MultiBoard, computeActiveLetterStates } from '../game/multi-board';
 import { Keyboard } from '../game/keyboard';
 import { VictoryAnimation } from '../effects/victory-animation';
 import { AnimatePresence } from 'framer-motion';
@@ -54,35 +54,7 @@ export function RescueGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyPress]);
 
-  const letterStates = useMemo(() => {
-    const states: Record<string, 'correct' | 'present' | 'absent'> = {};
-    for (const board of state.boards) {
-      if (board.prefilledGuesses) {
-        for (const prefill of board.prefilledGuesses) {
-          for (const tile of prefill.evaluation.tiles) {
-            const letter = tile.letter.toUpperCase();
-            if (tile.state === TileState.CORRECT) states[letter] = 'correct';
-            else if (tile.state === TileState.PRESENT && states[letter] !== 'correct') states[letter] = 'present';
-            else if (tile.state === TileState.ABSENT && !states[letter]) states[letter] = 'absent';
-          }
-        }
-      }
-      for (const guess of board.guesses) {
-        const solutionArray = board.solution.toUpperCase().split('');
-        const guessArray = guess.toUpperCase().split('');
-        const used = Array(5).fill(false);
-        const tileStates: TileState[] = Array(5).fill(TileState.EMPTY);
-        guessArray.forEach((letter, i) => { if (letter === solutionArray[i]) { tileStates[i] = TileState.CORRECT; used[i] = true; } });
-        guessArray.forEach((letter, i) => { if (tileStates[i] === TileState.EMPTY) { const f = solutionArray.findIndex((l, idx) => l === letter && !used[idx]); if (f !== -1) { tileStates[i] = TileState.PRESENT; used[f] = true; } else { tileStates[i] = TileState.ABSENT; } } });
-        guessArray.forEach((letter, i) => {
-          if (tileStates[i] === TileState.CORRECT) states[letter] = 'correct';
-          else if (tileStates[i] === TileState.PRESENT && states[letter] !== 'correct') states[letter] = 'present';
-          else if (tileStates[i] === TileState.ABSENT && !states[letter]) states[letter] = 'absent';
-        });
-      }
-    }
-    return states;
-  }, [state.boards]);
+  const letterStates = useMemo(() => computeActiveLetterStates(state.boards), [state.boards]);
 
   const completedBoards = state.boards.filter(b => b.status === 'WON').length;
   const guessesUsed = state.boards.reduce((max, board) => Math.max(max, board.guesses.length), 0);

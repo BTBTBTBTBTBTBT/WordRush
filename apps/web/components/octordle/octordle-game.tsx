@@ -1,8 +1,8 @@
 'use client';
 
-import { useReducer, useState, useEffect, useCallback } from 'react';
+import { useReducer, useState, useEffect, useCallback, useMemo } from 'react';
 import { GameMode, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
-import { MultiBoard } from '../game/multi-board';
+import { MultiBoard, computeActiveLetterStates } from '../game/multi-board';
 import { Keyboard } from '../game/keyboard';
 import { VictoryAnimation } from '../effects/victory-animation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -64,6 +64,8 @@ export function OctordleGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyPress]);
 
+  const letterStates = useMemo(() => computeActiveLetterStates(state.boards), [state.boards]);
+
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   const completedBoards = state.boards.filter(b => b.status !== 'PLAYING').length;
   const totalGuesses = state.boards[0]?.guesses.length || 0;
@@ -114,7 +116,7 @@ export function OctordleGame() {
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2">
-        <Keyboard onKey={handleKeyPress} />
+        <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
       </div>
     </div>
   );
