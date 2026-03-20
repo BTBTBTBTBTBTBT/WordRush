@@ -6,7 +6,7 @@ import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } fr
 import { Keyboard } from '../game/keyboard';
 import { VictoryAnimation } from '../effects/victory-animation';
 import { AnimatePresence } from 'framer-motion';
-import { Trophy, Zap, ShieldCheck } from 'lucide-react';
+import { Trophy, Clock } from 'lucide-react';
 
 export function RescueGame() {
   const [state, dispatch] = useReducer(
@@ -17,6 +17,16 @@ export function RescueGame() {
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  useEffect(() => {
+    if (state.status === 'PLAYING') {
+      const interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - state.startTime) / 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [state.status, state.startTime]);
 
   useEffect(() => {
     if (state.status === 'WON') setShowVictory(true);
@@ -59,10 +69,12 @@ export function RescueGame() {
 
   const completedBoards = state.boards.filter(b => b.status === 'WON').length;
   const guessesUsed = state.boards.reduce((max, board) => Math.max(max, board.guesses.length), 0);
+  const maxGuesses = state.boards[0]?.maxGuesses || 6;
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   const handleRestart = () => {
     dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.RESCUE });
-    setCurrentGuess(''); setError('');
+    setCurrentGuess(''); setError(''); setElapsedTime(0);
   };
 
   return (
@@ -73,26 +85,24 @@ export function RescueGame() {
 
       {/* Compact Header */}
       <div className="text-center py-2 px-2 shrink-0">
-        <div className="flex items-center justify-center gap-2">
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400">
-            RESCUE
-          </h1>
-          <ShieldCheck className="w-5 h-5 text-fuchsia-400" />
-        </div>
+        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400">
+          DELIVERANCE
+        </h1>
         <div className="flex justify-center gap-3 mt-1">
-          <span className="text-white/70 text-xs font-bold"><Zap className="w-3 h-3 inline mr-1 text-fuchsia-400" />{completedBoards}/4</span>
-          <span className="text-white/70 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-purple-400" />{6 - guessesUsed} left</span>
+          <span className="text-white/70 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-yellow-400" />{completedBoards}/4</span>
+          <span className="text-white/70 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
+          <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
         {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
         {state.status === 'WON' && (
           <div className="mt-1">
-            <span className="text-green-300 text-xs font-bold">Rescue complete! </span>
+            <span className="text-green-300 text-xs font-bold">Deliverance complete! </span>
             <button onClick={handleRestart} className="text-yellow-400 text-xs font-bold underline">Play Again</button>
           </div>
         )}
         {state.status === 'LOST' && (
           <div className="mt-1">
-            <span className="text-red-300 text-xs font-bold">Mission failed! {completedBoards}/4 </span>
+            <span className="text-red-300 text-xs font-bold">Failed! {completedBoards}/4 </span>
             <button onClick={handleRestart} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
           </div>
         )}

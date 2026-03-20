@@ -264,4 +264,49 @@
   .animate-glow-pulse {
     animation: glow-pulse 2s ease-in-out infinite;
   }
+
+  @keyframes blob {
+    0%, 100% {
+      transform: scale(1) translate(0, 0);
+    }
+    33% {
+      transform: scale(1.15) translate(30px, -20px);
+    }
+    66% {
+      transform: scale(0.9) translate(-20px, 20px);
+    }
+  }
+
+  @keyframes blob-reverse {
+    0%, 100% {
+      transform: scale(1) translate(0, 0);
+    }
+    33% {
+      transform: scale(0.9) translate(-30px, 20px);
+    }
+    66% {
+      transform: scale(1.2) translate(20px, -20px);
+    }
+  }
+
+  @keyframes title-pulse {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.04);
+    }
+  }
+
+  .animate-blob {
+    animation: blob 20s ease-in-out infinite;
+  }
+
+  .animate-blob-reverse {
+    animation: blob-reverse 25s ease-in-out infinite;
+  }
+
+  .animate-title-pulse {
+    animation: title-pulse 3s ease-in-out infinite;
+  }
 }

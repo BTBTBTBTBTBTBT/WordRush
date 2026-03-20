@@ -75,10 +75,10 @@ export interface GauntletProgress {
 
 export const GAUNTLET_STAGES: GauntletStageConfig[] = [
   { stageIndex: 0, name: 'The Opening',  baseMode: GameMode.DUEL,     boardCount: 1, maxGuesses: 6,  sequential: false, hasPrefill: false },
-  { stageIndex: 1, name: 'The Quartet',  baseMode: GameMode.QUORDLE,  boardCount: 4, maxGuesses: 9,  sequential: false, hasPrefill: false },
-  { stageIndex: 2, name: 'The Gauntlet', baseMode: GameMode.SEQUENCE, boardCount: 4, maxGuesses: 10, sequential: true,  hasPrefill: false },
-  { stageIndex: 3, name: 'The Rescue',   baseMode: GameMode.RESCUE,   boardCount: 4, maxGuesses: 6,  sequential: false, hasPrefill: true  },
-  { stageIndex: 4, name: 'The Finale',   baseMode: GameMode.OCTORDLE, boardCount: 8, maxGuesses: 13, sequential: false, hasPrefill: false },
+  { stageIndex: 1, name: 'QuadWord',     baseMode: GameMode.QUORDLE,  boardCount: 4, maxGuesses: 9,  sequential: false, hasPrefill: false },
+  { stageIndex: 2, name: 'Succession',   baseMode: GameMode.SEQUENCE, boardCount: 4, maxGuesses: 10, sequential: true,  hasPrefill: false },
+  { stageIndex: 3, name: 'Deliverance',  baseMode: GameMode.RESCUE,   boardCount: 4, maxGuesses: 6,  sequential: false, hasPrefill: true  },
+  { stageIndex: 4, name: 'OctoWord',     baseMode: GameMode.OCTORDLE, boardCount: 8, maxGuesses: 13, sequential: false, hasPrefill: false },
 ];
 
 export const GAUNTLET_TOTAL_SOLUTIONS = GAUNTLET_STAGES.reduce((sum, s) => sum + s.boardCount, 0);

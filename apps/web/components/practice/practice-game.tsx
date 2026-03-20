@@ -6,7 +6,7 @@ import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { AnimatePresence } from 'framer-motion';
-import { Trophy, RotateCcw, Home, Flame } from 'lucide-react';
+import { Trophy, RotateCcw, Home, Clock } from 'lucide-react';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
 interface PracticeGameProps {
@@ -20,6 +20,7 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const currentBoard = state.boards[state.currentBoardIndex];
 
@@ -39,6 +40,15 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
     }
     return states;
   }, [evaluations]);
+
+  useEffect(() => {
+    if (state.status === GameStatus.PLAYING) {
+      const interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - state.startTime) / 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [state.status, state.startTime]);
 
   useEffect(() => {
     if (state.status === GameStatus.WON) setShowVictory(true);
@@ -81,10 +91,13 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKey]);
 
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+
   const handleReset = () => {
     dispatch({ type: 'RESET', seed: generateMatchSeed(), mode });
     setCurrentGuess('');
     setMessage('');
+    setElapsedTime(0);
   };
 
   const guessesUsed = currentBoard.guesses.length;
@@ -102,9 +115,8 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
           CLASSIC
         </h1>
         <div className="flex justify-center gap-3 mt-1">
-          <span className="text-white/70 text-xs font-bold">
-            <Trophy className="w-3 h-3 inline mr-1 text-yellow-400" />{guessesUsed}/{maxGuesses} guesses
-          </span>
+          <span className="text-white/70 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
+          <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>

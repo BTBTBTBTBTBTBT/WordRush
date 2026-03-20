@@ -147,7 +147,7 @@ export function SequenceGame() {
       {/* Compact Header */}
       <div className="text-center py-2 px-2 shrink-0">
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
-          SEQUENCE
+          SUCCESSION
         </h1>
         <div className="flex justify-center gap-3 mt-1">
           <span className="text-white/70 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-yellow-400" />{solvedCount}/4</span>

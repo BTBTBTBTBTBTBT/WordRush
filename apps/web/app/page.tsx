@@ -14,7 +14,6 @@ import solutionWords from '@/data/solutions.json';
 export default function HomePage() {
   const { user, profile, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<string | null>(null);
 
   useEffect(() => {
     initDictionary(allowedWords, solutionWords);
@@ -31,17 +30,8 @@ export default function HomePage() {
       difficulty: 'Easy',
     },
     {
-      id: 'sequence',
-      title: 'Sequence',
-      icon: Flame,
-      description: '4 puzzles, one at a time, 10 guesses total!',
-      color: 'from-orange-500 to-red-500',
-      href: '/sequence',
-      difficulty: 'Medium',
-    },
-    {
       id: 'quordle',
-      title: 'Quordle',
+      title: 'QuadWord',
       icon: Grid2x2,
       description: 'Solve 4 puzzles at once, 9 tries',
       color: 'from-purple-500 to-pink-500',
@@ -49,22 +39,31 @@ export default function HomePage() {
       difficulty: 'Hard',
     },
     {
-      id: 'rescue',
-      title: 'Rescue',
-      icon: Timer,
-      description: 'Decode pre-filled clues, solve 4 boards',
-      color: 'from-red-500 to-orange-500',
-      href: '/rescue',
-      difficulty: 'Intense',
-    },
-    {
       id: 'octordle',
-      title: 'Octordle',
+      title: 'OctoWord',
       icon: Zap,
       description: 'Ultimate challenge! 8 boards, 13 tries',
       color: 'from-yellow-500 to-orange-500',
       href: '/octordle',
       difficulty: 'Extreme',
+    },
+    {
+      id: 'sequence',
+      title: 'Succession',
+      icon: Flame,
+      description: '4 puzzles, one at a time, 10 guesses total!',
+      color: 'from-orange-500 to-red-500',
+      href: '/sequence',
+      difficulty: 'Medium',
+    },
+    {
+      id: 'rescue',
+      title: 'Deliverance',
+      icon: Timer,
+      description: 'Decode pre-filled clues, solve 4 boards',
+      color: 'from-red-500 to-orange-500',
+      href: '/rescue',
+      difficulty: 'Intense',
     },
     {
       id: 'gauntlet',
@@ -79,23 +78,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-30">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-          }}
-          transition={{ duration: 20, repeat: Infinity }}
-          className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.3, 1],
-            rotate: [0, -90, 0],
-          }}
-          transition={{ duration: 25, repeat: Infinity }}
-          className="absolute bottom-20 right-20 w-96 h-96 bg-pink-500 rounded-full blur-3xl"
-        />
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl will-change-transform animate-blob" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-500 rounded-full blur-3xl will-change-transform animate-blob-reverse" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
@@ -146,17 +131,11 @@ export default function HomePage() {
           transition={{ duration: 0.8 }}
           className="text-center mb-12"
         >
-          <motion.div
-            animate={{
-              scale: [1, 1.05, 1],
-            }}
-            transition={{ duration: 3, repeat: Infinity }}
-            className="inline-block"
-          >
+          <div className="inline-block will-change-transform animate-title-pulse">
             <h1 className="text-5xl sm:text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-2xl mb-4">
               SPELLSTRIKE
             </h1>
-          </motion.div>
+          </div>
 
           <motion.p
             initial={{ opacity: 0 }}
@@ -205,11 +184,10 @@ export default function HomePage() {
               key={mode.id}
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.6 + index * 0.1 }}
-              whileHover={{ scale: 1.05, rotate: selectedMode === mode.id ? 0 : 2 }}
-              onHoverStart={() => setSelectedMode(mode.id)}
-              onHoverEnd={() => setSelectedMode(null)}
-              className="relative group"
+              transition={{ delay: 0.4 + index * 0.08 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="relative group will-change-transform"
             >
               <Link href={mode.href}>
                 <div
@@ -218,8 +196,8 @@ export default function HomePage() {
                     bg-gradient-to-br ${mode.color}
                     border-4 border-white/20
                     shadow-2xl
-                    transition-all duration-300
-                    ${selectedMode === mode.id ? 'shadow-yellow-400/50' : ''}
+                    transition-shadow duration-300
+                    group-hover:shadow-yellow-400/40
                   `}
                 >
                   <div className="absolute inset-0 bg-black/20" />
@@ -231,12 +209,7 @@ export default function HomePage() {
                   </div>
 
                   <div className="relative z-10 space-y-4">
-                    <motion.div
-                      animate={selectedMode === mode.id ? { rotate: 360 } : {}}
-                      transition={{ duration: 0.6 }}
-                    >
-                      <mode.icon className="w-16 h-16 text-white drop-shadow-lg" />
-                    </motion.div>
+                    <mode.icon className="w-16 h-16 text-white drop-shadow-lg transition-transform duration-300 group-hover:scale-110" />
 
                     <div>
                       <h2 className="text-4xl font-black text-white mb-2 drop-shadow-lg">
@@ -247,22 +220,11 @@ export default function HomePage() {
                       </p>
                     </div>
 
-                    <motion.div
-                      animate={selectedMode === mode.id ? { x: 10 } : { x: 0 }}
-                      className="flex items-center gap-2 text-white font-bold"
-                    >
+                    <div className="flex items-center gap-2 text-white font-bold transition-transform duration-300 group-hover:translate-x-2">
                       <span>PLAY NOW</span>
                       <Sparkles className="w-5 h-5" fill="currentColor" />
-                    </motion.div>
+                    </div>
                   </div>
-
-                  {selectedMode === mode.id && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute top-0 left-0 right-0 bottom-0 border-4 border-yellow-400 rounded-3xl pointer-events-none"
-                    />
-                  )}
                 </div>
               </Link>
             </motion.div>

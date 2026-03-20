@@ -71,10 +71,10 @@ export default function ProfilePage() {
     DUEL: 'Classic Duel',
     MULTI_DUEL: 'Multi Duel',
     GAUNTLET: 'Gauntlet',
-    QUORDLE: 'Quordle',
-    OCTORDLE: 'Octordle',
-    SEQUENCE: 'Sequence',
-    RESCUE: 'Rescue',
+    QUORDLE: 'QuadWord',
+    OCTORDLE: 'OctoWord',
+    SEQUENCE: 'Succession',
+    RESCUE: 'Deliverance',
     TOURNAMENT: 'Tournament',
   };
 

@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'SpellStrike - Epic Word Battles',
-  description: 'Compete in vibrant multiplayer word challenges - Quordle, Octordle, and more!',
+  description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
 };
 
 export default function RootLayout({
