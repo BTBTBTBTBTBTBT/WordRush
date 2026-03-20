@@ -38,6 +38,18 @@ export function SequenceGame() {
     }
   }, [state.status]);
 
+  // Advance to next board when current board is solved
+  useEffect(() => {
+    if (state.status !== 'PLAYING') return;
+    const board = state.boards[state.currentBoardIndex];
+    if (board?.status === 'WON' && state.currentBoardIndex < state.boards.length - 1) {
+      const timer = setTimeout(() => {
+        dispatch({ type: 'NEXT_BOARD' });
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [state.boards, state.currentBoardIndex, state.status]);
+
   const currentBoard = state.boards[state.currentBoardIndex];
   const completedBoards = state.boards.filter((b) => b.status === 'WON').length;
 
@@ -59,7 +71,7 @@ export function SequenceGame() {
 
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess });
       setCurrentGuess('');
-    } else if (key === 'BACKSPACE') {
+    } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess((prev) => prev.slice(0, -1));
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess((prev) => prev + key);
@@ -71,7 +83,7 @@ export function SequenceGame() {
       if (e.key === 'Enter') {
         handleKeyPress('ENTER');
       } else if (e.key === 'Backspace') {
-        handleKeyPress('BACKSPACE');
+        handleKeyPress('BACK');
       } else if (/^[a-zA-Z]$/.test(e.key)) {
         handleKeyPress(e.key.toUpperCase());
       }

@@ -57,7 +57,7 @@ export function OctordleGame() {
       });
 
       setCurrentGuess('');
-    } else if (key === 'BACKSPACE') {
+    } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess((prev) => prev.slice(0, -1));
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess((prev) => prev + key);
@@ -69,7 +69,7 @@ export function OctordleGame() {
       if (e.key === 'Enter') {
         handleKeyPress('ENTER');
       } else if (e.key === 'Backspace') {
-        handleKeyPress('BACKSPACE');
+        handleKeyPress('BACK');
       } else if (/^[a-zA-Z]$/.test(e.key)) {
         handleKeyPress(e.key.toUpperCase());
       }

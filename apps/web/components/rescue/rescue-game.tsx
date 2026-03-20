@@ -61,7 +61,7 @@ export function RescueGame() {
       if (e.key === 'Enter') {
         handleKeyPress('ENTER');
       } else if (e.key === 'Backspace') {
-        handleKeyPress('BACKSPACE');
+        handleKeyPress('BACK');
       } else if (/^[a-zA-Z]$/.test(e.key)) {
         handleKeyPress(e.key.toUpperCase());
       }
