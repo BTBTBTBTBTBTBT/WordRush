@@ -153,7 +153,7 @@ export default function HomePage() {
             transition={{ duration: 3, repeat: Infinity }}
             className="inline-block"
           >
-            <h1 className="text-8xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-2xl mb-4">
+            <h1 className="text-5xl sm:text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-2xl mb-4">
               SPELLSTRIKE
             </h1>
           </motion.div>
