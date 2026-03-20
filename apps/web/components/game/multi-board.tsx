@@ -1,6 +1,8 @@
 'use client';
 
+import { memo, useState, useCallback } from 'react';
 import { BoardState, TileState, PrefilledGuess, evaluateGuess as coreEvaluateGuess } from '@wordle-duel/core';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MultiBoardProps {
   boards: BoardState[];
@@ -8,57 +10,60 @@ interface MultiBoardProps {
   colorBlind?: boolean;
 }
 
-function MiniBoard({ board, index, currentGuess, colorBlind }: {
+const getTileColor = (state: TileState, colorBlind?: boolean) => {
+  if (colorBlind) {
+    switch (state) {
+      case TileState.CORRECT: return 'bg-cyan-600 border-cyan-400';
+      case TileState.PRESENT: return 'bg-orange-600 border-orange-400';
+      case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
+      default: return 'bg-zinc-800 border-zinc-600';
+    }
+  }
+  switch (state) {
+    case TileState.CORRECT: return 'bg-green-600 border-green-400';
+    case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
+    case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
+    default: return 'bg-zinc-800 border-zinc-600';
+  }
+};
+
+const evaluateGuess = (guess: string, solution: string) => {
+  const result: TileState[] = Array(5).fill(TileState.EMPTY);
+  const solutionArray = solution.split('');
+  const guessArray = guess.split('');
+  const used = Array(5).fill(false);
+
+  guessArray.forEach((letter, i) => {
+    if (letter === solutionArray[i]) {
+      result[i] = TileState.CORRECT;
+      used[i] = true;
+    }
+  });
+
+  guessArray.forEach((letter, i) => {
+    if (result[i] === TileState.EMPTY) {
+      const foundIndex = solutionArray.findIndex((l, idx) => l === letter && !used[idx]);
+      if (foundIndex !== -1) {
+        result[i] = TileState.PRESENT;
+        used[foundIndex] = true;
+      } else {
+        result[i] = TileState.ABSENT;
+      }
+    }
+  });
+
+  return result;
+};
+
+// Memoized MiniBoard — only re-renders when its own board data or currentGuess changes
+const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded }: {
   board: BoardState;
   index: number;
   currentGuess?: string;
   colorBlind?: boolean;
+  onClick?: () => void;
+  isExpanded?: boolean;
 }) {
-  const getTileColor = (state: TileState) => {
-    if (colorBlind) {
-      switch (state) {
-        case TileState.CORRECT: return 'bg-cyan-600 border-cyan-400';
-        case TileState.PRESENT: return 'bg-orange-600 border-orange-400';
-        case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
-        default: return 'bg-zinc-800 border-zinc-600';
-      }
-    }
-    switch (state) {
-      case TileState.CORRECT: return 'bg-green-600 border-green-400';
-      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
-      case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
-      default: return 'bg-zinc-800 border-zinc-600';
-    }
-  };
-
-  const evaluateGuess = (guess: string, solution: string) => {
-    const result: TileState[] = Array(5).fill(TileState.EMPTY);
-    const solutionArray = solution.split('');
-    const guessArray = guess.split('');
-    const used = Array(5).fill(false);
-
-    guessArray.forEach((letter, i) => {
-      if (letter === solutionArray[i]) {
-        result[i] = TileState.CORRECT;
-        used[i] = true;
-      }
-    });
-
-    guessArray.forEach((letter, i) => {
-      if (result[i] === TileState.EMPTY) {
-        const foundIndex = solutionArray.findIndex((l, idx) => l === letter && !used[idx]);
-        if (foundIndex !== -1) {
-          result[i] = TileState.PRESENT;
-          used[foundIndex] = true;
-        } else {
-          result[i] = TileState.ABSENT;
-        }
-      }
-    });
-
-    return result;
-  };
-
   const prefills = board.prefilledGuesses || [];
   const prefillCount = prefills.length;
   const totalRows = prefillCount + board.maxGuesses;
@@ -72,12 +77,17 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
 
   const isWon = board.status === 'WON';
   const isLost = board.status === 'LOST';
-  // The most recently submitted row — only animate flip on the winning guess
   const lastSubmittedRow = isWon && board.guesses.length > 0 ? board.guesses.length - 1 : -1;
+
+  // In expanded mode, show larger text
+  const textSize = isExpanded ? 'text-base sm:text-lg' : 'text-[10px] sm:text-xs';
 
   return (
     <div
+      onClick={onClick}
       className={`relative p-1 rounded-lg border-2 h-full flex flex-col ${
+        onClick ? 'cursor-pointer' : ''
+      } ${
         isWon
           ? 'border-green-400 bg-green-900/20'
           : isLost
@@ -103,7 +113,7 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
                 {prefill.evaluation.tiles.map((tile, letterIndex) => (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold text-[10px] sm:text-xs ${getTileColor(tile.state)}`}
+                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold ${textSize} ${getTileColor(tile.state, colorBlind)}`}
                   >
                     {tile.letter.toUpperCase()}
                   </div>
@@ -113,7 +123,6 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
           }
 
           const guess = allGuesses[playerRowIndex] || '';
-          const isCurrentGuess = playerRowIndex === board.guesses.length && board.status === 'PLAYING';
           const isPastGuess = playerRowIndex < board.guesses.length;
           const isLastSubmitted = isPastGuess && playerRowIndex === lastSubmittedRow;
           const tiles = isPastGuess ? evaluateGuess(guess, board.solution) : Array(5).fill(TileState.EMPTY);
@@ -127,7 +136,7 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
                 return (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold text-[10px] sm:text-xs ${getTileColor(tileState)} ${
+                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold ${textSize} ${getTileColor(tileState, colorBlind)} ${
                       isLastSubmitted ? 'animate-tile-flip-mini' : ''
                     }`}
                     style={isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : undefined}
@@ -142,22 +151,77 @@ function MiniBoard({ board, index, currentGuess, colorBlind }: {
       </div>
     </div>
   );
-}
+});
 
 export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps) {
-  const cols = boards.length <= 4 ? 'grid-cols-2' : 'grid-cols-4';
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const isOctordle = boards.length > 4;
+  const cols = isOctordle ? 'grid-cols-4' : 'grid-cols-2';
+
+  const handleBoardClick = useCallback((index: number) => {
+    if (!isOctordle) return; // Only octordle boards are expandable
+    setExpandedIndex(index);
+  }, [isOctordle]);
+
+  const handleCloseExpanded = useCallback(() => {
+    setExpandedIndex(null);
+  }, []);
 
   return (
-    <div className={`grid ${cols} gap-2 w-full h-full`}>
-      {boards.map((board, index) => (
-        <MiniBoard
-          key={index}
-          board={board}
-          index={index}
-          currentGuess={currentGuess}
-          colorBlind={colorBlind}
-        />
-      ))}
+    <div className="relative w-full h-full">
+      {/* Grid of mini boards */}
+      <div className={`grid ${cols} gap-2 w-full h-full`}>
+        {boards.map((board, index) => (
+          <MiniBoard
+            key={index}
+            board={board}
+            index={index}
+            currentGuess={board.status === 'PLAYING' ? currentGuess : undefined}
+            colorBlind={colorBlind}
+            onClick={isOctordle ? () => handleBoardClick(index) : undefined}
+          />
+        ))}
+      </div>
+
+      {/* Expanded board overlay (octordle only) */}
+      <AnimatePresence>
+        {expandedIndex !== null && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={handleCloseExpanded}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            />
+            {/* Expanded board */}
+            <motion.div
+              initial={{ scale: 0.3, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.3, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={handleCloseExpanded}
+              className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            >
+              <div
+                className="w-full max-w-sm"
+                style={{ height: '60vh' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MiniBoard
+                  board={boards[expandedIndex]}
+                  index={expandedIndex}
+                  currentGuess={boards[expandedIndex].status === 'PLAYING' ? currentGuess : undefined}
+                  colorBlind={colorBlind}
+                  isExpanded
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -168,7 +232,6 @@ function computeBoardLetterStates(
 ): Record<string, 'correct' | 'present' | 'absent'> {
   const states: Record<string, 'correct' | 'present' | 'absent'> = {};
 
-  // Include prefilled guess hints
   if (board.prefilledGuesses) {
     for (const prefill of board.prefilledGuesses) {
       for (const tile of prefill.evaluation.tiles) {
@@ -180,7 +243,6 @@ function computeBoardLetterStates(
     }
   }
 
-  // Include player guess hints
   for (const guess of board.guesses) {
     const solutionArray = board.solution.toUpperCase().split('');
     const guessArray = guess.toUpperCase().split('');

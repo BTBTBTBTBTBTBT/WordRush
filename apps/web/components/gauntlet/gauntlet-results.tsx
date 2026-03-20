@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, XCircle, Clock, Hash, Home, RotateCcw } from 'lucide-react';
+import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, BarChart3, Zap, Timer } from 'lucide-react';
 import { GameStatus, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { Button } from '@/components/ui/button';
+import { GauntletStats, getGauntletStats, recordGauntletGame } from '@/lib/gauntlet-stats';
 
 interface GauntletResultsProps {
   won: boolean;
@@ -32,13 +34,31 @@ export function GauntletResults({
   const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
   const stagesCompleted = stageResults.filter(r => r.status === GameStatus.WON).length;
 
+  const [stats, setStats] = useState<GauntletStats | null>(null);
+
+  // Record this game and load stats on mount
+  useEffect(() => {
+    const updated = recordGauntletGame(won, totalGuesses, totalTimeMs);
+    setStats(updated);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const winRate = stats && stats.gamesPlayed > 0
+    ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100)
+    : 0;
+  const avgTime = stats && stats.gamesPlayed > 0
+    ? stats.totalTimeMs / stats.gamesPlayed
+    : null;
+  const avgGuesses = stats && stats.gamesPlayed > 0
+    ? Math.round(stats.totalGuesses / stats.gamesPlayed)
+    : null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center p-4 overflow-y-auto">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', damping: 15 }}
-        className="max-w-lg w-full space-y-6"
+        className="max-w-lg w-full space-y-6 py-6"
       >
         {/* Header */}
         <div className="text-center space-y-3">
@@ -103,7 +123,6 @@ export function GauntletResults({
             const result = stageResults.find(r => r.stageIndex === i);
             const isCompleted = result?.status === GameStatus.WON;
             const isFailed = result?.status === GameStatus.LOST;
-            const isSkipped = !result;
 
             return (
               <motion.div
@@ -154,11 +173,60 @@ export function GauntletResults({
           })}
         </motion.div>
 
+        {/* All-Time Stats */}
+        {stats && stats.gamesPlayed > 0 && (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1.4 }}
+            className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10"
+          >
+            <h3 className="text-white/60 text-sm font-bold uppercase tracking-wider mb-3">All-Time Stats</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-3 p-2">
+                <BarChart3 className="w-4 h-4 text-purple-400 shrink-0" />
+                <div>
+                  <div className="text-white font-bold text-lg">{stats.gamesPlayed}</div>
+                  <div className="text-white/40 text-xs">Games Played</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2">
+                <Zap className="w-4 h-4 text-yellow-400 shrink-0" />
+                <div>
+                  <div className="text-white font-bold text-lg">{winRate}%</div>
+                  <div className="text-white/40 text-xs">Win Rate</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2">
+                <Clock className="w-4 h-4 text-blue-400 shrink-0" />
+                <div>
+                  <div className="text-white font-bold text-lg">{avgTime ? formatTime(avgTime) : '—'}</div>
+                  <div className="text-white/40 text-xs">Avg Time</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2">
+                <Timer className="w-4 h-4 text-green-400 shrink-0" />
+                <div>
+                  <div className="text-white font-bold text-lg">{stats.bestTimeMs ? formatTime(stats.bestTimeMs) : '—'}</div>
+                  <div className="text-white/40 text-xs">Best Time</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-2 col-span-2">
+                <Hash className="w-4 h-4 text-orange-400 shrink-0" />
+                <div>
+                  <div className="text-white font-bold text-lg">{avgGuesses ?? '—'}</div>
+                  <div className="text-white/40 text-xs">Avg Guesses per Game</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Actions */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.4 }}
+          transition={{ delay: 1.6 }}
           className="flex gap-3"
         >
           <Button
