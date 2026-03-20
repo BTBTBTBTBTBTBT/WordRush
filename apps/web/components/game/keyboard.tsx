@@ -31,8 +31,8 @@ export function Keyboard({ onKey, letterStates = {}, blackedOutLetters }: Keyboa
                 size="sm"
                 disabled={isBlackedOut}
                 className={cn(
-                  'h-14 font-bold transition-all duration-300',
-                  key === 'ENTER' || key === 'BACK' ? 'px-4' : 'w-10',
+                  'h-11 sm:h-14 font-bold transition-all duration-300 text-sm sm:text-base',
+                  key === 'ENTER' || key === 'BACK' ? 'px-3 sm:px-4' : 'w-8 sm:w-10',
                   isBlackedOut && 'bg-red-900/80 text-red-900/80 border-red-900/60 opacity-40 cursor-not-allowed animate-pulse',
                   !isBlackedOut && letterStates[key] === 'correct' && 'bg-green-600 text-white border-green-600',
                   !isBlackedOut && letterStates[key] === 'present' && 'bg-yellow-600 text-white border-yellow-600',

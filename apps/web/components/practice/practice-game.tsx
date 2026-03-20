@@ -96,53 +96,44 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
   const stats = storage.getStats(mode);
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={onBack}>Back</Button>
-          <h1 className="text-2xl font-bold">Practice Mode</h1>
-          <Button variant="outline" onClick={handleReset}>New Game</Button>
-        </div>
-
-        <Card className="p-6">
-          <div className="flex justify-between text-sm mb-4">
-            <div>Win Rate: {stats.gamesPlayed > 0 ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) : 0}%</div>
-            <div>Streak: {stats.currentStreak}</div>
-            <div>Best: {stats.personalBest || '-'}</div>
-          </div>
-        </Card>
-
-        <div className="flex justify-center">
-          <Board
-            guesses={currentBoard.guesses}
-            currentGuess={currentGuess}
-            maxGuesses={currentBoard.maxGuesses}
-            evaluations={evaluations}
-            showSolution={currentBoard.status === GameStatus.LOST}
-            solution={currentBoard.solution}
-          />
-        </div>
-
-        {message && (
-          <div className="text-center text-red-500 font-medium">{message}</div>
-        )}
-
-        {currentBoard.status === GameStatus.WON && mode === GameMode.GAUNTLET && state.currentBoardIndex < 2 && (
+    <div className="h-[100dvh] flex flex-col bg-background">
+      {/* Header */}
+      <div className="shrink-0 px-4 py-2">
+        <div className="flex items-center justify-between max-w-2xl mx-auto">
+          <Button variant="outline" size="sm" onClick={onBack}>Back</Button>
           <div className="text-center">
-            <Button onClick={handleNextBoard} size="lg">Next Round</Button>
+            <h1 className="text-lg font-bold">Classic</h1>
+            <div className="flex gap-3 text-xs text-muted-foreground">
+              <span>Win: {stats.gamesPlayed > 0 ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) : 0}%</span>
+              <span>Streak: {stats.currentStreak}</span>
+              <span>Best: {stats.personalBest || '-'}</span>
+            </div>
           </div>
-        )}
-
+          <Button variant="outline" size="sm" onClick={handleReset}>New</Button>
+        </div>
+        {message && <div className="text-center text-red-500 text-sm font-medium mt-1">{message}</div>}
         {currentBoard.status === GameStatus.WON && (
-          <div className="text-center text-green-600 font-bold text-xl">
-            {mode === GameMode.GAUNTLET && state.currentBoardIndex === 2 ? 'Gauntlet Complete!' : 'You Won!'}
-          </div>
+          <div className="text-center text-green-600 font-bold mt-1">You Won!</div>
         )}
-
         {currentBoard.status === GameStatus.LOST && (
-          <div className="text-center text-red-600 font-bold text-xl">Game Over</div>
+          <div className="text-center text-red-600 font-bold mt-1">Game Over</div>
         )}
+      </div>
 
+      {/* Board */}
+      <div className="flex-1 flex items-center justify-center px-4 min-h-0">
+        <Board
+          guesses={currentBoard.guesses}
+          currentGuess={currentGuess}
+          maxGuesses={currentBoard.maxGuesses}
+          evaluations={evaluations}
+          showSolution={currentBoard.status === GameStatus.LOST}
+          solution={currentBoard.solution}
+        />
+      </div>
+
+      {/* Keyboard */}
+      <div className="shrink-0 pb-2 px-2">
         <Keyboard onKey={handleKey} letterStates={letterStates} />
       </div>
     </div>

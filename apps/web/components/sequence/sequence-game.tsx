@@ -140,93 +140,39 @@ export function SequenceGame() {
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-900 via-red-800 to-pink-700 flex flex-col">
+    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-orange-900 via-red-800 to-pink-700">
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
       </AnimatePresence>
 
-      <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-2 py-4">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-center space-y-3 mb-4"
-        >
-          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 drop-shadow-lg">
-            SEQUENCE
-          </h1>
-
-          <div className="flex justify-center gap-3">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white text-sm">
-                <Trophy className="w-4 h-4 text-yellow-400" />
-                <span className="font-bold">{solvedCount}/4</span>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white text-sm">
-                <span className="font-bold">{guessesUsed}/{maxGuesses} guesses</span>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white text-sm">
-                <Clock className="w-4 h-4 text-blue-400" />
-                <span className="font-bold">{formatTime(elapsedTime)}</span>
-              </div>
-            </div>
+      {/* Compact Header */}
+      <div className="text-center py-2 px-2 shrink-0">
+        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
+          SEQUENCE
+        </h1>
+        <div className="flex justify-center gap-3 mt-1">
+          <span className="text-white/70 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-yellow-400" />{solvedCount}/4</span>
+          <span className="text-white/70 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
+          <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
+        </div>
+        {error && <div className="text-red-300 text-xs font-bold mt-1">{error}</div>}
+        {state.status === 'WON' && (
+          <div className="mt-1">
+            <span className="text-green-300 text-xs font-bold">All 4 solved in {guessesUsed} guesses! </span>
+            <button onClick={handleNextPuzzle} className="text-yellow-400 text-xs font-bold underline">Play Again</button>
           </div>
+        )}
+        {state.status === 'LOST' && (
+          <div className="mt-1">
+            <span className="text-red-300 text-xs font-bold">Out of guesses! {solvedCount}/4 </span>
+            <button onClick={handleNextPuzzle} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
+          </div>
+        )}
+      </div>
 
-          {error && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-red-500/20 border-2 border-red-500 text-white px-6 py-2 rounded-xl font-bold inline-block text-sm"
-            >
-              {error}
-            </motion.div>
-          )}
-
-          {state.status === 'WON' && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="space-y-3"
-            >
-              <div className="bg-green-500/20 border-2 border-green-400 text-white px-6 py-3 rounded-xl font-bold inline-block">
-                All 4 puzzles solved in {guessesUsed} guesses!
-              </div>
-              <button
-                onClick={handleNextPuzzle}
-                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 mx-auto"
-              >
-                Next Challenge <ArrowRight className="w-5 h-5" />
-              </button>
-            </motion.div>
-          )}
-
-          {state.status === 'LOST' && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="space-y-3"
-            >
-              <div className="bg-red-500/20 border-2 border-red-400 text-white px-6 py-3 rounded-xl font-bold inline-block">
-                Out of guesses! Solved {solvedCount}/4
-              </div>
-              <button
-                onClick={handleNextPuzzle}
-                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 mx-auto"
-              >
-                Try Again <ArrowRight className="w-5 h-5" />
-              </button>
-            </motion.div>
-          )}
-        </motion.div>
-
-        {/* 2x2 Board Grid */}
-        <div className="flex-1 flex items-center justify-center">
-          <div className="grid grid-cols-2 gap-2 w-full max-w-lg">
+      {/* 2x2 Board Grid */}
+      <div className="flex-1 min-h-0 px-2 pb-1">
+        <div className="grid grid-cols-2 gap-2 w-full h-full max-w-lg mx-auto">
             {BOARD_ORDER.map((boardIdx) => {
               const board = state.boards[boardIdx];
               if (!board) return null;
@@ -251,12 +197,11 @@ export function SequenceGame() {
               );
             })}
           </div>
-        </div>
+      </div>
 
-        {/* Keyboard */}
-        <div className="pb-4 px-2 mt-4">
-          <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
-        </div>
+      {/* Keyboard */}
+      <div className="shrink-0 pb-2 px-2">
+        <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
       </div>
     </div>
   );
@@ -330,7 +275,7 @@ function SequenceMiniBoard({
       initial={{ scale: 0.8, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ delay: boardIndex * 0.1 }}
-      className={`relative p-2 rounded-xl border-2 transition-all duration-300 ${
+      className={`relative p-1 rounded-lg border-2 transition-all duration-300 h-full flex flex-col ${
         isCompleted
           ? 'border-green-400 bg-green-900/20 shadow-lg shadow-green-500/20'
           : isFailed
@@ -356,7 +301,7 @@ function SequenceMiniBoard({
         </div>
       )}
 
-      <div className="space-y-0.5">
+      <div className="flex flex-col gap-[2px] flex-1">
         {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
           const guess = allGuesses[rowIndex] || '';
           const isPastGuess = rowIndex < board.guesses.length;
@@ -366,7 +311,7 @@ function SequenceMiniBoard({
             : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className="flex gap-0.5">
+            <div key={rowIndex} className="flex gap-[2px] flex-1">
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = tiles[letterIndex];
@@ -376,8 +321,8 @@ function SequenceMiniBoard({
                   <div
                     key={letterIndex}
                     className={`
-                      flex-1 aspect-square flex items-center justify-center
-                      border rounded text-white font-bold text-xs sm:text-sm
+                      flex-1 flex items-center justify-center
+                      border rounded text-white font-bold text-[10px] sm:text-xs
                       ${isPastGuess && showColors
                         ? getTileColor(tileState)
                         : isPastGuess && !showColors

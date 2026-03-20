@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState, useEffect } from 'react';
+import { useReducer, useState, useEffect, useCallback } from 'react';
 import { GameMode, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
 import { MultiBoard } from '../game/multi-board';
 import { Keyboard } from '../game/keyboard';
@@ -29,150 +29,92 @@ export function OctordleGame() {
   }, [state.status, state.startTime]);
 
   useEffect(() => {
-    if (state.status === 'WON') {
-      setShowVictory(true);
-    }
+    if (state.status === 'WON') setShowVictory(true);
   }, [state.status]);
 
-  const handleKeyPress = (key: string) => {
+  const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
-
     setError('');
 
     if (key === 'ENTER') {
-      if (currentGuess.length !== 5) {
-        setError('Word must be 5 letters');
-        return;
-      }
-
-      if (!isWordValid(currentGuess)) {
-        setError('Not in word list');
-        return;
-      }
+      if (currentGuess.length !== 5) { setError('Word must be 5 letters'); return; }
+      if (!isWordValid(currentGuess)) { setError('Not in word list'); return; }
 
       state.boards.forEach((_, index) => {
         if (state.boards[index].status === 'PLAYING') {
           dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
         }
       });
-
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess((prev) => prev.slice(0, -1));
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess((prev) => prev + key);
     }
-  };
+  }, [state, currentGuess]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        handleKeyPress('ENTER');
-      } else if (e.key === 'Backspace') {
-        handleKeyPress('BACK');
-      } else if (/^[a-zA-Z]$/.test(e.key)) {
-        handleKeyPress(e.key.toUpperCase());
-      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Enter') handleKeyPress('ENTER');
+      else if (e.key === 'Backspace') handleKeyPress('BACK');
+      else if (/^[a-zA-Z]$/.test(e.key)) handleKeyPress(e.key.toUpperCase());
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentGuess, state]);
+  }, [handleKeyPress]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+  const completedBoards = state.boards.filter(b => b.status !== 'PLAYING').length;
+  const totalGuesses = state.boards[0]?.guesses.length || 0;
+
+  const handleRestart = () => {
+    dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.OCTORDLE });
+    setCurrentGuess(''); setError(''); setElapsedTime(0);
   };
 
-  const completedBoards = state.boards.filter((b) => b.status !== 'PLAYING').length;
-  const totalGuesses = state.boards.reduce((sum, board) => sum + board.guesses.length, 0);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700 p-4">
+    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700">
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
       </AnimatePresence>
 
-      <div className="max-w-7xl mx-auto space-y-6">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-center space-y-4"
-        >
-          <div className="relative inline-block">
-            <h1 className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 drop-shadow-lg animate-gradient-x">
-              OCTORDLE
-            </h1>
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-              className="absolute -top-4 -right-4"
-            >
-              <Zap className="w-8 h-8 text-yellow-400" fill="currentColor" />
-            </motion.div>
-          </div>
-
-          <div className="flex justify-center gap-4 flex-wrap">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white">
-                <Target className="w-4 h-4 text-green-400" />
-                <span className="font-bold text-sm">{completedBoards}/8 Complete</span>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white">
-                <Trophy className="w-4 h-4 text-yellow-400" />
-                <span className="font-bold text-sm">{totalGuesses} Guesses</span>
-              </div>
-            </div>
-
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-white/20">
-              <div className="flex items-center gap-2 text-white">
-                <Clock className="w-4 h-4 text-blue-400" />
-                <span className="font-bold text-sm">{formatTime(elapsedTime)}</span>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-red-500/20 border-2 border-red-500 text-white px-6 py-3 rounded-xl font-bold inline-block"
-            >
-              {error}
-            </motion.div>
-          )}
-
-          {state.status === 'WON' && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-2 border-green-400 text-white px-8 py-4 rounded-xl font-bold inline-block"
-            >
-              🌟 INCREDIBLE! All 8 puzzles solved in {totalGuesses} guesses! 🌟
-            </motion.div>
-          )}
-
-          {state.status === 'LOST' && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-red-500/20 border-2 border-red-400 text-white px-8 py-4 rounded-xl font-bold inline-block space-y-2"
-            >
-              <div>Game Over! Completed: {completedBoards}/8</div>
-              <div className="text-xs">Solutions: {state.boards.map((b) => b.solution.toUpperCase()).join(', ')}</div>
-            </motion.div>
-          )}
-        </motion.div>
-
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} />
-
-        <div className="max-w-2xl mx-auto">
-          <Keyboard onKey={handleKeyPress} />
+      {/* Compact Header */}
+      <div className="text-center py-2 px-2 shrink-0">
+        <div className="flex items-center justify-center gap-2">
+          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
+            OCTORDLE
+          </h1>
+          <Zap className="w-5 h-5 text-yellow-400" fill="currentColor" />
         </div>
+        <div className="flex justify-center gap-3 mt-1">
+          <span className="text-white/70 text-xs font-bold"><Target className="w-3 h-3 inline mr-1 text-green-400" />{completedBoards}/8</span>
+          <span className="text-white/70 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-yellow-400" />{totalGuesses}/{state.boards[0]?.maxGuesses}</span>
+          <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
+        </div>
+        {error && <div className="text-red-300 text-xs font-bold mt-1">{error}</div>}
+        {state.status === 'WON' && (
+          <div className="mt-1">
+            <span className="text-green-300 text-xs font-bold">All 8 solved! </span>
+            <button onClick={handleRestart} className="text-yellow-400 text-xs font-bold underline">Play Again</button>
+          </div>
+        )}
+        {state.status === 'LOST' && (
+          <div className="mt-1">
+            <span className="text-red-300 text-xs font-bold">Game Over! {completedBoards}/8 </span>
+            <button onClick={handleRestart} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
+          </div>
+        )}
+      </div>
+
+      {/* Boards */}
+      <div className="flex-1 min-h-0 px-1 pb-1">
+        <MultiBoard boards={state.boards} currentGuess={currentGuess} />
+      </div>
+
+      {/* Keyboard */}
+      <div className="shrink-0 pb-2 px-2">
+        <Keyboard onKey={handleKeyPress} />
       </div>
     </div>
   );
