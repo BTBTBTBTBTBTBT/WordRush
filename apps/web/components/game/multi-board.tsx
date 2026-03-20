@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import { BoardState, TileState, PrefilledGuess, evaluateGuess as coreEvaluateGuess } from '@wordle-duel/core';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -56,13 +56,14 @@ const evaluateGuess = (guess: string, solution: string) => {
 };
 
 // Memoized MiniBoard — only re-renders when its own board data or currentGuess changes
-const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded }: {
+const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible }: {
   board: BoardState;
   index: number;
   currentGuess?: string;
   colorBlind?: boolean;
   onClick?: () => void;
   isExpanded?: boolean;
+  invisible?: boolean;
 }) {
   const prefills = board.prefilledGuesses || [];
   const prefillCount = prefills.length;
@@ -87,6 +88,8 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
       onClick={onClick}
       className={`relative p-1 rounded-lg border-2 h-full flex flex-col ${
         onClick ? 'cursor-pointer' : ''
+      } ${
+        invisible ? 'invisible' : ''
       } ${
         isWon
           ? 'border-green-400 bg-green-900/20'
@@ -155,59 +158,108 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
 
 export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
+  const boardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isOctordle = boards.length > 4;
   const cols = isOctordle ? 'grid-cols-4' : 'grid-cols-2';
 
   const handleBoardClick = useCallback((index: number) => {
-    if (!isOctordle) return; // Only octordle boards are expandable
+    if (!isOctordle) return;
+    const el = boardRefs.current[index];
+    if (el) {
+      setSourceRect(el.getBoundingClientRect());
+    }
     setExpandedIndex(index);
   }, [isOctordle]);
 
   const handleCloseExpanded = useCallback(() => {
+    // Re-capture current position for exit animation
+    if (expandedIndex !== null) {
+      const el = boardRefs.current[expandedIndex];
+      if (el) {
+        setSourceRect(el.getBoundingClientRect());
+      }
+    }
     setExpandedIndex(null);
-  }, []);
+  }, [expandedIndex]);
+
+  // Compute the expanded board's target rect (centered in the container area)
+  const getExpandedStyle = () => {
+    if (!containerRef.current) return {};
+    const container = containerRef.current.getBoundingClientRect();
+    const padding = 12;
+    const availW = container.width - padding * 2;
+    const availH = container.height - padding * 2;
+    // Use 90% of available space, capped at reasonable max
+    const targetW = Math.min(availW * 0.9, 384);
+    const targetH = Math.min(availH * 0.95, targetW * 2.2);
+    return {
+      position: 'fixed' as const,
+      left: container.left + (container.width - targetW) / 2,
+      top: container.top + (container.height - targetH) / 2,
+      width: targetW,
+      height: targetH,
+    };
+  };
+
+  const getSourceStyle = () => {
+    if (!sourceRect) return {};
+    return {
+      position: 'fixed' as const,
+      left: sourceRect.left,
+      top: sourceRect.top,
+      width: sourceRect.width,
+      height: sourceRect.height,
+    };
+  };
 
   return (
-    <div className="relative w-full h-full">
+    <div ref={containerRef} className="relative w-full h-full">
       {/* Grid of mini boards */}
       <div className={`grid ${cols} gap-2 w-full h-full`}>
         {boards.map((board, index) => (
-          <MiniBoard
+          <div
             key={index}
-            board={board}
-            index={index}
-            currentGuess={board.status === 'PLAYING' ? currentGuess : undefined}
-            colorBlind={colorBlind}
-            onClick={isOctordle ? () => handleBoardClick(index) : undefined}
-          />
+            ref={(el) => { boardRefs.current[index] = el; }}
+            className="h-full"
+          >
+            <MiniBoard
+              board={board}
+              index={index}
+              currentGuess={board.status === 'PLAYING' ? currentGuess : undefined}
+              colorBlind={colorBlind}
+              onClick={isOctordle ? () => handleBoardClick(index) : undefined}
+              invisible={expandedIndex === index}
+            />
+          </div>
         ))}
       </div>
 
       {/* Expanded board overlay (octordle only) */}
       <AnimatePresence>
-        {expandedIndex !== null && (
+        {expandedIndex !== null && sourceRect && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop — only covers the board area, not the keyboard */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={handleCloseExpanded}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 rounded-lg"
             />
-            {/* Expanded board */}
+            {/* Expanded board — animates from source position */}
             <motion.div
-              initial={{ scale: 0.3, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.3, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              initial={getSourceStyle()}
+              animate={getExpandedStyle()}
+              exit={getSourceStyle()}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="z-50"
               onClick={handleCloseExpanded}
-              className="fixed inset-0 z-50 flex items-center justify-center p-6"
             >
               <div
-                className="w-full max-w-sm"
-                style={{ height: '60vh' }}
+                className="w-full h-full"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MiniBoard

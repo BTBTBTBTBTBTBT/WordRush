@@ -4,7 +4,7 @@ import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
 import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess, TileState } from '@wordle-duel/core';
 import { Keyboard } from '../game/keyboard';
 import { VictoryAnimation } from '../effects/victory-animation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
@@ -270,10 +270,7 @@ function SequenceMiniBoard({
   }
 
   return (
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: boardIndex * 0.1 }}
+    <div
       className={`relative p-1 rounded-lg border-2 transition-all duration-300 h-full flex flex-col ${
         isCompleted
           ? 'border-green-400 bg-green-900/20 shadow-lg shadow-green-500/20'
@@ -338,6 +335,6 @@ function SequenceMiniBoard({
           {board.solution.toUpperCase()}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
