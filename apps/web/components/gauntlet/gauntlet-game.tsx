@@ -399,20 +399,20 @@ export function GauntletGame() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 pointer-events-none z-30"
+            className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"
           >
-            <div className="absolute inset-0 bg-red-900/20 animate-pulse" />
+            <div className="absolute inset-0 bg-black/40 animate-pulse" />
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0, opacity: 0 }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+              className="relative z-10"
             >
-              <div className="text-center space-y-2">
-                <div className="text-6xl font-black text-red-400 animate-pulse">
+              <div className="text-center space-y-3">
+                <div className="text-9xl font-black text-red-400 drop-shadow-[0_0_30px_rgba(248,113,113,0.6)] animate-pulse">
                   {blackoutTimeLeft}
                 </div>
-                <div className="text-red-300/70 text-sm font-bold uppercase tracking-wider">
+                <div className="text-red-300 text-lg font-bold uppercase tracking-widest">
                   Letters Blacked Out
                 </div>
               </div>
