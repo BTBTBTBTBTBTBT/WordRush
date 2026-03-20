@@ -74,7 +74,8 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
           stages: GAUNTLET_STAGES,
           stageResults: [],
           stageStartTime: Date.now(),
-          allSolutions
+          allSolutions,
+          blackoutCount: 0
         }
       };
     }
@@ -172,26 +173,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           gameStatus = anyWon ? GameStatus.WON : GameStatus.LOST;
         }
       } else if (state.mode === GameMode.GAUNTLET && state.gauntlet) {
-        const stage = state.gauntlet.stages[state.gauntlet.currentStage];
-
-        if (stage.sequential) {
-          // Sequential stage (like SEQUENCE): losing any board = gauntlet lost
-          if (newStatus === GameStatus.LOST) {
-            gameStatus = GameStatus.LOST;
-          }
-          // Winning handled by NEXT_BOARD (within stage) or NEXT_STAGE (between stages)
-        } else {
-          // Simultaneous stage (like QUORDLE/OCTORDLE/RESCUE)
-          const allComplete = newBoards.every(b => b.status !== GameStatus.PLAYING);
-          if (allComplete) {
-            const allWon = newBoards.every(b => b.status === GameStatus.WON);
-            if (!allWon) {
-              gameStatus = GameStatus.LOST;
-            }
-            // If allWon: stage is complete, UI will dispatch NEXT_STAGE
-            // Last stage completion is handled in NEXT_STAGE
-          }
-        }
+        // In gauntlet mode, losing a board triggers Letter Blackout instead of game over.
+        // The board stays LOST — the UI detects it, shows blackout, then dispatches BLACKOUT_RESTART.
+        // Game status stays PLAYING until all boards are WON (stage complete) or the game is abandoned.
       } else if (state.mode === GameMode.QUORDLE || state.mode === GameMode.OCTORDLE) {
         const allComplete = newBoards.every(b => b.status !== GameStatus.PLAYING);
         if (allComplete) {
@@ -286,6 +270,52 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           stageResults: newStageResults,
           stageStartTime: Date.now()
         }
+      };
+    }
+
+    case 'STEAL_GUESS': {
+      // Opponent completed a stage ahead — reduce maxGuesses by 1 on all PLAYING boards
+      if (state.mode !== GameMode.GAUNTLET || !state.gauntlet) return state;
+      if (state.status !== GameStatus.PLAYING) return state;
+
+      const stolenBoards = state.boards.map(b => {
+        if (b.status !== GameStatus.PLAYING) return b;
+        const newMax = Math.max(b.guesses.length + 1, b.maxGuesses - 1);
+        return { ...b, maxGuesses: newMax };
+      });
+
+      return { ...state, boards: stolenBoards };
+    }
+
+    case 'BLACKOUT_RESTART': {
+      // After Letter Blackout timer expires: reset the failed board with a new word
+      if (state.mode !== GameMode.GAUNTLET || !state.gauntlet) return state;
+      if (state.status !== GameStatus.PLAYING) return state;
+
+      const { boardIndex } = action;
+      const failedBoard = state.boards[boardIndex];
+      if (!failedBoard || failedBoard.status !== GameStatus.LOST) return state;
+
+      const gauntlet = state.gauntlet;
+      const blackoutNum = gauntlet.blackoutCount + 1;
+      const replacementSeed = `${state.seed}-blackout-${blackoutNum}`;
+      const [newSolution] = generateSolutionsFromSeed(replacementSeed, 1);
+
+      const stageConfig = gauntlet.stages[gauntlet.currentStage];
+      const newBoard = createBoardState(newSolution, stageConfig.maxGuesses);
+
+      if (stageConfig.hasPrefill) {
+        const allowedWords = getAllowedWords();
+        newBoard.prefilledGuesses = generatePrefillGuesses(replacementSeed, newSolution, boardIndex, allowedWords);
+      }
+
+      const newBoards = [...state.boards];
+      newBoards[boardIndex] = newBoard;
+
+      return {
+        ...state,
+        boards: newBoards,
+        gauntlet: { ...gauntlet, blackoutCount: blackoutNum }
       };
     }
 

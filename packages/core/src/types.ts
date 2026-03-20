@@ -70,6 +70,7 @@ export interface GauntletProgress {
   stageResults: GauntletStageResult[];
   stageStartTime: number;
   allSolutions: string[];
+  blackoutCount: number;
 }
 
 export const GAUNTLET_STAGES: GauntletStageConfig[] = [
@@ -115,5 +116,7 @@ export type GameAction =
   | { type: 'SUBMIT_GUESS'; guess: string; boardIndex?: number }
   | { type: 'NEXT_BOARD' }
   | { type: 'NEXT_STAGE' }
+  | { type: 'STEAL_GUESS' }
+  | { type: 'BLACKOUT_RESTART'; boardIndex: number }
   | { type: 'ABANDON' }
   | { type: 'RESET'; seed: string; mode: GameMode };
