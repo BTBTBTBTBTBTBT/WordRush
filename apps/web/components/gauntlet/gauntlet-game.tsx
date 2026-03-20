@@ -103,12 +103,19 @@ export function GauntletGame() {
   }, [currentBoard]);
 
   // Detect board failure → trigger Letter Blackout
+  // Uses a ref to track whether we've already triggered for this failure,
+  // so the effect doesn't depend on letterStates (which would cause cleanup/restart).
+  const blackoutTriggeredRef = useRef(false);
+
   useEffect(() => {
     if (state.status !== GameStatus.PLAYING) return;
-    if (isInBlackout) return; // Already in a blackout
+    if (blackoutTriggeredRef.current) return; // Already handling a blackout
 
     const failedIndex = state.boards.findIndex(b => b.status === GameStatus.LOST);
     if (failedIndex === -1) return;
+
+    // Mark as triggered so re-renders don't restart timers
+    blackoutTriggeredRef.current = true;
 
     // Start blackout
     const letters = pickBlackoutLetters(letterStates, BLACKOUT_LETTER_COUNT);
@@ -119,28 +126,32 @@ export function GauntletGame() {
     setMessage('LETTER BLACKOUT! Board restarting...');
 
     // Countdown timer (visual)
-    blackoutCountdownRef.current = setInterval(() => {
+    const countdownId = setInterval(() => {
       setBlackoutTimeLeft(prev => {
         if (prev <= 1) return 0;
         return prev - 1;
       });
     }, 1000);
+    blackoutCountdownRef.current = countdownId;
 
     // Main blackout timer — restart board after duration
-    blackoutTimerRef.current = setTimeout(() => {
+    const timerId = setTimeout(() => {
+      clearInterval(countdownId);
       dispatch({ type: 'BLACKOUT_RESTART', boardIndex: failedIndex });
       setBlackedOutLetters(new Set());
       setBlackoutBoardIndex(null);
       setBlackoutTimeLeft(0);
       setMessage('');
-      if (blackoutCountdownRef.current) clearInterval(blackoutCountdownRef.current);
+      blackoutTriggeredRef.current = false;
     }, BLACKOUT_DURATION_MS);
+    blackoutTimerRef.current = timerId;
 
     return () => {
-      if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
-      if (blackoutCountdownRef.current) clearInterval(blackoutCountdownRef.current);
+      clearTimeout(timerId);
+      clearInterval(countdownId);
+      blackoutTriggeredRef.current = false;
     };
-  }, [state.boards, state.status, isInBlackout, letterStates]);
+  }, [state.boards, state.status]);
 
   // Check for stage completion
   useEffect(() => {
@@ -258,6 +269,7 @@ export function GauntletGame() {
     setBlackedOutLetters(new Set());
     setBlackoutBoardIndex(null);
     setBlackoutTimeLeft(0);
+    blackoutTriggeredRef.current = false;
     if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
     if (blackoutCountdownRef.current) clearInterval(blackoutCountdownRef.current);
   }, []);
@@ -299,9 +311,9 @@ export function GauntletGame() {
       if (!board) return null;
 
       return (
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-1 w-full justify-center">
           {isSequential && (
-            <div className="text-white/50 text-sm font-medium">
+            <div className="text-white/50 text-xs font-medium">
               Board {state.currentBoardIndex + 1} of {state.boards.length}
             </div>
           )}
@@ -312,6 +324,7 @@ export function GauntletGame() {
             evaluations={evaluations}
             solution={board.solution}
             showSolution={board.status === GameStatus.LOST}
+            darkMode
           />
         </div>
       );
@@ -326,16 +339,16 @@ export function GauntletGame() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex flex-col">
-      {/* Progress Bar */}
-      <GauntletProgress
-        stages={gauntlet.stages}
-        currentStage={gauntlet.currentStage}
-        stageResults={gauntlet.stageResults}
-      />
-
-      {/* Stage Header */}
-      <GauntletStageHeader stage={currentStageConfig} />
+    <div className="h-[100dvh] bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex flex-col">
+      {/* Progress Bar + Stage Header */}
+      <div className="shrink-0">
+        <GauntletProgress
+          stages={gauntlet.stages}
+          currentStage={gauntlet.currentStage}
+          stageResults={gauntlet.stageResults}
+        />
+        <GauntletStageHeader stage={currentStageConfig} />
+      </div>
 
       {/* Message / Blackout Warning */}
       <AnimatePresence>
@@ -404,12 +417,12 @@ export function GauntletGame() {
       </AnimatePresence>
 
       {/* Game Area */}
-      <div className="flex-1 flex items-center justify-center px-4 py-2 overflow-auto">
+      <div className="flex-1 flex items-center justify-center px-4 min-h-0">
         {renderGameArea()}
       </div>
 
       {/* Keyboard */}
-      <div className="pb-4 px-2">
+      <div className="shrink-0 pb-2 px-2">
         <Keyboard
           onKey={handleKey}
           letterStates={letterStates}
