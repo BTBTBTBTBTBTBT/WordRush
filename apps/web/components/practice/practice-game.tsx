@@ -14,12 +14,14 @@ import { recordGameResult } from '@/lib/stats-service';
 interface PracticeGameProps {
   mode: GameMode;
   onBack: () => void;
+  initialSeed?: string;
 }
 
-export function PracticeGame({ mode, onBack }: PracticeGameProps) {
+export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
   ensureDictionaryInitialized();
   const { profile } = useAuth();
-  const [state, dispatch] = useReducer(gameReducer, createInitialState(generateMatchSeed(), mode));
+  const [gameSeed] = useState(() => initialSeed || generateMatchSeed());
+  const [state, dispatch] = useReducer(gameReducer, createInitialState(gameSeed, mode));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
@@ -58,7 +60,7 @@ export function PracticeGame({ mode, onBack }: PracticeGameProps) {
     if (profile && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       const timeMs = Date.now() - state.startTime;
       const guesses = currentBoard.guesses.length;
-      recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs);
+      recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1);
     }
   }, [state.status]);
 

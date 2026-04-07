@@ -1,13 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { QuordleGame } from '@/components/quordle/quordle-game';
 import { initDictionary } from '@wordle-duel/core';
+import { generateDailySeed } from '@wordle-duel/core';
+import { getTodayUTC } from '@/lib/daily-service';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
 export default function QuordlePage() {
   const [ready, setReady] = useState(false);
+  const searchParams = useSearchParams();
+  const isDaily = searchParams.get('daily') === 'true';
 
   useEffect(() => {
     initDictionary(allowedWords, solutionWords);
@@ -16,5 +21,7 @@ export default function QuordlePage() {
 
   if (!ready) return null;
 
-  return <QuordleGame />;
+  const seed = isDaily ? generateDailySeed(getTodayUTC(), 'QUORDLE') : undefined;
+
+  return <QuordleGame initialSeed={seed} />;
 }

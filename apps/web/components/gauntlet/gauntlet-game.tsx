@@ -42,9 +42,13 @@ function pickBlackoutLetters(
   return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
-export function GauntletGame() {
+interface GauntletGameProps {
+  initialSeed?: string;
+}
+
+export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
   const { profile } = useAuth();
-  const [seed, setSeed] = useState(generateSeed);
+  const [seed, setSeed] = useState(() => initialSeed || generateSeed());
   const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
@@ -188,7 +192,8 @@ export function GauntletGame() {
     if (profile && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       const timeMs = Date.now() - state.startTime;
       const totalGuesses = state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
-      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs);
+      const boardsSolved = state.boards.filter(b => b.status === GameStatus.WON).length;
+      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, boardsSolved, 21);
     }
   }, [state.status]);
 

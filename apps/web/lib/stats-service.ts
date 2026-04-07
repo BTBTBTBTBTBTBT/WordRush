@@ -1,7 +1,11 @@
 import { supabase } from './supabase-client';
+import { isDailySeed } from '@wordle-duel/core';
+import { recordDailyResult, recordDailyVsResult, checkAndUpdateRecord } from './daily-service';
+import { checkAchievements } from './achievement-service';
 
 /**
  * Record a game result (solo or VS) — upserts user_stats and updates profile.
+ * If the seed is a daily seed, also records daily results and checks all-time records.
  */
 export async function recordGameResult(
   userId: string,
@@ -9,7 +13,10 @@ export async function recordGameResult(
   playType: 'solo' | 'vs',
   won: boolean,
   guessCount: number,
-  timeMs: number
+  timeMs: number,
+  seed?: string,
+  boardsSolved?: number,
+  totalBoards?: number,
 ) {
   const timeSeconds = Math.round(timeMs / 1000);
 
@@ -86,6 +93,68 @@ export async function recordGameResult(
       })
       .eq('id', userId);
   }
+
+  // --- Daily result recording ---
+  if (seed && isDailySeed(seed)) {
+    const boards = boardsSolved ?? (won ? (totalBoards ?? 1) : 0);
+    const total = totalBoards ?? 1;
+
+    if (playType === 'vs') {
+      await recordDailyVsResult(userId, gameMode, won);
+    } else {
+      await recordDailyResult(
+        userId, gameMode, playType, won, guessCount, timeSeconds, boards, total,
+      );
+    }
+  }
+
+  // --- All-time record checks ---
+  if (won && timeSeconds > 0) {
+    await checkAndUpdateRecord('fastest_win', gameMode, playType, userId, timeSeconds, false);
+  }
+  if (won && guessCount > 0) {
+    await checkAndUpdateRecord('fewest_guesses', gameMode, playType, userId, guessCount, false);
+  }
+
+  // Update last_played_at and login streak
+  const { data: streakProfile } = await (supabase as any)
+    .from('profiles')
+    .select('last_played_at, daily_login_streak')
+    .eq('id', userId)
+    .single();
+
+  if (streakProfile) {
+    const now = new Date();
+    const lastPlayed = streakProfile.last_played_at ? new Date(streakProfile.last_played_at) : null;
+    let newStreak = streakProfile.daily_login_streak || 0;
+
+    if (lastPlayed) {
+      const lastDay = lastPlayed.toISOString().slice(0, 10);
+      const today = now.toISOString().slice(0, 10);
+      const yesterday = new Date(now.getTime() - 86400000).toISOString().slice(0, 10);
+
+      if (lastDay === today) {
+        // Same day, no change
+      } else if (lastDay === yesterday) {
+        newStreak += 1;
+      } else {
+        newStreak = 1; // Reset streak
+      }
+    } else {
+      newStreak = 1;
+    }
+
+    await (supabase as any)
+      .from('profiles')
+      .update({
+        last_played_at: now.toISOString(),
+        daily_login_streak: newStreak,
+      })
+      .eq('id', userId);
+  }
+
+  // Check achievements (fire-and-forget, don't block game flow)
+  checkAchievements(userId, gameMode, playType, won, guessCount, timeSeconds, seed).catch(() => {});
 }
 
 /**

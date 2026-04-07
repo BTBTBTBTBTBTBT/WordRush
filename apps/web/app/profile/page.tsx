@@ -17,10 +17,14 @@ import {
   Check,
   X,
   Pencil,
+  Medal,
+  Crown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
+import { fetchUserMedals, type Medal as MedalType } from '@/lib/daily-service';
+import { fetchUserAchievements, ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import type { Database } from '@/lib/database.types';
 
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -41,6 +45,8 @@ export default function ProfilePage() {
   const { profile, loading, refreshProfile } = useAuth();
   const [stats, setStats] = useState<UserStats[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [medals, setMedals] = useState<MedalType[]>([]);
+  const [userAchievements, setUserAchievements] = useState<Set<string>>(new Set());
   const [loadingStats, setLoadingStats] = useState(true);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
 
@@ -55,6 +61,8 @@ export default function ProfilePage() {
     if (profile) {
       fetchStats();
       fetchMatches();
+      fetchMedals();
+      loadAchievements();
       setUsernameValue(profile.username);
     }
   }, [profile]);
@@ -79,6 +87,18 @@ export default function ProfilePage() {
     }
 
     setLoadingStats(false);
+  };
+
+  const fetchMedals = async () => {
+    if (!profile) return;
+    const data = await fetchUserMedals(profile.id, 10);
+    setMedals(data);
+  };
+
+  const loadAchievements = async () => {
+    if (!profile) return;
+    const data = await fetchUserAchievements(profile.id);
+    setUserAchievements(new Set(data.map(a => a.key)));
   };
 
   const fetchMatches = async () => {
@@ -331,6 +351,114 @@ export default function ProfilePage() {
             </div>
           </motion.div>
         </div>
+
+        {/* Medals Section */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border-2 border-white/20"
+        >
+          <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
+            <Medal className="w-6 h-6 text-yellow-400" />
+            Daily Medals
+          </h2>
+
+          {/* Medal Counters */}
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="bg-yellow-500/10 border border-yellow-400/20 rounded-xl p-4 text-center">
+              <Crown className="w-8 h-8 text-yellow-400 mx-auto mb-1" />
+              <div className="text-3xl font-black text-yellow-400">{(profile as any).gold_medals || 0}</div>
+              <div className="text-white/60 text-xs font-bold">Gold</div>
+            </div>
+            <div className="bg-slate-300/10 border border-slate-300/20 rounded-xl p-4 text-center">
+              <Medal className="w-8 h-8 text-slate-300 mx-auto mb-1" />
+              <div className="text-3xl font-black text-slate-300">{(profile as any).silver_medals || 0}</div>
+              <div className="text-white/60 text-xs font-bold">Silver</div>
+            </div>
+            <div className="bg-amber-600/10 border border-amber-600/20 rounded-xl p-4 text-center">
+              <Medal className="w-8 h-8 text-amber-600 mx-auto mb-1" />
+              <div className="text-3xl font-black text-amber-600">{(profile as any).bronze_medals || 0}</div>
+              <div className="text-white/60 text-xs font-bold">Bronze</div>
+            </div>
+          </div>
+
+          {/* Recent Medals */}
+          {medals.length > 0 ? (
+            <div className="space-y-2">
+              <h3 className="text-white/70 text-sm font-bold">Recent</h3>
+              {medals.slice(0, 5).map((medal) => (
+                <div
+                  key={medal.id}
+                  className="flex items-center gap-3 bg-white/5 rounded-lg p-3 border border-white/10"
+                >
+                  {medal.medal_type === 'gold' && <Crown className="w-5 h-5 text-yellow-400 flex-shrink-0" />}
+                  {medal.medal_type === 'silver' && <Medal className="w-5 h-5 text-slate-300 flex-shrink-0" />}
+                  {medal.medal_type === 'bronze' && <Medal className="w-5 h-5 text-amber-600 flex-shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white text-sm font-bold">
+                      {gameModeTitles[medal.game_mode] || medal.game_mode}
+                      <span className="text-white/40 ml-1">({medal.play_type})</span>
+                    </div>
+                  </div>
+                  <div className="text-white/40 text-xs flex-shrink-0">
+                    {new Date(medal.day + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-white/50 text-sm py-4">
+              Play daily challenges to earn medals!
+            </div>
+          )}
+
+          <div className="mt-4 text-center">
+            <Link href="/daily" className="text-amber-400 hover:text-amber-300 text-sm font-bold transition-colors">
+              View Daily Leaderboard →
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Achievements Section */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.48 }}
+          className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border-2 border-white/20"
+        >
+          <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
+            <Star className="w-6 h-6 text-purple-400" />
+            Achievements
+            <span className="text-sm font-bold text-white/40 ml-auto">
+              {userAchievements.size}/{ACHIEVEMENTS.length}
+            </span>
+          </h2>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {ACHIEVEMENTS.map((achievement) => {
+              const isUnlocked = userAchievements.has(achievement.key);
+              return (
+                <div
+                  key={achievement.key}
+                  className={`rounded-xl p-3 border text-center transition-all ${
+                    isUnlocked
+                      ? 'bg-purple-500/15 border-purple-400/30'
+                      : 'bg-white/3 border-white/5 opacity-40'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">
+                    {isUnlocked ? '✓' : '?'}
+                  </div>
+                  <div className={`text-xs font-bold ${isUnlocked ? 'text-white' : 'text-white/50'}`}>
+                    {achievement.name}
+                  </div>
+                  <div className="text-[10px] text-white/40 mt-0.5">{achievement.description}</div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
 
         {/* Stats Tabs */}
         <motion.div

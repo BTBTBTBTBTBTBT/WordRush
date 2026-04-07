@@ -115,7 +115,7 @@ export function VsGame({ mode }: VsGameProps) {
       if (profile && !resultRecordedRef.current) {
         resultRecordedRef.current = true;
         const won = data.winner === 'player';
-        recordGameResult(profile.id, mode, 'vs', won, data.playerGuesses, data.playerTime);
+        recordGameResult(profile.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seed);
       }
     });
 

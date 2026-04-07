@@ -10,11 +10,16 @@ import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 
-export function RescueGame() {
+interface RescueGameProps {
+  initialSeed?: string;
+}
+
+export function RescueGame({ initialSeed }: RescueGameProps = {}) {
   const { profile } = useAuth();
+  const [gameSeed] = useState(() => initialSeed || Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(Date.now().toString(), GameMode.RESCUE)
+    initializeGame(gameSeed, GameMode.RESCUE)
   );
 
   const [currentGuess, setCurrentGuess] = useState('');
@@ -36,7 +41,8 @@ export function RescueGame() {
     if (profile && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - state.startTime;
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
-      recordGameResult(profile.id, 'RESCUE', 'solo', state.status === 'WON', guesses, timeMs);
+      const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
+      recordGameResult(profile.id, 'RESCUE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
     }
   }, [state.status]);
 

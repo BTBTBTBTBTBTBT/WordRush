@@ -36,3 +36,31 @@ export function generateSolutionsFromSeed(seed: string, count: number): string[]
 export function generateMatchSeed(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
 }
+
+/**
+ * Generate a deterministic daily seed for a given date and game mode.
+ * Everyone playing the same mode on the same day gets the same seed.
+ */
+export function generateDailySeed(date: string, gameMode: string): string {
+  return `daily-${date}-${gameMode}`;
+}
+
+/**
+ * Check if a seed is a daily seed.
+ */
+export function isDailySeed(seed: string): boolean {
+  return seed.startsWith('daily-');
+}
+
+/**
+ * Extract the date from a daily seed string.
+ */
+export function getDailySeedDate(seed: string): string | null {
+  if (!isDailySeed(seed)) return null;
+  const parts = seed.split('-');
+  // daily-YYYY-MM-DD-MODE → date is parts[1]-parts[2]-parts[3]
+  if (parts.length >= 4) {
+    return `${parts[1]}-${parts[2]}-${parts[3]}`;
+  }
+  return null;
+}

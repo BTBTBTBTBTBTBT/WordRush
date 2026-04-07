@@ -10,11 +10,16 @@ import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 
-export function QuordleGame() {
+interface QuordleGameProps {
+  initialSeed?: string;
+}
+
+export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
   const { profile } = useAuth();
+  const [gameSeed] = useState(() => initialSeed || Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(Date.now().toString(), GameMode.QUORDLE)
+    initializeGame(gameSeed, GameMode.QUORDLE)
   );
 
   const [currentGuess, setCurrentGuess] = useState('');
@@ -36,7 +41,8 @@ export function QuordleGame() {
     if (profile && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - state.startTime;
       const guesses = state.boards[0]?.guesses.length || 0;
-      recordGameResult(profile.id, 'QUORDLE', 'solo', state.status === 'WON', guesses, timeMs);
+      const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
+      recordGameResult(profile.id, 'QUORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
     }
   }, [state.status]);
 

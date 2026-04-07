@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Trophy, Zap, Flame, Timer, Grid3x3, Grid2x2, User, LogOut, Swords } from 'lucide-react';
+import { Sparkles, Trophy, Zap, Flame, Timer, Grid3x3, Grid2x2, User, LogOut, Swords, Calendar, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -198,6 +198,59 @@ export default function HomePage() {
           </motion.div>
         )}
 
+        {/* Daily Challenge Card */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          className="mb-8"
+        >
+          <Link href="/daily">
+            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 border-2 border-amber-500/30 hover:border-amber-400/50 transition-all group cursor-pointer">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-amber-400" />
+                    <span className="text-white/60 text-sm font-medium">
+                      {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-black text-white">Daily Challenge</h3>
+                  <p className="text-white/60 text-sm">Same puzzle for everyone. Compete for the leaderboard!</p>
+                </div>
+                <motion.div
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <Trophy className="w-10 h-10 text-amber-400 group-hover:text-yellow-300 transition-colors" />
+                </motion.div>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
+
+        {/* Quick Links */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.38 }}
+          className="flex gap-3 mb-6"
+        >
+          <Link href="/daily" className="flex-1">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/15 transition-all text-center">
+              <Trophy className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
+              <span className="text-white/80 text-xs font-bold">Leaderboard</span>
+            </div>
+          </Link>
+          <Link href="/records" className="flex-1">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/15 transition-all text-center">
+              <Crown className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+              <span className="text-white/80 text-xs font-bold">Records</span>
+            </div>
+          </Link>
+        </motion.div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {gameModes.map((mode, index) => (
             <motion.div
@@ -231,7 +284,7 @@ export default function HomePage() {
                     </p>
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <Link href={mode.href} className="flex-1">
                       <button className="w-full py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-sm transition-colors backdrop-blur-sm border border-white/20">
                         Solo
@@ -243,6 +296,11 @@ export default function HomePage() {
                     >
                       VS
                     </button>
+                    <Link href={`${mode.href}?daily=true`} className="flex-1">
+                      <button className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500/30 to-orange-500/30 hover:from-amber-500/50 hover:to-orange-500/50 text-amber-300 font-bold text-sm transition-colors backdrop-blur-sm border border-amber-500/30">
+                        Daily
+                      </button>
+                    </Link>
                   </div>
                 </div>
               </div>

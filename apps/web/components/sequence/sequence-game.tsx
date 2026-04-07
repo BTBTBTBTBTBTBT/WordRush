@@ -12,11 +12,16 @@ import { recordGameResult } from '@/lib/stats-service';
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
 
-export function SequenceGame() {
+interface SequenceGameProps {
+  initialSeed?: string;
+}
+
+export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
   const { profile } = useAuth();
+  const [gameSeed] = useState(() => initialSeed || Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(Date.now().toString(), GameMode.SEQUENCE)
+    initializeGame(gameSeed, GameMode.SEQUENCE)
   );
 
   const [currentGuess, setCurrentGuess] = useState('');
@@ -52,7 +57,8 @@ export function SequenceGame() {
     if (profile && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - state.startTime;
       const guesses = state.boards[0]?.guesses.length || 0;
-      recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs);
+      const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
+      recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
     }
   }, [state.status]);
 

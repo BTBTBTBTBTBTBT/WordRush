@@ -20,6 +20,11 @@ export interface Database {
           total_losses: number
           current_streak: number
           best_streak: number
+          gold_medals: number
+          silver_medals: number
+          bronze_medals: number
+          last_played_at: string | null
+          daily_login_streak: number
           created_at: string
           updated_at: string
         }
@@ -33,6 +38,11 @@ export interface Database {
           total_losses?: number
           current_streak?: number
           best_streak?: number
+          gold_medals?: number
+          silver_medals?: number
+          bronze_medals?: number
+          last_played_at?: string | null
+          daily_login_streak?: number
           created_at?: string
           updated_at?: string
         }
@@ -46,6 +56,11 @@ export interface Database {
           total_losses?: number
           current_streak?: number
           best_streak?: number
+          gold_medals?: number
+          silver_medals?: number
+          bronze_medals?: number
+          last_played_at?: string | null
+          daily_login_streak?: number
           created_at?: string
           updated_at?: string
         }
@@ -142,6 +157,172 @@ export interface Database {
           started_at?: string
           completed_at?: string | null
           created_at?: string
+        }
+      }
+      daily_seeds: {
+        Row: {
+          id: string
+          day: string
+          game_mode: string
+          seed: string
+          solutions: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          day: string
+          game_mode: string
+          seed: string
+          solutions?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          day?: string
+          game_mode?: string
+          seed?: string
+          solutions?: Json
+          created_at?: string
+        }
+      }
+      daily_results: {
+        Row: {
+          id: string
+          user_id: string
+          day: string
+          game_mode: string
+          play_type: string
+          completed: boolean
+          guess_count: number
+          time_seconds: number
+          boards_solved: number
+          total_boards: number
+          composite_score: number
+          vs_wins: number
+          vs_losses: number
+          vs_games: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          day: string
+          game_mode: string
+          play_type?: string
+          completed?: boolean
+          guess_count?: number
+          time_seconds?: number
+          boards_solved?: number
+          total_boards?: number
+          composite_score?: number
+          vs_wins?: number
+          vs_losses?: number
+          vs_games?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          day?: string
+          game_mode?: string
+          play_type?: string
+          completed?: boolean
+          guess_count?: number
+          time_seconds?: number
+          boards_solved?: number
+          total_boards?: number
+          composite_score?: number
+          vs_wins?: number
+          vs_losses?: number
+          vs_games?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      medals: {
+        Row: {
+          id: string
+          user_id: string
+          day: string
+          game_mode: string
+          play_type: string
+          medal_type: string
+          composite_score: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          day: string
+          game_mode: string
+          play_type?: string
+          medal_type: string
+          composite_score: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          day?: string
+          game_mode?: string
+          play_type?: string
+          medal_type?: string
+          composite_score?: number
+          created_at?: string
+        }
+      }
+      all_time_records: {
+        Row: {
+          id: string
+          record_type: string
+          game_mode: string | null
+          play_type: string | null
+          holder_id: string
+          record_value: number
+          achieved_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          record_type: string
+          game_mode?: string | null
+          play_type?: string | null
+          holder_id: string
+          record_value: number
+          achieved_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          record_type?: string
+          game_mode?: string | null
+          play_type?: string | null
+          holder_id?: string
+          record_value?: number
+          achieved_at?: string
+          updated_at?: string
+        }
+      }
+      achievements: {
+        Row: {
+          id: string
+          user_id: string
+          achievement_key: string
+          unlocked_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          achievement_key: string
+          unlocked_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          achievement_key?: string
+          unlocked_at?: string
         }
       }
     }
