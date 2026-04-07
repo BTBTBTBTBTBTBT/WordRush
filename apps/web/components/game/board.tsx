@@ -2,6 +2,7 @@
 
 import { TileState, GuessResult } from '@wordle-duel/core';
 import { cn } from '@/lib/utils';
+import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
 
 interface BoardProps {
   guesses: string[];
@@ -74,12 +75,13 @@ interface TileProps {
 
 function Tile({ letter, state, darkMode, flipDelay }: TileProps) {
   const hasFlip = flipDelay !== undefined;
+  const { tileTheme } = useCosmetics();
 
   const colorClass = cn(
-    state === TileState.EMPTY && (darkMode ? 'border-white/30 bg-white/10 text-white' : 'border-border bg-background'),
-    state === TileState.ABSENT && 'border-zinc-600 bg-zinc-700 text-white',
-    state === TileState.PRESENT && 'border-yellow-600 bg-yellow-600 text-white',
-    state === TileState.CORRECT && 'border-green-600 bg-green-600 text-white'
+    state === TileState.EMPTY && (darkMode ? `border-white/30 ${tileTheme.empty} text-white` : `${tileTheme.border} ${tileTheme.empty}`),
+    state === TileState.ABSENT && `${tileTheme.border} ${tileTheme.absent} ${tileTheme.text}`,
+    state === TileState.PRESENT && `${tileTheme.present} ${tileTheme.text}`,
+    state === TileState.CORRECT && `${tileTheme.correct} ${tileTheme.text}`
   );
 
   return (

@@ -2,13 +2,23 @@
 
 import { motion } from 'framer-motion';
 import { Trophy, Star, Zap } from 'lucide-react';
-import { Confetti } from './confetti';
+import { Confetti, CONFETTI_PALETTES } from './confetti';
+import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
 
 interface VictoryAnimationProps {
   onComplete?: () => void;
 }
 
+const VARIANT_MAP: Record<string, string> = {
+  victory_fireworks: 'fireworks',
+  victory_rainbow: 'rainbow',
+};
+
 export function VictoryAnimation({ onComplete }: VictoryAnimationProps) {
+  const { victoryAnimationId } = useCosmetics();
+  const paletteKey = victoryAnimationId ? VARIANT_MAP[victoryAnimationId] : undefined;
+  const confettiColors = paletteKey ? CONFETTI_PALETTES[paletteKey] : undefined;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -17,7 +27,7 @@ export function VictoryAnimation({ onComplete }: VictoryAnimationProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onComplete}
     >
-      <Confetti />
+      <Confetti colors={confettiColors} />
 
       <motion.div
         initial={{ scale: 0, rotate: -180 }}

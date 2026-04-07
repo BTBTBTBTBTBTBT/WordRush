@@ -2,6 +2,18 @@
 
 import { cn } from '@/lib/utils';
 import { Delete } from 'lucide-react';
+import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
+
+const KEYBOARD_SKINS: Record<string, { base: string; special: string }> = {
+  kb_galaxy: {
+    base: 'bg-purple-900 border-purple-600 text-purple-100',
+    special: 'bg-purple-800 border-purple-600 text-purple-100',
+  },
+  kb_wooden: {
+    base: 'bg-amber-900 border-amber-700 text-amber-100',
+    special: 'bg-amber-800 border-amber-700 text-amber-100',
+  },
+};
 
 const ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -88,6 +100,8 @@ function QuadrantKey({
 
 export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedOutLetters }: KeyboardProps) {
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
+  const { keyboardSkinId } = useCosmetics();
+  const skin = keyboardSkinId ? KEYBOARD_SKINS[keyboardSkinId] : null;
 
   return (
     <div className="flex flex-col gap-1.5 max-w-lg mx-auto">
@@ -106,7 +120,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   disabled={isBlackedOut}
                   className={cn(
                     'h-11 sm:h-14 px-3 sm:px-4 rounded-md font-bold text-sm sm:text-base',
-                    'bg-zinc-700 text-white border border-zinc-600 transition-all duration-300 select-none',
+                    skin ? `${skin.special} border transition-all duration-300 select-none` : 'bg-zinc-700 text-white border border-zinc-600 transition-all duration-300 select-none',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
                 >
@@ -151,7 +165,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   state === 'correct' && 'bg-green-600 text-white border-green-600',
                   state === 'present' && 'bg-yellow-600 text-white border-yellow-600',
                   state === 'absent' && 'bg-zinc-700 text-white border-zinc-600',
-                  !state && 'bg-zinc-800 text-zinc-300 border-zinc-600'
+                  !state && (skin ? skin.base : 'bg-zinc-800 text-zinc-300 border-zinc-600')
                 )}
               >
                 {key}

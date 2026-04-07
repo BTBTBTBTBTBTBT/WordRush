@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Trophy, Zap, Flame, Timer, Grid3x3, Grid2x2, User, LogOut, Swords, Calendar, Crown } from 'lucide-react';
+import { Sparkles, Trophy, Zap, Flame, Timer, Grid3x3, Grid2x2, User, LogOut, Swords, Calendar, Crown, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { Button } from '@/components/ui/button';
+import { CoinBalance } from '@/components/ui/coin-balance';
 import { initDictionary } from '@wordle-duel/core';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
@@ -111,12 +112,15 @@ export default function HomePage() {
             className="flex items-center gap-2"
           >
             {profile && (
-              <Link href="/profile">
-                <Button className="bg-white/10 backdrop-blur-sm border-2 border-white/20 hover:bg-white/20 text-white">
-                  <User className="w-4 h-4 mr-2" />
-                  {profile.username}
-                </Button>
-              </Link>
+              <>
+                <Link href="/profile">
+                  <Button className="bg-white/10 backdrop-blur-sm border-2 border-white/20 hover:bg-white/20 text-white">
+                    <User className="w-4 h-4 mr-2" />
+                    {profile.username}
+                  </Button>
+                </Link>
+                <CoinBalance coins={profile.coins ?? 0} />
+              </>
             )}
           </motion.div>
 
@@ -247,6 +251,12 @@ export default function HomePage() {
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/15 transition-all text-center">
               <Crown className="w-5 h-5 text-purple-400 mx-auto mb-1" />
               <span className="text-white/80 text-xs font-bold">Records</span>
+            </div>
+          </Link>
+          <Link href="/shop" className="flex-1">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/15 transition-all text-center">
+              <ShoppingBag className="w-5 h-5 text-pink-400 mx-auto mb-1" />
+              <span className="text-white/80 text-xs font-bold">Shop</span>
             </div>
           </Link>
         </motion.div>

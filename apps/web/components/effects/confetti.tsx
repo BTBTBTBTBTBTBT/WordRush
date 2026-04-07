@@ -11,25 +11,32 @@ interface ConfettiPiece {
   duration: number;
 }
 
-export function Confetti() {
+const DEFAULT_COLORS = [
+  '#FFD700',
+  '#FF6B9D',
+  '#C084FC',
+  '#60A5FA',
+  '#34D399',
+  '#FBBF24',
+  '#F97316',
+  '#EC4899',
+];
+
+export const CONFETTI_PALETTES: Record<string, string[]> = {
+  fireworks: ['#FF0000', '#FFD700', '#FF6B00', '#FFFFFF', '#FF4500', '#FFA500'],
+  rainbow: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'],
+};
+
+export function Confetti({ colors }: { colors?: string[] }) {
   const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
 
   useEffect(() => {
-    const colors = [
-      '#FFD700',
-      '#FF6B9D',
-      '#C084FC',
-      '#60A5FA',
-      '#34D399',
-      '#FBBF24',
-      '#F97316',
-      '#EC4899',
-    ];
+    const palette = colors || DEFAULT_COLORS;
 
     const newPieces = Array.from({ length: 50 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: palette[Math.floor(Math.random() * palette.length)],
       delay: Math.random() * 0.5,
       duration: 2 + Math.random() * 2,
     }));

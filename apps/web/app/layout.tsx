@@ -3,6 +3,9 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
+import { StreakShieldProvider } from '@/components/providers/streak-shield-provider';
+import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
+import { CosmeticProvider } from '@/lib/cosmetics/cosmetic-context';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +25,14 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <CosmeticProvider>
+              <StreakShieldProvider>
+                {children}
+                <ProPromptModal />
+              </StreakShieldProvider>
+            </CosmeticProvider>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

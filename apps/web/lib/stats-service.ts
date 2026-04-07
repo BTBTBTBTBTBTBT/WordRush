@@ -2,6 +2,8 @@ import { supabase } from './supabase-client';
 import { isDailySeed } from '@wordle-duel/core';
 import { recordDailyResult, recordDailyVsResult, checkAndUpdateRecord } from './daily-service';
 import { checkAchievements } from './achievement-service';
+import { awardGameCoins, awardStreakBonus } from './coin-service';
+import { grantFreeShield } from './shield-service';
 
 /**
  * Record a game result (solo or VS) — upserts user_stats and updates profile.
@@ -92,6 +94,10 @@ export async function recordGameResult(
         level: newLevel,
       })
       .eq('id', userId);
+
+    // Award SpellCoins for game result
+    const isDailyGame = seed ? isDailySeed(seed) : false;
+    awardGameCoins(userId, won, isDailyGame).catch(() => {});
   }
 
   // --- Daily result recording ---
@@ -137,6 +143,11 @@ export async function recordGameResult(
         // Same day, no change
       } else if (lastDay === yesterday) {
         newStreak += 1;
+        // Award streak bonus coins + free shield every 7 days
+        if (newStreak % 7 === 0) {
+          awardStreakBonus(userId, newStreak).catch(() => {});
+          grantFreeShield(userId).catch(() => {});
+        }
       } else {
         newStreak = 1; // Reset streak
       }

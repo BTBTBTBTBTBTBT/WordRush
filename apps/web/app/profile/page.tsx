@@ -22,7 +22,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ProBadge } from '@/components/ui/pro-badge';
+import { CoinBalance } from '@/components/ui/coin-balance';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
+import { ProStats } from '@/components/profile/pro-stats';
 import { fetchUserMedals, type Medal as MedalType } from '@/lib/daily-service';
 import { fetchUserAchievements, ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import type { Database } from '@/lib/database.types';
@@ -239,6 +242,7 @@ export default function ProfilePage() {
                 <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-lg">
                   {profile.username}
                 </h1>
+                {(profile as any).is_pro && <ProBadge size="md" />}
                 <Pencil className="w-5 h-5 text-white/40 group-hover:text-white/80 transition-colors" />
               </button>
             )}
@@ -261,6 +265,22 @@ export default function ProfilePage() {
                 <p className="text-white/50 text-xs mt-1">{xpToNextLevel} XP to next level</p>
               </div>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <CoinBalance coins={(profile as any).coins ?? 0} />
+            <Link href="/shop">
+              <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-sm">
+                Shop
+              </Button>
+            </Link>
+            {!(profile as any).is_pro && (
+              <Link href="/pro">
+                <Button className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-bold text-sm">
+                  Go Pro
+                </Button>
+              </Link>
+            )}
           </div>
 
           <Link href="/">
@@ -458,6 +478,15 @@ export default function ProfilePage() {
               );
             })}
           </div>
+        </motion.div>
+
+        {/* Extended Stats (Pro) */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.49 }}
+        >
+          <ProStats userId={profile.id} isPro={(profile as any).is_pro ?? false} />
         </motion.div>
 
         {/* Stats Tabs */}
