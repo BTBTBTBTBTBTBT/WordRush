@@ -153,7 +153,7 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-orange-900 via-red-800 to-pink-700 relative">
+    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#0d0a1a' }}>
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
       </AnimatePresence>

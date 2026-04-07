@@ -2,9 +2,6 @@
 
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/lib/auth-context';
 import { Sparkles, Mail, Lock, User } from 'lucide-react';
 
@@ -74,11 +71,17 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-purple-900/95 via-pink-900/95 to-orange-900/95 border-2 border-purple-400/30 backdrop-blur-xl">
+      <DialogContent
+        className="sm:max-w-md border"
+        style={{
+          background: '#13102a',
+          borderColor: 'rgba(167,139,250,0.3)',
+        }}
+      >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <Sparkles className="w-6 h-6 text-yellow-400" />
-            <span className="bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Sparkles className="w-5 h-5" style={{ color: '#fbbf24' }} />
+            <span className="font-black text-white">
               {mode === 'signin' ? 'Welcome Back!' : 'Join the Fun!'}
             </span>
           </DialogTitle>
@@ -86,91 +89,107 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
         <div className="space-y-4">
           {/* Google Sign-In */}
-          <Button
+          <button
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full bg-white hover:bg-gray-100 text-gray-900 font-bold text-base py-6 flex items-center gap-3"
+            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-gray-900 font-extrabold text-sm hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
             <GoogleIcon className="w-5 h-5" />
             Continue with Google
-          </Button>
+          </button>
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-white/20" />
-            <span className="text-white/50 text-xs font-medium">or</span>
-            <div className="flex-1 h-px bg-white/20" />
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
+            <span className="text-[10px] font-extrabold" style={{ color: 'rgba(255,255,255,0.3)' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
           </div>
 
           {/* Email/Password Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'signup' && (
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-white flex items-center gap-2">
-                  <User className="w-4 h-4" />
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  <User className="w-3.5 h-3.5" />
                   Username
-                </Label>
-                <Input
-                  id="username"
+                </label>
+                <input
                   type="text"
-                  placeholder="Choose a cool username"
+                  placeholder="Choose a username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   minLength={3}
                   maxLength={20}
-                  className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                  className="w-full px-3 py-2.5 rounded-xl text-white text-sm font-bold outline-none"
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                  }}
                 />
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-white flex items-center gap-2">
-                <Mail className="w-4 h-4" />
+            <div className="space-y-1.5">
+              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                <Mail className="w-3.5 h-3.5" />
                 Email
-              </Label>
-              <Input
-                id="email"
+              </label>
+              <input
                 type="email"
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                className="w-full px-3 py-2.5 rounded-xl text-white text-sm font-bold outline-none"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-white flex items-center gap-2">
-                <Lock className="w-4 h-4" />
+            <div className="space-y-1.5">
+              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                <Lock className="w-3.5 h-3.5" />
                 Password
-              </Label>
-              <Input
-                id="password"
+              </label>
+              <input
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                className="w-full px-3 py-2.5 rounded-xl text-white text-sm font-bold outline-none"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
               />
             </div>
 
             {error && (
-              <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm">
+              <div
+                className="p-3 rounded-xl text-xs font-bold"
+                style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}
+              >
                 {error}
               </div>
             )}
 
-            <Button
+            <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 hover:from-yellow-500 hover:via-pink-600 hover:to-purple-600 text-white font-bold text-lg py-6"
+              className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
+              style={{
+                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                boxShadow: '0 4px 0 #4c1d95',
+              }}
             >
               {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
-            </Button>
+            </button>
 
             <div className="text-center">
               <button
@@ -179,7 +198,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   setMode(mode === 'signin' ? 'signup' : 'signin');
                   setError('');
                 }}
-                className="text-sm text-white/70 hover:text-white transition-colors"
+                className="text-xs font-bold transition-colors"
+                style={{ color: 'rgba(255,255,255,0.4)' }}
               >
                 {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
               </button>

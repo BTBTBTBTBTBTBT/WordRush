@@ -25,9 +25,7 @@ type LetterState = 'correct' | 'present' | 'absent';
 
 interface KeyboardProps {
   onKey: (key: string) => void;
-  /** Single combined letter states (used for single-board modes and sequence) */
   letterStates?: Record<string, LetterState>;
-  /** Per-board letter states for quadrant display (used for multi-board modes) */
   boardLetterStates?: Record<string, LetterState>[];
   blackedOutLetters?: Set<string>;
 }
@@ -35,7 +33,7 @@ interface KeyboardProps {
 const QUADRANT_COLORS: Record<string, string> = {
   correct: 'bg-green-500',
   present: 'bg-yellow-500',
-  absent: 'bg-zinc-600',
+  absent: 'bg-zinc-700',
 };
 
 function QuadrantKey({
@@ -48,11 +46,9 @@ function QuadrantKey({
   onClick: () => void;
 }) {
   const count = boardStates.length;
-  // For 8 boards: 4x2 grid, for 4 boards: 2x2 grid
   const cols = count <= 4 ? 2 : 4;
   const rows = Math.ceil(count / cols);
 
-  // Determine overall key background: if every board with a state shows absent, key is dark
   const allStates = boardStates.map(s => s[letter]).filter(Boolean);
   const hasAny = allStates.length > 0;
   const allAbsent = hasAny && allStates.every(s => s === 'absent');
@@ -61,16 +57,18 @@ function QuadrantKey({
     <button
       onClick={onClick}
       className={cn(
-        'relative h-11 sm:h-14 w-8 sm:w-10 rounded-md font-bold text-sm sm:text-base overflow-hidden border',
+        'relative h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base overflow-hidden',
         'transition-all duration-300 select-none',
         allAbsent
-          ? 'border-zinc-700 text-zinc-400'
+          ? 'text-zinc-500'
           : hasAny
-          ? 'border-zinc-600 text-white'
-          : 'border-zinc-600 bg-zinc-800 text-zinc-300'
+          ? 'text-white'
+          : 'text-zinc-400'
       )}
+      style={{
+        border: '1px solid rgba(255,255,255,0.08)',
+      }}
     >
-      {/* Quadrant grid background */}
       <div
         className="absolute inset-0 grid"
         style={{
@@ -83,14 +81,12 @@ function QuadrantKey({
           return (
             <div
               key={i}
-              className={cn(
-                state ? QUADRANT_COLORS[state] : 'bg-zinc-800',
-              )}
+              className={cn(state ? QUADRANT_COLORS[state] : '')}
+              style={!state ? { backgroundColor: '#1a1730' } : undefined}
             />
           );
         })}
       </div>
-      {/* Letter overlay */}
       <span className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
         {letter}
       </span>
@@ -111,7 +107,6 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
             const isSpecial = key === 'ENTER' || key === 'BACK';
             const isBlackedOut = blackedOutLetters?.has(key);
 
-            // Special keys (ENTER, BACK) — no quadrants
             if (isSpecial) {
               return (
                 <button
@@ -119,10 +114,15 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   onClick={() => !isBlackedOut && onKey(key)}
                   disabled={isBlackedOut}
                   className={cn(
-                    'h-11 sm:h-14 px-3 sm:px-4 rounded-md font-bold text-sm sm:text-base',
-                    skin ? `${skin.special} border transition-all duration-300 select-none` : 'bg-zinc-700 text-white border border-zinc-600 transition-all duration-300 select-none',
+                    'h-11 sm:h-14 px-3 sm:px-4 rounded-md font-black text-sm sm:text-base',
+                    'transition-all duration-300 select-none',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
+                  style={{
+                    backgroundColor: skin ? undefined : '#1a1730',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: '#fff',
+                  }}
                 >
                   {key === 'BACK' ? <Delete className="h-5 w-5" /> : key}
                 </button>
@@ -134,14 +134,18 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 <button
                   key={key}
                   disabled
-                  className="h-11 sm:h-14 w-8 sm:w-10 rounded-md font-bold text-sm sm:text-base bg-red-900/80 text-red-900/80 border border-red-900/60 opacity-40 cursor-not-allowed animate-pulse select-none"
+                  className="h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base opacity-40 cursor-not-allowed animate-pulse select-none"
+                  style={{
+                    backgroundColor: 'rgba(127,29,29,0.5)',
+                    border: '1px solid rgba(127,29,29,0.4)',
+                    color: 'rgba(127,29,29,0.6)',
+                  }}
                 >
                   ?
                 </button>
               );
             }
 
-            // Quadrant mode for multi-board
             if (useQuadrants) {
               return (
                 <QuadrantKey
@@ -153,20 +157,23 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
               );
             }
 
-            // Single-board mode
             const state = letterStates[key];
             return (
               <button
                 key={key}
                 onClick={() => onKey(key)}
                 className={cn(
-                  'h-11 sm:h-14 w-8 sm:w-10 rounded-md font-bold text-sm sm:text-base',
-                  'border transition-all duration-300 select-none',
+                  'h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base',
+                  'transition-all duration-300 select-none',
                   state === 'correct' && 'bg-green-600 text-white border-green-600',
                   state === 'present' && 'bg-yellow-600 text-white border-yellow-600',
-                  state === 'absent' && 'bg-zinc-700 text-white border-zinc-600',
-                  !state && (skin ? skin.base : 'bg-zinc-800 text-zinc-300 border-zinc-600')
+                  state === 'absent' && 'text-zinc-500',
                 )}
+                style={{
+                  backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#1a1730' : (skin ? undefined : '#1a1730'),
+                  border: state ? undefined : '1px solid rgba(255,255,255,0.08)',
+                  color: !state ? (skin ? undefined : 'rgba(255,255,255,0.7)') : undefined,
+                }}
               >
                 {key}
               </button>

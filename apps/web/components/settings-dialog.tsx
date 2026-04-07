@@ -1,9 +1,7 @@
 'use client';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
 import { useTheme, Theme } from '@/lib/theme-context';
 
 interface SettingsDialogProps {
@@ -22,45 +20,51 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md border"
+        style={{ background: '#13102a', borderColor: 'rgba(255,255,255,0.08)' }}
+      >
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>Customize your SpellStrike experience</DialogDescription>
+          <DialogTitle className="text-white font-black">Settings</DialogTitle>
+          <DialogDescription style={{ color: 'rgba(255,255,255,0.4)' }} className="text-xs font-bold">
+            Customize your SpellStrike experience
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">Theme</Label>
-            <div className="space-y-2">
+          <div className="space-y-2">
+            <div className="section-header">THEME</div>
+            <div className="space-y-1.5">
               {themes.map((t) => (
-                <Button
+                <button
                   key={t.value}
-                  variant={theme === t.value ? 'default' : 'outline'}
-                  className="w-full justify-start"
+                  className="w-full text-left p-3 rounded-xl transition-all"
                   onClick={() => setTheme(t.value)}
+                  style={{
+                    background: theme === t.value ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.04)',
+                    border: theme === t.value ? '1px solid rgba(167,139,250,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                  }}
                 >
-                  <div className="text-left">
-                    <div className="font-semibold">{t.label}</div>
-                    <div className="text-sm text-muted-foreground">{t.description}</div>
-                  </div>
-                </Button>
+                  <div className="text-white font-extrabold text-xs">{t.label}</div>
+                  <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>{t.description}</div>
+                </button>
               ))}
             </div>
           </div>
 
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Accessibility</Label>
+          <div className="space-y-3">
+            <div className="section-header">ACCESSIBILITY</div>
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Colorblind Mode</Label>
-                <div className="text-sm text-muted-foreground">High contrast colors</div>
+              <div>
+                <div className="text-white text-xs font-extrabold">Colorblind Mode</div>
+                <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>High contrast colors</div>
               </div>
               <Switch checked={colorblindMode} onCheckedChange={setColorblindMode} />
             </div>
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Reduced Motion</Label>
-                <div className="text-sm text-muted-foreground">Minimize animations</div>
+              <div>
+                <div className="text-white text-xs font-extrabold">Reduced Motion</div>
+                <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>Minimize animations</div>
               </div>
               <Switch checked={reducedMotion} onCheckedChange={setReducedMotion} />
             </div>

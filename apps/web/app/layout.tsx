@@ -1,6 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
 import { StreakShieldProvider } from '@/components/providers/streak-shield-provider';
@@ -9,7 +9,11 @@ import { CosmeticProvider } from '@/lib/cosmetics/cosmetic-context';
 
 export const dynamic = 'force-dynamic';
 
-const inter = Inter({ subsets: ['latin'] });
+const nunito = Nunito({
+  subsets: ['latin'],
+  weight: ['700', '800', '900'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'SpellStrike - Epic Word Battles',
@@ -23,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={nunito.className} style={{ backgroundColor: '#0d0a1a' }}>
         <AuthProvider>
           <ThemeProvider>
             <CosmeticProvider>

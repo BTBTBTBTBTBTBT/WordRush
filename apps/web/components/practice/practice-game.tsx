@@ -114,14 +114,14 @@ export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
   const maxGuesses = currentBoard.maxGuesses;
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-blue-900 via-cyan-800 to-teal-700 relative">
+    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#0d0a1a' }}>
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
       </AnimatePresence>
 
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
-        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-teal-400">
+        <h1 className="text-3xl font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>
           CLASSIC
         </h1>
         <div className="flex justify-center gap-3 mt-1">

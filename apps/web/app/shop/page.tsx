@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ShoppingBag, ArrowLeft, Coins, Palette, Keyboard, Sparkles } from 'lucide-react';
-import Link from 'next/link';
+import { Coins, Palette, Keyboard, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { CoinBalance } from '@/components/ui/coin-balance';
+import { AppHeader } from '@/components/ui/app-header';
+import { BottomNav } from '@/components/ui/bottom-nav';
 import { CosmeticCard } from '@/components/shop/cosmetic-card';
 import { COSMETICS_CATALOG, CosmeticCategory } from '@/lib/cosmetics/catalog';
 import { purchaseCosmeticWithCoins, equipCosmetic, unequipCosmetic } from '@/lib/cosmetics/cosmetic-service';
@@ -75,104 +74,90 @@ export default function ShopPage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-500 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+      <AppHeader />
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Link>
-          {profile && <CoinBalance coins={coins} />}
+      <div className="max-w-lg mx-auto px-4">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-black text-white">Shop</h1>
         </div>
 
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-center mb-8"
-        >
-          <ShoppingBag className="w-12 h-12 text-pink-400 mx-auto mb-3" />
-          <h1 className="text-4xl font-black text-white">Shop</h1>
-        </motion.div>
-
         {/* Tabs */}
-        <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-white/20 border-2 border-white/30 text-white'
-                  : 'bg-white/5 border-2 border-white/10 text-white/60 hover:bg-white/10'
-              }`}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all"
+              style={{
+                background: activeTab === tab.id ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                border: activeTab === tab.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                color: activeTab === tab.id ? '#fff' : 'rgba(255,255,255,0.4)',
+              }}
             >
-              <tab.icon className="w-4 h-4" />
+              <tab.icon className="w-3.5 h-3.5" />
               {tab.label}
             </button>
           ))}
         </div>
 
         {!user ? (
-          <div className="text-center text-white/60 py-12">
+          <div className="text-center py-12" style={{ color: 'rgba(255,255,255,0.4)' }}>
             Sign in to access the shop.
           </div>
         ) : activeTab === 'coins' ? (
-          /* Coin Packs */
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {COIN_PACKS.map(pack => (
-              <motion.div
+              <div
                 key={pack.id}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className={`bg-white/5 backdrop-blur-sm rounded-2xl p-6 border text-center ${
-                  pack.popular ? 'border-yellow-400/40' : 'border-white/10'
-                }`}
+                className="p-5 text-center"
+                style={{
+                  background: '#13102a',
+                  border: pack.popular ? '1px solid rgba(251,191,36,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '16px',
+                }}
               >
                 {pack.popular && (
-                  <div className="text-[10px] font-black text-yellow-400 uppercase tracking-wider mb-2">Most Popular</div>
+                  <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: '#fbbf24' }}>
+                    Most Popular
+                  </div>
                 )}
-                <Coins className="w-10 h-10 text-yellow-400 mx-auto mb-2" />
+                <Coins className="w-10 h-10 mx-auto mb-2" style={{ color: '#fbbf24' }} />
                 <div className="text-2xl font-black text-white mb-1">{pack.coins.toLocaleString()}</div>
-                <div className="text-white/50 text-sm mb-4">Coins</div>
+                <div className="text-xs font-bold mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>Coins</div>
                 <button
                   onClick={() => handleBuyCoinPack(pack.id)}
                   disabled={buyingPack !== null}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold text-sm transition-colors disabled:opacity-50"
+                  className="w-full py-2.5 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    boxShadow: '0 4px 0 #92400e',
+                  }}
                 >
                   {buyingPack === pack.id ? 'Processing...' : `$${pack.price.toFixed(2)}`}
                 </button>
-              </motion.div>
+              </div>
             ))}
           </div>
         ) : (
-          /* Cosmetic Items */
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {filteredCosmetics.map((item, i) => (
-              <motion.div
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {filteredCosmetics.map((item) => (
+              <CosmeticCard
                 key={item.id}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <CosmeticCard
-                  item={item}
-                  owned={owned.includes(item.id)}
-                  equipped={equipped[item.category] === item.id}
-                  coins={coins}
-                  onBuyWithCoins={handleBuyCosmetic}
-                  onEquip={handleEquip}
-                  onUnequip={handleUnequip}
-                />
-              </motion.div>
+                item={item}
+                owned={owned.includes(item.id)}
+                equipped={equipped[item.category] === item.id}
+                coins={coins}
+                onBuyWithCoins={handleBuyCosmetic}
+                onEquip={handleEquip}
+                onUnequip={handleUnequip}
+              />
             ))}
           </div>
         )}
       </div>
+
+      <BottomNav />
     </div>
   );
 }

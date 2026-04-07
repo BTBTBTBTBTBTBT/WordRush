@@ -92,7 +92,7 @@ export function RescueGame({ initialSeed }: RescueGameProps = {}) {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-gradient-to-br from-indigo-900 via-purple-800 to-fuchsia-700 relative">
+    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#0d0a1a' }}>
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
       </AnimatePresence>

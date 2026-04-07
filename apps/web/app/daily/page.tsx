@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Clock, Medal, Crown, ArrowLeft, Users, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { Trophy, Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Swords } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/auth/auth-modal';
+import { AppHeader } from '@/components/ui/app-header';
+import { BottomNav } from '@/components/ui/bottom-nav';
 import {
   fetchDailyLeaderboard,
   getUserDailyRank,
@@ -46,20 +48,18 @@ function CountdownTimer() {
   const secs = secondsLeft % 60;
 
   return (
-    <div className="flex items-center gap-1 text-white/60 text-sm font-mono">
-      <Clock className="w-3.5 h-3.5" />
-      <span>
-        {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
-      </span>
-    </div>
+    <span className="font-mono text-xs font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+      <Clock className="w-3 h-3 inline mr-1" />
+      {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
+    </span>
   );
 }
 
 function MedalIcon({ rank }: { rank: number }) {
-  if (rank === 1) return <Crown className="w-5 h-5 text-yellow-400" />;
-  if (rank === 2) return <Medal className="w-5 h-5 text-slate-300" />;
-  if (rank === 3) return <Medal className="w-5 h-5 text-amber-600" />;
-  return <span className="text-white/40 text-sm font-bold w-5 text-center">{rank}</span>;
+  if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#fbbf24' }} />;
+  if (rank === 2) return <Medal className="w-5 h-5" style={{ color: '#cbd5e1' }} />;
+  if (rank === 3) return <Medal className="w-5 h-5" style={{ color: '#d97706' }} />;
+  return <span className="text-xs font-black w-5 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>{rank}</span>;
 }
 
 export default function DailyPage() {
@@ -112,49 +112,38 @@ export default function DailyPage() {
       setAuthModalOpen(true);
       return;
     }
-    // Navigate to game with daily seed param
     router.push(`${modeConfig.href}?daily=true`);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-500 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+      <AppHeader />
 
-      <div className="relative z-10 max-w-2xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="text-white/60 hover:text-white transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <div className="text-center">
-            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
-              DAILY CHALLENGE
-            </h1>
-            <div className="flex items-center justify-center gap-3 mt-1">
-              <div className="flex items-center gap-1 text-white/60 text-sm">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>{new Date(today + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-              </div>
-              <CountdownTimer />
-            </div>
+      <div className="max-w-lg mx-auto px-4">
+        {/* Title */}
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-black text-white">Daily Challenge</h1>
+          <div className="flex items-center justify-center gap-3 mt-1">
+            <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <Calendar className="w-3 h-3 inline mr-1" />
+              {new Date(today + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+            <CountdownTimer />
           </div>
-          <div className="w-6" />
         </div>
 
         {/* Mode Tabs */}
-        <div className="flex gap-1 overflow-x-auto pb-2 mb-4 scrollbar-hide">
+        <div className="flex gap-1 overflow-x-auto pb-2 mb-3">
           {GAME_MODES.map((mode) => (
             <button
               key={mode.id}
               onClick={() => setSelectedMode(mode.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
-                selectedMode === mode.id
-                  ? 'bg-white/20 text-white border border-white/30'
-                  : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
-              }`}
+              className="px-3 py-1.5 rounded-lg text-[10px] font-extrabold whitespace-nowrap transition-all"
+              style={{
+                background: selectedMode === mode.id ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                border: selectedMode === mode.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                color: selectedMode === mode.id ? '#fff' : 'rgba(255,255,255,0.4)',
+              }}
             >
               {mode.label}
             </button>
@@ -167,89 +156,102 @@ export default function DailyPage() {
             <button
               key={type}
               onClick={() => setPlayType(type)}
-              className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${
-                playType === type
-                  ? 'bg-white/20 text-white border border-white/30'
-                  : 'bg-white/5 text-white/40 border border-white/10 hover:bg-white/10'
-              }`}
+              className="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all"
+              style={{
+                background: playType === type ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                border: playType === type ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                color: playType === type ? '#fff' : 'rgba(255,255,255,0.3)',
+              }}
             >
               {type === 'solo' ? 'Solo' : 'VS'}
             </button>
           ))}
         </div>
 
-        {/* Player Count + Play CTA */}
-        <div className="flex items-center justify-between bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 mb-4">
-          <div className="flex items-center gap-2 text-white/70 text-sm">
-            <Users className="w-4 h-4" />
+        {/* Play CTA + Player Count */}
+        <div
+          className="flex items-center justify-between p-3.5 mb-4"
+          style={{
+            background: '#13102a',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px',
+          }}
+        >
+          <div className="flex items-center gap-2 text-xs font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <Users className="w-3.5 h-3.5" />
             <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={handlePlayDaily}
-            className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-lg shadow-lg hover:shadow-amber-500/50 transition-shadow text-sm"
+            className="btn-3d px-4 py-2 rounded-lg text-white font-black text-xs"
+            style={{
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              boxShadow: '0 3px 0 #92400e',
+            }}
           >
-            Play Today's {modeConfig.label}
-          </motion.button>
+            Play {modeConfig.label}
+          </button>
         </div>
 
         {/* User Rank */}
         {userRank && (
-          <motion.div
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-xl p-3 mb-4 text-center"
+          <div
+            className="text-center p-3 mb-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.12), rgba(234,88,12,0.08))',
+              border: '1px solid rgba(251,191,36,0.25)',
+              borderRadius: '16px',
+            }}
           >
-            <span className="text-white/80 text-sm">You're ranked </span>
-            <span className="text-yellow-400 font-black text-lg">#{userRank.rank}</span>
-            <span className="text-white/80 text-sm"> of {userRank.totalPlayers}</span>
-          </motion.div>
+            <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>You're ranked </span>
+            <span className="font-black text-lg" style={{ color: '#fbbf24' }}>#{userRank.rank}</span>
+            <span className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}> of {userRank.totalPlayers}</span>
+          </div>
         )}
 
         {/* Leaderboard */}
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden">
-          <div className="p-3 border-b border-white/10">
-            <h2 className="text-white font-bold text-sm flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-yellow-400" />
-              Today's Leaderboard
-            </h2>
-          </div>
-
+        <div className="section-header mb-2">LEADERBOARD</div>
+        <div
+          className="overflow-hidden"
+          style={{
+            background: '#13102a',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px',
+          }}
+        >
           {loading ? (
-            <div className="p-8 text-center text-white/40 text-sm">Loading...</div>
+            <div className="p-8 text-center text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>Loading...</div>
           ) : leaderboard.length === 0 ? (
-            <div className="p-8 text-center text-white/40 text-sm">No results yet. Be the first!</div>
+            <div className="p-8 text-center text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              No results yet. Be the first!
+            </div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div>
               {leaderboard.map((entry, index) => {
                 const rank = index + 1;
                 const isCurrentUser = user && entry.user_id === user.id;
                 return (
-                  <motion.div
+                  <div
                     key={entry.user_id}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: index * 0.03 }}
-                    className={`flex items-center gap-3 px-4 py-3 ${
-                      isCurrentUser ? 'bg-yellow-500/10' : ''
-                    } ${rank <= 3 ? 'bg-white/5' : ''}`}
+                    className="flex items-center gap-3 px-4 py-3"
+                    style={{
+                      background: isCurrentUser ? 'rgba(251,191,36,0.08)' : rank <= 3 ? 'rgba(255,255,255,0.03)' : 'transparent',
+                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                    }}
                   >
                     <MedalIcon rank={rank} />
-
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/profile/${entry.user_id}`}
-                        className="text-white text-sm font-bold truncate hover:text-yellow-400 transition-colors block"
+                        className="text-white text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
                       >
                         {entry.username}
-                        {isCurrentUser && <span className="text-yellow-400 ml-1">(you)</span>}
+                        {isCurrentUser && <span style={{ color: '#fbbf24' }}> (you)</span>}
                       </Link>
                     </div>
-
-                    <div className="text-right space-y-0.5">
-                      <div className="text-white font-bold text-sm">{entry.composite_score}</div>
-                      <div className="text-white/40 text-xs">
+                    <div className="text-right">
+                      <div className="text-white font-black text-xs">{entry.composite_score}</div>
+                      <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
                         {playType === 'solo' ? (
                           <>
                             {entry.guess_count}g · {formatTime(entry.time_seconds)}
@@ -260,7 +262,7 @@ export default function DailyPage() {
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -270,40 +272,46 @@ export default function DailyPage() {
         {/* Yesterday's Winners */}
         <button
           onClick={() => setShowYesterday(!showYesterday)}
-          className="w-full mt-4 flex items-center justify-center gap-2 text-white/40 hover:text-white/60 text-sm font-bold transition-colors py-2"
+          className="w-full mt-4 flex items-center justify-center gap-1.5 text-xs font-extrabold py-2 transition-colors"
+          style={{ color: 'rgba(255,255,255,0.3)' }}
         >
           Yesterday's Winners
-          {showYesterday ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {showYesterday ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
 
-        <AnimatePresence>
-          {showYesterday && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 overflow-hidden mb-4">
-                {yesterdayLeaderboard.length === 0 ? (
-                  <div className="p-6 text-center text-white/40 text-sm">No results from yesterday</div>
-                ) : (
-                  <div className="divide-y divide-white/5">
-                    {yesterdayLeaderboard.map((entry, index) => (
-                      <div key={entry.user_id} className="flex items-center gap-3 px-4 py-3">
-                        <MedalIcon rank={index + 1} />
-                        <span className="text-white text-sm font-bold flex-1 truncate">{entry.username}</span>
-                        <span className="text-white/60 text-sm font-bold">{entry.composite_score}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+        {showYesterday && (
+          <div
+            className="overflow-hidden mb-4"
+            style={{
+              background: '#13102a',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '16px',
+            }}
+          >
+            {yesterdayLeaderboard.length === 0 ? (
+              <div className="p-6 text-center text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                No results from yesterday
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            ) : (
+              <div>
+                {yesterdayLeaderboard.map((entry, index) => (
+                  <div
+                    key={entry.user_id}
+                    className="flex items-center gap-3 px-4 py-3"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                  >
+                    <MedalIcon rank={index + 1} />
+                    <span className="text-white text-xs font-extrabold flex-1 truncate">{entry.username}</span>
+                    <span className="text-xs font-black" style={{ color: 'rgba(255,255,255,0.5)' }}>{entry.composite_score}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      <BottomNav />
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   );

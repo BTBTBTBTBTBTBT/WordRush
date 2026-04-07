@@ -182,7 +182,7 @@ export function VsGame({ mode }: VsGameProps) {
   // Queue screen
   if (screen === 'queue') {
     return (
-      <div className={`h-[100dvh] flex flex-col items-center justify-center bg-gradient-to-br ${gradient} relative`}>
+      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#0d0a1a' }}>
         {/* Countdown overlay */}
         <AnimatePresence>
           {showCountdown && (
@@ -257,7 +257,7 @@ export function VsGame({ mode }: VsGameProps) {
     const headlineColor = isWin ? 'from-green-400 to-emerald-300' : isDraw ? 'from-yellow-400 to-orange-300' : 'from-red-400 to-rose-300';
 
     return (
-      <div className={`h-[100dvh] flex flex-col items-center justify-center bg-gradient-to-br ${gradient} relative`}>
+      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#0d0a1a' }}>
         <div className="text-center space-y-8 max-w-md w-full px-6">
           {/* Headline */}
           <motion.div
@@ -351,7 +351,7 @@ export function VsGame({ mode }: VsGameProps) {
   };
 
   return (
-    <div className={`h-[100dvh] flex flex-col bg-gradient-to-br ${gradient} relative`}>
+    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#0d0a1a' }}>
       {/* Match Header */}
       <div className="text-center py-1 shrink-0">
         <div className="flex items-center justify-between px-4">

@@ -362,7 +362,7 @@ export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
   };
 
   return (
-    <div className="h-[100dvh] bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex flex-col relative">
+    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#0d0a1a' }}>
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0">
         <GauntletProgress

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Check, Crown, ArrowLeft, Shield, BarChart3, Sparkles, Zap } from 'lucide-react';
-import Link from 'next/link';
+import { Check, Crown, Shield, BarChart3, Sparkles, Zap } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
+import { AppHeader } from '@/components/ui/app-header';
+import { BottomNav } from '@/components/ui/bottom-nav';
 import { PRO_PLANS } from '@/lib/payment/types';
 
 const benefits = [
@@ -35,7 +35,6 @@ export default function ProPage() {
       });
       const data = await res.json();
       if (data.url) {
-        // Demo provider redirects with success params
         await refreshProfile();
         window.location.href = data.url;
       }
@@ -47,107 +46,127 @@ export default function ProPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-500 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+      <AppHeader />
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
-        <Link href="/" className="inline-flex items-center gap-2 text-white/70 hover:text-white mb-8 transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
-
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-center mb-12"
-        >
-          <Crown className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-          <h1 className="text-5xl font-black text-white mb-2">Go Pro</h1>
-          <p className="text-white/70 text-lg">Unlock the full SpellStrike experience</p>
-        </motion.div>
+      <div className="max-w-lg mx-auto px-4">
+        <div className="text-center mb-8">
+          <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#fbbf24' }} />
+          <h1 className="text-4xl font-black text-white mb-1">Go Pro</h1>
+          <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Unlock the full SpellStrike experience
+          </p>
+        </div>
 
         {isPro ? (
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border-2 border-yellow-400/30 text-center"
+          <div
+            className="text-center p-8"
+            style={{
+              background: '#13102a',
+              border: '1px solid rgba(251,191,36,0.3)',
+              borderRadius: '16px',
+            }}
           >
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 rounded-full px-4 py-2 mb-4">
-              <Crown className="w-5 h-5 text-white" />
-              <span className="text-white font-black">ACTIVE PRO</span>
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-3"
+              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+            >
+              <Crown className="w-4 h-4 text-white" />
+              <span className="text-white font-black text-sm">ACTIVE PRO</span>
             </div>
-            <p className="text-white/70">You're enjoying all Pro benefits!</p>
-          </motion.div>
+            <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              You're enjoying all Pro benefits!
+            </p>
+          </div>
         ) : (
           <>
             {/* Benefits */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10"
-            >
+            <div className="section-header mb-3">BENEFITS</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
               {benefits.map((b, i) => (
-                <div key={i} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                  <b.icon className="w-5 h-5 text-yellow-400 flex-shrink-0" />
-                  <span className="text-white text-sm font-medium">{b.text}</span>
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-3.5"
+                  style={{
+                    background: '#13102a',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '16px',
+                  }}
+                >
+                  <b.icon className="w-5 h-5 flex-shrink-0" style={{ color: '#fbbf24' }} />
+                  <span className="text-white text-xs font-bold">{b.text}</span>
                 </div>
               ))}
-            </motion.div>
+            </div>
 
             {/* Pricing Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="section-header mb-3">CHOOSE YOUR PLAN</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Monthly */}
-              <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 border-2 border-white/20 hover:border-white/40 transition-colors"
+              <div
+                className="p-5"
+                style={{
+                  background: '#13102a',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '16px',
+                }}
               >
-                <h3 className="text-lg font-bold text-white mb-1">Monthly</h3>
-                <div className="text-4xl font-black text-white mb-1">
-                  ${PRO_PLANS.monthly.price}<span className="text-lg font-medium text-white/50">/mo</span>
+                <h3 className="text-sm font-extrabold text-white mb-1">Monthly</h3>
+                <div className="text-3xl font-black text-white mb-0.5">
+                  ${PRO_PLANS.monthly.price}<span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>/mo</span>
                 </div>
-                <p className="text-white/50 text-sm mb-6">Cancel anytime</p>
+                <p className="text-xs font-bold mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>Cancel anytime</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.monthly.id)}
                   disabled={loading !== null}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold transition-colors disabled:opacity-50"
+                  className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
+                  style={{
+                    background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                    boxShadow: '0 4px 0 #4c1d95',
+                  }}
                 >
                   {loading === PRO_PLANS.monthly.id ? 'Processing...' : 'Subscribe Monthly'}
                 </button>
-              </motion.div>
+              </div>
 
               {/* Yearly */}
-              <motion.div
-                initial={{ y: 30, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="relative bg-white/10 backdrop-blur-sm rounded-3xl p-6 border-2 border-yellow-400/40 hover:border-yellow-400/60 transition-colors"
+              <div
+                className="p-5 relative"
+                style={{
+                  background: '#13102a',
+                  border: '1px solid rgba(251,191,36,0.3)',
+                  borderRadius: '16px',
+                }}
               >
-                <div className="absolute -top-3 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full px-3 py-1 text-xs font-black text-white">
+                <div
+                  className="absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-black text-white"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}
+                >
                   BEST VALUE
                 </div>
-                <h3 className="text-lg font-bold text-white mb-1">Yearly</h3>
-                <div className="text-4xl font-black text-white mb-1">
-                  ${PRO_PLANS.yearly.price}<span className="text-lg font-medium text-white/50">/yr</span>
+                <h3 className="text-sm font-extrabold text-white mb-1">Yearly</h3>
+                <div className="text-3xl font-black text-white mb-0.5">
+                  ${PRO_PLANS.yearly.price}<span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>/yr</span>
                 </div>
-                <p className="text-white/50 text-sm mb-6">$4.99/mo billed annually</p>
+                <p className="text-xs font-bold mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>$4.99/mo billed annually</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.yearly.id)}
                   disabled={loading !== null}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold transition-colors disabled:opacity-50"
+                  className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    boxShadow: '0 4px 0 #92400e',
+                  }}
                 >
                   {loading === PRO_PLANS.yearly.id ? 'Processing...' : 'Subscribe Yearly'}
                 </button>
-              </motion.div>
+              </div>
             </div>
           </>
         )}
       </div>
+
+      <BottomNav />
     </div>
   );
 }

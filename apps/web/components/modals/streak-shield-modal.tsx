@@ -44,17 +44,24 @@ export function StreakShieldModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="relative w-full max-w-sm bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900 rounded-3xl p-6 border-2 border-white/20 shadow-2xl"
+            className="relative w-full max-w-sm p-6"
+            style={{
+              background: '#13102a',
+              border: '1px solid rgba(167,139,250,0.3)',
+              borderRadius: '20px',
+            }}
           >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
+              className="absolute top-4 right-4 transition-opacity hover:opacity-80"
+              style={{ color: 'rgba(255,255,255,0.3)' }}
             >
               <X className="w-5 h-5" />
             </button>
@@ -63,41 +70,54 @@ export function StreakShieldModal({
               {/* Streak at risk */}
               <div className="flex justify-center">
                 <div className="relative">
-                  <Flame className="w-16 h-16 text-orange-400" fill="currentColor" />
+                  <Flame className="w-14 h-14" style={{ color: '#f97316' }} fill="currentColor" />
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
-                    className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center"
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center"
                   >
-                    <span className="text-white text-xs font-bold">!</span>
+                    <span className="text-white text-[10px] font-black">!</span>
                   </motion.div>
                 </div>
               </div>
 
-              <h2 className="text-2xl font-black text-white">Streak at Risk!</h2>
-              <p className="text-white/70 text-sm">
-                Your <span className="text-orange-400 font-bold">{streak}-day streak</span> will be lost if you don't play today.
+              <h2 className="text-xl font-black text-white">Streak at Risk!</h2>
+
+              {/* Large streak number */}
+              <div className="text-5xl font-black text-white">{streak}</div>
+              <p className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                day streak will be lost if you don't play today
               </p>
 
               {/* Shield & coin status */}
-              <div className="flex justify-center gap-4 text-sm">
-                <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1.5">
-                  <Shield className="w-4 h-4 text-blue-400" />
-                  <span className="text-white font-bold">{shields}</span>
+              <div className="flex justify-center gap-3">
+                <div
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold"
+                  style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)', color: '#c4b5fd' }}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>{shields}</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1.5">
-                  <Coins className="w-4 h-4 text-yellow-400" />
-                  <span className="text-white font-bold">{coins.toLocaleString()}</span>
+                <div
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold"
+                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fde68a' }}
+                >
+                  <Coins className="w-3.5 h-3.5" />
+                  <span>{coins.toLocaleString()}</span>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="space-y-2">
+              <div className="space-y-2 pt-2">
                 {shields > 0 && (
                   <button
                     onClick={() => handleAction(onUseShield, 'shield')}
                     disabled={loading !== null}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-sm transition-colors disabled:opacity-50"
+                    className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
+                    style={{
+                      background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                      boxShadow: '0 4px 0 #4c1d95',
+                    }}
                   >
                     {loading === 'shield' ? 'Using Shield...' : `Use Shield (${shields} left)`}
                   </button>
@@ -106,15 +126,20 @@ export function StreakShieldModal({
                 <button
                   onClick={() => handleAction(onBuyWithCoins, 'coins')}
                   disabled={loading !== null || !canBuyWithCoins}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold text-sm transition-colors disabled:opacity-50"
+                  className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    boxShadow: '0 4px 0 #92400e',
+                  }}
                 >
-                  {loading === 'coins' ? 'Buying...' : `Buy Shield (50 Coins)`}
+                  {loading === 'coins' ? 'Buying...' : 'Buy Shield (50 Coins)'}
                 </button>
 
                 <button
                   onClick={onDecline}
                   disabled={loading !== null}
-                  className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 font-medium text-sm transition-colors disabled:opacity-50"
+                  className="w-full py-2 text-xs font-bold transition-colors disabled:opacity-50"
+                  style={{ color: 'rgba(255,255,255,0.4)' }}
                 >
                   Let Streak Reset
                 </button>

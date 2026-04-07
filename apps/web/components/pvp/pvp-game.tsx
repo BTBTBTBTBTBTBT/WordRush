@@ -155,7 +155,7 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
 
   if (screen === 'queue' || screen === 'warmup') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="p-8 max-w-md w-full text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
           <h2 className="text-2xl font-bold">Finding Opponent...</h2>
@@ -185,7 +185,7 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
     const winText = winner === 'player' ? 'You Won!' : winner === 'opponent' ? 'You Lost' : 'Draw';
 
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="p-8 max-w-md w-full text-center space-y-4">
           <h2 className="text-3xl font-bold">{winText}</h2>
           <div className="space-y-2 text-left">
@@ -216,7 +216,7 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen p-4">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => {

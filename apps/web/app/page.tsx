@@ -1,17 +1,99 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Trophy, Zap, Flame, Timer, Grid3x3, Grid2x2, User, LogOut, Swords, Calendar, Crown, ShoppingBag } from 'lucide-react';
+import { Sparkles, Flame, Swords, Grid3x3, Grid2x2, Zap, Timer, LogOut, Star, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/auth/auth-modal';
-import { Button } from '@/components/ui/button';
-import { CoinBalance } from '@/components/ui/coin-balance';
+import { AppHeader } from '@/components/ui/app-header';
+import { BottomNav } from '@/components/ui/bottom-nav';
 import { initDictionary } from '@wordle-duel/core';
+import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
+
+function DailyCountdown() {
+  const [secs, setSecs] = useState(getSecondsUntilMidnightUTC());
+  useEffect(() => {
+    const i = setInterval(() => setSecs(getSecondsUntilMidnightUTC()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  return (
+    <span style={{ color: 'rgba(255,255,255,0.65)' }} className="text-xs font-bold">
+      Resets in {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}:{s.toString().padStart(2, '0')}
+    </span>
+  );
+}
+
+const MODE_CARDS = [
+  {
+    id: 'practice',
+    title: 'Classic',
+    icon: Grid3x3,
+    desc: '1 word, 6 tries',
+    gradient: 'linear-gradient(145deg, #7c3aed, #4f46e5)',
+    shadow: '0 4px 0 #3730a3',
+    href: '/practice',
+    vsHref: '/practice/vs',
+  },
+  {
+    id: 'quordle',
+    title: 'QuadWord',
+    icon: Grid2x2,
+    desc: '4 words at once',
+    gradient: 'linear-gradient(145deg, #be185d, #9d174d)',
+    shadow: '0 4px 0 #831843',
+    href: '/quordle',
+    vsHref: '/quordle/vs',
+    badge: 'HOT',
+  },
+  {
+    id: 'vs',
+    title: 'VS Battle',
+    icon: Swords,
+    desc: 'Real-time PvP',
+    gradient: 'linear-gradient(145deg, #0d9488, #0f766e)',
+    shadow: '0 4px 0 #115e59',
+    href: '/practice/vs',
+    vsHref: '/practice/vs',
+    badge: 'NEW',
+  },
+  {
+    id: 'gauntlet',
+    title: 'Gauntlet',
+    icon: Zap,
+    desc: '5 escalating stages',
+    gradient: 'linear-gradient(145deg, #b45309, #92400e)',
+    shadow: '0 4px 0 #78350f',
+    href: '/gauntlet',
+    vsHref: '/gauntlet/vs',
+  },
+  {
+    id: 'sequence',
+    title: 'Succession',
+    icon: Flame,
+    desc: '4 words, one by one',
+    gradient: 'linear-gradient(145deg, #1d4ed8, #1e40af)',
+    shadow: '0 4px 0 #1e3a8a',
+    href: '/sequence',
+    vsHref: '/sequence/vs',
+  },
+  {
+    id: 'octordle',
+    title: 'OctoWord',
+    icon: Timer,
+    desc: '8 boards, 13 tries',
+    gradient: 'linear-gradient(145deg, #7e22ce, #6b21a8)',
+    shadow: '0 4px 0 #581c87',
+    href: '/octordle',
+    vsHref: '/octordle/vs',
+    badge: 'PRO',
+  },
+];
 
 export default function HomePage() {
   const { user, profile, signOut } = useAuth();
@@ -23,7 +105,6 @@ export default function HomePage() {
     initDictionary(allowedWords, solutionWords);
   }, []);
 
-  // After auth completes, navigate to pending VS route
   useEffect(() => {
     if (user && pendingVsHref) {
       router.push(pendingVsHref);
@@ -40,309 +121,188 @@ export default function HomePage() {
     }
   };
 
-  const gameModes = [
-    {
-      id: 'practice',
-      title: 'Classic',
-      icon: Grid3x3,
-      description: 'Solve one puzzle, 6 tries',
-      color: 'from-blue-500 to-cyan-500',
-      href: '/practice',
-      vsHref: '/practice/vs',
-    },
-    {
-      id: 'quordle',
-      title: 'QuadWord',
-      icon: Grid2x2,
-      description: 'Solve 4 puzzles at once, 9 tries',
-      color: 'from-purple-500 to-pink-500',
-      href: '/quordle',
-      vsHref: '/quordle/vs',
-    },
-    {
-      id: 'octordle',
-      title: 'OctoWord',
-      icon: Zap,
-      description: 'Ultimate challenge! 8 boards, 13 tries',
-      color: 'from-yellow-500 to-orange-500',
-      href: '/octordle',
-      vsHref: '/octordle/vs',
-    },
-    {
-      id: 'sequence',
-      title: 'Succession',
-      icon: Flame,
-      description: '4 puzzles, one at a time, 10 guesses total!',
-      color: 'from-orange-500 to-red-500',
-      href: '/sequence',
-      vsHref: '/sequence/vs',
-    },
-    {
-      id: 'rescue',
-      title: 'Deliverance',
-      icon: Timer,
-      description: 'Decode pre-filled clues, solve 4 boards',
-      color: 'from-red-500 to-orange-500',
-      href: '/rescue',
-      vsHref: '/rescue/vs',
-    },
-    {
-      id: 'gauntlet',
-      title: 'The Gauntlet',
-      icon: Swords,
-      description: '5 stages of escalating word challenges!',
-      color: 'from-red-600 via-yellow-500 to-red-600',
-      href: '/gauntlet',
-      vsHref: '/gauntlet/vs',
-    },
-  ];
+  const streak = profile?.current_streak ?? 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl will-change-transform animate-blob" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-500 rounded-full blur-3xl will-change-transform animate-blob-reverse" />
-      </div>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+      <AppHeader />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <motion.div
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="flex items-center gap-2"
+      <div className="max-w-lg mx-auto px-4 space-y-4">
+        {/* Streak Card */}
+        {profile && streak > 0 && (
+          <div
+            className="flex items-center justify-between p-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(234,88,12,0.12))',
+              border: '1px solid rgba(251,191,36,0.25)',
+              borderRadius: '16px',
+            }}
           >
-            {profile && (
-              <>
-                <Link href="/profile">
-                  <Button className="bg-white/10 backdrop-blur-sm border-2 border-white/20 hover:bg-white/20 text-white">
-                    <User className="w-4 h-4 mr-2" />
-                    {profile.username}
-                  </Button>
-                </Link>
-                <CoinBalance coins={profile.coins ?? 0} />
-              </>
-            )}
-          </motion.div>
-
-          <motion.div
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="flex gap-2"
-          >
-            {user ? (
-              <Button
-                onClick={() => signOut()}
-                className="bg-red-500/20 backdrop-blur-sm border-2 border-red-400/30 hover:bg-red-500/30 text-white"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setAuthModalOpen(true)}
-                className="bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 hover:from-yellow-500 hover:via-pink-600 hover:to-purple-600 text-white font-bold"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Sign In
-              </Button>
-            )}
-          </motion.div>
-        </div>
-
-        <motion.div
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-12"
-        >
-          <div className="inline-block will-change-transform animate-title-pulse">
-            <h1 className="text-5xl sm:text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-2xl mb-4">
-              SPELLSTRIKE
-            </h1>
-          </div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="text-2xl text-white font-bold drop-shadow-lg"
-          >
-            Choose Your Challenge
-          </motion.p>
-        </motion.div>
-
-        {profile && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border-2 border-white/20 mb-8"
-          >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div>
-                <div className="text-white/70 text-sm mb-1">Level</div>
-                <div className="text-3xl font-black text-yellow-400">{profile.level}</div>
-              </div>
-              <div>
-                <div className="text-white/70 text-sm mb-1">Wins</div>
-                <div className="text-3xl font-black text-green-400">{profile.total_wins}</div>
-              </div>
-              <div>
-                <div className="text-white/70 text-sm mb-1">Streak</div>
-                <div className="text-3xl font-black text-orange-400 flex items-center justify-center gap-1">
-                  <Flame className="w-6 h-6" fill="currentColor" />
-                  {profile.current_streak}
-                </div>
-              </div>
-              <div>
-                <div className="text-white/70 text-sm mb-1">Best</div>
-                <div className="text-3xl font-black text-purple-400">{profile.best_streak}</div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Daily Challenge Card */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.35 }}
-          className="mb-8"
-        >
-          <Link href="/daily">
-            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 border-2 border-amber-500/30 hover:border-amber-400/50 transition-all group cursor-pointer">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
-              <div className="relative z-10 flex items-center justify-between">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-amber-400" />
-                    <span className="text-white/60 text-sm font-medium">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                  <h3 className="text-2xl font-black text-white">Daily Challenge</h3>
-                  <p className="text-white/60 text-sm">Same puzzle for everyone. Compete for the leaderboard!</p>
-                </div>
-                <motion.div
-                  animate={{ rotate: [0, 5, -5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  <Trophy className="w-10 h-10 text-amber-400 group-hover:text-yellow-300 transition-colors" />
-                </motion.div>
-              </div>
-            </div>
-          </Link>
-        </motion.div>
-
-        {/* Quick Links */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.38 }}
-          className="flex gap-3 mb-6"
-        >
-          <Link href="/daily" className="flex-1">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/15 transition-all text-center">
-              <Trophy className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
-              <span className="text-white/80 text-xs font-bold">Leaderboard</span>
-            </div>
-          </Link>
-          <Link href="/records" className="flex-1">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/15 transition-all text-center">
-              <Crown className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-              <span className="text-white/80 text-xs font-bold">Records</span>
-            </div>
-          </Link>
-          <Link href="/shop" className="flex-1">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/20 hover:bg-white/15 transition-all text-center">
-              <ShoppingBag className="w-5 h-5 text-pink-400 mx-auto mb-1" />
-              <span className="text-white/80 text-xs font-bold">Shop</span>
-            </div>
-          </Link>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {gameModes.map((mode, index) => (
-            <motion.div
-              key={mode.id}
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 + index * 0.08 }}
-              className="relative group will-change-transform"
-            >
+            <div className="flex items-center gap-3">
               <div
-                className={`
-                  relative overflow-hidden rounded-3xl p-6 h-full
-                  bg-gradient-to-br ${mode.color}
-                  ring-4 ring-inset ring-white/20
-                  shadow-2xl
-                  transition-shadow duration-300
-                  group-hover:shadow-yellow-400/40
-                `}
+                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
               >
-                <div className="absolute inset-0 bg-black/20" />
+                <Flame className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="text-[10px] font-extrabold uppercase" style={{ color: '#fbbf24' }}>
+                  Day Streak
+                </div>
+                <div className="text-[28px] font-black text-white leading-none">{streak}</div>
+              </div>
+            </div>
+            <div
+              className="px-3 py-1.5 rounded-lg text-white font-black text-xs"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                boxShadow: '0 3px 0 #92400e',
+              }}
+            >
+              ON FIRE
+            </div>
+          </div>
+        )}
 
-                <div className="relative z-10 space-y-4">
-                  <mode.icon className="w-12 h-12 text-white drop-shadow-lg" />
+        {/* Daily Challenge CTA */}
+        <Link href="/daily">
+          <button
+            className="w-full btn-3d flex flex-col items-center py-[13px] text-white font-black relative"
+            style={{
+              background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+              borderRadius: '14px',
+              boxShadow: '0 5px 0 #4c1d95, 0 8px 20px rgba(109,40,217,0.4)',
+            }}
+          >
+            <div className="flex items-center gap-2 text-base">
+              <Star className="w-4 h-4" style={{ color: '#fbbf24' }} />
+              <span>Daily Challenge</span>
+              <Star className="w-4 h-4" style={{ color: '#fbbf24' }} />
+            </div>
+            <DailyCountdown />
+          </button>
+        </Link>
 
-                  <div>
-                    <h2 className="text-3xl font-black text-white mb-1 drop-shadow-lg">
-                      {mode.title}
-                    </h2>
-                    <p className="text-white/90 text-sm font-medium mb-4">
-                      {mode.description}
-                    </p>
+        {/* Game Mode Cards - 2 column grid */}
+        <div className="section-header mt-6 mb-2">GAME MODES</div>
+        <div className="grid grid-cols-2 gap-3">
+          {MODE_CARDS.map((mode) => {
+            const Icon = mode.icon;
+            return (
+              <Link key={mode.id} href={mode.href}>
+                <div
+                  className="relative p-[14px] cursor-pointer transition-transform active:scale-[0.96]"
+                  style={{
+                    background: mode.gradient,
+                    borderRadius: '16px',
+                    boxShadow: mode.shadow,
+                  }}
+                >
+                  {/* Shine circle */}
+                  <div
+                    className="absolute top-0 right-0 w-16 h-16 rounded-full"
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      transform: 'translate(25%, -25%)',
+                    }}
+                  />
+
+                  {/* Badge */}
+                  {mode.badge && (
+                    <div
+                      className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[9px] font-black text-white"
+                      style={{
+                        background: mode.badge === 'HOT' ? '#ef4444' : mode.badge === 'NEW' ? '#22c55e' : '#a78bfa',
+                      }}
+                    >
+                      {mode.badge}
+                    </div>
+                  )}
+
+                  {/* Icon wrap */}
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center mb-2"
+                    style={{ background: 'rgba(255,255,255,0.15)' }}
+                  >
+                    <Icon className="w-4 h-4 text-white" />
                   </div>
 
-                  <div className="flex gap-2">
-                    <Link href={mode.href} className="flex-1">
-                      <button className="w-full py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-sm transition-colors backdrop-blur-sm border border-white/20">
-                        Solo
-                      </button>
-                    </Link>
-                    <button
-                      onClick={() => handleVsClick(mode.vsHref)}
-                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold text-sm transition-colors border border-white/20 shadow-lg"
-                    >
-                      VS
-                    </button>
-                    <Link href={`${mode.href}?daily=true`} className="flex-1">
-                      <button className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500/30 to-orange-500/30 hover:from-amber-500/50 hover:to-orange-500/50 text-amber-300 font-bold text-sm transition-colors backdrop-blur-sm border border-amber-500/30">
-                        Daily
-                      </button>
-                    </Link>
+                  <div className="text-[13px] font-black text-white">{mode.title}</div>
+                  <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    {mode.desc}
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </Link>
+            );
+          })}
         </div>
 
-        {!user && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.2 }}
-            className="text-center"
-          >
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border-2 border-white/20 inline-block">
-              <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-              <h3 className="text-2xl font-black text-white mb-2">Track Your Progress!</h3>
-              <p className="text-white/80 mb-4">
-                Sign in to save your stats, track your streaks, and compete on leaderboards
-              </p>
-              <Button
-                onClick={() => setAuthModalOpen(true)}
-                className="bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 hover:from-yellow-500 hover:via-pink-600 hover:to-purple-600 text-white font-bold text-lg px-8 py-6"
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                Get Started
-              </Button>
+        {/* VS Live Banner */}
+        <div
+          className="flex items-center justify-between p-4 mt-2"
+          style={{
+            background: 'linear-gradient(135deg, #0f172a, #1e1b4b)',
+            border: '1px solid rgba(99,102,241,0.3)',
+            borderRadius: '16px',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-white font-black text-sm">LIVE</span>
             </div>
-          </motion.div>
+            <div>
+              <div className="text-white/60 text-[10px] font-bold">Players online</div>
+            </div>
+          </div>
+          <button
+            onClick={() => handleVsClick('/practice/vs')}
+            className="btn-3d px-4 py-2 text-white font-black text-xs rounded-lg"
+            style={{
+              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+              boxShadow: '0 3px 0 #3730a3',
+            }}
+          >
+            <Swords className="w-3.5 h-3.5 inline mr-1" />
+            VS
+          </button>
+        </div>
+
+        {/* Sign in / Sign out */}
+        {!user ? (
+          <div
+            className="text-center p-6"
+            style={{
+              background: '#13102a',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '16px',
+            }}
+          >
+            <p className="text-white/60 text-sm font-bold mb-3">Sign in to track stats & compete</p>
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="btn-3d px-6 py-2.5 text-white font-black text-sm rounded-xl"
+              style={{
+                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                boxShadow: '0 4px 0 #4c1d95',
+              }}
+            >
+              <Sparkles className="w-4 h-4 inline mr-1.5" />
+              Sign In
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => signOut()}
+            className="w-full py-2 text-center text-white/30 text-xs font-bold hover:text-white/50 transition-colors"
+          >
+            <LogOut className="w-3 h-3 inline mr-1" />
+            Sign Out
+          </button>
         )}
       </div>
 
+      <BottomNav />
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   );

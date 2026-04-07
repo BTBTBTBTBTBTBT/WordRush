@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Trophy, Clock, Target, Flame, ArrowLeft, Crown, Zap } from 'lucide-react';
+import { Trophy, Clock, Target, Flame, Crown, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { AppHeader } from '@/components/ui/app-header';
+import { BottomNav } from '@/components/ui/bottom-nav';
 import { fetchAllTimeRecords, type AllTimeRecord } from '@/lib/daily-service';
 
 const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format: (v: number) => string; category: string }> = {
@@ -47,35 +48,26 @@ export default function RecordsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-20 pointer-events-none">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-yellow-400 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-pink-500 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+      <AppHeader />
 
-      <div className="relative z-10 max-w-2xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Link href="/" className="text-white/60 hover:text-white transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">
-            ALL-TIME RECORDS
-          </h1>
-          <div className="w-6" />
+      <div className="max-w-lg mx-auto px-4">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-black text-white">All-Time Records</h1>
         </div>
 
         {/* Category Tabs */}
-        <div className="flex gap-1 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+        <div className="flex gap-1 overflow-x-auto pb-2 mb-4">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all ${
-                activeCategory === cat
-                  ? 'bg-white/20 text-white border border-white/30'
-                  : 'bg-white/5 text-white/50 border border-white/10 hover:bg-white/10'
-              }`}
+              className="px-3.5 py-2 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all"
+              style={{
+                background: activeCategory === cat ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                border: activeCategory === cat ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                color: activeCategory === cat ? '#fff' : 'rgba(255,255,255,0.4)',
+              }}
             >
               {cat}
             </button>
@@ -84,76 +76,67 @@ export default function RecordsPage() {
 
         {/* Records List */}
         {loading ? (
-          <div className="text-center text-white/40 py-12">Loading records...</div>
+          <div className="text-center py-12 text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Loading records...
+          </div>
         ) : filteredRecords.length === 0 ? (
-          <div className="text-center text-white/40 py-12">
-            <Trophy className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>No records set yet in this category.</p>
-            <p className="text-sm mt-1">Play games to set the first records!</p>
+          <div className="text-center py-12" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-xs font-bold">No records set yet in this category.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredRecords.map((record, index) => {
+          <div className="space-y-2">
+            {filteredRecords.map((record) => {
               const config = RECORD_LABELS[record.record_type];
               if (!config) return null;
               const Icon = config.icon;
               const isCurrentUser = user && record.holder_id === user.id;
 
               return (
-                <motion.div
+                <div
                   key={record.id}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`bg-white/5 backdrop-blur-sm rounded-xl p-4 border ${
-                    isCurrentUser ? 'border-yellow-400/40 bg-yellow-500/10' : 'border-white/10'
-                  }`}
+                  className="flex items-center gap-3 p-4"
+                  style={{
+                    background: isCurrentUser ? 'rgba(251,191,36,0.08)' : '#13102a',
+                    border: isCurrentUser ? '1px solid rgba(251,191,36,0.25)' : '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '16px',
+                  }}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      isCurrentUser ? 'bg-yellow-500/20' : 'bg-white/10'
-                    }`}>
-                      <Icon className={`w-5 h-5 ${isCurrentUser ? 'text-yellow-400' : 'text-white/60'}`} />
-                    </div>
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: isCurrentUser ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.06)' }}
+                  >
+                    <Icon className="w-5 h-5" style={{ color: isCurrentUser ? '#fbbf24' : 'rgba(255,255,255,0.4)' }} />
+                  </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="text-white font-bold text-sm">
-                        {config.label}
-                        {record.game_mode && (
-                          <span className="text-white/40 ml-1">
-                            — {MODE_LABELS[record.game_mode] || record.game_mode}
-                          </span>
-                        )}
-                        {record.play_type && (
-                          <span className="text-white/30 ml-1">({record.play_type})</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Link
-                          href={`/profile/${record.holder_id}`}
-                          className="text-white/60 text-xs hover:text-yellow-400 transition-colors"
-                        >
-                          {record.holder_username || 'Unknown'}
-                        </Link>
-                        {isCurrentUser && (
-                          <Crown className="w-3 h-3 text-yellow-400" />
-                        )}
-                        <span className="text-white/30 text-xs">
-                          {new Date(record.achieved_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                      </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-extrabold text-xs">
+                      {config.label}
+                      {record.game_mode && (
+                        <span style={{ color: 'rgba(255,255,255,0.3)' }}> — {MODE_LABELS[record.game_mode] || record.game_mode}</span>
+                      )}
                     </div>
-
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-white font-black text-lg">{config.format(record.record_value)}</div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Link
+                        href={`/profile/${record.holder_id}`}
+                        className="text-[10px] font-bold hover:opacity-80 transition-opacity"
+                        style={{ color: 'rgba(255,255,255,0.4)' }}
+                      >
+                        {record.holder_username || 'Unknown'}
+                      </Link>
+                      {isCurrentUser && <Crown className="w-3 h-3" style={{ color: '#fbbf24' }} />}
                     </div>
                   </div>
-                </motion.div>
+
+                  <div className="text-white font-black text-base">{config.format(record.record_value)}</div>
+                </div>
               );
             })}
           </div>
         )}
       </div>
+
+      <BottomNav />
     </div>
   );
 }

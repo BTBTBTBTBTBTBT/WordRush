@@ -7,10 +7,6 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 
-/**
- * One-time Pro upsell shown when daily_login_streak >= 7 and pro_prompt_shown is false.
- * Dismissing sets pro_prompt_shown = true so it never appears again.
- */
 export function ProPromptModal() {
   const { user, profile, refreshProfile } = useAuth();
   const [show, setShow] = useState(false);
@@ -43,21 +39,37 @@ export function ProPromptModal() {
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto"
+          className="fixed bottom-16 left-4 right-4 z-50 max-w-md mx-auto"
         >
-          <div className="bg-gradient-to-r from-purple-900 to-pink-900 rounded-2xl p-4 border border-yellow-400/30 shadow-2xl flex items-center gap-4">
-            <Crown className="w-10 h-10 text-yellow-400 flex-shrink-0" />
+          <div
+            className="flex items-center gap-3 p-3.5"
+            style={{
+              background: '#13102a',
+              border: '1px solid rgba(251,191,36,0.25)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            }}
+          >
+            <Crown className="w-8 h-8 flex-shrink-0" style={{ color: '#fbbf24' }} />
             <div className="flex-1 min-w-0">
-              <p className="text-white font-bold text-sm">You're on a streak!</p>
-              <p className="text-white/60 text-xs">Upgrade to Pro for extended stats, shields, and more.</p>
+              <p className="text-white font-extrabold text-xs">You're on a streak!</p>
+              <p className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Upgrade to Pro for stats, shields, and more.
+              </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <Link href="/pro" onClick={dismiss}>
-                <button className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full px-3 py-1.5 text-white text-xs font-bold hover:from-yellow-500 hover:to-orange-600 transition-colors">
+                <button
+                  className="btn-3d px-3 py-1.5 rounded-lg text-white text-[10px] font-black"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    boxShadow: '0 2px 0 #92400e',
+                  }}
+                >
                   Go Pro
                 </button>
               </Link>
-              <button onClick={dismiss} className="text-white/40 hover:text-white transition-colors">
+              <button onClick={dismiss} style={{ color: 'rgba(255,255,255,0.3)' }} className="hover:opacity-80 transition-opacity">
                 <X className="w-4 h-4" />
               </button>
             </div>

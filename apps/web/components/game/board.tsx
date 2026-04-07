@@ -24,17 +24,16 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
           key={rowIndex}
           guess={guess}
           evaluation={evaluations[rowIndex]}
-          darkMode={darkMode}
           animate={rowIndex === guesses.length - 1 && evaluations[rowIndex]?.isCorrect === true}
         />
       ))}
-      {guesses.length < maxGuesses && <Row guess={currentGuess} darkMode={darkMode} />}
+      {guesses.length < maxGuesses && <Row guess={currentGuess} />}
       {Array.from({ length: emptyRows }).map((_, i) => (
-        <Row key={`empty-${i}`} guess="" darkMode={darkMode} />
+        <Row key={`empty-${i}`} guess="" />
       ))}
       {showSolution && solution && (
-        <div className="mt-4 text-center text-sm text-muted-foreground">
-          Solution: <span className="font-bold">{solution}</span>
+        <div className="mt-4 text-center text-xs font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          Solution: <span className="font-black text-white">{solution}</span>
         </div>
       )}
     </div>
@@ -44,11 +43,10 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
 interface RowProps {
   guess: string;
   evaluation?: GuessResult;
-  darkMode?: boolean;
   animate?: boolean;
 }
 
-function Row({ guess, evaluation, darkMode, animate }: RowProps) {
+function Row({ guess, evaluation, animate }: RowProps) {
   const tiles = guess.padEnd(5, ' ').split('');
 
   return (
@@ -58,7 +56,6 @@ function Row({ guess, evaluation, darkMode, animate }: RowProps) {
           key={i}
           letter={letter === ' ' ? '' : letter}
           state={evaluation?.tiles[i]?.state || TileState.EMPTY}
-          darkMode={darkMode}
           flipDelay={animate && evaluation ? i * 150 : undefined}
         />
       ))}
@@ -69,16 +66,15 @@ function Row({ guess, evaluation, darkMode, animate }: RowProps) {
 interface TileProps {
   letter: string;
   state: TileState;
-  darkMode?: boolean;
   flipDelay?: number;
 }
 
-function Tile({ letter, state, darkMode, flipDelay }: TileProps) {
+function Tile({ letter, state, flipDelay }: TileProps) {
   const hasFlip = flipDelay !== undefined;
   const { tileTheme } = useCosmetics();
 
   const colorClass = cn(
-    state === TileState.EMPTY && (darkMode ? `border-white/30 ${tileTheme.empty} text-white` : `${tileTheme.border} ${tileTheme.empty}`),
+    state === TileState.EMPTY && `${tileTheme.border} ${tileTheme.empty}`,
     state === TileState.ABSENT && `${tileTheme.border} ${tileTheme.absent} ${tileTheme.text}`,
     state === TileState.PRESENT && `${tileTheme.present} ${tileTheme.text}`,
     state === TileState.CORRECT && `${tileTheme.correct} ${tileTheme.text}`
@@ -87,9 +83,10 @@ function Tile({ letter, state, darkMode, flipDelay }: TileProps) {
   return (
     <div
       className={cn(
-        'flex-1 aspect-square border-2 flex items-center justify-center text-2xl font-bold uppercase',
+        'flex-1 aspect-square border-2 flex items-center justify-center text-2xl font-black uppercase',
         hasFlip ? 'animate-tile-flip' : 'transition-colors',
-        colorClass
+        colorClass,
+        state === TileState.EMPTY && 'text-white'
       )}
       style={hasFlip ? { animationDelay: `${flipDelay}ms` } : undefined}
     >

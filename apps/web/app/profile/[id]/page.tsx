@@ -95,7 +95,7 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-white text-2xl font-bold">Loading...</div>
       </div>
     );
@@ -103,7 +103,7 @@ export default function PublicProfilePage() {
 
   if (notFound || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -129,7 +129,7 @@ export default function PublicProfilePage() {
     : '0.0';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 p-4">
+    <div className="min-h-screen p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
         <motion.div
@@ -170,7 +170,7 @@ export default function PublicProfilePage() {
           </div>
 
           <Link href="/">
-            <Button variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+            <Button variant="outline" className="text-white" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -183,7 +183,8 @@ export default function PublicProfilePage() {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-2xl p-6 border-2 border-yellow-400/30"
+            className="rounded-2xl p-6"
+            style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)' }}
           >
             <div className="flex items-center gap-3 mb-3">
               <Star className="w-8 h-8 text-yellow-400" fill="currentColor" />
@@ -212,7 +213,8 @@ export default function PublicProfilePage() {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-2xl p-6 border-2 border-green-400/30"
+            className="rounded-2xl p-6"
+            style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}
           >
             <div className="flex items-center gap-3">
               <Trophy className="w-8 h-8 text-green-400" />
@@ -228,7 +230,8 @@ export default function PublicProfilePage() {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="bg-gradient-to-br from-orange-500/20 to-red-500/20 backdrop-blur-sm rounded-2xl p-6 border-2 border-orange-400/30"
+            className="rounded-2xl p-6"
+            style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)' }}
           >
             <div className="flex items-center gap-3">
               <Flame className="w-8 h-8 text-orange-400" fill="currentColor" />
@@ -244,7 +247,8 @@ export default function PublicProfilePage() {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm rounded-2xl p-6 border-2 border-blue-400/30"
+            className="rounded-2xl p-6"
+            style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}
           >
             <div className="flex items-center gap-3">
               <Target className="w-8 h-8 text-blue-400" />
@@ -264,7 +268,8 @@ export default function PublicProfilePage() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border-2 border-white/20"
+          className="rounded-2xl p-6"
+          style={{ background: '#13102a', border: '1px solid rgba(255,255,255,0.08)' }}
         >
           <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-pink-400" />
@@ -348,7 +353,8 @@ export default function PublicProfilePage() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border-2 border-white/20"
+          className="rounded-2xl p-6"
+          style={{ background: '#13102a', border: '1px solid rgba(255,255,255,0.08)' }}
         >
           <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
             <Clock className="w-6 h-6 text-blue-400" />

@@ -53,7 +53,7 @@ export function GauntletResults({
     : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 flex items-center justify-center p-4 overflow-y-auto">
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-y-auto" style={{ backgroundColor: '#0d0a1a' }}>
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

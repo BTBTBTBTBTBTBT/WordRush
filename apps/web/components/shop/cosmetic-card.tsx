@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Coins, Check, Palette } from 'lucide-react';
+import { Coins } from 'lucide-react';
 import { CosmeticItem } from '@/lib/cosmetics/catalog';
 
 interface CosmeticCardProps {
@@ -42,27 +42,39 @@ export function CosmeticCard({
   };
 
   return (
-    <div className={`bg-white/5 backdrop-blur-sm rounded-2xl p-4 border transition-all ${
-      equipped
-        ? 'border-yellow-400/50 bg-yellow-500/10'
-        : owned
-          ? 'border-green-400/30'
-          : 'border-white/10 hover:border-white/20'
-    }`}>
+    <div
+      className="p-3.5 transition-all"
+      style={{
+        background: equipped ? 'rgba(251,191,36,0.08)' : '#13102a',
+        border: equipped
+          ? '1px solid rgba(251,191,36,0.3)'
+          : owned
+            ? '1px solid rgba(74,222,128,0.25)'
+            : '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '16px',
+      }}
+    >
       {/* Preview */}
-      <div className="h-20 rounded-xl mb-3 flex items-center justify-center bg-white/5 border border-white/5">
+      <div
+        className="h-16 rounded-xl mb-2.5 flex items-center justify-center"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.04)' }}
+      >
         <CosmeticPreviewMini item={item} />
       </div>
 
-      <h3 className="text-white font-bold text-sm">{item.name}</h3>
-      <p className="text-white/50 text-xs mb-3">{item.description}</p>
+      <h3 className="text-white font-extrabold text-xs">{item.name}</h3>
+      <p className="text-[10px] font-bold mb-2.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{item.description}</p>
 
-      {/* Status / Action */}
       {equipped ? (
         <button
           onClick={handleAction}
           disabled={loading}
-          className="w-full py-2 rounded-xl bg-yellow-500/20 border border-yellow-400/30 text-yellow-300 font-bold text-xs transition-colors hover:bg-yellow-500/30 disabled:opacity-50"
+          className="w-full py-2 rounded-xl text-[10px] font-black transition-opacity hover:opacity-80 disabled:opacity-50"
+          style={{
+            background: 'rgba(251,191,36,0.15)',
+            border: '1px solid rgba(251,191,36,0.25)',
+            color: '#fde68a',
+          }}
         >
           {loading ? '...' : 'Equipped ✓'}
         </button>
@@ -70,7 +82,12 @@ export function CosmeticCard({
         <button
           onClick={handleAction}
           disabled={loading}
-          className="w-full py-2 rounded-xl bg-green-500/20 border border-green-400/30 text-green-300 font-bold text-xs transition-colors hover:bg-green-500/30 disabled:opacity-50"
+          className="w-full py-2 rounded-xl text-[10px] font-black transition-opacity hover:opacity-80 disabled:opacity-50"
+          style={{
+            background: 'rgba(74,222,128,0.15)',
+            border: '1px solid rgba(74,222,128,0.25)',
+            color: '#86efac',
+          }}
         >
           {loading ? '...' : 'Equip'}
         </button>
@@ -78,9 +95,14 @@ export function CosmeticCard({
         <button
           onClick={handleAction}
           disabled={loading || !canAfford}
-          className="w-full py-2 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-xs transition-colors hover:bg-white/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+          className="w-full py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1 transition-opacity hover:opacity-80 disabled:opacity-50"
+          style={{
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: '#fff',
+          }}
         >
-          <Coins className="w-3 h-3 text-yellow-400" />
+          <Coins className="w-3 h-3" style={{ color: '#fbbf24' }} />
           {loading ? '...' : `${item.coinPrice} Coins`}
         </button>
       )}
@@ -99,7 +121,7 @@ function CosmeticPreviewMini({ item }: { item: CosmeticItem }) {
     return (
       <div className="flex gap-1.5">
         {c.map((cls, i) => (
-          <div key={i} className={`w-8 h-8 rounded-md ${cls} flex items-center justify-center text-white font-bold text-xs`}>
+          <div key={i} className={`w-7 h-7 rounded-md ${cls} flex items-center justify-center text-white font-black text-[10px]`}>
             {['A', 'B', 'C'][i]}
           </div>
         ))}
@@ -108,15 +130,12 @@ function CosmeticPreviewMini({ item }: { item: CosmeticItem }) {
   }
 
   if (item.category === 'keyboard_skin') {
-    const bgMap: Record<string, string> = {
-      galaxy: 'bg-purple-800',
-      wooden: 'bg-amber-800',
-    };
+    const bgMap: Record<string, string> = { galaxy: 'bg-purple-800', wooden: 'bg-amber-800' };
     const bg = bgMap[item.preview] || 'bg-zinc-700';
     return (
       <div className="flex gap-1">
         {['Q', 'W', 'E', 'R'].map(k => (
-          <div key={k} className={`w-7 h-7 rounded ${bg} flex items-center justify-center text-white font-bold text-[10px]`}>
+          <div key={k} className={`w-6 h-6 rounded ${bg} flex items-center justify-center text-white font-black text-[9px]`}>
             {k}
           </div>
         ))}
@@ -124,10 +143,5 @@ function CosmeticPreviewMini({ item }: { item: CosmeticItem }) {
     );
   }
 
-  // Victory animation
-  return (
-    <div className="text-2xl">
-      {item.preview === 'fireworks' ? '🎆' : '🌈'}
-    </div>
-  );
+  return <div className="text-xl">{item.preview === 'fireworks' ? '🎆' : '🌈'}</div>;
 }
