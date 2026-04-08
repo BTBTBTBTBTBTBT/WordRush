@@ -227,11 +227,11 @@ export default function HomePage() {
     <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div className="max-w-lg mx-auto px-4" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button
-            className="w-full btn-3d flex flex-col items-center py-1.5 font-black relative"
+            className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
             style={{
               background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
               border: '1.5px solid #c4b5fd',
@@ -253,7 +253,7 @@ export default function HomePage() {
         {/* Streak Card */}
         {profile && streak > 0 && (
           <div
-            className="flex items-center justify-between px-3 py-1.5"
+            className="flex items-center justify-between px-3 py-2"
             style={{
               background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
               border: '1.5px solid #fde68a',
@@ -288,13 +288,13 @@ export default function HomePage() {
 
         {/* Game Mode Cards - 2 column grid */}
         <div className="section-header mt-1 mb-0.5">GAME MODES</div>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-2 gap-2">
           {MODE_CARDS.map((mode) => {
             const Icon = mode.icon;
             return (
               <Link key={mode.id} href={mode.href}>
                 <div
-                  className="relative px-2.5 py-2 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden"
+                  className="relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden"
                   style={{
                     background: '#ffffff',
                     border: '1.5px solid #ede9f6',
@@ -313,7 +313,7 @@ export default function HomePage() {
                   {/* Badge */}
                   {mode.badge && (
                     <div
-                      className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[8px] font-black text-white"
+                      className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded-md text-[8px] font-black text-white"
                       style={{
                         background: mode.badge === 'HOT' ? '#ef4444' : mode.badge === 'NEW' ? '#22c55e' : '#a78bfa',
                       }}
@@ -322,17 +322,15 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  {/* Icon + title inline */}
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <div
-                      className="w-5 h-5 rounded flex items-center justify-center"
-                      style={{ background: `${mode.accentColor}15` }}
-                    >
-                      <Icon className="w-3 h-3" style={{ color: mode.accentColor }} />
-                    </div>
-                    <div className="text-[11px] font-black" style={{ color: '#1a1a2e' }}>{mode.title}</div>
+                  {/* Icon */}
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
+                    style={{ background: `${mode.accentColor}15` }}
+                  >
+                    <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
                   </div>
-                  <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>
+                  <div className="text-[13px] font-black" style={{ color: '#1a1a2e' }}>{mode.title}</div>
+                  <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
                     {mode.desc}
                   </div>
                 </div>
@@ -343,7 +341,7 @@ export default function HomePage() {
 
         {/* VS Live Banner */}
         <div
-          className="flex items-center justify-between px-3 py-1.5"
+          className="flex items-center justify-between px-3 py-2"
           style={{
             background: '#ffffff',
             border: '1.5px solid #ede9f6',
