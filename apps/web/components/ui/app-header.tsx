@@ -48,10 +48,10 @@ export function AppHeader() {
             <div
               className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"
               style={{
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.12)',
+                background: '#fef9ec',
+                border: '1.5px solid #fde68a',
                 borderRadius: '20px',
-                color: '#fde68a',
+                color: '#92400e',
               }}
             >
               <CoinIcon className="w-4 h-4" />
@@ -63,10 +63,10 @@ export function AppHeader() {
           <div
             className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"
             style={{
-              background: 'rgba(167,139,250,0.15)',
-              border: '1px solid rgba(167,139,250,0.3)',
+              background: '#f3f0ff',
+              border: '1.5px solid #c4b5fd',
               borderRadius: '20px',
-              color: '#c4b5fd',
+              color: '#5b21b6',
             }}
           >
             <ShieldIcon className="w-4 h-4" />

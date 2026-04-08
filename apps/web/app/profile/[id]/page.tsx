@@ -95,24 +95,24 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-2xl font-bold">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8f7ff' }}>
+        <div className="text-lg font-black" style={{ color: '#1a1a2e' }}>Loading...</div>
       </div>
     );
   }
 
   if (notFound || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f8f7ff' }}>
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-4xl font-black text-white">Player not found</h1>
-          <p className="text-white/70">This profile doesn't exist or may have been removed.</p>
+          <h1 className="text-4xl font-black" style={{ color: '#1a1a2e' }}>Player not found</h1>
+          <p style={{ color: '#9ca3af' }}>This profile doesn't exist or may have been removed.</p>
           <Link href="/">
-            <Button className="bg-gradient-to-r from-yellow-400 to-pink-500">
+            <Button className="bg-gradient-to-r from-yellow-400 to-pink-500 text-white">
               Go Home
             </Button>
           </Link>
@@ -129,7 +129,7 @@ export default function PublicProfilePage() {
     : '0.0';
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-4" style={{ backgroundColor: '#f8f7ff' }}>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
         <motion.div
@@ -151,12 +151,13 @@ export default function PublicProfilePage() {
 
             {/* Level Badge & XP Bar */}
             <div className="mt-3 flex flex-col items-center gap-2">
-              <div className="inline-flex items-center gap-2 bg-yellow-500/20 border border-yellow-400/30 rounded-full px-4 py-1">
-                <Star className="w-4 h-4 text-yellow-400" fill="currentColor" />
-                <span className="text-yellow-300 font-bold text-sm">Level {profile.level}</span>
+              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1"
+                style={{ background: '#fef9ec', border: '1.5px solid #fde68a' }}>
+                <Star className="w-4 h-4" style={{ color: '#d97706' }} fill="currentColor" />
+                <span className="font-bold text-sm" style={{ color: '#92400e' }}>Level {profile.level}</span>
               </div>
               <div className="w-48">
-                <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: '#ede9f6' }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${levelProgress}%` }}
@@ -164,13 +165,13 @@ export default function PublicProfilePage() {
                     className="h-full bg-gradient-to-r from-yellow-400 to-orange-500"
                   />
                 </div>
-                <p className="text-white/50 text-xs mt-1">{xpToNextLevel} XP to next level</p>
+                <p className="text-xs mt-1" style={{ color: '#9ca3af' }}>{xpToNextLevel} XP to next level</p>
               </div>
             </div>
           </div>
 
           <Link href="/">
-            <Button variant="outline" className="text-white" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <Button variant="outline" style={{ background: '#f3f0ff', border: '1.5px solid #ede9f6', color: '#7c3aed' }}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -184,21 +185,21 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="rounded-2xl p-6"
-            style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.2)' }}
+            style={{ background: '#ffffff', border: '1.5px solid #fde68a' }}
           >
             <div className="flex items-center gap-3 mb-3">
-              <Star className="w-8 h-8 text-yellow-400" fill="currentColor" />
+              <Star className="w-8 h-8" style={{ color: '#d97706' }} fill="currentColor" />
               <div>
-                <div className="text-white/70 text-sm">Level</div>
-                <div className="text-3xl font-black text-white">{profile.level}</div>
+                <div className="text-sm" style={{ color: '#9ca3af' }}>Level</div>
+                <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.level}</div>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between text-sm text-white/70">
+              <div className="flex justify-between text-sm" style={{ color: '#9ca3af' }}>
                 <span>Progress</span>
                 <span>{xpToNextLevel} XP to next level</span>
               </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: '#ede9f6' }}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${levelProgress}%` }}
@@ -214,14 +215,14 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="rounded-2xl p-6"
-            style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}
+            style={{ background: '#ffffff', border: '1.5px solid #bbf7d0' }}
           >
             <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-green-400" />
+              <Trophy className="w-8 h-8" style={{ color: '#16a34a' }} />
               <div>
-                <div className="text-white/70 text-sm">Total Wins</div>
-                <div className="text-3xl font-black text-white">{profile.total_wins}</div>
-                <div className="text-white/70 text-xs mt-1">{winRate}% win rate</div>
+                <div className="text-sm" style={{ color: '#9ca3af' }}>Total Wins</div>
+                <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.total_wins}</div>
+                <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>{winRate}% win rate</div>
               </div>
             </div>
           </motion.div>
@@ -231,14 +232,14 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3 }}
             className="rounded-2xl p-6"
-            style={{ background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.2)' }}
+            style={{ background: '#ffffff', border: '1.5px solid #fed7aa' }}
           >
             <div className="flex items-center gap-3">
-              <Flame className="w-8 h-8 text-orange-400" fill="currentColor" />
+              <Flame className="w-8 h-8" style={{ color: '#ea580c' }} fill="currentColor" />
               <div>
-                <div className="text-white/70 text-sm">Current Streak</div>
-                <div className="text-3xl font-black text-white">{profile.current_streak}</div>
-                <div className="text-white/70 text-xs mt-1">Best: {profile.best_streak}</div>
+                <div className="text-sm" style={{ color: '#9ca3af' }}>Current Streak</div>
+                <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.current_streak}</div>
+                <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>Best: {profile.best_streak}</div>
               </div>
             </div>
           </motion.div>
@@ -248,16 +249,16 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.4 }}
             className="rounded-2xl p-6"
-            style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}
+            style={{ background: '#ffffff', border: '1.5px solid #bfdbfe' }}
           >
             <div className="flex items-center gap-3">
-              <Target className="w-8 h-8 text-blue-400" />
+              <Target className="w-8 h-8" style={{ color: '#2563eb' }} />
               <div>
-                <div className="text-white/70 text-sm">Total Games</div>
-                <div className="text-3xl font-black text-white">
+                <div className="text-sm" style={{ color: '#9ca3af' }}>Total Games</div>
+                <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>
                   {profile.total_wins + profile.total_losses}
                 </div>
-                <div className="text-white/70 text-xs mt-1">{profile.total_losses} losses</div>
+                <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>{profile.total_losses} losses</div>
               </div>
             </div>
           </motion.div>
@@ -269,10 +270,10 @@ export default function PublicProfilePage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
           className="rounded-2xl p-6"
-          style={{ background: '#13102a', border: '1px solid rgba(255,255,255,0.08)' }}
+          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
         >
-          <h2 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-pink-400" />
+          <h2 className="text-2xl font-black mb-4 flex items-center gap-2" style={{ color: '#1a1a2e' }}>
+            <TrendingUp className="w-6 h-6" style={{ color: '#ec4899' }} />
             Game Mode Statistics
           </h2>
 
@@ -280,22 +281,24 @@ export default function PublicProfilePage() {
           <div className="flex gap-2 mb-6">
             <button
               onClick={() => setActiveTab('solo')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                activeTab === 'solo'
-                  ? 'bg-white/20 border-2 border-white/30 text-white shadow-lg'
-                  : 'bg-white/5 border-2 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80'
-              }`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all`}
+              style={{
+                background: activeTab === 'solo' ? '#f3f0ff' : '#fafafa',
+                border: activeTab === 'solo' ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+                color: activeTab === 'solo' ? '#7c3aed' : '#9ca3af',
+              }}
             >
               <User className="w-4 h-4" />
               Solo
             </button>
             <button
               onClick={() => setActiveTab('vs')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                activeTab === 'vs'
-                  ? 'bg-white/20 border-2 border-white/30 text-white shadow-lg'
-                  : 'bg-white/5 border-2 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/80'
-              }`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all`}
+              style={{
+                background: activeTab === 'vs' ? '#f3f0ff' : '#fafafa',
+                border: activeTab === 'vs' ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+                color: activeTab === 'vs' ? '#7c3aed' : '#9ca3af',
+              }}
             >
               <Swords className="w-4 h-4" />
               VS
@@ -303,7 +306,7 @@ export default function PublicProfilePage() {
           </div>
 
           {filteredStats.length === 0 ? (
-            <div className="text-center text-white/70 py-8">
+            <div className="text-center py-8" style={{ color: '#9ca3af' }}>
               {activeTab === 'solo'
                 ? 'No solo stats yet.'
                 : 'No VS stats yet.'}
@@ -316,28 +319,29 @@ export default function PublicProfilePage() {
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.1 + index * 0.1 }}
-                  className="bg-white/5 rounded-xl p-4 border border-white/10"
+                  className="rounded-xl p-4"
+                  style={{ background: '#f8f7ff', border: '1px solid #ede9f6' }}
                 >
-                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-yellow-400" />
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: '#1a1a2e' }}>
+                    <Zap className="w-5 h-5" style={{ color: '#d97706' }} />
                     {gameModeTitles[stat.game_mode] || stat.game_mode}
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <div className="text-white/70">Wins</div>
-                      <div className="text-green-400 font-bold text-lg">{stat.wins}</div>
+                      <div style={{ color: '#9ca3af' }}>Wins</div>
+                      <div className="font-bold text-lg" style={{ color: '#16a34a' }}>{stat.wins}</div>
                     </div>
                     <div>
-                      <div className="text-white/70">Losses</div>
-                      <div className="text-red-400 font-bold text-lg">{stat.losses}</div>
+                      <div style={{ color: '#9ca3af' }}>Losses</div>
+                      <div className="font-bold text-lg" style={{ color: '#dc2626' }}>{stat.losses}</div>
                     </div>
                     <div>
-                      <div className="text-white/70">Best Score</div>
-                      <div className="text-yellow-400 font-bold text-lg">{stat.best_score}</div>
+                      <div style={{ color: '#9ca3af' }}>Best Score</div>
+                      <div className="font-bold text-lg" style={{ color: '#d97706' }}>{stat.best_score}</div>
                     </div>
                     <div>
-                      <div className="text-white/70">Fastest</div>
-                      <div className="text-blue-400 font-bold text-lg">
+                      <div style={{ color: '#9ca3af' }}>Fastest</div>
+                      <div className="font-bold text-lg" style={{ color: '#2563eb' }}>
                         {stat.fastest_time > 0 ? `${stat.fastest_time}s` : '-'}
                       </div>
                     </div>
@@ -354,15 +358,15 @@ export default function PublicProfilePage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
           className="rounded-2xl p-6"
-          style={{ background: '#13102a', border: '1px solid rgba(255,255,255,0.08)' }}
+          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
         >
-          <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
-            <Clock className="w-6 h-6 text-blue-400" />
+          <h2 className="text-2xl font-black mb-6 flex items-center gap-2" style={{ color: '#1a1a2e' }}>
+            <Clock className="w-6 h-6" style={{ color: '#2563eb' }} />
             Recent Matches
           </h2>
 
           {matches.length === 0 ? (
-            <div className="text-center text-white/70 py-8">
+            <div className="text-center py-8" style={{ color: '#9ca3af' }}>
               No matches played yet.
             </div>
           ) : (
@@ -380,27 +384,28 @@ export default function PublicProfilePage() {
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.7 + index * 0.05 }}
-                    className="bg-white/5 rounded-xl p-4 border border-white/10 flex items-center justify-between gap-4"
+                    className="rounded-xl p-4 flex items-center justify-between gap-4"
+                    style={{ background: '#f8f7ff', border: '1px solid #ede9f6' }}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          isWinner
-                            ? 'bg-green-500/20 border border-green-400/30'
-                            : 'bg-red-500/20 border border-red-400/30'
-                        }`}
+                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: isWinner ? '#f0fdf4' : '#fef2f2',
+                          border: isWinner ? '1px solid #bbf7d0' : '1px solid #fecaca',
+                        }}
                       >
                         {isWinner ? (
-                          <Check className="w-5 h-5 text-green-400" />
+                          <Check className="w-5 h-5" style={{ color: '#16a34a' }} />
                         ) : (
-                          <X className="w-5 h-5 text-red-400" />
+                          <X className="w-5 h-5" style={{ color: '#dc2626' }} />
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-white font-bold truncate">
+                        <div className="font-bold truncate" style={{ color: '#1a1a2e' }}>
                           {gameModeTitles[match.game_mode] || match.game_mode}
                         </div>
-                        <div className="text-white/50 text-sm">
+                        <div className="text-sm" style={{ color: '#9ca3af' }}>
                           {isSolo ? 'Solo' : 'VS Match'}
                         </div>
                       </div>
@@ -408,14 +413,14 @@ export default function PublicProfilePage() {
 
                     <div className="flex items-center gap-4 flex-shrink-0 text-right">
                       <div>
-                        <div className={`font-bold text-sm ${isWinner ? 'text-green-400' : 'text-red-400'}`}>
+                        <div className="font-bold text-sm" style={{ color: isWinner ? '#16a34a' : '#dc2626' }}>
                           {isWinner ? 'Win' : 'Loss'}
                         </div>
-                        <div className="text-white/50 text-xs">
+                        <div className="text-xs" style={{ color: '#9ca3af' }}>
                           {playerTime > 0 ? `${playerTime}s` : '-'}
                         </div>
                       </div>
-                      <div className="text-white/40 text-xs text-right">
+                      <div className="text-xs text-right" style={{ color: '#9ca3af' }}>
                         <div>{matchDate.toLocaleDateString()}</div>
                         <div>{matchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                       </div>

@@ -153,7 +153,7 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
       </AnimatePresence>
@@ -164,21 +164,21 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
           SUCCESSION
         </h1>
         <div className="flex justify-center gap-3 mt-1">
-          <span className="text-white/70 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-yellow-400" />{solvedCount}/4</span>
-          <span className="text-white/70 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
-          <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
+          <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{solvedCount}/4</span>
+          <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
+          <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
-        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
+        {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
         {state.status === 'WON' && (
           <div className="mt-1">
-            <span className="text-green-300 text-xs font-bold">All 4 solved in {guessesUsed} guesses! </span>
-            <button onClick={handleNextPuzzle} className="text-yellow-400 text-xs font-bold underline">Play Again</button>
+            <span className="text-green-600 text-xs font-bold">All 4 solved in {guessesUsed} guesses! </span>
+            <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Play Again</button>
           </div>
         )}
         {state.status === 'LOST' && (
           <div className="mt-1">
             <span className="text-red-300 text-xs font-bold">Out of guesses! {solvedCount}/4 </span>
-            <button onClick={handleNextPuzzle} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
+            <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Try Again</button>
           </div>
         )}
       </div>

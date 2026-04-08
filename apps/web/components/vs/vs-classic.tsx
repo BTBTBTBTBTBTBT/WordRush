@@ -109,12 +109,12 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, opponentProg
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
         <div className="flex justify-center gap-3 mt-1">
-          <span className="text-white/70 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
-          <span className="text-white/70 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
+          <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
+          <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
-            <span className="bg-black/70 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
+            <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
       </div>

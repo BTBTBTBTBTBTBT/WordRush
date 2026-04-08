@@ -45,25 +45,25 @@ export function CosmeticCard({
     <div
       className="p-3.5 transition-all"
       style={{
-        background: equipped ? 'rgba(251,191,36,0.08)' : '#13102a',
+        background: equipped ? '#fffbeb' : '#ffffff',
         border: equipped
-          ? '1px solid rgba(251,191,36,0.3)'
+          ? '1.5px solid #fde68a'
           : owned
-            ? '1px solid rgba(74,222,128,0.25)'
-            : '1px solid rgba(255,255,255,0.08)',
+            ? '1.5px solid #bbf7d0'
+            : '1.5px solid #ede9f6',
         borderRadius: '16px',
       }}
     >
       {/* Preview */}
       <div
         className="h-16 rounded-xl mb-2.5 flex items-center justify-center"
-        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.04)' }}
+        style={{ background: '#f8f7ff', border: '1px solid #ede9f6' }}
       >
         <CosmeticPreviewMini item={item} />
       </div>
 
-      <h3 className="text-white font-extrabold text-xs">{item.name}</h3>
-      <p className="text-[10px] font-bold mb-2.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{item.description}</p>
+      <h3 className="font-extrabold text-xs" style={{ color: '#1a1a2e' }}>{item.name}</h3>
+      <p className="text-[10px] font-bold mb-2.5" style={{ color: '#9ca3af' }}>{item.description}</p>
 
       {equipped ? (
         <button
@@ -71,9 +71,9 @@ export function CosmeticCard({
           disabled={loading}
           className="w-full py-2 rounded-xl text-[10px] font-black transition-opacity hover:opacity-80 disabled:opacity-50"
           style={{
-            background: 'rgba(251,191,36,0.15)',
-            border: '1px solid rgba(251,191,36,0.25)',
-            color: '#fde68a',
+            background: '#fef9ec',
+            border: '1.5px solid #fde68a',
+            color: '#92400e',
           }}
         >
           {loading ? '...' : 'Equipped ✓'}
@@ -84,9 +84,9 @@ export function CosmeticCard({
           disabled={loading}
           className="w-full py-2 rounded-xl text-[10px] font-black transition-opacity hover:opacity-80 disabled:opacity-50"
           style={{
-            background: 'rgba(74,222,128,0.15)',
-            border: '1px solid rgba(74,222,128,0.25)',
-            color: '#86efac',
+            background: '#f0fdf4',
+            border: '1.5px solid #bbf7d0',
+            color: '#16a34a',
           }}
         >
           {loading ? '...' : 'Equip'}
@@ -97,12 +97,12 @@ export function CosmeticCard({
           disabled={loading || !canAfford}
           className="w-full py-2 rounded-xl text-[10px] font-black flex items-center justify-center gap-1 transition-opacity hover:opacity-80 disabled:opacity-50"
           style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: '#fff',
+            background: '#f3f0ff',
+            border: '1.5px solid #ede9f6',
+            color: '#1a1a2e',
           }}
         >
-          <Coins className="w-3 h-3" style={{ color: '#fbbf24' }} />
+          <Coins className="w-3 h-3" style={{ color: '#d97706' }} />
           {loading ? '...' : `${item.coinPrice} Coins`}
         </button>
       )}

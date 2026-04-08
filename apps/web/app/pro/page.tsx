@@ -46,14 +46,14 @@ export default function ProPage() {
   };
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
         <div className="text-center mb-8">
-          <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#fbbf24' }} />
-          <h1 className="text-4xl font-black text-white mb-1">Go Pro</h1>
-          <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#d97706' }} />
+          <h1 className="text-4xl font-black mb-1" style={{ color: '#1a1a2e' }}>Go Pro</h1>
+          <p className="text-sm font-bold" style={{ color: '#9ca3af' }}>
             Unlock the full SpellStrike experience
           </p>
         </div>
@@ -62,8 +62,8 @@ export default function ProPage() {
           <div
             className="text-center p-8"
             style={{
-              background: '#13102a',
-              border: '1px solid rgba(251,191,36,0.3)',
+              background: '#ffffff',
+              border: '1.5px solid #fde68a',
               borderRadius: '16px',
             }}
           >
@@ -74,7 +74,7 @@ export default function ProPage() {
               <Crown className="w-4 h-4 text-white" />
               <span className="text-white font-black text-sm">ACTIVE PRO</span>
             </div>
-            <p className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="text-sm font-bold" style={{ color: '#9ca3af' }}>
               You're enjoying all Pro benefits!
             </p>
           </div>
@@ -88,13 +88,13 @@ export default function ProPage() {
                   key={i}
                   className="flex items-center gap-3 p-3.5"
                   style={{
-                    background: '#13102a',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: '#ffffff',
+                    border: '1.5px solid #ede9f6',
                     borderRadius: '16px',
                   }}
                 >
-                  <b.icon className="w-5 h-5 flex-shrink-0" style={{ color: '#fbbf24' }} />
-                  <span className="text-white text-xs font-bold">{b.text}</span>
+                  <b.icon className="w-5 h-5 flex-shrink-0" style={{ color: '#d97706' }} />
+                  <span className="text-xs font-bold" style={{ color: '#1a1a2e' }}>{b.text}</span>
                 </div>
               ))}
             </div>
@@ -106,16 +106,16 @@ export default function ProPage() {
               <div
                 className="p-5"
                 style={{
-                  background: '#13102a',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: '#ffffff',
+                  border: '1.5px solid #ede9f6',
                   borderRadius: '16px',
                 }}
               >
-                <h3 className="text-sm font-extrabold text-white mb-1">Monthly</h3>
-                <div className="text-3xl font-black text-white mb-0.5">
-                  ${PRO_PLANS.monthly.price}<span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>/mo</span>
+                <h3 className="text-sm font-extrabold mb-1" style={{ color: '#1a1a2e' }}>Monthly</h3>
+                <div className="text-3xl font-black mb-0.5" style={{ color: '#1a1a2e' }}>
+                  ${PRO_PLANS.monthly.price}<span className="text-sm font-bold" style={{ color: '#9ca3af' }}>/mo</span>
                 </div>
-                <p className="text-xs font-bold mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>Cancel anytime</p>
+                <p className="text-xs font-bold mb-5" style={{ color: '#9ca3af' }}>Cancel anytime</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.monthly.id)}
                   disabled={loading !== null}
@@ -133,8 +133,8 @@ export default function ProPage() {
               <div
                 className="p-5 relative"
                 style={{
-                  background: '#13102a',
-                  border: '1px solid rgba(251,191,36,0.3)',
+                  background: '#ffffff',
+                  border: '1.5px solid #fde68a',
                   borderRadius: '16px',
                 }}
               >
@@ -144,11 +144,11 @@ export default function ProPage() {
                 >
                   BEST VALUE
                 </div>
-                <h3 className="text-sm font-extrabold text-white mb-1">Yearly</h3>
-                <div className="text-3xl font-black text-white mb-0.5">
-                  ${PRO_PLANS.yearly.price}<span className="text-sm font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>/yr</span>
+                <h3 className="text-sm font-extrabold mb-1" style={{ color: '#1a1a2e' }}>Yearly</h3>
+                <div className="text-3xl font-black mb-0.5" style={{ color: '#1a1a2e' }}>
+                  ${PRO_PLANS.yearly.price}<span className="text-sm font-bold" style={{ color: '#9ca3af' }}>/yr</span>
                 </div>
-                <p className="text-xs font-bold mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>$4.99/mo billed annually</p>
+                <p className="text-xs font-bold mb-5" style={{ color: '#9ca3af' }}>$4.99/mo billed annually</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.yearly.id)}
                   disabled={loading !== null}

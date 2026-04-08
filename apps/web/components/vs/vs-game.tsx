@@ -182,7 +182,7 @@ export function VsGame({ mode }: VsGameProps) {
   // Queue screen
   if (screen === 'queue') {
     return (
-      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#0d0a1a' }}>
+      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
         {/* Countdown overlay */}
         <AnimatePresence>
           {showCountdown && (
@@ -196,7 +196,7 @@ export function VsGame({ mode }: VsGameProps) {
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="text-white/50 text-lg font-bold uppercase tracking-widest"
+                  className="text-gray-400 text-lg font-bold uppercase tracking-widest"
                 >
                   Match Found
                 </motion.div>
@@ -227,13 +227,13 @@ export function VsGame({ mode }: VsGameProps) {
           </motion.div>
 
           <div className="space-y-2">
-            <p className="text-white/70 text-lg font-bold">Finding Opponent...</p>
+            <p className="text-gray-400 text-lg font-bold">Finding Opponent...</p>
             <p className="text-white/40 text-sm">Position in queue: {queuePosition + 1}</p>
           </div>
 
           <button
             onClick={handleCancel}
-            className="bg-white/10 hover:bg-white/20 border border-white/20 text-white/70 hover:text-white font-bold px-6 py-2 rounded-xl transition-all flex items-center gap-2 mx-auto"
+            className="bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-400 hover:text-white font-bold px-6 py-2 rounded-xl transition-all flex items-center gap-2 mx-auto"
           >
             <X className="w-4 h-4" /> Cancel
           </button>
@@ -241,7 +241,7 @@ export function VsGame({ mode }: VsGameProps) {
 
         {message && (
           <div className="absolute bottom-8 left-0 right-0 text-center">
-            <span className="bg-black/70 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
+            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
           </div>
         )}
       </div>
@@ -257,7 +257,7 @@ export function VsGame({ mode }: VsGameProps) {
     const headlineColor = isWin ? 'from-green-400 to-emerald-300' : isDraw ? 'from-yellow-400 to-orange-300' : 'from-red-400 to-rose-300';
 
     return (
-      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#0d0a1a' }}>
+      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
         <div className="text-center space-y-8 max-w-md w-full px-6">
           {/* Headline */}
           <motion.div
@@ -275,22 +275,22 @@ export function VsGame({ mode }: VsGameProps) {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-6 space-y-3"
+            className="bg-gray-100 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 space-y-3"
           >
-            <div className="flex justify-between text-white/70 text-sm font-bold">
+            <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Your Guesses</span>
               <span className="text-white">{matchResult?.playerGuesses}</span>
             </div>
-            <div className="flex justify-between text-white/70 text-sm font-bold">
+            <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Opponent Guesses</span>
               <span className="text-white">{matchResult?.opponentGuesses}</span>
             </div>
-            <div className="h-px bg-white/10" />
-            <div className="flex justify-between text-white/70 text-sm font-bold">
+            <div className="h-px bg-gray-100" />
+            <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Your Time</span>
               <span className="text-white">{Math.round((matchResult?.playerTime || 0) / 1000)}s</span>
             </div>
-            <div className="flex justify-between text-white/70 text-sm font-bold">
+            <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Opponent Time</span>
               <span className="text-white">{Math.round((matchResult?.opponentTime || 0) / 1000)}s</span>
             </div>
@@ -305,7 +305,7 @@ export function VsGame({ mode }: VsGameProps) {
           >
             <button
               onClick={handleHome}
-              className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
             >
               <Home className="w-4 h-4" /> Home
             </button>
@@ -351,13 +351,13 @@ export function VsGame({ mode }: VsGameProps) {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       {/* Match Header */}
       <div className="text-center py-1 shrink-0">
         <div className="flex items-center justify-between px-4">
           <button
             onClick={handleForfeit}
-            className="text-white/40 hover:text-white/70 text-xs font-bold transition-colors"
+            className="text-white/40 hover:text-gray-400 text-xs font-bold transition-colors"
           >
             Forfeit
           </button>
@@ -375,7 +375,7 @@ export function VsGame({ mode }: VsGameProps) {
 
       {message && (
         <div className="absolute bottom-20 left-0 right-0 text-center z-30">
-          <span className="bg-black/70 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
+          <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
         </div>
       )}
     </div>

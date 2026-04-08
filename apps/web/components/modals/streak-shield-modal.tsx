@@ -45,7 +45,7 @@ export function StreakShieldModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -53,15 +53,16 @@ export function StreakShieldModal({
             exit={{ scale: 0.9, opacity: 0 }}
             className="relative w-full max-w-sm p-6"
             style={{
-              background: '#13102a',
-              border: '1px solid rgba(167,139,250,0.3)',
+              background: '#ffffff',
+              border: '1.5px solid #c4b5fd',
               borderRadius: '20px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
             }}
           >
             <button
               onClick={onClose}
               className="absolute top-4 right-4 transition-opacity hover:opacity-80"
-              style={{ color: 'rgba(255,255,255,0.3)' }}
+              style={{ color: '#9ca3af' }}
             >
               <X className="w-5 h-5" />
             </button>
@@ -81,11 +82,11 @@ export function StreakShieldModal({
                 </div>
               </div>
 
-              <h2 className="text-xl font-black text-white">Streak at Risk!</h2>
+              <h2 className="text-xl font-black" style={{ color: '#1a1a2e' }}>Streak at Risk!</h2>
 
               {/* Large streak number */}
-              <div className="text-5xl font-black text-white">{streak}</div>
-              <p className="text-xs font-bold" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <div className="text-5xl font-black" style={{ color: '#1a1a2e' }}>{streak}</div>
+              <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>
                 day streak will be lost if you don't play today
               </p>
 
@@ -93,14 +94,14 @@ export function StreakShieldModal({
               <div className="flex justify-center gap-3">
                 <div
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold"
-                  style={{ background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)', color: '#c4b5fd' }}
+                  style={{ background: '#f3f0ff', border: '1.5px solid #c4b5fd', color: '#5b21b6' }}
                 >
                   <Shield className="w-3.5 h-3.5" />
                   <span>{shields}</span>
                 </div>
                 <div
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold"
-                  style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fde68a' }}
+                  style={{ background: '#fef9ec', border: '1.5px solid #fde68a', color: '#92400e' }}
                 >
                   <Coins className="w-3.5 h-3.5" />
                   <span>{coins.toLocaleString()}</span>
@@ -139,7 +140,7 @@ export function StreakShieldModal({
                   onClick={onDecline}
                   disabled={loading !== null}
                   className="w-full py-2 text-xs font-bold transition-colors disabled:opacity-50"
-                  style={{ color: 'rgba(255,255,255,0.4)' }}
+                  style={{ color: '#9ca3af' }}
                 >
                   Let Streak Reset
                 </button>

@@ -17,10 +17,10 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage 
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-      className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2 flex items-center gap-3"
+      className="bg-gray-100 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-3"
     >
       <span className="text-white/60 text-xs font-bold uppercase tracking-wider">Opponent</span>
-      <div className="h-4 w-px bg-white/20" />
+      <div className="h-4 w-px bg-gray-200" />
 
       {currentStage !== undefined ? (
         // Gauntlet mode

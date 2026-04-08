@@ -362,7 +362,7 @@ export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0">
         <GauntletProgress
@@ -388,7 +388,7 @@ export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
                 ? 'bg-red-500/30 text-red-200 border border-red-400/40'
                 : showStolenGuess
                   ? 'bg-orange-500/30 text-orange-200 border border-orange-400/40'
-                  : 'bg-black/70 text-white'
+                  : 'bg-gray-800 text-white'
             }`}>
               {message}
               {isInBlackout && blackoutTimeLeft > 0 && (

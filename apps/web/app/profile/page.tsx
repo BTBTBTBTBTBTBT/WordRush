@@ -147,17 +147,17 @@ export default function ProfilePage() {
 
   if (loading || loadingStats) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0d0a1a' }}>
-        <div className="text-white text-lg font-black">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8f7ff' }}>
+        <div className="text-lg font-black" style={{ color: '#1a1a2e' }}>Loading...</div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#0d0a1a' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f8f7ff' }}>
         <div className="text-center">
-          <h1 className="text-2xl font-black text-white mb-4">Sign in to view your profile</h1>
+          <h1 className="text-2xl font-black mb-4" style={{ color: '#1a1a2e' }}>Sign in to view your profile</h1>
           <Link href="/">
             <button
               className="btn-3d px-6 py-2.5 rounded-xl text-white font-black text-sm"
@@ -178,7 +178,7 @@ export default function ProfilePage() {
     : '0.0';
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">
@@ -197,20 +197,21 @@ export default function ProfilePage() {
                 onKeyDown={handleUsernameKeyDown}
                 maxLength={20}
                 disabled={savingUsername}
-                className="text-2xl font-black text-center px-4 py-2 text-white outline-none w-56"
+                className="text-2xl font-black text-center px-4 py-2 outline-none w-56"
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#1a1a2e',
+                  background: '#f3f0ff',
+                  border: '1.5px solid #c4b5fd',
                   borderRadius: '12px',
                 }}
               />
-              {usernameError && <p className="text-red-400 text-xs font-bold">{usernameError}</p>}
+              {usernameError && <p className="text-red-500 text-xs font-bold">{usernameError}</p>}
             </div>
           ) : (
             <button onClick={() => setEditingUsername(true)} className="group flex items-center gap-2">
-              <h1 className="text-3xl font-black text-white">{profile.username}</h1>
+              <h1 className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.username}</h1>
               {(profile as any).is_pro && <ProBadge size="md" />}
-              <Pencil className="w-4 h-4 opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: '#fff' }} />
+              <Pencil className="w-4 h-4 opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: '#9ca3af' }} />
             </button>
           )}
 
@@ -218,16 +219,16 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center gap-1.5">
             <div
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold"
-              style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.25)', color: '#fde68a' }}
+              style={{ background: '#fef9ec', border: '1.5px solid #fde68a', color: '#92400e' }}
             >
               <Star className="w-3.5 h-3.5" fill="currentColor" />
               Level {profile.level}
             </div>
             <div className="w-40">
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#ede9f6' }}>
                 <div className="h-full" style={{ width: `${levelProgress}%`, background: 'linear-gradient(90deg, #fbbf24, #f97316)' }} />
               </div>
-              <p className="text-[10px] font-bold text-center mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              <p className="text-[10px] font-bold text-center mt-0.5" style={{ color: '#9ca3af' }}>
                 {xpToNextLevel} XP to next
               </p>
             </div>
@@ -236,8 +237,8 @@ export default function ProfilePage() {
           <div className="flex items-center gap-2">
             <Link href="/shop">
               <button
-                className="btn-3d px-4 py-1.5 rounded-lg text-white font-extrabold text-xs"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+                className="btn-3d px-4 py-1.5 rounded-lg font-extrabold text-xs"
+                style={{ background: '#f3f0ff', border: '1.5px solid #ede9f6', color: '#7c3aed' }}
               >
                 Shop
               </button>
@@ -259,24 +260,24 @@ export default function ProfilePage() {
         <div className="section-header mb-2">OVERVIEW</div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { icon: Star, label: 'Level', value: profile.level, color: '#fbbf24', fill: true },
-            { icon: Trophy, label: 'Wins', value: profile.total_wins, color: '#4ade80', sub: `${winRate}% rate` },
-            { icon: Flame, label: 'Streak', value: profile.current_streak, color: '#f97316', fill: true, sub: `Best: ${profile.best_streak}` },
-            { icon: Target, label: 'Games', value: profile.total_wins + profile.total_losses, color: '#60a5fa' },
+            { icon: Star, label: 'Level', value: profile.level, color: '#d97706', fill: true },
+            { icon: Trophy, label: 'Wins', value: profile.total_wins, color: '#16a34a', sub: `${winRate}% rate` },
+            { icon: Flame, label: 'Streak', value: profile.current_streak, color: '#ea580c', fill: true, sub: `Best: ${profile.best_streak}` },
+            { icon: Target, label: 'Games', value: profile.total_wins + profile.total_losses, color: '#2563eb' },
           ].map((s, i) => {
             const Icon = s.icon;
             return (
               <div
                 key={i}
                 className="p-4"
-                style={{ background: '#13102a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px' }}
+                style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <Icon className="w-5 h-5" style={{ color: s.color }} fill={s.fill ? 'currentColor' : 'none'} />
-                  <span className="text-[10px] font-extrabold uppercase" style={{ color: 'rgba(255,255,255,0.4)' }}>{s.label}</span>
+                  <span className="text-[10px] font-extrabold uppercase" style={{ color: '#9ca3af' }}>{s.label}</span>
                 </div>
-                <div className="text-2xl font-black text-white">{s.value}</div>
-                {s.sub && <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>{s.sub}</div>}
+                <div className="text-2xl font-black" style={{ color: '#1a1a2e' }}>{s.value}</div>
+                {s.sub && <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>{s.sub}</div>}
               </div>
             );
           })}
@@ -286,20 +287,20 @@ export default function ProfilePage() {
         <div className="section-header mb-2">DAILY MEDALS</div>
         <div
           className="p-4"
-          style={{ background: '#13102a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px' }}
+          style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
         >
           <div className="grid grid-cols-3 gap-3 mb-3">
             {[
-              { icon: Crown, count: (profile as any).gold_medals || 0, label: 'Gold', color: '#fbbf24' },
-              { icon: Medal, count: (profile as any).silver_medals || 0, label: 'Silver', color: '#cbd5e1' },
-              { icon: Medal, count: (profile as any).bronze_medals || 0, label: 'Bronze', color: '#d97706' },
+              { icon: Crown, count: (profile as any).gold_medals || 0, label: 'Gold', color: '#d97706' },
+              { icon: Medal, count: (profile as any).silver_medals || 0, label: 'Silver', color: '#9ca3af' },
+              { icon: Medal, count: (profile as any).bronze_medals || 0, label: 'Bronze', color: '#b45309' },
             ].map((m, i) => {
               const Icon = m.icon;
               return (
-                <div key={i} className="text-center p-3" style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px' }}>
+                <div key={i} className="text-center p-3" style={{ background: '#f8f7ff', borderRadius: '12px' }}>
                   <Icon className="w-6 h-6 mx-auto mb-1" style={{ color: m.color }} />
                   <div className="text-xl font-black" style={{ color: m.color }}>{m.count}</div>
-                  <div className="text-[10px] font-extrabold" style={{ color: 'rgba(255,255,255,0.4)' }}>{m.label}</div>
+                  <div className="text-[10px] font-extrabold" style={{ color: '#9ca3af' }}>{m.label}</div>
                 </div>
               );
             })}
@@ -311,22 +312,22 @@ export default function ProfilePage() {
                 <div
                   key={medal.id}
                   className="flex items-center gap-2.5 p-2.5"
-                  style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}
+                  style={{ background: '#f8f7ff', borderRadius: '10px' }}
                 >
-                  {medal.medal_type === 'gold' && <Crown className="w-4 h-4" style={{ color: '#fbbf24' }} />}
-                  {medal.medal_type === 'silver' && <Medal className="w-4 h-4" style={{ color: '#cbd5e1' }} />}
-                  {medal.medal_type === 'bronze' && <Medal className="w-4 h-4" style={{ color: '#d97706' }} />}
-                  <span className="text-white text-xs font-extrabold flex-1">
+                  {medal.medal_type === 'gold' && <Crown className="w-4 h-4" style={{ color: '#d97706' }} />}
+                  {medal.medal_type === 'silver' && <Medal className="w-4 h-4" style={{ color: '#9ca3af' }} />}
+                  {medal.medal_type === 'bronze' && <Medal className="w-4 h-4" style={{ color: '#b45309' }} />}
+                  <span className="text-xs font-extrabold flex-1" style={{ color: '#1a1a2e' }}>
                     {gameModeTitles[medal.game_mode] || medal.game_mode}
                   </span>
-                  <span className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                  <span className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
                     {new Date(medal.day + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-center text-xs font-bold py-3" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <p className="text-center text-xs font-bold py-3" style={{ color: '#9ca3af' }}>
               Play daily challenges to earn medals!
             </p>
           )}
@@ -335,7 +336,7 @@ export default function ProfilePage() {
         {/* Achievements */}
         <div className="section-header mb-2 flex items-center justify-between">
           <span>ACHIEVEMENTS</span>
-          <span style={{ color: 'rgba(255,255,255,0.3)' }}>{userAchievements.size}/{ACHIEVEMENTS.length}</span>
+          <span style={{ color: '#9ca3af' }}>{userAchievements.size}/{ACHIEVEMENTS.length}</span>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {ACHIEVEMENTS.map((achievement) => {
@@ -345,15 +346,15 @@ export default function ProfilePage() {
                 key={achievement.key}
                 className="text-center p-2.5 transition-all"
                 style={{
-                  background: isUnlocked ? 'rgba(167,139,250,0.1)' : 'rgba(255,255,255,0.02)',
-                  border: isUnlocked ? '1px solid rgba(167,139,250,0.25)' : '1px solid rgba(255,255,255,0.04)',
+                  background: isUnlocked ? '#f3f0ff' : '#fafafa',
+                  border: isUnlocked ? '1.5px solid #c4b5fd' : '1.5px solid #ede9f6',
                   borderRadius: '12px',
                   opacity: isUnlocked ? 1 : 0.4,
                 }}
               >
                 <div className="text-lg mb-0.5">{isUnlocked ? '✓' : '?'}</div>
-                <div className="text-[10px] font-extrabold text-white truncate">{achievement.name}</div>
-                <div className="text-[9px] font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>{achievement.description}</div>
+                <div className="text-[10px] font-extrabold truncate" style={{ color: '#1a1a2e' }}>{achievement.name}</div>
+                <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>{achievement.description}</div>
               </div>
             );
           })}
@@ -371,9 +372,9 @@ export default function ProfilePage() {
               onClick={() => setActiveTab(type)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition-all"
               style={{
-                background: activeTab === type ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-                border: activeTab === type ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                color: activeTab === type ? '#fff' : 'rgba(255,255,255,0.3)',
+                background: activeTab === type ? '#ffffff' : '#f3f0ff',
+                border: activeTab === type ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+                color: activeTab === type ? '#7c3aed' : '#9ca3af',
               }}
             >
               {type === 'solo' ? <User className="w-3.5 h-3.5" /> : <Swords className="w-3.5 h-3.5" />}
@@ -383,7 +384,7 @@ export default function ProfilePage() {
         </div>
 
         {filteredStats.length === 0 ? (
-          <div className="text-center py-8 text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          <div className="text-center py-8 text-xs font-bold" style={{ color: '#9ca3af' }}>
             {activeTab === 'solo' ? 'Play some solo games to see stats!' : 'Play VS matches to see stats!'}
           </div>
         ) : (
@@ -392,28 +393,28 @@ export default function ProfilePage() {
               <div
                 key={stat.id}
                 className="p-4"
-                style={{ background: '#13102a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px' }}
+                style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
               >
-                <h3 className="text-sm font-extrabold text-white mb-2 flex items-center gap-1.5">
-                  <Zap className="w-4 h-4" style={{ color: '#fbbf24' }} />
+                <h3 className="text-sm font-extrabold mb-2 flex items-center gap-1.5" style={{ color: '#1a1a2e' }}>
+                  <Zap className="w-4 h-4" style={{ color: '#d97706' }} />
                   {gameModeTitles[stat.game_mode] || stat.game_mode}
                 </h3>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <div style={{ color: 'rgba(255,255,255,0.4)' }} className="font-bold">Wins</div>
-                    <div className="font-black text-base" style={{ color: '#4ade80' }}>{stat.wins}</div>
+                    <div style={{ color: '#9ca3af' }} className="font-bold">Wins</div>
+                    <div className="font-black text-base" style={{ color: '#16a34a' }}>{stat.wins}</div>
                   </div>
                   <div>
-                    <div style={{ color: 'rgba(255,255,255,0.4)' }} className="font-bold">Losses</div>
-                    <div className="font-black text-base" style={{ color: '#f87171' }}>{stat.losses}</div>
+                    <div style={{ color: '#9ca3af' }} className="font-bold">Losses</div>
+                    <div className="font-black text-base" style={{ color: '#dc2626' }}>{stat.losses}</div>
                   </div>
                   <div>
-                    <div style={{ color: 'rgba(255,255,255,0.4)' }} className="font-bold">Best</div>
-                    <div className="font-black text-base" style={{ color: '#fbbf24' }}>{stat.best_score}</div>
+                    <div style={{ color: '#9ca3af' }} className="font-bold">Best</div>
+                    <div className="font-black text-base" style={{ color: '#d97706' }}>{stat.best_score}</div>
                   </div>
                   <div>
-                    <div style={{ color: 'rgba(255,255,255,0.4)' }} className="font-bold">Fastest</div>
-                    <div className="font-black text-base" style={{ color: '#60a5fa' }}>
+                    <div style={{ color: '#9ca3af' }} className="font-bold">Fastest</div>
+                    <div className="font-black text-base" style={{ color: '#2563eb' }}>
                       {stat.fastest_time > 0 ? `${stat.fastest_time}s` : '-'}
                     </div>
                   </div>
@@ -426,7 +427,7 @@ export default function ProfilePage() {
         {/* Recent Matches */}
         <div className="section-header mb-2">RECENT MATCHES</div>
         {matches.length === 0 ? (
-          <div className="text-center py-8 text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          <div className="text-center py-8 text-xs font-bold" style={{ color: '#9ca3af' }}>
             No matches played yet.
           </div>
         ) : (
@@ -441,31 +442,31 @@ export default function ProfilePage() {
                 <div
                   key={match.id}
                   className="flex items-center gap-3 p-3"
-                  style={{ background: '#13102a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}
+                  style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '12px' }}
                 >
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: isWinner ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)' }}
+                    style={{ background: isWinner ? '#f0fdf4' : '#fef2f2' }}
                   >
                     {isWinner ? (
-                      <Check className="w-4 h-4" style={{ color: '#4ade80' }} />
+                      <Check className="w-4 h-4" style={{ color: '#16a34a' }} />
                     ) : (
-                      <X className="w-4 h-4" style={{ color: '#f87171' }} />
+                      <X className="w-4 h-4" style={{ color: '#dc2626' }} />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-white text-xs font-extrabold truncate">
+                    <div className="text-xs font-extrabold truncate" style={{ color: '#1a1a2e' }}>
                       {gameModeTitles[match.game_mode] || match.game_mode}
                     </div>
-                    <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
                       {!match.player2_id ? 'Solo' : 'VS'}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-xs font-extrabold" style={{ color: isWinner ? '#4ade80' : '#f87171' }}>
+                    <div className="text-xs font-extrabold" style={{ color: isWinner ? '#16a34a' : '#dc2626' }}>
                       {isWinner ? 'Win' : 'Loss'}
                     </div>
-                    <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                    <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
                       {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                   </div>

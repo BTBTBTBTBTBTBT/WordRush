@@ -74,12 +74,12 @@ export default function ShopPage() {
     : [];
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-black text-white">Shop</h1>
+          <h1 className="text-3xl font-black" style={{ color: '#1a1a2e' }}>Shop</h1>
         </div>
 
         {/* Tabs */}
@@ -90,9 +90,9 @@ export default function ShopPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all"
               style={{
-                background: activeTab === tab.id ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-                border: activeTab === tab.id ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                color: activeTab === tab.id ? '#fff' : 'rgba(255,255,255,0.4)',
+                background: activeTab === tab.id ? '#ffffff' : '#f3f0ff',
+                border: activeTab === tab.id ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+                color: activeTab === tab.id ? '#7c3aed' : '#9ca3af',
               }}
             >
               <tab.icon className="w-3.5 h-3.5" />
@@ -102,7 +102,7 @@ export default function ShopPage() {
         </div>
 
         {!user ? (
-          <div className="text-center py-12" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <div className="text-center py-12" style={{ color: '#9ca3af' }}>
             Sign in to access the shop.
           </div>
         ) : activeTab === 'coins' ? (
@@ -112,19 +112,19 @@ export default function ShopPage() {
                 key={pack.id}
                 className="p-5 text-center"
                 style={{
-                  background: '#13102a',
-                  border: pack.popular ? '1px solid rgba(251,191,36,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                  background: '#ffffff',
+                  border: pack.popular ? '1.5px solid #fde68a' : '1.5px solid #ede9f6',
                   borderRadius: '16px',
                 }}
               >
                 {pack.popular && (
-                  <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: '#fbbf24' }}>
+                  <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: '#d97706' }}>
                     Most Popular
                   </div>
                 )}
-                <Coins className="w-10 h-10 mx-auto mb-2" style={{ color: '#fbbf24' }} />
-                <div className="text-2xl font-black text-white mb-1">{pack.coins.toLocaleString()}</div>
-                <div className="text-xs font-bold mb-4" style={{ color: 'rgba(255,255,255,0.4)' }}>Coins</div>
+                <Coins className="w-10 h-10 mx-auto mb-2" style={{ color: '#d97706' }} />
+                <div className="text-2xl font-black mb-1" style={{ color: '#1a1a2e' }}>{pack.coins.toLocaleString()}</div>
+                <div className="text-xs font-bold mb-4" style={{ color: '#9ca3af' }}>Coins</div>
                 <button
                   onClick={() => handleBuyCoinPack(pack.id)}
                   disabled={buyingPack !== null}

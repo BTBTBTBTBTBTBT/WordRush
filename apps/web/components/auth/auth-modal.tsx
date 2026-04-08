@@ -74,14 +74,14 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       <DialogContent
         className="sm:max-w-md border"
         style={{
-          background: '#13102a',
-          borderColor: 'rgba(167,139,250,0.3)',
+          background: '#ffffff',
+          borderColor: '#c4b5fd',
         }}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="w-5 h-5" style={{ color: '#fbbf24' }} />
-            <span className="font-black text-white">
+            <Sparkles className="w-5 h-5" style={{ color: '#d97706' }} />
+            <span className="font-black" style={{ color: '#1a1a2e' }}>
               {mode === 'signin' ? 'Welcome Back!' : 'Join the Fun!'}
             </span>
           </DialogTitle>
@@ -93,7 +93,8 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-gray-900 font-extrabold text-sm hover:bg-gray-100 transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-extrabold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+            style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', color: '#1a1a2e' }}
           >
             <GoogleIcon className="w-5 h-5" />
             Continue with Google
@@ -101,16 +102,16 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
-            <span className="text-[10px] font-extrabold" style={{ color: 'rgba(255,255,255,0.3)' }}>or</span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.1)' }} />
+            <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
+            <span className="text-[10px] font-extrabold" style={{ color: '#9ca3af' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
           </div>
 
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'signup' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
                   <User className="w-3.5 h-3.5" />
                   Username
                 </label>
@@ -122,17 +123,18 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   required
                   minLength={3}
                   maxLength={20}
-                  className="w-full px-3 py-2.5 rounded-xl text-white text-sm font-bold outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                   style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#1a1a2e',
+                    background: '#f8f7ff',
+                    border: '1.5px solid #ede9f6',
                   }}
                 />
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
                 <Mail className="w-3.5 h-3.5" />
                 Email
               </label>
@@ -142,16 +144,17 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2.5 rounded-xl text-white text-sm font-bold outline-none"
+                className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#1a1a2e',
+                  background: '#f8f7ff',
+                  border: '1.5px solid #ede9f6',
                 }}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
                 <Lock className="w-3.5 h-3.5" />
                 Password
               </label>
@@ -162,10 +165,11 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-3 py-2.5 rounded-xl text-white text-sm font-bold outline-none"
+                className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                 style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#1a1a2e',
+                  background: '#f8f7ff',
+                  border: '1.5px solid #ede9f6',
                 }}
               />
             </div>
@@ -173,7 +177,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             {error && (
               <div
                 className="p-3 rounded-xl text-xs font-bold"
-                style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}
+                style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}
               >
                 {error}
               </div>
@@ -199,7 +203,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   setError('');
                 }}
                 className="text-xs font-bold transition-colors"
-                style={{ color: 'rgba(255,255,255,0.4)' }}
+                style={{ color: '#9ca3af' }}
               >
                 {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
               </button>

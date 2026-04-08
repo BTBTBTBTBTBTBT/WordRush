@@ -20,10 +20,10 @@ export function CoinBalance({ coins, size = 'md', onClick }: CoinBalanceProps) {
       onClick={onClick}
       className={`inline-flex items-center ${sizeClasses} font-extrabold transition-opacity hover:opacity-80`}
       style={{
-        background: 'rgba(255,255,255,0.08)',
-        border: '1px solid rgba(255,255,255,0.12)',
+        background: '#fef9ec',
+        border: '1.5px solid #fde68a',
         borderRadius: '20px',
-        color: '#fde68a',
+        color: '#92400e',
       }}
     >
       <Coins className={iconSize} />

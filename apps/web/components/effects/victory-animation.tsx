@@ -25,7 +25,7 @@ export function VictoryAnimation({ onComplete }: VictoryAnimationProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
       onClick={onComplete}
     >
       <Confetti colors={confettiColors} />

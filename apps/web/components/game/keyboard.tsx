@@ -33,7 +33,7 @@ interface KeyboardProps {
 const QUADRANT_COLORS: Record<string, string> = {
   correct: 'bg-green-500',
   present: 'bg-yellow-500',
-  absent: 'bg-zinc-700',
+  absent: 'bg-zinc-400',
 };
 
 function QuadrantKey({
@@ -60,13 +60,13 @@ function QuadrantKey({
         'relative h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base overflow-hidden',
         'transition-all duration-300 select-none',
         allAbsent
-          ? 'text-zinc-500'
+          ? 'text-zinc-400'
           : hasAny
           ? 'text-white'
-          : 'text-zinc-400'
+          : 'text-zinc-500'
       )}
       style={{
-        border: '1px solid rgba(255,255,255,0.08)',
+        border: '1.5px solid #ede9f6',
       }}
     >
       <div
@@ -82,12 +82,12 @@ function QuadrantKey({
             <div
               key={i}
               className={cn(state ? QUADRANT_COLORS[state] : '')}
-              style={!state ? { backgroundColor: '#1a1730' } : undefined}
+              style={!state ? { backgroundColor: '#e8e5f0' } : undefined}
             />
           );
         })}
       </div>
-      <span className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+      <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
         {letter}
       </span>
     </button>
@@ -119,9 +119,9 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
                   style={{
-                    backgroundColor: skin ? undefined : '#1a1730',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: '#fff',
+                    backgroundColor: skin ? undefined : '#e8e5f0',
+                    border: '1.5px solid #ede9f6',
+                    color: '#1a1a2e',
                   }}
                 >
                   {key === 'BACK' ? <Delete className="h-5 w-5" /> : key}
@@ -136,9 +136,9 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   disabled
                   className="h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base opacity-40 cursor-not-allowed animate-pulse select-none"
                   style={{
-                    backgroundColor: 'rgba(127,29,29,0.5)',
-                    border: '1px solid rgba(127,29,29,0.4)',
-                    color: 'rgba(127,29,29,0.6)',
+                    backgroundColor: 'rgba(220,38,38,0.15)',
+                    border: '1.5px solid rgba(220,38,38,0.2)',
+                    color: 'rgba(220,38,38,0.4)',
                   }}
                 >
                   ?
@@ -167,12 +167,12 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   'transition-all duration-300 select-none',
                   state === 'correct' && 'bg-green-600 text-white border-green-600',
                   state === 'present' && 'bg-yellow-600 text-white border-yellow-600',
-                  state === 'absent' && 'text-zinc-500',
+                  state === 'absent' && 'text-zinc-400',
                 )}
                 style={{
-                  backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#1a1730' : (skin ? undefined : '#1a1730'),
-                  border: state ? undefined : '1px solid rgba(255,255,255,0.08)',
-                  color: !state ? (skin ? undefined : 'rgba(255,255,255,0.7)') : undefined,
+                  backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#d4d0e0' : (skin ? undefined : '#e8e5f0'),
+                  border: state ? undefined : '1.5px solid #ede9f6',
+                  color: !state ? (skin ? undefined : '#1a1a2e') : undefined,
                 }}
               >
                 {key}

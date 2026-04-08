@@ -23,7 +23,7 @@ function DailyCountdown() {
   const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
   return (
-    <span style={{ color: 'rgba(255,255,255,0.65)' }} className="text-xs font-bold">
+    <span style={{ color: '#9ca3af' }} className="text-xs font-bold">
       Resets in {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}:{s.toString().padStart(2, '0')}
     </span>
   );
@@ -35,8 +35,7 @@ const MODE_CARDS = [
     title: 'Classic',
     icon: Grid3x3,
     desc: '1 word, 6 tries',
-    gradient: 'linear-gradient(145deg, #7c3aed, #4f46e5)',
-    shadow: '0 4px 0 #3730a3',
+    accentColor: '#7c3aed',
     href: '/practice',
     vsHref: '/practice/vs',
   },
@@ -45,8 +44,7 @@ const MODE_CARDS = [
     title: 'QuadWord',
     icon: Grid2x2,
     desc: '4 words at once',
-    gradient: 'linear-gradient(145deg, #be185d, #9d174d)',
-    shadow: '0 4px 0 #831843',
+    accentColor: '#ec4899',
     href: '/quordle',
     vsHref: '/quordle/vs',
     badge: 'HOT',
@@ -56,8 +54,7 @@ const MODE_CARDS = [
     title: 'VS Battle',
     icon: Swords,
     desc: 'Real-time PvP',
-    gradient: 'linear-gradient(145deg, #0d9488, #0f766e)',
-    shadow: '0 4px 0 #115e59',
+    accentColor: '#0d9488',
     href: '/practice/vs',
     vsHref: '/practice/vs',
     badge: 'NEW',
@@ -67,8 +64,7 @@ const MODE_CARDS = [
     title: 'Gauntlet',
     icon: Zap,
     desc: '5 escalating stages',
-    gradient: 'linear-gradient(145deg, #b45309, #92400e)',
-    shadow: '0 4px 0 #78350f',
+    accentColor: '#d97706',
     href: '/gauntlet',
     vsHref: '/gauntlet/vs',
   },
@@ -77,8 +73,7 @@ const MODE_CARDS = [
     title: 'Succession',
     icon: Flame,
     desc: '4 words, one by one',
-    gradient: 'linear-gradient(145deg, #1d4ed8, #1e40af)',
-    shadow: '0 4px 0 #1e3a8a',
+    accentColor: '#2563eb',
     href: '/sequence',
     vsHref: '/sequence/vs',
   },
@@ -87,12 +82,19 @@ const MODE_CARDS = [
     title: 'OctoWord',
     icon: Timer,
     desc: '8 boards, 13 tries',
-    gradient: 'linear-gradient(145deg, #7e22ce, #6b21a8)',
-    shadow: '0 4px 0 #581c87',
+    accentColor: '#7e22ce',
     href: '/octordle',
     vsHref: '/octordle/vs',
     badge: 'PRO',
   },
+];
+
+const WORD_TILES = [
+  { letter: 'S', color: '#6aaa64' },
+  { letter: 'P', color: '#c9b458' },
+  { letter: 'E', color: '#787c7e' },
+  { letter: 'L', color: '#6aaa64' },
+  { letter: 'L', color: '#c9b458' },
 ];
 
 export default function HomePage() {
@@ -124,17 +126,30 @@ export default function HomePage() {
   const streak = profile?.current_streak ?? 0;
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4 space-y-4">
+        {/* Word Tiles Visual Signature */}
+        <div className="flex justify-center gap-1.5">
+          {WORD_TILES.map((tile, i) => (
+            <div
+              key={i}
+              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black text-lg"
+              style={{ backgroundColor: tile.color }}
+            >
+              {tile.letter}
+            </div>
+          ))}
+        </div>
+
         {/* Streak Card */}
         {profile && streak > 0 && (
           <div
             className="flex items-center justify-between p-4"
             style={{
-              background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(234,88,12,0.12))',
-              border: '1px solid rgba(251,191,36,0.25)',
+              background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
+              border: '1.5px solid #fde68a',
               borderRadius: '16px',
             }}
           >
@@ -146,10 +161,10 @@ export default function HomePage() {
                 <Flame className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-[10px] font-extrabold uppercase" style={{ color: '#fbbf24' }}>
+                <div className="text-[10px] font-extrabold uppercase" style={{ color: '#92400e' }}>
                   Day Streak
                 </div>
-                <div className="text-[28px] font-black text-white leading-none">{streak}</div>
+                <div className="text-[28px] font-black leading-none" style={{ color: '#1a1a2e' }}>{streak}</div>
               </div>
             </div>
             <div
@@ -171,7 +186,7 @@ export default function HomePage() {
             style={{
               background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
               borderRadius: '14px',
-              boxShadow: '0 5px 0 #4c1d95, 0 8px 20px rgba(109,40,217,0.4)',
+              boxShadow: '0 5px 0 #4c1d95, 0 8px 20px rgba(109,40,217,0.25)',
             }}
           >
             <div className="flex items-center gap-2 text-base">
@@ -191,26 +206,27 @@ export default function HomePage() {
             return (
               <Link key={mode.id} href={mode.href}>
                 <div
-                  className="relative p-[14px] cursor-pointer transition-transform active:scale-[0.96]"
+                  className="relative p-[14px] cursor-pointer transition-transform active:scale-[0.96] overflow-hidden"
                   style={{
-                    background: mode.gradient,
+                    background: '#ffffff',
+                    border: '1.5px solid #ede9f6',
                     borderRadius: '16px',
-                    boxShadow: mode.shadow,
+                    boxShadow: '0 4px 0 #ede9f6',
                   }}
                 >
-                  {/* Shine circle */}
+                  {/* Top accent bar */}
                   <div
-                    className="absolute top-0 right-0 w-16 h-16 rounded-full"
+                    className="absolute top-0 left-0 right-0 h-1"
                     style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      transform: 'translate(25%, -25%)',
+                      background: `linear-gradient(90deg, ${mode.accentColor}, ${mode.accentColor}88)`,
+                      borderRadius: '16px 16px 0 0',
                     }}
                   />
 
                   {/* Badge */}
                   {mode.badge && (
                     <div
-                      className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[9px] font-black text-white"
+                      className="absolute top-2.5 right-2 px-1.5 py-0.5 rounded-md text-[9px] font-black text-white"
                       style={{
                         background: mode.badge === 'HOT' ? '#ef4444' : mode.badge === 'NEW' ? '#22c55e' : '#a78bfa',
                       }}
@@ -221,14 +237,14 @@ export default function HomePage() {
 
                   {/* Icon wrap */}
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center mb-2"
-                    style={{ background: 'rgba(255,255,255,0.15)' }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 mt-1"
+                    style={{ background: `${mode.accentColor}15` }}
                   >
-                    <Icon className="w-4 h-4 text-white" />
+                    <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
                   </div>
 
-                  <div className="text-[13px] font-black text-white">{mode.title}</div>
-                  <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                  <div className="text-[13px] font-black" style={{ color: '#1a1a2e' }}>{mode.title}</div>
+                  <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
                     {mode.desc}
                   </div>
                 </div>
@@ -241,18 +257,18 @@ export default function HomePage() {
         <div
           className="flex items-center justify-between p-4 mt-2"
           style={{
-            background: 'linear-gradient(135deg, #0f172a, #1e1b4b)',
-            border: '1px solid rgba(99,102,241,0.3)',
+            background: '#ffffff',
+            border: '1.5px solid #ede9f6',
             borderRadius: '16px',
           }}
         >
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-white font-black text-sm">LIVE</span>
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="font-black text-sm" style={{ color: '#1a1a2e' }}>LIVE</span>
             </div>
             <div>
-              <div className="text-white/60 text-[10px] font-bold">Players online</div>
+              <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>Players online</div>
             </div>
           </div>
           <button
@@ -273,12 +289,12 @@ export default function HomePage() {
           <div
             className="text-center p-6"
             style={{
-              background: '#13102a',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: '#ffffff',
+              border: '1.5px solid #ede9f6',
               borderRadius: '16px',
             }}
           >
-            <p className="text-white/60 text-sm font-bold mb-3">Sign in to track stats & compete</p>
+            <p className="text-sm font-bold mb-3" style={{ color: '#9ca3af' }}>Sign in to track stats & compete</p>
             <button
               onClick={() => setAuthModalOpen(true)}
               className="btn-3d px-6 py-2.5 text-white font-black text-sm rounded-xl"
@@ -294,7 +310,8 @@ export default function HomePage() {
         ) : (
           <button
             onClick={() => signOut()}
-            className="w-full py-2 text-center text-white/30 text-xs font-bold hover:text-white/50 transition-colors"
+            className="w-full py-2 text-center text-xs font-bold hover:opacity-70 transition-colors"
+            style={{ color: '#9ca3af' }}
           >
             <LogOut className="w-3 h-3 inline mr-1" />
             Sign Out

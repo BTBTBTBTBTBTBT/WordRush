@@ -48,12 +48,12 @@ export default function RecordsPage() {
   });
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
         <div className="text-center mb-4">
-          <h1 className="text-2xl font-black text-white">All-Time Records</h1>
+          <h1 className="text-2xl font-black" style={{ color: '#1a1a2e' }}>All-Time Records</h1>
         </div>
 
         {/* Category Tabs */}
@@ -64,9 +64,9 @@ export default function RecordsPage() {
               onClick={() => setActiveCategory(cat)}
               className="px-3.5 py-2 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all"
               style={{
-                background: activeCategory === cat ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-                border: activeCategory === cat ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                color: activeCategory === cat ? '#fff' : 'rgba(255,255,255,0.4)',
+                background: activeCategory === cat ? '#ffffff' : '#f3f0ff',
+                border: activeCategory === cat ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+                color: activeCategory === cat ? '#7c3aed' : '#9ca3af',
               }}
             >
               {cat}
@@ -76,11 +76,11 @@ export default function RecordsPage() {
 
         {/* Records List */}
         {loading ? (
-          <div className="text-center py-12 text-xs font-bold" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          <div className="text-center py-12 text-xs font-bold" style={{ color: '#9ca3af' }}>
             Loading records...
           </div>
         ) : filteredRecords.length === 0 ? (
-          <div className="text-center py-12" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          <div className="text-center py-12" style={{ color: '#9ca3af' }}>
             <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-xs font-bold">No records set yet in this category.</p>
           </div>
@@ -97,38 +97,38 @@ export default function RecordsPage() {
                   key={record.id}
                   className="flex items-center gap-3 p-4"
                   style={{
-                    background: isCurrentUser ? 'rgba(251,191,36,0.08)' : '#13102a',
-                    border: isCurrentUser ? '1px solid rgba(251,191,36,0.25)' : '1px solid rgba(255,255,255,0.08)',
+                    background: isCurrentUser ? '#fffbeb' : '#ffffff',
+                    border: isCurrentUser ? '1.5px solid #fde68a' : '1.5px solid #ede9f6',
                     borderRadius: '16px',
                   }}
                 >
                   <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: isCurrentUser ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.06)' }}
+                    style={{ background: isCurrentUser ? '#fef9ec' : '#f3f0ff' }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: isCurrentUser ? '#fbbf24' : 'rgba(255,255,255,0.4)' }} />
+                    <Icon className="w-5 h-5" style={{ color: isCurrentUser ? '#d97706' : '#9ca3af' }} />
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="text-white font-extrabold text-xs">
+                    <div className="font-extrabold text-xs" style={{ color: '#1a1a2e' }}>
                       {config.label}
                       {record.game_mode && (
-                        <span style={{ color: 'rgba(255,255,255,0.3)' }}> — {MODE_LABELS[record.game_mode] || record.game_mode}</span>
+                        <span style={{ color: '#9ca3af' }}> — {MODE_LABELS[record.game_mode] || record.game_mode}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <Link
                         href={`/profile/${record.holder_id}`}
                         className="text-[10px] font-bold hover:opacity-80 transition-opacity"
-                        style={{ color: 'rgba(255,255,255,0.4)' }}
+                        style={{ color: '#9ca3af' }}
                       >
                         {record.holder_username || 'Unknown'}
                       </Link>
-                      {isCurrentUser && <Crown className="w-3 h-3" style={{ color: '#fbbf24' }} />}
+                      {isCurrentUser && <Crown className="w-3 h-3" style={{ color: '#d97706' }} />}
                     </div>
                   </div>
 
-                  <div className="text-white font-black text-base">{config.format(record.record_value)}</div>
+                  <div className="font-black text-base" style={{ color: '#1a1a2e' }}>{config.format(record.record_value)}</div>
                 </div>
               );
             })}

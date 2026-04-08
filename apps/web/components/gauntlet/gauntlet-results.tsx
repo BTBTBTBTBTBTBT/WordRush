@@ -53,7 +53,7 @@ export function GauntletResults({
     : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 overflow-y-auto" style={{ backgroundColor: '#0d0a1a' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-y-auto" style={{ backgroundColor: '#f8f7ff' }}>
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -68,7 +68,7 @@ export function GauntletResults({
             transition={{ delay: 0.2, type: 'spring', damping: 10 }}
           >
             {won ? (
-              <Trophy className="w-20 h-20 text-yellow-400 mx-auto" fill="currentColor" />
+              <Trophy className="w-20 h-20 text-amber-600 mx-auto" fill="currentColor" />
             ) : (
               <XCircle className="w-20 h-20 text-red-400 mx-auto" />
             )}
@@ -94,20 +94,20 @@ export function GauntletResults({
           transition={{ delay: 0.6 }}
           className="grid grid-cols-3 gap-3"
         >
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+          <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
             <Trophy className="w-5 h-5 text-green-400 mx-auto mb-1" />
             <div className="text-2xl font-black text-white">{stagesCompleted}/5</div>
-            <div className="text-white/50 text-xs">Stages</div>
+            <div className="text-gray-400 text-xs">Stages</div>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+          <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
             <Hash className="w-5 h-5 text-blue-400 mx-auto mb-1" />
             <div className="text-2xl font-black text-white">{totalGuesses}</div>
-            <div className="text-white/50 text-xs">Guesses</div>
+            <div className="text-gray-400 text-xs">Guesses</div>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center border border-white/10">
+          <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
             <Clock className="w-5 h-5 text-orange-400 mx-auto mb-1" />
             <div className="text-2xl font-black text-white">{formatTime(totalTimeMs)}</div>
-            <div className="text-white/50 text-xs">Time</div>
+            <div className="text-gray-400 text-xs">Time</div>
           </div>
         </motion.div>
 
@@ -116,9 +116,9 @@ export function GauntletResults({
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 space-y-2"
+          className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 space-y-2"
         >
-          <h3 className="text-white/60 text-sm font-bold uppercase tracking-wider mb-3">Stage Breakdown</h3>
+          <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-3">Stage Breakdown</h3>
           {stages.map((stage, i) => {
             const result = stageResults.find(r => r.stageIndex === i);
             const isCompleted = result?.status === GameStatus.WON;
@@ -135,21 +135,21 @@ export function GauntletResults({
                     ? 'bg-green-500/10 border border-green-400/20'
                     : isFailed
                       ? 'bg-red-500/10 border border-red-400/20'
-                      : 'bg-white/5 border border-white/5'
+                      : 'bg-gray-50 border border-white/5'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                    isCompleted ? 'bg-green-500/30 text-green-300' :
+                    isCompleted ? 'bg-green-500/30 text-green-600' :
                     isFailed ? 'bg-red-500/30 text-red-300' :
-                    'bg-white/10 text-white/30'
+                    'bg-gray-100 text-gray-300'
                   }`}>
                     {i + 1}
                   </div>
                   <span className={`font-bold ${
-                    isCompleted ? 'text-green-300' :
+                    isCompleted ? 'text-green-600' :
                     isFailed ? 'text-red-300' :
-                    'text-white/30'
+                    'text-gray-300'
                   }`}>
                     {stage.name}
                   </span>
@@ -157,10 +157,10 @@ export function GauntletResults({
                 <div className="flex items-center gap-4 text-sm">
                   {result ? (
                     <>
-                      <span className="text-white/50">
+                      <span className="text-gray-400">
                         {result.guesses} guess{result.guesses !== 1 ? 'es' : ''}
                       </span>
-                      <span className="text-white/50">
+                      <span className="text-gray-400">
                         {formatTime(result.timeMs)}
                       </span>
                     </>
@@ -179,9 +179,9 @@ export function GauntletResults({
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1.4 }}
-            className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10"
+            className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200"
           >
-            <h3 className="text-white/60 text-sm font-bold uppercase tracking-wider mb-3">All-Time Stats</h3>
+            <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-3">All-Time Stats</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center gap-3 p-2">
                 <BarChart3 className="w-4 h-4 text-purple-400 shrink-0" />
@@ -191,7 +191,7 @@ export function GauntletResults({
                 </div>
               </div>
               <div className="flex items-center gap-3 p-2">
-                <Zap className="w-4 h-4 text-yellow-400 shrink-0" />
+                <Zap className="w-4 h-4 text-amber-600 shrink-0" />
                 <div>
                   <div className="text-white font-bold text-lg">{winRate}%</div>
                   <div className="text-white/40 text-xs">Win Rate</div>
@@ -238,7 +238,7 @@ export function GauntletResults({
           </Button>
           <Button
             onClick={onHome}
-            className="bg-white/10 border-2 border-white/20 hover:bg-white/20 text-white font-bold py-6"
+            className="bg-gray-100 border-2 border-gray-200 hover:bg-gray-200 text-white font-bold py-6"
           >
             <Home className="w-5 h-5 mr-2" />
             Home

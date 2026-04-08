@@ -18,8 +18,8 @@ export function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       style={{
-        backgroundColor: '#0d0a1a',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        backgroundColor: '#f8f7ff',
+        borderTop: '1.5px solid #ede9f6',
       }}
     >
       {NAV_ITEMS.map((item) => {
@@ -34,19 +34,19 @@ export function BottomNav() {
           >
             <Icon
               className="w-5 h-5 transition-colors"
-              style={{ color: isActive ? '#a78bfa' : 'rgba(255,255,255,0.3)' }}
-              fill={isActive ? '#a78bfa' : 'none'}
+              style={{ color: isActive ? '#7c3aed' : '#9ca3af' }}
+              fill={isActive ? '#7c3aed' : 'none'}
             />
             <span
               className="text-[10px] font-extrabold transition-colors"
-              style={{ color: isActive ? '#a78bfa' : 'rgba(255,255,255,0.3)' }}
+              style={{ color: isActive ? '#7c3aed' : '#9ca3af' }}
             >
               {item.label}
             </span>
             {isActive && (
               <div
                 className="w-1 h-1 rounded-full"
-                style={{ backgroundColor: '#a78bfa' }}
+                style={{ backgroundColor: '#7c3aed' }}
               />
             )}
           </Link>

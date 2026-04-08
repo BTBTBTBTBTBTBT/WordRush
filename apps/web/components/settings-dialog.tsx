@@ -22,11 +22,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-md border"
-        style={{ background: '#13102a', borderColor: 'rgba(255,255,255,0.08)' }}
+        style={{ background: '#ffffff', borderColor: '#ede9f6' }}
       >
         <DialogHeader>
-          <DialogTitle className="text-white font-black">Settings</DialogTitle>
-          <DialogDescription style={{ color: 'rgba(255,255,255,0.4)' }} className="text-xs font-bold">
+          <DialogTitle className="font-black" style={{ color: '#1a1a2e' }}>Settings</DialogTitle>
+          <DialogDescription style={{ color: '#9ca3af' }} className="text-xs font-bold">
             Customize your SpellStrike experience
           </DialogDescription>
         </DialogHeader>
@@ -41,12 +41,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   className="w-full text-left p-3 rounded-xl transition-all"
                   onClick={() => setTheme(t.value)}
                   style={{
-                    background: theme === t.value ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.04)',
-                    border: theme === t.value ? '1px solid rgba(167,139,250,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                    background: theme === t.value ? '#f3f0ff' : '#f8f7ff',
+                    border: theme === t.value ? '1.5px solid #c4b5fd' : '1.5px solid #ede9f6',
                   }}
                 >
-                  <div className="text-white font-extrabold text-xs">{t.label}</div>
-                  <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>{t.description}</div>
+                  <div className="font-extrabold text-xs" style={{ color: '#1a1a2e' }}>{t.label}</div>
+                  <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>{t.description}</div>
                 </button>
               ))}
             </div>
@@ -56,15 +56,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="section-header">ACCESSIBILITY</div>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-white text-xs font-extrabold">Colorblind Mode</div>
-                <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>High contrast colors</div>
+                <div className="text-xs font-extrabold" style={{ color: '#1a1a2e' }}>Colorblind Mode</div>
+                <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>High contrast colors</div>
               </div>
               <Switch checked={colorblindMode} onCheckedChange={setColorblindMode} />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-white text-xs font-extrabold">Reduced Motion</div>
-                <div className="text-[10px] font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>Minimize animations</div>
+                <div className="text-xs font-extrabold" style={{ color: '#1a1a2e' }}>Reduced Motion</div>
+                <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>Minimize animations</div>
               </div>
               <Switch checked={reducedMotion} onCheckedChange={setReducedMotion} />
             </div>

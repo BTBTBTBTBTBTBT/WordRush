@@ -27,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={nunito.className} style={{ backgroundColor: '#0d0a1a' }}>
+      <body className={nunito.className} style={{ backgroundColor: '#f8f7ff' }}>
         <AuthProvider>
           <ThemeProvider>
             <CosmeticProvider>
