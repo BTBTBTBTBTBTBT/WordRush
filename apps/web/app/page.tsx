@@ -53,56 +53,46 @@ function WordOfTheDay() {
 
   return (
     <div
-      className="px-4 py-3.5"
+      className="px-4 py-3"
       style={{
         background: '#ffffff',
         border: '1.5px solid #ede9f6',
         borderRadius: '16px',
       }}
     >
-      <div className="flex items-center gap-1.5 mb-2">
-        <BookOpen className="w-3 h-3" style={{ color: '#9ca3af' }} />
-        <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
-          Word of the Day
-        </span>
-      </div>
-
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-black" style={{ color: '#1a1a2e' }}>
-          {dailyWord.charAt(0) + dailyWord.slice(1).toLowerCase()}
-        </span>
-        {info.phonetic && (
-          <span className="text-sm font-bold" style={{ color: '#9ca3af' }}>
-            {info.phonetic}
-          </span>
-        )}
-      </div>
-
-      {info.partOfSpeech && (
-        <div className="mt-0.5">
-          <span
-            className="text-[10px] font-extrabold italic"
-            style={{ color: '#7c3aed' }}
-          >
-            {info.partOfSpeech}
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <BookOpen className="w-3 h-3" style={{ color: '#9ca3af' }} />
+          <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+            Word of the Day
           </span>
         </div>
-      )}
-
-      {info.definition && (
-        <p className="mt-1.5 text-xs font-bold leading-relaxed" style={{ color: '#4b5563' }}>
-          {info.definition}
-        </p>
-      )}
-
-      <div
-        className="mt-2 pt-2"
-        style={{ borderTop: '1px solid #ede9f6' }}
-      >
         <span className="text-[10px] font-bold" style={{ color: '#c4b5fd' }}>
           A new word every day
         </span>
       </div>
+
+      <div className="flex items-baseline gap-2">
+        <span className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+          {dailyWord.charAt(0) + dailyWord.slice(1).toLowerCase()}
+        </span>
+        {info.phonetic && (
+          <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>
+            {info.phonetic}
+          </span>
+        )}
+        {info.partOfSpeech && (
+          <span className="text-[10px] font-extrabold italic" style={{ color: '#7c3aed' }}>
+            {info.partOfSpeech}
+          </span>
+        )}
+      </div>
+
+      {info.definition && (
+        <p className="mt-1 text-[11px] font-bold leading-snug" style={{ color: '#4b5563' }}>
+          {info.definition}
+        </p>
+      )}
     </div>
   );
 }
@@ -263,17 +253,18 @@ export default function HomePage() {
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button
-            className="w-full btn-3d flex flex-col items-center py-[13px] text-white font-black relative"
+            className="w-full btn-3d flex flex-col items-center py-[13px] font-black relative"
             style={{
-              background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+              background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
+              border: '1.5px solid #c4b5fd',
               borderRadius: '14px',
-              boxShadow: '0 5px 0 #4c1d95, 0 8px 20px rgba(109,40,217,0.25)',
+              boxShadow: '0 4px 0 #ddd6fe',
             }}
           >
-            <div className="flex items-center gap-2 text-base">
-              <Star className="w-4 h-4" style={{ color: '#fbbf24' }} />
+            <div className="flex items-center gap-2 text-base" style={{ color: '#5b21b6' }}>
+              <Star className="w-4 h-4" style={{ color: '#7c3aed' }} />
               <span>Daily Challenge</span>
-              <Star className="w-4 h-4" style={{ color: '#fbbf24' }} />
+              <Star className="w-4 h-4" style={{ color: '#7c3aed' }} />
             </div>
             <DailyCountdown />
           </button>
