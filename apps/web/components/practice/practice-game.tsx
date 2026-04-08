@@ -3,6 +3,7 @@
 import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
+import Link from 'next/link';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { AnimatePresence } from 'framer-motion';
@@ -134,15 +135,21 @@ export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
           </div>
         )}
         {state.status === GameStatus.WON && (
-          <div className="mt-1 flex items-center justify-center gap-3">
-            <span className="text-green-600 text-xs font-bold">Solved in {guessesUsed}!</span>
-            <button onClick={handleReset} className="text-purple-600 text-xs font-bold underline">Play Again</button>
+          <div className="mt-1 flex flex-col items-center gap-1">
+            <span className="text-green-600 text-xs font-bold">Solved in {guessesUsed} guesses  ·  {formatTime(elapsedTime)}</span>
+            <div className="flex items-center gap-3">
+              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+              <button onClick={handleReset} className="text-purple-600 text-xs font-bold underline">Play Again</button>
+            </div>
           </div>
         )}
         {state.status === GameStatus.LOST && (
-          <div className="mt-1 flex items-center justify-center gap-3">
+          <div className="mt-1 flex flex-col items-center gap-1">
             <span className="text-red-300 text-xs font-bold">The word was {currentBoard.solution.toUpperCase()}</span>
-            <button onClick={handleReset} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
+            <div className="flex items-center gap-3">
+              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+              <button onClick={handleReset} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
+            </div>
           </div>
         )}
       </div>

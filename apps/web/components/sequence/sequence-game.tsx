@@ -3,6 +3,7 @@
 import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
 import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess, TileState } from '@wordle-duel/core';
 import { Keyboard } from '../game/keyboard';
+import Link from 'next/link';
 import { VictoryAnimation } from '../effects/victory-animation';
 import { AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
@@ -170,15 +171,21 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
         </div>
         {error && <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}><span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{error}</span></div>}
         {state.status === 'WON' && (
-          <div className="mt-1">
-            <span className="text-green-600 text-xs font-bold">All 4 solved in {guessesUsed} guesses! </span>
-            <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Play Again</button>
+          <div className="mt-1 flex flex-col items-center gap-1">
+            <span className="text-green-600 text-xs font-bold">All 4 solved in {guessesUsed} guesses  ·  {formatTime(elapsedTime)}</span>
+            <div className="flex items-center gap-3">
+              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+              <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Play Again</button>
+            </div>
           </div>
         )}
         {state.status === 'LOST' && (
-          <div className="mt-1">
-            <span className="text-red-300 text-xs font-bold">Out of guesses! {solvedCount}/4 </span>
-            <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Try Again</button>
+          <div className="mt-1 flex flex-col items-center gap-1">
+            <span className="text-red-300 text-xs font-bold">Out of guesses! {solvedCount}/4</span>
+            <div className="flex items-center gap-3">
+              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+              <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Try Again</button>
+            </div>
           </div>
         )}
       </div>
