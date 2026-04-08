@@ -24,6 +24,7 @@ const MODE_LABELS: Record<string, string> = {
   OCTORDLE: 'OctoWord',
   SEQUENCE: 'Succession',
   RESCUE: 'Deliverance',
+  PROPERNOUNDLE: 'ProperNoundle',
   GAUNTLET: 'Gauntlet',
 };
 

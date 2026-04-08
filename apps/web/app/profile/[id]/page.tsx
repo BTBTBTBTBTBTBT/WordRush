@@ -35,6 +35,7 @@ const gameModeTitles: Record<string, string> = {
   OCTORDLE: 'OctoWord',
   SEQUENCE: 'Succession',
   RESCUE: 'Deliverance',
+  PROPERNOUNDLE: 'ProperNoundle',
   TOURNAMENT: 'Tournament',
 };
 

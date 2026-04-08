@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, Flame, Swords, Grid3x3, Grid2x2, Zap, Timer, LogOut, Star, Users, BookOpen } from 'lucide-react';
+import { Sparkles, Flame, Swords, Grid3x3, Grid2x2, Zap, Timer, LogOut, Star, Users, BookOpen, Shield, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -167,6 +167,15 @@ const MODE_CARDS = [
     vsHref: '/sequence/vs',
   },
   {
+    id: 'rescue',
+    title: 'Deliverance',
+    icon: Shield,
+    desc: '4 prefilled boards',
+    accentColor: '#059669',
+    href: '/rescue',
+    vsHref: '/rescue/vs',
+  },
+  {
     id: 'gauntlet',
     title: 'Gauntlet',
     icon: Zap,
@@ -174,6 +183,14 @@ const MODE_CARDS = [
     accentColor: '#d97706',
     href: '/gauntlet',
     vsHref: '/gauntlet/vs',
+  },
+  {
+    id: 'propernoundle',
+    title: 'ProperNoundle',
+    icon: Crown,
+    desc: 'Guess famous names',
+    accentColor: '#dc2626',
+    href: '/propernoundle',
   },
 ];
 
