@@ -22,6 +22,7 @@ import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { saveDailyGame, getSavedDailyGame } from '@/lib/daily-game-persistence';
 
 const BLACKOUT_DURATION_MS = 15_000;
 const BLACKOUT_LETTER_COUNT = 3;
@@ -45,17 +46,19 @@ function pickBlackoutLetters(
 
 interface GauntletGameProps {
   initialSeed?: string;
+  isDaily?: boolean;
 }
 
-export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
+export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const { profile } = useAuth();
   const [seed, setSeed] = useState(() => initialSeed || generateSeed());
   const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showTransition, setShowTransition] = useState(false);
+  const [savedGauntletDaily] = useState(() => isDaily ? getSavedDailyGame('GAUNTLET') : null);
   const [showVictory, setShowVictory] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [showResults, setShowResults] = useState(() => savedGauntletDaily?.status === 'lost');
   const [gameStartTime] = useState(Date.now());
 
   // Letter Blackout state
@@ -67,6 +70,13 @@ export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
 
   // Stolen Guess visual feedback
   const [showStolenGuess, setShowStolenGuess] = useState(false);
+
+  // Show completed state if returning to a finished daily gauntlet
+  useEffect(() => {
+    if (savedGauntletDaily?.status === 'won') {
+      setShowResults(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const gauntlet = state.gauntlet!;
   const currentStageConfig = gauntlet.stages[gauntlet.currentStage];
@@ -198,6 +208,9 @@ export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
     }
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
       recordModePlayed('gauntlet');
+      if (isDaily) {
+        saveDailyGame('GAUNTLET', [], state.status === GameStatus.WON ? 'won' : 'lost', Math.floor((Date.now() - gameStartTime) / 1000));
+      }
     }
   }, [state.status]);
 

@@ -12,6 +12,7 @@ import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown } from '@/lib/play-limit-service';
+import { cleanupDailyGameSaves } from '@/lib/daily-game-persistence';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
@@ -210,6 +211,7 @@ export default function HomePage() {
   useEffect(() => {
     initDictionary(allowedWords, solutionWords);
     cleanupOldPlayData();
+    cleanupDailyGameSaves();
   }, []);
 
   // Countdown for locked cards
@@ -239,14 +241,14 @@ export default function HomePage() {
   const streak = profile?.current_streak ?? 0;
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="min-h-screen pb-16" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="max-w-lg mx-auto px-4" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button
-            className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
+            className="w-full btn-3d flex flex-col items-center py-1.5 font-black relative"
             style={{
               background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
               border: '1.5px solid #c4b5fd',
@@ -302,8 +304,8 @@ export default function HomePage() {
         )}
 
         {/* Game Mode Cards - 2 column grid */}
-        <div className="section-header mt-1 mb-0.5">GAME MODES</div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="section-header mt-0.5 mb-0">GAME MODES</div>
+        <div className="grid grid-cols-2 gap-1.5">
           {MODE_CARDS.map((mode) => {
             const Icon = mode.icon;
             const isLocked = !isPro && user && hasPlayedModeToday(mode.id);
@@ -318,32 +320,49 @@ export default function HomePage() {
             return (
               <Link key={mode.id} href={mode.href} onClick={handleCardClick}>
                 <div
-                  className={`relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
+                  className={`relative flex items-center gap-2.5 px-2.5 py-2 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
                   style={{
                     background: '#ffffff',
                     border: `1.5px solid ${isLocked ? '#d1d5db' : '#ede9f6'}`,
-                    borderRadius: '14px',
+                    borderRadius: '12px',
                   }}
                 >
-                  {/* Top accent bar */}
+                  {/* Left accent bar */}
                   <div
-                    className="absolute top-0 left-0 right-0 h-1"
+                    className="absolute left-0 top-0 bottom-0 w-[3px]"
                     style={{
                       background: isLocked
                         ? '#d1d5db'
-                        : `linear-gradient(90deg, ${mode.accentColor}, ${mode.accentColor}88)`,
-                      borderRadius: '14px 14px 0 0',
+                        : mode.accentColor,
+                      borderRadius: '12px 0 0 12px',
                     }}
                   />
 
+                  {/* Icon */}
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: isLocked ? '#f3f4f6' : `${mode.accentColor}15` }}
+                  >
+                    {isLocked
+                      ? <Lock className="w-3.5 h-3.5" style={{ color: '#9ca3af' }} />
+                      : <Icon className="w-3.5 h-3.5" style={{ color: mode.accentColor }} />
+                    }
+                  </div>
+
+                  {/* Text */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-black leading-tight" style={{ color: isLocked ? '#9ca3af' : '#1a1a2e' }}>{mode.title}</div>
+                    <div className="text-[9px] font-bold leading-tight" style={{ color: '#9ca3af' }}>
+                      {isLocked ? `In ${resetCountdown}` : mode.desc}
+                    </div>
+                  </div>
+
                   {/* Badge or Lock */}
                   {isLocked ? (
-                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
-                      <Lock className="w-3 h-3" style={{ color: '#9ca3af' }} />
-                    </div>
+                    <Lock className="w-3 h-3 flex-shrink-0" style={{ color: '#9ca3af' }} />
                   ) : mode.badge ? (
                     <div
-                      className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded-md text-[8px] font-black text-white"
+                      className="px-1.5 py-0.5 rounded-md text-[7px] font-black text-white flex-shrink-0"
                       style={{
                         background: mode.badge === 'HOT' ? '#ef4444' : mode.badge === 'NEW' ? '#22c55e' : '#a78bfa',
                       }}
@@ -351,21 +370,6 @@ export default function HomePage() {
                       {mode.badge}
                     </div>
                   ) : null}
-
-                  {/* Icon */}
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
-                    style={{ background: isLocked ? '#f3f4f6' : `${mode.accentColor}15` }}
-                  >
-                    {isLocked
-                      ? <Lock className="w-4 h-4" style={{ color: '#9ca3af' }} />
-                      : <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
-                    }
-                  </div>
-                  <div className="text-[13px] font-black" style={{ color: isLocked ? '#9ca3af' : '#1a1a2e' }}>{mode.title}</div>
-                  <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                    {isLocked ? `Play again in ${resetCountdown}` : mode.desc}
-                  </div>
                 </div>
               </Link>
             );

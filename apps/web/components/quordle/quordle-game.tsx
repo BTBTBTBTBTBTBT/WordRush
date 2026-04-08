@@ -11,23 +11,36 @@ import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { saveDailyGame, getSavedDailyGame } from '@/lib/daily-game-persistence';
 
 interface QuordleGameProps {
   initialSeed?: string;
+  isDaily?: boolean;
 }
 
-export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
+export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   const { profile } = useAuth();
   const [gameSeed] = useState(() => initialSeed || Date.now().toString());
-  const [state, dispatch] = useReducer(
-    gameReducer,
-    initializeGame(gameSeed, GameMode.QUORDLE)
-  );
+
+  const [savedDaily] = useState(() => isDaily ? getSavedDailyGame('QUORDLE') : null);
+  const [state, dispatch] = useReducer(gameReducer, gameSeed, (seed) => {
+    let s = initializeGame(seed, GameMode.QUORDLE);
+    if (savedDaily) {
+      for (const guess of savedDaily.guesses) {
+        s.boards.forEach((board, index) => {
+          if (board.status === 'PLAYING') {
+            s = gameReducer(s, { type: 'SUBMIT_GUESS', guess, boardIndex: index });
+          }
+        });
+      }
+    }
+    return s;
+  });
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(savedDaily?.elapsedTime ?? 0);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
@@ -48,8 +61,18 @@ export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
     }
     if (state.status === 'WON' || state.status === 'LOST') {
       recordModePlayed('quordle');
+      if (isDaily) {
+        saveDailyGame('QUORDLE', state.boards[0]?.guesses || [], state.status === 'WON' ? 'won' : 'lost', elapsedTime);
+      }
     }
   }, [state.status]);
+
+  // Save daily progress after each guess
+  useEffect(() => {
+    if (isDaily && state.status === 'PLAYING' && (state.boards[0]?.guesses.length || 0) > 0) {
+      saveDailyGame('QUORDLE', state.boards[0]?.guesses || [], 'playing', elapsedTime);
+    }
+  }, [state.boards[0]?.guesses.length]);
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
@@ -92,7 +115,7 @@ export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
 
   const handleRestart = () => {
     dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.QUORDLE });
-    setCurrentGuess(''); setError(''); setElapsedTime(0);
+    setCurrentGuess(''); setError(''); setElapsedTime(0); setShowVictory(false);
   };
 
   return (

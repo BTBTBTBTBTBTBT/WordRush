@@ -23,5 +23,5 @@ export default function PracticePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'DUEL') : undefined;
 
-  return <PracticeGame mode={GameMode.DUEL} onBack={() => window.location.href = '/'} initialSeed={seed} />;
+  return <PracticeGame mode={GameMode.DUEL} onBack={() => window.location.href = '/'} initialSeed={seed} isDaily={isDaily} />;
 }

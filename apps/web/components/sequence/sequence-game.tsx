@@ -10,26 +10,39 @@ import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { saveDailyGame, getSavedDailyGame } from '@/lib/daily-game-persistence';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
 
 interface SequenceGameProps {
   initialSeed?: string;
+  isDaily?: boolean;
 }
 
-export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
+export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const { profile } = useAuth();
   const [gameSeed] = useState(() => initialSeed || Date.now().toString());
-  const [state, dispatch] = useReducer(
-    gameReducer,
-    initializeGame(gameSeed, GameMode.SEQUENCE)
-  );
+
+  const [savedDaily] = useState(() => isDaily ? getSavedDailyGame('SEQUENCE') : null);
+  const [state, dispatch] = useReducer(gameReducer, gameSeed, (seed) => {
+    let s = initializeGame(seed, GameMode.SEQUENCE);
+    if (savedDaily) {
+      for (const guess of savedDaily.guesses) {
+        s.boards.forEach((board, index) => {
+          if (board.status === 'PLAYING') {
+            s = gameReducer(s, { type: 'SUBMIT_GUESS', guess, boardIndex: index });
+          }
+        });
+      }
+    }
+    return s;
+  });
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(savedDaily?.elapsedTime ?? 0);
   const [streak, setStreak] = useState(0);
 
   // The active board is the first unsolved board in sequence order
@@ -64,8 +77,17 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
     }
     if (state.status === 'WON' || state.status === 'LOST') {
       recordModePlayed('sequence');
+      if (isDaily) {
+        saveDailyGame('SEQUENCE', state.boards[0]?.guesses || [], state.status === 'WON' ? 'won' : 'lost', elapsedTime);
+      }
     }
   }, [state.status]);
+
+  useEffect(() => {
+    if (isDaily && state.status === 'PLAYING' && (state.boards[0]?.guesses.length || 0) > 0) {
+      saveDailyGame('SEQUENCE', state.boards[0]?.guesses || [], 'playing', elapsedTime);
+    }
+  }, [state.boards[0]?.guesses.length]);
 
   // Build letter states ONLY from the active board's perspective
   // Previous guesses are evaluated against the current active board's solution
@@ -151,6 +173,7 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
     setCurrentGuess('');
     setError('');
     setElapsedTime(0);
+    setShowVictory(false);
   };
 
   const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
