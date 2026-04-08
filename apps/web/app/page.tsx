@@ -53,14 +53,14 @@ function WordOfTheDay() {
 
   return (
     <div
-      className="px-4 py-3"
+      className="px-3 py-2"
       style={{
         background: '#ffffff',
         border: '1.5px solid #ede9f6',
-        borderRadius: '16px',
+        borderRadius: '14px',
       }}
     >
-      <div className="flex items-center justify-between mb-1.5">
+      <div className="flex items-center justify-between mb-0.5">
         <div className="flex items-center gap-1.5">
           <BookOpen className="w-3 h-3" style={{ color: '#9ca3af' }} />
           <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
@@ -73,7 +73,7 @@ function WordOfTheDay() {
       </div>
 
       <div className="flex items-baseline gap-2">
-        <span className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+        <span className="text-base font-black" style={{ color: '#1a1a2e' }}>
           {dailyWord.charAt(0) + dailyWord.slice(1).toLowerCase()}
         </span>
         {info.phonetic && (
@@ -227,11 +227,11 @@ export default function HomePage() {
     <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="max-w-lg mx-auto px-4" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button
-            className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
+            className="w-full btn-3d flex flex-col items-center py-1.5 font-black relative"
             style={{
               background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
               border: '1.5px solid #c4b5fd',
@@ -253,25 +253,25 @@ export default function HomePage() {
         {/* Streak Card */}
         {profile && streak > 0 && (
           <div
-            className="flex items-center justify-between px-3.5 py-2.5"
+            className="flex items-center justify-between px-3 py-1.5"
             style={{
               background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
               border: '1.5px solid #fde68a',
               borderRadius: '14px',
             }}
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                className="w-6 h-6 rounded-md flex items-center justify-center"
                 style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
               >
-                <Flame className="w-4 h-4 text-white" />
+                <Flame className="w-3 h-3 text-white" />
               </div>
               <div>
-                <div className="text-[9px] font-extrabold uppercase" style={{ color: '#92400e' }}>
+                <div className="text-[8px] font-extrabold uppercase" style={{ color: '#92400e' }}>
                   Day Streak
                 </div>
-                <div className="text-xl font-black leading-none" style={{ color: '#1a1a2e' }}>{streak}</div>
+                <div className="text-base font-black leading-none" style={{ color: '#1a1a2e' }}>{streak}</div>
               </div>
             </div>
             <div
@@ -287,14 +287,14 @@ export default function HomePage() {
         )}
 
         {/* Game Mode Cards - 2 column grid */}
-        <div className="section-header mt-3 mb-1">GAME MODES</div>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="section-header mt-1 mb-0.5">GAME MODES</div>
+        <div className="grid grid-cols-2 gap-1.5">
           {MODE_CARDS.map((mode) => {
             const Icon = mode.icon;
             return (
               <Link key={mode.id} href={mode.href}>
                 <div
-                  className="relative px-3 py-2.5 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden"
+                  className="relative px-2.5 py-2 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden"
                   style={{
                     background: '#ffffff',
                     border: '1.5px solid #ede9f6',
@@ -322,15 +322,16 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  {/* Icon wrap */}
-                  <div
-                    className="w-7 h-7 rounded-md flex items-center justify-center mb-1.5"
-                    style={{ background: `${mode.accentColor}15` }}
-                  >
-                    <Icon className="w-3.5 h-3.5" style={{ color: mode.accentColor }} />
+                  {/* Icon + title inline */}
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <div
+                      className="w-5 h-5 rounded flex items-center justify-center"
+                      style={{ background: `${mode.accentColor}15` }}
+                    >
+                      <Icon className="w-3 h-3" style={{ color: mode.accentColor }} />
+                    </div>
+                    <div className="text-[11px] font-black" style={{ color: '#1a1a2e' }}>{mode.title}</div>
                   </div>
-
-                  <div className="text-[12px] font-black" style={{ color: '#1a1a2e' }}>{mode.title}</div>
                   <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>
                     {mode.desc}
                   </div>
@@ -342,14 +343,14 @@ export default function HomePage() {
 
         {/* VS Live Banner */}
         <div
-          className="flex items-center justify-between px-3.5 py-2.5"
+          className="flex items-center justify-between px-3 py-1.5"
           style={{
             background: '#ffffff',
             border: '1.5px solid #ede9f6',
             borderRadius: '14px',
           }}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="font-black text-xs" style={{ color: '#1a1a2e' }}>LIVE</span>
@@ -372,7 +373,7 @@ export default function HomePage() {
         {/* Sign in / Sign out */}
         {!user ? (
           <div
-            className="flex items-center justify-between px-4 py-3"
+            className="flex items-center justify-between px-3 py-2"
             style={{
               background: '#ffffff',
               border: '1.5px solid #ede9f6',
