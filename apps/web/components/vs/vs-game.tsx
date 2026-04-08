@@ -17,16 +17,26 @@ import { VsDeliverance } from './vs-deliverance';
 import { VsGauntlet } from './vs-gauntlet';
 
 const WAITING_PHRASES = [
-  'Finding Opponent',
-  'Scanning Lobbies',
-  'Matching Players',
-  'Searching Worldwide',
-  'Queueing Up',
-  'Warming Up',
-  'Almost There',
-  'Shuffling Words',
-  'Loading Puzzle',
-  'Scouting Rivals',
+  'Searching',
+  'Scanning',
+  'Seeking',
+  'Matching',
+  'Pairing',
+  'Connecting',
+  'Locating',
+  'Scouting',
+  'Hunting',
+  'Queuing',
+  'Polling',
+  'Awaiting',
+  'Preparing',
+  'Loading',
+  'Syncing',
+  'Summoning',
+  'Fetching',
+  'Probing',
+  'Browsing',
+  'Rallying',
 ];
 
 function CyclingStatus() {
