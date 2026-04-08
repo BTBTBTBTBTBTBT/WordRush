@@ -275,10 +275,10 @@ function SequenceMiniBoard({
 
   const getTileColor = (state: TileState) => {
     switch (state) {
-      case TileState.CORRECT: return 'bg-green-600 border-green-400';
-      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
-      case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
-      default: return 'bg-zinc-800 border-zinc-600';
+      case TileState.CORRECT: return 'bg-green-600 border-green-600';
+      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
+      case TileState.ABSENT: return 'bg-gray-400 border-gray-400';
+      default: return 'bg-white border-gray-300';
     }
   };
 
@@ -294,18 +294,18 @@ function SequenceMiniBoard({
     <div
       className={`relative p-1 rounded-lg border-2 transition-all duration-300 h-full flex flex-col ${
         isCompleted
-          ? 'border-green-400 bg-green-900/20 shadow-lg shadow-green-500/20'
+          ? 'border-green-400 bg-green-50 shadow-lg shadow-green-500/20'
           : isFailed
-          ? 'border-red-400 bg-red-900/20'
+          ? 'border-red-400 bg-red-50'
           : isActive
-          ? 'border-yellow-400 bg-zinc-900/50 shadow-lg shadow-yellow-500/20'
-          : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
+          ? 'border-yellow-400 bg-white shadow-lg shadow-yellow-500/20'
+          : 'border-gray-200 bg-gray-50 opacity-60'
       }`}
     >
       {/* Lock icon for locked boards */}
       {isLocked && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
-          <Lock className="w-8 h-8 text-zinc-500/50" />
+          <Lock className="w-8 h-8 text-gray-300" />
         </div>
       )}
 
@@ -330,14 +330,14 @@ function SequenceMiniBoard({
                     key={letterIndex}
                     className={`
                       flex-1 flex items-center justify-center
-                      border rounded text-white font-bold text-[10px] sm:text-xs
+                      border rounded font-bold text-[10px] sm:text-xs
                       ${isPastGuess && showColors
-                        ? getTileColor(tileState)
+                        ? `${getTileColor(tileState)} text-white`
                         : isPastGuess && !showColors
-                        ? 'bg-zinc-700/50 border-zinc-600/50'
+                        ? 'bg-gray-100 border-gray-300 text-gray-800'
                         : hasLetter
-                        ? 'bg-zinc-800 border-zinc-500'
-                        : 'bg-zinc-800/50 border-zinc-700/30'
+                        ? 'bg-white border-gray-400 text-gray-800'
+                        : 'bg-white border-gray-200'
                       }
                     `}
                   >
