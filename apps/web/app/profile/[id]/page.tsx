@@ -38,6 +38,13 @@ const gameModeTitles: Record<string, string> = {
   TOURNAMENT: 'Tournament',
 };
 
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
 export default function PublicProfilePage() {
   const params = useParams();
   const profileId = params.id as string;
@@ -342,7 +349,7 @@ export default function PublicProfilePage() {
                     <div>
                       <div style={{ color: '#9ca3af' }}>Fastest</div>
                       <div className="font-bold text-lg" style={{ color: '#2563eb' }}>
-                        {stat.fastest_time > 0 ? `${stat.fastest_time}s` : '-'}
+                        {stat.fastest_time > 0 ? formatDuration(stat.fastest_time) : '-'}
                       </div>
                     </div>
                   </div>
