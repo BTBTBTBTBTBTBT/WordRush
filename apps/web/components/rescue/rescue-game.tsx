@@ -10,6 +10,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
+import { recordModePlayed } from '@/lib/play-limit-service';
 
 interface RescueGameProps {
   initialSeed?: string;
@@ -44,6 +45,9 @@ export function RescueGame({ initialSeed }: RescueGameProps = {}) {
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'RESCUE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
+    }
+    if (state.status === 'WON' || state.status === 'LOST') {
+      recordModePlayed('rescue');
     }
   }, [state.status]);
 

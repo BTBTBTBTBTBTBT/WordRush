@@ -9,6 +9,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
+import { recordModePlayed } from '@/lib/play-limit-service';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
@@ -60,6 +61,9 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
       const guesses = state.boards[0]?.guesses.length || 0;
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
+    }
+    if (state.status === 'WON' || state.status === 'LOST') {
+      recordModePlayed('sequence');
     }
   }, [state.status]);
 

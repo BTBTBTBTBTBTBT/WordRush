@@ -243,14 +243,6 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/shop">
-              <button
-                className="btn-3d px-4 py-1.5 rounded-lg font-extrabold text-xs"
-                style={{ background: '#f3f0ff', border: '1.5px solid #ede9f6', color: '#7c3aed' }}
-              >
-                Shop
-              </button>
-            </Link>
             {!(profile as any).is_pro && (
               <Link href="/pro">
                 <button

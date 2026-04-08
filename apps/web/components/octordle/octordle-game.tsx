@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
+import { recordModePlayed } from '@/lib/play-limit-service';
 
 interface OctordleGameProps {
   initialSeed?: string;
@@ -44,6 +45,9 @@ export function OctordleGame({ initialSeed }: OctordleGameProps = {}) {
       const guesses = state.boards[0]?.guesses.length || 0;
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'OCTORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 8);
+    }
+    if (state.status === 'WON' || state.status === 'LOST') {
+      recordModePlayed('octordle');
     }
   }, [state.status]);
 

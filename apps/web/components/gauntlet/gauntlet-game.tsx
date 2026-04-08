@@ -21,6 +21,7 @@ import { StageTransition } from './stage-transition';
 import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
+import { recordModePlayed } from '@/lib/play-limit-service';
 
 const BLACKOUT_DURATION_MS = 15_000;
 const BLACKOUT_LETTER_COUNT = 3;
@@ -194,6 +195,9 @@ export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
       const totalGuesses = state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
       const boardsSolved = state.boards.filter(b => b.status === GameStatus.WON).length;
       recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, boardsSolved, 21);
+    }
+    if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
+      recordModePlayed('gauntlet');
     }
   }, [state.status]);
 

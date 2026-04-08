@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Crown, Shield, BarChart3, Sparkles, Zap } from 'lucide-react';
+import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords, Grid3x3 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { PRO_PLANS } from '@/lib/payment/types';
 
 const benefits = [
-  { icon: BarChart3, text: 'Extended stats & win rate trends' },
-  { icon: Shield, text: '4 streak shields on subscribe' },
+  { icon: Grid3x3, text: 'Unlimited replays of all 8 game modes, any time' },
+  { icon: Swords, text: 'Unlimited VS matches per day' },
+  { icon: Shield, text: '4 streak shields credited each billing period' },
   { icon: Sparkles, text: 'Pro badge on profile & leaderboards' },
-  { icon: Zap, text: 'Early access to new features' },
+  { icon: BarChart3, text: 'Extended stats — win rate trends & avg speed per mode' },
+  { icon: Zap, text: 'Early access to new game modes' },
 ];
 
 export default function ProPage() {
@@ -54,7 +56,7 @@ export default function ProPage() {
           <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#d97706' }} />
           <h1 className="text-4xl font-black mb-1" style={{ color: '#1a1a2e' }}>Go Pro</h1>
           <p className="text-sm font-bold" style={{ color: '#9ca3af' }}>
-            Unlock the full SpellStrike experience
+            Play unlimited — all 8 modes, any time
           </p>
         </div>
 

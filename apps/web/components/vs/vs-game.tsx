@@ -8,6 +8,8 @@ import { recordGameResult } from '@/lib/stats-service';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Home, RotateCcw, Trophy, X } from 'lucide-react';
+import { hasReachedVsLimit, recordVsMatch } from '@/lib/play-limit-service';
+import { VsLimitModal } from '@/components/modals/vs-limit-modal';
 
 import { VsClassic } from './vs-classic';
 import { VsQuadword } from './vs-quadword';
@@ -102,6 +104,8 @@ export function VsGame({ mode }: VsGameProps) {
   ensureDictionaryInitialized();
 
   const { profile } = useAuth();
+  const isPro = (profile as any)?.is_pro ?? false;
+  const [vsLimitOpen, setVsLimitOpen] = useState(() => !isPro && hasReachedVsLimit());
   const [screen, setScreen] = useState<VsScreen>('queue');
   const [matchService] = useState(() => new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'));
   const [seed, setSeed] = useState('');
@@ -166,6 +170,10 @@ export function VsGame({ mode }: VsGameProps) {
         const won = data.winner === 'player';
         recordGameResult(profile.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seed);
       }
+      // Record VS match for daily limit tracking
+      if (!isPro) {
+        recordVsMatch();
+      }
     });
 
     matchService.onRematchStart((data) => {
@@ -188,12 +196,15 @@ export function VsGame({ mode }: VsGameProps) {
       setMessage(data.message);
     });
 
-    matchService.joinQueue(mode);
+    // Only join queue if not VS-limited
+    if (!vsLimitOpen) {
+      matchService.joinQueue(mode);
+    }
 
     return () => {
       matchService.disconnect();
     };
-  }, [mode, matchService, profile]);
+  }, [mode, matchService, profile, vsLimitOpen]);
 
   const handleBoardSolved = useCallback((boardIndex: number) => {
     matchService.reportBoardSolved(boardIndex);
@@ -219,8 +230,12 @@ export function VsGame({ mode }: VsGameProps) {
   }, [matchService]);
 
   const handleRematch = useCallback(() => {
+    if (!isPro && hasReachedVsLimit()) {
+      setVsLimitOpen(true);
+      return;
+    }
     matchService.offerRematch();
-  }, [matchService]);
+  }, [matchService, isPro]);
 
   const handleForfeit = useCallback(() => {
     matchService.abandonMatch();
@@ -232,6 +247,7 @@ export function VsGame({ mode }: VsGameProps) {
   if (screen === 'queue') {
     return (
       <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+        <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); window.location.href = '/'; }} />
         {/* Countdown overlay */}
         <AnimatePresence>
           {showCountdown && (
@@ -328,20 +344,20 @@ export function VsGame({ mode }: VsGameProps) {
           >
             <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Your Guesses</span>
-              <span className="text-white">{matchResult?.playerGuesses}</span>
+              <span className="text-gray-800">{matchResult?.playerGuesses}</span>
             </div>
             <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Opponent Guesses</span>
-              <span className="text-white">{matchResult?.opponentGuesses}</span>
+              <span className="text-gray-800">{matchResult?.opponentGuesses}</span>
             </div>
-            <div className="h-px bg-gray-100" />
+            <div className="h-px bg-gray-200" />
             <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Your Time</span>
-              <span className="text-white">{Math.round((matchResult?.playerTime || 0) / 1000)}s</span>
+              <span className="text-gray-800">{Math.round((matchResult?.playerTime || 0) / 1000)}s</span>
             </div>
             <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Opponent Time</span>
-              <span className="text-white">{Math.round((matchResult?.opponentTime || 0) / 1000)}s</span>
+              <span className="text-gray-800">{Math.round((matchResult?.opponentTime || 0) / 1000)}s</span>
             </div>
           </motion.div>
 
@@ -354,7 +370,7 @@ export function VsGame({ mode }: VsGameProps) {
           >
             <button
               onClick={handleHome}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
             >
               <Home className="w-4 h-4" /> Home
             </button>

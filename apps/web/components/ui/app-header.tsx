@@ -44,20 +44,18 @@ export function AppHeader() {
       {profile && (
         <div className="flex items-center gap-2">
           {/* Coin pill */}
-          <Link href="/shop">
-            <div
-              className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"
-              style={{
-                background: '#fef9ec',
-                border: '1.5px solid #fde68a',
-                borderRadius: '20px',
-                color: '#92400e',
-              }}
-            >
-              <CoinIcon className="w-4 h-4" />
-              <span>{coins.toLocaleString()}</span>
-            </div>
-          </Link>
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"
+            style={{
+              background: '#fef9ec',
+              border: '1.5px solid #fde68a',
+              borderRadius: '20px',
+              color: '#92400e',
+            }}
+          >
+            <CoinIcon className="w-4 h-4" />
+            <span>{coins.toLocaleString()}</span>
+          </div>
 
           {/* Shield pill */}
           <div

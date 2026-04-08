@@ -11,6 +11,7 @@ import { Trophy, RotateCcw, Home, Clock } from 'lucide-react';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
+import { recordModePlayed } from '@/lib/play-limit-service';
 
 interface PracticeGameProps {
   mode: GameMode;
@@ -62,6 +63,9 @@ export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
       const timeMs = Date.now() - state.startTime;
       const guesses = currentBoard.guesses.length;
       recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1);
+    }
+    if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
+      recordModePlayed('practice');
     }
   }, [state.status]);
 

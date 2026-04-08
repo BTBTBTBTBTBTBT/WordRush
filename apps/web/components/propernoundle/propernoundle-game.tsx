@@ -11,6 +11,7 @@ import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
 import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber } from './puzzle-service';
 import { useHints } from './use-hints';
+import { recordModePlayed } from '@/lib/play-limit-service';
 
 const MAX_GUESSES = 6;
 
@@ -77,6 +78,9 @@ export function ProperNoundleGame() {
 
   useEffect(() => {
     if (gameStatus === 'won') setShowVictory(true);
+    if (gameStatus === 'won' || gameStatus === 'lost') {
+      recordModePlayed('propernoundle');
+    }
   }, [gameStatus]);
 
   const buildLetterStates = useCallback((allGuesses: Guess[]) => {

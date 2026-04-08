@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
+import { recordModePlayed } from '@/lib/play-limit-service';
 
 interface QuordleGameProps {
   initialSeed?: string;
@@ -44,6 +45,9 @@ export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
       const guesses = state.boards[0]?.guesses.length || 0;
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'QUORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
+    }
+    if (state.status === 'WON' || state.status === 'LOST') {
+      recordModePlayed('quordle');
     }
   }, [state.status]);
 

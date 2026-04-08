@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, Flame, Swords, Grid3x3, Grid2x2, Zap, Timer, LogOut, Star, Users, BookOpen, Shield, Crown } from 'lucide-react';
+import { Sparkles, Flame, Swords, Grid3x3, Grid2x2, Zap, Timer, LogOut, Star, Users, BookOpen, Shield, Crown, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
+import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown } from '@/lib/play-limit-service';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
@@ -199,10 +201,23 @@ export default function HomePage() {
   const { user, profile, signOut } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [pendingVsHref, setPendingVsHref] = useState<string | null>(null);
+  const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string }>({ open: false, modeName: '' });
+  const [resetCountdown, setResetCountdown] = useState('');
   const router = useRouter();
+
+  const isPro = (profile as any)?.is_pro ?? false;
 
   useEffect(() => {
     initDictionary(allowedWords, solutionWords);
+    cleanupOldPlayData();
+  }, []);
+
+  // Countdown for locked cards
+  useEffect(() => {
+    const update = () => setResetCountdown(formatCountdown(getResetSeconds()));
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -291,13 +306,22 @@ export default function HomePage() {
         <div className="grid grid-cols-2 gap-2">
           {MODE_CARDS.map((mode) => {
             const Icon = mode.icon;
+            const isLocked = !isPro && user && hasPlayedModeToday(mode.id);
+
+            const handleCardClick = (e: React.MouseEvent) => {
+              if (isLocked) {
+                e.preventDefault();
+                setLimitModal({ open: true, modeName: mode.title });
+              }
+            };
+
             return (
-              <Link key={mode.id} href={mode.href}>
+              <Link key={mode.id} href={mode.href} onClick={handleCardClick}>
                 <div
-                  className="relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden"
+                  className={`relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
                   style={{
                     background: '#ffffff',
-                    border: '1.5px solid #ede9f6',
+                    border: `1.5px solid ${isLocked ? '#d1d5db' : '#ede9f6'}`,
                     borderRadius: '14px',
                   }}
                 >
@@ -305,13 +329,19 @@ export default function HomePage() {
                   <div
                     className="absolute top-0 left-0 right-0 h-1"
                     style={{
-                      background: `linear-gradient(90deg, ${mode.accentColor}, ${mode.accentColor}88)`,
+                      background: isLocked
+                        ? '#d1d5db'
+                        : `linear-gradient(90deg, ${mode.accentColor}, ${mode.accentColor}88)`,
                       borderRadius: '14px 14px 0 0',
                     }}
                   />
 
-                  {/* Badge */}
-                  {mode.badge && (
+                  {/* Badge or Lock */}
+                  {isLocked ? (
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
+                      <Lock className="w-3 h-3" style={{ color: '#9ca3af' }} />
+                    </div>
+                  ) : mode.badge ? (
                     <div
                       className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded-md text-[8px] font-black text-white"
                       style={{
@@ -320,18 +350,21 @@ export default function HomePage() {
                     >
                       {mode.badge}
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Icon */}
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
-                    style={{ background: `${mode.accentColor}15` }}
+                    style={{ background: isLocked ? '#f3f4f6' : `${mode.accentColor}15` }}
                   >
-                    <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
+                    {isLocked
+                      ? <Lock className="w-4 h-4" style={{ color: '#9ca3af' }} />
+                      : <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
+                    }
                   </div>
-                  <div className="text-[13px] font-black" style={{ color: '#1a1a2e' }}>{mode.title}</div>
+                  <div className="text-[13px] font-black" style={{ color: isLocked ? '#9ca3af' : '#1a1a2e' }}>{mode.title}</div>
                   <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                    {mode.desc}
+                    {isLocked ? `Play again in ${resetCountdown}` : mode.desc}
                   </div>
                 </div>
               </Link>
@@ -405,6 +438,11 @@ export default function HomePage() {
 
       <BottomNav />
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      <ModeLimitModal
+        open={limitModal.open}
+        onClose={() => setLimitModal({ open: false, modeName: '' })}
+        modeName={limitModal.modeName}
+      />
     </div>
   );
 }
