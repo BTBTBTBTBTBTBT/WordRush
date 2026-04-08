@@ -210,39 +210,39 @@ export default function HomePage() {
     <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4 space-y-4">
+      <div className="max-w-lg mx-auto px-4 space-y-2.5">
         {/* Word of the Day */}
         <WordOfTheDay />
 
         {/* Streak Card */}
         {profile && streak > 0 && (
           <div
-            className="flex items-center justify-between p-4"
+            className="flex items-center justify-between px-3.5 py-2.5"
             style={{
               background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
               border: '1.5px solid #fde68a',
-              borderRadius: '16px',
+              borderRadius: '14px',
             }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
               >
-                <Flame className="w-5 h-5 text-white" />
+                <Flame className="w-4 h-4 text-white" />
               </div>
               <div>
-                <div className="text-[10px] font-extrabold uppercase" style={{ color: '#92400e' }}>
+                <div className="text-[9px] font-extrabold uppercase" style={{ color: '#92400e' }}>
                   Day Streak
                 </div>
-                <div className="text-[28px] font-black leading-none" style={{ color: '#1a1a2e' }}>{streak}</div>
+                <div className="text-xl font-black leading-none" style={{ color: '#1a1a2e' }}>{streak}</div>
               </div>
             </div>
             <div
-              className="px-3 py-1.5 rounded-lg text-white font-black text-xs"
+              className="px-2.5 py-1 rounded-md text-white font-black text-[10px]"
               style={{
                 background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                boxShadow: '0 3px 0 #92400e',
+                boxShadow: '0 2px 0 #92400e',
               }}
             >
               ON FIRE
@@ -253,37 +253,35 @@ export default function HomePage() {
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button
-            className="w-full btn-3d flex flex-col items-center py-[13px] font-black relative"
+            className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
             style={{
               background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
               border: '1.5px solid #c4b5fd',
               borderRadius: '14px',
-              boxShadow: '0 4px 0 #ddd6fe',
             }}
           >
-            <div className="flex items-center gap-2 text-base" style={{ color: '#5b21b6' }}>
-              <Star className="w-4 h-4" style={{ color: '#7c3aed' }} />
+            <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
+              <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
               <span>Daily Challenge</span>
-              <Star className="w-4 h-4" style={{ color: '#7c3aed' }} />
+              <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
             </div>
             <DailyCountdown />
           </button>
         </Link>
 
         {/* Game Mode Cards - 2 column grid */}
-        <div className="section-header mt-6 mb-2">GAME MODES</div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="section-header mt-3 mb-1">GAME MODES</div>
+        <div className="grid grid-cols-2 gap-2.5">
           {MODE_CARDS.map((mode) => {
             const Icon = mode.icon;
             return (
               <Link key={mode.id} href={mode.href}>
                 <div
-                  className="relative p-[14px] cursor-pointer transition-transform active:scale-[0.96] overflow-hidden"
+                  className="relative px-3 py-2.5 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden"
                   style={{
                     background: '#ffffff',
                     border: '1.5px solid #ede9f6',
-                    borderRadius: '16px',
-                    boxShadow: '0 4px 0 #ede9f6',
+                    borderRadius: '14px',
                   }}
                 >
                   {/* Top accent bar */}
@@ -291,14 +289,14 @@ export default function HomePage() {
                     className="absolute top-0 left-0 right-0 h-1"
                     style={{
                       background: `linear-gradient(90deg, ${mode.accentColor}, ${mode.accentColor}88)`,
-                      borderRadius: '16px 16px 0 0',
+                      borderRadius: '14px 14px 0 0',
                     }}
                   />
 
                   {/* Badge */}
                   {mode.badge && (
                     <div
-                      className="absolute top-2.5 right-2 px-1.5 py-0.5 rounded-md text-[9px] font-black text-white"
+                      className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[8px] font-black text-white"
                       style={{
                         background: mode.badge === 'HOT' ? '#ef4444' : mode.badge === 'NEW' ? '#22c55e' : '#a78bfa',
                       }}
@@ -309,14 +307,14 @@ export default function HomePage() {
 
                   {/* Icon wrap */}
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 mt-1"
+                    className="w-7 h-7 rounded-md flex items-center justify-center mb-1.5"
                     style={{ background: `${mode.accentColor}15` }}
                   >
-                    <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
+                    <Icon className="w-3.5 h-3.5" style={{ color: mode.accentColor }} />
                   </div>
 
-                  <div className="text-[13px] font-black" style={{ color: '#1a1a2e' }}>{mode.title}</div>
-                  <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+                  <div className="text-[12px] font-black" style={{ color: '#1a1a2e' }}>{mode.title}</div>
+                  <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>
                     {mode.desc}
                   </div>
                 </div>
@@ -327,31 +325,29 @@ export default function HomePage() {
 
         {/* VS Live Banner */}
         <div
-          className="flex items-center justify-between p-4 mt-2"
+          className="flex items-center justify-between px-3.5 py-2.5"
           style={{
             background: '#ffffff',
             border: '1.5px solid #ede9f6',
-            borderRadius: '16px',
+            borderRadius: '14px',
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-black text-sm" style={{ color: '#1a1a2e' }}>LIVE</span>
+              <span className="font-black text-xs" style={{ color: '#1a1a2e' }}>LIVE</span>
             </div>
-            <div>
-              <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>Players online</div>
-            </div>
+            <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>Players online</div>
           </div>
           <button
             onClick={() => handleVsClick('/practice/vs')}
-            className="btn-3d px-4 py-2 text-white font-black text-xs rounded-lg"
+            className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md"
             style={{
               background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-              boxShadow: '0 3px 0 #3730a3',
+              boxShadow: '0 2px 0 #3730a3',
             }}
           >
-            <Swords className="w-3.5 h-3.5 inline mr-1" />
+            <Swords className="w-3 h-3 inline mr-1" />
             VS
           </button>
         </div>
@@ -359,30 +355,30 @@ export default function HomePage() {
         {/* Sign in / Sign out */}
         {!user ? (
           <div
-            className="text-center p-6"
+            className="flex items-center justify-between px-4 py-3"
             style={{
               background: '#ffffff',
               border: '1.5px solid #ede9f6',
-              borderRadius: '16px',
+              borderRadius: '14px',
             }}
           >
-            <p className="text-sm font-bold mb-3" style={{ color: '#9ca3af' }}>Sign in to track stats & compete</p>
+            <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>Sign in to track stats & compete</p>
             <button
               onClick={() => setAuthModalOpen(true)}
-              className="btn-3d px-6 py-2.5 text-white font-black text-sm rounded-xl"
+              className="btn-3d px-4 py-1.5 text-white font-black text-[10px] rounded-lg"
               style={{
                 background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                boxShadow: '0 4px 0 #4c1d95',
+                boxShadow: '0 3px 0 #4c1d95',
               }}
             >
-              <Sparkles className="w-4 h-4 inline mr-1.5" />
+              <Sparkles className="w-3 h-3 inline mr-1" />
               Sign In
             </button>
           </div>
         ) : (
           <button
             onClick={() => signOut()}
-            className="w-full py-2 text-center text-xs font-bold hover:opacity-70 transition-colors"
+            className="w-full py-1 text-center text-[10px] font-bold hover:opacity-70 transition-colors"
             style={{ color: '#9ca3af' }}
           >
             <LogOut className="w-3 h-3 inline mr-1" />
