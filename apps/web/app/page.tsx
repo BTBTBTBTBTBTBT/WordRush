@@ -210,7 +210,26 @@ export default function HomePage() {
     <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4 space-y-2.5">
+      <div className="max-w-lg mx-auto px-4" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* Daily Challenge CTA */}
+        <Link href="/daily">
+          <button
+            className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
+            style={{
+              background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
+              border: '1.5px solid #c4b5fd',
+              borderRadius: '14px',
+            }}
+          >
+            <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
+              <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+              <span>Daily Challenge</span>
+              <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+            </div>
+            <DailyCountdown />
+          </button>
+        </Link>
+
         {/* Word of the Day */}
         <WordOfTheDay />
 
@@ -249,25 +268,6 @@ export default function HomePage() {
             </div>
           </div>
         )}
-
-        {/* Daily Challenge CTA */}
-        <Link href="/daily">
-          <button
-            className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
-            style={{
-              background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
-              border: '1.5px solid #c4b5fd',
-              borderRadius: '14px',
-            }}
-          >
-            <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
-              <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-              <span>Daily Challenge</span>
-              <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-            </div>
-            <DailyCountdown />
-          </button>
-        </Link>
 
         {/* Game Mode Cards - 2 column grid */}
         <div className="section-header mt-3 mb-1">GAME MODES</div>
