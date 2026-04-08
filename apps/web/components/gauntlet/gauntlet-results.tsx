@@ -96,17 +96,17 @@ export function GauntletResults({
         >
           <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
             <Trophy className="w-5 h-5 text-green-400 mx-auto mb-1" />
-            <div className="text-2xl font-black text-white">{stagesCompleted}/5</div>
+            <div className="text-2xl font-black text-gray-800">{stagesCompleted}/5</div>
             <div className="text-gray-400 text-xs">Stages</div>
           </div>
           <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
             <Hash className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-            <div className="text-2xl font-black text-white">{totalGuesses}</div>
+            <div className="text-2xl font-black text-gray-800">{totalGuesses}</div>
             <div className="text-gray-400 text-xs">Guesses</div>
           </div>
           <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
             <Clock className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-            <div className="text-2xl font-black text-white">{formatTime(totalTimeMs)}</div>
+            <div className="text-2xl font-black text-gray-800">{formatTime(totalTimeMs)}</div>
             <div className="text-gray-400 text-xs">Time</div>
           </div>
         </motion.div>
@@ -165,7 +165,7 @@ export function GauntletResults({
                       </span>
                     </>
                   ) : (
-                    <span className="text-white/20">—</span>
+                    <span className="text-gray-300">—</span>
                   )}
                 </div>
               </motion.div>
@@ -186,36 +186,36 @@ export function GauntletResults({
               <div className="flex items-center gap-3 p-2">
                 <BarChart3 className="w-4 h-4 text-purple-400 shrink-0" />
                 <div>
-                  <div className="text-white font-bold text-lg">{stats.gamesPlayed}</div>
-                  <div className="text-white/40 text-xs">Games Played</div>
+                  <div className="text-gray-800 font-bold text-lg">{stats.gamesPlayed}</div>
+                  <div className="text-gray-400 text-xs">Games Played</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-2">
                 <Zap className="w-4 h-4 text-amber-600 shrink-0" />
                 <div>
-                  <div className="text-white font-bold text-lg">{winRate}%</div>
-                  <div className="text-white/40 text-xs">Win Rate</div>
+                  <div className="text-gray-800 font-bold text-lg">{winRate}%</div>
+                  <div className="text-gray-400 text-xs">Win Rate</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-2">
                 <Clock className="w-4 h-4 text-blue-400 shrink-0" />
                 <div>
-                  <div className="text-white font-bold text-lg">{avgTime ? formatTime(avgTime) : '—'}</div>
-                  <div className="text-white/40 text-xs">Avg Time</div>
+                  <div className="text-gray-800 font-bold text-lg">{avgTime ? formatTime(avgTime) : '—'}</div>
+                  <div className="text-gray-400 text-xs">Avg Time</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-2">
                 <Timer className="w-4 h-4 text-green-400 shrink-0" />
                 <div>
-                  <div className="text-white font-bold text-lg">{stats.bestTimeMs ? formatTime(stats.bestTimeMs) : '—'}</div>
-                  <div className="text-white/40 text-xs">Best Time</div>
+                  <div className="text-gray-800 font-bold text-lg">{stats.bestTimeMs ? formatTime(stats.bestTimeMs) : '—'}</div>
+                  <div className="text-gray-400 text-xs">Best Time</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-2 col-span-2">
                 <Hash className="w-4 h-4 text-orange-400 shrink-0" />
                 <div>
-                  <div className="text-white font-bold text-lg">{avgGuesses ?? '—'}</div>
-                  <div className="text-white/40 text-xs">Avg Guesses per Game</div>
+                  <div className="text-gray-800 font-bold text-lg">{avgGuesses ?? '—'}</div>
+                  <div className="text-gray-400 text-xs">Avg Guesses per Game</div>
                 </div>
               </div>
             </div>
@@ -238,7 +238,7 @@ export function GauntletResults({
           </Button>
           <Button
             onClick={onHome}
-            className="bg-gray-100 border-2 border-gray-200 hover:bg-gray-200 text-white font-bold py-6"
+            className="bg-gray-100 border-2 border-gray-200 hover:bg-gray-200 text-gray-700 font-bold py-6"
           >
             <Home className="w-5 h-5 mr-2" />
             Home
