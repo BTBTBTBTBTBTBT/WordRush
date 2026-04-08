@@ -32,8 +32,8 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
         <Row key={`empty-${i}`} guess="" />
       ))}
       {showSolution && solution && (
-        <div className="mt-4 text-center text-xs font-bold" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          Solution: <span className="font-black text-white">{solution}</span>
+        <div className="mt-4 text-center text-xs font-bold" style={{ color: '#9ca3af' }}>
+          Solution: <span className="font-black" style={{ color: '#1a1a2e' }}>{solution}</span>
         </div>
       )}
     </div>
@@ -86,7 +86,7 @@ function Tile({ letter, state, flipDelay }: TileProps) {
         'flex-1 aspect-square border-2 flex items-center justify-center text-2xl font-black uppercase',
         hasFlip ? 'animate-tile-flip' : 'transition-colors',
         colorClass,
-        state === TileState.EMPTY && 'text-white'
+        state === TileState.EMPTY && 'text-gray-800'
       )}
       style={hasFlip ? { animationDelay: `${flipDelay}ms` } : undefined}
     >

@@ -13,17 +13,17 @@ interface MultiBoardProps {
 const getTileColor = (state: TileState, colorBlind?: boolean) => {
   if (colorBlind) {
     switch (state) {
-      case TileState.CORRECT: return 'bg-cyan-600 border-cyan-400';
-      case TileState.PRESENT: return 'bg-orange-600 border-orange-400';
-      case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
-      default: return 'bg-zinc-800 border-zinc-600';
+      case TileState.CORRECT: return 'bg-cyan-600 border-cyan-600';
+      case TileState.PRESENT: return 'bg-orange-500 border-orange-500';
+      case TileState.ABSENT: return 'bg-gray-400 border-gray-400';
+      default: return 'bg-white border-gray-300';
     }
   }
   switch (state) {
-    case TileState.CORRECT: return 'bg-green-600 border-green-400';
-    case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
-    case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
-    default: return 'bg-zinc-800 border-zinc-600';
+    case TileState.CORRECT: return 'bg-green-600 border-green-600';
+    case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
+    case TileState.ABSENT: return 'bg-gray-400 border-gray-400';
+    default: return 'bg-white border-gray-300';
   }
 };
 
@@ -92,10 +92,10 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
         invisible ? 'invisible' : ''
       } ${
         isWon
-          ? 'border-green-400 bg-green-900/20'
+          ? 'border-green-400 bg-green-50'
           : isLost
-          ? 'border-red-400 bg-red-900/20'
-          : 'border-zinc-700 bg-zinc-900/50'
+          ? 'border-red-400 bg-red-50'
+          : 'border-gray-200 bg-white'
       }`}
     >
       {isWon && (
@@ -116,7 +116,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
                 {prefill.evaluation.tiles.map((tile, letterIndex) => (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold ${textSize} ${getTileColor(tile.state, colorBlind)}`}
+                    className={`flex-1 flex items-center justify-center border rounded font-bold ${textSize} ${tile.state === TileState.EMPTY ? 'text-gray-800' : 'text-white'} ${getTileColor(tile.state, colorBlind)}`}
                   >
                     {tile.letter.toUpperCase()}
                   </div>
@@ -139,7 +139,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
                 return (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold ${textSize} ${getTileColor(tileState, colorBlind)} ${
+                    className={`flex-1 flex items-center justify-center border rounded font-bold ${textSize} ${tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'} ${getTileColor(tileState, colorBlind)} ${
                       isLastSubmitted ? 'animate-tile-flip-mini' : ''
                     }`}
                     style={isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : undefined}

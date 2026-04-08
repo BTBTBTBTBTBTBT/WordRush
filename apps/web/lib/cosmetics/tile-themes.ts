@@ -8,12 +8,12 @@ export interface TileThemeConfig {
 }
 
 export const DEFAULT_THEME: TileThemeConfig = {
-  correct: 'bg-green-600',
-  present: 'bg-yellow-600',
-  absent: 'bg-zinc-700',
-  empty: 'bg-zinc-800',
+  correct: 'bg-green-600 border-green-600',
+  present: 'bg-yellow-500 border-yellow-500',
+  absent: 'bg-gray-400 border-gray-400',
+  empty: 'bg-white',
   text: 'text-white',
-  border: 'border-zinc-600',
+  border: 'border-gray-300',
 };
 
 export const TILE_THEMES: Record<string, TileThemeConfig> = {
