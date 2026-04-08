@@ -25,6 +25,7 @@ const GAME_MODES = [
   { id: 'SEQUENCE', label: 'Succession', href: '/sequence' },
   { id: 'RESCUE', label: 'Deliverance', href: '/rescue' },
   { id: 'GAUNTLET', label: 'Gauntlet', href: '/gauntlet' },
+  { id: 'PROPERNOUNDLE', label: 'ProperNoundle', href: '/propernoundle' },
 ];
 
 function formatTime(seconds: number): string {

@@ -13,6 +13,8 @@ import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber } from './puzzle-
 import { useHints } from './use-hints';
 import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { useAuth } from '@/lib/auth-context';
+import { recordGameResult } from '@/lib/stats-service';
 
 const MAX_GUESSES = 6;
 const DAILY_STORAGE_KEY = 'spellstrike-propernoundle-daily';
@@ -74,6 +76,7 @@ function saveDailyState(state: DailyState): void {
 }
 
 export function ProperNoundleGame() {
+  const { profile } = useAuth();
   const [mode, setMode] = useState<GameMode>('daily');
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [guesses, setGuesses] = useState<Guess[]>([]);
@@ -165,6 +168,22 @@ export function ProperNoundleGame() {
     }
     if (gameStatus === 'won' || gameStatus === 'lost') {
       recordModePlayed('propernoundle');
+
+      // Record game stats
+      if (profile) {
+        const timeMs = elapsedTime * 1000;
+        recordGameResult(
+          profile.id,
+          'PROPERNOUNDLE',
+          'solo',
+          gameStatus === 'won',
+          guesses.length,
+          timeMs,
+          undefined,
+          gameStatus === 'won' ? 1 : 0,
+          1
+        );
+      }
 
       // Fetch Wikipedia image for result screen
       if (puzzle) {
