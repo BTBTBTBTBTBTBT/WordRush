@@ -33,7 +33,7 @@ interface KeyboardProps {
 const QUADRANT_COLORS: Record<string, string> = {
   correct: 'bg-green-500',
   present: 'bg-yellow-500',
-  absent: 'bg-zinc-400',
+  absent: 'bg-gray-400',
 };
 
 function QuadrantKey({
@@ -60,10 +60,10 @@ function QuadrantKey({
         'relative h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base overflow-hidden',
         'transition-all duration-300 select-none',
         allAbsent
-          ? 'text-zinc-400'
+          ? 'text-gray-400'
           : hasAny
           ? 'text-white'
-          : 'text-zinc-500'
+          : 'text-gray-700'
       )}
       style={{
         border: '1.5px solid #ede9f6',
@@ -87,7 +87,10 @@ function QuadrantKey({
           );
         })}
       </div>
-      <span className="relative z-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]">
+      <span
+        className="relative z-10"
+        style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitFontSmoothing: 'antialiased' }}
+      >
         {letter}
       </span>
     </button>

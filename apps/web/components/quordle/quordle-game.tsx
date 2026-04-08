@@ -129,12 +129,12 @@ export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
       </div>
 
       {/* Boards - fills remaining space */}
-      <div className="flex-1 min-h-0 px-2 pb-1">
+      <div className="flex-1 min-h-0 px-2 pb-2">
         <MultiBoard boards={state.boards} currentGuess={currentGuess} />
       </div>
 
       {/* Keyboard - fixed at bottom */}
-      <div className="shrink-0 pb-2 px-2">
+      <div className="shrink-0 pb-2 px-2 pt-1">
         <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} />
       </div>
     </div>

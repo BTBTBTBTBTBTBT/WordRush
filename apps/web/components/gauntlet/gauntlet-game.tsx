@@ -441,12 +441,12 @@ export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
       </AnimatePresence>
 
       {/* Game Area */}
-      <div className="flex-1 flex items-center justify-center px-4 min-h-0">
+      <div className={`flex-1 min-h-0 px-2 pb-2 ${isSingleBoard ? 'flex items-center justify-center' : ''}`}>
         {renderGameArea()}
       </div>
 
       {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2">
+      <div className="shrink-0 pb-2 px-2 pt-2">
         <Keyboard
           onKey={handleKey}
           letterStates={letterStates}
@@ -517,10 +517,10 @@ function GauntletSequenceMiniBoard({
 
   const getTileColor = (state: TileState) => {
     switch (state) {
-      case TileState.CORRECT: return 'bg-green-600 border-green-400';
-      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
-      case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
-      default: return 'bg-zinc-800 border-zinc-600';
+      case TileState.CORRECT: return 'bg-green-600 border-green-600';
+      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
+      case TileState.ABSENT: return 'bg-gray-400 border-gray-400';
+      default: return 'bg-white border-gray-300';
     }
   };
 
@@ -535,12 +535,12 @@ function GauntletSequenceMiniBoard({
     <div
       className={`relative p-1 rounded-lg border-2 h-full flex flex-col transition-all duration-300 ${
         isCompleted
-          ? 'border-green-400 bg-green-900/20'
+          ? 'border-green-400 bg-green-50'
           : isFailed
-          ? 'border-red-400 bg-red-900/20'
+          ? 'border-red-400 bg-red-50'
           : isActive
-          ? 'border-yellow-400 bg-zinc-900/50 shadow-lg shadow-yellow-500/20'
-          : 'border-zinc-700/50 bg-zinc-900/30 opacity-60'
+          ? 'border-yellow-400 bg-white shadow-lg shadow-yellow-500/20'
+          : 'border-gray-200 bg-gray-50 opacity-60'
       }`}
     >
       <div className="flex flex-col gap-[2px] flex-1">
@@ -561,14 +561,14 @@ function GauntletSequenceMiniBoard({
                 return (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded text-white font-bold text-[10px] sm:text-xs ${
+                    className={`flex-1 flex items-center justify-center border rounded font-bold text-[10px] sm:text-xs ${
                       isPastGuess && showColors
-                        ? getTileColor(tileState)
+                        ? `${getTileColor(tileState)} text-white`
                         : isPastGuess && !showColors
-                        ? 'bg-zinc-700/50 border-zinc-600/50'
+                        ? 'bg-gray-100 border-gray-300 text-gray-800'
                         : letter
-                        ? 'bg-zinc-800 border-zinc-500'
-                        : 'bg-zinc-800/50 border-zinc-700/30'
+                        ? 'bg-white border-gray-400 text-gray-800'
+                        : 'bg-white border-gray-200'
                     }`}
                   >
                     {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : ''}
