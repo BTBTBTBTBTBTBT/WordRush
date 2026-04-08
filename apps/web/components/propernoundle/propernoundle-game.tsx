@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
@@ -11,9 +11,11 @@ import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
 import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber } from './puzzle-service';
 import { useHints } from './use-hints';
+import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
 
 const MAX_GUESSES = 6;
+const DAILY_STORAGE_KEY = 'spellstrike-propernoundle-daily';
 
 const CATEGORY_LABELS: Record<string, string> = {
   music: 'Music',
@@ -37,6 +39,40 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 type GameMode = 'daily' | 'practice';
 
+interface DailyState {
+  date: string;
+  guesses: Guess[];
+  gameStatus: 'playing' | 'won' | 'lost';
+  letterStates: Record<string, TileState>;
+  elapsedTime: number;
+}
+
+function getTodayString(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+}
+
+function getSavedDailyState(): DailyState | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(DAILY_STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    if (parsed.date !== getTodayString()) {
+      localStorage.removeItem(DAILY_STORAGE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveDailyState(state: DailyState): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(state));
+}
+
 export function ProperNoundleGame() {
   const [mode, setMode] = useState<GameMode>('daily');
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
@@ -48,8 +84,11 @@ export function ProperNoundleGame() {
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [playedIds, setPlayedIds] = useState<string[]>([]);
+  const [wikiImageUrl, setWikiImageUrl] = useState<string | null>(null);
+  const [wikiImageLoaded, setWikiImageLoaded] = useState(false);
+  const restoredDailyRef = useRef(false);
 
   const hints = useHints();
 
@@ -57,13 +96,56 @@ export function ProperNoundleGame() {
 
   // Load puzzle
   useEffect(() => {
-    const p = mode === 'daily' ? getDailyPuzzle() : getRandomPuzzle(playedIds);
-    setPuzzle(p);
-    setGuesses([]);
-    setCurrentGuess('');
-    setGameStatus('playing');
-    setLetterStates({});
-    setMessage('');
+    if (mode === 'daily') {
+      const p = getDailyPuzzle();
+      setPuzzle(p);
+
+      // Restore saved daily state
+      const saved = getSavedDailyState();
+      if (saved && saved.gameStatus !== 'playing') {
+        setGuesses(saved.guesses);
+        setGameStatus(saved.gameStatus);
+        setLetterStates(saved.letterStates);
+        setElapsedTime(saved.elapsedTime);
+        setCurrentGuess('');
+        setMessage('');
+        restoredDailyRef.current = true;
+        return;
+      } else if (saved && saved.gameStatus === 'playing') {
+        setGuesses(saved.guesses);
+        setLetterStates(saved.letterStates);
+        setElapsedTime(saved.elapsedTime);
+        setStartTime(Date.now() - saved.elapsedTime * 1000);
+        setCurrentGuess('');
+        setGameStatus('playing');
+        setMessage('');
+        restoredDailyRef.current = false;
+        return;
+      }
+      // Fresh daily
+      setGuesses([]);
+      setCurrentGuess('');
+      setGameStatus('playing');
+      setLetterStates({});
+      setMessage('');
+      setElapsedTime(0);
+      setStartTime(Date.now());
+      restoredDailyRef.current = false;
+    } else {
+      const p = getRandomPuzzle(playedIds);
+      setPuzzle(p);
+      setGuesses([]);
+      setCurrentGuess('');
+      setGameStatus('playing');
+      setLetterStates({});
+      setMessage('');
+      setElapsedTime(0);
+      setStartTime(Date.now());
+      restoredDailyRef.current = false;
+    }
+    setShowVictory(false);
+    setWikiImageUrl(null);
+    setWikiImageLoaded(false);
     hints.resetHints();
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -76,12 +158,49 @@ export function ProperNoundleGame() {
     return () => clearInterval(interval);
   }, [gameStatus, startTime]);
 
+  // Game over effects
   useEffect(() => {
-    if (gameStatus === 'won') setShowVictory(true);
+    if (gameStatus === 'won' && !restoredDailyRef.current) {
+      setShowVictory(true);
+    }
     if (gameStatus === 'won' || gameStatus === 'lost') {
       recordModePlayed('propernoundle');
+
+      // Fetch Wikipedia image for result screen
+      if (puzzle) {
+        setWikiImageUrl(null);
+        setWikiImageLoaded(false);
+        fetchWikipediaImage(puzzle.display, puzzle.wikiTitle).then(url => {
+          if (url) setWikiImageUrl(url);
+        });
+      }
+
+      // Save daily state
+      if (mode === 'daily') {
+        saveDailyState({
+          date: getTodayString(),
+          guesses,
+          gameStatus,
+          letterStates,
+          elapsedTime,
+        });
+      }
     }
-  }, [gameStatus]);
+    restoredDailyRef.current = false;
+  }, [gameStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Also save daily state after each guess (so in-progress games persist)
+  useEffect(() => {
+    if (mode === 'daily' && gameStatus === 'playing' && guesses.length > 0) {
+      saveDailyState({
+        date: getTodayString(),
+        guesses,
+        gameStatus,
+        letterStates,
+        elapsedTime,
+      });
+    }
+  }, [guesses, mode, gameStatus, letterStates, elapsedTime]);
 
   const buildLetterStates = useCallback((allGuesses: Guess[]) => {
     const states: Record<string, TileState> = {};
@@ -201,6 +320,10 @@ export function ProperNoundleGame() {
     setLetterStates({});
     setMessage('');
     setShowVictory(false);
+    setElapsedTime(0);
+    setStartTime(Date.now());
+    setWikiImageUrl(null);
+    setWikiImageLoaded(false);
     hints.resetHints();
     setMode('practice');
   }, [puzzle, playedIds, hints]);
@@ -287,18 +410,54 @@ export function ProperNoundleGame() {
 
         {/* Win/Loss state */}
         {gameStatus === 'won' && (
-          <div className="mt-1 flex flex-col items-center gap-1">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-2 flex flex-col items-center gap-2"
+          >
+            {/* Wikipedia image */}
+            {wikiImageUrl && (
+              <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-green-200 shadow-md">
+                <img
+                  src={wikiImageUrl}
+                  alt={puzzle.display}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${wikiImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={() => setWikiImageLoaded(true)}
+                />
+                {!wikiImageLoaded && (
+                  <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+                )}
+              </div>
+            )}
             <span className="text-green-600 text-xs font-bold">
-              {puzzle.display} — solved in {guesses.length} guesses  ·  {formatTime(elapsedTime)}
+              {puzzle.display} — solved in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'}  ·  {formatTime(elapsedTime)}
             </span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
               <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>
             </div>
-          </div>
+          </motion.div>
         )}
         {gameStatus === 'lost' && (
-          <div className="mt-1 flex flex-col items-center gap-1">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-2 flex flex-col items-center gap-2"
+          >
+            {/* Wikipedia image */}
+            {wikiImageUrl && (
+              <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-red-200 shadow-md">
+                <img
+                  src={wikiImageUrl}
+                  alt={puzzle.display}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${wikiImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={() => setWikiImageLoaded(true)}
+                />
+                {!wikiImageLoaded && (
+                  <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+                )}
+              </div>
+            )}
             <span className="text-red-500 text-xs font-bold">
               The answer was: {puzzle.display}
             </span>
@@ -306,7 +465,7 @@ export function ProperNoundleGame() {
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
               <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
 
