@@ -255,7 +255,7 @@ export default function DailyPage() {
                       <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
                         {playType === 'solo' ? (
                           <>
-                            {entry.guess_count}g · {formatTime(entry.time_seconds)}
+                            {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
                             {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
                           </>
                         ) : (

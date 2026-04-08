@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GameMode } from '@wordle-duel/core';
 import { SocketIOMatchService } from '@/lib/adapters/match-service';
 import { useAuth } from '@/lib/auth-context';
@@ -15,6 +15,45 @@ import { VsOctoword } from './vs-octoword';
 import { VsSuccession } from './vs-succession';
 import { VsDeliverance } from './vs-deliverance';
 import { VsGauntlet } from './vs-gauntlet';
+
+const WAITING_PHRASES = [
+  'Finding Opponent',
+  'Scanning Lobbies',
+  'Matching Players',
+  'Searching Worldwide',
+  'Queueing Up',
+  'Warming Up',
+  'Almost There',
+  'Shuffling Words',
+  'Loading Puzzle',
+  'Scouting Rivals',
+];
+
+function CyclingStatus() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex(prev => (prev + 1) % WAITING_PHRASES.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.p
+        key={index}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.3 }}
+        className="text-gray-500 text-lg font-bold"
+      >
+        {WAITING_PHRASES[index]}...
+      </motion.p>
+    </AnimatePresence>
+  );
+}
 
 interface VsGameProps {
   mode: GameMode;
@@ -223,12 +262,12 @@ export function VsGame({ mode }: VsGameProps) {
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
           >
-            <Loader2 className="h-16 w-16 text-white/40 mx-auto" />
+            <Loader2 className="h-16 w-16 text-purple-300 mx-auto" />
           </motion.div>
 
           <div className="space-y-2">
-            <p className="text-gray-400 text-lg font-bold">Finding Opponent...</p>
-            <p className="text-white/40 text-sm">Position in queue: {queuePosition + 1}</p>
+            <CyclingStatus />
+            <p className="text-gray-400 text-sm">Position in queue: {queuePosition + 1}</p>
           </div>
 
           <button
