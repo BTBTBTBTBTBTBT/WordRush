@@ -23,5 +23,5 @@ export default function OctordlePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'OCTORDLE') : undefined;
 
-  return <OctordleGame initialSeed={seed} isDaily={isDaily} />;
+  return <OctordleGame initialSeed={seed} />;
 }

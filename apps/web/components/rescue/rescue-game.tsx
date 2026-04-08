@@ -11,36 +11,23 @@ import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { saveDailyGame, getSavedDailyGame } from '@/lib/daily-game-persistence';
 
 interface RescueGameProps {
   initialSeed?: string;
-  isDaily?: boolean;
 }
 
-export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
+export function RescueGame({ initialSeed }: RescueGameProps = {}) {
   const { profile } = useAuth();
   const [gameSeed] = useState(() => initialSeed || Date.now().toString());
-
-  const [savedDaily] = useState(() => isDaily ? getSavedDailyGame('RESCUE') : null);
-  const [state, dispatch] = useReducer(gameReducer, gameSeed, (seed) => {
-    let s = initializeGame(seed, GameMode.RESCUE);
-    if (savedDaily) {
-      for (const guess of savedDaily.guesses) {
-        s.boards.forEach((board, index) => {
-          if (board.status === 'PLAYING') {
-            s = gameReducer(s, { type: 'SUBMIT_GUESS', guess, boardIndex: index });
-          }
-        });
-      }
-    }
-    return s;
-  });
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    initializeGame(gameSeed, GameMode.RESCUE)
+  );
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(savedDaily?.elapsedTime ?? 0);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
@@ -61,22 +48,8 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
     }
     if (state.status === 'WON' || state.status === 'LOST') {
       recordModePlayed('rescue');
-      if (isDaily) {
-        const guesses = state.boards.reduce((max, b) => b.guesses.length > max.length ? b.guesses : max, [] as string[]);
-        saveDailyGame('RESCUE', guesses, state.status === 'WON' ? 'won' : 'lost', elapsedTime);
-      }
     }
   }, [state.status]);
-
-  useEffect(() => {
-    if (isDaily && state.status === 'PLAYING') {
-      const guessCount = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
-      if (guessCount > 0) {
-        const guesses = state.boards.reduce((max, b) => b.guesses.length > max.length ? b.guesses : max, [] as string[]);
-        saveDailyGame('RESCUE', guesses, 'playing', elapsedTime);
-      }
-    }
-  }, [state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)]);
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
@@ -120,7 +93,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
 
   const handleRestart = () => {
     dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.RESCUE });
-    setCurrentGuess(''); setError(''); setElapsedTime(0); setShowVictory(false);
+    setCurrentGuess(''); setError(''); setElapsedTime(0);
   };
 
   return (

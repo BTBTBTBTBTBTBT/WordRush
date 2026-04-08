@@ -29,7 +29,7 @@ export function AppHeader() {
   const shields = (profile as any)?.streak_shields ?? 0;
 
   return (
-    <header className="flex items-center justify-between px-4 py-2">
+    <header className="flex items-center justify-between px-4 py-3">
       <Link href="/" className="flex items-center">
         <span
           className="text-xl font-black bg-clip-text text-transparent"

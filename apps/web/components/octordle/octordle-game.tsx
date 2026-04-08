@@ -11,36 +11,23 @@ import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { saveDailyGame, getSavedDailyGame } from '@/lib/daily-game-persistence';
 
 interface OctordleGameProps {
   initialSeed?: string;
-  isDaily?: boolean;
 }
 
-export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
+export function OctordleGame({ initialSeed }: OctordleGameProps = {}) {
   const { profile } = useAuth();
   const [gameSeed] = useState(() => initialSeed || Date.now().toString());
-
-  const [savedDaily] = useState(() => isDaily ? getSavedDailyGame('OCTORDLE') : null);
-  const [state, dispatch] = useReducer(gameReducer, gameSeed, (seed) => {
-    let s = initializeGame(seed, GameMode.OCTORDLE);
-    if (savedDaily) {
-      for (const guess of savedDaily.guesses) {
-        s.boards.forEach((board, index) => {
-          if (board.status === 'PLAYING') {
-            s = gameReducer(s, { type: 'SUBMIT_GUESS', guess, boardIndex: index });
-          }
-        });
-      }
-    }
-    return s;
-  });
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    initializeGame(gameSeed, GameMode.OCTORDLE)
+  );
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(savedDaily?.elapsedTime ?? 0);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
@@ -61,17 +48,8 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
     }
     if (state.status === 'WON' || state.status === 'LOST') {
       recordModePlayed('octordle');
-      if (isDaily) {
-        saveDailyGame('OCTORDLE', state.boards[0]?.guesses || [], state.status === 'WON' ? 'won' : 'lost', elapsedTime);
-      }
     }
   }, [state.status]);
-
-  useEffect(() => {
-    if (isDaily && state.status === 'PLAYING' && (state.boards[0]?.guesses.length || 0) > 0) {
-      saveDailyGame('OCTORDLE', state.boards[0]?.guesses || [], 'playing', elapsedTime);
-    }
-  }, [state.boards[0]?.guesses.length]);
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
@@ -114,7 +92,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
   const handleRestart = () => {
     dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.OCTORDLE });
-    setCurrentGuess(''); setError(''); setElapsedTime(0); setShowVictory(false);
+    setCurrentGuess(''); setError(''); setElapsedTime(0);
   };
 
   return (

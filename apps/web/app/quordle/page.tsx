@@ -23,5 +23,5 @@ export default function QuordlePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'QUORDLE') : undefined;
 
-  return <QuordleGame initialSeed={seed} isDaily={isDaily} />;
+  return <QuordleGame initialSeed={seed} />;
 }

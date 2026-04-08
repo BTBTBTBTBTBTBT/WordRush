@@ -23,5 +23,5 @@ export default function RescuePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'RESCUE') : undefined;
 
-  return <RescueGame initialSeed={seed} isDaily={isDaily} />;
+  return <RescueGame initialSeed={seed} />;
 }

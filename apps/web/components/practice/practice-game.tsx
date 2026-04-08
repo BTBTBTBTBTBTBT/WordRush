@@ -12,36 +12,22 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { saveDailyGame, getSavedDailyGame } from '@/lib/daily-game-persistence';
 
 interface PracticeGameProps {
   mode: GameMode;
   onBack: () => void;
   initialSeed?: string;
-  isDaily?: boolean;
 }
 
-export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGameProps) {
+export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
   ensureDictionaryInitialized();
   const { profile } = useAuth();
   const [gameSeed] = useState(() => initialSeed || generateMatchSeed());
-
-  // Initialize state, replaying saved daily guesses if available
-  const [savedDaily] = useState(() => isDaily ? getSavedDailyGame('DUEL') : null);
-  const [state, dispatch] = useReducer(gameReducer, gameSeed, (seed) => {
-    let s = createInitialState(seed, mode);
-    if (savedDaily) {
-      for (const guess of savedDaily.guesses) {
-        s = gameReducer(s, { type: 'SUBMIT_GUESS', guess });
-      }
-    }
-    return s;
-  });
-
+  const [state, dispatch] = useReducer(gameReducer, createInitialState(gameSeed, mode));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(savedDaily?.elapsedTime ?? 0);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   const currentBoard = state.boards[state.currentBoardIndex];
 
@@ -80,18 +66,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     }
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
       recordModePlayed('practice');
-      if (isDaily) {
-        saveDailyGame('DUEL', currentBoard.guesses, state.status === GameStatus.WON ? 'won' : 'lost', elapsedTime);
-      }
     }
   }, [state.status]);
-
-  // Save daily progress after each guess
-  useEffect(() => {
-    if (isDaily && state.status === GameStatus.PLAYING && currentBoard.guesses.length > 0) {
-      saveDailyGame('DUEL', currentBoard.guesses, 'playing', elapsedTime);
-    }
-  }, [currentBoard.guesses.length]);
 
   const handleKey = useCallback((key: string) => {
     if (currentBoard.status !== GameStatus.PLAYING) return;
@@ -137,7 +113,6 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     setCurrentGuess('');
     setMessage('');
     setElapsedTime(0);
-    setShowVictory(false);
   };
 
   const guessesUsed = currentBoard.guesses.length;

@@ -23,5 +23,5 @@ export default function GauntletPage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'GAUNTLET') : undefined;
 
-  return <GauntletGame initialSeed={seed} isDaily={isDaily} />;
+  return <GauntletGame initialSeed={seed} />;
 }
