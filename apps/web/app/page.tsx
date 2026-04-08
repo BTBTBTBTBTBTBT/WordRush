@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, Flame, Swords, Grid3x3, Grid2x2, Zap, Timer, LogOut, Star, Users } from 'lucide-react';
+import { Sparkles, Flame, Swords, Grid3x3, Grid2x2, Zap, Timer, LogOut, Star, Users, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -13,12 +13,110 @@ import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
-function DailyCountdown() {
-  const [secs, setSecs] = useState(getSecondsUntilMidnightUTC());
+function getDailyWord(): string {
+  const now = new Date();
+  const daysSinceEpoch = Math.floor(now.getTime() / 86400000);
+  return solutionWords[daysSinceEpoch % solutionWords.length];
+}
+
+interface WordDefinition {
+  word: string;
+  phonetic?: string;
+  partOfSpeech?: string;
+  definition?: string;
+}
+
+function WordOfTheDay() {
+  const [info, setInfo] = useState<WordDefinition | null>(null);
+
   useEffect(() => {
+    const word = getDailyWord();
+    setInfo({ word });
+    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data[0]) {
+          const entry = data[0];
+          const phonetic = entry.phonetics?.find((p: any) => p.text)?.text || entry.phonetic || '';
+          const meaning = entry.meanings?.[0];
+          const partOfSpeech = meaning?.partOfSpeech || '';
+          const definition = meaning?.definitions?.[0]?.definition || '';
+          setInfo({ word, phonetic, partOfSpeech, definition });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!info) return null;
+
+  const { word: dailyWord } = info;
+
+  return (
+    <div
+      className="px-4 py-3.5"
+      style={{
+        background: '#ffffff',
+        border: '1.5px solid #ede9f6',
+        borderRadius: '16px',
+      }}
+    >
+      <div className="flex items-center gap-1.5 mb-2">
+        <BookOpen className="w-3 h-3" style={{ color: '#9ca3af' }} />
+        <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+          Word of the Day
+        </span>
+      </div>
+
+      <div className="flex items-baseline gap-2">
+        <span className="text-2xl font-black" style={{ color: '#1a1a2e' }}>
+          {dailyWord.charAt(0) + dailyWord.slice(1).toLowerCase()}
+        </span>
+        {info.phonetic && (
+          <span className="text-sm font-bold" style={{ color: '#9ca3af' }}>
+            {info.phonetic}
+          </span>
+        )}
+      </div>
+
+      {info.partOfSpeech && (
+        <div className="mt-0.5">
+          <span
+            className="text-[10px] font-extrabold italic"
+            style={{ color: '#7c3aed' }}
+          >
+            {info.partOfSpeech}
+          </span>
+        </div>
+      )}
+
+      {info.definition && (
+        <p className="mt-1.5 text-xs font-bold leading-relaxed" style={{ color: '#4b5563' }}>
+          {info.definition}
+        </p>
+      )}
+
+      <div
+        className="mt-2 pt-2"
+        style={{ borderTop: '1px solid #ede9f6' }}
+      >
+        <span className="text-[10px] font-bold" style={{ color: '#c4b5fd' }}>
+          A new word every day
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function DailyCountdown() {
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    setSecs(getSecondsUntilMidnightUTC());
     const i = setInterval(() => setSecs(getSecondsUntilMidnightUTC()), 1000);
     return () => clearInterval(i);
   }, []);
+  if (secs === null) {
+    return <span style={{ color: '#9ca3af' }} className="text-xs font-bold">Resets in --:--:--</span>;
+  }
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
@@ -89,13 +187,6 @@ const MODE_CARDS = [
   },
 ];
 
-const WORD_TILES = [
-  { letter: 'S', color: '#6aaa64' },
-  { letter: 'P', color: '#c9b458' },
-  { letter: 'E', color: '#787c7e' },
-  { letter: 'L', color: '#6aaa64' },
-  { letter: 'L', color: '#c9b458' },
-];
 
 export default function HomePage() {
   const { user, profile, signOut } = useAuth();
@@ -130,18 +221,8 @@ export default function HomePage() {
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4 space-y-4">
-        {/* Word Tiles Visual Signature */}
-        <div className="flex justify-center gap-1.5">
-          {WORD_TILES.map((tile, i) => (
-            <div
-              key={i}
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-black text-lg"
-              style={{ backgroundColor: tile.color }}
-            >
-              {tile.letter}
-            </div>
-          ))}
-        </div>
+        {/* Word of the Day */}
+        <WordOfTheDay />
 
         {/* Streak Card */}
         {profile && streak > 0 && (
