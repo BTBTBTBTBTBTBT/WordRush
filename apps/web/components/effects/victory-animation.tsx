@@ -91,46 +91,46 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
               VICTORY!
             </h2>
 
-            {/* Word + Definition */}
+            {/* Single solution word */}
             {solution && (
+              <div className="mt-2 text-2xl font-black tracking-wider" style={{ color: '#1a1a2e' }}>
+                {solution.toUpperCase()}
+              </div>
+            )}
+
+            {/* Definition (only shown when found) */}
+            {solution && definition?.definition && (
               <div
-                className="mt-4 px-4 py-3"
+                className="mt-3 px-4 py-3"
                 style={{
                   background: '#f8f7ff',
                   borderRadius: '12px',
                   border: '1px solid #ede9f6',
                 }}
               >
-                <div className="text-2xl font-black tracking-wider" style={{ color: '#1a1a2e' }}>
-                  {solution.toUpperCase()}
-                </div>
-                {definition?.phonetic && (
-                  <div className="text-xs font-medium mt-0.5" style={{ color: '#9ca3af' }}>
+                {definition.phonetic && (
+                  <div className="text-xs font-medium mb-1.5" style={{ color: '#9ca3af' }}>
                     {definition.phonetic}
                   </div>
                 )}
-                {definition?.definition && (
-                  <div className="mt-2">
-                    {definition.partOfSpeech && (
-                      <span
-                        className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                        style={{ background: '#ede9f6', color: '#a78bfa' }}
-                      >
-                        {definition.partOfSpeech}
-                      </span>
-                    )}
-                    <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
-                      {definition.definition}
-                    </p>
-                  </div>
+                {definition.partOfSpeech && (
+                  <span
+                    className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+                    style={{ background: '#ede9f6', color: '#a78bfa' }}
+                  >
+                    {definition.partOfSpeech}
+                  </span>
                 )}
+                <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
+                  {definition.definition}
+                </p>
               </div>
             )}
 
             {/* Multiple solutions (multi-board games) */}
             {!solution && solutions && solutions.length > 0 && (
               <div
-                className="mt-4 px-4 py-3"
+                className="mt-3 px-4 py-3"
                 style={{
                   background: '#f8f7ff',
                   borderRadius: '12px',
