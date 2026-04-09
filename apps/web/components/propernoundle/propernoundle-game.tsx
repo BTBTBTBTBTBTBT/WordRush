@@ -410,7 +410,7 @@ export function ProperNoundleGame() {
           </span>
         </div>
 
-        {/* Mode toggle */}
+        {/* Mode toggle — Practice only for Pro users */}
         <div className="flex justify-center gap-2 mt-2">
           <button
             onClick={() => setMode('daily')}
@@ -422,16 +422,18 @@ export function ProperNoundleGame() {
           >
             Daily
           </button>
-          <button
-            onClick={() => { setMode('practice'); }}
-            className={`text-xs font-bold px-3 py-1 rounded-full border transition-all ${
-              mode === 'practice'
-                ? 'border-red-400 bg-red-50 text-red-600'
-                : 'border-gray-200 text-gray-400'
-            }`}
-          >
-            Practice
-          </button>
+          {isPro && (
+            <button
+              onClick={() => { setMode('practice'); }}
+              className={`text-xs font-bold px-3 py-1 rounded-full border transition-all ${
+                mode === 'practice'
+                  ? 'border-red-400 bg-red-50 text-red-600'
+                  : 'border-gray-200 text-gray-400'
+              }`}
+            >
+              Practice
+            </button>
+          )}
         </div>
 
         {/* Hint display */}

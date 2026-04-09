@@ -253,6 +253,22 @@ export default function ProfilePage() {
                 </button>
               </Link>
             )}
+            {/* Dev: Simulate Pro toggle */}
+            <button
+              onClick={async () => {
+                const newValue = !(profile as any).is_pro;
+                await (supabase as any).from('profiles').update({ is_pro: newValue }).eq('id', profile.id);
+                await refreshProfile();
+              }}
+              className="px-3 py-1.5 rounded-lg font-extrabold text-xs border"
+              style={{
+                background: (profile as any).is_pro ? '#fef2f2' : '#f0fdf4',
+                border: (profile as any).is_pro ? '1.5px solid #fca5a5' : '1.5px solid #86efac',
+                color: (profile as any).is_pro ? '#dc2626' : '#16a34a',
+              }}
+            >
+              {(profile as any).is_pro ? 'Disable Pro' : 'Simulate Pro'}
+            </button>
           </div>
         </div>
 
