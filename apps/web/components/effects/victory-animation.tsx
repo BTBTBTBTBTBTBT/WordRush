@@ -54,74 +54,112 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center px-6"
-      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center px-5"
+      style={{ backgroundColor: 'rgba(24, 24, 46, 0.6)' }}
       onClick={onComplete}
     >
       <Confetti colors={confettiColors} />
 
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         className="relative max-w-sm w-full"
       >
         <div
-          className="relative rounded-3xl shadow-2xl p-6 text-center"
-          style={{ background: 'linear-gradient(135deg, #fbbf24, #f97316, #ec4899)' }}
+          className="relative overflow-hidden text-center"
+          style={{
+            background: '#ffffff',
+            border: '1.5px solid #ede9f6',
+            borderRadius: '16px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          }}
         >
-          {/* VICTORY header */}
-          <h2
-            className="text-5xl font-black text-white drop-shadow-lg mb-4"
-          >
-            VICTORY!
-          </h2>
+          {/* Top accent bar */}
+          <div
+            className="h-1.5"
+            style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }}
+          />
 
-          {/* Word + Definition */}
-          {solution && (
-            <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-3 mb-4">
-              <div className="text-3xl font-black text-white tracking-wider">{solution.toUpperCase()}</div>
-              {definition?.phonetic && (
-                <div className="text-sm text-white/70 font-medium mt-0.5">{definition.phonetic}</div>
-              )}
-              {definition?.definition && (
-                <div className="mt-2">
-                  {definition.partOfSpeech && (
-                    <span className="text-xs font-bold text-white/60 uppercase tracking-wider">{definition.partOfSpeech}</span>
-                  )}
-                  <p className="text-sm text-white/90 font-medium mt-0.5 leading-snug">{definition.definition}</p>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="px-5 pt-5 pb-4">
+            {/* VICTORY header */}
+            <h2
+              className="text-4xl font-black text-transparent bg-clip-text"
+              style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899, #fbbf24)' }}
+            >
+              VICTORY!
+            </h2>
 
-          {/* Stats */}
-          {(guesses != null || timeSeconds != null || boardsSolved != null) && (
-            <div className="flex justify-center gap-4 mb-3">
-              {guesses != null && (
-                <div className="text-center">
-                  <div className="text-2xl font-black text-white">{guesses}{maxGuesses ? `/${maxGuesses}` : ''}</div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-white/50">Guesses</div>
+            {/* Word + Definition */}
+            {solution && (
+              <div
+                className="mt-4 px-4 py-3"
+                style={{
+                  background: '#f8f7ff',
+                  borderRadius: '12px',
+                  border: '1px solid #ede9f6',
+                }}
+              >
+                <div className="text-2xl font-black tracking-wider" style={{ color: '#1a1a2e' }}>
+                  {solution.toUpperCase()}
                 </div>
-              )}
-              {boardsSolved != null && totalBoards != null && (
-                <div className="text-center">
-                  <div className="text-2xl font-black text-white">{boardsSolved}/{totalBoards}</div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-white/50">Boards</div>
-                </div>
-              )}
-              {timeSeconds != null && (
-                <div className="text-center">
-                  <div className="text-2xl font-black text-white">{formatTime(timeSeconds)}</div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-white/50">Time</div>
-                </div>
-              )}
-            </div>
-          )}
+                {definition?.phonetic && (
+                  <div className="text-xs font-medium mt-0.5" style={{ color: '#9ca3af' }}>
+                    {definition.phonetic}
+                  </div>
+                )}
+                {definition?.definition && (
+                  <div className="mt-2">
+                    {definition.partOfSpeech && (
+                      <span
+                        className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        style={{ background: '#ede9f6', color: '#a78bfa' }}
+                      >
+                        {definition.partOfSpeech}
+                      </span>
+                    )}
+                    <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
+                      {definition.definition}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
-          <p className="text-sm font-bold text-white/50">
-            Tap anywhere to continue
-          </p>
+            {/* Stats */}
+            {(guesses != null || timeSeconds != null || boardsSolved != null) && (
+              <div className="flex justify-center gap-5 mt-4">
+                {guesses != null && (
+                  <div className="text-center">
+                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                      {guesses}{maxGuesses ? `/${maxGuesses}` : ''}
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Guesses</div>
+                  </div>
+                )}
+                {boardsSolved != null && totalBoards != null && (
+                  <div className="text-center">
+                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                      {boardsSolved}/{totalBoards}
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Boards</div>
+                  </div>
+                )}
+                {timeSeconds != null && (
+                  <div className="text-center">
+                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                      {formatTime(timeSeconds)}
+                    </div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Time</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <p className="text-xs font-bold mt-4" style={{ color: '#c4b5fd' }}>
+              Tap anywhere to continue
+            </p>
+          </div>
         </div>
       </motion.div>
     </motion.div>
