@@ -122,6 +122,7 @@ export function VsGame({ mode }: VsGameProps) {
   const [matchResult, setMatchResult] = useState<any>(null);
   const [playerStats, setPlayerStats] = useState<{ guesses: number; timeMs: number } | null>(null);
   const [message, setMessage] = useState('');
+  const [rematchState, setRematchState] = useState<'idle' | 'offered' | 'received' | 'declined'>('idle');
   const resultRecordedRef = useRef(false);
 
   const gradient = MODE_GRADIENTS[mode] || MODE_GRADIENTS[GameMode.DUEL];
@@ -183,6 +184,14 @@ export function VsGame({ mode }: VsGameProps) {
       }
     });
 
+    matchService.onRematchOffered(() => {
+      setRematchState('received');
+    });
+
+    matchService.onRematchDeclined(() => {
+      setRematchState('declined');
+    });
+
     matchService.onRematchStart((data) => {
       setSeed(data.seed);
       setStartTime(Date.now());
@@ -190,6 +199,8 @@ export function VsGame({ mode }: VsGameProps) {
       setScreen('match');
       setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
       setMatchResult(null);
+      setRematchState('idle');
+      setPlayerStats(null);
       resultRecordedRef.current = false;
     });
 
@@ -244,8 +255,14 @@ export function VsGame({ mode }: VsGameProps) {
       setVsLimitOpen(true);
       return;
     }
+    setRematchState('offered');
     matchService.offerRematch();
   }, [matchService, isPro]);
+
+  const handleDeclineRematch = useCallback(() => {
+    matchService.declineRematch();
+    setRematchState('declined');
+  }, [matchService]);
 
   const handleForfeit = useCallback(() => {
     matchService.abandonMatch();
@@ -371,6 +388,31 @@ export function VsGame({ mode }: VsGameProps) {
             </div>
           </motion.div>
 
+          {/* Rematch Status */}
+          {rematchState === 'received' && (
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="bg-white border-2 border-purple-300 rounded-xl p-4 text-center"
+            >
+              <p className="text-sm font-bold text-gray-700 mb-3">Opponent wants a rematch!</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDeclineRematch}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-600 font-bold py-2.5 rounded-xl transition-all"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={handleRematch}
+                  className={`flex-1 bg-gradient-to-r ${titleGradient} text-white font-bold py-2.5 rounded-xl transition-all shadow-lg`}
+                >
+                  Accept
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {/* Actions */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -384,12 +426,22 @@ export function VsGame({ mode }: VsGameProps) {
             >
               <Home className="w-4 h-4" /> Home
             </button>
-            <button
-              onClick={handleRematch}
-              className={`flex-1 bg-gradient-to-r ${titleGradient} text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg`}
-            >
-              <RotateCcw className="w-4 h-4" /> Rematch
-            </button>
+            {rematchState === 'declined' ? (
+              <div className="flex-1 bg-gray-100 border border-gray-200 text-gray-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+                <X className="w-4 h-4" /> No Rematch
+              </div>
+            ) : rematchState === 'offered' ? (
+              <div className={`flex-1 bg-gradient-to-r ${titleGradient} text-white/80 font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg`}>
+                <Loader2 className="w-4 h-4 animate-spin" /> Waiting...
+              </div>
+            ) : rematchState !== 'received' ? (
+              <button
+                onClick={handleRematch}
+                className={`flex-1 bg-gradient-to-r ${titleGradient} text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg`}
+              >
+                <RotateCcw className="w-4 h-4" /> Rematch
+              </button>
+            ) : null}
           </motion.div>
         </div>
       </div>
