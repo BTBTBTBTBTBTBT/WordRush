@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { ProBadge } from '@/components/ui/pro-badge';
 
 function ShieldIcon({ className }: { className?: string }) {
   return (
@@ -16,10 +17,11 @@ export function AppHeader() {
   const { profile } = useAuth();
 
   const shields = (profile as any)?.streak_shields ?? 0;
+  const isPro = (profile as any)?.is_pro ?? false;
 
   return (
     <header className="flex items-center justify-between px-4 py-3">
-      <Link href="/" className="flex items-center">
+      <Link href="/" className="flex items-center gap-1.5">
         <span
           className="text-xl font-black bg-clip-text text-transparent"
           style={{
@@ -28,6 +30,7 @@ export function AppHeader() {
         >
           SPELLSTRIKE
         </span>
+        {isPro && <ProBadge size="sm" />}
       </Link>
 
       {profile && (

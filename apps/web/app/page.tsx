@@ -130,16 +130,6 @@ const MODE_CARDS = [
     vsHref: '/practice/vs',
   },
   {
-    id: 'vs',
-    title: 'VS Battle',
-    icon: Swords,
-    desc: 'Real-time PvP',
-    accentColor: '#0d9488',
-    href: '/practice/vs',
-    vsHref: '/practice/vs',
-    badge: 'NEW',
-  },
-  {
     id: 'quordle',
     title: 'QuadWord',
     icon: Grid2x2,
@@ -367,6 +357,22 @@ export default function HomePage() {
                   <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
                     {isLocked ? `Play again in ${resetCountdown}` : mode.desc}
                   </div>
+
+                  {/* VS button */}
+                  {!isLocked && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleVsClick(mode.vsHref);
+                      }}
+                      className="absolute bottom-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center active:scale-95"
+                      style={{ background: `${mode.accentColor}15` }}
+                      aria-label={`${mode.title} VS`}
+                    >
+                      <Swords className="w-3.5 h-3.5" style={{ color: mode.accentColor }} />
+                    </button>
+                  )}
                 </div>
               </Link>
             );
