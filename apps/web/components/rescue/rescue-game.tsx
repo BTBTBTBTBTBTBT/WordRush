@@ -11,13 +11,16 @@ import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 
 interface RescueGameProps {
   initialSeed?: string;
+  isDaily?: boolean;
 }
 
-export function RescueGame({ initialSeed }: RescueGameProps = {}) {
+export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
   const { profile } = useAuth();
+  const isPro = (profile as any)?.is_pro ?? false;
   const [gameSeed] = useState(() => initialSeed || Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
@@ -28,6 +31,7 @@ export function RescueGame({ initialSeed }: RescueGameProps = {}) {
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
@@ -91,6 +95,22 @@ export function RescueGame({ initialSeed }: RescueGameProps = {}) {
   const maxGuesses = state.boards[0]?.maxGuesses || 6;
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
+  const handleShare = useCallback(async () => {
+    const summary = generateMultiBoardSummary(state.boards as any, () => []);
+    const text = generateShareText({
+      mode: 'Deliverance',
+      won: state.status === 'WON',
+      guesses: guessesUsed,
+      maxGuesses: maxGuesses,
+      timeSeconds: elapsedTime,
+      boardSummary: summary,
+      boardsSolved: completedBoards,
+      totalBoards: 4,
+    });
+    const ok = await copyShareToClipboard(text);
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [state, guessesUsed, maxGuesses, elapsedTime, completedBoards]);
+
   const handleRestart = () => {
     dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.RESCUE });
     setCurrentGuess(''); setError(''); setElapsedTime(0);
@@ -118,7 +138,8 @@ export function RescueGame({ initialSeed }: RescueGameProps = {}) {
             <span className="text-green-600 text-xs font-bold">Deliverance complete in {guessesUsed} guesses  ·  {formatTime(elapsedTime)}</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Play Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Play Again</button>}
             </div>
           </div>
         )}
@@ -127,7 +148,8 @@ export function RescueGame({ initialSeed }: RescueGameProps = {}) {
             <span className="text-red-300 text-xs font-bold">Failed! {completedBoards}/4</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Try Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Try Again</button>}
             </div>
           </div>
         )}

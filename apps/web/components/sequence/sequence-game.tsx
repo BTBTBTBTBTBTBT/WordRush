@@ -10,16 +10,19 @@ import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
 
 interface SequenceGameProps {
   initialSeed?: string;
+  isDaily?: boolean;
 }
 
-export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
+export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const { profile } = useAuth();
+  const isPro = (profile as any)?.is_pro ?? false;
   const [gameSeed] = useState(() => initialSeed || Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
@@ -31,6 +34,7 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
   const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   // The active board is the first unsolved board in sequence order
   const activeBoardIndex = useMemo(() => {
@@ -157,6 +161,22 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
   const guessesUsed = state.boards[0]?.guesses.length || 0;
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
+  const handleShare = useCallback(async () => {
+    const summary = generateMultiBoardSummary(state.boards as any, () => []);
+    const text = generateShareText({
+      mode: 'Succession',
+      won: state.status === 'WON',
+      guesses: guessesUsed,
+      maxGuesses,
+      timeSeconds: elapsedTime,
+      boardSummary: summary,
+      boardsSolved: solvedCount,
+      totalBoards: 4,
+    });
+    const ok = await copyShareToClipboard(text);
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [state, guessesUsed, maxGuesses, elapsedTime, solvedCount]);
+
   return (
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
@@ -179,7 +199,8 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
             <span className="text-green-600 text-xs font-bold">All 4 solved in {guessesUsed} guesses  ·  {formatTime(elapsedTime)}</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Play Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Play Again</button>}
             </div>
           </div>
         )}
@@ -188,7 +209,8 @@ export function SequenceGame({ initialSeed }: SequenceGameProps = {}) {
             <span className="text-red-300 text-xs font-bold">Out of guesses! {solvedCount}/4</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Try Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && <button onClick={handleNextPuzzle} className="text-amber-600 text-xs font-bold underline">Try Again</button>}
             </div>
           </div>
         )}

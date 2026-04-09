@@ -3,16 +3,6 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 
-function CoinIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="10" cy="10" r="9" fill="#FBBF24" stroke="#D97706" strokeWidth="1.5"/>
-      <circle cx="10" cy="10" r="6" stroke="#D97706" strokeWidth="1" opacity="0.5"/>
-      <text x="10" y="14" textAnchor="middle" fill="#92400E" fontSize="10" fontWeight="900">$</text>
-    </svg>
-  );
-}
-
 function ShieldIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -25,7 +15,6 @@ function ShieldIcon({ className }: { className?: string }) {
 export function AppHeader() {
   const { profile } = useAuth();
 
-  const coins = (profile as any)?.coins ?? 0;
   const shields = (profile as any)?.streak_shields ?? 0;
 
   return (
@@ -43,20 +32,6 @@ export function AppHeader() {
 
       {profile && (
         <div className="flex items-center gap-2">
-          {/* Coin pill */}
-          <div
-            className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"
-            style={{
-              background: '#fef9ec',
-              border: '1.5px solid #fde68a',
-              borderRadius: '20px',
-              color: '#92400e',
-            }}
-          >
-            <CoinIcon className="w-4 h-4" />
-            <span>{coins.toLocaleString()}</span>
-          </div>
-
           {/* Shield pill */}
           <div
             className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"

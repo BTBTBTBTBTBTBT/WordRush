@@ -11,13 +11,16 @@ import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 
 interface QuordleGameProps {
   initialSeed?: string;
+  isDaily?: boolean;
 }
 
-export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
+export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   const { profile } = useAuth();
+  const isPro = (profile as any)?.is_pro ?? false;
   const [gameSeed] = useState(() => initialSeed || Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
@@ -28,6 +31,7 @@ export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
@@ -90,6 +94,23 @@ export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
   const completedBoards = state.boards.filter(b => b.status !== 'PLAYING').length;
   const totalGuesses = state.boards[0]?.guesses.length || 0;
 
+  const handleShare = useCallback(async () => {
+    const summary = generateMultiBoardSummary(state.boards as any, () => []);
+    const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
+    const text = generateShareText({
+      mode: 'QuadWord',
+      won: state.status === 'WON',
+      guesses: totalGuesses,
+      maxGuesses: state.boards[0]?.maxGuesses || 9,
+      timeSeconds: elapsedTime,
+      boardSummary: summary,
+      boardsSolved,
+      totalBoards: 4,
+    });
+    const ok = await copyShareToClipboard(text);
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [state, totalGuesses, elapsedTime]);
+
   const handleRestart = () => {
     dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.QUORDLE });
     setCurrentGuess(''); setError(''); setElapsedTime(0);
@@ -117,7 +138,8 @@ export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
             <span className="text-green-600 text-xs font-bold">All 4 solved in {totalGuesses} guesses  ·  {formatTime(elapsedTime)}</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Play Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Play Again</button>}
             </div>
           </div>
         )}
@@ -126,7 +148,8 @@ export function QuordleGame({ initialSeed }: QuordleGameProps = {}) {
             <span className="text-red-300 text-xs font-bold">Game Over! {completedBoards}/4</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Try Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Try Again</button>}
             </div>
           </div>
         )}

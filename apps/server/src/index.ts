@@ -10,6 +10,30 @@ const allowedWords = JSON.parse(readFileSync(join(__dirname, '../../../data/allo
 const solutionWords = JSON.parse(readFileSync(join(__dirname, '../../../data/solutions.json'), 'utf-8'));
 initDictionary(allowedWords, solutionWords);
 
+// ProperNoundle puzzle data
+interface ProperNoundlePuzzle {
+  id: string;
+  answer: string;
+  display: string;
+  category: string;
+  themeCategory: string;
+}
+let properNoundlePuzzles: ProperNoundlePuzzle[] = [];
+try {
+  properNoundlePuzzles = JSON.parse(readFileSync(join(__dirname, '../../web/data/propernoundle-puzzles.json'), 'utf-8'));
+} catch {
+  console.warn('ProperNoundle puzzles not found, VS mode for ProperNoundle will not work');
+}
+
+function selectProperNoundlePuzzle(seed: string): ProperNoundlePuzzle {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  const index = Math.abs(hash) % properNoundlePuzzles.length;
+  return properNoundlePuzzles[index];
+}
+
 const MODE_BOARD_COUNT: Record<string, number> = {
   [GameMode.DUEL]: 1,
   [GameMode.QUORDLE]: 4,
@@ -18,7 +42,8 @@ const MODE_BOARD_COUNT: Record<string, number> = {
   [GameMode.RESCUE]: 4,
   [GameMode.GAUNTLET]: 21,
   [GameMode.MULTI_DUEL]: 2,
-  [GameMode.TOURNAMENT]: 1
+  [GameMode.TOURNAMENT]: 1,
+  [GameMode.PROPERNOUNDLE]: 1
 };
 
 const MODE_MAX_GUESSES: Record<string, number> = {
@@ -29,7 +54,8 @@ const MODE_MAX_GUESSES: Record<string, number> = {
   [GameMode.RESCUE]: 6,
   [GameMode.GAUNTLET]: 50,
   [GameMode.MULTI_DUEL]: 6,
-  [GameMode.TOURNAMENT]: 6
+  [GameMode.TOURNAMENT]: 6,
+  [GameMode.PROPERNOUNDLE]: 6
 };
 
 const httpServer = createServer();
@@ -86,24 +112,27 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (guess.length !== 5) {
-      socket.emit('guess_result', {
-        boardIndex,
-        isValid: false,
-        isCorrect: false,
-        reason: 'Guess must be 5 letters'
-      });
-      return;
-    }
+    // Skip length and dictionary checks for ProperNoundle (variable-length proper nouns)
+    if (match.mode !== GameMode.PROPERNOUNDLE) {
+      if (guess.length !== 5) {
+        socket.emit('guess_result', {
+          boardIndex,
+          isValid: false,
+          isCorrect: false,
+          reason: 'Guess must be 5 letters'
+        });
+        return;
+      }
 
-    if (!isValidWord(guess)) {
-      socket.emit('guess_result', {
-        boardIndex,
-        isValid: false,
-        isCorrect: false,
-        reason: 'Not in word list'
-      });
-      return;
+      if (!isValidWord(guess)) {
+        socket.emit('guess_result', {
+          boardIndex,
+          isValid: false,
+          isCorrect: false,
+          reason: 'Not in word list'
+        });
+        return;
+      }
     }
 
     const isPlayer1 = match.player1.id === playerId;
@@ -117,7 +146,13 @@ io.on('connection', (socket) => {
     }
 
     const solution = match.solutions[boardIndex];
-    const isCorrect = guess.toUpperCase() === solution.toUpperCase();
+    const normalizedGuess = match.mode === GameMode.PROPERNOUNDLE
+      ? guess.toLowerCase().replace(/[^a-z]/g, '')
+      : guess.toUpperCase();
+    const normalizedSolution = match.mode === GameMode.PROPERNOUNDLE
+      ? solution.toLowerCase().replace(/[^a-z]/g, '')
+      : solution.toUpperCase();
+    const isCorrect = normalizedGuess === normalizedSolution;
 
     playerState.guesses++;
 
@@ -243,13 +278,24 @@ io.on('connection', (socket) => {
       const newMatchId = `match-${Date.now()}`;
       const newSeed = generateMatchSeed();
       const boardCount = MODE_BOARD_COUNT[match.mode] || 1;
+
+      let newSolutions: string[];
+      let newPuzzleMetadata: any;
+      if (match.mode === GameMode.PROPERNOUNDLE && properNoundlePuzzles.length > 0) {
+        const puzzle = selectProperNoundlePuzzle(newSeed);
+        newSolutions = [puzzle.answer];
+        newPuzzleMetadata = { display: puzzle.display, category: puzzle.category, answerLength: puzzle.answer.length, themeCategory: puzzle.themeCategory };
+      } else {
+        newSolutions = generateSolutionsFromSeed(newSeed, boardCount);
+      }
+
       const newMatch: Match = {
         id: newMatchId,
         mode: match.mode,
         seed: newSeed,
         player1: match.player1,
         player2: match.player2,
-        solutions: generateSolutionsFromSeed(newSeed, boardCount),
+        solutions: newSolutions,
         serverStartAt: Date.now() + MATCH_COUNTDOWN * 1000,
         player1State: { guesses: 0, status: GameStatus.PLAYING, boardsSolved: 0, totalBoards: boardCount },
         player2State: { guesses: 0, status: GameStatus.PLAYING, boardsSolved: 0, totalBoards: boardCount },
@@ -261,8 +307,8 @@ io.on('connection', (socket) => {
       playerToMatch.set(match.player2.id, newMatchId);
       matches.delete(matchId);
 
-      io.to(match.player1.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed });
-      io.to(match.player2.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed });
+      io.to(match.player1.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata });
+      io.to(match.player2.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata });
     }
   });
 
@@ -308,8 +354,23 @@ function createMatch(player1: Player, player2: Player, mode: GameMode): void {
   const matchId = `match-${Date.now()}`;
   const seed = generateMatchSeed();
   const boardCount = MODE_BOARD_COUNT[mode] || 1;
-  const solutions = generateSolutionsFromSeed(seed, boardCount);
   const serverStartAt = Date.now() + MATCH_COUNTDOWN * 1000;
+
+  let solutions: string[];
+  let puzzleMetadata: { display: string; category: string; answerLength: number; themeCategory?: string } | undefined;
+
+  if (mode === GameMode.PROPERNOUNDLE && properNoundlePuzzles.length > 0) {
+    const puzzle = selectProperNoundlePuzzle(seed);
+    solutions = [puzzle.answer];
+    puzzleMetadata = {
+      display: puzzle.display,
+      category: puzzle.category,
+      answerLength: puzzle.answer.length,
+      themeCategory: puzzle.themeCategory,
+    };
+  } else {
+    solutions = generateSolutionsFromSeed(seed, boardCount);
+  }
 
   const match: Match = {
     id: matchId,
@@ -343,8 +404,8 @@ function createMatch(player1: Player, player2: Player, mode: GameMode): void {
   });
 
   setTimeout(() => {
-    io.to(player1.socketId).emit('match_start', { seed, startTime: serverStartAt });
-    io.to(player2.socketId).emit('match_start', { seed, startTime: serverStartAt });
+    io.to(player1.socketId).emit('match_start', { seed, startTime: serverStartAt, puzzleMetadata });
+    io.to(player2.socketId).emit('match_start', { seed, startTime: serverStartAt, puzzleMetadata });
   }, MATCH_COUNTDOWN * 1000);
 }
 

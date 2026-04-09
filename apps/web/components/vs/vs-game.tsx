@@ -17,6 +17,7 @@ import { VsOctoword } from './vs-octoword';
 import { VsSuccession } from './vs-succession';
 import { VsDeliverance } from './vs-deliverance';
 import { VsGauntlet } from './vs-gauntlet';
+import { VsProperNoundle } from './vs-propernoundle';
 
 const WAITING_PHRASES = [
   'Searching',
@@ -71,7 +72,7 @@ interface VsGameProps {
   mode: GameMode;
 }
 
-type VsScreen = 'queue' | 'warmup' | 'match' | 'result';
+type VsScreen = 'queue' | 'warmup' | 'match' | 'waiting' | 'result';
 
 const MODE_LABELS: Record<string, string> = {
   [GameMode.DUEL]: 'CLASSIC',
@@ -80,6 +81,7 @@ const MODE_LABELS: Record<string, string> = {
   [GameMode.SEQUENCE]: 'SUCCESSION',
   [GameMode.RESCUE]: 'DELIVERANCE',
   [GameMode.GAUNTLET]: 'GAUNTLET',
+  [GameMode.PROPERNOUNDLE]: 'PROPERNOUNDLE',
 };
 
 const MODE_GRADIENTS: Record<string, string> = {
@@ -89,6 +91,7 @@ const MODE_GRADIENTS: Record<string, string> = {
   [GameMode.SEQUENCE]: 'from-orange-900 via-red-800 to-pink-700',
   [GameMode.RESCUE]: 'from-indigo-900 via-purple-800 to-fuchsia-700',
   [GameMode.GAUNTLET]: 'from-purple-900 via-pink-800 to-orange-700',
+  [GameMode.PROPERNOUNDLE]: 'from-red-900 via-rose-800 to-orange-700',
 };
 
 const MODE_TITLE_GRADIENTS: Record<string, string> = {
@@ -98,6 +101,7 @@ const MODE_TITLE_GRADIENTS: Record<string, string> = {
   [GameMode.SEQUENCE]: 'from-yellow-400 via-orange-400 to-red-400',
   [GameMode.RESCUE]: 'from-indigo-400 via-purple-400 to-fuchsia-400',
   [GameMode.GAUNTLET]: 'from-yellow-400 via-pink-400 to-purple-400',
+  [GameMode.PROPERNOUNDLE]: 'from-red-400 via-rose-400 to-orange-400',
 };
 
 export function VsGame({ mode }: VsGameProps) {
@@ -114,7 +118,9 @@ export function VsGame({ mode }: VsGameProps) {
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(false);
   const [opponentProgress, setOpponentProgress] = useState({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
+  const [puzzleMetadata, setPuzzleMetadata] = useState<{ display: string; category: string; answerLength: number; themeCategory?: string } | undefined>();
   const [matchResult, setMatchResult] = useState<any>(null);
+  const [playerStats, setPlayerStats] = useState<{ guesses: number; timeMs: number } | null>(null);
   const [message, setMessage] = useState('');
   const resultRecordedRef = useRef(false);
 
@@ -151,6 +157,7 @@ export function VsGame({ mode }: VsGameProps) {
     matchService.onMatchStart((data) => {
       setSeed(data.seed);
       setStartTime(data.startTime);
+      setPuzzleMetadata(data.puzzleMetadata);
       setScreen('match');
       setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
       resultRecordedRef.current = false;
@@ -179,6 +186,7 @@ export function VsGame({ mode }: VsGameProps) {
     matchService.onRematchStart((data) => {
       setSeed(data.seed);
       setStartTime(Date.now());
+      setPuzzleMetadata((data as any).puzzleMetadata);
       setScreen('match');
       setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
       setMatchResult(null);
@@ -212,6 +220,8 @@ export function VsGame({ mode }: VsGameProps) {
 
   const handleCompleted = useCallback((status: 'won' | 'lost', totalGuesses: number, timeMs: number) => {
     matchService.reportCompletion(status, totalGuesses, timeMs);
+    setPlayerStats({ guesses: totalGuesses, timeMs });
+    setScreen('waiting');
   }, [matchService]);
 
   const handleStageCompleted = useCallback((stageIndex: number) => {
@@ -386,6 +396,70 @@ export function VsGame({ mode }: VsGameProps) {
     );
   }
 
+  // Waiting screen — shown after player completes, waiting for opponent
+  if (screen === 'waiting') {
+    const formatWaitTime = (ms: number) => `${Math.round(ms / 1000)}s`;
+    return (
+      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+        <div className="text-center space-y-6 max-w-md w-full px-6">
+          <h2 className={`text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
+            Waiting for opponent...
+          </h2>
+
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          >
+            <Loader2 className="h-12 w-12 text-purple-300 mx-auto" />
+          </motion.div>
+
+          {/* Your stats */}
+          {playerStats && (
+            <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+              <div className="text-gray-400 text-xs font-bold uppercase tracking-wider">Your Result</div>
+              <div className="flex justify-between text-sm font-bold">
+                <span className="text-gray-500">Guesses</span>
+                <span className="text-gray-800">{playerStats.guesses}</span>
+              </div>
+              <div className="flex justify-between text-sm font-bold">
+                <span className="text-gray-500">Time</span>
+                <span className="text-gray-800">{formatWaitTime(playerStats.timeMs)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Opponent progress */}
+          <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+            <div className="text-gray-400 text-xs font-bold uppercase tracking-wider">Opponent Progress</div>
+            <div className="flex justify-between text-sm font-bold">
+              <span className="text-gray-500">Guesses</span>
+              <span className="text-gray-800">{opponentProgress.attempts}</span>
+            </div>
+            {opponentProgress.totalBoards > 1 && (
+              <div className="flex justify-between text-sm font-bold">
+                <span className="text-gray-500">Boards Solved</span>
+                <span className="text-gray-800">{opponentProgress.boardsSolved}/{opponentProgress.totalBoards}</span>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={handleForfeit}
+            className="bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-400 hover:text-gray-600 font-bold px-6 py-2 rounded-xl transition-all flex items-center gap-2 mx-auto"
+          >
+            <X className="w-4 h-4" /> Leave
+          </button>
+        </div>
+
+        {message && (
+          <div className="absolute bottom-8 left-0 right-0 text-center">
+            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // Match screen
   const renderModeComponent = () => {
     const commonProps = {
@@ -410,6 +484,8 @@ export function VsGame({ mode }: VsGameProps) {
         return <VsDeliverance {...commonProps} />;
       case GameMode.GAUNTLET:
         return <VsGauntlet {...commonProps} onStageCompleted={handleStageCompleted} />;
+      case GameMode.PROPERNOUNDLE:
+        return <VsProperNoundle {...commonProps} puzzleMetadata={puzzleMetadata} />;
       default:
         return <VsClassic {...commonProps} />;
     }

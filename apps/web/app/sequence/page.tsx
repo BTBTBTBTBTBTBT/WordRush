@@ -23,5 +23,5 @@ export default function SequencePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'SEQUENCE') : undefined;
 
-  return <SequenceGame initialSeed={seed} />;
+  return <SequenceGame initialSeed={seed} isDaily={isDaily} />;
 }

@@ -12,22 +12,26 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 
 interface PracticeGameProps {
   mode: GameMode;
   onBack: () => void;
   initialSeed?: string;
+  isDaily?: boolean;
 }
 
-export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
+export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGameProps) {
   ensureDictionaryInitialized();
   const { profile } = useAuth();
+  const isPro = (profile as any)?.is_pro ?? false;
   const [gameSeed] = useState(() => initialSeed || generateMatchSeed());
   const [state, dispatch] = useReducer(gameReducer, createInitialState(gameSeed, mode));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [copied, setCopied] = useState(false);
 
   const currentBoard = state.boards[state.currentBoardIndex];
 
@@ -115,6 +119,22 @@ export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
     setElapsedTime(0);
   };
 
+  const handleShare = useCallback(async () => {
+    const grid = generateEmojiGrid(
+      evaluations.map(e => e.tiles.map(t => t.state as 'CORRECT' | 'PRESENT' | 'ABSENT'))
+    );
+    const text = generateShareText({
+      mode: 'Classic',
+      won: state.status === GameStatus.WON,
+      guesses: currentBoard.guesses.length,
+      maxGuesses: currentBoard.maxGuesses,
+      timeSeconds: elapsedTime,
+      emojiGrid: grid,
+    });
+    const ok = await copyShareToClipboard(text);
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [evaluations, state.status, currentBoard, elapsedTime]);
+
   const guessesUsed = currentBoard.guesses.length;
   const maxGuesses = currentBoard.maxGuesses;
 
@@ -143,7 +163,8 @@ export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
             <span className="text-green-600 text-xs font-bold">Solved in {guessesUsed} guesses  ·  {formatTime(elapsedTime)}</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleReset} className="text-purple-600 text-xs font-bold underline">Play Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && <button onClick={handleReset} className="text-purple-600 text-xs font-bold underline">Play Again</button>}
             </div>
           </div>
         )}
@@ -152,7 +173,8 @@ export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
             <span className="text-red-300 text-xs font-bold">The word was {currentBoard.solution.toUpperCase()}</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleReset} className="text-yellow-400 text-xs font-bold underline">Try Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && <button onClick={handleReset} className="text-yellow-400 text-xs font-bold underline">Try Again</button>}
             </div>
           </div>
         )}
@@ -176,9 +198,11 @@ export function PracticeGame({ mode, onBack, initialSeed }: PracticeGameProps) {
         <button onClick={onBack} className="text-white/50 text-xs font-bold flex items-center gap-1">
           <Home className="w-3 h-3" /> Home
         </button>
-        <button onClick={handleReset} className="text-white/50 text-xs font-bold flex items-center gap-1">
-          <RotateCcw className="w-3 h-3" /> New Puzzle
-        </button>
+        {!isDaily && isPro && (
+          <button onClick={handleReset} className="text-white/50 text-xs font-bold flex items-center gap-1">
+            <RotateCcw className="w-3 h-3" /> New Puzzle
+          </button>
+        )}
       </div>
 
       {/* Keyboard */}

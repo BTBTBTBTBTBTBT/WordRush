@@ -19,22 +19,22 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage 
       transition={{ type: 'spring', damping: 20, stiffness: 300 }}
       className="bg-gray-100 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-3"
     >
-      <span className="text-white/60 text-xs font-bold uppercase tracking-wider">Opponent</span>
+      <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">Opponent</span>
       <div className="h-4 w-px bg-gray-200" />
 
       {currentStage !== undefined ? (
         // Gauntlet mode
-        <span className="text-white/80 text-xs font-bold">
+        <span className="text-gray-700 text-xs font-bold">
           Stage {currentStage + 1}/5 | {attempts} guesses
         </span>
       ) : totalBoards === 1 ? (
         // Single board mode
-        <span className="text-white/80 text-xs font-bold">
+        <span className="text-gray-700 text-xs font-bold">
           {attempts} guesses
         </span>
       ) : (
         // Multi board mode
-        <span className="text-white/80 text-xs font-bold">
+        <span className="text-gray-700 text-xs font-bold">
           {boardsSolved}/{totalBoards} boards | {attempts} guesses
         </span>
       )}

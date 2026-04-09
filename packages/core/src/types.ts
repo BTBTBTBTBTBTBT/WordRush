@@ -6,7 +6,8 @@ export enum GameMode {
   OCTORDLE = 'OCTORDLE',
   SEQUENCE = 'SEQUENCE',
   RESCUE = 'RESCUE',
-  TOURNAMENT = 'TOURNAMENT'
+  TOURNAMENT = 'TOURNAMENT',
+  PROPERNOUNDLE = 'PROPERNOUNDLE'
 }
 
 export enum TileState {

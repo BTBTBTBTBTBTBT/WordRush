@@ -45,10 +45,12 @@ function pickBlackoutLetters(
 
 interface GauntletGameProps {
   initialSeed?: string;
+  isDaily?: boolean;
 }
 
-export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
+export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const { profile } = useAuth();
+  const isPro = (profile as any)?.is_pro ?? false;
   const [seed, setSeed] = useState(() => initialSeed || generateSeed());
   const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET));
   const [currentGuess, setCurrentGuess] = useState('');
@@ -314,6 +316,7 @@ export function GauntletGame({ initialSeed }: GauntletGameProps = {}) {
         totalTimeMs={Date.now() - gameStartTime}
         onPlayAgain={handlePlayAgain}
         onHome={handleHome}
+        showPlayAgain={!isDaily && isPro}
       />
     );
   }

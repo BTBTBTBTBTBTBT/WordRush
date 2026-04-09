@@ -10,7 +10,8 @@ export class MatchmakingQueue {
     [GameMode.OCTORDLE, []],
     [GameMode.SEQUENCE, []],
     [GameMode.RESCUE, []],
-    [GameMode.TOURNAMENT, []]
+    [GameMode.TOURNAMENT, []],
+    [GameMode.PROPERNOUNDLE, []]
   ]);
 
   addToQueue(player: Player, mode: GameMode): number {

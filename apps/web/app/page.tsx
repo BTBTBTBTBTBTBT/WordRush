@@ -193,6 +193,7 @@ const MODE_CARDS = [
     desc: 'Guess famous names',
     accentColor: '#dc2626',
     href: '/propernoundle',
+    vsHref: '/propernoundle/vs',
   },
 ];
 

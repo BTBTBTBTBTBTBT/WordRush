@@ -13,6 +13,7 @@ import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber } from './puzzle-
 import { useHints } from './use-hints';
 import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 
@@ -77,6 +78,7 @@ function saveDailyState(state: DailyState): void {
 
 export function ProperNoundleGame() {
   const { profile } = useAuth();
+  const isPro = (profile as any)?.is_pro ?? false;
   const [mode, setMode] = useState<GameMode>('daily');
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [guesses, setGuesses] = useState<Guess[]>([]);
@@ -91,6 +93,7 @@ export function ProperNoundleGame() {
   const [playedIds, setPlayedIds] = useState<string[]>([]);
   const [wikiImageUrl, setWikiImageUrl] = useState<string | null>(null);
   const [wikiImageLoaded, setWikiImageLoaded] = useState(false);
+  const [copied, setCopied] = useState(false);
   const restoredDailyRef = useRef(false);
 
   const hints = useHints();
@@ -347,6 +350,24 @@ export function ProperNoundleGame() {
     setMode('practice');
   }, [puzzle, playedIds, hints]);
 
+  const handleShare = useCallback(async () => {
+    if (!puzzle) return;
+    const grid = guesses.map(g =>
+      g.tiles.map(t => (t === 'correct' ? 'CORRECT' : t === 'present' ? 'PRESENT' : 'ABSENT') as 'CORRECT' | 'PRESENT' | 'ABSENT')
+    );
+    const emojiGrid = generateEmojiGrid(grid);
+    const text = generateShareText({
+      mode: 'ProperNoundle',
+      won: gameStatus === 'won',
+      guesses: guesses.length,
+      maxGuesses: MAX_GUESSES,
+      timeSeconds: elapsedTime,
+      emojiGrid,
+    });
+    const ok = await copyShareToClipboard(text);
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [puzzle, guesses, gameStatus, elapsedTime]);
+
   const formatTime = (s: number) => {
     const mins = Math.floor(s / 60);
     const secs = s % 60;
@@ -453,7 +474,8 @@ export function ProperNoundleGame() {
             </span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
             </div>
           </motion.div>
         )}
@@ -482,7 +504,8 @@ export function ProperNoundleGame() {
             </span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
             </div>
           </motion.div>
         )}

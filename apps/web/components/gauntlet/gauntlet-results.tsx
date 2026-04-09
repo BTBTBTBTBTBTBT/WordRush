@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, BarChart3, Zap, Timer } from 'lucide-react';
+import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, BarChart3, Zap, Timer, Share2 } from 'lucide-react';
 import { GameStatus, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { Button } from '@/components/ui/button';
 import { GauntletStats, getGauntletStats, recordGauntletGame } from '@/lib/gauntlet-stats';
+import { generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 
 interface GauntletResultsProps {
   won: boolean;
@@ -14,6 +15,7 @@ interface GauntletResultsProps {
   totalTimeMs: number;
   onPlayAgain: () => void;
   onHome: () => void;
+  showPlayAgain?: boolean;
 }
 
 function formatTime(ms: number): string {
@@ -30,9 +32,29 @@ export function GauntletResults({
   totalTimeMs,
   onPlayAgain,
   onHome,
+  showPlayAgain = true,
 }: GauntletResultsProps) {
   const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
   const stagesCompleted = stageResults.filter(r => r.status === GameStatus.WON).length;
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    const stageSummary = stageResults.map((r, i) =>
+      `${r.status === GameStatus.WON ? '\u{2705}' : '\u{274C}'} Stage ${i + 1}: ${r.guesses} guesses`
+    ).join('\n');
+    const text = generateShareText({
+      mode: 'Gauntlet',
+      won,
+      guesses: totalGuesses,
+      maxGuesses: totalGuesses,
+      timeSeconds: Math.floor(totalTimeMs / 1000),
+      boardSummary: stageSummary,
+      boardsSolved: stagesCompleted,
+      totalBoards: 5,
+    });
+    const ok = await copyShareToClipboard(text);
+    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [won, totalGuesses, totalTimeMs, stageResults, stagesCompleted]);
 
   const [stats, setStats] = useState<GauntletStats | null>(null);
 
@@ -229,12 +251,21 @@ export function GauntletResults({
           transition={{ delay: 1.6 }}
           className="flex gap-3"
         >
+          {showPlayAgain && (
+            <Button
+              onClick={onPlayAgain}
+              className="flex-1 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 hover:from-yellow-500 hover:via-pink-600 hover:to-purple-600 text-white font-bold py-6"
+            >
+              <RotateCcw className="w-5 h-5 mr-2" />
+              Play Again
+            </Button>
+          )}
           <Button
-            onClick={onPlayAgain}
-            className="flex-1 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 hover:from-yellow-500 hover:via-pink-600 hover:to-purple-600 text-white font-bold py-6"
+            onClick={handleShare}
+            className="bg-blue-50 border-2 border-blue-200 hover:bg-blue-100 text-blue-600 font-bold py-6"
           >
-            <RotateCcw className="w-5 h-5 mr-2" />
-            Play Again
+            <Share2 className="w-5 h-5 mr-2" />
+            {copied ? 'Copied!' : 'Share'}
           </Button>
           <Button
             onClick={onHome}
