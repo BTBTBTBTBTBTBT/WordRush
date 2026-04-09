@@ -180,7 +180,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   return (
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
-        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
+        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} />}
       </AnimatePresence>
 
       {/* Compact Header */}
@@ -239,6 +239,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
                   isFailed={isFailed}
                   isLocked={isLocked}
                   currentGuess={isActive ? currentGuess : ''}
+                  isInvalidWord={isActive && currentGuess.length === 5 && !isValidWord(currentGuess)}
                 />
               );
             })}
@@ -262,6 +263,7 @@ function SequenceMiniBoard({
   isFailed,
   isLocked,
   currentGuess,
+  isInvalidWord,
 }: {
   board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
   boardIndex: number;
@@ -270,6 +272,7 @@ function SequenceMiniBoard({
   isFailed: boolean;
   isLocked: boolean;
   currentGuess: string;
+  isInvalidWord?: boolean;
 }) {
   const evalGuess = (guess: string, solution: string): TileState[] => {
     const result: TileState[] = Array(5).fill(TileState.EMPTY);
@@ -357,7 +360,9 @@ function SequenceMiniBoard({
                     className={`
                       flex-1 flex items-center justify-center
                       border rounded font-bold text-[10px] sm:text-xs
-                      ${isPastGuess && showColors
+                      ${isCurrentRow && isInvalidWord && hasLetter
+                        ? 'bg-red-50 border-red-400 text-red-500'
+                        : isPastGuess && showColors
                         ? `${getTileColor(tileState)} text-white`
                         : isPastGuess && !showColors
                         ? 'bg-gray-100 border-gray-300 text-gray-800'

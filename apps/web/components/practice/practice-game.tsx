@@ -141,7 +141,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   return (
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
-        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
+        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} />}
       </AnimatePresence>
 
       {/* Header */}
@@ -190,6 +190,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           showSolution={currentBoard.status === GameStatus.LOST}
           solution={currentBoard.solution}
           darkMode
+          isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
         />
       </div>
 

@@ -202,6 +202,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, opponentPro
             solution={board.solution}
             showSolution={board.status === GameStatus.LOST}
             darkMode
+            isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
           />
         </div>
       );
@@ -218,6 +219,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, opponentPro
               isFailed={board.status === GameStatus.LOST}
               isLocked={idx !== sequenceActiveBoardIndex && board.status === GameStatus.PLAYING}
               currentGuess={idx === sequenceActiveBoardIndex ? currentGuess : ''}
+              isInvalidWord={idx === sequenceActiveBoardIndex && currentGuess.length === 5 && !isValidWord(currentGuess)}
             />
           ))}
         </div>
@@ -227,6 +229,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, opponentPro
         <MultiBoard
           boards={state.boards}
           currentGuess={currentGuess}
+          isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
         />
       );
     }
@@ -310,6 +313,7 @@ function GauntletSequenceMiniBoard({
   isFailed,
   isLocked,
   currentGuess,
+  isInvalidWord,
 }: {
   board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
   boardIndex: number;
@@ -318,6 +322,7 @@ function GauntletSequenceMiniBoard({
   isFailed: boolean;
   isLocked: boolean;
   currentGuess: string;
+  isInvalidWord?: boolean;
 }) {
   const evalGuess = (guess: string, solution: string): TileState[] => {
     const result: TileState[] = Array(5).fill(TileState.EMPTY);
@@ -390,7 +395,9 @@ function GauntletSequenceMiniBoard({
                   <div
                     key={letterIndex}
                     className={`flex-1 flex items-center justify-center border rounded text-white font-bold text-[10px] sm:text-xs ${
-                      isPastGuess && showColors
+                      isCurrentRow && isInvalidWord && letter
+                        ? 'bg-red-900/40 border-red-400 text-red-400'
+                        : isPastGuess && showColors
                         ? getTileColor(tileState)
                         : isPastGuess && !showColors
                         ? 'bg-zinc-700/50 border-zinc-600/50'

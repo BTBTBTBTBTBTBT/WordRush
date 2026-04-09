@@ -337,6 +337,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             solution={board.solution}
             showSolution={board.status === GameStatus.LOST}
             darkMode
+            isInvalidWord={!isInBlackout && currentGuess.length === 5 && !isValidWord(currentGuess)}
           />
         </div>
       );
@@ -354,6 +355,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
               isFailed={board.status === GameStatus.LOST}
               isLocked={idx !== sequenceActiveBoardIndex && board.status === GameStatus.PLAYING}
               currentGuess={idx === sequenceActiveBoardIndex && !isInBlackout ? currentGuess : ''}
+              isInvalidWord={idx === sequenceActiveBoardIndex && !isInBlackout && currentGuess.length === 5 && !isValidWord(currentGuess)}
             />
           ))}
         </div>
@@ -363,6 +365,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         <MultiBoard
           boards={state.boards}
           currentGuess={isInBlackout ? '' : currentGuess}
+          isInvalidWord={!isInBlackout && currentGuess.length === 5 && !isValidWord(currentGuess)}
         />
       );
     }
@@ -478,7 +481,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
 
       <AnimatePresence>
         {showVictory && (
-          <VictoryAnimation onComplete={handleVictoryComplete} />
+          <VictoryAnimation onComplete={handleVictoryComplete} timeSeconds={Math.floor((Date.now() - gameStartTime) / 1000)} />
         )}
       </AnimatePresence>
     </div>
@@ -494,6 +497,7 @@ function GauntletSequenceMiniBoard({
   isFailed,
   isLocked,
   currentGuess,
+  isInvalidWord,
 }: {
   board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
   boardIndex: number;
@@ -502,6 +506,7 @@ function GauntletSequenceMiniBoard({
   isFailed: boolean;
   isLocked: boolean;
   currentGuess: string;
+  isInvalidWord?: boolean;
 }) {
   const evalGuess = (guess: string, solution: string): TileState[] => {
     const result: TileState[] = Array(5).fill(TileState.EMPTY);
@@ -569,7 +574,9 @@ function GauntletSequenceMiniBoard({
                   <div
                     key={letterIndex}
                     className={`flex-1 flex items-center justify-center border rounded font-bold text-[10px] sm:text-xs ${
-                      isPastGuess && showColors
+                      isCurrentRow && isInvalidWord && letter
+                        ? 'bg-red-50 border-red-400 text-red-500'
+                        : isPastGuess && showColors
                         ? `${getTileColor(tileState)} text-white`
                         : isPastGuess && !showColors
                         ? 'bg-gray-100 border-gray-300 text-gray-800'

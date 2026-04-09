@@ -113,7 +113,7 @@ export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, opponentPro
 
       {/* Boards */}
       <div className="flex-1 min-h-0 px-2 pb-1">
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} />
+        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && !isWordValid(currentGuess)} />
       </div>
 
       {/* Keyboard */}

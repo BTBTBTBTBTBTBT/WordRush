@@ -7,6 +7,11 @@ import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
 
 interface VictoryAnimationProps {
   onComplete?: () => void;
+  guesses?: number;
+  maxGuesses?: number;
+  timeSeconds?: number;
+  boardsSolved?: number;
+  totalBoards?: number;
 }
 
 const VARIANT_MAP: Record<string, string> = {
@@ -14,10 +19,15 @@ const VARIANT_MAP: Record<string, string> = {
   victory_rainbow: 'rainbow',
 };
 
-export function VictoryAnimation({ onComplete }: VictoryAnimationProps) {
+export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards }: VictoryAnimationProps) {
   const { victoryAnimationId } = useCosmetics();
   const paletteKey = victoryAnimationId ? VARIANT_MAP[victoryAnimationId] : undefined;
   const confettiColors = paletteKey ? CONFETTI_PALETTES[paletteKey] : undefined;
+
+  const formatTime = (s: number) => {
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}m ${s % 60}s`;
+  };
 
   return (
     <motion.div
@@ -82,6 +92,33 @@ export function VictoryAnimation({ onComplete }: VictoryAnimationProps) {
           >
             VICTORY!
           </h2>
+          {(guesses != null || timeSeconds != null || boardsSolved != null) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex justify-center gap-4 mt-3"
+            >
+              {guesses != null && (
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">{guesses}{maxGuesses ? `/${maxGuesses}` : ''}</div>
+                  <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>Guesses</div>
+                </div>
+              )}
+              {boardsSolved != null && totalBoards != null && (
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">{boardsSolved}/{totalBoards}</div>
+                  <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>Boards</div>
+                </div>
+              )}
+              {timeSeconds != null && (
+                <div className="text-center">
+                  <div className="text-2xl font-black text-white">{formatTime(timeSeconds)}</div>
+                  <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>Time</div>
+                </div>
+              )}
+            </motion.div>
+          )}
           <p className="text-lg mt-2 font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>
             Tap anywhere to continue
           </p>

@@ -12,9 +12,10 @@ interface BoardProps {
   solution?: string;
   showSolution?: boolean;
   darkMode?: boolean;
+  isInvalidWord?: boolean;
 }
 
-export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode }: BoardProps) {
+export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode, isInvalidWord }: BoardProps) {
   const emptyRows = Math.max(0, maxGuesses - guesses.length - 1);
 
   return (
@@ -27,7 +28,7 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
           animate={rowIndex === guesses.length - 1 && evaluations[rowIndex]?.isCorrect === true}
         />
       ))}
-      {guesses.length < maxGuesses && <Row guess={currentGuess} />}
+      {guesses.length < maxGuesses && <Row guess={currentGuess} isInvalid={isInvalidWord} />}
       {Array.from({ length: emptyRows }).map((_, i) => (
         <Row key={`empty-${i}`} guess="" />
       ))}
@@ -44,9 +45,10 @@ interface RowProps {
   guess: string;
   evaluation?: GuessResult;
   animate?: boolean;
+  isInvalid?: boolean;
 }
 
-function Row({ guess, evaluation, animate }: RowProps) {
+function Row({ guess, evaluation, animate, isInvalid }: RowProps) {
   const tiles = guess.padEnd(5, ' ').split('');
 
   return (
@@ -57,6 +59,7 @@ function Row({ guess, evaluation, animate }: RowProps) {
           letter={letter === ' ' ? '' : letter}
           state={evaluation?.tiles[i]?.state || TileState.EMPTY}
           flipDelay={animate && evaluation ? i * 150 : undefined}
+          isInvalid={isInvalid && letter !== ' '}
         />
       ))}
     </div>
@@ -67,14 +70,16 @@ interface TileProps {
   letter: string;
   state: TileState;
   flipDelay?: number;
+  isInvalid?: boolean;
 }
 
-function Tile({ letter, state, flipDelay }: TileProps) {
+function Tile({ letter, state, flipDelay, isInvalid }: TileProps) {
   const hasFlip = flipDelay !== undefined;
   const { tileTheme } = useCosmetics();
 
   const colorClass = cn(
-    state === TileState.EMPTY && `${tileTheme.border} ${tileTheme.empty}`,
+    state === TileState.EMPTY && !isInvalid && `${tileTheme.border} ${tileTheme.empty}`,
+    state === TileState.EMPTY && isInvalid && 'border-red-400 bg-red-50',
     state === TileState.ABSENT && `${tileTheme.border} ${tileTheme.absent} ${tileTheme.text}`,
     state === TileState.PRESENT && `${tileTheme.present} ${tileTheme.text}`,
     state === TileState.CORRECT && `${tileTheme.correct} ${tileTheme.text}`
@@ -86,7 +91,8 @@ function Tile({ letter, state, flipDelay }: TileProps) {
         'flex-1 aspect-square border-2 flex items-center justify-center text-2xl font-black uppercase',
         hasFlip ? 'animate-tile-flip' : 'transition-colors',
         colorClass,
-        state === TileState.EMPTY && 'text-gray-800'
+        state === TileState.EMPTY && !isInvalid && 'text-gray-800',
+        state === TileState.EMPTY && isInvalid && 'text-red-500'
       )}
       style={hasFlip ? { animationDelay: `${flipDelay}ms` } : undefined}
     >

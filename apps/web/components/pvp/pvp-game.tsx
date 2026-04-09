@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useState, useEffect } from 'react';
-import { GameMode, GameStatus, GuessResult, evaluateGuess, gameReducer, createInitialState, generateMatchSeed } from '@wordle-duel/core';
+import { GameMode, GameStatus, GuessResult, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
 import { Button } from '@/components/ui/button';
@@ -236,6 +236,7 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
             currentGuess={currentGuess}
             maxGuesses={currentBoard.maxGuesses}
             evaluations={evaluations}
+            isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
           />
         </div>
 

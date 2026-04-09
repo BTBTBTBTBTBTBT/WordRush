@@ -119,7 +119,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   return (
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
-        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} />}
+        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} />}
       </AnimatePresence>
 
       {/* Compact Header */}
@@ -157,7 +157,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
       {/* Boards */}
       <div className="flex-1 min-h-0 px-1 pb-1">
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} />
+        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && !isWordValid(currentGuess)} />
       </div>
 
       {/* Keyboard */}

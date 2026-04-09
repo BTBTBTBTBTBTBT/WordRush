@@ -114,7 +114,7 @@ export function VsDeliverance({ seed, mode, onBoardSolved, onCompleted, opponent
 
       {/* Boards */}
       <div className="flex-1 min-h-0 px-2 pb-1">
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} />
+        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && !isWordValid(currentGuess)} />
       </div>
 
       {/* Keyboard */}

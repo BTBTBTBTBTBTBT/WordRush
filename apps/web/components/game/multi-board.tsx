@@ -8,6 +8,7 @@ interface MultiBoardProps {
   boards: BoardState[];
   currentGuess?: string;
   colorBlind?: boolean;
+  isInvalidWord?: boolean;
 }
 
 const getTileColor = (state: TileState, colorBlind?: boolean) => {
@@ -56,7 +57,7 @@ const evaluateGuess = (guess: string, solution: string) => {
 };
 
 // Memoized MiniBoard — only re-renders when its own board data or currentGuess changes
-const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible }: {
+const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord }: {
   board: BoardState;
   index: number;
   currentGuess?: string;
@@ -64,6 +65,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   onClick?: () => void;
   isExpanded?: boolean;
   invisible?: boolean;
+  isInvalidWord?: boolean;
 }) {
   const prefills = board.prefilledGuesses || [];
   const prefillCount = prefills.length;
@@ -127,6 +129,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
 
           const guess = allGuesses[playerRowIndex] || '';
           const isPastGuess = playerRowIndex < board.guesses.length;
+          const isCurrentRow = !isPastGuess && guess.length > 0 && playerRowIndex === board.guesses.length;
           const isLastSubmitted = isPastGuess && playerRowIndex === lastSubmittedRow;
           const tiles = isPastGuess ? evaluateGuess(guess, board.solution) : Array(5).fill(TileState.EMPTY);
 
@@ -135,11 +138,16 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = isPastGuess ? tiles[letterIndex] : TileState.EMPTY;
+                const isInvalidTile = isCurrentRow && isInvalidWord && letter !== '';
 
                 return (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded font-bold ${textSize} ${tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'} ${getTileColor(tileState, colorBlind)} ${
+                    className={`flex-1 flex items-center justify-center border rounded font-bold ${textSize} ${
+                      isInvalidTile
+                        ? 'text-red-500 bg-red-50 border-red-400'
+                        : tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'
+                    } ${!isInvalidTile ? getTileColor(tileState, colorBlind) : ''} ${
                       isLastSubmitted ? 'animate-tile-flip-mini' : ''
                     }`}
                     style={isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : undefined}
@@ -156,7 +164,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   );
 });
 
-export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps) {
+export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord }: MultiBoardProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
   const boardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -230,6 +238,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
               colorBlind={colorBlind}
               onClick={isOctordle ? () => handleBoardClick(index) : undefined}
               invisible={expandedIndex === index}
+              isInvalidWord={isInvalidWord}
             />
           </div>
         ))}
@@ -273,6 +282,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind }: MultiBoardProps
                   currentGuess={boards[expandedIndex].status === 'PLAYING' ? currentGuess : undefined}
                   colorBlind={colorBlind}
                   isExpanded
+                  isInvalidWord={isInvalidWord}
                 />
               </div>
             </motion.div>

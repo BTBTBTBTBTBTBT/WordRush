@@ -138,6 +138,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, opponentProg
           showSolution={currentBoard.status === GameStatus.LOST}
           solution={currentBoard.solution}
           darkMode
+          isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
         />
       </div>
 
