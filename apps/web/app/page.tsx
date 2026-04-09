@@ -130,6 +130,16 @@ const MODE_CARDS = [
     vsHref: '/practice/vs',
   },
   {
+    id: 'vs',
+    title: 'VS Battle',
+    icon: Swords,
+    desc: 'Real-time PvP',
+    accentColor: '#0d9488',
+    href: '/practice/vs',
+    vsHref: '/practice/vs',
+    badge: 'NEW',
+  },
+  {
     id: 'quordle',
     title: 'QuadWord',
     icon: Grid2x2,
@@ -303,6 +313,9 @@ export default function HomePage() {
               if (isLocked) {
                 e.preventDefault();
                 setLimitModal({ open: true, modeName: mode.title });
+              } else if (mode.id === 'vs') {
+                e.preventDefault();
+                handleVsClick(mode.href);
               }
             };
 
@@ -358,8 +371,8 @@ export default function HomePage() {
                     {isLocked ? `Play again in ${resetCountdown}` : mode.desc}
                   </div>
 
-                  {/* VS button */}
-                  {!isLocked && (
+                  {/* VS button (not on the VS Battle card itself) */}
+                  {!isLocked && mode.id !== 'vs' && (
                     <button
                       onClick={(e) => {
                         e.preventDefault();
