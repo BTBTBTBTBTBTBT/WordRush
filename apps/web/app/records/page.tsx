@@ -9,7 +9,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { fetchAllTimeRecords, type AllTimeRecord } from '@/lib/daily-service';
 
 const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format: (v: number) => string; category: string }> = {
-  fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => `${v}s`, category: 'Speed' },
+  fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s`, category: 'Speed' },
   fewest_guesses: { label: 'Fewest Guesses', icon: Target, format: (v) => `${v} guesses`, category: 'Efficiency' },
   most_games_played: { label: 'Most Games Played', icon: Zap, format: (v) => `${v} games`, category: 'Endurance' },
   longest_streak: { label: 'Longest Streak', icon: Flame, format: (v) => `${v} wins`, category: 'Endurance' },

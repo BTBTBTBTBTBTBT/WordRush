@@ -199,11 +199,11 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
             </div>
             <div className="flex justify-between">
               <span>Your Time:</span>
-              <span className="font-bold">{Math.round(matchResult?.playerTime / 1000)}s</span>
+              <span className="font-bold">{(() => { const t = Math.round((matchResult?.playerTime || 0) / 1000); return t < 60 ? `${t}s` : `${Math.floor(t/60)}m ${t%60}s`; })()}</span>
             </div>
             <div className="flex justify-between">
               <span>Opponent Time:</span>
-              <span className="font-bold">{Math.round(matchResult?.opponentTime / 1000)}s</span>
+              <span className="font-bold">{(() => { const t = Math.round((matchResult?.opponentTime || 0) / 1000); return t < 60 ? `${t}s` : `${Math.floor(t/60)}m ${t%60}s`; })()}</span>
             </div>
           </div>
           <div className="flex gap-2">

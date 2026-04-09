@@ -125,6 +125,14 @@ export function VsGame({ mode }: VsGameProps) {
   const [rematchState, setRematchState] = useState<'idle' | 'offered' | 'received' | 'declined'>('idle');
   const resultRecordedRef = useRef(false);
 
+  const formatTime = (ms: number) => {
+    const totalSec = Math.round(ms / 1000);
+    if (totalSec < 60) return `${totalSec}s`;
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+  };
+
   const gradient = MODE_GRADIENTS[mode] || MODE_GRADIENTS[GameMode.DUEL];
   const titleGradient = MODE_TITLE_GRADIENTS[mode] || MODE_TITLE_GRADIENTS[GameMode.DUEL];
   const label = MODE_LABELS[mode] || 'VS';
@@ -380,11 +388,11 @@ export function VsGame({ mode }: VsGameProps) {
             <div className="h-px bg-gray-200" />
             <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Your Time</span>
-              <span className="text-gray-800">{Math.round((matchResult?.playerTime || 0) / 1000)}s</span>
+              <span className="text-gray-800">{formatTime(matchResult?.playerTime || 0)}</span>
             </div>
             <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Opponent Time</span>
-              <span className="text-gray-800">{Math.round((matchResult?.opponentTime || 0) / 1000)}s</span>
+              <span className="text-gray-800">{formatTime(matchResult?.opponentTime || 0)}</span>
             </div>
           </motion.div>
 
@@ -450,7 +458,6 @@ export function VsGame({ mode }: VsGameProps) {
 
   // Waiting screen — shown after player completes, waiting for opponent
   if (screen === 'waiting') {
-    const formatWaitTime = (ms: number) => `${Math.round(ms / 1000)}s`;
     return (
       <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
         <div className="text-center space-y-6 max-w-md w-full px-6">
@@ -475,7 +482,7 @@ export function VsGame({ mode }: VsGameProps) {
               </div>
               <div className="flex justify-between text-sm font-bold">
                 <span className="text-gray-500">Time</span>
-                <span className="text-gray-800">{formatWaitTime(playerStats.timeMs)}</span>
+                <span className="text-gray-800">{formatTime(playerStats.timeMs)}</span>
               </div>
             </div>
           )}

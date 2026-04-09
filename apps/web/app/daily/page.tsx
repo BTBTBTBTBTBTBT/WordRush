@@ -29,9 +29,10 @@ const GAME_MODES = [
 ];
 
 function formatTime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
 function CountdownTimer() {
