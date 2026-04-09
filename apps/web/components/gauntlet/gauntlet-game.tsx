@@ -22,6 +22,7 @@ import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { useGamePersistence } from '@/hooks/use-game-persistence';
 
 const BLACKOUT_DURATION_MS = 15_000;
 const BLACKOUT_LETTER_COUNT = 3;
@@ -59,6 +60,9 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const [showVictory, setShowVictory] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [gameStartTime] = useState(Date.now());
+
+  // Persistence hook (no-op when isDaily is false, which is always for gauntlet currently)
+  useGamePersistence(GameMode.GAUNTLET, !!isDaily, seed, state, dispatch, 0);
 
   // Letter Blackout state
   const [blackedOutLetters, setBlackedOutLetters] = useState<Set<string>>(new Set());

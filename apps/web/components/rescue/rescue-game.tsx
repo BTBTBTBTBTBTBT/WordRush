@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
+import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GameMode, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '../game/multi-board';
 import Link from 'next/link';
@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { useGamePersistence } from '@/hooks/use-game-persistence';
 
 interface RescueGameProps {
   initialSeed?: string;
@@ -33,24 +34,34 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [copied, setCopied] = useState(false);
 
+  const { isRestored, restoredElapsedTime } = useGamePersistence(GameMode.RESCUE, !!isDaily, gameSeed, state, dispatch, elapsedTime);
+  const startTimeRef = useRef(state.startTime);
+
+  useEffect(() => {
+    if (restoredElapsedTime > 0) {
+      startTimeRef.current = Date.now() - restoredElapsedTime * 1000;
+      setElapsedTime(restoredElapsedTime);
+    }
+  }, [restoredElapsedTime]);
+
   useEffect(() => {
     if (state.status === 'PLAYING') {
       const interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - state.startTime) / 1000));
+        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [state.status, state.startTime]);
+  }, [state.status]);
 
   useEffect(() => {
-    if (state.status === 'WON') setShowVictory(true);
-    if (profile && (state.status === 'WON' || state.status === 'LOST')) {
-      const timeMs = Date.now() - state.startTime;
+    if (state.status === 'WON' && !isRestored) setShowVictory(true);
+    if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
+      const timeMs = Date.now() - startTimeRef.current;
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'RESCUE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
     }
-    if (state.status === 'WON' || state.status === 'LOST') {
+    if (!isRestored && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('rescue');
     }
   }, [state.status]);

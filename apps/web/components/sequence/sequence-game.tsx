@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
+import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess, TileState } from '@wordle-duel/core';
 import { Keyboard } from '../game/keyboard';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { useGamePersistence } from '@/hooks/use-game-persistence';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
@@ -36,6 +37,16 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const [streak, setStreak] = useState(0);
   const [copied, setCopied] = useState(false);
 
+  const { isRestored, restoredElapsedTime } = useGamePersistence(GameMode.SEQUENCE, !!isDaily, gameSeed, state, dispatch, elapsedTime);
+  const startTimeRef = useRef(state.startTime);
+
+  useEffect(() => {
+    if (restoredElapsedTime > 0) {
+      startTimeRef.current = Date.now() - restoredElapsedTime * 1000;
+      setElapsedTime(restoredElapsedTime);
+    }
+  }, [restoredElapsedTime]);
+
   // The active board is the first unsolved board in sequence order
   const activeBoardIndex = useMemo(() => {
     for (const idx of BOARD_ORDER) {
@@ -47,26 +58,26 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   useEffect(() => {
     if (state.status === 'PLAYING') {
       const interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - state.startTime) / 1000));
+        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [state.status, state.startTime]);
+  }, [state.status]);
 
   useEffect(() => {
-    if (state.status === 'WON') {
+    if (state.status === 'WON' && !isRestored) {
       setShowVictory(true);
       setStreak((prev) => prev + 1);
     } else if (state.status === 'LOST') {
       setStreak(0);
     }
-    if (profile && (state.status === 'WON' || state.status === 'LOST')) {
-      const timeMs = Date.now() - state.startTime;
+    if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
+      const timeMs = Date.now() - startTimeRef.current;
       const guesses = state.boards[0]?.guesses.length || 0;
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
     }
-    if (state.status === 'WON' || state.status === 'LOST') {
+    if (!isRestored && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('sequence');
     }
   }, [state.status]);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
+import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { useGamePersistence } from '@/hooks/use-game-persistence';
 
 interface PracticeGameProps {
   mode: GameMode;
@@ -32,6 +33,16 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   const [showVictory, setShowVictory] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  const { isRestored, restoredElapsedTime } = useGamePersistence(mode, !!isDaily, gameSeed, state, dispatch, elapsedTime);
+  const startTimeRef = useRef(state.startTime);
+
+  useEffect(() => {
+    if (restoredElapsedTime > 0) {
+      startTimeRef.current = Date.now() - restoredElapsedTime * 1000;
+      setElapsedTime(restoredElapsedTime);
+    }
+  }, [restoredElapsedTime]);
 
   const currentBoard = state.boards[state.currentBoardIndex];
 
@@ -55,20 +66,20 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   useEffect(() => {
     if (state.status === GameStatus.PLAYING) {
       const interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - state.startTime) / 1000));
+        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [state.status, state.startTime]);
+  }, [state.status]);
 
   useEffect(() => {
-    if (state.status === GameStatus.WON) setShowVictory(true);
-    if (profile && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
-      const timeMs = Date.now() - state.startTime;
+    if (state.status === GameStatus.WON && !isRestored) setShowVictory(true);
+    if (profile && !isRestored && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
+      const timeMs = Date.now() - startTimeRef.current;
       const guesses = currentBoard.guesses.length;
       recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1);
     }
-    if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
+    if (!isRestored && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       recordModePlayed('practice');
     }
   }, [state.status]);
