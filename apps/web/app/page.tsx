@@ -371,8 +371,8 @@ export default function HomePage() {
                     {isLocked ? `Play again in ${resetCountdown}` : mode.desc}
                   </div>
 
-                  {/* VS button (not on the VS Battle card itself) */}
-                  {!isLocked && mode.id !== 'vs' && (
+                  {/* VS button — Pro only (not on the VS Battle card itself) */}
+                  {!isLocked && isPro && mode.id !== 'vs' && (
                     <button
                       onClick={(e) => {
                         e.preventDefault();
