@@ -1,7 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Star, Zap } from 'lucide-react';
 import { Confetti, CONFETTI_PALETTES } from './confetti';
 import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
 
@@ -12,6 +12,7 @@ interface VictoryAnimationProps {
   timeSeconds?: number;
   boardsSolved?: number;
   totalBoards?: number;
+  solution?: string;
 }
 
 const VARIANT_MAP: Record<string, string> = {
@@ -19,10 +20,29 @@ const VARIANT_MAP: Record<string, string> = {
   victory_rainbow: 'rainbow',
 };
 
-export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards }: VictoryAnimationProps) {
+export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution }: VictoryAnimationProps) {
   const { victoryAnimationId } = useCosmetics();
   const paletteKey = victoryAnimationId ? VARIANT_MAP[victoryAnimationId] : undefined;
   const confettiColors = paletteKey ? CONFETTI_PALETTES[paletteKey] : undefined;
+
+  const [definition, setDefinition] = useState<{ partOfSpeech?: string; definition?: string; phonetic?: string } | null>(null);
+
+  useEffect(() => {
+    if (!solution) return;
+    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${solution.toLowerCase()}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data[0]) {
+          const entry = data[0];
+          const phonetic = entry.phonetics?.find((p: any) => p.text)?.text || entry.phonetic || '';
+          const meaning = entry.meanings?.[0];
+          const partOfSpeech = meaning?.partOfSpeech || '';
+          const def = meaning?.definitions?.[0]?.definition || '';
+          setDefinition({ partOfSpeech, definition: def, phonetic });
+        }
+      })
+      .catch(() => {});
+  }, [solution]);
 
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;
@@ -34,95 +54,75 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
       onClick={onComplete}
     >
       <Confetti colors={confettiColors} />
 
       <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-        className="relative"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        className="relative max-w-sm w-full"
       >
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="relative"
+        <div
+          className="relative rounded-3xl shadow-2xl p-6 text-center"
+          style={{ background: 'linear-gradient(135deg, #fbbf24, #f97316, #ec4899)' }}
         >
-          <div
-            className="absolute inset-0 rounded-full blur-3xl opacity-60 animate-pulse-slow"
-            style={{ background: 'linear-gradient(135deg, #fbbf24, #ec4899, #a78bfa)' }}
-          />
-
-          <div
-            className="relative p-12 rounded-3xl shadow-2xl"
-            style={{ background: 'linear-gradient(135deg, #fbbf24, #f97316, #ec4899)' }}
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-              className="absolute -top-6 -right-6"
-            >
-              <Star className="w-12 h-12" style={{ color: '#fde68a' }} fill="currentColor" />
-            </motion.div>
-
-            <motion.div
-              animate={{ rotate: -360 }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-              className="absolute -bottom-6 -left-6"
-            >
-              <Zap className="w-12 h-12" style={{ color: '#c4b5fd' }} fill="currentColor" />
-            </motion.div>
-
-            <Trophy className="w-32 h-32 text-white drop-shadow-2xl" />
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="text-center mt-8"
-        >
+          {/* VICTORY header */}
           <h2
-            className="text-6xl font-black text-transparent bg-clip-text drop-shadow-lg"
-            style={{ backgroundImage: 'linear-gradient(135deg, #fbbf24, #ec4899, #a78bfa)' }}
+            className="text-5xl font-black text-white drop-shadow-lg mb-4"
           >
             VICTORY!
           </h2>
+
+          {/* Word + Definition */}
+          {solution && (
+            <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-3 mb-4">
+              <div className="text-3xl font-black text-white tracking-wider">{solution.toUpperCase()}</div>
+              {definition?.phonetic && (
+                <div className="text-sm text-white/70 font-medium mt-0.5">{definition.phonetic}</div>
+              )}
+              {definition?.definition && (
+                <div className="mt-2">
+                  {definition.partOfSpeech && (
+                    <span className="text-xs font-bold text-white/60 uppercase tracking-wider">{definition.partOfSpeech}</span>
+                  )}
+                  <p className="text-sm text-white/90 font-medium mt-0.5 leading-snug">{definition.definition}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Stats */}
           {(guesses != null || timeSeconds != null || boardsSolved != null) && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="flex justify-center gap-4 mt-3"
-            >
+            <div className="flex justify-center gap-4 mb-3">
               {guesses != null && (
                 <div className="text-center">
                   <div className="text-2xl font-black text-white">{guesses}{maxGuesses ? `/${maxGuesses}` : ''}</div>
-                  <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>Guesses</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-white/50">Guesses</div>
                 </div>
               )}
               {boardsSolved != null && totalBoards != null && (
                 <div className="text-center">
                   <div className="text-2xl font-black text-white">{boardsSolved}/{totalBoards}</div>
-                  <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>Boards</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-white/50">Boards</div>
                 </div>
               )}
               {timeSeconds != null && (
                 <div className="text-center">
                   <div className="text-2xl font-black text-white">{formatTime(timeSeconds)}</div>
-                  <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.5)' }}>Time</div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-white/50">Time</div>
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
-          <p className="text-lg mt-2 font-bold" style={{ color: 'rgba(255,255,255,0.6)' }}>
+
+          <p className="text-sm font-bold text-white/50">
             Tap anywhere to continue
           </p>
-        </motion.div>
+        </div>
       </motion.div>
     </motion.div>
   );
