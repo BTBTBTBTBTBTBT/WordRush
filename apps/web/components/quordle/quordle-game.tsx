@@ -119,7 +119,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   return (
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
-        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} />}
+        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
       </AnimatePresence>
 
       {/* Compact Header */}

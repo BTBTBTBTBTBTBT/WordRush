@@ -13,6 +13,7 @@ interface VictoryAnimationProps {
   boardsSolved?: number;
   totalBoards?: number;
   solution?: string;
+  solutions?: string[];
 }
 
 const VARIANT_MAP: Record<string, string> = {
@@ -20,7 +21,7 @@ const VARIANT_MAP: Record<string, string> = {
   victory_rainbow: 'rainbow',
 };
 
-export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution }: VictoryAnimationProps) {
+export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions }: VictoryAnimationProps) {
   const { victoryAnimationId } = useCosmetics();
   const paletteKey = victoryAnimationId ? VARIANT_MAP[victoryAnimationId] : undefined;
   const confettiColors = paletteKey ? CONFETTI_PALETTES[paletteKey] : undefined;
@@ -123,6 +124,30 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Multiple solutions (multi-board games) */}
+            {!solution && solutions && solutions.length > 0 && (
+              <div
+                className="mt-4 px-4 py-3"
+                style={{
+                  background: '#f8f7ff',
+                  borderRadius: '12px',
+                  border: '1px solid #ede9f6',
+                }}
+              >
+                <div className={`flex flex-wrap justify-center gap-2 ${solutions.length > 4 ? 'gap-x-3 gap-y-1.5' : 'gap-3'}`}>
+                  {solutions.map((word, i) => (
+                    <span
+                      key={i}
+                      className={`font-black tracking-wider ${solutions.length > 4 ? 'text-sm' : 'text-lg'}`}
+                      style={{ color: '#1a1a2e' }}
+                    >
+                      {word.toUpperCase()}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
