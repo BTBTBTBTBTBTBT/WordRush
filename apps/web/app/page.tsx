@@ -241,7 +241,7 @@ export default function HomePage() {
     <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
-      <div className="px-4 flex-1 min-h-0 overflow-hidden pb-16" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="px-4 flex-1 min-h-0 overflow-hidden pb-20" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button
