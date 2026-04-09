@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Flame } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { ProBadge } from '@/components/ui/pro-badge';
 
@@ -17,6 +18,7 @@ export function AppHeader() {
   const { profile } = useAuth();
 
   const shields = (profile as any)?.streak_shields ?? 0;
+  const streak = profile?.current_streak ?? 0;
   const isPro = (profile as any)?.is_pro ?? false;
 
   return (
@@ -35,6 +37,21 @@ export function AppHeader() {
 
       {profile && (
         <div className="flex items-center gap-2">
+          {/* Streak pill */}
+          {streak > 0 && (
+            <div
+              className="flex items-center gap-1 px-2.5 py-1.5 font-extrabold text-sm"
+              style={{
+                background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
+                border: '1.5px solid #fde68a',
+                borderRadius: '20px',
+                color: '#92400e',
+              }}
+            >
+              <Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />
+              <span>{streak}</span>
+            </div>
+          )}
           {/* Shield pill */}
           <div
             className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"

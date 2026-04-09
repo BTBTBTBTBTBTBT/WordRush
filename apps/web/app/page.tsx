@@ -237,13 +237,11 @@ export default function HomePage() {
     }
   };
 
-  const streak = profile?.current_streak ?? 0;
-
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
-      <div className="max-w-lg mx-auto px-4" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="max-w-lg mx-auto px-4 flex-1 min-h-0 overflow-hidden pb-16" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button
@@ -265,42 +263,6 @@ export default function HomePage() {
 
         {/* Word of the Day */}
         <WordOfTheDay />
-
-        {/* Streak Card */}
-        {profile && streak > 0 && (
-          <div
-            className="flex items-center justify-between px-3 py-2"
-            style={{
-              background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
-              border: '1.5px solid #fde68a',
-              borderRadius: '14px',
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <div
-                className="w-6 h-6 rounded-md flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
-              >
-                <Flame className="w-3 h-3 text-white" />
-              </div>
-              <div>
-                <div className="text-[8px] font-extrabold uppercase" style={{ color: '#92400e' }}>
-                  Day Streak
-                </div>
-                <div className="text-base font-black leading-none" style={{ color: '#1a1a2e' }}>{streak}</div>
-              </div>
-            </div>
-            <div
-              className="px-2.5 py-1 rounded-md text-white font-black text-[10px]"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                boxShadow: '0 2px 0 #92400e',
-              }}
-            >
-              ON FIRE
-            </div>
-          </div>
-        )}
 
         {/* Game Mode Cards - 2 column grid */}
         <div className="section-header mt-1 mb-0.5">GAME MODES</div>
