@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Grid3x3, Swords, Flame, Shield, Zap, Crown } from 'lucide-react';
+import { X, Grid3x3, Swords, TrendingUp, Shield, Skull, Crown } from 'lucide-react';
 
 type HelpTab = 'how-to-play' | 'modes' | 'faq';
 
@@ -82,7 +82,7 @@ const GAME_MODES = [
     badge: 'PRO',
   },
   {
-    icon: Flame,
+    icon: TrendingUp,
     title: 'Succession',
     desc: '4 words solved in order. Solve one to unlock the next. 10 guesses total.',
     color: '#2563eb',
@@ -94,7 +94,7 @@ const GAME_MODES = [
     color: '#059669',
   },
   {
-    icon: Zap,
+    icon: Skull,
     title: 'Gauntlet',
     desc: '5 stages of increasing difficulty — Classic through OctoWord. Survive them all.',
     color: '#d97706',

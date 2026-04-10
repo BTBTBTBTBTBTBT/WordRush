@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, Flame, Swords, Grid3x3, Zap, LogOut, Star, Users, BookOpen, Shield, Crown, Lock } from 'lucide-react';
+import { Sparkles, TrendingUp, Swords, Grid3x3, Skull, LogOut, Star, Users, BookOpen, Shield, Crown, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -174,7 +174,7 @@ const MODE_CARDS = [
   {
     id: 'sequence',
     title: 'Succession',
-    icon: Flame,
+    icon: TrendingUp,
     desc: '4 words, one by one',
     accentColor: '#2563eb',
     href: '/sequence',
@@ -192,7 +192,7 @@ const MODE_CARDS = [
   {
     id: 'gauntlet',
     title: 'Gauntlet',
-    icon: Zap,
+    icon: Skull,
     desc: '5 escalating stages',
     accentColor: '#d97706',
     href: '/gauntlet',
