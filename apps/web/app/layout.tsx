@@ -37,11 +37,20 @@ export const metadata: Metadata = {
     url: 'https://spellstrike.vercel.app',
     siteName: 'SpellStrike',
     type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'SpellStrike - Epic Word Battles',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SpellStrike - Epic Word Battles',
     description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
+    images: ['/og-image.png'],
   },
 };
 
