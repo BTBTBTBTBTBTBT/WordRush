@@ -237,6 +237,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
               background: '#ffffff',
               border: '1.5px solid #ede9f6',
               borderRadius: '20px',
+              overflow: 'hidden',
               boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
               maxHeight: 'calc(100vh - 60px)',
               display: 'flex',
@@ -249,7 +250,6 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
               className="h-1.5 flex-shrink-0"
               style={{
                 background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)',
-                borderRadius: '20px 20px 0 0',
               }}
             />
 
