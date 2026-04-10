@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Flame } from 'lucide-react';
+import { Flame, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { ProBadge } from '@/components/ui/pro-badge';
+import { HelpModal } from '@/components/modals/help-modal';
 
 function ShieldIcon({ className }: { className?: string }) {
   return (
@@ -16,57 +18,78 @@ function ShieldIcon({ className }: { className?: string }) {
 
 export function AppHeader() {
   const { profile } = useAuth();
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const shields = (profile as any)?.streak_shields ?? 0;
   const streak = profile?.current_streak ?? 0;
   const isPro = (profile as any)?.is_pro ?? false;
 
   return (
-    <header className="flex items-center justify-between px-4 py-3">
-      <Link href="/" className="flex items-center gap-1.5">
-        <span
-          className="text-xl font-black bg-clip-text text-transparent"
-          style={{
-            backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-          }}
-        >
-          SPELLSTRIKE
-        </span>
-        {isPro && <ProBadge size="sm" />}
-      </Link>
-
-      {profile && (
-        <div className="flex items-center gap-2">
-          {/* Streak pill */}
-          {streak > 0 && (
-            <div
-              className="flex items-center gap-1 px-2.5 py-1.5 font-extrabold text-sm"
-              style={{
-                background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
-                border: '1.5px solid #fde68a',
-                borderRadius: '20px',
-                color: '#92400e',
-              }}
-            >
-              <Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />
-              <span>{streak}</span>
-            </div>
-          )}
-          {/* Shield pill */}
-          <div
-            className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"
+    <>
+      <header className="flex items-center justify-between px-4 py-3">
+        <Link href="/" className="flex items-center gap-1.5">
+          <span
+            className="text-xl font-black bg-clip-text text-transparent"
             style={{
-              background: '#f3f0ff',
-              border: '1.5px solid #c4b5fd',
-              borderRadius: '20px',
-              color: '#5b21b6',
+              backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
             }}
           >
-            <ShieldIcon className="w-4 h-4" />
-            <span>{shields}</span>
-          </div>
+            SPELLSTRIKE
+          </span>
+          {isPro && <ProBadge size="sm" />}
+        </Link>
+
+        <div className="flex items-center gap-2">
+          {/* Help button — always visible */}
+          <button
+            onClick={() => setHelpOpen(true)}
+            className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+            style={{
+              background: '#f3f4f6',
+              border: '1.5px solid #e5e7eb',
+              color: '#9ca3af',
+            }}
+            aria-label="How to play"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+
+          {profile && (
+            <>
+              {/* Streak pill */}
+              {streak > 0 && (
+                <div
+                  className="flex items-center gap-1 px-2.5 py-1.5 font-extrabold text-sm"
+                  style={{
+                    background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
+                    border: '1.5px solid #fde68a',
+                    borderRadius: '20px',
+                    color: '#92400e',
+                  }}
+                >
+                  <Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />
+                  <span>{streak}</span>
+                </div>
+              )}
+              {/* Shield pill */}
+              <div
+                className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm"
+                style={{
+                  background: '#f3f0ff',
+                  border: '1.5px solid #c4b5fd',
+                  borderRadius: '20px',
+                  color: '#5b21b6',
+                }}
+              >
+                <ShieldIcon className="w-4 h-4" />
+                <span>{shields}</span>
+              </div>
+            </>
+          )}
         </div>
-      )}
-    </header>
+      </header>
+
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+    </>
   );
 }
