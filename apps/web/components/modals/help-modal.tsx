@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Grid3x3, Swords, TrendingUp, Shield, Skull, Crown } from 'lucide-react';
+import { X, Swords, TrendingUp, Shield, Skull, Crown } from 'lucide-react';
+import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 
 type HelpTab = 'how-to-play' | 'modes' | 'faq';
 
@@ -55,7 +56,7 @@ const TABS: { id: HelpTab; label: string }[] = [
 
 const GAME_MODES = [
   {
-    icon: Grid3x3,
+    icon: WordleGridIcon,
     title: 'Classic',
     desc: '1 word, 6 guesses. The original formula.',
     color: '#7c3aed',

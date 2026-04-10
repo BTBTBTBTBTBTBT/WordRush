@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, TrendingUp, Swords, Grid3x3, Skull, LogOut, Star, Users, BookOpen, Shield, Crown, Lock } from 'lucide-react';
+import { Sparkles, TrendingUp, Swords, Skull, LogOut, Star, Users, BookOpen, Shield, Crown, Lock } from 'lucide-react';
+import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -133,7 +134,7 @@ const MODE_CARDS = [
   {
     id: 'practice',
     title: 'Classic',
-    icon: Grid3x3,
+    icon: WordleGridIcon,
     desc: '1 word, 6 tries',
     accentColor: '#7c3aed',
     href: '/practice',
