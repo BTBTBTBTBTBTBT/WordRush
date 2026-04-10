@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, TrendingUp, Swords, Skull, LogOut, Star, Users, BookOpen, Shield, Crown, Lock } from 'lucide-react';
+import { TrendingUp, Swords, Skull, LogOut, Star, BookOpen, Shield, Crown, Lock } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
@@ -213,8 +212,6 @@ const MODE_CARDS = [
 
 export default function HomePage() {
   const { user, profile, signOut } = useAuth();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [pendingVsHref, setPendingVsHref] = useState<string | null>(null);
   const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string }>({ open: false, modeName: '' });
   const [resetCountdown, setResetCountdown] = useState('');
   const router = useRouter();
@@ -234,20 +231,8 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (user && pendingVsHref) {
-      router.push(pendingVsHref);
-      setPendingVsHref(null);
-    }
-  }, [user, pendingVsHref, router]);
-
   const handleVsClick = (vsHref: string) => {
-    if (user) {
-      router.push(vsHref);
-    } else {
-      setPendingVsHref(vsHref);
-      setAuthModalOpen(true);
-    }
+    router.push(vsHref);
   };
 
   return (
@@ -400,43 +385,18 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Sign in / Sign out */}
-        {!user ? (
-          <div
-            className="flex items-center justify-between px-3 py-2"
-            style={{
-              background: '#ffffff',
-              border: '1.5px solid #ede9f6',
-              borderRadius: '14px',
-            }}
-          >
-            <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>Sign in to track stats & compete</p>
-            <button
-              onClick={() => setAuthModalOpen(true)}
-              className="btn-3d px-4 py-1.5 text-white font-black text-[10px] rounded-lg"
-              style={{
-                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                boxShadow: '0 3px 0 #4c1d95',
-              }}
-            >
-              <Sparkles className="w-3 h-3 inline mr-1" />
-              Sign In
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => signOut()}
-            className="w-full py-1 text-center text-[10px] font-bold hover:opacity-70 transition-colors"
-            style={{ color: '#9ca3af' }}
-          >
-            <LogOut className="w-3 h-3 inline mr-1" />
-            Sign Out
-          </button>
-        )}
+        {/* Sign out */}
+        <button
+          onClick={() => signOut()}
+          className="w-full py-1 text-center text-[10px] font-bold hover:opacity-70 transition-colors"
+          style={{ color: '#9ca3af' }}
+        >
+          <LogOut className="w-3 h-3 inline mr-1" />
+          Sign Out
+        </button>
       </div>
 
       <BottomNav />
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
       <ModeLimitModal
         open={limitModal.open}
         onClose={() => setLimitModal({ open: false, modeName: '' })}

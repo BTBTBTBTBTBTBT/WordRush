@@ -6,6 +6,7 @@ import { AuthProvider } from '@/lib/auth-context';
 import { StreakShieldProvider } from '@/components/providers/streak-shield-provider';
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
 import { CosmeticProvider } from '@/lib/cosmetics/cosmetic-context';
+import { AuthGate } from '@/components/auth/auth-gate';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,14 +54,16 @@ export default function RootLayout({
     <html lang="en">
       <body className={nunito.className} style={{ backgroundColor: '#f8f7ff' }}>
         <AuthProvider>
-          <ThemeProvider>
-            <CosmeticProvider>
-              <StreakShieldProvider>
-                {children}
-                <ProPromptModal />
-              </StreakShieldProvider>
-            </CosmeticProvider>
-          </ThemeProvider>
+          <AuthGate>
+            <ThemeProvider>
+              <CosmeticProvider>
+                <StreakShieldProvider>
+                  {children}
+                  <ProPromptModal />
+                </StreakShieldProvider>
+              </CosmeticProvider>
+            </ThemeProvider>
+          </AuthGate>
         </AuthProvider>
       </body>
     </html>
