@@ -34,8 +34,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq('id', userId)
       .maybeSingle();
 
-    if (data) {
-      setProfile(data);
+    const profile = data as Profile | null;
+
+    if (profile) {
+      if (profile.is_banned) {
+        // Banned users get signed out immediately
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        setSession(null);
+        return;
+      }
+      setProfile(profile);
     } else if (!error || error.code === 'PGRST116') {
       // No profile exists — auto-create for OAuth users
       const u = userData;
@@ -55,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .single();
 
         if (newProfile) {
-          setProfile(newProfile);
+          setProfile(newProfile as Profile);
         }
       }
     }

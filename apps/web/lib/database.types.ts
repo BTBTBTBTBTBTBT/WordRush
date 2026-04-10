@@ -34,6 +34,9 @@ export interface Database {
           pro_prompt_shown: boolean
           owned_cosmetics: string[]
           equipped_cosmetics: Record<string, string>
+          role: string
+          is_banned: boolean
+          ban_reason: string | null
           created_at: string
           updated_at: string
         }
@@ -61,6 +64,9 @@ export interface Database {
           pro_prompt_shown?: boolean
           owned_cosmetics?: string[]
           equipped_cosmetics?: Record<string, string>
+          role?: string
+          is_banned?: boolean
+          ban_reason?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -88,8 +94,72 @@ export interface Database {
           pro_prompt_shown?: boolean
           owned_cosmetics?: string[]
           equipped_cosmetics?: Record<string, string>
+          role?: string
+          is_banned?: boolean
+          ban_reason?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      announcements: {
+        Row: {
+          id: string
+          title: string
+          body: string
+          type: string
+          active: boolean
+          starts_at: string
+          expires_at: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          body: string
+          type?: string
+          active?: boolean
+          starts_at?: string
+          expires_at?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          body?: string
+          type?: string
+          active?: boolean
+          starts_at?: string
+          expires_at?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+      }
+      admin_audit_log: {
+        Row: {
+          id: string
+          admin_id: string
+          action: string
+          target_user_id: string | null
+          details: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          admin_id: string
+          action: string
+          target_user_id?: string | null
+          details?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          admin_id?: string
+          action?: string
+          target_user_id?: string | null
+          details?: Json
+          created_at?: string
         }
       }
       user_stats: {
