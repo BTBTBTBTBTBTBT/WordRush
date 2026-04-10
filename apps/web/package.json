@@ -7,9 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "cap:sync": "npx cap sync",
+    "cap:build:ios": "pnpm build && npx cap sync ios && npx cap open ios",
+    "cap:build:android": "pnpm build && npx cap sync android && npx cap open android",
+    "generate-icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.3.0",
+    "@capacitor/keyboard": "^8.0.3",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@hookform/resolvers": "^3.9.0",
     "@netlify/plugin-nextjs": "^5.15.1",
     "@next/swc-wasm-nodejs": "13.5.1",
@@ -72,5 +84,8 @@
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
   }
 }

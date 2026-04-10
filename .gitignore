@@ -37,3 +37,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# capacitor native projects (regenerate with `npx cap add ios/android`)
+apps/web/ios/
+apps/web/android/

@@ -18,6 +18,9 @@ import {
   Pencil,
   Medal,
   Crown,
+  LogOut,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -53,7 +56,7 @@ function formatDuration(seconds: number): string {
 }
 
 export default function ProfilePage() {
-  const { profile, loading, refreshProfile } = useAuth();
+  const { profile, loading, refreshProfile, signOut } = useAuth();
   const [stats, setStats] = useState<UserStats[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [medals, setMedals] = useState<MedalType[]>([]);
@@ -64,7 +67,32 @@ export default function ProfilePage() {
   const [usernameValue, setUsernameValue] = useState('');
   const [usernameError, setUsernameError] = useState('');
   const [savingUsername, setSavingUsername] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const usernameInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDeleteAccount = async () => {
+    if (!profile) return;
+    setDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No session');
+
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (!res.ok) throw new Error('Delete failed');
+
+      await signOut();
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Delete account error:', err);
+      alert('Failed to delete account. Please try again or contact support@spellstrike.com.');
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (profile) {
@@ -493,6 +521,60 @@ export default function ProfilePage() {
             })}
           </div>
         )}
+        {/* Account Actions */}
+        <div className="section-header mb-2 mt-4">ACCOUNT</div>
+        <div className="space-y-2">
+          <button
+            onClick={() => signOut()}
+            className="w-full flex items-center gap-3 p-4 transition-colors active:scale-[0.98]"
+            style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+          >
+            <LogOut className="w-5 h-5" style={{ color: '#9ca3af' }} />
+            <span className="text-sm font-extrabold" style={{ color: '#1a1a2e' }}>Sign Out</span>
+          </button>
+
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full flex items-center gap-3 p-4 transition-colors active:scale-[0.98]"
+              style={{ background: '#ffffff', border: '1.5px solid #fecaca', borderRadius: '16px' }}
+            >
+              <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
+              <span className="text-sm font-extrabold" style={{ color: '#dc2626' }}>Delete Account</span>
+            </button>
+          ) : (
+            <div
+              className="p-5"
+              style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '16px' }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-5 h-5" style={{ color: '#dc2626' }} />
+                <span className="text-sm font-black" style={{ color: '#dc2626' }}>Delete your account?</span>
+              </div>
+              <p className="text-xs leading-relaxed mb-4" style={{ color: '#6b7280' }}>
+                This will permanently delete your profile, stats, streak, medals, achievements, and all game data. This action cannot be undone.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-black"
+                  style={{ background: '#ffffff', border: '1.5px solid #ede9f6', color: '#1a1a2e' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="flex-1 py-2.5 rounded-xl text-white text-sm font-black disabled:opacity-50"
+                  style={{ background: '#dc2626' }}
+                >
+                  {deleting ? 'Deleting...' : 'Delete Forever'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <BottomNav />

@@ -19,6 +19,17 @@ export const metadata: Metadata = {
   title: 'SpellStrike - Epic Word Battles',
   description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
   metadataBase: new URL('https://spellstrike.vercel.app'),
+  manifest: '/manifest.json',
+  themeColor: '#a78bfa',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'SpellStrike',
+  },
   openGraph: {
     title: 'SpellStrike - Epic Word Battles',
     description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
