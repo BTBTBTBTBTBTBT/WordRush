@@ -112,11 +112,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What are Streak Shields?',
-    a: "Shields protect your streak if you miss a day. You can earn them through gameplay or buy them with coins.",
-  },
-  {
-    q: 'What are coins?',
-    a: 'Earn coins by playing daily puzzles and winning VS matches. Spend them on shields and cosmetics.',
+    a: "Shields protect your streak if you miss a day. You can earn them through gameplay.",
   },
   {
     q: 'What does PRO unlock?',
@@ -239,7 +235,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
               borderRadius: '20px',
               overflow: 'hidden',
               boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
-              maxHeight: 'calc(100vh - 60px)',
+              height: 'min(540px, calc(100vh - 60px))',
               display: 'flex',
               flexDirection: 'column',
             }}
