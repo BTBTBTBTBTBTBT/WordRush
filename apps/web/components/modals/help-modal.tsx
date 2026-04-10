@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Grid3x3, Swords, Grid2x2, Timer, Flame, Shield, Zap, Crown } from 'lucide-react';
+import { X, Grid3x3, Swords, Flame, Shield, Zap, Crown } from 'lucide-react';
 
 type HelpTab = 'how-to-play' | 'modes' | 'faq';
 
@@ -67,13 +67,15 @@ const GAME_MODES = [
     color: '#0d9488',
   },
   {
-    icon: Grid2x2,
+    icon: null,
+    romanNumeral: 'IV',
     title: 'QuadWord',
     desc: '4 words at once. 9 guesses total. Each guess applies to all 4 boards.',
     color: '#ec4899',
   },
   {
-    icon: Timer,
+    icon: null,
+    romanNumeral: 'VIII',
     title: 'OctoWord',
     desc: '8 words at once. 13 guesses. Same idea, bigger challenge.',
     color: '#7e22ce',
@@ -174,7 +176,11 @@ function GameModesContent() {
               className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: `${mode.color}18` }}
             >
-              <Icon className="w-4 h-4" style={{ color: mode.color }} />
+              {mode.romanNumeral ? (
+                <span className="text-[11px] font-black leading-none" style={{ color: mode.color }}>{mode.romanNumeral}</span>
+              ) : Icon ? (
+                <Icon className="w-4 h-4" style={{ color: mode.color }} />
+              ) : null}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
