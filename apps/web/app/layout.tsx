@@ -18,6 +18,28 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: 'SpellStrike - Epic Word Battles',
   description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
+  metadataBase: new URL('https://spellstrike.vercel.app'),
+  openGraph: {
+    title: 'SpellStrike - Epic Word Battles',
+    description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
+    url: 'https://spellstrike.vercel.app',
+    siteName: 'SpellStrike',
+    type: 'website',
+    images: [
+      {
+        url: '/api/og',
+        width: 1200,
+        height: 630,
+        alt: 'SpellStrike - Epic Word Battles',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SpellStrike - Epic Word Battles',
+    description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
+    images: ['/api/og'],
+  },
 };
 
 export default function RootLayout({
