@@ -274,7 +274,6 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord }: 
             >
               <div
                 className="w-full h-full"
-                onClick={(e) => e.stopPropagation()}
               >
                 <MiniBoard
                   board={boards[expandedIndex]}
