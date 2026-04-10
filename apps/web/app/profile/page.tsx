@@ -73,8 +73,10 @@ export default function ProfilePage() {
       fetchMedals();
       loadAchievements();
       setUsernameValue(profile.username);
+    } else if (!loading) {
+      setLoadingStats(false);
     }
-  }, [profile]);
+  }, [profile, loading]);
 
   useEffect(() => {
     if (editingUsername && usernameInputRef.current) {
