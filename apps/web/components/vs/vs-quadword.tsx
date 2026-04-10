@@ -8,7 +8,7 @@ import { OpponentHUD } from './opponent-hud';
 import { Trophy, Clock } from 'lucide-react';
 import type { VsGameComponentProps } from './vs-classic';
 
-export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, opponentProgress, startTime }: VsGameComponentProps) {
+export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
     initializeGame(seed, GameMode.QUORDLE)
@@ -59,6 +59,7 @@ export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, opponentPro
       if (currentGuess.length !== 5) { setError('Word must be 5 letters'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
       if (!isWordValid(currentGuess)) { setError('Not in word list'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
 
+      onGuessSubmitted(currentGuess, 0);
       state.boards.forEach((_, index) => {
         if (state.boards[index].status === 'PLAYING') {
           dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
@@ -108,6 +109,9 @@ export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, opponentPro
           attempts={opponentProgress.attempts}
           boardsSolved={opponentProgress.boardsSolved}
           totalBoards={opponentProgress.totalBoards}
+          opponentTiles={opponentTiles}
+          maxGuesses={state.boards[0]?.maxGuesses || 9}
+          wordLength={5}
         />
       </div>
 

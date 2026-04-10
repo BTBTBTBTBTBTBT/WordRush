@@ -1,16 +1,21 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
 
 interface OpponentHUDProps {
   attempts: number;
   boardsSolved: number;
   totalBoards: number;
   currentStage?: number;
+  opponentTiles?: Record<number, string[][]>;
+  maxGuesses?: number;
+  wordLength?: number;
 }
 
-export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage }: OpponentHUDProps) {
+export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage, opponentTiles, maxGuesses = 6, wordLength = 5 }: OpponentHUDProps) {
   const allSolved = boardsSolved >= totalBoards && totalBoards > 0;
+  const hasTiles = opponentTiles && Object.keys(opponentTiles).length > 0;
 
   return (
     <motion.div
@@ -23,17 +28,14 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage 
       <div className="h-4 w-px bg-gray-200" />
 
       {currentStage !== undefined ? (
-        // Gauntlet mode
         <span className="text-gray-700 text-xs font-bold">
           Stage {currentStage + 1}/5 | {attempts} guesses
         </span>
       ) : totalBoards === 1 ? (
-        // Single board mode
         <span className="text-gray-700 text-xs font-bold">
           {attempts} guesses
         </span>
       ) : (
-        // Multi board mode
         <span className="text-gray-700 text-xs font-bold">
           {boardsSolved}/{totalBoards} boards | {attempts} guesses
         </span>
@@ -47,6 +49,27 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage 
         >
           Solved!
         </motion.span>
+      )}
+
+      {/* Live opponent tiles */}
+      {hasTiles && (
+        <>
+          <div className="h-4 w-px bg-gray-200" />
+          {totalBoards === 1 ? (
+            <OpponentMiniBoard
+              tiles={opponentTiles[0] || []}
+              maxGuesses={maxGuesses}
+              wordLength={wordLength}
+            />
+          ) : (
+            <OpponentMultiMiniBoard
+              opponentTiles={opponentTiles}
+              totalBoards={totalBoards}
+              maxGuesses={maxGuesses}
+              wordLength={wordLength}
+            />
+          )}
+        </>
       )}
     </motion.div>
   );

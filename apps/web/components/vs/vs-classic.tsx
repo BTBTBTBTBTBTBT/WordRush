@@ -12,11 +12,13 @@ export interface VsGameComponentProps {
   mode: GameMode;
   onBoardSolved: (boardIndex: number) => void;
   onCompleted: (status: 'won' | 'lost', totalGuesses: number, timeMs: number) => void;
+  onGuessSubmitted: (guess: string, boardIndex: number) => void;
   opponentProgress: { attempts: number; boardsSolved: number; totalBoards: number };
+  opponentTiles: Record<number, string[][]>;
   startTime: number;
 }
 
-export function VsClassic({ seed, mode, onBoardSolved, onCompleted, opponentProgress, startTime }: VsGameComponentProps) {
+export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(gameReducer, createInitialState(seed, mode));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
@@ -80,6 +82,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, opponentProg
         setTimeout(() => setMessage(''), 1500);
         return;
       }
+      onGuessSubmitted(currentGuess, 0);
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess });
       setCurrentGuess('');
     } else if (key === 'BACK') {
@@ -125,6 +128,9 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, opponentProg
           attempts={opponentProgress.attempts}
           boardsSolved={opponentProgress.boardsSolved}
           totalBoards={opponentProgress.totalBoards}
+          opponentTiles={opponentTiles}
+          maxGuesses={currentBoard.maxGuesses}
+          wordLength={5}
         />
       </div>
 

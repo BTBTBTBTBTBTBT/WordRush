@@ -26,7 +26,9 @@ export function VsProperNoundle({
   mode,
   onBoardSolved,
   onCompleted,
+  onGuessSubmitted,
   opponentProgress,
+  opponentTiles,
   startTime,
   puzzleMetadata,
 }: VsProperNoundleProps) {
@@ -73,6 +75,9 @@ export function VsProperNoundle({
         setTimeout(() => setMessage(''), 1500);
         return;
       }
+
+      // Report guess to server for opponent progress
+      onGuessSubmitted(currentGuess, 0);
 
       // Evaluate guess against the answer (using seed-derived answer)
       // In VS mode, the answer comes from the server via puzzleMetadata
@@ -146,6 +151,9 @@ export function VsProperNoundle({
           attempts={opponentProgress.attempts}
           boardsSolved={opponentProgress.boardsSolved}
           totalBoards={opponentProgress.totalBoards}
+          opponentTiles={opponentTiles}
+          maxGuesses={6}
+          wordLength={puzzleMetadata?.answerLength || 10}
         />
       </div>
 

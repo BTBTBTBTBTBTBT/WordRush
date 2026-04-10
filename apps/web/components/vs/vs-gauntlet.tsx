@@ -25,12 +25,14 @@ export interface VsGauntletProps {
   mode: GameMode;
   onBoardSolved: (boardIndex: number) => void;
   onCompleted: (status: 'won' | 'lost', totalGuesses: number, timeMs: number) => void;
+  onGuessSubmitted: (guess: string, boardIndex: number) => void;
   opponentProgress: { attempts: number; boardsSolved: number; totalBoards: number; currentStage?: number };
+  opponentTiles: Record<number, string[][]>;
   startTime: number;
   onStageCompleted?: (stageIndex: number) => void;
 }
 
-export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, opponentProgress, startTime, onStageCompleted }: VsGauntletProps) {
+export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onStageCompleted }: VsGauntletProps) {
   const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
@@ -152,6 +154,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, opponentPro
         return;
       }
 
+      onGuessSubmitted(currentGuess, state.currentBoardIndex);
       if (isSingleBoard) {
         dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: state.currentBoardIndex });
       } else {
@@ -254,6 +257,9 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, opponentPro
           boardsSolved={opponentProgress.boardsSolved}
           totalBoards={opponentProgress.totalBoards}
           currentStage={opponentProgress.currentStage}
+          opponentTiles={opponentTiles}
+          maxGuesses={6}
+          wordLength={5}
         />
       </div>
 

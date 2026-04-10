@@ -55,7 +55,7 @@ export interface ServerToClientEvents {
     serverStartAt: number;
     countdownSeconds: number;
   }) => void;
-  match_start: (data: { seed: string; startTime: number }) => void;
+  match_start: (data: { seed: string; startTime: number; puzzleMetadata?: any }) => void;
   guess_result: (data: {
     boardIndex: number;
     isValid: boolean;
@@ -67,6 +67,7 @@ export interface ServerToClientEvents {
     solved: boolean;
     boardsSolved: number;
     totalBoards: number;
+    latestGuess?: { boardIndex: number; tiles: string[] };
   }) => void;
   match_ended: (data: {
     winner: 'player' | 'opponent' | 'draw' | null;
@@ -74,11 +75,13 @@ export interface ServerToClientEvents {
     opponentGuesses: number;
     playerTime: number;
     opponentTime: number;
+    playerScore: number;
+    opponentScore: number;
   }) => void;
   opponent_stage_completed: (data: { stageIndex: number }) => void;
   rematch_offered: () => void;
   rematch_declined: () => void;
-  rematch_start: (data: { matchId: string; seed: string }) => void;
+  rematch_start: (data: { matchId: string; seed: string; puzzleMetadata?: any }) => void;
   opponent_left: () => void;
   error: (data: { message: string }) => void;
 }

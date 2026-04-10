@@ -332,7 +332,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       if (!board) return null;
 
       return (
-        <div className="flex flex-col items-center gap-1 w-full justify-center">
+        <div className="flex flex-col items-center gap-1 w-full h-full justify-center">
           <Board
             guesses={board.guesses}
             currentGuess={isInBlackout ? '' : currentGuess}

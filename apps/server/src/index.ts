@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import { createServer } from 'http';
-import { initDictionary, generateMatchSeed, generateSolutionsFromSeed, isValidWord, GameMode, GameStatus } from '@wordle-duel/core';
+import { initDictionary, generateMatchSeed, generateSolutionsFromSeed, isValidWord, evaluateGuess, GameMode, GameStatus } from '@wordle-duel/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { MatchmakingQueue } from './matchmaking';
@@ -175,11 +175,24 @@ io.on('connection', (socket) => {
       playerState.completedAt = Date.now();
     }
 
+    // Evaluate tiles for opponent visualization (colors only, no letters)
+    let latestGuess: { boardIndex: number; tiles: string[] } | undefined;
+    try {
+      const evalResult = evaluateGuess(normalizedSolution, normalizedGuess);
+      latestGuess = {
+        boardIndex,
+        tiles: evalResult.tiles.map((t: any) => t.state),
+      };
+    } catch (e) {
+      // ProperNoundle or variable-length words may fail evaluation
+    }
+
     io.to(opponentSocket).emit('opponent_progress', {
       attempts: playerState.guesses,
       solved: playerState.status === GameStatus.WON,
       boardsSolved: playerState.boardsSolved,
-      totalBoards: playerState.totalBoards
+      totalBoards: playerState.totalBoards,
+      ...(latestGuess ? { latestGuess } : {}),
     });
 
     if (playerState.status !== GameStatus.PLAYING && opponentState.status !== GameStatus.PLAYING) {
@@ -223,7 +236,8 @@ io.on('connection', (socket) => {
     playerState.completedAt = Date.now();
     playerState.guesses = totalGuesses;
 
-    if (playerState.status !== GameStatus.PLAYING && opponentState.status !== GameStatus.PLAYING) {
+    // Both players must be done (playerState was just set to WON/LOST above)
+    if (opponentState.status !== GameStatus.PLAYING) {
       endMatch(matchId);
     }
   });
@@ -431,25 +445,36 @@ function endMatch(matchId: string): void {
       winner = 'player';
     } else if (match.player2State.boardsSolved > match.player1State.boardsSolved) {
       winner = 'opponent';
-    } else if (match.player1State.guesses < match.player2State.guesses) {
-      winner = 'player';
-    } else if (match.player2State.guesses < match.player1State.guesses) {
-      winner = 'opponent';
-    } else if (player1Time < player2Time) {
-      winner = 'player';
-    } else if (player2Time < player1Time) {
-      winner = 'opponent';
     } else {
-      winner = 'draw';
+      // Composite score: guesses + (timeSeconds / 45)
+      // 45 seconds of speed advantage ≈ 1 guess advantage
+      const TIME_WEIGHT = 45;
+      const p1Score = match.player1State.guesses + (player1Time / 1000 / TIME_WEIGHT);
+      const p2Score = match.player2State.guesses + (player2Time / 1000 / TIME_WEIGHT);
+
+      if (Math.abs(p1Score - p2Score) < 0.01) {
+        winner = 'draw';
+      } else if (p1Score < p2Score) {
+        winner = 'player';
+      } else {
+        winner = 'opponent';
+      }
     }
   }
+
+  // Compute composite scores for display
+  const TIME_WEIGHT_DISPLAY = 45;
+  const p1ScoreDisplay = match.player1State.guesses + (player1Time / 1000 / TIME_WEIGHT_DISPLAY);
+  const p2ScoreDisplay = match.player2State.guesses + (player2Time / 1000 / TIME_WEIGHT_DISPLAY);
 
   io.to(match.player1.socketId).emit('match_ended', {
     winner: winner === 'opponent' ? 'opponent' : winner === 'player' ? 'player' : winner,
     playerGuesses: match.player1State.guesses,
     opponentGuesses: match.player2State.guesses,
     playerTime: player1Time,
-    opponentTime: player2Time
+    opponentTime: player2Time,
+    playerScore: Math.round(p1ScoreDisplay * 100) / 100,
+    opponentScore: Math.round(p2ScoreDisplay * 100) / 100,
   });
 
   io.to(match.player2.socketId).emit('match_ended', {
@@ -457,7 +482,9 @@ function endMatch(matchId: string): void {
     playerGuesses: match.player2State.guesses,
     opponentGuesses: match.player1State.guesses,
     playerTime: player2Time,
-    opponentTime: player1Time
+    opponentTime: player1Time,
+    playerScore: Math.round(p2ScoreDisplay * 100) / 100,
+    opponentScore: Math.round(p1ScoreDisplay * 100) / 100,
   });
 }
 

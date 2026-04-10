@@ -15,12 +15,6 @@ import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as g
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
-function getDailyWord(): string {
-  const now = new Date();
-  const daysSinceEpoch = Math.floor(now.getTime() / 86400000);
-  return solutionWords[daysSinceEpoch % solutionWords.length];
-}
-
 interface WordDefinition {
   word: string;
   phonetic?: string;
@@ -32,21 +26,37 @@ function WordOfTheDay() {
   const [info, setInfo] = useState<WordDefinition | null>(null);
 
   useEffect(() => {
-    const word = getDailyWord();
-    setInfo({ word });
-    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data && data[0]) {
-          const entry = data[0];
-          const phonetic = entry.phonetics?.find((p: any) => p.text)?.text || entry.phonetic || '';
-          const meaning = entry.meanings?.[0];
-          const partOfSpeech = meaning?.partOfSpeech || '';
-          const definition = meaning?.definitions?.[0]?.definition || '';
-          setInfo({ word, phonetic, partOfSpeech, definition });
-        }
-      })
-      .catch(() => {});
+    const now = new Date();
+    const daysSinceEpoch = Math.floor(now.getTime() / 86400000);
+
+    async function findWordWithDefinition() {
+      // Try up to 20 words starting from today's index until we find one with a definition
+      for (let offset = 0; offset < 20; offset++) {
+        const word = solutionWords[(daysSinceEpoch + offset) % solutionWords.length];
+        try {
+          const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data[0]) {
+              const entry = data[0];
+              const phonetic = entry.phonetics?.find((p: any) => p.text)?.text || entry.phonetic || '';
+              const meaning = entry.meanings?.[0];
+              const partOfSpeech = meaning?.partOfSpeech || '';
+              const definition = meaning?.definitions?.[0]?.definition || '';
+              if (definition) {
+                setInfo({ word, phonetic, partOfSpeech, definition });
+                return;
+              }
+            }
+          }
+        } catch {}
+      }
+      // Fallback: show the original daily word without definition
+      const fallback = solutionWords[daysSinceEpoch % solutionWords.length];
+      setInfo({ word: fallback });
+    }
+
+    findWordWithDefinition();
   }, []);
 
   if (!info) return null;
@@ -241,7 +251,7 @@ export default function HomePage() {
     <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
 
-      <div className="px-4 flex-1 min-h-0 overflow-hidden pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button

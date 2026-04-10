@@ -118,6 +118,7 @@ export function VsGame({ mode }: VsGameProps) {
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(false);
   const [opponentProgress, setOpponentProgress] = useState({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
+  const [opponentTiles, setOpponentTiles] = useState<Record<number, string[][]>>({});
   const [puzzleMetadata, setPuzzleMetadata] = useState<{ display: string; category: string; answerLength: number; themeCategory?: string } | undefined>();
   const [matchResult, setMatchResult] = useState<any>(null);
   const [playerStats, setPlayerStats] = useState<{ guesses: number; timeMs: number } | null>(null);
@@ -169,11 +170,19 @@ export function VsGame({ mode }: VsGameProps) {
       setPuzzleMetadata(data.puzzleMetadata);
       setScreen('match');
       setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
+      setOpponentTiles({});
       resultRecordedRef.current = false;
     });
 
-    matchService.onOpponentProgress((data) => {
+    matchService.onOpponentProgress((data: any) => {
       setOpponentProgress(data);
+      if (data.latestGuess) {
+        setOpponentTiles(prev => {
+          const boardIdx = data.latestGuess.boardIndex ?? 0;
+          const boardTiles = prev[boardIdx] || [];
+          return { ...prev, [boardIdx]: [...boardTiles, data.latestGuess.tiles] };
+        });
+      }
     });
 
     matchService.onMatchEnded((data) => {
@@ -206,6 +215,7 @@ export function VsGame({ mode }: VsGameProps) {
       setPuzzleMetadata((data as any).puzzleMetadata);
       setScreen('match');
       setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
+      setOpponentTiles({});
       setMatchResult(null);
       setRematchState('idle');
       setPlayerStats(null);
@@ -245,6 +255,10 @@ export function VsGame({ mode }: VsGameProps) {
 
   const handleStageCompleted = useCallback((stageIndex: number) => {
     matchService.reportStageCompleted(stageIndex);
+  }, [matchService]);
+
+  const handleGuessSubmitted = useCallback((guess: string, boardIndex: number) => {
+    matchService.submitGuess(guess, boardIndex);
   }, [matchService]);
 
   const handleCancel = useCallback(() => {
@@ -394,6 +408,20 @@ export function VsGame({ mode }: VsGameProps) {
               <span>Opponent Time</span>
               <span className="text-gray-800">{formatTime(matchResult?.opponentTime || 0)}</span>
             </div>
+            {matchResult?.playerScore != null && (
+              <>
+                <div className="h-px bg-gray-200" />
+                <div className="flex justify-between text-gray-400 text-sm font-bold">
+                  <span>Your Score</span>
+                  <span className="text-gray-800">{matchResult.playerScore.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-gray-400 text-sm font-bold">
+                  <span>Opponent Score</span>
+                  <span className="text-gray-800">{matchResult.opponentScore.toFixed(2)}</span>
+                </div>
+                <p className="text-gray-400 text-[10px] text-center mt-1">Score = guesses + time penalty (lower is better)</p>
+              </>
+            )}
           </motion.div>
 
           {/* Rematch Status */}
@@ -526,7 +554,9 @@ export function VsGame({ mode }: VsGameProps) {
       mode,
       onBoardSolved: handleBoardSolved,
       onCompleted: handleCompleted,
+      onGuessSubmitted: handleGuessSubmitted,
       opponentProgress,
+      opponentTiles,
       startTime,
     };
 
