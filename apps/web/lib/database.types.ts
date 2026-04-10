@@ -25,6 +25,7 @@ export interface Database {
           bronze_medals: number
           last_played_at: string | null
           daily_login_streak: number
+          best_daily_login_streak: number
           coins: number
           streak_shields: number
           is_pro: boolean
@@ -55,6 +56,7 @@ export interface Database {
           bronze_medals?: number
           last_played_at?: string | null
           daily_login_streak?: number
+          best_daily_login_streak?: number
           coins?: number
           streak_shields?: number
           is_pro?: boolean
@@ -85,6 +87,7 @@ export interface Database {
           bronze_medals?: number
           last_played_at?: string | null
           daily_login_streak?: number
+          best_daily_login_streak?: number
           coins?: number
           streak_shields?: number
           is_pro?: boolean

@@ -68,30 +68,65 @@ export async function recordGameResult(
       });
   }
 
-  // Update profile totals
+  // Update profile totals + daily login streak in a single fetch/update
   const { data: profile } = await (supabase as any)
     .from('profiles')
-    .select('total_wins, total_losses, current_streak, best_streak, xp, level')
+    .select('total_wins, total_losses, current_streak, best_streak, xp, level, last_played_at, daily_login_streak, best_daily_login_streak')
     .eq('id', userId)
     .single() as { data: any };
 
   if (profile) {
-    const newStreak = won ? profile.current_streak + 1 : 0;
-    const newBestStreak = Math.max(profile.best_streak, newStreak);
+    // --- Win streak (resets on loss) ---
+    const newWinStreak = won ? profile.current_streak + 1 : 0;
+    const newBestWinStreak = Math.max(profile.best_streak, newWinStreak);
+
+    // --- XP ---
     const xpGain = won ? 100 : 25;
-    const streakBonus = won && newStreak > 1 ? 50 : 0;
+    const streakBonus = won && newWinStreak > 1 ? 50 : 0;
     const newXp = profile.xp + xpGain + streakBonus;
     const newLevel = Math.floor(newXp / 1000) + 1;
+
+    // --- Daily login streak (consecutive days played, UTC) ---
+    const now = new Date();
+    const lastPlayed = profile.last_played_at ? new Date(profile.last_played_at) : null;
+    let newDailyStreak = profile.daily_login_streak || 0;
+
+    if (lastPlayed) {
+      const lastDay = lastPlayed.toISOString().slice(0, 10);
+      const today = now.toISOString().slice(0, 10);
+      const yesterday = new Date(now.getTime() - 86400000).toISOString().slice(0, 10);
+
+      if (lastDay === today) {
+        // Same UTC day — no change to daily streak
+      } else if (lastDay === yesterday) {
+        // Consecutive UTC day — increment
+        newDailyStreak += 1;
+        if (newDailyStreak % 7 === 0) {
+          awardStreakBonus(userId, newDailyStreak).catch(() => {});
+          grantFreeShield(userId).catch(() => {});
+        }
+      } else {
+        // Missed a day — reset to 1 (today counts)
+        newDailyStreak = 1;
+      }
+    } else {
+      newDailyStreak = 1;
+    }
+
+    const newBestDailyStreak = Math.max(profile.best_daily_login_streak || 0, newDailyStreak);
 
     await (supabase as any)
       .from('profiles')
       .update({
         total_wins: profile.total_wins + (won ? 1 : 0),
         total_losses: profile.total_losses + (won ? 0 : 1),
-        current_streak: newStreak,
-        best_streak: newBestStreak,
+        current_streak: newWinStreak,
+        best_streak: newBestWinStreak,
         xp: newXp,
         level: newLevel,
+        last_played_at: now.toISOString(),
+        daily_login_streak: newDailyStreak,
+        best_daily_login_streak: newBestDailyStreak,
       })
       .eq('id', userId);
 
@@ -120,48 +155,6 @@ export async function recordGameResult(
   }
   if (won && guessCount > 0) {
     await checkAndUpdateRecord('fewest_guesses', gameMode, playType, userId, guessCount, false);
-  }
-
-  // Update last_played_at and login streak
-  const { data: streakProfile } = await (supabase as any)
-    .from('profiles')
-    .select('last_played_at, daily_login_streak')
-    .eq('id', userId)
-    .single();
-
-  if (streakProfile) {
-    const now = new Date();
-    const lastPlayed = streakProfile.last_played_at ? new Date(streakProfile.last_played_at) : null;
-    let newStreak = streakProfile.daily_login_streak || 0;
-
-    if (lastPlayed) {
-      const lastDay = lastPlayed.toISOString().slice(0, 10);
-      const today = now.toISOString().slice(0, 10);
-      const yesterday = new Date(now.getTime() - 86400000).toISOString().slice(0, 10);
-
-      if (lastDay === today) {
-        // Same day, no change
-      } else if (lastDay === yesterday) {
-        newStreak += 1;
-        // Award streak bonus coins + free shield every 7 days
-        if (newStreak % 7 === 0) {
-          awardStreakBonus(userId, newStreak).catch(() => {});
-          grantFreeShield(userId).catch(() => {});
-        }
-      } else {
-        newStreak = 1; // Reset streak
-      }
-    } else {
-      newStreak = 1;
-    }
-
-    await (supabase as any)
-      .from('profiles')
-      .update({
-        last_played_at: now.toISOString(),
-        daily_login_streak: newStreak,
-      })
-      .eq('id', userId);
   }
 
   // Check achievements (fire-and-forget, don't block game flow)

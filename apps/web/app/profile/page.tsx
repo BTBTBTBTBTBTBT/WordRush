@@ -308,7 +308,7 @@ export default function ProfilePage() {
           {[
             { icon: Star, label: 'Level', value: profile.level, color: '#d97706', fill: true },
             { icon: Trophy, label: 'Wins', value: profile.total_wins, color: '#16a34a', sub: `${winRate}% rate` },
-            { icon: Flame, label: 'Streak', value: profile.current_streak, color: '#ea580c', fill: true, sub: `Best: ${profile.best_streak}` },
+            { icon: Flame, label: 'Streak', value: profile.daily_login_streak, color: '#ea580c', fill: true, sub: `Best: ${(profile as any).best_daily_login_streak ?? 0}` },
             { icon: Target, label: 'Games', value: profile.total_wins + profile.total_losses, color: '#2563eb' },
           ].map((s, i) => {
             const Icon = s.icon;
