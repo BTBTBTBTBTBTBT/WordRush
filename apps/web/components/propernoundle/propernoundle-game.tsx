@@ -44,6 +44,7 @@ type GameMode = 'daily' | 'practice';
 
 interface DailyState {
   date: string;
+  puzzleId: string;
   guesses: Guess[];
   gameStatus: 'playing' | 'won' | 'lost';
   letterStates: Record<string, TileState>;
@@ -51,17 +52,17 @@ interface DailyState {
 }
 
 function getTodayString(): string {
-  const now = new Date();
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+  return new Date().toISOString().slice(0, 10);
 }
 
-function getSavedDailyState(): DailyState | null {
+function getSavedDailyState(puzzleId: string): DailyState | null {
   if (typeof window === 'undefined') return null;
   try {
     const stored = localStorage.getItem(DAILY_STORAGE_KEY);
     if (!stored) return null;
     const parsed = JSON.parse(stored);
-    if (parsed.date !== getTodayString()) {
+    // Clear if date doesn't match OR puzzle changed
+    if (parsed.date !== getTodayString() || (parsed.puzzleId && parsed.puzzleId !== puzzleId)) {
       localStorage.removeItem(DAILY_STORAGE_KEY);
       return null;
     }
@@ -106,8 +107,8 @@ export function ProperNoundleGame() {
       const p = getDailyPuzzle();
       setPuzzle(p);
 
-      // Restore saved daily state
-      const saved = getSavedDailyState();
+      // Restore saved daily state (validate puzzle ID matches today's puzzle)
+      const saved = getSavedDailyState(p.id);
       if (saved && saved.gameStatus !== 'playing') {
         setGuesses(saved.guesses);
         setGameStatus(saved.gameStatus);
@@ -198,9 +199,10 @@ export function ProperNoundleGame() {
       }
 
       // Save daily state
-      if (mode === 'daily') {
+      if (mode === 'daily' && puzzle) {
         saveDailyState({
           date: getTodayString(),
+          puzzleId: puzzle.id,
           guesses,
           gameStatus,
           letterStates,
@@ -213,16 +215,17 @@ export function ProperNoundleGame() {
 
   // Also save daily state after each guess (so in-progress games persist)
   useEffect(() => {
-    if (mode === 'daily' && gameStatus === 'playing' && guesses.length > 0) {
+    if (mode === 'daily' && gameStatus === 'playing' && guesses.length > 0 && puzzle) {
       saveDailyState({
         date: getTodayString(),
+        puzzleId: puzzle.id,
         guesses,
         gameStatus,
         letterStates,
         elapsedTime,
       });
     }
-  }, [guesses, mode, gameStatus, letterStates, elapsedTime]);
+  }, [guesses, mode, gameStatus, letterStates, elapsedTime, puzzle]);
 
   const buildLetterStates = useCallback((allGuesses: Guess[]) => {
     const states: Record<string, TileState> = {};

@@ -12,8 +12,7 @@ function getDaysSinceEpoch(dateString?: string): number {
 }
 
 export function getTodayString(): string {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  return new Date().toISOString().slice(0, 10);
 }
 
 export function getDailyPuzzle(dateString?: string): Puzzle {
