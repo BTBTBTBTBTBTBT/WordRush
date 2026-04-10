@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sparkles, Flame, Swords, Grid3x3, Grid2x2, Zap, Timer, LogOut, Star, Users, BookOpen, Shield, Crown, Lock } from 'lucide-react';
+import { Sparkles, Flame, Swords, Grid3x3, Zap, LogOut, Star, Users, BookOpen, Shield, Crown, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -152,7 +152,8 @@ const MODE_CARDS = [
   {
     id: 'quordle',
     title: 'QuadWord',
-    icon: Grid2x2,
+    icon: null,
+    romanNumeral: 'IV',
     desc: '4 words at once',
     accentColor: '#ec4899',
     href: '/quordle',
@@ -162,7 +163,8 @@ const MODE_CARDS = [
   {
     id: 'octordle',
     title: 'OctoWord',
-    icon: Timer,
+    icon: null,
+    romanNumeral: 'VIII',
     desc: '8 boards, 13 tries',
     accentColor: '#7e22ce',
     href: '/octordle',
@@ -335,7 +337,11 @@ export default function HomePage() {
                   >
                     {isLocked
                       ? <Lock className="w-4 h-4" style={{ color: '#9ca3af' }} />
-                      : <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
+                      : mode.romanNumeral
+                      ? <span className="text-[11px] font-black leading-none" style={{ color: mode.accentColor }}>{mode.romanNumeral}</span>
+                      : Icon
+                      ? <Icon className="w-4 h-4" style={{ color: mode.accentColor }} />
+                      : null
                     }
                   </div>
                   <div className="text-[13px] font-black" style={{ color: isLocked ? '#9ca3af' : '#1a1a2e' }}>{mode.title}</div>
