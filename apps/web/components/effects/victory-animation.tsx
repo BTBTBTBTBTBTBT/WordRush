@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Confetti, CONFETTI_PALETTES } from './confetti';
 import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
+import { useWordDefinition } from '@/hooks/use-word-definition';
 
 interface VictoryAnimationProps {
   onComplete?: () => void;
@@ -26,24 +26,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
   const paletteKey = victoryAnimationId ? VARIANT_MAP[victoryAnimationId] : undefined;
   const confettiColors = paletteKey ? CONFETTI_PALETTES[paletteKey] : undefined;
 
-  const [definition, setDefinition] = useState<{ partOfSpeech?: string; definition?: string; phonetic?: string } | null>(null);
-
-  useEffect(() => {
-    if (!solution) return;
-    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${solution.toLowerCase()}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data && data[0]) {
-          const entry = data[0];
-          const phonetic = entry.phonetics?.find((p: any) => p.text)?.text || entry.phonetic || '';
-          const meaning = entry.meanings?.[0];
-          const partOfSpeech = meaning?.partOfSpeech || '';
-          const def = meaning?.definitions?.[0]?.definition || '';
-          setDefinition({ partOfSpeech, definition: def, phonetic });
-        }
-      })
-      .catch(() => {});
-  }, [solution]);
+  const definition = useWordDefinition(solution || null);
 
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;

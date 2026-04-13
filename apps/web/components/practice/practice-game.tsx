@@ -3,11 +3,11 @@
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
-import Link from 'next/link';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { AnimatePresence } from 'framer-motion';
-import { Trophy, RotateCcw, Home, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult } from '@/lib/stats-service';
@@ -148,6 +148,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   const guessesUsed = currentBoard.guesses.length;
   const maxGuesses = currentBoard.maxGuesses;
+  const gameComplete = state.status === GameStatus.WON || state.status === GameStatus.LOST;
 
   return (
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
@@ -169,58 +170,52 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: '#1a1a2e', color: '#fff' }}>{message}</span>
           </div>
         )}
-        {state.status === GameStatus.WON && (
-          <div className="mt-1 flex flex-col items-center gap-1">
-            <span className="text-green-600 text-xs font-bold">Solved in {guessesUsed} guesses  ·  {formatTime(elapsedTime)}</span>
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-              {!isDaily && isPro && <button onClick={handleReset} className="text-purple-600 text-xs font-bold underline">Play Again</button>}
-            </div>
-          </div>
-        )}
-        {state.status === GameStatus.LOST && (
-          <div className="mt-1 flex flex-col items-center gap-1">
-            <span className="text-red-300 text-xs font-bold">The word was {currentBoard.solution.toUpperCase()}</span>
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-              {!isDaily && isPro && <button onClick={handleReset} className="text-yellow-400 text-xs font-bold underline">Try Again</button>}
-            </div>
+        {(state.status === GameStatus.WON || state.status === GameStatus.LOST) && (
+          <div className="mt-1 text-center">
+            <span className={`text-xs font-bold ${state.status === GameStatus.WON ? 'text-green-600' : 'text-red-400'}`}>
+              {state.status === GameStatus.WON ? `Solved in ${guessesUsed} guesses` : ''} · {formatTime(elapsedTime)}
+            </span>
           </div>
         )}
       </div>
 
-      {/* Board */}
-      <div className="flex-1 flex items-center justify-center px-4 min-h-0">
-        <Board
-          guesses={currentBoard.guesses}
-          currentGuess={currentGuess}
-          maxGuesses={currentBoard.maxGuesses}
-          evaluations={evaluations}
-          showSolution={currentBoard.status === GameStatus.LOST}
-          solution={currentBoard.solution}
-          darkMode
-          isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
-        />
+      {/* Board + Post-game summary */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-4">
+        <div className="flex flex-col items-center justify-center h-full">
+          <Board
+            guesses={currentBoard.guesses}
+            currentGuess={currentGuess}
+            maxGuesses={currentBoard.maxGuesses}
+            evaluations={evaluations}
+            showSolution={false}
+            solution={currentBoard.solution}
+            darkMode
+            isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
+          />
+
+          {gameComplete && (
+            <PostGameSummary
+              solution={currentBoard.solution}
+              won={state.status === GameStatus.WON}
+              guessCount={guessesUsed}
+              maxGuesses={maxGuesses}
+              timeSeconds={elapsedTime}
+              isDaily={isDaily}
+              isPro={isPro}
+              onShare={handleShare}
+              onReset={handleReset}
+              copied={copied}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Bottom bar */}
-      <div className="shrink-0 px-4 pb-1 flex justify-center gap-4">
-        <button onClick={onBack} className="text-white/50 text-xs font-bold flex items-center gap-1">
-          <Home className="w-3 h-3" /> Home
-        </button>
-        {!isDaily && isPro && (
-          <button onClick={handleReset} className="text-white/50 text-xs font-bold flex items-center gap-1">
-            <RotateCcw className="w-3 h-3" /> New Puzzle
-          </button>
-        )}
-      </div>
-
-      {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2">
-        <Keyboard onKey={handleKey} letterStates={letterStates} />
-      </div>
+      {/* Keyboard — hidden when game is complete */}
+      {!gameComplete && (
+        <div className="shrink-0 pb-2 px-2">
+          <Keyboard onKey={handleKey} letterStates={letterStates} />
+        </div>
+      )}
     </div>
   );
 }
