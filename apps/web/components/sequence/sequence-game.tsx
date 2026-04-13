@@ -332,7 +332,7 @@ function SequenceMiniBoard({
 
   return (
     <div
-      className={`relative p-1 rounded-lg border-2 transition-all duration-300 h-full flex flex-col ${
+      className={`relative p-1 rounded-lg border-2 transition-colors duration-300 h-full flex flex-col ${
         isCompleted
           ? 'border-green-400 bg-green-50 shadow-lg shadow-green-500/20'
           : isFailed

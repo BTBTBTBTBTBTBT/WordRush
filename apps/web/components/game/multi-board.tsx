@@ -106,7 +106,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
         </div>
       )}
 
-      <div className="flex flex-col gap-[2px] flex-1">
+      <div className="grid gap-[2px] flex-1" style={{ gridTemplateRows: `repeat(${totalRows}, 1fr)` }}>
         {Array.from({ length: totalRows }).map((_, rowIndex) => {
           const isPrefillRow = rowIndex < prefillCount;
           const playerRowIndex = rowIndex - prefillCount;
@@ -114,11 +114,11 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
           if (isPrefillRow) {
             const prefill = prefills[rowIndex];
             return (
-              <div key={rowIndex} className="flex gap-[2px] flex-1 opacity-75">
+              <div key={rowIndex} className="grid grid-cols-5 gap-[2px] min-h-0 opacity-75">
                 {prefill.evaluation.tiles.map((tile, letterIndex) => (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded font-bold ${textSize} ${tile.state === TileState.EMPTY ? 'text-gray-800' : 'text-white'} ${getTileColor(tile.state, colorBlind)}`}
+                    className={`flex items-center justify-center min-h-0 border rounded font-bold ${textSize} ${tile.state === TileState.EMPTY ? 'text-gray-800' : 'text-white'} ${getTileColor(tile.state, colorBlind)}`}
                   >
                     {tile.letter.toUpperCase()}
                   </div>
@@ -134,7 +134,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
           const tiles = isPastGuess ? evaluateGuess(guess, board.solution) : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className="flex gap-[2px] flex-1">
+            <div key={rowIndex} className="grid grid-cols-5 gap-[2px] min-h-0">
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = isPastGuess ? tiles[letterIndex] : TileState.EMPTY;
@@ -143,7 +143,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
                 return (
                   <div
                     key={letterIndex}
-                    className={`flex-1 flex items-center justify-center border rounded font-bold ${textSize} ${
+                    className={`flex items-center justify-center min-h-0 border rounded font-bold ${textSize} ${
                       isInvalidTile
                         ? 'text-red-500 bg-red-50 border-red-400'
                         : tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'
