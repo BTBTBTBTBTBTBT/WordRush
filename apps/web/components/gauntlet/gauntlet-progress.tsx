@@ -64,13 +64,23 @@ const STAGE_DESCRIPTIONS: Record<string, string> = {
   'OctoWord': 'OctoWord — 8 boards, 13 tries',
 };
 
+const STAGE_GRADIENTS: Record<string, string> = {
+  'The Opening': 'bg-gradient-to-r from-purple-400 to-pink-400',
+  'QuadWord': 'bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400',
+  'Succession': 'bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400',
+  'Deliverance': 'bg-gradient-to-r from-indigo-400 via-purple-400 to-fuchsia-400',
+  'OctoWord': 'bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400',
+};
+
 export function GauntletStageHeader({ stage }: { stage: GauntletStageConfig }) {
+  const gradient = STAGE_GRADIENTS[stage.name] || 'bg-gradient-to-r from-purple-400 to-pink-400';
+
   return (
     <div className="text-center py-2">
       <div className="text-gray-400 text-xs font-medium uppercase tracking-wider">
         Stage {stage.stageIndex + 1} of 5
       </div>
-      <h2 className="text-2xl font-black mt-1" style={{ color: '#1a1a2e' }}>
+      <h2 className={`text-2xl font-black mt-1 text-transparent bg-clip-text ${gradient}`}>
         {stage.name}
       </h2>
       <div className="text-gray-400 text-[10px] font-bold mt-0.5">
