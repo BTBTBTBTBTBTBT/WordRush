@@ -70,7 +70,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     return saved.guesses.map(g => evaluateGuess(solution, g));
   }, [saved, solution]);
 
-  const definition = useWordDefinition(solution);
+  const { definition, loaded: defLoaded } = useWordDefinition(solution);
 
   if (!saved || !solution || evaluations.length === 0) return null;
 
@@ -132,7 +132,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           <div className="text-lg font-black tracking-wider" style={{ color: '#1a1a2e' }}>
             {solution.toUpperCase()}
           </div>
-          {definition && (
+          {defLoaded && (
             <div
               className="mt-2 mx-auto px-3 py-2 text-left"
               style={{
@@ -142,24 +142,32 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
                 maxWidth: '320px',
               }}
             >
-              <div className="flex items-center gap-2 flex-wrap">
-                {definition.phonetic && (
-                  <span className="text-[11px] font-medium" style={{ color: '#9ca3af' }}>
-                    {definition.phonetic}
-                  </span>
-                )}
-                {definition.partOfSpeech && (
-                  <span
-                    className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                    style={{ background: '#ede9f6', color: '#a78bfa' }}
-                  >
-                    {definition.partOfSpeech}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs font-medium mt-1 leading-snug" style={{ color: '#4a4a6a' }}>
-                {definition.definition}
-              </p>
+              {definition ? (
+                <>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {definition.phonetic && (
+                      <span className="text-[11px] font-medium" style={{ color: '#9ca3af' }}>
+                        {definition.phonetic}
+                      </span>
+                    )}
+                    {definition.partOfSpeech && (
+                      <span
+                        className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+                        style={{ background: '#ede9f6', color: '#a78bfa' }}
+                      >
+                        {definition.partOfSpeech}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs font-medium mt-1 leading-snug" style={{ color: '#4a4a6a' }}>
+                    {definition.definition}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs font-medium italic" style={{ color: '#9ca3af' }}>
+                  No definition available for this word.
+                </p>
+              )}
             </div>
           )}
         </div>

@@ -2,18 +2,29 @@
 
 import { useState, useEffect } from 'react';
 
-interface WordDefinition {
+export interface WordDefinition {
   phonetic: string;
   partOfSpeech: string;
   definition: string;
 }
 
-export function useWordDefinition(word: string | null): WordDefinition | null {
+export interface WordDefinitionResult {
+  definition: WordDefinition | null;
+  loaded: boolean;
+}
+
+export function useWordDefinition(word: string | null): WordDefinitionResult {
   const [definition, setDefinition] = useState<WordDefinition | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!word) return;
+    if (!word) {
+      setDefinition(null);
+      setLoaded(false);
+      return;
+    }
     setDefinition(null);
+    setLoaded(false);
 
     fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`)
       .then(res => res.ok ? res.json() : null)
@@ -28,9 +39,12 @@ export function useWordDefinition(word: string | null): WordDefinition | null {
             setDefinition({ phonetic, partOfSpeech, definition: def });
           }
         }
+        setLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        setLoaded(true);
+      });
   }, [word]);
 
-  return definition;
+  return { definition, loaded };
 }

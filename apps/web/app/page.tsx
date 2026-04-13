@@ -212,7 +212,7 @@ const MODE_CARDS = [
 
 export default function HomePage() {
   const { user, profile, signOut } = useAuth();
-  const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string }>({ open: false, modeName: '' });
+  const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string; modeHref: string }>({ open: false, modeName: '', modeHref: '' });
   const [resetCountdown, setResetCountdown] = useState('');
   const router = useRouter();
 
@@ -272,7 +272,7 @@ export default function HomePage() {
             const handleCardClick = (e: React.MouseEvent) => {
               if (isLocked) {
                 e.preventDefault();
-                router.push(`${mode.href}?daily=true`);
+                setLimitModal({ open: true, modeName: mode.title, modeHref: mode.href });
               } else if (mode.id === 'vs') {
                 e.preventDefault();
                 handleVsClick(mode.href);
@@ -399,8 +399,9 @@ export default function HomePage() {
       <BottomNav />
       <ModeLimitModal
         open={limitModal.open}
-        onClose={() => setLimitModal({ open: false, modeName: '' })}
+        onClose={() => setLimitModal({ open: false, modeName: '', modeHref: '' })}
         modeName={limitModal.modeName}
+        onViewPuzzle={() => router.push(`${limitModal.modeHref}?daily=true`)}
       />
     </div>
   );

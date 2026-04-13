@@ -26,7 +26,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
   const paletteKey = victoryAnimationId ? VARIANT_MAP[victoryAnimationId] : undefined;
   const confettiColors = paletteKey ? CONFETTI_PALETTES[paletteKey] : undefined;
 
-  const definition = useWordDefinition(solution || null);
+  const { definition } = useWordDefinition(solution || null);
 
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;

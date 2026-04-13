@@ -29,7 +29,7 @@ export function PostGameSummary({
   onReset,
   copied,
 }: PostGameSummaryProps) {
-  const definition = useWordDefinition(solution);
+  const { definition, loaded: defLoaded } = useWordDefinition(solution);
 
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;
@@ -63,7 +63,7 @@ export function PostGameSummary({
       </div>
 
       {/* Definition */}
-      {definition && (
+      {defLoaded && (
         <div
           className="mt-2.5 px-3 py-2.5"
           style={{
@@ -72,22 +72,30 @@ export function PostGameSummary({
             border: '1px solid #ede9f6',
           }}
         >
-          {definition.phonetic && (
-            <div className="text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
-              {definition.phonetic}
-            </div>
+          {definition ? (
+            <>
+              {definition.phonetic && (
+                <div className="text-xs font-medium mb-1" style={{ color: '#9ca3af' }}>
+                  {definition.phonetic}
+                </div>
+              )}
+              {definition.partOfSpeech && (
+                <span
+                  className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+                  style={{ background: '#ede9f6', color: '#a78bfa' }}
+                >
+                  {definition.partOfSpeech}
+                </span>
+              )}
+              <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
+                {definition.definition}
+              </p>
+            </>
+          ) : (
+            <p className="text-xs font-medium italic" style={{ color: '#9ca3af' }}>
+              No definition available for this word.
+            </p>
           )}
-          {definition.partOfSpeech && (
-            <span
-              className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-              style={{ background: '#ede9f6', color: '#a78bfa' }}
-            >
-              {definition.partOfSpeech}
-            </span>
-          )}
-          <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
-            {definition.definition}
-          </p>
         </div>
       )}
 

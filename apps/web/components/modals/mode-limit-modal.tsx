@@ -10,9 +10,10 @@ interface ModeLimitModalProps {
   open: boolean;
   onClose: () => void;
   modeName: string;
+  onViewPuzzle?: () => void;
 }
 
-export function ModeLimitModal({ open, onClose, modeName }: ModeLimitModalProps) {
+export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLimitModalProps) {
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
@@ -76,13 +77,23 @@ export function ModeLimitModal({ open, onClose, modeName }: ModeLimitModalProps)
               </button>
             </Link>
 
-            <button
-              onClick={onClose}
-              className="text-xs font-bold"
-              style={{ color: '#9ca3af' }}
-            >
-              Come back tomorrow
-            </button>
+            {onViewPuzzle ? (
+              <button
+                onClick={() => { onClose(); onViewPuzzle(); }}
+                className="text-xs font-bold"
+                style={{ color: '#7c3aed' }}
+              >
+                View Solved Puzzle
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="text-xs font-bold"
+                style={{ color: '#9ca3af' }}
+              >
+                Come back tomorrow
+              </button>
+            )}
           </motion.div>
         </motion.div>
       )}
