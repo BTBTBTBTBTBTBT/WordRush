@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Play } from 'lucide-react';
+import { Check, Play, Clock, Trophy } from 'lucide-react';
 import { GauntletStageConfig } from '@wordle-duel/core';
 
 interface GauntletProgressProps {
@@ -12,7 +12,7 @@ interface GauntletProgressProps {
 
 export function GauntletProgress({ stages, currentStage, stageResults }: GauntletProgressProps) {
   return (
-    <div className="flex items-center justify-center gap-1 px-4 py-3">
+    <div className="flex items-center justify-center gap-1 px-4 py-2">
       {stages.map((stage, i) => {
         const isCompleted = stageResults.some(r => r.stageIndex === i);
         const isActive = i === currentStage;
@@ -72,19 +72,38 @@ const STAGE_GRADIENTS: Record<string, string> = {
   'OctoWord': 'bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400',
 };
 
-export function GauntletStageHeader({ stage }: { stage: GauntletStageConfig }) {
+interface GauntletStageHeaderProps {
+  stage: GauntletStageConfig;
+  elapsedTime?: number;
+  boardsSolved?: number;
+  totalBoards?: number;
+  guessesUsed?: number;
+  maxGuesses?: number;
+}
+
+const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+
+export function GauntletStageHeader({ stage, elapsedTime, boardsSolved, totalBoards, guessesUsed, maxGuesses }: GauntletStageHeaderProps) {
   const gradient = STAGE_GRADIENTS[stage.name] || 'bg-gradient-to-r from-purple-400 to-pink-400';
 
   return (
-    <div className="text-center py-2">
-      <div className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+    <div className="text-center py-1">
+      <div className="text-gray-400 text-[10px] font-medium uppercase tracking-wider">
         Stage {stage.stageIndex + 1} of 5
       </div>
-      <h2 className={`text-2xl font-black mt-1 text-transparent bg-clip-text ${gradient}`}>
+      <h2 className={`text-xl font-black text-transparent bg-clip-text ${gradient}`}>
         {stage.name}
       </h2>
-      <div className="text-gray-400 text-[10px] font-bold mt-0.5">
-        {STAGE_DESCRIPTIONS[stage.name] || ''}
+      <div className="flex justify-center gap-3 mt-0.5">
+        {totalBoards != null && totalBoards > 1 && (
+          <span className="text-gray-400 text-[10px] font-bold"><Trophy className="w-3 h-3 inline mr-0.5 text-amber-600" />{boardsSolved ?? 0}/{totalBoards}</span>
+        )}
+        {guessesUsed != null && maxGuesses != null && (
+          <span className="text-gray-400 text-[10px] font-bold">{guessesUsed}/{maxGuesses} guesses</span>
+        )}
+        {elapsedTime != null && (
+          <span className="text-gray-400 text-[10px] font-bold"><Clock className="w-3 h-3 inline mr-0.5 text-blue-400" />{formatTime(elapsedTime)}</span>
+        )}
       </div>
     </div>
   );

@@ -60,9 +60,21 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const [showVictory, setShowVictory] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [gameStartTime] = useState(Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const startTimeRef = useRef(Date.now());
 
   // Persistence hook (no-op when isDaily is false, which is always for gauntlet currently)
-  useGamePersistence(GameMode.GAUNTLET, !!isDaily, seed, state, dispatch, 0);
+  useGamePersistence(GameMode.GAUNTLET, !!isDaily, seed, state, dispatch, elapsedTime);
+
+  // Running timer
+  useEffect(() => {
+    if (state.status === GameStatus.PLAYING && !showTransition) {
+      const interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [state.status, showTransition]);
 
   // Letter Blackout state
   const [blackedOutLetters, setBlackedOutLetters] = useState<Set<string>>(new Set());
@@ -289,6 +301,8 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     setBlackedOutLetters(new Set());
     setBlackoutBoardIndex(null);
     setBlackoutTimeLeft(0);
+    setElapsedTime(0);
+    startTimeRef.current = Date.now();
     blackoutTriggeredRef.current = false;
     if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
     if (blackoutCountdownRef.current) clearInterval(blackoutCountdownRef.current);
@@ -384,7 +398,14 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           currentStage={gauntlet.currentStage}
           stageResults={gauntlet.stageResults}
         />
-        <GauntletStageHeader stage={currentStageConfig} />
+        <GauntletStageHeader
+          stage={currentStageConfig}
+          elapsedTime={elapsedTime}
+          boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
+          totalBoards={currentStageConfig.boardCount}
+          guessesUsed={state.boards[0]?.guesses.length || 0}
+          maxGuesses={currentStageConfig.maxGuesses}
+        />
       </div>
 
       {/* Message / Blackout Warning — absolutely positioned so it doesn't shift layout */}
@@ -455,12 +476,12 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       </AnimatePresence>
 
       {/* Game Area */}
-      <div className={`flex-1 min-h-0 px-2 pb-2 ${isSingleBoard ? 'flex items-center justify-center' : ''}`}>
+      <div className={`flex-1 min-h-0 px-1 pb-1 ${isSingleBoard ? 'flex items-center justify-center' : ''}`}>
         {renderGameArea()}
       </div>
 
       {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2 pt-2">
+      <div className="shrink-0 pb-2 px-2 pt-1">
         <Keyboard
           onKey={handleKey}
           letterStates={letterStates}
