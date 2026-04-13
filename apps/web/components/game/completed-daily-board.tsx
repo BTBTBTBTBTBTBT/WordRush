@@ -8,7 +8,10 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { getTodayUTC } from '@/lib/daily-service';
 import { generateDailySeed } from '@wordle-duel/core';
 
+const SAVE_VERSION = 2;
+
 interface SavedGameState {
+  version?: number;
   date: string;
   seed: string;
   mode: string;
@@ -35,6 +38,7 @@ function loadCompletedGame(modeId: string): SavedGameState | null {
     const parsed: SavedGameState = JSON.parse(stored);
     if (parsed.date !== getTodayUTC()) return null;
     if (parsed.gameStatus !== 'WON' && parsed.gameStatus !== 'LOST') return null;
+    if (parsed.version !== SAVE_VERSION) return null;
     return parsed;
   } catch {
     return null;

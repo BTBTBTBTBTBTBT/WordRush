@@ -4,7 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { GameMode, GameStatus } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
 
+// Bump this when the save format changes to invalidate old data
+const SAVE_VERSION = 2;
+
 interface SavedGameState {
+  version?: number;
   date: string;
   seed: string;
   mode: string;
@@ -31,6 +35,10 @@ function loadSavedState(mode: GameMode, seed: string): SavedGameState | null {
       localStorage.removeItem(getStorageKey(mode));
       return null;
     }
+    if (parsed.version !== SAVE_VERSION) {
+      localStorage.removeItem(getStorageKey(mode));
+      return null;
+    }
     return parsed;
   } catch {
     return null;
@@ -40,6 +48,7 @@ function loadSavedState(mode: GameMode, seed: string): SavedGameState | null {
 function saveState(mode: GameMode, seed: string, guesses: string[], elapsedTime: number, gameStatus: string): void {
   if (typeof window === 'undefined') return;
   const state: SavedGameState = {
+    version: SAVE_VERSION,
     date: getTodayUTC(),
     seed,
     mode,
