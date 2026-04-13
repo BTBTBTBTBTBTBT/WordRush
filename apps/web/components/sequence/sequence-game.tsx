@@ -229,7 +229,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
 
       {/* 2x2 Board Grid */}
       <div className="flex-1 min-h-0 px-2 pb-2">
-        <div className="grid grid-cols-2 gap-2 w-full h-full max-w-lg mx-auto">
+        <div className="grid grid-cols-2 grid-rows-2 gap-2 w-full h-full max-w-lg mx-auto">
             {BOARD_ORDER.map((boardIdx) => {
               const board = state.boards[boardIdx];
               if (!board) return null;
@@ -332,7 +332,7 @@ function SequenceMiniBoard({
 
   return (
     <div
-      className={`relative p-1 rounded-lg border-2 transition-colors duration-300 h-full flex flex-col ${
+      className={`relative p-1 rounded-lg border-2 transition-colors duration-300 h-full flex flex-col overflow-hidden ${
         isCompleted
           ? 'border-green-400 bg-green-50 shadow-lg shadow-green-500/20'
           : isFailed
