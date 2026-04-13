@@ -110,10 +110,17 @@ export function useGamePersistence(
     prevGuessCount.current = saved.guesses.length;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // For multi-board games, the board with the most guesses has the complete set
+  // (each guess goes to all playing boards, so the last-solved board has all guesses)
+  const getAllGuesses = () => {
+    return state.boards.reduce<string[]>((longest, board) =>
+      board.guesses.length > longest.length ? board.guesses : longest, []);
+  };
+
   // Save after each new guess
   useEffect(() => {
     if (!isDaily) return;
-    const currentGuesses = state.boards[0]?.guesses || [];
+    const currentGuesses = getAllGuesses();
     if (currentGuesses.length === 0) return;
     // Don't save during replay
     if (currentGuesses.length <= prevGuessCount.current && state.status === 'PLAYING') return;
@@ -126,7 +133,7 @@ export function useGamePersistence(
   useEffect(() => {
     if (!isDaily) return;
     if (state.status === 'WON' || state.status === 'LOST') {
-      const currentGuesses = state.boards[0]?.guesses || [];
+      const currentGuesses = getAllGuesses();
       saveState(mode, seed, currentGuesses, elapsedTime, state.status);
     }
   }, [state.status, isDaily, mode, seed, elapsedTime, state.boards]);
