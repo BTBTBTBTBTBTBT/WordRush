@@ -17,6 +17,7 @@ import {
   getTodayUTC,
   type LeaderboardEntry,
 } from '@/lib/daily-service';
+import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 const GAME_MODES = [
   { id: 'DUEL', label: 'Classic', href: '/practice' },
@@ -194,6 +195,9 @@ export default function DailyPage() {
             Play {modeConfig.label}
           </button>
         </div>
+
+        {/* Completed Board Preview */}
+        <CompletedDailyBoard modeId={selectedMode} />
 
         {/* User Rank */}
         {userRank && (

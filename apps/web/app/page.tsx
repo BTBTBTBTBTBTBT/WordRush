@@ -272,7 +272,7 @@ export default function HomePage() {
             const handleCardClick = (e: React.MouseEvent) => {
               if (isLocked) {
                 e.preventDefault();
-                setLimitModal({ open: true, modeName: mode.title });
+                router.push(`${mode.href}?daily=true`);
               } else if (mode.id === 'vs') {
                 e.preventDefault();
                 handleVsClick(mode.href);
