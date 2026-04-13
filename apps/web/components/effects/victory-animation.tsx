@@ -122,6 +122,8 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
               >
                 <div className={solutions.length === 8
                   ? 'grid grid-cols-4 gap-x-3 gap-y-1.5 justify-items-center'
+                  : solutions.length === 4
+                  ? 'grid grid-cols-2 gap-x-4 gap-y-1.5 justify-items-center'
                   : `flex flex-wrap justify-center gap-2 ${solutions.length > 4 ? 'gap-x-3 gap-y-1.5' : 'gap-3'}`
                 }>
                   {solutions.map((word, i) => (

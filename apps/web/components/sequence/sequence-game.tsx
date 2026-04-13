@@ -349,7 +349,7 @@ function SequenceMiniBoard({
         </div>
       )}
 
-      <div className="flex flex-col gap-[2px] flex-1">
+      <div className="grid gap-[2px] flex-1" style={{ gridTemplateRows: `repeat(${board.maxGuesses}, 1fr)` }}>
         {Array.from({ length: board.maxGuesses }).map((_, rowIndex) => {
           const guess = allGuesses[rowIndex] || '';
           const isPastGuess = rowIndex < board.guesses.length;
@@ -359,7 +359,7 @@ function SequenceMiniBoard({
             : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className="flex gap-[2px] flex-1">
+            <div key={rowIndex} className="grid grid-cols-5 gap-[2px] min-h-0">
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = tiles[letterIndex];
@@ -369,7 +369,7 @@ function SequenceMiniBoard({
                   <div
                     key={letterIndex}
                     className={`
-                      flex-1 flex items-center justify-center
+                      flex items-center justify-center min-h-0
                       border rounded font-bold text-[10px] sm:text-xs
                       ${isCurrentRow && isInvalidWord && hasLetter
                         ? 'bg-red-50 border-red-400 text-red-500'
