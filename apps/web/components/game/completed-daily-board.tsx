@@ -8,7 +8,7 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { getTodayUTC } from '@/lib/daily-service';
 import { generateDailySeed } from '@wordle-duel/core';
 
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 
 interface SavedGameState {
   version?: number;

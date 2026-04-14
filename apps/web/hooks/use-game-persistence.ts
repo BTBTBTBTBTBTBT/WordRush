@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { GameMode, GameStatus } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
 
-// Bump this when the save format changes to invalidate old data
-const SAVE_VERSION = 2;
+// Bump this when the save format or solution list changes to invalidate old data
+// v2: getAllGuesses fix for multi-board games
+// v3: solutions.json changed (213 words removed), invalidating seed-to-solution mapping
+const SAVE_VERSION = 3;
 
 interface SavedGameState {
   version?: number;
