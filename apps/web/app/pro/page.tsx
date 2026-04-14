@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords } from 'lucide-react';
+import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords, EyeOff } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
@@ -9,6 +9,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { PRO_PLANS } from '@/lib/payment/types';
 
 const benefits = [
+  { icon: EyeOff, text: 'Ad-free experience — no interruptions, ever' },
   { icon: WordleGridIcon, text: 'Unlimited replays of all 8 game modes, any time' },
   { icon: Swords, text: 'VS mode on every game — challenge friends in all 8 modes' },
   { icon: Shield, text: '4 streak shields credited each billing period' },
@@ -57,7 +58,7 @@ export default function ProPage() {
           <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#d97706' }} />
           <h1 className="text-4xl font-black mb-1" style={{ color: '#1a1a2e' }}>Go Pro</h1>
           <p className="text-sm font-bold" style={{ color: '#9ca3af' }}>
-            Play unlimited — all 8 modes, any time
+            Play unlimited & ad-free — all 8 modes, any time
           </p>
         </div>
 

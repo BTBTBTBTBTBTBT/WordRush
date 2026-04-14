@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GameMode } from '@wordle-duel/core';
 import { SocketIOMatchService } from '@/lib/adapters/match-service';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Home, RotateCcw, Trophy, X } from 'lucide-react';
@@ -125,6 +126,7 @@ export function VsGame({ mode }: VsGameProps) {
   const [message, setMessage] = useState('');
   const [rematchState, setRematchState] = useState<'idle' | 'offered' | 'received' | 'declined'>('idle');
   const resultRecordedRef = useRef(false);
+  const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
   const formatTime = (ms: number) => {
     const totalSec = Math.round(ms / 1000);
@@ -193,7 +195,8 @@ export function VsGame({ mode }: VsGameProps) {
       if (profile && !resultRecordedRef.current) {
         resultRecordedRef.current = true;
         const won = data.winner === 'player';
-        recordGameResult(profile.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seed);
+        recordGameResult(profile.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seed)
+          .then(xp => { if (xp) setXpResult(xp); });
       }
       // Record VS match for daily limit tracking
       if (!isPro) {
@@ -582,6 +585,7 @@ export function VsGame({ mode }: VsGameProps) {
 
   return (
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
+      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
       {/* Match Header */}
       <div className="text-center py-1 shrink-0">
         <div className="flex items-center justify-between px-4">

@@ -5,13 +5,15 @@ import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, g
 import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
+import { GameOverAnimation } from '@/components/effects/game-over-animation';
 import { AnimatePresence } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
+import { XpToast } from '@/components/effects/xp-toast';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { useGamePersistence } from '@/hooks/use-game-persistence';
 
@@ -31,8 +33,10 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
+  const [showGameOver, setShowGameOver] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
   const { isRestored, restoredElapsedTime } = useGamePersistence(mode, !!isDaily, gameSeed, state, dispatch, elapsedTime);
   const startTimeRef = useRef(state.startTime);
@@ -74,10 +78,12 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   useEffect(() => {
     if (state.status === GameStatus.WON && !isRestored) setShowVictory(true);
+    if (state.status === GameStatus.LOST && !isRestored) setShowGameOver(true);
     if (profile && !isRestored && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       const timeMs = Date.now() - startTimeRef.current;
       const guesses = currentBoard.guesses.length;
-      recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1);
+      recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1)
+        .then(xp => { if (xp) setXpResult(xp); });
     }
     if (!isRestored && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       recordModePlayed('practice');
@@ -154,7 +160,9 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
+        {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
       </AnimatePresence>
+      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
@@ -181,7 +189,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
       {/* Board + Post-game summary */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4">
-        <div className="flex flex-col items-center justify-center h-full">
+        <div className={`flex flex-col items-center ${gameComplete ? 'justify-start pt-2' : 'justify-center h-full'}`}>
           <Board
             guesses={currentBoard.guesses}
             currentGuess={currentGuess}

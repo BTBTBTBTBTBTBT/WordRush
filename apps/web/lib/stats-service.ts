@@ -5,9 +5,19 @@ import { checkAchievements } from './achievement-service';
 import { awardGameCoins, awardStreakBonus } from './coin-service';
 import { grantFreeShield } from './shield-service';
 
+export interface XpResult {
+  xpGain: number;
+  streakBonus: number;
+  dailyBonus: number;
+  totalXp: number;
+  newLevel: number;
+  leveledUp: boolean;
+}
+
 /**
  * Record a game result (solo or VS) — upserts user_stats and updates profile.
  * If the seed is a daily seed, also records daily results and checks all-time records.
+ * Returns XP details for post-game display.
  */
 export async function recordGameResult(
   userId: string,
@@ -19,7 +29,7 @@ export async function recordGameResult(
   seed?: string,
   boardsSolved?: number,
   totalBoards?: number,
-) {
+): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
 
   // Fetch existing stats for this mode+playType
@@ -83,7 +93,11 @@ export async function recordGameResult(
     // --- XP ---
     const xpGain = won ? 100 : 25;
     const streakBonus = won && newWinStreak > 1 ? 50 : 0;
-    const newXp = profile.xp + xpGain + streakBonus;
+    const isDailyGame = seed ? isDailySeed(seed) : false;
+    const dailyBonus = isDailyGame ? 50 : 0;
+    const totalXpGain = xpGain + streakBonus + dailyBonus;
+    const newXp = profile.xp + totalXpGain;
+    const oldLevel = profile.level || Math.floor(profile.xp / 1000) + 1;
     const newLevel = Math.floor(newXp / 1000) + 1;
 
     // --- Daily login streak (consecutive days played, UTC) ---
@@ -131,7 +145,6 @@ export async function recordGameResult(
       .eq('id', userId);
 
     // Award SpellCoins for game result
-    const isDailyGame = seed ? isDailySeed(seed) : false;
     awardGameCoins(userId, won, isDailyGame).catch(() => {});
   }
 
@@ -159,6 +172,22 @@ export async function recordGameResult(
 
   // Check achievements (fire-and-forget, don't block game flow)
   checkAchievements(userId, gameMode, playType, won, guessCount, timeSeconds, seed).catch(() => {});
+
+  // Return XP details for post-game display
+  if (profile) {
+    const xpGain = won ? 100 : 25;
+    const streakBonusVal = won && (profile.current_streak + (won ? 1 : 0)) > 1 ? 50 : 0;
+    const dailyBonusVal = (seed && isDailySeed(seed)) ? 50 : 0;
+    return {
+      xpGain,
+      streakBonus: streakBonusVal,
+      dailyBonus: dailyBonusVal,
+      totalXp: xpGain + streakBonusVal + dailyBonusVal,
+      newLevel: Math.floor(((profile.xp || 0) + xpGain + streakBonusVal + dailyBonusVal) / 1000) + 1,
+      leveledUp: Math.floor(((profile.xp || 0) + xpGain + streakBonusVal + dailyBonusVal) / 1000) + 1 > (profile.level || 1),
+    };
+  }
+  return null;
 }
 
 /**

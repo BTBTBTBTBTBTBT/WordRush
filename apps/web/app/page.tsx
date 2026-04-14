@@ -136,7 +136,7 @@ const MODE_CARDS = [
     icon: WordleGridIcon,
     desc: '1 word, 6 tries',
     accentColor: '#7c3aed',
-    href: '/practice',
+    href: '/practice?daily=true',
     vsHref: '/practice/vs',
   },
   {
@@ -156,7 +156,7 @@ const MODE_CARDS = [
     romanNumeral: 'IV',
     desc: '4 words at once',
     accentColor: '#ec4899',
-    href: '/quordle',
+    href: '/quordle?daily=true',
     vsHref: '/quordle/vs',
     badge: 'HOT',
   },
@@ -167,7 +167,7 @@ const MODE_CARDS = [
     romanNumeral: 'VIII',
     desc: '8 boards, 13 tries',
     accentColor: '#7e22ce',
-    href: '/octordle',
+    href: '/octordle?daily=true',
     vsHref: '/octordle/vs',
     badge: 'PRO',
   },
@@ -177,7 +177,7 @@ const MODE_CARDS = [
     icon: TrendingUp,
     desc: '4 words, one by one',
     accentColor: '#2563eb',
-    href: '/sequence',
+    href: '/sequence?daily=true',
     vsHref: '/sequence/vs',
   },
   {
@@ -186,7 +186,7 @@ const MODE_CARDS = [
     icon: Shield,
     desc: '4 prefilled boards',
     accentColor: '#059669',
-    href: '/rescue',
+    href: '/rescue?daily=true',
     vsHref: '/rescue/vs',
   },
   {
@@ -195,7 +195,7 @@ const MODE_CARDS = [
     icon: Skull,
     desc: '5 escalating stages',
     accentColor: '#d97706',
-    href: '/gauntlet',
+    href: '/gauntlet?daily=true',
     vsHref: '/gauntlet/vs',
   },
   {
@@ -204,7 +204,7 @@ const MODE_CARDS = [
     icon: Crown,
     desc: 'Guess famous names',
     accentColor: '#dc2626',
-    href: '/propernoundle',
+    href: '/propernoundle?daily=true',
     vsHref: '/propernoundle/vs',
   },
 ];
@@ -401,7 +401,7 @@ export default function HomePage() {
         open={limitModal.open}
         onClose={() => setLimitModal({ open: false, modeName: '', modeHref: '' })}
         modeName={limitModal.modeName}
-        onViewPuzzle={() => router.push(`${limitModal.modeHref}?daily=true`)}
+        onViewPuzzle={() => router.push(limitModal.modeHref.includes('daily=true') ? limitModal.modeHref : `${limitModal.modeHref}?daily=true`)}
       />
     </div>
   );

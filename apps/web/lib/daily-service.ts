@@ -12,12 +12,13 @@ interface ScoreConfig {
 }
 
 const MODE_SCORE_CONFIG: Record<string, ScoreConfig> = {
-  DUEL:     { maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1 },
-  QUORDLE:  { maxGuesses: 9,  guessWeight: 50,  timeCap: 600,  totalBoards: 4 },
-  OCTORDLE: { maxGuesses: 13, guessWeight: 30,  timeCap: 900,  totalBoards: 8 },
-  SEQUENCE: { maxGuesses: 10, guessWeight: 60,  timeCap: 480,  totalBoards: 4 },
-  RESCUE:   { maxGuesses: 6,  guessWeight: 80,  timeCap: 480,  totalBoards: 4 },
-  GAUNTLET: { maxGuesses: 44, guessWeight: 20,  timeCap: 1800, totalBoards: 21 },
+  DUEL:          { maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1 },
+  QUORDLE:       { maxGuesses: 9,  guessWeight: 50,  timeCap: 600,  totalBoards: 4 },
+  OCTORDLE:      { maxGuesses: 13, guessWeight: 30,  timeCap: 900,  totalBoards: 8 },
+  SEQUENCE:      { maxGuesses: 10, guessWeight: 60,  timeCap: 480,  totalBoards: 4 },
+  RESCUE:        { maxGuesses: 6,  guessWeight: 80,  timeCap: 480,  totalBoards: 4 },
+  GAUNTLET:      { maxGuesses: 44, guessWeight: 20,  timeCap: 1800, totalBoards: 21 },
+  PROPERNOUNDLE: { maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1 },
 };
 
 export function calculateCompositeScore(
@@ -170,6 +171,10 @@ export async function recordDailyResult(
         composite_score: compositeScore,
       });
   }
+
+  // Check for streak and perfect game medals (fire-and-forget)
+  checkAndAwardStreakMedals(userId, day).catch(() => {});
+  checkAndAwardPerfectMedal(userId, gameMode, day, guessCount, boardsSolved, totalBoards, completed).catch(() => {});
 
   return compositeScore;
 }
@@ -365,12 +370,14 @@ export async function getDailyPlayerCount(
 // Medal Queries
 // ============================================================
 
+export type MedalType = 'gold' | 'silver' | 'bronze' | 'streak_7' | 'streak_30' | 'streak_100' | 'perfect';
+
 export interface Medal {
   id: string;
   day: string;
   game_mode: string;
   play_type: string;
-  medal_type: 'gold' | 'silver' | 'bronze';
+  medal_type: MedalType;
   composite_score: number;
   created_at: string;
 }
@@ -398,7 +405,7 @@ export async function fetchUserMedals(
  */
 export async function assignDailyMedals(day?: string) {
   const targetDay = day || new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const gameModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET'];
+  const gameModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE'];
   const playTypes = ['solo', 'vs'] as const;
 
   for (const mode of gameModes) {
@@ -439,6 +446,115 @@ export async function assignDailyMedals(day?: string) {
       }
     }
   }
+}
+
+// ============================================================
+// Streak Medals
+// ============================================================
+
+const STREAK_MILESTONES: { days: number; medalType: MedalType }[] = [
+  { days: 7, medalType: 'streak_7' },
+  { days: 30, medalType: 'streak_30' },
+  { days: 100, medalType: 'streak_100' },
+];
+
+/**
+ * Check if a user has hit a daily-play streak milestone and award a medal.
+ * Called after recording a daily result.
+ */
+export async function checkAndAwardStreakMedals(userId: string, day: string) {
+  // Get the user's current daily login streak from profile
+  const { data: profile } = await (supabase as any)
+    .from('profiles')
+    .select('daily_login_streak')
+    .eq('id', userId)
+    .single();
+
+  if (!profile) return;
+
+  const streak = profile.daily_login_streak || 0;
+
+  for (const milestone of STREAK_MILESTONES) {
+    if (streak >= milestone.days) {
+      // Check if they already have this streak medal (ever)
+      const { data: existing } = await (supabase as any)
+        .from('medals')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('medal_type', milestone.medalType)
+        .limit(1);
+
+      if (!existing || existing.length === 0) {
+        await (supabase as any)
+          .from('medals')
+          .insert({
+            user_id: userId,
+            day,
+            game_mode: 'ALL',
+            play_type: 'solo',
+            medal_type: milestone.medalType,
+            composite_score: streak,
+          });
+      }
+    }
+  }
+}
+
+// ============================================================
+// Perfect Game Medals
+// ============================================================
+
+/**
+ * Check if a game result qualifies as a "perfect game" and award a medal.
+ * Perfect = solved in the minimum possible guesses for the mode.
+ */
+export async function checkAndAwardPerfectMedal(
+  userId: string,
+  gameMode: string,
+  day: string,
+  guessCount: number,
+  boardsSolved: number,
+  totalBoards: number,
+  completed: boolean,
+) {
+  if (!completed) return;
+
+  // Define perfect criteria per mode
+  const perfectCriteria: Record<string, () => boolean> = {
+    DUEL: () => guessCount === 1,
+    PROPERNOUNDLE: () => guessCount === 1,
+    QUORDLE: () => boardsSolved === 4 && guessCount <= 4,
+    OCTORDLE: () => boardsSolved === 8 && guessCount <= 8,
+    SEQUENCE: () => boardsSolved === 4 && guessCount <= 4,
+    RESCUE: () => boardsSolved === 4 && guessCount <= 4,
+    GAUNTLET: () => boardsSolved === 21,
+  };
+
+  const check = perfectCriteria[gameMode];
+  if (!check || !check()) return;
+
+  // Check if they already have a perfect medal for this day+mode
+  const { data: existing } = await (supabase as any)
+    .from('medals')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('day', day)
+    .eq('game_mode', gameMode)
+    .eq('medal_type', 'perfect')
+    .limit(1);
+
+  if (existing && existing.length > 0) return;
+
+  await (supabase as any)
+    .from('medals')
+    .insert({
+      user_id: userId,
+      day,
+      game_mode: gameMode,
+      play_type: 'solo',
+      medal_type: 'perfect',
+      composite_score: guessCount,
+    });
 }
 
 // ============================================================
@@ -559,6 +675,7 @@ export function generateShareText(
     SEQUENCE: 'Succession',
     RESCUE: 'Deliverance',
     GAUNTLET: 'Gauntlet',
+    PROPERNOUNDLE: 'ProperNoundle',
   };
 
   const modeName = modeNames[gameMode] || gameMode;

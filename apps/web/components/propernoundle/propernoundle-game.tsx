@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
+import { GameOverAnimation } from '@/components/effects/game-over-animation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import NoundleBoard from './noundle-board';
@@ -15,7 +16,10 @@ import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { XpToast } from '@/components/effects/xp-toast';
+import { generateDailySeed } from '@wordle-duel/core';
+import { getTodayUTC } from '@/lib/daily-service';
 
 const MAX_GUESSES = 6;
 const DAILY_STORAGE_KEY = 'spellstrike-propernoundle-daily';
@@ -89,6 +93,7 @@ export function ProperNoundleGame() {
   const [shouldShake, setShouldShake] = useState(false);
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
+  const [showGameOver, setShowGameOver] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [startTime, setStartTime] = useState(Date.now());
   const [playedIds, setPlayedIds] = useState<string[]>([]);
@@ -96,6 +101,7 @@ export function ProperNoundleGame() {
   const [wikiImageLoaded, setWikiImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const restoredDailyRef = useRef(false);
+  const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
   const hints = useHints();
 
@@ -117,6 +123,17 @@ export function ProperNoundleGame() {
         setCurrentGuess('');
         setMessage('');
         restoredDailyRef.current = true;
+
+        // Ensure daily result is recorded even for restored games
+        // (covers case where original play didn't have the daily seed fix)
+        const seed = generateDailySeed(getTodayUTC(), 'PROPERNOUNDLE');
+        const timeMs = saved.elapsedTime * 1000;
+        const won = saved.gameStatus === 'won';
+        // Fire-and-forget: will use profile when auth loads via the separate effect
+        if (profile) {
+          recordGameResult(profile.id, 'PROPERNOUNDLE', 'solo', won, saved.guesses.length, timeMs, seed, won ? 1 : 0, 1).then(xp => { if (xp) setXpResult(xp); });
+          hasRecordedRef.current = true;
+        }
         return;
       } else if (saved && saved.gameStatus === 'playing') {
         setGuesses(saved.guesses);
@@ -165,29 +182,40 @@ export function ProperNoundleGame() {
     return () => clearInterval(interval);
   }, [gameStatus, startTime]);
 
+  // Track whether we've recorded this game to avoid duplicate recordings
+  const hasRecordedRef = useRef(false);
+
+  // Record game result helper
+  const recordResult = useCallback(() => {
+    if (!profile || hasRecordedRef.current) return;
+    if (gameStatus !== 'won' && gameStatus !== 'lost') return;
+    hasRecordedRef.current = true;
+    const timeMs = elapsedTime * 1000;
+    const seed = mode === 'daily' ? generateDailySeed(getTodayUTC(), 'PROPERNOUNDLE') : undefined;
+    recordGameResult(
+      profile.id,
+      'PROPERNOUNDLE',
+      'solo',
+      gameStatus === 'won',
+      guesses.length,
+      timeMs,
+      seed,
+      gameStatus === 'won' ? 1 : 0,
+      1
+    ).then(xp => { if (xp) setXpResult(xp); });
+  }, [profile, gameStatus, elapsedTime, mode, guesses.length]);
+
   // Game over effects
   useEffect(() => {
     if (gameStatus === 'won' && !restoredDailyRef.current) {
       setShowVictory(true);
     }
+    if (gameStatus === 'lost' && !restoredDailyRef.current) {
+      setShowGameOver(true);
+    }
     if (gameStatus === 'won' || gameStatus === 'lost') {
       recordModePlayed('propernoundle');
-
-      // Record game stats
-      if (profile) {
-        const timeMs = elapsedTime * 1000;
-        recordGameResult(
-          profile.id,
-          'PROPERNOUNDLE',
-          'solo',
-          gameStatus === 'won',
-          guesses.length,
-          timeMs,
-          undefined,
-          gameStatus === 'won' ? 1 : 0,
-          1
-        );
-      }
+      recordResult();
 
       // Fetch Wikipedia image for result screen
       if (puzzle) {
@@ -212,6 +240,14 @@ export function ProperNoundleGame() {
     }
     restoredDailyRef.current = false;
   }, [gameStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-attempt recording when profile loads (handles restored daily games
+  // where profile wasn't available when gameStatus first changed)
+  useEffect(() => {
+    if (profile && (gameStatus === 'won' || gameStatus === 'lost')) {
+      recordResult();
+    }
+  }, [profile, recordResult, gameStatus]);
 
   // Also save daily state after each guess (so in-progress games persist)
   useEffect(() => {
@@ -347,6 +383,7 @@ export function ProperNoundleGame() {
     setShowVictory(false);
     setElapsedTime(0);
     setStartTime(Date.now());
+    hasRecordedRef.current = false;
     setWikiImageUrl(null);
     setWikiImageLoaded(false);
     hints.resetHints();
@@ -386,7 +423,9 @@ export function ProperNoundleGame() {
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
+        {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
       </AnimatePresence>
+      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
@@ -574,10 +613,12 @@ export function ProperNoundleGame() {
         </div>
       )}
 
-      {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2 pt-1">
-        <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} />
-      </div>
+      {/* Keyboard — hidden when game is complete */}
+      {gameStatus === 'playing' && (
+        <div className="shrink-0 pb-2 px-2 pt-1">
+          <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} />
+        </div>
+      )}
     </div>
   );
 }

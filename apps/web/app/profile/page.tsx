@@ -21,10 +21,13 @@ import {
   LogOut,
   Trash2,
   AlertTriangle,
+  Shield,
+  Skull,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ProBadge } from '@/components/ui/pro-badge';
+import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
@@ -47,6 +50,28 @@ const gameModeTitles: Record<string, string> = {
   PROPERNOUNDLE: 'ProperNoundle',
   TOURNAMENT: 'Tournament',
 };
+
+const gameModeIcons: Record<string, { icon: React.ComponentType<any> | null; romanNumeral?: string; color: string }> = {
+  DUEL:          { icon: WordleGridIcon, color: '#7c3aed' },
+  QUORDLE:       { icon: null, romanNumeral: 'IV', color: '#ec4899' },
+  OCTORDLE:      { icon: null, romanNumeral: 'VIII', color: '#7e22ce' },
+  SEQUENCE:      { icon: TrendingUp, color: '#2563eb' },
+  RESCUE:        { icon: Shield, color: '#059669' },
+  GAUNTLET:      { icon: Skull, color: '#d97706' },
+  PROPERNOUNDLE: { icon: Crown, color: '#dc2626' },
+};
+
+// Display order matching the home page
+const gameModeOrder: string[] = [
+  'DUEL',
+  'MULTI_DUEL',
+  'QUORDLE',
+  'OCTORDLE',
+  'SEQUENCE',
+  'RESCUE',
+  'GAUNTLET',
+  'PROPERNOUNDLE',
+];
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -181,7 +206,13 @@ export default function ProfilePage() {
     }
   };
 
-  const filteredStats = stats.filter((s) => s.play_type === activeTab);
+  const filteredStats = stats
+    .filter((s) => s.play_type === activeTab)
+    .sort((a, b) => {
+      const ai = gameModeOrder.indexOf(a.game_mode);
+      const bi = gameModeOrder.indexOf(b.game_mode);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
 
   if (loading || loadingStats) {
     return (
@@ -354,23 +385,35 @@ export default function ProfilePage() {
 
           {medals.length > 0 ? (
             <div className="space-y-1.5">
-              {medals.slice(0, 5).map((medal) => (
-                <div
-                  key={medal.id}
-                  className="flex items-center gap-2.5 p-2.5"
-                  style={{ background: '#f8f7ff', borderRadius: '10px' }}
-                >
-                  {medal.medal_type === 'gold' && <Crown className="w-4 h-4" style={{ color: '#d97706' }} />}
-                  {medal.medal_type === 'silver' && <Medal className="w-4 h-4" style={{ color: '#9ca3af' }} />}
-                  {medal.medal_type === 'bronze' && <Medal className="w-4 h-4" style={{ color: '#b45309' }} />}
-                  <span className="text-xs font-extrabold flex-1" style={{ color: '#1a1a2e' }}>
-                    {gameModeTitles[medal.game_mode] || medal.game_mode}
-                  </span>
-                  <span className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                    {new Date(medal.day + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </span>
-                </div>
-              ))}
+              {medals.slice(0, 5).map((medal) => {
+                const medalConfig: Record<string, { icon: typeof Crown; color: string; label: string }> = {
+                  gold: { icon: Crown, color: '#d97706', label: '1st' },
+                  silver: { icon: Medal, color: '#9ca3af', label: '2nd' },
+                  bronze: { icon: Medal, color: '#b45309', label: '3rd' },
+                  streak_7: { icon: Flame, color: '#ea580c', label: '7-Day Streak' },
+                  streak_30: { icon: Flame, color: '#dc2626', label: '30-Day Streak' },
+                  streak_100: { icon: Flame, color: '#7c3aed', label: '100-Day Streak' },
+                  perfect: { icon: Star, color: '#16a34a', label: 'Perfect' },
+                };
+                const cfg = medalConfig[medal.medal_type] || { icon: Medal, color: '#9ca3af', label: medal.medal_type };
+                const MedalIcon = cfg.icon;
+                return (
+                  <div
+                    key={medal.id}
+                    className="flex items-center gap-2.5 p-2.5"
+                    style={{ background: '#f8f7ff', borderRadius: '10px' }}
+                  >
+                    <MedalIcon className="w-4 h-4" style={{ color: cfg.color }} fill={cfg.icon === Flame || cfg.icon === Star ? 'currentColor' : 'none'} />
+                    <span className="text-xs font-extrabold flex-1" style={{ color: '#1a1a2e' }}>
+                      {medal.medal_type.startsWith('streak') ? cfg.label : (gameModeTitles[medal.game_mode] || medal.game_mode)}
+                      {medal.medal_type === 'perfect' && <span className="text-[10px] font-bold ml-1" style={{ color: '#16a34a' }}>Perfect!</span>}
+                    </span>
+                    <span className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+                      {new Date(medal.day + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <p className="text-center text-xs font-bold py-3" style={{ color: '#9ca3af' }}>
@@ -442,7 +485,18 @@ export default function ProfilePage() {
                 style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
               >
                 <h3 className="text-sm font-extrabold mb-2 flex items-center gap-1.5" style={{ color: '#1a1a2e' }}>
-                  <Zap className="w-4 h-4" style={{ color: '#d97706' }} />
+                  {(() => {
+                    const cfg = gameModeIcons[stat.game_mode];
+                    if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;
+                    if (cfg.romanNumeral) {
+                      return <span className="text-xs font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
+                    }
+                    if (cfg.icon) {
+                      const Icon = cfg.icon;
+                      return <Icon className="w-4 h-4" style={{ color: cfg.color }} />;
+                    }
+                    return <Zap className="w-4 h-4" style={{ color: cfg.color }} />;
+                  })()}
                   {gameModeTitles[stat.game_mode] || stat.game_mode}
                 </h3>
                 <div className="grid grid-cols-2 gap-2 text-xs">

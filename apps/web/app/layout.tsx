@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
@@ -30,6 +31,9 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'SpellStrike',
+  },
+  other: {
+    'google-adsense-account': 'ca-pub-3015627373086578',
   },
   openGraph: {
     title: 'SpellStrike - Epic Word Battles',
@@ -62,6 +66,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={nunito.className} style={{ backgroundColor: '#f8f7ff' }}>
+        {/* Google AdSense — loaded for site verification & ad serving */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3015627373086578"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <AuthProvider>
           <AuthGate>
             <ThemeProvider>

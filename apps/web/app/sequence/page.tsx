@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SequenceGame } from '@/components/sequence/sequence-game';
+import { AdGate } from '@/components/ads/ad-gate';
 import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
@@ -23,5 +24,5 @@ export default function SequencePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'SEQUENCE') : undefined;
 
-  return <SequenceGame initialSeed={seed} isDaily={isDaily} />;
+  return <AdGate><SequenceGame initialSeed={seed} isDaily={isDaily} /></AdGate>;
 }

@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         </Link>
 
         <h1 className="text-3xl font-black mb-1" style={{ color: '#1a1a2e' }}>Privacy Policy</h1>
-        <p className="text-xs font-bold mb-6" style={{ color: '#9ca3af' }}>Effective April 10, 2026</p>
+        <p className="text-xs font-bold mb-6" style={{ color: '#9ca3af' }}>Effective April 14, 2026</p>
 
         <div className="space-y-4">
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
@@ -57,13 +57,14 @@ export default function PrivacyPage() {
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Supabase</strong> &mdash; used for user authentication and secure data storage. Your account data and game statistics are stored in Supabase&apos;s infrastructure.</span></li>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Vercel</strong> &mdash; used for web hosting and serving the SpellStrike application.</span></li>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Google OAuth</strong> &mdash; available as a sign-in option. When you sign in with Google, we receive your email address and display name from Google. We do not access any other Google account data.</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Google AdSense</strong> &mdash; used to display advertisements to free-tier users. Ad-related data collection is governed by Google&apos;s privacy policies. Pro subscribers are not shown ads.</span></li>
             </ul>
           </div>
 
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Advertising &amp; Data Sharing</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              SpellStrike does <strong>not</strong> display advertisements. We do <strong>not</strong> sell, rent, or share your personal data with third parties for marketing or advertising purposes. Your data is only used to provide and improve the SpellStrike service.
+              SpellStrike displays interstitial advertisements to free-tier users before game sessions. These ads are served by Google AdSense and are subject to <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="underline" style={{ color: '#7c3aed' }}>Google&apos;s Privacy Policy</a>. Pro subscribers enjoy a completely ad-free experience. We do <strong>not</strong> sell, rent, or share your personal data with third parties for marketing purposes beyond what is necessary for ad delivery.
             </p>
           </div>
 

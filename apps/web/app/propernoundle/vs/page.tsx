@@ -2,7 +2,8 @@
 
 import { GameMode } from '@wordle-duel/core';
 import { VsGame } from '@/components/vs/vs-game';
+import { AdGate } from '@/components/ads/ad-gate';
 
 export default function VsProperNoundlePage() {
-  return <VsGame mode={GameMode.PROPERNOUNDLE} />;
+  return <AdGate><VsGame mode={GameMode.PROPERNOUNDLE} /></AdGate>;
 }

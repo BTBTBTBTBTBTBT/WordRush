@@ -20,7 +20,8 @@ import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
 import { StageTransition } from './stage-transition';
 import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { useGamePersistence } from '@/hooks/use-game-persistence';
 
@@ -59,6 +60,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const [showTransition, setShowTransition] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [xpResult, setXpResult] = useState<XpResult | null>(null);
   const [gameStartTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const startTimeRef = useRef(Date.now());
@@ -212,7 +214,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       const timeMs = Date.now() - state.startTime;
       const totalGuesses = state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
       const boardsSolved = state.boards.filter(b => b.status === GameStatus.WON).length;
-      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, boardsSolved, 21);
+      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, boardsSolved, 21).then(xp => { if (xp) setXpResult(xp); });
     }
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
       recordModePlayed('gauntlet');
@@ -509,6 +511,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           <VictoryAnimation onComplete={handleVictoryComplete} timeSeconds={Math.floor((Date.now() - gameStartTime) / 1000)} />
         )}
       </AnimatePresence>
+      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
     </div>
   );
 }

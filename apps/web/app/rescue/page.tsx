@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { RescueGame } from '@/components/rescue/rescue-game';
+import { AdGate } from '@/components/ads/ad-gate';
 import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
@@ -23,5 +24,5 @@ export default function RescuePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'RESCUE') : undefined;
 
-  return <RescueGame initialSeed={seed} isDaily={isDaily} />;
+  return <AdGate><RescueGame initialSeed={seed} isDaily={isDaily} /></AdGate>;
 }

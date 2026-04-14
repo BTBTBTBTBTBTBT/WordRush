@@ -6,10 +6,12 @@ import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } fr
 import Link from 'next/link';
 import { Keyboard } from '../game/keyboard';
 import { VictoryAnimation } from '../effects/victory-animation';
+import { GameOverAnimation } from '../effects/game-over-animation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { useGamePersistence } from '@/hooks/use-game-persistence';
@@ -31,8 +33,10 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
+  const [showGameOver, setShowGameOver] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
   const { isRestored, restoredElapsedTime } = useGamePersistence(GameMode.OCTORDLE, !!isDaily, gameSeed, state, dispatch, elapsedTime);
   const startTimeRef = useRef(state.startTime);
@@ -55,11 +59,12 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
   useEffect(() => {
     if (state.status === 'WON' && !isRestored) setShowVictory(true);
+    if (state.status === 'LOST' && !isRestored) setShowGameOver(true);
     if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - startTimeRef.current;
       const guesses = state.boards[0]?.guesses.length || 0;
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
-      recordGameResult(profile.id, 'OCTORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 8);
+      recordGameResult(profile.id, 'OCTORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 8).then(xp => { if (xp) setXpResult(xp); });
     }
     if (!isRestored && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('octordle');
@@ -131,7 +136,9 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} />}
+        {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={8} solutions={state.boards.map(b => b.solution)} />}
       </AnimatePresence>
+      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}
       <div className="text-center py-2 px-2 shrink-0">
@@ -156,7 +163,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
         )}
         {state.status === 'LOST' && (
           <div className="mt-1 flex flex-col items-center gap-1">
-            <span className="text-red-300 text-xs font-bold">Game Over! {completedBoards}/8</span>
+            <span className="text-red-300 text-xs font-bold">Boards Completed {completedBoards}/8</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
               <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
@@ -171,10 +178,12 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
         <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && !isWordValid(currentGuess)} />
       </div>
 
-      {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2">
-        <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} />
-      </div>
+      {/* Keyboard — hidden when game is complete */}
+      {state.status === 'PLAYING' && (
+        <div className="shrink-0 pb-2 px-2">
+          <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} />
+        </div>
+      )}
     </div>
   );
 }

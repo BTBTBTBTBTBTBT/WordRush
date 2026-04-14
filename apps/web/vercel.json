@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-medals",
+      "schedule": "5 0 * * *"
+    }
+  ]
+}

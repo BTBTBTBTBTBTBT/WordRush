@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { QuordleGame } from '@/components/quordle/quordle-game';
+import { AdGate } from '@/components/ads/ad-gate';
 import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
@@ -23,5 +24,5 @@ export default function QuordlePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'QUORDLE') : undefined;
 
-  return <QuordleGame initialSeed={seed} isDaily={isDaily} />;
+  return <AdGate><QuordleGame initialSeed={seed} isDaily={isDaily} /></AdGate>;
 }

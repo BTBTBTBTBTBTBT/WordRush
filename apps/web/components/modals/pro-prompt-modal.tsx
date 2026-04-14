@@ -54,7 +54,7 @@ export function ProPromptModal() {
             <div className="flex-1 min-w-0">
               <p className="font-extrabold text-xs" style={{ color: '#1a1a2e' }}>You're on a streak!</p>
               <p className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                Upgrade to Pro for stats, shields, and more.
+                Upgrade to Pro for ad-free play, stats, shields, and more.
               </p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">

@@ -86,6 +86,8 @@ export default function DailyPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setUserRank(null);
+      setLeaderboard([]);
       const [lb, count] = await Promise.all([
         fetchDailyLeaderboard(selectedMode, playType, today, 50),
         getDailyPlayerCount(selectedMode, today),

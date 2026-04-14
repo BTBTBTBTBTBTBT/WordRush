@@ -5,10 +5,12 @@ import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluat
 import { Keyboard } from '../game/keyboard';
 import Link from 'next/link';
 import { VictoryAnimation } from '../effects/victory-animation';
+import { GameOverAnimation } from '../effects/game-over-animation';
 import { AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult } from '@/lib/stats-service';
+import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { useGamePersistence } from '@/hooks/use-game-persistence';
@@ -33,9 +35,11 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
+  const [showGameOver, setShowGameOver] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [streak, setStreak] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
   const { isRestored, restoredElapsedTime } = useGamePersistence(GameMode.SEQUENCE, !!isDaily, gameSeed, state, dispatch, elapsedTime);
   const startTimeRef = useRef(state.startTime);
@@ -69,13 +73,14 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       setShowVictory(true);
       setStreak((prev) => prev + 1);
     } else if (state.status === 'LOST') {
+      if (!isRestored) setShowGameOver(true);
       setStreak(0);
     }
     if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - startTimeRef.current;
       const guesses = state.boards[0]?.guesses.length || 0;
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
-      recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4);
+      recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
     }
     if (!isRestored && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('sequence');
@@ -192,7 +197,9 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
+        {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
       </AnimatePresence>
+      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}
       <div className="text-center py-2 px-2 shrink-0">
@@ -217,7 +224,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         )}
         {state.status === 'LOST' && (
           <div className="mt-1 flex flex-col items-center gap-1">
-            <span className="text-red-300 text-xs font-bold">Out of guesses! {solvedCount}/4</span>
+            <span className="text-red-300 text-xs font-bold">Boards Completed {solvedCount}/4</span>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
               <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
@@ -257,10 +264,12 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
           </div>
       </div>
 
-      {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2 pt-1">
-        <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
-      </div>
+      {/* Keyboard — hidden when game is complete */}
+      {state.status === 'PLAYING' && (
+        <div className="shrink-0 pb-2 px-2 pt-1">
+          <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
+        </div>
+      )}
     </div>
   );
 }

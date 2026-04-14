@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { OctordleGame } from '@/components/octordle/octordle-game';
+import { AdGate } from '@/components/ads/ad-gate';
 import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
@@ -23,5 +24,5 @@ export default function OctordlePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayUTC(), 'OCTORDLE') : undefined;
 
-  return <OctordleGame initialSeed={seed} isDaily={isDaily} />;
+  return <AdGate><OctordleGame initialSeed={seed} isDaily={isDaily} /></AdGate>;
 }
