@@ -31,6 +31,20 @@ export default function SupportPage() {
           </div>
 
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
+            <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>How are daily scores calculated?</h2>
+            <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
+              Your daily score is a composite of three factors: a <span className="font-bold" style={{ color: '#1a1a2e' }}>base score</span> of 1,000 points for completing the puzzle, a <span className="font-bold" style={{ color: '#1a1a2e' }}>guess bonus</span> for using fewer guesses than the maximum allowed, and a <span className="font-bold" style={{ color: '#1a1a2e' }}>speed bonus</span> for finishing quickly. Multi-board modes also include a <span className="font-bold" style={{ color: '#1a1a2e' }}>completion bonus</span> based on how many boards you solved. For example, in Classic with 4 guesses and 13 seconds: 1,000 base + 200 guess bonus (2 unused guesses &times; 100) + 287 speed bonus (300s cap &minus; 13s) + 200 completion = 1,687 points. The fewer guesses and less time you take, the higher your score.
+            </p>
+          </div>
+
+          <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
+            <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>How do XP and levels work?</h2>
+            <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
+              You earn XP after every game. Winning awards 100 XP and losing awards 25 XP. You can earn bonus XP from win streaks (+50), completing daily challenges (+50), and earning medals (gold +100, silver +50, bronze +25). Your level is based on your total XP &mdash; every 1,000 XP advances you one level. Check your progress on your profile page.
+            </p>
+          </div>
+
+          <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>How do streaks work?</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
               Your streak counts how many consecutive days you&apos;ve completed a daily puzzle. Play and solve at least one daily puzzle each day to keep your streak alive. If you miss a day, your current streak resets to zero &mdash; but your best streak is always saved. Streaks reset at midnight based on your local time.
