@@ -64,8 +64,8 @@ const MODE_ROMAN: Record<string, string> = {
 };
 
 const GAME_MODES_ORDERED = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE'];
-const PER_MODE_RECORD_TYPES = ['fastest_win', 'fewest_guesses', 'most_games_played', 'longest_streak'];
-const GLOBAL_RECORD_TYPES = ['highest_level', 'most_gold_medals', 'most_daily_completions'];
+const PER_MODE_RECORD_TYPES = ['fastest_win', 'fewest_guesses', 'most_games_played'];
+const GLOBAL_RECORD_TYPES = ['longest_streak', 'highest_level', 'most_gold_medals', 'most_daily_completions'];
 
 /* ── helpers ── */
 function formatTime(seconds: number): string {

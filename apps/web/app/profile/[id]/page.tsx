@@ -245,9 +245,17 @@ export default function PublicProfilePage() {
             <div className="flex items-center gap-3">
               <Flame className="w-8 h-8" style={{ color: '#ea580c' }} fill="currentColor" />
               <div>
-                <div className="text-sm" style={{ color: '#9ca3af' }}>Current Streak</div>
+                <div className="text-sm" style={{ color: '#9ca3af' }}>Win Streak</div>
                 <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.current_streak}</div>
                 <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>Best: {profile.best_streak}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid #fed7aa' }}>
+              <Zap className="w-6 h-6" style={{ color: '#7c3aed' }} />
+              <div>
+                <div className="text-xs" style={{ color: '#9ca3af' }}>Daily Login Streak</div>
+                <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>{(profile as any).daily_login_streak ?? 0}</div>
+                <div className="text-[10px] mt-0.5" style={{ color: '#9ca3af' }}>Best: {(profile as any).best_daily_login_streak ?? 0}</div>
               </div>
             </div>
           </motion.div>
