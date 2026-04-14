@@ -453,6 +453,33 @@ export default function ProfilePage() {
         {/* Pro Stats */}
         <ProStats userId={profile.id} isPro={(profile as any).is_pro ?? false} />
 
+        {/* Streaks */}
+        <div className="section-header mb-2">STREAKS</div>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div
+            className="p-4"
+            style={{ background: '#ffffff', border: '1.5px solid #fed7aa', borderRadius: '16px' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Flame className="w-5 h-5" style={{ color: '#ea580c' }} fill="currentColor" />
+              <span className="text-[10px] font-extrabold uppercase" style={{ color: '#9ca3af' }}>Win Streak</span>
+            </div>
+            <div className="text-2xl font-black" style={{ color: '#1a1a2e' }}>{(profile as any).current_streak ?? 0}</div>
+            <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>Best: {(profile as any).best_streak ?? 0}</div>
+          </div>
+          <div
+            className="p-4"
+            style={{ background: '#ffffff', border: '1.5px solid #c4b5fd', borderRadius: '16px' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Zap className="w-5 h-5" style={{ color: '#7c3aed' }} />
+              <span className="text-[10px] font-extrabold uppercase" style={{ color: '#9ca3af' }}>Daily Streak</span>
+            </div>
+            <div className="text-2xl font-black" style={{ color: '#1a1a2e' }}>{profile.daily_login_streak ?? 0}</div>
+            <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>Best: {(profile as any).best_daily_login_streak ?? 0}</div>
+          </div>
+        </div>
+
         {/* Game Mode Stats */}
         <div className="section-header mb-2">GAME MODE STATS</div>
         <div className="flex gap-2 mb-3">
@@ -500,7 +527,7 @@ export default function ProfilePage() {
                   })()}
                   {gameModeTitles[stat.game_mode] || stat.game_mode}
                 </h3>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-3 gap-2 text-xs">
                   <div>
                     <div style={{ color: '#9ca3af' }} className="font-bold">Wins</div>
                     <div className="font-black text-base" style={{ color: '#16a34a' }}>{stat.wins}</div>
@@ -510,6 +537,10 @@ export default function ProfilePage() {
                     <div className="font-black text-base" style={{ color: '#dc2626' }}>{stat.losses}</div>
                   </div>
                   <div>
+                    <div style={{ color: '#9ca3af' }} className="font-bold">Games</div>
+                    <div className="font-black text-base" style={{ color: '#1a1a2e' }}>{stat.total_games}</div>
+                  </div>
+                  <div>
                     <div style={{ color: '#9ca3af' }} className="font-bold">Best</div>
                     <div className="font-black text-base" style={{ color: '#d97706' }}>{stat.best_score}</div>
                   </div>
@@ -517,6 +548,12 @@ export default function ProfilePage() {
                     <div style={{ color: '#9ca3af' }} className="font-bold">Fastest</div>
                     <div className="font-black text-base" style={{ color: '#2563eb' }}>
                       {stat.fastest_time > 0 ? formatDuration(stat.fastest_time) : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#9ca3af' }} className="font-bold">Win Rate</div>
+                    <div className="font-black text-base" style={{ color: '#7c3aed' }}>
+                      {stat.total_games > 0 ? Math.round((stat.wins / stat.total_games) * 100) : 0}%
                     </div>
                   </div>
                 </div>
