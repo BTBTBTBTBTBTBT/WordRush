@@ -164,10 +164,67 @@ export async function recordGameResult(
 
   // --- All-time record checks ---
   if (won && timeSeconds > 0) {
-    await checkAndUpdateRecord('fastest_win', gameMode, playType, userId, timeSeconds, false);
+    checkAndUpdateRecord('fastest_win', gameMode, playType, userId, timeSeconds, false).catch(() => {});
   }
   if (won && guessCount > 0) {
-    await checkAndUpdateRecord('fewest_guesses', gameMode, playType, userId, guessCount, false);
+    checkAndUpdateRecord('fewest_guesses', gameMode, playType, userId, guessCount, false).catch(() => {});
+  }
+
+  // Most games played (per mode) — fetch current total_games from user_stats
+  try {
+    const { data: stats } = await (supabase as any)
+      .from('user_stats')
+      .select('total_games')
+      .eq('user_id', userId)
+      .eq('game_mode', gameMode)
+      .eq('play_type', playType)
+      .maybeSingle() as { data: any };
+    if (stats?.total_games) {
+      checkAndUpdateRecord('most_games_played', gameMode, playType, userId, stats.total_games, true).catch(() => {});
+    }
+  } catch {}
+
+  // Longest win streak (global — profile best_streak)
+  if (profile) {
+    const newBestStreak = Math.max(profile.best_streak || 0, won ? (profile.current_streak || 0) + 1 : 0);
+    if (newBestStreak > 0) {
+      checkAndUpdateRecord('longest_streak', null, null, userId, newBestStreak, true).catch(() => {});
+    }
+  }
+
+  // Highest level (global)
+  if (profile) {
+    const xpForLevel = (won ? 100 : 25) + (won && (profile.current_streak || 0) > 0 ? 50 : 0) + ((seed && isDailySeed(seed)) ? 50 : 0);
+    const currentLevel = Math.floor(((profile.xp || 0) + xpForLevel) / 1000) + 1;
+    checkAndUpdateRecord('highest_level', null, null, userId, currentLevel, true).catch(() => {});
+  }
+
+  // Most gold medals (global)
+  if (profile) {
+    try {
+      const { data: medalProfile } = await (supabase as any)
+        .from('profiles')
+        .select('gold_medals')
+        .eq('id', userId)
+        .single() as { data: any };
+      if (medalProfile?.gold_medals > 0) {
+        checkAndUpdateRecord('most_gold_medals', null, null, userId, medalProfile.gold_medals, true).catch(() => {});
+      }
+    } catch {}
+  }
+
+  // Most daily completions (global — count from daily_results)
+  if (seed && isDailySeed(seed)) {
+    try {
+      const { count } = await (supabase as any)
+        .from('daily_results')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('completed', true);
+      if (count && count > 0) {
+        checkAndUpdateRecord('most_daily_completions', null, null, userId, count, true).catch(() => {});
+      }
+    } catch {}
   }
 
   // Check achievements (fire-and-forget, don't block game flow)
