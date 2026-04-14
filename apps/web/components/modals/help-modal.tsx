@@ -110,6 +110,14 @@ const GAME_MODES = [
 
 const FAQ_ITEMS = [
   {
+    q: 'How are scores calculated?',
+    a: 'Your score combines a 1,000-point base for solving, a guess bonus for fewer guesses, and a speed bonus for finishing fast. For example, Classic with 4 guesses in 13s = 1,000 + 200 (guess) + 287 (speed) + 200 (completion) = 1,687 pts. Fewer guesses and less time = higher score.',
+  },
+  {
+    q: 'How do XP and levels work?',
+    a: 'Win = 100 XP, loss = 25 XP. Bonuses: +50 for win streaks, +50 for daily challenges, and medal XP (gold +100, silver +50, bronze +25). Every 1,000 XP = 1 level.',
+  },
+  {
     q: "What's a streak?",
     a: 'Play at least one daily puzzle each day to build your streak. Miss a day and it resets — unless you use a Streak Shield.',
   },
@@ -119,7 +127,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What does PRO unlock?',
-    a: 'Unlimited daily plays (free users get one per mode per day), OctoWord mode, and exclusive cosmetics.',
+    a: 'Unlimited daily plays (free users get one per mode per day), OctoWord mode, ad-free gameplay, and exclusive cosmetics.',
   },
   {
     q: 'Do daily puzzles use the same words for everyone?',
