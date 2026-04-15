@@ -67,15 +67,17 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const [message, setMessage] = useState('');
   const [showTransition, setShowTransition] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  // When a completed session is restored, skip straight to GauntletResults —
+  // we don't want to replay the intermediate VictoryAnimation modal, and we
+  // definitely don't want to re-record the game stats.
+  const [showResults, setShowResults] = useState(() => savedSession?.isCompleted ?? false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
-  // Rebase start-time anchors so restored elapsed time is preserved. The
-  // running timer below computes elapsed as (Date.now() - startTimeRef), so
-  // subtracting the saved elapsed time from the anchor makes the timer pick
-  // up exactly where it left off.
-  const [gameStartTime] = useState(() => Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
   const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
   const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
+  // Flag so the game-over effect below doesn't refire victory/loss animations
+  // or double-record stats when a completed save is loaded on mount. Reset in
+  // handlePlayAgain so a fresh run behaves normally.
+  const isRestoredCompletedRef = useRef(savedSession?.isCompleted ?? false);
 
   // Persistence hook — snapshots the full reducer state to localStorage on
   // every change, and clears on game-end. This lets the user navigate away
@@ -217,15 +219,21 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     }
   }, [state.boards, state.status, isInBlackout]);
 
-  // Check for game over
+  // Check for game over. Suppressed when the session was restored as already
+  // completed — we don't want to replay animations or re-record a win the user
+  // already has in their stats.
   useEffect(() => {
+    if (isRestoredCompletedRef.current) return;
     if (state.status === GameStatus.WON) {
       setShowVictory(true);
     } else if (state.status === GameStatus.LOST) {
       setShowResults(true);
     }
     if (profile && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
-      const timeMs = Date.now() - state.startTime;
+      // Use the frozen elapsedTime (timer stops ticking when the stage ends)
+      // so this exactly matches the VictoryAnimation and GauntletResults
+      // numbers the player sees.
+      const timeMs = elapsedTime * 1000;
       // Sum across completed stages. On WON the final NEXT_STAGE has already
       // pushed the last stage into stageResults, so state.boards would be a
       // double-count. On LOST the current stage isn't yet in stageResults, so
@@ -328,6 +336,10 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     setElapsedTime(0);
     startTimeRef.current = Date.now();
     blackoutTriggeredRef.current = false;
+    // Re-enable the game-over effect for this fresh run. The ref was set on
+    // mount if the session was already completed; clearing it here lets
+    // VictoryAnimation / stat-recording fire normally when the new run ends.
+    isRestoredCompletedRef.current = false;
     if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
     if (blackoutCountdownRef.current) clearInterval(blackoutCountdownRef.current);
   }, []);
@@ -355,7 +367,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         won={state.status === GameStatus.WON}
         stages={gauntlet.stages}
         stageResults={gauntlet.stageResults}
-        totalTimeMs={Date.now() - gameStartTime}
+        totalTimeMs={elapsedTime * 1000}
         onPlayAgain={handlePlayAgain}
         onHome={handleHome}
         showPlayAgain={!isDaily && isPro}
@@ -535,14 +547,17 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         {showVictory && (
           <VictoryAnimation
             onComplete={handleVictoryComplete}
-            timeSeconds={Math.floor((Date.now() - gameStartTime) / 1000)}
-            // Full run-order list (21 words across all 5 stages) so the victory
-            // modal shows every solved puzzle in the order they were played,
-            // matching how standalone multi-board modes pass their boards'
-            // solutions straight through. Stage-by-stage breakdown is shown on
-            // the subsequent GauntletResults screen, so boardsSolved/totalBoards
-            // are intentionally omitted here to keep the modal uncluttered.
-            solutions={gauntlet.allSolutions}
+            // Use frozen elapsedTime so the time shown here matches the
+            // GauntletStageHeader clock at the moment of completion and the
+            // GauntletResults screen that follows — all three must agree.
+            timeSeconds={elapsedTime}
+            // Show the 8 OctoWord solutions in board-position order. On WON
+            // the reducer leaves state.boards as the final stage's boards
+            // (the NEXT_STAGE action on the last stage only toggles status →
+            // WON without rebuilding boards), so this matches how standalone
+            // multi-board modes display their solutions. Full 21-word stage
+            // breakdown is shown on the subsequent GauntletResults screen.
+            solutions={state.boards.map(b => b.solution)}
           />
         )}
       </AnimatePresence>

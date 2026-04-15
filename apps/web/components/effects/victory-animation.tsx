@@ -121,8 +121,8 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                 }}
               >
                 <div className={solutions.length > 8
-                  // Gauntlet (21 solutions) — tight 4-col grid so everything
-                  // fits inside the modal without overflowing the viewport.
+                  // 9+ solutions — tight 4-col grid so everything fits inside
+                  // the modal without overflowing the viewport.
                   ? 'grid grid-cols-4 gap-x-2 gap-y-1 justify-items-center'
                   : solutions.length === 8
                   ? 'grid grid-cols-4 gap-x-3 gap-y-1.5 justify-items-center'
