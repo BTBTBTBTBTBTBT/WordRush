@@ -24,7 +24,7 @@ SpellStrike is a competitive word puzzle platform featuring 6 distinct game mode
 | Service | Host | URL |
 |---------|------|-----|
 | Web App (Next.js) | Vercel | spellstrike.vercel.app |
-| VS Server (Socket.IO) | Render | wordrush-production.up.railway.app |
+| VS Server (Socket.IO) | Railway | wordrush-production.up.railway.app |
 | Database + Auth | Supabase | eniiqqsxpmuyrspvepiw.supabase.co |
 
 ---
