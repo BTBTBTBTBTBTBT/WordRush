@@ -4,7 +4,7 @@ import { Socket, io } from 'socket.io-client';
 export interface IMatchService {
   connect(): void;
   disconnect(): void;
-  joinQueue(mode: GameMode): void;
+  joinQueue(mode: GameMode, dailySeed?: string): void;
   leaveQueue(): void;
   submitGuess(guess: string, boardIndex?: number): void;
   abandonMatch(): void;
@@ -46,8 +46,8 @@ export class SocketIOMatchService implements IMatchService {
     }
   }
 
-  joinQueue(mode: GameMode): void {
-    this.socket?.emit('join_queue', { mode });
+  joinQueue(mode: GameMode, dailySeed?: string): void {
+    this.socket?.emit('join_queue', { mode, dailySeed });
   }
 
   leaveQueue(): void {

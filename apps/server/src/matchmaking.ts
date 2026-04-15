@@ -14,7 +14,7 @@ export class MatchmakingQueue {
     [GameMode.PROPERNOUNDLE, []]
   ]);
 
-  addToQueue(player: Player, mode: GameMode): number {
+  addToQueue(player: Player, mode: GameMode, dailySeed?: string): number {
     const queue = this.queues.get(mode)!;
     const existing = queue.findIndex(e => e.player.id === player.id);
 
@@ -25,7 +25,8 @@ export class MatchmakingQueue {
     queue.push({
       player,
       mode,
-      joinedAt: Date.now()
+      joinedAt: Date.now(),
+      dailySeed,
     });
 
     return queue.length - 1;

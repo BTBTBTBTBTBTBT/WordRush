@@ -10,6 +10,14 @@ export interface QueueEntry {
   player: Player;
   mode: GameMode;
   joinedAt: number;
+  /**
+   * Optional deterministic seed the client wants the match to use.
+   * When present, the server uses this as the match seed instead of
+   * calling `generateMatchSeed()`. Used by the daily-VS flow so that
+   * everyone playing their free daily VS match on the same day shares
+   * the same puzzle word.
+   */
+  dailySeed?: string;
 }
 
 export interface PlayerMatchState {
@@ -35,7 +43,7 @@ export interface Match {
 }
 
 export interface ClientToServerEvents {
-  join_queue: (data: { mode: GameMode }) => void;
+  join_queue: (data: { mode: GameMode; dailySeed?: string }) => void;
   leave_queue: () => void;
   submit_guess: (data: { guess: string; boardIndex?: number }) => void;
   abandon_match: () => void;

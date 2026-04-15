@@ -1,16 +1,29 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { GameMode } from '@wordle-duel/core';
+import { GameMode, generateDailySeed, generateSolutionsFromSeed } from '@wordle-duel/core';
+import Link from 'next/link';
 import { SocketIOMatchService } from '@/lib/adapters/match-service';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Home, RotateCcw, Trophy, X } from 'lucide-react';
-import { hasReachedVsLimit, recordVsMatch } from '@/lib/play-limit-service';
+import { Crown, Loader2, Home, RotateCcw, Trophy, X } from 'lucide-react';
+import {
+  hasPlayedModeToday,
+  recordModePlayed,
+  getSecondsUntilMidnightUTC,
+  formatCountdown,
+} from '@/lib/play-limit-service';
 import { VsLimitModal } from '@/components/modals/vs-limit-modal';
+
+// Same UTC-date helper the Classic daily flow uses, duplicated here so
+// this file doesn't have to reach into daily-service just for the date.
+function getTodayUTC(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+}
 
 import { VsClassic } from './vs-classic';
 import { VsQuadword } from './vs-quadword';
@@ -71,6 +84,22 @@ function CyclingStatus() {
 
 interface VsGameProps {
   mode: GameMode;
+  /**
+   * When true, this is the freemium "daily VS" flow:
+   * - The client joins the matchmaking queue with a deterministic daily
+   *   seed so everyone who plays their free daily VS that day shares
+   *   the same puzzle word.
+   * - On match end, the VS tile is locked for the rest of the day via
+   *   `recordModePlayed('vs')`.
+   * - Rematch is hidden (freemium only gets one VS match/day).
+   * - If the player has already used their daily, a read-only
+   *   "already played" screen is shown with the answer and a pro
+   *   upsell instead of queueing.
+   *
+   * Pro users do not need this flag — they get unlimited random-seed
+   * matches and rematches as before.
+   */
+  isDaily?: boolean;
 }
 
 type VsScreen = 'queue' | 'warmup' | 'match' | 'waiting' | 'result';
@@ -105,12 +134,42 @@ const MODE_TITLE_GRADIENTS: Record<string, string> = {
   [GameMode.PROPERNOUNDLE]: 'from-red-400 via-rose-400 to-orange-400',
 };
 
-export function VsGame({ mode }: VsGameProps) {
+export function VsGame({ mode, isDaily = false }: VsGameProps) {
   ensureDictionaryInitialized();
 
   const { profile } = useAuth();
   const isPro = (profile as any)?.is_pro ?? false;
-  const [vsLimitOpen, setVsLimitOpen] = useState(() => !isPro && hasReachedVsLimit());
+
+  // Freemium daily-VS gating is only active when (a) the caller asked
+  // for the daily flow, (b) the user isn't pro, and (c) the mode is the
+  // main Classic VS (DUEL). Other modes' VS buttons are pro-only so
+  // they never reach this branch.
+  const dailyVsActive = isDaily && !isPro && mode === GameMode.DUEL;
+
+  // The deterministic seed for today's free daily VS puzzle. Intentionally
+  // uses a different mode slug ("DUEL_VS") from Classic's daily
+  // ("DUEL"), so the daily VS word is always different from the daily
+  // Classic word even though both are derived from the same solution
+  // list via generateSolutionsFromSeed.
+  const todayDailySeed = useMemo(
+    () => (dailyVsActive ? generateDailySeed(getTodayUTC(), 'DUEL_VS') : undefined),
+    [dailyVsActive],
+  );
+
+  // Pre-compute the answer for today's daily VS so the "already played"
+  // screen can show it without needing to re-connect to the server.
+  const todayDailyAnswer = useMemo(
+    () => (todayDailySeed ? generateSolutionsFromSeed(todayDailySeed, 1)[0] : ''),
+    [todayDailySeed],
+  );
+
+  // Has this freemium user already used their daily VS today? If so we
+  // short-circuit past the matchmaking queue entirely.
+  const [alreadyPlayedDaily, setAlreadyPlayedDaily] = useState(
+    () => dailyVsActive && hasPlayedModeToday('vs'),
+  );
+  // Shown if a freemium user tries to rematch after their daily game.
+  const [vsLimitOpen, setVsLimitOpen] = useState(false);
   const [screen, setScreen] = useState<VsScreen>('queue');
   const [matchService] = useState(() => new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'));
   const [seed, setSeed] = useState('');
@@ -198,9 +257,12 @@ export function VsGame({ mode }: VsGameProps) {
         recordGameResult(profile.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seed)
           .then(xp => { if (xp) setXpResult(xp); });
       }
-      // Record VS match for daily limit tracking
-      if (!isPro) {
-        recordVsMatch();
+      // Freemium daily VS: lock the home-page VS tile for the rest of
+      // the day. This replaces the old 2-per-day VS counter — the
+      // freemium flow is now strictly one daily VS match, gated the
+      // same way Classic/Quordle/etc. are.
+      if (dailyVsActive) {
+        recordModePlayed('vs');
       }
     });
 
@@ -236,15 +298,18 @@ export function VsGame({ mode }: VsGameProps) {
       setMessage(data.message);
     });
 
-    // Only join queue if not VS-limited
-    if (!vsLimitOpen) {
-      matchService.joinQueue(mode);
+    // Skip queueing when a freemium user has already used their daily
+    // VS — we're rendering the "already played" screen instead. Pro
+    // users (and freemium who haven't played yet) join the queue
+    // normally, passing the daily seed only when this is the daily flow.
+    if (!alreadyPlayedDaily) {
+      matchService.joinQueue(mode, todayDailySeed);
     }
 
     return () => {
       matchService.disconnect();
     };
-  }, [mode, matchService, profile, vsLimitOpen]);
+  }, [mode, matchService, profile, alreadyPlayedDaily, todayDailySeed, dailyVsActive]);
 
   const handleBoardSolved = useCallback((boardIndex: number) => {
     matchService.reportBoardSolved(boardIndex);
@@ -276,7 +341,9 @@ export function VsGame({ mode }: VsGameProps) {
   }, [matchService]);
 
   const handleRematch = useCallback(() => {
-    if (!isPro && hasReachedVsLimit()) {
+    // Freemium: no rematch allowed after the daily VS game. Show the
+    // pro upsell modal instead of firing the rematch event.
+    if (!isPro) {
       setVsLimitOpen(true);
       return;
     }
@@ -294,6 +361,21 @@ export function VsGame({ mode }: VsGameProps) {
     matchService.disconnect();
     window.location.href = '/';
   }, [matchService]);
+
+  // "Already played today" screen — shown when a freemium user
+  // revisits /practice/vs?daily=true after using their free daily VS
+  // match. This mirrors how the home tile's "View Solved Puzzle" flow
+  // works for Classic: instead of replaying, the user sees the answer
+  // word plus a pro upsell and a reset countdown. Pro users never hit
+  // this branch (dailyVsActive is false for them).
+  if (alreadyPlayedDaily) {
+    return (
+      <DailyVsAlreadyPlayed
+        answer={todayDailyAnswer}
+        titleGradient={titleGradient}
+      />
+    );
+  }
 
   // Queue screen
   if (screen === 'queue') {
@@ -375,6 +457,8 @@ export function VsGame({ mode }: VsGameProps) {
 
     return (
       <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+        {/* Rematch upsell for freemium — handleRematch sets this open */}
+        <VsLimitModal open={vsLimitOpen} onClose={() => setVsLimitOpen(false)} />
         <div className="text-center space-y-8 max-w-md w-full px-6">
           {/* Headline */}
           <motion.div
@@ -612,6 +696,145 @@ export function VsGame({ mode }: VsGameProps) {
           <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * "Already played today" screen for freemium daily VS.
+ *
+ * Shown when a freemium user revisits /practice/vs?daily=true after
+ * using their free daily VS match. Mirrors how the Classic mode's
+ * "View Solved Puzzle" upsell works: the user can see today's answer
+ * word, a countdown until tomorrow's puzzle, and a Go Pro CTA for
+ * unlimited matches.
+ */
+function DailyVsAlreadyPlayed({
+  answer,
+  titleGradient,
+}: {
+  answer: string;
+  titleGradient: string;
+}) {
+  const [countdown, setCountdown] = useState('');
+
+  useEffect(() => {
+    const update = () => setCountdown(formatCountdown(getSecondsUntilMidnightUTC()));
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const displayWord = answer ? answer.toUpperCase() : '';
+  const letters = displayWord.split('');
+
+  return (
+    <div
+      className="h-[100dvh] flex flex-col items-center justify-center relative"
+      style={{ backgroundColor: '#f8f7ff' }}
+    >
+      <div className="text-center space-y-6 max-w-md w-full px-6">
+        {/* Headline */}
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+          className="space-y-2"
+        >
+          <div
+            className="text-[10px] font-extrabold uppercase tracking-widest"
+            style={{ color: '#9ca3af' }}
+          >
+            Today&apos;s VS Puzzle
+          </div>
+          <h1
+            className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}
+          >
+            Already Played
+          </h1>
+        </motion.div>
+
+        {/* Answer tiles */}
+        {letters.length > 0 && (
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className="flex items-center justify-center gap-1.5"
+          >
+            {letters.map((ch, i) => (
+              <div
+                key={i}
+                className="w-11 h-11 rounded-md flex items-center justify-center text-lg font-black text-white"
+                style={{
+                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                  boxShadow: '0 3px 0 #15803d',
+                }}
+              >
+                {ch}
+              </div>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Countdown */}
+        <motion.div
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="inline-block px-4 py-2 rounded-lg"
+          style={{ background: '#f3f0ff', border: '1px solid #ede9f6' }}
+        >
+          <span className="text-xs font-bold" style={{ color: '#7c3aed' }}>
+            Next daily VS in {countdown}
+          </span>
+        </motion.div>
+
+        {/* Pro upsell copy */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.35 }}
+          className="text-xs font-bold px-4"
+          style={{ color: '#6b7280' }}
+        >
+          Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.
+        </motion.p>
+
+        {/* Actions */}
+        <motion.div
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="space-y-2"
+        >
+          <Link href="/pro" className="block">
+            <button
+              className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d flex items-center justify-center gap-2"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                boxShadow: '0 4px 0 #92400e',
+              }}
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade to Pro
+            </button>
+          </Link>
+          <Link href="/" className="block">
+            <button
+              className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
+              style={{
+                background: '#f3f4f6',
+                border: '1px solid #e5e7eb',
+                color: '#6b7280',
+              }}
+            >
+              <Home className="w-4 h-4" />
+              Home
+            </button>
+          </Link>
+        </motion.div>
+      </div>
     </div>
   );
 }

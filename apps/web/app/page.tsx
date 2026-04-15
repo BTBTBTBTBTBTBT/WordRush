@@ -145,8 +145,10 @@ const MODE_CARDS = [
     icon: Swords,
     desc: 'Real-time PvP',
     accentColor: '#0d9488',
-    href: '/practice/vs',
-    vsHref: '/practice/vs',
+    // Freemium: daily VS (1 match/day, shared puzzle). Pro users get
+    // redirected to the plain /practice/vs at click time in handleVsClick.
+    href: '/practice/vs?daily=true',
+    vsHref: '/practice/vs?daily=true',
     badge: 'NEW',
   },
   {
@@ -232,6 +234,13 @@ export default function HomePage() {
   }, []);
 
   const handleVsClick = (vsHref: string) => {
+    // Pro users playing the main VS Classic tile skip the daily flow
+    // entirely — they get unlimited random-seed matches. Freemium users
+    // (and the ?daily=true variant) go through the daily VS flow.
+    if (isPro && (vsHref === '/practice/vs?daily=true' || vsHref === '/practice/vs')) {
+      router.push('/practice/vs');
+      return;
+    }
     router.push(vsHref);
   };
 
@@ -373,7 +382,7 @@ export default function HomePage() {
             <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>Players online</div>
           </div>
           <button
-            onClick={() => handleVsClick('/practice/vs')}
+            onClick={() => handleVsClick('/practice/vs?daily=true')}
             className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md"
             style={{
               background: 'linear-gradient(135deg, #6366f1, #4f46e5)',

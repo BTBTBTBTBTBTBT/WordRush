@@ -47,10 +47,10 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
           >
             <Swords className="w-12 h-12 mx-auto mb-3" style={{ color: '#9ca3af' }} />
             <h2 className="text-lg font-black mb-1" style={{ color: '#1a1a2e' }}>
-              VS Matches Used
+              Daily VS Used
             </h2>
             <p className="text-xs font-bold mb-4" style={{ color: '#9ca3af' }}>
-              You've used your 2 free VS matches for today. Upgrade to Pro for unlimited ad-free battles, or come back tomorrow.
+              You&apos;ve played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.
             </p>
 
             <div

@@ -82,16 +82,21 @@ io.on('connection', (socket) => {
     rating: 1000
   };
 
-  socket.on('join_queue', ({ mode }) => {
+  socket.on('join_queue', ({ mode, dailySeed }) => {
     queue.removeFromQueue(playerId);
-    const position = queue.addToQueue(player, mode);
+    const position = queue.addToQueue(player, mode, dailySeed);
 
     socket.emit('queue_status', { position, mode });
 
     const matchPair = queue.findMatch(mode);
     if (matchPair) {
       const [entry1, entry2] = matchPair;
-      createMatch(entry1.player, entry2.player, mode);
+      // If either queued player asked for a daily seed, use it as the
+      // match seed so everyone playing the daily gets the same puzzle.
+      // Rematches (see offer_rematch handler below) always use a fresh
+      // random seed — daily is only for the first matchup of the day.
+      const preferredSeed = entry1.dailySeed || entry2.dailySeed;
+      createMatch(entry1.player, entry2.player, mode, preferredSeed);
     }
   });
 
@@ -364,9 +369,13 @@ io.on('connection', (socket) => {
   });
 });
 
-function createMatch(player1: Player, player2: Player, mode: GameMode): void {
+function createMatch(player1: Player, player2: Player, mode: GameMode, preferredSeed?: string): void {
   const matchId = `match-${Date.now()}`;
-  const seed = generateMatchSeed();
+  // If a preferred (daily) seed is supplied, use it verbatim so the
+  // solution derivation below produces the same word for everyone
+  // playing that day's daily match. Otherwise fall back to the random
+  // match seed used for regular ad-hoc VS matchmaking.
+  const seed = preferredSeed || generateMatchSeed();
   const boardCount = MODE_BOARD_COUNT[mode] || 1;
   const serverStartAt = Date.now() + MATCH_COUNTDOWN * 1000;
 
