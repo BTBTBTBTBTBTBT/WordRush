@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Trophy, Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Swords } from 'lucide-react';
+import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -70,7 +69,6 @@ export default function DailyPage() {
   const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedMode, setSelectedMode] = useState('DUEL');
-  const [playType, setPlayType] = useState<'solo' | 'vs'>('solo');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [playerCount, setPlayerCount] = useState(0);
@@ -89,26 +87,26 @@ export default function DailyPage() {
       setUserRank(null);
       setLeaderboard([]);
       const [lb, count] = await Promise.all([
-        fetchDailyLeaderboard(selectedMode, playType, today, 50),
+        fetchDailyLeaderboard(selectedMode, 'solo', today, 50),
         getDailyPlayerCount(selectedMode, today),
       ]);
       setLeaderboard(lb);
       setPlayerCount(count);
 
       if (user) {
-        const rank = await getUserDailyRank(user.id, selectedMode, playType, today);
+        const rank = await getUserDailyRank(user.id, selectedMode, 'solo', today);
         setUserRank(rank);
       }
       setLoading(false);
     }
     load();
-  }, [selectedMode, playType, user, today]);
+  }, [selectedMode, user, today]);
 
   useEffect(() => {
     if (showYesterday) {
-      fetchDailyLeaderboard(selectedMode, playType, yesterday, 3).then(setYesterdayLeaderboard);
+      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 3).then(setYesterdayLeaderboard);
     }
-  }, [showYesterday, selectedMode, playType, yesterday]);
+  }, [showYesterday, selectedMode, yesterday]);
 
   const modeConfig = GAME_MODES.find(m => m.id === selectedMode)!;
 
@@ -127,7 +125,14 @@ export default function DailyPage() {
       <div className="max-w-lg mx-auto px-4">
         {/* Title */}
         <div className="text-center mb-4">
-          <h1 className="text-2xl font-black" style={{ color: '#1a1a2e' }}>Daily Challenge</h1>
+          <h1
+            className="text-3xl font-black bg-clip-text text-transparent tracking-tight"
+            style={{
+              backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+            }}
+          >
+            DAILY CHALLENGE
+          </h1>
           <div className="flex items-center justify-center gap-3 mt-1">
             <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>
               <Calendar className="w-3 h-3 inline mr-1" />
@@ -138,7 +143,7 @@ export default function DailyPage() {
         </div>
 
         {/* Mode Tabs */}
-        <div className="flex gap-1 overflow-x-auto pb-2 mb-3">
+        <div className="flex gap-1 overflow-x-auto pb-2 mb-4">
           {GAME_MODES.map((mode) => (
             <button
               key={mode.id}
@@ -151,24 +156,6 @@ export default function DailyPage() {
               }}
             >
               {mode.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Solo/VS Toggle */}
-        <div className="flex gap-2 mb-4">
-          {(['solo', 'vs'] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => setPlayType(type)}
-              className="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all"
-              style={{
-                background: playType === type ? '#ffffff' : '#f3f0ff',
-                border: playType === type ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
-                color: playType === type ? '#7c3aed' : '#9ca3af',
-              }}
-            >
-              {type === 'solo' ? 'Solo' : 'VS'}
             </button>
           ))}
         </div>
@@ -261,14 +248,8 @@ export default function DailyPage() {
                     <div className="text-right">
                       <div className="font-black text-xs" style={{ color: '#1a1a2e' }}>{entry.composite_score}</div>
                       <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                        {playType === 'solo' ? (
-                          <>
-                            {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
-                            {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
-                          </>
-                        ) : (
-                          <>{entry.vs_wins}W / {entry.vs_games}G</>
-                        )}
+                        {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
+                        {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
                       </div>
                     </div>
                   </div>
