@@ -11,7 +11,7 @@ import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
 import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById } from './puzzle-service';
-import { useHints } from './use-hints';
+import { useHints, type PersistedHintState } from './use-hints';
 import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
@@ -56,6 +56,9 @@ interface DailyState {
   gameStatus: 'playing' | 'won' | 'lost';
   letterStates: Record<string, TileState>;
   elapsedTime: number;
+  // Optional for backwards compat with saves from before hint persistence
+  // was added — older entries hydrate with the default empty hint state.
+  hintState?: PersistedHintState;
 }
 
 interface PracticeState {
@@ -65,6 +68,8 @@ interface PracticeState {
   letterStates: Record<string, TileState>;
   elapsedTime: number;
   savedAt: number;
+  // Optional for backwards compat — see DailyState.
+  hintState?: PersistedHintState;
 }
 
 function getTodayString(): string {
@@ -159,6 +164,17 @@ export function ProperNoundleGame() {
 
   const answerLength = puzzle ? normalizeString(puzzle.answer).length : 0;
 
+  // Empty hint-state fallback used when restoring from a save that predates
+  // hint persistence — ensures older entries still hydrate cleanly.
+  const emptyHintState: PersistedHintState = {
+    hint: null,
+    hintUsed: false,
+    vowelRevealed: null,
+    vowelUsed: false,
+    consonantRevealed: null,
+    consonantUsed: false,
+  };
+
   // Load puzzle
   useEffect(() => {
     if (mode === 'daily') {
@@ -174,6 +190,9 @@ export function ProperNoundleGame() {
         setElapsedTime(saved.elapsedTime);
         setCurrentGuess('');
         setMessage('');
+        // Restore the clue text, revealed letters, and used flags so a
+        // completed-save looks exactly like it did when the game ended.
+        hints.restoreHints(saved.hintState ?? emptyHintState);
         restoredDailyRef.current = true;
 
         // Ensure daily result is recorded even for restored games
@@ -195,6 +214,9 @@ export function ProperNoundleGame() {
         setCurrentGuess('');
         setGameStatus('playing');
         setMessage('');
+        // Restore hints so returning mid-game keeps the clue visible and
+        // doesn't let the player re-use an already-spent hint slot.
+        hints.restoreHints(saved.hintState ?? emptyHintState);
         restoredDailyRef.current = false;
         return;
       }
@@ -228,6 +250,16 @@ export function ProperNoundleGame() {
           setStartTime(Date.now() - savedPractice.elapsedTime * 1000);
           restoredDailyRef.current = false;
         }
+        // Restore hints and return early so the fresh-game reset block
+        // below doesn't wipe what we just loaded. (Previously this branch
+        // fell through to hints.resetHints(), which is why the clue
+        // disappeared on navigation-back and the player could re-burn
+        // another guess slot re-fetching it.)
+        hints.restoreHints(savedPractice.hintState ?? emptyHintState);
+        setShowVictory(false);
+        setWikiImageUrl(null);
+        setWikiImageLoaded(false);
+        return;
       } else {
         const p = getRandomPuzzle(playedIds);
         setPuzzle(p);
@@ -300,8 +332,18 @@ export function ProperNoundleGame() {
         });
       }
 
-      // Save terminal state so returning shows the completed board
+      // Save terminal state so returning shows the completed board —
+      // include hint state so any clue/vowel/consonant used during play
+      // is still visible when the user returns to the finished puzzle.
       if (puzzle) {
+        const persistedHints: PersistedHintState = {
+          hint: hints.hint,
+          hintUsed: hints.hintUsed,
+          vowelRevealed: hints.vowelRevealed,
+          vowelUsed: hints.vowelUsed,
+          consonantRevealed: hints.consonantRevealed,
+          consonantUsed: hints.consonantUsed,
+        };
         if (mode === 'daily') {
           saveDailyState({
             date: getTodayString(),
@@ -310,6 +352,7 @@ export function ProperNoundleGame() {
             gameStatus,
             letterStates,
             elapsedTime,
+            hintState: persistedHints,
           });
         } else {
           savePracticeState({
@@ -318,6 +361,7 @@ export function ProperNoundleGame() {
             gameStatus,
             letterStates,
             elapsedTime,
+            hintState: persistedHints,
           });
         }
       }
@@ -335,8 +379,23 @@ export function ProperNoundleGame() {
 
   // Save in-progress state after each guess so games persist across
   // navigate-away / navigate-back cycles in both daily and practice.
+  // hintState is persisted too so that a clue fetched mid-game survives
+  // navigation and doesn't cost a second hint slot on return. The hint
+  // fields are in the dep array so the save also fires when the player
+  // uses a hint without (yet) entering a new guess.
   useEffect(() => {
-    if (gameStatus !== 'playing' || guesses.length === 0 || !puzzle) return;
+    if (gameStatus !== 'playing' || !puzzle) return;
+    // Don't persist an empty board with no hints — there's nothing to restore
+    // and it would stamp a stale save over an otherwise-absent entry.
+    if (guesses.length === 0 && !hints.hint && !hints.vowelUsed && !hints.consonantUsed) return;
+    const persistedHints: PersistedHintState = {
+      hint: hints.hint,
+      hintUsed: hints.hintUsed,
+      vowelRevealed: hints.vowelRevealed,
+      vowelUsed: hints.vowelUsed,
+      consonantRevealed: hints.consonantRevealed,
+      consonantUsed: hints.consonantUsed,
+    };
     if (mode === 'daily') {
       saveDailyState({
         date: getTodayString(),
@@ -345,6 +404,7 @@ export function ProperNoundleGame() {
         gameStatus,
         letterStates,
         elapsedTime,
+        hintState: persistedHints,
       });
     } else {
       savePracticeState({
@@ -353,9 +413,23 @@ export function ProperNoundleGame() {
         gameStatus,
         letterStates,
         elapsedTime,
+        hintState: persistedHints,
       });
     }
-  }, [guesses, mode, gameStatus, letterStates, elapsedTime, puzzle]);
+  }, [
+    guesses,
+    mode,
+    gameStatus,
+    letterStates,
+    elapsedTime,
+    puzzle,
+    hints.hint,
+    hints.hintUsed,
+    hints.vowelRevealed,
+    hints.vowelUsed,
+    hints.consonantRevealed,
+    hints.consonantUsed,
+  ]);
 
   // Persist the current mode so the next visit lands back on the same tab.
   useEffect(() => {

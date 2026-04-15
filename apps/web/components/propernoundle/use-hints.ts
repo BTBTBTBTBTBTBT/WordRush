@@ -3,7 +3,7 @@ import { Guess, TileState, Puzzle } from './types';
 import { normalizeString } from './game-logic';
 import { fetchWikipediaHint } from './wikipedia';
 
-interface HintState {
+export interface HintState {
   hint: string | null;
   hintUsed: boolean;
   loadingHint: boolean;
@@ -23,11 +23,26 @@ const initialHintState: HintState = {
   consonantUsed: false,
 };
 
+/**
+ * Persistable slice of the hint state — excludes transient loading flag
+ * since any in-flight Wikipedia fetch is abandoned when the component
+ * unmounts, so the hook should always restart with loadingHint: false.
+ */
+export type PersistedHintState = Omit<HintState, 'loadingHint'>;
+
 export function useHints() {
   const [state, setState] = useState<HintState>(initialHintState);
 
   const resetHints = useCallback(() => {
     setState(initialHintState);
+  }, []);
+
+  // Restore a previously saved hint state — used when the game component
+  // rehydrates from localStorage so the clue text, revealed vowel/consonant,
+  // and used-flags survive navigation. loadingHint is forced to false since
+  // any in-flight fetch was abandoned on unmount.
+  const restoreHints = useCallback((saved: PersistedHintState) => {
+    setState({ ...saved, loadingHint: false });
   }, []);
 
   const fetchClue = useCallback(async (
@@ -135,6 +150,7 @@ export function useHints() {
   return {
     ...state,
     resetHints,
+    restoreHints,
     fetchClue,
     revealVowel,
     revealConsonant,
