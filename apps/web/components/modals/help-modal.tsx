@@ -126,7 +126,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What does PRO unlock?',
-    a: 'Unlimited daily plays (free users get one per mode per day), OctoWord mode, and ad-free gameplay.',
+    a: 'Unlimited daily plays (free users get one per mode per day) and ad-free gameplay.',
   },
   {
     q: 'Do daily puzzles use the same words for everyone?',
