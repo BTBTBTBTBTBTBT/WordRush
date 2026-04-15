@@ -15,6 +15,10 @@ function simpleHash(str: string): number {
  * Pick the 3 shared prefill words for a given seed.
  * Every board in a Rescue game uses the same words,
  * just evaluated against its own solution.
+ *
+ * Filters to 5-letter words only — allowedWords contains a small number of
+ * non-5-letter dictionary entries (legacy artifacts), and picking one crashes
+ * evaluateGuess when it's measured against a 5-letter solution.
  */
 export function generatePrefillWords(
   seed: string,
@@ -22,6 +26,8 @@ export function generatePrefillWords(
   allowedWords: string[]
 ): string[] {
   const solutionSet = new Set(solutions.map(s => s.toUpperCase()));
+  const fiveLetterWords = allowedWords.filter(w => w.length === 5);
+  const pool = fiveLetterWords.length > 0 ? fiveLetterWords : allowedWords;
   const words: string[] = [];
 
   for (let i = 0; i < 3; i++) {
@@ -31,8 +37,8 @@ export function generatePrefillWords(
     do {
       const hashKey = `${seed}-prefill-${i}-${attempt}`;
       const hash = simpleHash(hashKey);
-      const index = hash % allowedWords.length;
-      word = allowedWords[index];
+      const index = hash % pool.length;
+      word = pool[index];
       attempt++;
     } while (solutionSet.has(word) && attempt < 100);
 
