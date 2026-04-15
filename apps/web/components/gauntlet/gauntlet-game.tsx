@@ -360,18 +360,41 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     }, 3000);
   }, []);
 
+  // The XpToast is lifted out of the main-view JSX into a fragment that
+  // wraps BOTH the results screen and the playing view so it survives the
+  // showResults transition. Previously it lived inside the playing-view
+  // return and the `if (showResults)` early-return unmounted the main tree
+  // before the toast could render — so on LOSS it never appeared at all,
+  // and on WIN it flashed only during VictoryAnimation before
+  // GauntletResults replaced the tree. The `key` prop resets the 3s
+  // auto-dismiss timer on the results-screen transition so the player
+  // still sees the toast after they dismiss VictoryAnimation.
+  const xpToast = xpResult ? (
+    <XpToast
+      key={showResults ? 'results' : 'playing'}
+      xp={xpResult.xpGain}
+      streakBonus={xpResult.streakBonus}
+      dailyBonus={xpResult.dailyBonus}
+      leveledUp={xpResult.leveledUp}
+      newLevel={xpResult.newLevel}
+    />
+  ) : null;
+
   // Show results screen
   if (showResults) {
     return (
-      <GauntletResults
-        won={state.status === GameStatus.WON}
-        stages={gauntlet.stages}
-        stageResults={gauntlet.stageResults}
-        totalTimeMs={elapsedTime * 1000}
-        onPlayAgain={handlePlayAgain}
-        onHome={handleHome}
-        showPlayAgain={!isDaily && isPro}
-      />
+      <>
+        {xpToast}
+        <GauntletResults
+          won={state.status === GameStatus.WON}
+          stages={gauntlet.stages}
+          stageResults={gauntlet.stageResults}
+          totalTimeMs={elapsedTime * 1000}
+          onPlayAgain={handlePlayAgain}
+          onHome={handleHome}
+          showPlayAgain={!isDaily && isPro}
+        />
+      </>
     );
   }
 
@@ -561,7 +584,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           />
         )}
       </AnimatePresence>
-      {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
+      {xpToast}
     </div>
   );
 }
