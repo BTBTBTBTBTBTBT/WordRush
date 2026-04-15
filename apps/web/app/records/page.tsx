@@ -99,73 +99,58 @@ function RankIcon({ rank }: { rank: number }) {
   return <span className="text-xs font-black w-5 text-center" style={{ color: '#9ca3af' }}>{rank}</span>;
 }
 
-/* ── all-time record row ── */
-function AllTimeRecordRow({
+/* ── stat cell (matches Gauntlet All-Time Stats visual) ──
+   Mirrors the layout used in `components/gauntlet/gauntlet-results.tsx`
+   — small colored icon on the left, stacked `bold value / gray label`
+   on the right, all packed into a 2-column grid by the parent. Handles
+   both "record exists" (shows holder link + optional current-user
+   crown) and "no record yet" (em-dash placeholder in muted color). */
+function StatCell({
+  recordType,
   record,
   accentColor,
   isCurrentUser,
 }: {
-  record: AllTimeRecord;
+  recordType: string;
+  record?: AllTimeRecord;
   accentColor: string;
   isCurrentUser: boolean;
 }) {
-  const config = RECORD_LABELS[record.record_type];
-  if (!config) return null;
-  const Icon = config.icon;
-
-  return (
-    <div
-      className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all"
-      style={{
-        background: isCurrentUser ? '#fffbeb' : 'transparent',
-        border: isCurrentUser ? '1.5px solid #fde68a' : '1.5px solid transparent',
-      }}
-    >
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: isCurrentUser ? '#fef9ec' : `${accentColor}15` }}
-      >
-        <Icon className="w-4 h-4" style={{ color: isCurrentUser ? '#d97706' : accentColor }} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="font-extrabold text-xs" style={{ color: '#1a1a2e' }}>{config.label}</div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <Link
-            href={`/profile/${record.holder_id}`}
-            className="text-[10px] font-bold hover:opacity-80 transition-opacity truncate"
-            style={{ color: '#9ca3af' }}
-          >
-            {record.holder_username || 'Unknown'}
-          </Link>
-          {isCurrentUser && <Crown className="w-3 h-3 flex-shrink-0" style={{ color: '#d97706' }} />}
-        </div>
-      </div>
-      <div className="font-black text-sm flex-shrink-0" style={{ color: '#1a1a2e' }}>
-        {config.format(record.record_value)}
-      </div>
-    </div>
-  );
-}
-
-/* ── empty record placeholder ── */
-function EmptyRecordRow({ recordType }: { recordType: string }) {
   const config = RECORD_LABELS[recordType];
   if (!config) return null;
   const Icon = config.icon;
+  const hasRecord = !!record;
 
   return (
-    <div className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl opacity-40">
-      <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: '#f3f0ff' }}
-      >
-        <Icon className="w-4 h-4" style={{ color: '#c4b5fd' }} />
+    <div className="flex items-start gap-2.5 p-1.5">
+      <Icon
+        className="w-4 h-4 shrink-0 mt-0.5"
+        style={{ color: hasRecord ? accentColor : '#d1d5db' }}
+      />
+      <div className="min-w-0 flex-1">
+        <div
+          className="font-black text-base leading-tight"
+          style={{ color: hasRecord ? '#1a1a2e' : '#d1d5db' }}
+        >
+          {hasRecord ? config.format(record!.record_value) : '—'}
+        </div>
+        <div
+          className="text-[10px] font-bold leading-tight mt-0.5"
+          style={{ color: '#9ca3af' }}
+        >
+          {config.label}
+        </div>
+        {hasRecord && (
+          <Link
+            href={`/profile/${record!.holder_id}`}
+            className="text-[10px] font-extrabold leading-tight mt-1 flex items-center gap-1 hover:opacity-80 transition-opacity"
+            style={{ color: isCurrentUser ? '#d97706' : accentColor }}
+          >
+            <span className="truncate">{record!.holder_username || 'Unknown'}</span>
+            {isCurrentUser && <Crown className="w-2.5 h-2.5 shrink-0" />}
+          </Link>
+        )}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="font-extrabold text-xs" style={{ color: '#9ca3af' }}>{config.label}</div>
-        <div className="text-[10px] font-bold" style={{ color: '#c4b5fd' }}>No record yet</div>
-      </div>
-      <div className="font-black text-sm" style={{ color: '#c4b5fd' }}>—</div>
     </div>
   );
 }
@@ -424,21 +409,24 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
             className="h-[3px]"
             style={{ background: 'linear-gradient(90deg, #f59e0b, #fde68a)' }}
           />
-          <div className="p-2 space-y-0.5">
-            {GLOBAL_RECORD_TYPES.map((rt) => {
-              const record = globalRecords.find((r) => r.record_type === rt);
-              if (record) {
+          <div
+            className="mx-3 my-3 rounded-xl p-3"
+            style={{ background: '#fffbeb', border: '1px solid #fef3c7' }}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              {GLOBAL_RECORD_TYPES.map((rt) => {
+                const record = globalRecords.find((r) => r.record_type === rt);
                 return (
-                  <AllTimeRecordRow
+                  <StatCell
                     key={rt}
+                    recordType={rt}
                     record={record}
                     accentColor="#d97706"
-                    isCurrentUser={!!userId && record.holder_id === userId}
+                    isCurrentUser={!!userId && record?.holder_id === userId}
                   />
                 );
-              }
-              return <EmptyRecordRow key={rt} recordType={rt} />;
-            })}
+              })}
+            </div>
           </div>
         </motion.div>
       </div>
@@ -473,7 +461,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                   className="h-[3px]"
                   style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}
                 />
-                <div className="flex items-center gap-2.5 px-4 pt-3 pb-1">
+                <div className="flex items-center gap-2.5 px-4 pt-3 pb-2">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: `${color}15` }}
@@ -484,21 +472,24 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                     {MODE_LABELS[mode]}
                   </div>
                 </div>
-                <div className="px-1 pb-2 space-y-0.5">
-                  {PER_MODE_RECORD_TYPES.map((rt) => {
-                    const record = modeRecords.find((r) => r.record_type === rt);
-                    if (record) {
+                <div
+                  className="mx-3 mb-3 rounded-xl p-3"
+                  style={{ background: '#f9fafb', border: '1px solid #f3f4f6' }}
+                >
+                  <div className="grid grid-cols-2 gap-3">
+                    {PER_MODE_RECORD_TYPES.map((rt) => {
+                      const record = modeRecords.find((r) => r.record_type === rt);
                       return (
-                        <AllTimeRecordRow
+                        <StatCell
                           key={rt}
+                          recordType={rt}
                           record={record}
                           accentColor={color}
-                          isCurrentUser={!!userId && record.holder_id === userId}
+                          isCurrentUser={!!userId && record?.holder_id === userId}
                         />
                       );
-                    }
-                    return <EmptyRecordRow key={rt} recordType={rt} />;
-                  })}
+                    })}
+                  </div>
                 </div>
               </motion.div>
             );
