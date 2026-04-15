@@ -14,7 +14,7 @@ import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
-import { useGamePersistence } from '@/hooks/use-game-persistence';
+import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 
 interface OctordleGameProps {
   initialSeed?: string;
@@ -24,29 +24,29 @@ interface OctordleGameProps {
 export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   const { profile } = useAuth();
   const isPro = (profile as any)?.is_pro ?? false;
-  const [gameSeed] = useState(() => initialSeed || Date.now().toString());
+  // Restore any previously saved session for this mode+variant.
+  const [savedSession] = useState(() => loadGameSession(GameMode.OCTORDLE, !!isDaily));
+  const [gameSeed, setGameSeed] = useState(() => savedSession?.seed ?? initialSeed ?? Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(gameSeed, GameMode.OCTORDLE)
+    gameSeed,
+    (s) => savedSession?.state ?? initializeGame(s, GameMode.OCTORDLE),
   );
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
   const [copied, setCopied] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
-  const { isRestored, restoredElapsedTime } = useGamePersistence(GameMode.OCTORDLE, !!isDaily, gameSeed, state, dispatch, elapsedTime);
-  const startTimeRef = useRef(state.startTime);
+  // Flag so the effect below doesn't refire victory/loss on mount when a
+  // completed save is loaded. Reset in handleRestart.
+  const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
+  const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
 
-  useEffect(() => {
-    if (restoredElapsedTime > 0) {
-      startTimeRef.current = Date.now() - restoredElapsedTime * 1000;
-      setElapsedTime(restoredElapsedTime);
-    }
-  }, [restoredElapsedTime]);
+  useGameSnapshot(GameMode.OCTORDLE, !!isDaily, gameSeed, state, elapsedTime);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
@@ -58,15 +58,15 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   }, [state.status]);
 
   useEffect(() => {
-    if (state.status === 'WON' && !isRestored) setShowVictory(true);
-    if (state.status === 'LOST' && !isRestored) setShowGameOver(true);
-    if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
+    if (state.status === 'WON' && !isRestoredCompleted.current) setShowVictory(true);
+    if (state.status === 'LOST' && !isRestoredCompleted.current) setShowGameOver(true);
+    if (profile && !isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - startTimeRef.current;
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'OCTORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 8).then(xp => { if (xp) setXpResult(xp); });
     }
-    if (!isRestored && (state.status === 'WON' || state.status === 'LOST')) {
+    if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('octordle');
     }
   }, [state.status]);
@@ -128,8 +128,12 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   }, [state, totalGuesses, elapsedTime]);
 
   const handleRestart = () => {
-    dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.OCTORDLE });
+    const newSeed = Date.now().toString();
+    setGameSeed(newSeed);
+    dispatch({ type: 'RESET', seed: newSeed, mode: GameMode.OCTORDLE });
     setCurrentGuess(''); setError(''); setElapsedTime(0);
+    startTimeRef.current = Date.now();
+    isRestoredCompleted.current = false;
   };
 
   return (

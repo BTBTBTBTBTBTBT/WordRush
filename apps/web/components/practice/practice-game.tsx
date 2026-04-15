@@ -15,7 +15,7 @@ import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
-import { useGamePersistence } from '@/hooks/use-game-persistence';
+import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 
 interface PracticeGameProps {
   mode: GameMode;
@@ -28,25 +28,35 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   ensureDictionaryInitialized();
   const { profile } = useAuth();
   const isPro = (profile as any)?.is_pro ?? false;
-  const [gameSeed] = useState(() => initialSeed || generateMatchSeed());
-  const [state, dispatch] = useReducer(gameReducer, createInitialState(gameSeed, mode));
+  // Attempt to restore any previously saved session for this mode+variant.
+  // Captured in state so the value is stable across re-renders but only
+  // computed once on mount.
+  const [savedSession] = useState(() => loadGameSession(mode, !!isDaily));
+  const [gameSeed, setGameSeed] = useState(() => savedSession?.seed ?? initialSeed ?? generateMatchSeed());
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    gameSeed,
+    (s) => savedSession?.state ?? createInitialState(s, mode),
+  );
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
   const [copied, setCopied] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
-  const { isRestored, restoredElapsedTime } = useGamePersistence(mode, !!isDaily, gameSeed, state, dispatch, elapsedTime);
-  const startTimeRef = useRef(state.startTime);
+  // If a completed save was loaded, flag it so the victory/recording effect
+  // below doesn't refire. Reset to false on RESET (detected via elapsedTime
+  // going back to 0 while status returns to PLAYING).
+  const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
 
-  useEffect(() => {
-    if (restoredElapsedTime > 0) {
-      startTimeRef.current = Date.now() - restoredElapsedTime * 1000;
-      setElapsedTime(restoredElapsedTime);
-    }
-  }, [restoredElapsedTime]);
+  // Rebase running-timer anchors so restored elapsed time is preserved.
+  const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
+
+  // Snapshot persistence — saves the reducer state on every change, loads
+  // on mount via the lazy initializers above.
+  useGameSnapshot(mode, !!isDaily, gameSeed, state, elapsedTime);
 
   const currentBoard = state.boards[state.currentBoardIndex];
 
@@ -77,15 +87,15 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   }, [state.status]);
 
   useEffect(() => {
-    if (state.status === GameStatus.WON && !isRestored) setShowVictory(true);
-    if (state.status === GameStatus.LOST && !isRestored) setShowGameOver(true);
-    if (profile && !isRestored && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
+    if (state.status === GameStatus.WON && !isRestoredCompleted.current) setShowVictory(true);
+    if (state.status === GameStatus.LOST && !isRestoredCompleted.current) setShowGameOver(true);
+    if (profile && !isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       const timeMs = Date.now() - startTimeRef.current;
       const guesses = currentBoard.guesses.length;
       recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1)
         .then(xp => { if (xp) setXpResult(xp); });
     }
-    if (!isRestored && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
+    if (!isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       recordModePlayed('practice');
     }
   }, [state.status]);
@@ -130,10 +140,14 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   const handleReset = () => {
-    dispatch({ type: 'RESET', seed: generateMatchSeed(), mode });
+    const newSeed = generateMatchSeed();
+    setGameSeed(newSeed);
+    dispatch({ type: 'RESET', seed: newSeed, mode });
     setCurrentGuess('');
     setMessage('');
     setElapsedTime(0);
+    startTimeRef.current = Date.now();
+    isRestoredCompleted.current = false;
   };
 
   const handleShare = useCallback(async () => {

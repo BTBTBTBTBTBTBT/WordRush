@@ -32,6 +32,10 @@ export function getRandomPuzzle(excludeIds: string[] = []): Puzzle {
   return available[randomIndex];
 }
 
+export function getPuzzleById(id: string): Puzzle | null {
+  return allPuzzles.find(p => p.id === id) ?? null;
+}
+
 export function getPuzzlesByCategory(themeCategory: ThemeCategory): Puzzle[] {
   return allPuzzles.filter(p => p.themeCategory === themeCategory);
 }

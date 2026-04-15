@@ -14,7 +14,7 @@ import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
-import { useGamePersistence } from '@/hooks/use-game-persistence';
+import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 
 interface QuordleGameProps {
   initialSeed?: string;
@@ -24,29 +24,30 @@ interface QuordleGameProps {
 export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   const { profile } = useAuth();
   const isPro = (profile as any)?.is_pro ?? false;
-  const [gameSeed] = useState(() => initialSeed || Date.now().toString());
+  // Restore any previously saved session for this mode+variant.
+  const [savedSession] = useState(() => loadGameSession(GameMode.QUORDLE, !!isDaily));
+  const [gameSeed, setGameSeed] = useState(() => savedSession?.seed ?? initialSeed ?? Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(gameSeed, GameMode.QUORDLE)
+    gameSeed,
+    (s) => savedSession?.state ?? initializeGame(s, GameMode.QUORDLE),
   );
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
   const [copied, setCopied] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
-  const { isRestored, restoredElapsedTime } = useGamePersistence(GameMode.QUORDLE, !!isDaily, gameSeed, state, dispatch, elapsedTime);
-  const startTimeRef = useRef(state.startTime);
+  // Flag so effects below don't refire victory/loss animations or record
+  // duplicate stats when a completed game was loaded on mount. Reset on
+  // handleRestart so a fresh run can animate normally.
+  const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
+  const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
 
-  useEffect(() => {
-    if (restoredElapsedTime > 0) {
-      startTimeRef.current = Date.now() - restoredElapsedTime * 1000;
-      setElapsedTime(restoredElapsedTime);
-    }
-  }, [restoredElapsedTime]);
+  useGameSnapshot(GameMode.QUORDLE, !!isDaily, gameSeed, state, elapsedTime);
 
   useEffect(() => {
     if (state.status === 'PLAYING') {
@@ -58,15 +59,15 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   }, [state.status]);
 
   useEffect(() => {
-    if (state.status === 'WON' && !isRestored) setShowVictory(true);
-    if (state.status === 'LOST' && !isRestored) setShowGameOver(true);
-    if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
+    if (state.status === 'WON' && !isRestoredCompleted.current) setShowVictory(true);
+    if (state.status === 'LOST' && !isRestoredCompleted.current) setShowGameOver(true);
+    if (profile && !isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - startTimeRef.current;
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'QUORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
     }
-    if (!isRestored && (state.status === 'WON' || state.status === 'LOST')) {
+    if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('quordle');
     }
   }, [state.status]);
@@ -128,8 +129,12 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   }, [state, totalGuesses, elapsedTime]);
 
   const handleRestart = () => {
-    dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.QUORDLE });
+    const newSeed = Date.now().toString();
+    setGameSeed(newSeed);
+    dispatch({ type: 'RESET', seed: newSeed, mode: GameMode.QUORDLE });
     setCurrentGuess(''); setError(''); setElapsedTime(0);
+    startTimeRef.current = Date.now();
+    isRestoredCompleted.current = false;
   };
 
   return (

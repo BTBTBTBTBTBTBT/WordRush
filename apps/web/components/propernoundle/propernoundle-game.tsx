@@ -10,7 +10,7 @@ import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
-import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber } from './puzzle-service';
+import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById } from './puzzle-service';
 import { useHints } from './use-hints';
 import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
@@ -23,6 +23,9 @@ import { getTodayUTC } from '@/lib/daily-service';
 
 const MAX_GUESSES = 6;
 const DAILY_STORAGE_KEY = 'spellstrike-propernoundle-daily';
+const PRACTICE_STORAGE_KEY = 'spellstrike-propernoundle-practice';
+const MODE_STORAGE_KEY = 'spellstrike-propernoundle-mode';
+const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 const CATEGORY_LABELS: Record<string, string> = {
   music: 'Music',
@@ -55,6 +58,15 @@ interface DailyState {
   elapsedTime: number;
 }
 
+interface PracticeState {
+  puzzleId: string;
+  guesses: Guess[];
+  gameStatus: 'playing' | 'won' | 'lost';
+  letterStates: Record<string, TileState>;
+  elapsedTime: number;
+  savedAt: number;
+}
+
 function getTodayString(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -81,10 +93,50 @@ function saveDailyState(state: DailyState): void {
   localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(state));
 }
 
+function getSavedPracticeState(): PracticeState | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const stored = localStorage.getItem(PRACTICE_STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    // Expire practice saves after 24h so stale sessions don't linger.
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > PRACTICE_TTL_MS) {
+      localStorage.removeItem(PRACTICE_STORAGE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function savePracticeState(state: Omit<PracticeState, 'savedAt'>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PRACTICE_STORAGE_KEY, JSON.stringify({ ...state, savedAt: Date.now() }));
+  } catch {}
+}
+
+function loadPersistedMode(): 'daily' | 'practice' {
+  if (typeof window === 'undefined') return 'daily';
+  try {
+    const stored = localStorage.getItem(MODE_STORAGE_KEY);
+    return stored === 'practice' ? 'practice' : 'daily';
+  } catch {
+    return 'daily';
+  }
+}
+
+function savePersistedMode(mode: 'daily' | 'practice'): void {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch {}
+}
+
 export function ProperNoundleGame() {
   const { profile } = useAuth();
   const isPro = (profile as any)?.is_pro ?? false;
-  const [mode, setMode] = useState<GameMode>('daily');
+  // Persist the last-used mode so returning lands back on the same tab.
+  const [mode, setMode] = useState<GameMode>(() => loadPersistedMode());
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [currentGuess, setCurrentGuess] = useState('');
@@ -156,16 +208,38 @@ export function ProperNoundleGame() {
       setStartTime(Date.now());
       restoredDailyRef.current = false;
     } else {
-      const p = getRandomPuzzle(playedIds);
-      setPuzzle(p);
-      setGuesses([]);
-      setCurrentGuess('');
-      setGameStatus('playing');
-      setLetterStates({});
-      setMessage('');
-      setElapsedTime(0);
-      setStartTime(Date.now());
-      restoredDailyRef.current = false;
+      // Practice: first check for a saved in-progress or completed practice
+      // session so navigating away and back resumes on the same puzzle.
+      const savedPractice = getSavedPracticeState();
+      const savedPuzzle = savedPractice ? getPuzzleById(savedPractice.puzzleId) : null;
+      if (savedPractice && savedPuzzle) {
+        setPuzzle(savedPuzzle);
+        setGuesses(savedPractice.guesses);
+        setLetterStates(savedPractice.letterStates);
+        setElapsedTime(savedPractice.elapsedTime);
+        setCurrentGuess('');
+        setMessage('');
+        if (savedPractice.gameStatus !== 'playing') {
+          setGameStatus(savedPractice.gameStatus);
+          // Completed save: don't re-run victory animation or re-record stats.
+          restoredDailyRef.current = true;
+        } else {
+          setGameStatus('playing');
+          setStartTime(Date.now() - savedPractice.elapsedTime * 1000);
+          restoredDailyRef.current = false;
+        }
+      } else {
+        const p = getRandomPuzzle(playedIds);
+        setPuzzle(p);
+        setGuesses([]);
+        setCurrentGuess('');
+        setGameStatus('playing');
+        setLetterStates({});
+        setMessage('');
+        setElapsedTime(0);
+        setStartTime(Date.now());
+        restoredDailyRef.current = false;
+      }
     }
     setShowVictory(false);
     setWikiImageUrl(null);
@@ -226,16 +300,26 @@ export function ProperNoundleGame() {
         });
       }
 
-      // Save daily state
-      if (mode === 'daily' && puzzle) {
-        saveDailyState({
-          date: getTodayString(),
-          puzzleId: puzzle.id,
-          guesses,
-          gameStatus,
-          letterStates,
-          elapsedTime,
-        });
+      // Save terminal state so returning shows the completed board
+      if (puzzle) {
+        if (mode === 'daily') {
+          saveDailyState({
+            date: getTodayString(),
+            puzzleId: puzzle.id,
+            guesses,
+            gameStatus,
+            letterStates,
+            elapsedTime,
+          });
+        } else {
+          savePracticeState({
+            puzzleId: puzzle.id,
+            guesses,
+            gameStatus,
+            letterStates,
+            elapsedTime,
+          });
+        }
       }
     }
     restoredDailyRef.current = false;
@@ -249,9 +333,11 @@ export function ProperNoundleGame() {
     }
   }, [profile, recordResult, gameStatus]);
 
-  // Also save daily state after each guess (so in-progress games persist)
+  // Save in-progress state after each guess so games persist across
+  // navigate-away / navigate-back cycles in both daily and practice.
   useEffect(() => {
-    if (mode === 'daily' && gameStatus === 'playing' && guesses.length > 0 && puzzle) {
+    if (gameStatus !== 'playing' || guesses.length === 0 || !puzzle) return;
+    if (mode === 'daily') {
       saveDailyState({
         date: getTodayString(),
         puzzleId: puzzle.id,
@@ -260,8 +346,21 @@ export function ProperNoundleGame() {
         letterStates,
         elapsedTime,
       });
+    } else {
+      savePracticeState({
+        puzzleId: puzzle.id,
+        guesses,
+        gameStatus,
+        letterStates,
+        elapsedTime,
+      });
     }
   }, [guesses, mode, gameStatus, letterStates, elapsedTime, puzzle]);
+
+  // Persist the current mode so the next visit lands back on the same tab.
+  useEffect(() => {
+    savePersistedMode(mode);
+  }, [mode]);
 
   const buildLetterStates = useCallback((allGuesses: Guess[]) => {
     const states: Record<string, TileState> = {};

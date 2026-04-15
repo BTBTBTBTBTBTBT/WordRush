@@ -13,7 +13,7 @@ import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
-import { useGamePersistence } from '@/hooks/use-game-persistence';
+import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
@@ -26,30 +26,30 @@ interface SequenceGameProps {
 export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const { profile } = useAuth();
   const isPro = (profile as any)?.is_pro ?? false;
-  const [gameSeed] = useState(() => initialSeed || Date.now().toString());
+  // Restore any previously saved session for this mode+variant.
+  const [savedSession] = useState(() => loadGameSession(GameMode.SEQUENCE, !!isDaily));
+  const [gameSeed, setGameSeed] = useState(() => savedSession?.seed ?? initialSeed ?? Date.now().toString());
   const [state, dispatch] = useReducer(
     gameReducer,
-    initializeGame(gameSeed, GameMode.SEQUENCE)
+    gameSeed,
+    (s) => savedSession?.state ?? initializeGame(s, GameMode.SEQUENCE),
   );
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
   const [streak, setStreak] = useState(0);
   const [copied, setCopied] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
-  const { isRestored, restoredElapsedTime } = useGamePersistence(GameMode.SEQUENCE, !!isDaily, gameSeed, state, dispatch, elapsedTime);
-  const startTimeRef = useRef(state.startTime);
+  // Flag so the effect below doesn't refire victory/loss on mount when a
+  // completed save is loaded. Reset in handleNextPuzzle.
+  const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
+  const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
 
-  useEffect(() => {
-    if (restoredElapsedTime > 0) {
-      startTimeRef.current = Date.now() - restoredElapsedTime * 1000;
-      setElapsedTime(restoredElapsedTime);
-    }
-  }, [restoredElapsedTime]);
+  useGameSnapshot(GameMode.SEQUENCE, !!isDaily, gameSeed, state, elapsedTime);
 
   // The active board is the first unsolved board in sequence order
   const activeBoardIndex = useMemo(() => {
@@ -69,20 +69,20 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   }, [state.status]);
 
   useEffect(() => {
-    if (state.status === 'WON' && !isRestored) {
+    if (state.status === 'WON' && !isRestoredCompleted.current) {
       setShowVictory(true);
       setStreak((prev) => prev + 1);
     } else if (state.status === 'LOST') {
-      if (!isRestored) setShowGameOver(true);
+      if (!isRestoredCompleted.current) setShowGameOver(true);
       setStreak(0);
     }
-    if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
+    if (profile && !isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - startTimeRef.current;
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
     }
-    if (!isRestored && (state.status === 'WON' || state.status === 'LOST')) {
+    if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('sequence');
     }
   }, [state.status]);
@@ -167,10 +167,14 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   };
 
   const handleNextPuzzle = () => {
-    dispatch({ type: 'RESET', seed: Date.now().toString(), mode: GameMode.SEQUENCE });
+    const newSeed = Date.now().toString();
+    setGameSeed(newSeed);
+    dispatch({ type: 'RESET', seed: newSeed, mode: GameMode.SEQUENCE });
     setCurrentGuess('');
     setError('');
     setElapsedTime(0);
+    startTimeRef.current = Date.now();
+    isRestoredCompleted.current = false;
   };
 
   const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;

@@ -23,10 +23,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import {
-  loadGauntletSession,
-  useGauntletPersistence,
-} from '@/hooks/use-gauntlet-persistence';
+import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 
 const BLACKOUT_DURATION_MS = 15_000;
 const BLACKOUT_LETTER_COUNT = 3;
@@ -59,7 +56,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // Attempt to restore any previously saved mid-game session. Captured in
   // state so the value is stable across re-renders but only computed once on
   // mount — subsequent gets don't hit localStorage.
-  const [savedSession] = useState(() => loadGauntletSession(!!isDaily));
+  const [savedSession] = useState(() => loadGameSession(GameMode.GAUNTLET, !!isDaily));
   const [seed, setSeed] = useState(() => savedSession?.seed ?? initialSeed ?? generateSeed());
   const [state, dispatch] = useReducer(
     gameReducer,
@@ -83,7 +80,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // Persistence hook — snapshots the full reducer state to localStorage on
   // every change, and clears on game-end. This lets the user navigate away
   // and return mid-stage without losing progress.
-  useGauntletPersistence(seed, !!isDaily, state, elapsedTime);
+  useGameSnapshot(GameMode.GAUNTLET, !!isDaily, seed, state, elapsedTime);
 
   // Running timer
   useEffect(() => {
