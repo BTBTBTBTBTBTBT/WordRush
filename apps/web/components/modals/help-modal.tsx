@@ -191,17 +191,7 @@ function GameModesContent() {
               ) : null}
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-black" style={{ color: '#1a1a2e' }}>{mode.title}</span>
-                {mode.badge && (
-                  <span
-                    className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded"
-                    style={{ background: '#f3f0ff', color: '#7c3aed' }}
-                  >
-                    {mode.badge}
-                  </span>
-                )}
-              </div>
+              <span className="text-sm font-black" style={{ color: '#1a1a2e' }}>{mode.title}</span>
               <p className="text-xs mt-0.5" style={{ color: '#6b7280' }}>{mode.desc}</p>
             </div>
           </div>
