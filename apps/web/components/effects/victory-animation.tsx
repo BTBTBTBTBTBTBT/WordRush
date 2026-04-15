@@ -120,7 +120,11 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                   border: '1px solid #ede9f6',
                 }}
               >
-                <div className={solutions.length === 8
+                <div className={solutions.length > 8
+                  // Gauntlet (21 solutions) — tight 4-col grid so everything
+                  // fits inside the modal without overflowing the viewport.
+                  ? 'grid grid-cols-4 gap-x-2 gap-y-1 justify-items-center'
+                  : solutions.length === 8
                   ? 'grid grid-cols-4 gap-x-3 gap-y-1.5 justify-items-center'
                   : solutions.length === 4
                   ? 'grid grid-cols-2 gap-x-4 gap-y-1.5 justify-items-center'
@@ -129,7 +133,9 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                   {solutions.map((word, i) => (
                     <span
                       key={i}
-                      className={`font-black tracking-wider ${solutions.length > 4 ? 'text-sm' : 'text-lg'}`}
+                      className={`font-black tracking-wider ${
+                        solutions.length > 8 ? 'text-xs' : solutions.length > 4 ? 'text-sm' : 'text-lg'
+                      }`}
                       style={{ color: '#1a1a2e' }}
                     >
                       {word.toUpperCase()}

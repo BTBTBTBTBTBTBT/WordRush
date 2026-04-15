@@ -504,15 +504,18 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         {renderGameArea()}
       </div>
 
-      {/* Keyboard */}
-      <div className="shrink-0 pb-2 px-2 pt-1">
-        <Keyboard
-          onKey={handleKey}
-          letterStates={letterStates}
-          boardLetterStates={boardLetterStates}
-          blackedOutLetters={blackedOutLetters.size > 0 ? blackedOutLetters : undefined}
-        />
-      </div>
+      {/* Keyboard — hidden when game is complete so the VictoryAnimation /
+          final Results sit over a clean canvas, matching standalone modes. */}
+      {state.status === GameStatus.PLAYING && (
+        <div className="shrink-0 pb-2 px-2 pt-1">
+          <Keyboard
+            onKey={handleKey}
+            letterStates={letterStates}
+            boardLetterStates={boardLetterStates}
+            blackedOutLetters={blackedOutLetters.size > 0 ? blackedOutLetters : undefined}
+          />
+        </div>
+      )}
 
       {/* Overlays */}
       <AnimatePresence>
@@ -530,7 +533,17 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
 
       <AnimatePresence>
         {showVictory && (
-          <VictoryAnimation onComplete={handleVictoryComplete} timeSeconds={Math.floor((Date.now() - gameStartTime) / 1000)} />
+          <VictoryAnimation
+            onComplete={handleVictoryComplete}
+            timeSeconds={Math.floor((Date.now() - gameStartTime) / 1000)}
+            // Full run-order list (21 words across all 5 stages) so the victory
+            // modal shows every solved puzzle in the order they were played,
+            // matching how standalone multi-board modes pass their boards'
+            // solutions straight through. Stage-by-stage breakdown is shown on
+            // the subsequent GauntletResults screen, so boardsSolved/totalBoards
+            // are intentionally omitted here to keep the modal uncluttered.
+            solutions={gauntlet.allSolutions}
+          />
         )}
       </AnimatePresence>
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}

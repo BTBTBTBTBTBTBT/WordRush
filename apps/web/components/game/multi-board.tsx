@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useCallback, useRef } from 'react';
+import { memo, useState, useCallback, useRef, useMemo } from 'react';
 import { BoardState, TileState, PrefilledGuess, evaluateGuess as coreEvaluateGuess } from '@wordle-duel/core';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -181,6 +181,18 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord }: 
     setExpandedIndex(index);
   }, [isOctordle]);
 
+  // Stable per-index click handlers so that the memoized MiniBoard below
+  // doesn't re-render on every parent re-render (e.g. once-per-second timer
+  // ticks during a multi-board game). Inlining `() => handleBoardClick(i)` in
+  // the map would allocate a fresh closure on each render and defeat memo.
+  const boardClickHandlers = useMemo(
+    () =>
+      isOctordle
+        ? Array.from({ length: boards.length }, (_, index) => () => handleBoardClick(index))
+        : null,
+    [isOctordle, boards.length, handleBoardClick],
+  );
+
   const handleCloseExpanded = useCallback(() => {
     // Re-capture current position for exit animation
     if (expandedIndex !== null) {
@@ -236,7 +248,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord }: 
               index={index}
               currentGuess={board.status === 'PLAYING' ? currentGuess : undefined}
               colorBlind={colorBlind}
-              onClick={isOctordle ? () => handleBoardClick(index) : undefined}
+              onClick={boardClickHandlers?.[index]}
               invisible={expandedIndex === index}
               isInvalidWord={isInvalidWord}
             />
