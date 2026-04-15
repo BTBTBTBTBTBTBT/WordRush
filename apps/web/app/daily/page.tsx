@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import {
   fetchDailyLeaderboard,
   getUserDailyRank,
@@ -16,6 +17,7 @@ import {
   getTodayUTC,
   type LeaderboardEntry,
 } from '@/lib/daily-service';
+import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 const GAME_MODES = [
@@ -68,6 +70,7 @@ export default function DailyPage() {
   const { user, profile } = useAuth();
   const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [selectedMode, setSelectedMode] = useState('DUEL');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
@@ -75,6 +78,8 @@ export default function DailyPage() {
   const [loading, setLoading] = useState(true);
   const [showYesterday, setShowYesterday] = useState(false);
   const [yesterdayLeaderboard, setYesterdayLeaderboard] = useState<LeaderboardEntry[]>([]);
+
+  const isPro = (profile as any)?.is_pro ?? false;
 
   const today = getTodayUTC();
   const yesterday = useMemo(() => {
@@ -110,9 +115,20 @@ export default function DailyPage() {
 
   const modeConfig = GAME_MODES.find(m => m.id === selectedMode)!;
 
+  // Play-limit key matches the lowercase mode IDs that game components record
+  // (e.g. 'practice', 'quordle', 'propernoundle'). Derived from the route
+  // href so it stays in sync without a second lookup table.
+  const playLimitKey = modeConfig.href.slice(1);
+
   const handlePlayDaily = () => {
     if (!user) {
       setAuthModalOpen(true);
+      return;
+    }
+    // Freemium users who've already used today's free play for this mode see
+    // the Pro upsell modal instead of going straight to the completed board.
+    if (!isPro && hasPlayedModeToday(playLimitKey)) {
+      setLimitModalOpen(true);
       return;
     }
     router.push(`${modeConfig.href}?daily=true`);
@@ -303,6 +319,12 @@ export default function DailyPage() {
 
       <BottomNav />
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
+      <ModeLimitModal
+        open={limitModalOpen}
+        onClose={() => setLimitModalOpen(false)}
+        modeName={modeConfig.label}
+        onViewPuzzle={() => router.push(`${modeConfig.href}?daily=true`)}
+      />
     </div>
   );
 }
