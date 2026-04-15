@@ -46,7 +46,7 @@ export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
     if (hasReported) return;
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
       setHasReported(true);
-      const totalGuesses = state.boards[0]?.guesses.length || 0;
+      const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       onCompleted(state.status === GameStatus.WON ? 'won' : 'lost', totalGuesses, Date.now() - startTime);
     }
   }, [state.status, hasReported, state.boards, startTime, onCompleted]);
@@ -89,7 +89,7 @@ export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   const completedBoards = state.boards.filter(b => b.status !== 'PLAYING').length;
-  const totalGuesses = state.boards[0]?.guesses.length || 0;
+  const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
 
   return (
     <div className="h-full flex flex-col">

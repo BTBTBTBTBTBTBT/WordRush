@@ -78,7 +78,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
     }
     if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - startTimeRef.current;
-      const guesses = state.boards[0]?.guesses.length || 0;
+      const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
     }
@@ -174,7 +174,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   };
 
   const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
-  const guessesUsed = state.boards[0]?.guesses.length || 0;
+  const guessesUsed = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   const handleShare = useCallback(async () => {

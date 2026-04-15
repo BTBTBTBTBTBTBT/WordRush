@@ -53,7 +53,7 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
     if (hasReported) return;
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
       setHasReported(true);
-      const totalGuesses = state.boards[0]?.guesses.length || 0;
+      const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       onCompleted(state.status === GameStatus.WON ? 'won' : 'lost', totalGuesses, Date.now() - startTime);
     }
   }, [state.status, hasReported, state.boards, startTime, onCompleted]);
@@ -124,7 +124,7 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   const solvedCount = state.boards.filter(b => b.status === GameStatus.WON).length;
-  const guessesUsed = state.boards[0]?.guesses.length || 0;
+  const guessesUsed = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   return (

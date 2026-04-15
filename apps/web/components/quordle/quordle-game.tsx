@@ -62,7 +62,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
     if (state.status === 'LOST' && !isRestored) setShowGameOver(true);
     if (profile && !isRestored && (state.status === 'WON' || state.status === 'LOST')) {
       const timeMs = Date.now() - startTimeRef.current;
-      const guesses = state.boards[0]?.guesses.length || 0;
+      const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'QUORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
     }
@@ -108,7 +108,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   const completedBoards = state.boards.filter(b => b.status !== 'PLAYING').length;
-  const totalGuesses = state.boards[0]?.guesses.length || 0;
+  const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
 
   const handleShare = useCallback(async () => {
     const summary = generateMultiBoardSummary(state.boards as any, () => []);
