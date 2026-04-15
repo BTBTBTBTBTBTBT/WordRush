@@ -17,9 +17,14 @@ const nunito = Nunito({
   display: 'swap',
 });
 
+// Brand metadata. The og:image / twitter:image tags are emitted
+// automatically by Next.js from the file-convention siblings
+// `app/opengraph-image.tsx` and `app/twitter-image.tsx` — do NOT also set
+// `openGraph.images` or `twitter.images` here, or the explicit metadata
+// wins over the dynamic renderer and a stale static PNG gets served.
 export const metadata: Metadata = {
-  title: 'SpellStrike - Epic Word Battles',
-  description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
+  title: 'SpellStrike — Epic Word Battles',
+  description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
   metadataBase: new URL('https://spellstrike.vercel.app'),
   manifest: '/manifest.json',
   themeColor: '#a78bfa',
@@ -36,25 +41,16 @@ export const metadata: Metadata = {
     'google-adsense-account': 'ca-pub-3015627373086578',
   },
   openGraph: {
-    title: 'SpellStrike - Epic Word Battles',
-    description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
+    title: 'SpellStrike — Epic Word Battles',
+    description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
     url: 'https://spellstrike.vercel.app',
     siteName: 'SpellStrike',
     type: 'website',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'SpellStrike - Epic Word Battles',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SpellStrike - Epic Word Battles',
-    description: 'Compete in vibrant multiplayer word challenges - QuadWord, OctoWord, and more!',
-    images: ['/og-image.png'],
+    title: 'SpellStrike — Epic Word Battles',
+    description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
   },
 };
 
