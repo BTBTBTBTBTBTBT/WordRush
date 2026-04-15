@@ -80,7 +80,6 @@ const GAME_MODES = [
     title: 'OctoWord',
     desc: '8 words at once. 13 guesses. Same idea, bigger challenge.',
     color: '#7e22ce',
-    badge: 'PRO',
   },
   {
     icon: TrendingUp,
