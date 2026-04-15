@@ -122,7 +122,14 @@ function StatCell({
   const hasRecord = !!record;
 
   return (
-    <div className="flex items-start gap-2.5 p-1.5">
+    <div
+      className="flex items-start gap-2.5 p-2 rounded-lg"
+      style={
+        isCurrentUser && hasRecord
+          ? { background: '#fffbeb', border: '1px solid #fde68a' }
+          : { border: '1px solid transparent' }
+      }
+    >
       <Icon
         className="w-4 h-4 shrink-0 mt-0.5"
         style={{ color: hasRecord ? accentColor : '#d1d5db' }}
@@ -476,20 +483,32 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                   className="mx-3 mb-3 rounded-xl p-3"
                   style={{ background: '#f9fafb', border: '1px solid #f3f4f6' }}
                 >
-                  <div className="grid grid-cols-2 gap-3">
-                    {PER_MODE_RECORD_TYPES.map((rt) => {
-                      const record = modeRecords.find((r) => r.record_type === rt);
-                      return (
-                        <StatCell
-                          key={rt}
-                          recordType={rt}
-                          record={record}
-                          accentColor={color}
-                          isCurrentUser={!!userId && record?.holder_id === userId}
-                        />
-                      );
-                    })}
-                  </div>
+                  {modeRecords.length === 0 ? (
+                    <div className="py-5 text-center">
+                      <Trophy
+                        className="w-7 h-7 mx-auto mb-1.5"
+                        style={{ color: '#d1d5db' }}
+                      />
+                      <p className="text-[11px] font-extrabold" style={{ color: '#9ca3af' }}>
+                        No records yet
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {PER_MODE_RECORD_TYPES.map((rt) => {
+                        const record = modeRecords.find((r) => r.record_type === rt);
+                        return (
+                          <StatCell
+                            key={rt}
+                            recordType={rt}
+                            record={record}
+                            accentColor={color}
+                            isCurrentUser={!!userId && record?.holder_id === userId}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             );
