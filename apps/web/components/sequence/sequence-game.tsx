@@ -77,7 +77,11 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       setStreak(0);
     }
     if (profile && !isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
-      const timeMs = Date.now() - startTimeRef.current;
+      // Use the frozen elapsedTime (timer stops when status leaves PLAYING)
+      // so the recorded time exactly matches what the user sees in the
+      // header, VictoryAnimation, and share text. Using a fresh Date.now()
+      // subtraction would drift by up to 1000ms from the displayed value.
+      const timeMs = elapsedTime * 1000;
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });

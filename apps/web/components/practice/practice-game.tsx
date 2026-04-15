@@ -90,7 +90,12 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     if (state.status === GameStatus.WON && !isRestoredCompleted.current) setShowVictory(true);
     if (state.status === GameStatus.LOST && !isRestoredCompleted.current) setShowGameOver(true);
     if (profile && !isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
-      const timeMs = Date.now() - startTimeRef.current;
+      // Use the frozen elapsedTime (the timer interval cleared when status
+      // left PLAYING) so the recorded time exactly matches what the user saw
+      // in the header, VictoryAnimation, and PostGameSummary. Using
+      // Date.now() - startTimeRef would drift by up to 1000ms because the
+      // setInterval fires once per second.
+      const timeMs = elapsedTime * 1000;
       const guesses = currentBoard.guesses.length;
       recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1)
         .then(xp => { if (xp) setXpResult(xp); });
