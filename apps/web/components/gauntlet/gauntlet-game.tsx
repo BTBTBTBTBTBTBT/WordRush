@@ -23,7 +23,10 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { useGamePersistence } from '@/hooks/use-game-persistence';
+import {
+  loadGauntletSession,
+  useGauntletPersistence,
+} from '@/hooks/use-gauntlet-persistence';
 
 const BLACKOUT_DURATION_MS = 15_000;
 const BLACKOUT_LETTER_COUNT = 3;
@@ -53,20 +56,34 @@ interface GauntletGameProps {
 export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const { profile } = useAuth();
   const isPro = (profile as any)?.is_pro ?? false;
-  const [seed, setSeed] = useState(() => initialSeed || generateSeed());
-  const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET));
+  // Attempt to restore any previously saved mid-game session. Captured in
+  // state so the value is stable across re-renders but only computed once on
+  // mount — subsequent gets don't hit localStorage.
+  const [savedSession] = useState(() => loadGauntletSession(!!isDaily));
+  const [seed, setSeed] = useState(() => savedSession?.seed ?? initialSeed ?? generateSeed());
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    seed,
+    (s) => savedSession?.state ?? initializeGame(s, GameMode.GAUNTLET)
+  );
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
   const [showTransition, setShowTransition] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
-  const [gameStartTime] = useState(Date.now());
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const startTimeRef = useRef(Date.now());
+  // Rebase start-time anchors so restored elapsed time is preserved. The
+  // running timer below computes elapsed as (Date.now() - startTimeRef), so
+  // subtracting the saved elapsed time from the anchor makes the timer pick
+  // up exactly where it left off.
+  const [gameStartTime] = useState(() => Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
+  const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
+  const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
 
-  // Persistence hook (no-op when isDaily is false, which is always for gauntlet currently)
-  useGamePersistence(GameMode.GAUNTLET, !!isDaily, seed, state, dispatch, elapsedTime);
+  // Persistence hook — snapshots the full reducer state to localStorage on
+  // every change, and clears on game-end. This lets the user navigate away
+  // and return mid-stage without losing progress.
+  useGauntletPersistence(seed, !!isDaily, state, elapsedTime);
 
   // Running timer
   useEffect(() => {

@@ -120,4 +120,5 @@ export type GameAction =
   | { type: 'STEAL_GUESS' }
   | { type: 'BLACKOUT_RESTART'; boardIndex: number }
   | { type: 'ABANDON' }
-  | { type: 'RESET'; seed: string; mode: GameMode };
+  | { type: 'RESET'; seed: string; mode: GameMode }
+  | { type: 'RESTORE_STATE'; state: GameState };

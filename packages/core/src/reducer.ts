@@ -337,6 +337,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return createInitialState(action.seed, action.mode);
     }
 
+    case 'RESTORE_STATE': {
+      // Replace entire state wholesale with a previously saved snapshot.
+      // Used by persistence layers to resume mid-game after a remount.
+      return action.state;
+    }
+
     default:
       return state;
   }
