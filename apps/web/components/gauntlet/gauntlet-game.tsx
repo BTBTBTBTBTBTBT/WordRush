@@ -212,7 +212,15 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     }
     if (profile && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       const timeMs = Date.now() - state.startTime;
-      const totalGuesses = state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
+      // Sum across completed stages. On WON the final NEXT_STAGE has already
+      // pushed the last stage into stageResults, so state.boards would be a
+      // double-count. On LOST the current stage isn't yet in stageResults, so
+      // add its max-across-boards count.
+      const completedStageGuesses = state.gauntlet?.stageResults.reduce((sum, r) => sum + r.guesses, 0) ?? 0;
+      const currentStageGuesses = state.status === GameStatus.LOST
+        ? state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)
+        : 0;
+      const totalGuesses = completedStageGuesses + currentStageGuesses;
       const boardsSolved = state.boards.filter(b => b.status === GameStatus.WON).length;
       recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, boardsSolved, 21).then(xp => { if (xp) setXpResult(xp); });
     }
@@ -405,7 +413,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           elapsedTime={elapsedTime}
           boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
           totalBoards={currentStageConfig.boardCount}
-          guessesUsed={state.boards[0]?.guesses.length || 0}
+          guessesUsed={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
           maxGuesses={currentStageConfig.maxGuesses}
         />
       </div>

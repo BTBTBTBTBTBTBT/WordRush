@@ -235,11 +235,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
       }
 
-      // Record stage result
+      // Record stage result.
+      // Every guess is dispatched to all PLAYING boards simultaneously, so the
+      // board that took the longest to solve always holds every guess typed
+      // during this stage. Using sum would multi-count each guess per board.
       const stageResult = {
         stageIndex: gauntlet.currentStage,
         status: GameStatus.WON,
-        guesses: state.boards.reduce((sum, b) => sum + b.guesses.length, 0),
+        guesses: state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0),
         timeMs: Date.now() - gauntlet.stageStartTime
       };
 

@@ -114,7 +114,10 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
     if (allBoardsDone && !allBoardsWon) {
       if (!hasReported) {
         setHasReported(true);
-        const totalGuesses = state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
+        // Current stage isn't in stageResults yet; add its max-across-boards count.
+        const completedStageGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0);
+        const currentStageGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
+        const totalGuesses = completedStageGuesses + currentStageGuesses;
         onCompleted('lost', totalGuesses, Date.now() - startTime);
       }
     }
@@ -125,13 +128,15 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
     if (hasReported) return;
     if (state.status === GameStatus.WON) {
       setHasReported(true);
-      const totalGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0) +
-        state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
+      // Final NEXT_STAGE has already pushed the last stage into stageResults.
+      const totalGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0);
       onCompleted('won', totalGuesses, Date.now() - startTime);
     } else if (state.status === GameStatus.LOST) {
       setHasReported(true);
-      const totalGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0) +
-        state.boards.reduce((sum, b) => sum + b.guesses.length, 0);
+      // Current stage isn't in stageResults yet; add its max-across-boards count.
+      const completedStageGuesses = gauntlet.stageResults.reduce((sum, r) => sum + r.guesses, 0);
+      const currentStageGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
+      const totalGuesses = completedStageGuesses + currentStageGuesses;
       onCompleted('lost', totalGuesses, Date.now() - startTime);
     }
   }, [state.status, hasReported, gauntlet.stageResults, state.boards, startTime, onCompleted]);
