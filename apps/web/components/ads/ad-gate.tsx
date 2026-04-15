@@ -17,8 +17,8 @@ interface AdGateProps {
  * with a countdown before allowing the game to load. Pro users skip straight through.
  */
 export function AdGate({ children }: AdGateProps) {
-  const { profile } = useAuth();
-  const isPro = (profile as any)?.is_pro ?? false;
+  const { isProActive } = useAuth();
+  const isPro = isProActive;
 
   // Determine if we should show the ad at all
   const shouldShowAd = !isPro && AD_CONFIG.enabled;

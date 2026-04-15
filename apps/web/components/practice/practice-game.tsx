@@ -26,8 +26,8 @@ interface PracticeGameProps {
 
 export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGameProps) {
   ensureDictionaryInitialized();
-  const { profile } = useAuth();
-  const isPro = (profile as any)?.is_pro ?? false;
+  const { profile, isProActive } = useAuth();
+  const isPro = isProActive;
   // Attempt to restore any previously saved session for this mode+variant.
   // Captured in state so the value is stable across re-renders but only
   // computed once on mount.

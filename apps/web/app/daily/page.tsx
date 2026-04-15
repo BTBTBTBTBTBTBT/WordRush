@@ -67,7 +67,7 @@ function MedalIcon({ rank }: { rank: number }) {
 }
 
 export default function DailyPage() {
-  const { user, profile } = useAuth();
+  const { user, isProActive } = useAuth();
   const router = useRouter();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
@@ -79,7 +79,7 @@ export default function DailyPage() {
   const [showYesterday, setShowYesterday] = useState(false);
   const [yesterdayLeaderboard, setYesterdayLeaderboard] = useState<LeaderboardEntry[]>([]);
 
-  const isPro = (profile as any)?.is_pro ?? false;
+  const isPro = isProActive;
 
   const today = getTodayUTC();
   const yesterday = useMemo(() => {

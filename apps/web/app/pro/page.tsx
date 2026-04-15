@@ -19,9 +19,8 @@ const benefits = [
 ];
 
 export default function ProPage() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, refreshProfile, isProActive } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
-  const isPro = (profile as any)?.is_pro ?? false;
 
   const handleSubscribe = async (planId: string) => {
     if (!user) return;
@@ -62,7 +61,7 @@ export default function ProPage() {
           </p>
         </div>
 
-        {isPro ? (
+        {isProActive ? (
           <div
             className="text-center p-8"
             style={{
@@ -165,6 +164,36 @@ export default function ProPage() {
                   {loading === PRO_PLANS.yearly.id ? 'Processing...' : 'Subscribe Yearly'}
                 </button>
               </div>
+            </div>
+
+            {/* Day pass — secondary CTA for impulse buyers. Rendered below
+                the monthly/yearly grid so it doesn't compete with the main
+                plans for attention (and cannibalize monthly conversions). */}
+            <div className="mt-6 mb-2">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
+                <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+                  or try it first
+                </span>
+                <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
+              </div>
+              <button
+                onClick={() => handleSubscribe(PRO_PLANS.day.id)}
+                disabled={loading !== null}
+                className="w-full py-3 rounded-xl font-black text-sm transition-opacity disabled:opacity-50"
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #ede9f6',
+                  color: '#7c3aed',
+                }}
+              >
+                {loading === PRO_PLANS.day.id
+                  ? 'Processing...'
+                  : `Just today — $${PRO_PLANS.day.price.toFixed(0)} for 24 hours of Pro →`}
+              </button>
+              <p className="mt-2 text-center text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+                Eight day passes cost more than a month of Pro.
+              </p>
             </div>
           </>
         )}

@@ -137,8 +137,8 @@ const MODE_TITLE_GRADIENTS: Record<string, string> = {
 export function VsGame({ mode, isDaily = false }: VsGameProps) {
   ensureDictionaryInitialized();
 
-  const { profile } = useAuth();
-  const isPro = (profile as any)?.is_pro ?? false;
+  const { profile, isProActive } = useAuth();
+  const isPro = isProActive;
 
   // Freemium daily-VS gating is only active when (a) the caller asked
   // for the daily flow, (b) the user isn't pro, and (c) the mode is the

@@ -51,8 +51,8 @@ interface GauntletGameProps {
 }
 
 export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
-  const { profile } = useAuth();
-  const isPro = (profile as any)?.is_pro ?? false;
+  const { profile, isProActive } = useAuth();
+  const isPro = isProActive;
   // Attempt to restore any previously saved mid-game session. Captured in
   // state so the value is stable across re-renders but only computed once on
   // mount — subsequent gets don't hit localStorage.

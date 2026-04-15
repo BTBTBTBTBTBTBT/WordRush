@@ -22,8 +22,8 @@ interface OctordleGameProps {
 }
 
 export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
-  const { profile } = useAuth();
-  const isPro = (profile as any)?.is_pro ?? false;
+  const { profile, isProActive } = useAuth();
+  const isPro = isProActive;
   // Restore any previously saved session for this mode+variant.
   const [savedSession] = useState(() => loadGameSession(GameMode.OCTORDLE, !!isDaily));
   const [gameSeed, setGameSeed] = useState(() => savedSession?.seed ?? initialSeed ?? Date.now().toString());

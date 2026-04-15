@@ -81,7 +81,7 @@ function formatDuration(seconds: number): string {
 }
 
 export default function ProfilePage() {
-  const { profile, loading, refreshProfile, signOut } = useAuth();
+  const { profile, loading, refreshProfile, signOut, isProActive } = useAuth();
   const [stats, setStats] = useState<UserStats[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [medals, setMedals] = useState<MedalType[]>([]);
@@ -279,7 +279,7 @@ export default function ProfilePage() {
           ) : (
             <button onClick={() => setEditingUsername(true)} className="group flex items-center gap-2">
               <h1 className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.username}</h1>
-              {(profile as any).is_pro && <ProBadge size="md" />}
+              {isProActive && <ProBadge size="md" />}
               <Pencil className="w-4 h-4 opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: '#9ca3af' }} />
             </button>
           )}
@@ -304,7 +304,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {!(profile as any).is_pro && (
+            {!isProActive && (
               <Link href="/pro">
                 <button
                   className="btn-3d px-4 py-1.5 rounded-lg text-white font-extrabold text-xs"
@@ -451,7 +451,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Pro Stats */}
-        <ProStats userId={profile.id} isPro={(profile as any).is_pro ?? false} />
+        <ProStats userId={profile.id} isPro={isProActive} />
 
         {/* Streaks */}
         <div className="section-header mb-2">STREAKS</div>

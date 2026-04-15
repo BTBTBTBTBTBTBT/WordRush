@@ -213,12 +213,12 @@ const MODE_CARDS = [
 
 
 export default function HomePage() {
-  const { user, profile, signOut } = useAuth();
+  const { user, signOut, isProActive } = useAuth();
   const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string; modeHref: string }>({ open: false, modeName: '', modeHref: '' });
   const [resetCountdown, setResetCountdown] = useState('');
   const router = useRouter();
 
-  const isPro = (profile as any)?.is_pro ?? false;
+  const isPro = isProActive;
 
   useEffect(() => {
     initDictionary(allowedWords, solutionWords);

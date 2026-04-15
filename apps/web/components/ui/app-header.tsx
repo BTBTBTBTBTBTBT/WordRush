@@ -18,7 +18,7 @@ function ShieldIcon({ className }: { className?: string }) {
 }
 
 export function AppHeader() {
-  const { profile } = useAuth();
+  const { profile, isProActive } = useAuth();
   const [helpOpen, setHelpOpen] = useState(false);
   const [streakOpen, setStreakOpen] = useState(false);
   const [shieldOpen, setShieldOpen] = useState(false);
@@ -26,7 +26,7 @@ export function AppHeader() {
   const shields = (profile as any)?.streak_shields ?? 0;
   const streak = profile?.daily_login_streak ?? 0;
   const bestStreak = (profile as any)?.best_daily_login_streak ?? 0;
-  const isPro = (profile as any)?.is_pro ?? false;
+  const isPro = isProActive;
 
   const openStreak = () => {
     setShieldOpen(false);

@@ -41,9 +41,33 @@ export async function fulfillSubscription(
   stripeCustomerId?: string,
   stripeSubscriptionId?: string,
 ): Promise<void> {
-  const expiresAt = planId === 'pro_yearly'
-    ? new Date(Date.now() + 365 * 86400000).toISOString()
-    : new Date(Date.now() + 30 * 86400000).toISOString();
+  const now = Date.now();
+  const DAY_MS = 86400000;
+
+  // Day pass: stacks on top of any currently-active Pro window by banking
+  // 24h on top of the existing expiry (never truncating it). Monthly/yearly
+  // reset from `now`. Day pass also intentionally skips the streak-shield
+  // grant — shields are a recurring subscription benefit, and handing out 4
+  // shields for $1 is both economically bad and conceptually wrong.
+  const isDayPass = planId === 'pro_day';
+  let expiresAt: string;
+
+  if (isDayPass) {
+    const { data: existing } = await (supabase as any)
+      .from('profiles')
+      .select('pro_expires_at')
+      .eq('id', userId)
+      .single() as { data: { pro_expires_at: string | null } | null };
+
+    const base = existing?.pro_expires_at
+      ? Math.max(new Date(existing.pro_expires_at).getTime(), now)
+      : now;
+    expiresAt = new Date(base + DAY_MS).toISOString();
+  } else if (planId === 'pro_yearly') {
+    expiresAt = new Date(now + 365 * DAY_MS).toISOString();
+  } else {
+    expiresAt = new Date(now + 30 * DAY_MS).toISOString();
+  }
 
   await (supabase as any)
     .from('profiles')
@@ -55,6 +79,9 @@ export async function fulfillSubscription(
       streak_shields: (supabase as any).rpc ? undefined : 4, // Grant 4 shields on subscribe
     })
     .eq('id', userId);
+
+  // Day pass: no shields granted. Return early before the shield-grant block.
+  if (isDayPass) return;
 
   // Grant 4 shields separately to avoid RPC issues
   const { data: profile } = await (supabase as any)

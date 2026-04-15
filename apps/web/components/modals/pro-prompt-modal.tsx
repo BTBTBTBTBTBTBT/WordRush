@@ -8,19 +8,18 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 
 export function ProPromptModal() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile, isProActive } = useAuth();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
     if (!user || !profile) return;
     const streak = profile.daily_login_streak ?? 0;
     const prompted = (profile as any).pro_prompt_shown ?? false;
-    const isPro = (profile as any).is_pro ?? false;
 
-    if (streak >= 7 && !prompted && !isPro) {
+    if (streak >= 7 && !prompted && !isProActive) {
       setShow(true);
     }
-  }, [user, profile]);
+  }, [user, profile, isProActive]);
 
   const dismiss = async () => {
     if (!user) return;

@@ -49,6 +49,7 @@ export interface PaymentProvider {
 }
 
 export const PRO_PLANS = {
+  day: { id: 'pro_day', price: 1.0, label: '$1 for 24 hours' },
   monthly: { id: 'pro_monthly', price: 6.99, label: '$6.99/mo' },
   yearly: { id: 'pro_yearly', price: 59.99, label: '$4.99/mo billed annually' },
 } as const;

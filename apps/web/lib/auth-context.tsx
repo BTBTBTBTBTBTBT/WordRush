@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from './supabase-client';
 import type { Database } from './database.types';
+import { isProActive } from './pro';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -12,6 +13,11 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
+  /**
+   * Expiry-aware Pro check. Prefer this over `profile.is_pro`, which is a
+   * raw write-side marker that can remain true after `pro_expires_at` passes.
+   */
+  isProActive: boolean;
   signUp: (email: string, password: string, username: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -182,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         session,
         loading,
+        isProActive: isProActive(profile),
         signUp,
         signIn,
         signInWithGoogle,

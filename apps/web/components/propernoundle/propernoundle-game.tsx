@@ -138,8 +138,8 @@ function savePersistedMode(mode: 'daily' | 'practice'): void {
 }
 
 export function ProperNoundleGame() {
-  const { profile } = useAuth();
-  const isPro = (profile as any)?.is_pro ?? false;
+  const { profile, isProActive } = useAuth();
+  const isPro = isProActive;
   // Persist the last-used mode so returning lands back on the same tab.
   const [mode, setMode] = useState<GameMode>(() => loadPersistedMode());
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
