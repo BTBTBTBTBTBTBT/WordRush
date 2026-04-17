@@ -67,7 +67,7 @@ export function generateShareText(opts: {
   const guessStr = won ? `${guesses}/${maxGuesses}` : `X/${maxGuesses}`;
   const boardStr = totalBoards && totalBoards > 1 ? ` ${boardsSolved ?? 0}/${totalBoards}` : '';
 
-  let text = `SpellStrike ${mode} ${guessStr}${boardStr} \u{00B7} ${timeStr}\n`;
+  let text = `Wordocious ${mode} ${guessStr}${boardStr} \u{00B7} ${timeStr}\n`;
 
   if (boardSummary) {
     text += `\n${boardSummary}\n`;

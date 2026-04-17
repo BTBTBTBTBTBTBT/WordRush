@@ -9,7 +9,7 @@ export default function SupportPage() {
       <div className="max-w-2xl mx-auto px-4 py-6">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-6" style={{ color: '#7c3aed' }}>
           <ArrowLeft className="w-4 h-4" />
-          Back to SpellStrike
+          Back to Wordocious
         </Link>
 
         <h1 className="text-3xl font-black mb-1" style={{ color: '#1a1a2e' }}>Help &amp; Support</h1>
@@ -17,16 +17,16 @@ export default function SupportPage() {
 
         <div className="space-y-4">
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>How do I play SpellStrike?</h2>
+            <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>How do I play Wordocious?</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              SpellStrike is a word puzzle game with multiple modes. In each mode, you guess hidden words by typing guesses and using color-coded feedback to narrow things down. Green means the letter is correct and in the right spot. Yellow means the letter is in the word but in the wrong position. Gray means the letter isn&apos;t in the word at all. Each mode has its own twist &mdash; from single-word puzzles to multi-board challenges!
+              Wordocious is a word puzzle game with multiple modes. In each mode, you guess hidden words by typing guesses and using color-coded feedback to narrow things down. Green means the letter is correct and in the right spot. Yellow means the letter is in the word but in the wrong position. Gray means the letter isn&apos;t in the word at all. Each mode has its own twist &mdash; from single-word puzzles to multi-board challenges!
             </p>
           </div>
 
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>What are the different game modes?</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              SpellStrike offers a variety of modes to keep things fresh. There are daily puzzles that everyone shares, multi-board modes like QuadWord and OctoWord where you solve multiple puzzles at once, timed challenges like Gauntlet, and more. Head to the home page to see all available modes and find your favorite.
+              Wordocious offers a variety of modes to keep things fresh. There are daily puzzles that everyone shares, multi-board modes like QuadWord and OctoWord where you solve multiple puzzles at once, timed challenges like Gauntlet, and more. Head to the home page to see all available modes and find your favorite.
             </p>
           </div>
 
@@ -52,9 +52,9 @@ export default function SupportPage() {
           </div>
 
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>What is SpellStrike Pro?</h2>
+            <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>What is Wordocious Pro?</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              Pro is an optional subscription that unlocks extra features and game modes. It&apos;s designed for players who want even more from SpellStrike. You can subscribe from your profile page, and you can cancel anytime &mdash; you&apos;ll keep Pro access through the end of your billing period. SpellStrike is completely playable for free, and Pro is just a bonus for those who want it.
+              Pro is an optional subscription that unlocks extra features and game modes. It&apos;s designed for players who want even more from Wordocious. You can subscribe from your profile page, and you can cancel anytime &mdash; you&apos;ll keep Pro access through the end of your billing period. Wordocious is completely playable for free, and Pro is just a bonus for those who want it.
             </p>
           </div>
 
@@ -75,7 +75,7 @@ export default function SupportPage() {
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>I found a bug or have a suggestion!</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              We love hearing from players. Whether it&apos;s a bug report, a feature idea, or just a kind word, feel free to reach out. Your feedback helps make SpellStrike better for everyone.
+              We love hearing from players. Whether it&apos;s a bug report, a feature idea, or just a kind word, feel free to reach out. Your feedback helps make Wordocious better for everyone.
             </p>
           </div>
 
@@ -83,7 +83,7 @@ export default function SupportPage() {
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Contact Support</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
               Can&apos;t find what you&apos;re looking for? Send us an email at{' '}
-              <a href="mailto:support@spellstrike.com" className="font-bold" style={{ color: '#7c3aed' }}>support@spellstrike.com</a>{' '}
+              <a href="mailto:support@wordocious.com" className="font-bold" style={{ color: '#7c3aed' }}>support@wordocious.com</a>{' '}
               and we&apos;ll get back to you as soon as we can.
             </p>
           </div>

@@ -114,7 +114,7 @@ export default function ProfilePage() {
       window.location.href = '/';
     } catch (err) {
       console.error('Delete account error:', err);
-      alert('Failed to delete account. Please try again or contact support@spellstrike.com.');
+      alert('Failed to delete account. Please try again or contact support@wordocious.com.');
       setDeleting(false);
     }
   };

@@ -27,7 +27,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         <DialogHeader>
           <DialogTitle className="font-black" style={{ color: '#1a1a2e' }}>Settings</DialogTitle>
           <DialogDescription style={{ color: '#9ca3af' }} className="text-xs font-bold">
-            Customize your SpellStrike experience
+            Customize your Wordocious experience
           </DialogDescription>
         </DialogHeader>
 

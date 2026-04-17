@@ -684,7 +684,7 @@ export function generateShareText(
   const secs = timeSeconds % 60;
   const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
 
-  const lines = [`SpellStrike Daily — ${modeName}`, day];
+  const lines = [`Wordocious Daily — ${modeName}`, day];
 
   if (totalBoards > 1) {
     lines.push(`${boardsSolved}/${totalBoards} boards`);
@@ -696,7 +696,7 @@ export function generateShareText(
     lines.push(`DNF in ${timeStr}`);
   }
 
-  lines.push('', 'https://spellstrike.vercel.app/daily');
+  lines.push('', 'https://wordocious.com/daily');
 
   return lines.join('\n');
 }

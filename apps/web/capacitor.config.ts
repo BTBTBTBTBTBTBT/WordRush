@@ -1,11 +1,11 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.spellstrike.app',
-  appName: 'SpellStrike',
+  appId: 'com.wordocious.app',
+  appName: 'Wordocious',
   webDir: 'public',
   server: {
-    url: 'https://spellstrike.vercel.app',
+    url: 'https://wordocious.com',
     cleartext: false,
   },
   plugins: {
@@ -24,7 +24,7 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     allowsLinkPreview: false,
-    scheme: 'SpellStrike',
+    scheme: 'Wordocious',
   },
   android: {
     backgroundColor: '#f8f7ff',

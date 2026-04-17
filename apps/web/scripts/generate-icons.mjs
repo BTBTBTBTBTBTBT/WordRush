@@ -1,5 +1,5 @@
 /**
- * Generate app icons for SpellStrike
+ * Generate app icons for Wordocious
  * Run: node apps/web/scripts/generate-icons.mjs
  *
  * Generates:
@@ -55,6 +55,9 @@ function createSVG(size) {
     }
   }
 
+  // Wordocious wordmark: split across two lines (WORDO / CIOUS) to match
+  // the two-line layout of the previous mark and keep consistent metrics
+  // across icon sizes.
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -72,12 +75,12 @@ function createSVG(size) {
   <text x="${size / 2}" y="${size * 0.58}" text-anchor="middle" dominant-baseline="middle"
     font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="${fontSize}"
     fill="white" letter-spacing="${Math.round(size * 0.005)}">
-    SPELL
+    WORDO
   </text>
   <text x="${size / 2}" y="${size * 0.74}" text-anchor="middle" dominant-baseline="middle"
     font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="${fontSize}"
     fill="white" letter-spacing="${Math.round(size * 0.005)}">
-    STRIKE
+    CIOUS
   </text>
   <text x="${size / 2}" y="${size * 0.88}" text-anchor="middle" dominant-baseline="middle"
     font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="${subtitleSize}"
@@ -134,5 +137,5 @@ function createICO(pngBuffer, size) {
   return Buffer.concat([header, entry, pngBuffer]);
 }
 
-console.log('Generating SpellStrike app icons...\n');
+console.log('Generating Wordocious app icons...\n');
 generateIcons().catch(console.error);

@@ -8,12 +8,12 @@ import { ImageResponse } from 'next/server';
 // Next.js requires — while sharing the actual visual definition.
 
 export const OG_SIZE = { width: 1200, height: 630 };
-export const OG_ALT = 'SpellStrike — Epic Word Battles';
+export const OG_ALT = 'Wordocious — Epic Word Battles';
 export const OG_CONTENT_TYPE = 'image/png';
 
 /**
- * Render the SpellStrike brand card as a 1200×630 PNG. Uses the Nunito
- * weight-900 static font bundled under `app/fonts/` so the "SPELLSTRIKE"
+ * Render the Wordocious brand card as a 1200×630 PNG. Uses the Nunito
+ * weight-900 static font bundled under `app/fonts/` so the "WORDOCIOUS"
  * wordmark renders in the same black Nunito as the in-app header. Without
  * a bundled font, Satori would fall back to a generic system font and the
  * logo would look nothing like the brand.
@@ -23,7 +23,7 @@ export const OG_CONTENT_TYPE = 'image/png';
  * hence the `@fontsource`-sourced weight-900 WOFF instead of Google's
  * variable-axis TTF.
  */
-export async function renderSpellstrikeOgImage(): Promise<ImageResponse> {
+export async function renderWordociousOgImage(): Promise<ImageResponse> {
   const nunitoData = await fetch(
     new URL('../app/fonts/Nunito-Black.woff', import.meta.url),
   ).then((res) => res.arrayBuffer());
@@ -70,7 +70,7 @@ export async function renderSpellstrikeOgImage(): Promise<ImageResponse> {
             boxShadow: '0 20px 60px rgba(124, 58, 237, 0.18)',
           }}
         >
-          {/* Logo — SPELLSTRIKE in Nunito 900 with the brand gradient */}
+          {/* Logo — WORDOCIOUS in Nunito 900 with the brand gradient */}
           <div
             style={{
               fontSize: '128px',
@@ -83,7 +83,7 @@ export async function renderSpellstrikeOgImage(): Promise<ImageResponse> {
               display: 'flex',
             }}
           >
-            SPELLSTRIKE
+            WORDOCIOUS
           </div>
 
           {/* Tagline */}
@@ -141,7 +141,7 @@ export async function renderSpellstrikeOgImage(): Promise<ImageResponse> {
             gap: '10px',
           }}
         >
-          <span>Daily puzzles  ·  7 game modes  ·  spellstrike.vercel.app</span>
+          <span>Daily puzzles  ·  7 game modes  ·  wordocious.com</span>
         </div>
       </div>
     ),

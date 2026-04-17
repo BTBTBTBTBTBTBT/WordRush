@@ -37,7 +37,7 @@ const MULTI_BOARD_MODES = new Set(['QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE'])
 function loadCompletedGame(modeId: string): SavedGameState | null {
   if (typeof window === 'undefined') return null;
   try {
-    const key = `spellstrike-daily-${modeId}`;
+    const key = `wordocious-daily-${modeId}`;
     const stored = localStorage.getItem(key);
     if (!stored) return null;
     const parsed: SavedGameState = JSON.parse(stored);
@@ -63,7 +63,7 @@ interface SavedProperNoundleState {
 function loadCompletedProperNoundle(): SavedProperNoundleState | null {
   if (typeof window === 'undefined') return null;
   try {
-    const stored = localStorage.getItem('spellstrike-propernoundle-daily');
+    const stored = localStorage.getItem('wordocious-propernoundle-daily');
     if (!stored) return null;
     const parsed: SavedProperNoundleState = JSON.parse(stored);
     const today = new Date().toISOString().slice(0, 10);

@@ -30,7 +30,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             WebkitTextFillColor: 'transparent',
           }}
         >
-          SPELLSTRIKE
+          WORDOCIOUS
         </h1>
       </div>
     );

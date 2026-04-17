@@ -71,7 +71,7 @@ export function LoginScreen() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            SPELLSTRIKE
+            WORDOCIOUS
           </h1>
           <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>
             Epic Word Battles

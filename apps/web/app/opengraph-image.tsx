@@ -2,7 +2,7 @@ import {
   OG_ALT,
   OG_CONTENT_TYPE,
   OG_SIZE,
-  renderSpellstrikeOgImage,
+  renderWordociousOgImage,
 } from '@/lib/og-image-renderer';
 
 // Next.js file-convention Open Graph image. The rendering lives in
@@ -16,5 +16,5 @@ export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
 export default async function OpengraphImage() {
-  return renderSpellstrikeOgImage();
+  return renderWordociousOgImage();
 }

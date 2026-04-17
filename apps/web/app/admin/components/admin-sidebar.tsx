@@ -19,7 +19,7 @@ export function AdminSidebar() {
     <aside className="w-56 shrink-0 border-r border-gray-200 bg-white flex flex-col h-full">
       <div className="p-4 border-b border-gray-200">
         <h1 className="text-lg font-black text-gray-900">Admin Panel</h1>
-        <p className="text-xs text-gray-400 font-medium">Spellstrike</p>
+        <p className="text-xs text-gray-400 font-medium">Wordocious</p>
       </div>
 
       <nav className="flex-1 p-2 space-y-0.5">
@@ -51,7 +51,7 @@ export function AdminSidebar() {
           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Spellstrike
+          Back to Wordocious
         </Link>
       </div>
     </aside>

@@ -48,7 +48,7 @@ export function AppHeader() {
               backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
             }}
           >
-            SPELLSTRIKE
+            WORDOCIOUS
           </span>
           {isPro && <ProBadge size="sm" />}
         </Link>

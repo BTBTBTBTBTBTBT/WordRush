@@ -23,9 +23,9 @@ const nunito = Nunito({
 // `openGraph.images` or `twitter.images` here, or the explicit metadata
 // wins over the dynamic renderer and a stale static PNG gets served.
 export const metadata: Metadata = {
-  title: 'SpellStrike — Epic Word Battles',
+  title: 'Wordocious — Epic Word Battles',
   description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
-  metadataBase: new URL('https://spellstrike.vercel.app'),
+  metadataBase: new URL('https://wordocious.com'),
   manifest: '/manifest.json',
   themeColor: '#a78bfa',
   icons: {
@@ -35,21 +35,21 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'SpellStrike',
+    title: 'Wordocious',
   },
   other: {
     'google-adsense-account': 'ca-pub-3015627373086578',
   },
   openGraph: {
-    title: 'SpellStrike — Epic Word Battles',
+    title: 'Wordocious — Epic Word Battles',
     description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
-    url: 'https://spellstrike.vercel.app',
-    siteName: 'SpellStrike',
+    url: 'https://wordocious.com',
+    siteName: 'Wordocious',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SpellStrike — Epic Word Battles',
+    title: 'Wordocious — Epic Word Battles',
     description: 'Daily word puzzles and multiplayer showdowns. QuadWord, OctoWord, Sequence, Rescue, Gauntlet, and more.',
   },
 };

@@ -10,8 +10,8 @@
  * Resets at midnight UTC.
  */
 
-const STORAGE_KEY_PREFIX = 'spellstrike-plays';
-const VS_STORAGE_KEY = 'spellstrike-vs-plays';
+const STORAGE_KEY_PREFIX = 'wordocious-plays';
+const VS_STORAGE_KEY = 'wordocious-vs-plays';
 
 function getTodayUTC(): string {
   const now = new Date();

@@ -539,7 +539,7 @@ export default function RecordsPage() {
         >
           <h1 className="text-2xl font-black" style={{ color: '#1a1a2e' }}>Records</h1>
           <p className="text-xs font-bold mt-1" style={{ color: '#9ca3af' }}>
-            The best of the best across Spellstrike
+            The best of the best across Wordocious
           </p>
         </motion.div>
 

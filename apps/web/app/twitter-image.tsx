@@ -2,7 +2,7 @@ import {
   OG_ALT,
   OG_CONTENT_TYPE,
   OG_SIZE,
-  renderSpellstrikeOgImage,
+  renderWordociousOgImage,
 } from '@/lib/og-image-renderer';
 
 // Next.js file-convention Twitter card image. Shares the exact same
@@ -14,5 +14,5 @@ export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
 export default async function TwitterImage() {
-  return renderSpellstrikeOgImage();
+  return renderWordociousOgImage();
 }

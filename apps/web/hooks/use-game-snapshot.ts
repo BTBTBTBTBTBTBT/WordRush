@@ -16,7 +16,7 @@ const SAVE_VERSION = 1;
 const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 function getStorageKey(mode: GameMode, isDaily: boolean): string {
-  return `spellstrike-session-${mode}-${isDaily ? 'daily' : 'practice'}`;
+  return `wordocious-session-${mode}-${isDaily ? 'daily' : 'practice'}`;
 }
 
 interface SavedSession {

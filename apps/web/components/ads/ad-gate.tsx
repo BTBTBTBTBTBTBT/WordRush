@@ -72,7 +72,7 @@ export function AdGate({ children }: AdGateProps) {
               className="text-2xl font-black text-transparent bg-clip-text"
               style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
             >
-              SPELLSTRIKE
+              WORDOCIOUS
             </h1>
             <p className="text-[10px] font-bold mt-1" style={{ color: '#9ca3af' }}>
               Your game is loading&hellip;

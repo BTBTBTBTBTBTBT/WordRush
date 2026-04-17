@@ -5,6 +5,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from './supabase-client';
 import type { Database } from './database.types';
 import { isProActive } from './pro';
+import { migrateLegacyStorageKeys } from './storage-migration';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -84,6 +85,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // One-time rename of legacy `spellstrike-*` localStorage keys to the
+    // `wordocious-*` prefix. Runs before any game component reads its
+    // first persisted state. Idempotent via internal flag.
+    migrateLegacyStorageKeys();
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       (async () => {
         setSession(session);

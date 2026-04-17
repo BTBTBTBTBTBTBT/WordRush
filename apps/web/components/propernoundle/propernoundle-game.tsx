@@ -22,9 +22,9 @@ import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
 
 const MAX_GUESSES = 6;
-const DAILY_STORAGE_KEY = 'spellstrike-propernoundle-daily';
-const PRACTICE_STORAGE_KEY = 'spellstrike-propernoundle-practice';
-const MODE_STORAGE_KEY = 'spellstrike-propernoundle-mode';
+const DAILY_STORAGE_KEY = 'wordocious-propernoundle-daily';
+const PRACTICE_STORAGE_KEY = 'wordocious-propernoundle-practice';
+const MODE_STORAGE_KEY = 'wordocious-propernoundle-mode';
 const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 const CATEGORY_LABELS: Record<string, string> = {

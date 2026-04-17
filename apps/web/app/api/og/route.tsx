@@ -57,7 +57,7 @@ export async function GET() {
               display: 'flex',
             }}
           >
-            SPELLSTRIKE
+            WORDOCIOUS
           </div>
 
           {/* Tagline */}
@@ -112,7 +112,7 @@ export async function GET() {
             display: 'flex',
           }}
         >
-          spellstrike.vercel.app
+          wordocious.com
         </div>
       </div>
     ),

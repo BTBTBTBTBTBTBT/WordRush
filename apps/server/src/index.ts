@@ -58,10 +58,20 @@ const MODE_MAX_GUESSES: Record<string, number> = {
   [GameMode.PROPERNOUNDLE]: 6
 };
 
+// Socket.IO accepts a string, a string[], or a function for `cors.origin`.
+// Parse CLIENT_URL as a comma-separated list so a single env var can cover
+// both the new wordocious.com canonical domain and the legacy
+// spellstrike.vercel.app subdomain during the rebrand transition.
+// Example CLIENT_URL: "https://wordocious.com,https://spellstrike.vercel.app"
+const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 const httpServer = createServer();
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: clientOrigins.length === 1 ? clientOrigins[0] : clientOrigins,
     methods: ['GET', 'POST']
   }
 });

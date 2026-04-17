@@ -9,7 +9,7 @@ export default function TermsPage() {
       <div className="max-w-2xl mx-auto px-4 py-6">
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-6" style={{ color: '#7c3aed' }}>
           <ArrowLeft className="w-4 h-4" />
-          Back to SpellStrike
+          Back to Wordocious
         </Link>
 
         <h1 className="text-3xl font-black mb-1" style={{ color: '#1a1a2e' }}>Terms of Service</h1>
@@ -19,14 +19,14 @@ export default function TermsPage() {
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Agreement to Terms</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              By accessing or using SpellStrike (&quot;the Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service. We reserve the right to update these terms at any time, and continued use of SpellStrike constitutes acceptance of any changes.
+              By accessing or using Wordocious (&quot;the Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service. We reserve the right to update these terms at any time, and continued use of Wordocious constitutes acceptance of any changes.
             </p>
           </div>
 
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Eligibility</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              You must be at least <strong>13 years of age</strong> to create an account and use SpellStrike. By using the Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have the consent of a parent or legal guardian.
+              You must be at least <strong>13 years of age</strong> to create an account and use Wordocious. By using the Service, you represent and warrant that you meet this age requirement. If you are under 18, you confirm that you have the consent of a parent or legal guardian.
             </p>
           </div>
 
@@ -40,7 +40,7 @@ export default function TermsPage() {
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Acceptable Use</h2>
             <p className="text-xs leading-relaxed mb-3" style={{ color: '#6b7280' }}>
-              When using SpellStrike, you agree <strong>not</strong> to:
+              When using Wordocious, you agree <strong>not</strong> to:
             </p>
             <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: '#6b7280' }}>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Use automated tools, bots, scripts, or any form of cheating to gain an unfair advantage</span></li>
@@ -58,7 +58,7 @@ export default function TermsPage() {
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Free Tier &amp; Pro Subscription</h2>
             <p className="text-xs leading-relaxed mb-3" style={{ color: '#6b7280' }}>
-              SpellStrike is free to play. We also offer an optional <strong>Pro subscription</strong> that unlocks additional features and game modes.
+              Wordocious is free to play. We also offer an optional <strong>Pro subscription</strong> that unlocks additional features and game modes.
             </p>
             <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: '#6b7280' }}>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Pro subscriptions are billed through <strong>Stripe</strong>, our payment processor. By subscribing, you agree to Stripe&apos;s terms of service.</span></li>
@@ -71,21 +71,21 @@ export default function TermsPage() {
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Intellectual Property</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              All content, design, graphics, and code that make up SpellStrike are owned by us and protected by applicable intellectual property laws. You may not copy, modify, distribute, or reverse-engineer any part of the Service without our written permission.
+              All content, design, graphics, and code that make up Wordocious are owned by us and protected by applicable intellectual property laws. You may not copy, modify, distribute, or reverse-engineer any part of the Service without our written permission.
             </p>
           </div>
 
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Disclaimer of Warranties</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              SpellStrike is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind, whether express or implied. We do not guarantee that the Service will be uninterrupted, error-free, or free of harmful components.
+              Wordocious is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind, whether express or implied. We do not guarantee that the Service will be uninterrupted, error-free, or free of harmful components.
             </p>
           </div>
 
           <div style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Limitation of Liability</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
-              To the fullest extent permitted by law, SpellStrike and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of or inability to use the Service, including loss of data or game progress.
+              To the fullest extent permitted by law, Wordocious and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of or inability to use the Service, including loss of data or game progress.
             </p>
           </div>
 
@@ -100,7 +100,7 @@ export default function TermsPage() {
             <h2 className="text-sm font-black mb-2" style={{ color: '#1a1a2e' }}>Contact Us</h2>
             <p className="text-xs leading-relaxed" style={{ color: '#6b7280' }}>
               If you have any questions about these Terms of Service, please contact us at{' '}
-              <a href="mailto:legal@spellstrike.com" className="font-bold" style={{ color: '#7c3aed' }}>legal@spellstrike.com</a>.
+              <a href="mailto:legal@wordocious.com" className="font-bold" style={{ color: '#7c3aed' }}>legal@wordocious.com</a>.
             </p>
           </div>
         </div>

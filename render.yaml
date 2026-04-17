@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: spellstrike-server
+    name: wordocious-server
     runtime: node
     buildCommand: npm install -g pnpm@8.15.0 && pnpm install
     startCommand: cd apps/server && npx tsx src/index.ts
@@ -9,5 +9,8 @@ services:
         value: 20.11.0
       - key: PORT
         value: 3001
+      # Comma-separated list of allowed CORS origins. Keep the legacy
+      # spellstrike.vercel.app subdomain listed until every deployed
+      # client is on wordocious.com.
       - key: CLIENT_URL
-        value: https://spellstrike.vercel.app
+        value: https://wordocious.com,https://spellstrike.vercel.app
