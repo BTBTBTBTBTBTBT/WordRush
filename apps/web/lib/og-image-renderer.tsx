@@ -56,29 +56,24 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
           }}
         />
 
-        {/* Main card */}
+        {/* Main content — sits directly on the gradient, no card */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '72px 96px',
-            background: '#ffffff',
-            borderRadius: '36px',
-            border: '3px solid #ede9f6',
-            boxShadow: '0 20px 60px rgba(124, 58, 237, 0.18)',
           }}
         >
           {/* Logo — WORDOCIOUS in Nunito 900 with the brand gradient */}
           <div
             style={{
-              fontSize: '128px',
+              fontSize: '156px',
               fontWeight: 900,
               background: 'linear-gradient(135deg, #a78bfa, #ec4899)',
               backgroundClip: 'text',
               color: 'transparent',
-              letterSpacing: '-4px',
+              letterSpacing: '-5px',
               lineHeight: 1,
               display: 'flex',
             }}
@@ -89,10 +84,10 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
           {/* Tagline */}
           <div
             style={{
-              fontSize: '36px',
+              fontSize: '52px',
               fontWeight: 800,
-              color: '#6b7280',
-              marginTop: '24px',
+              color: '#4b5563',
+              marginTop: '32px',
               letterSpacing: '-0.5px',
               display: 'flex',
             }}
@@ -104,19 +99,19 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
           <div
             style={{
               display: 'flex',
-              gap: '18px',
-              marginTop: '44px',
+              gap: '22px',
+              marginTop: '56px',
             }}
           >
             {['Classic', 'QuadWord', 'OctoWord', 'Gauntlet'].map((mode) => (
               <div
                 key={mode}
                 style={{
-                  padding: '12px 28px',
-                  background: '#f3f0ff',
+                  padding: '16px 36px',
+                  background: 'rgba(255, 255, 255, 0.55)',
                   border: '2px solid #c4b5fd',
                   borderRadius: '999px',
-                  fontSize: '22px',
+                  fontSize: '28px',
                   fontWeight: 800,
                   color: '#5b21b6',
                   display: 'flex',
