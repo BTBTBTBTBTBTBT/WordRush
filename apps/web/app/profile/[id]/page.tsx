@@ -17,10 +17,15 @@ import {
   Check,
   X,
   ArrowLeft,
+  Shield,
+  Skull,
+  Crown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
+import { BottomNav } from '@/components/ui/bottom-nav';
+import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import type { Database } from '@/lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -37,6 +42,16 @@ const gameModeTitles: Record<string, string> = {
   RESCUE: 'Deliverance',
   PROPERNOUNDLE: 'ProperNoundle',
   TOURNAMENT: 'Tournament',
+};
+
+const gameModeIcons: Record<string, { icon: React.ComponentType<any> | null; romanNumeral?: string; color: string }> = {
+  DUEL:          { icon: WordleGridIcon, color: '#7c3aed' },
+  QUORDLE:       { icon: null, romanNumeral: 'IV', color: '#ec4899' },
+  OCTORDLE:      { icon: null, romanNumeral: 'VIII', color: '#7e22ce' },
+  SEQUENCE:      { icon: TrendingUp, color: '#2563eb' },
+  RESCUE:        { icon: Shield, color: '#059669' },
+  GAUNTLET:      { icon: Skull, color: '#d97706' },
+  PROPERNOUNDLE: { icon: Crown, color: '#dc2626' },
 };
 
 function formatDuration(seconds: number): string {
@@ -137,7 +152,7 @@ export default function PublicProfilePage() {
     : '0.0';
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: '#f8f7ff' }}>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
         <motion.div
@@ -339,7 +354,18 @@ export default function PublicProfilePage() {
                   style={{ background: '#f8f7ff', border: '1px solid #ede9f6' }}
                 >
                   <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: '#1a1a2e' }}>
-                    <Zap className="w-5 h-5" style={{ color: '#d97706' }} />
+                    {(() => {
+                      const cfg = gameModeIcons[stat.game_mode];
+                      if (!cfg) return <Zap className="w-5 h-5" style={{ color: '#d97706' }} />;
+                      if (cfg.romanNumeral) {
+                        return <span className="text-sm font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
+                      }
+                      if (cfg.icon) {
+                        const Icon = cfg.icon;
+                        return <Icon className="w-5 h-5" style={{ color: cfg.color }} />;
+                      }
+                      return <Zap className="w-5 h-5" style={{ color: cfg.color }} />;
+                    })()}
                     {gameModeTitles[stat.game_mode] || stat.game_mode}
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
@@ -448,6 +474,8 @@ export default function PublicProfilePage() {
           )}
         </motion.div>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
