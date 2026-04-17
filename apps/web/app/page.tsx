@@ -149,7 +149,6 @@ const MODE_CARDS = [
     // redirected to the plain /practice/vs at click time in handleVsClick.
     href: '/practice/vs?daily=true',
     vsHref: '/practice/vs?daily=true',
-    badge: 'NEW',
   },
   {
     id: 'quordle',
@@ -160,7 +159,6 @@ const MODE_CARDS = [
     accentColor: '#ec4899',
     href: '/quordle?daily=true',
     vsHref: '/quordle/vs',
-    badge: 'HOT',
   },
   {
     id: 'octordle',
@@ -171,7 +169,6 @@ const MODE_CARDS = [
     accentColor: '#7e22ce',
     href: '/octordle?daily=true',
     vsHref: '/octordle/vs',
-    badge: 'PRO',
   },
   {
     id: 'sequence',
@@ -309,19 +306,10 @@ export default function HomePage() {
                     }}
                   />
 
-                  {/* Badge or Lock */}
+                  {/* Lock */}
                   {isLocked ? (
                     <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
                       <Lock className="w-3 h-3" style={{ color: '#9ca3af' }} />
-                    </div>
-                  ) : mode.badge ? (
-                    <div
-                      className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded-md text-[8px] font-black text-white"
-                      style={{
-                        background: mode.badge === 'HOT' ? '#ef4444' : mode.badge === 'NEW' ? '#22c55e' : '#a78bfa',
-                      }}
-                    >
-                      {mode.badge}
                     </div>
                   ) : null}
 
