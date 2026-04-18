@@ -79,6 +79,11 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 const queue = new MatchmakingQueue();
 const matches = new Map<string, Match>();
 const playerToMatch = new Map<string, string>();
+// Private-match lobbies keyed by invite_code. First arrival is parked
+// here; the second arrival with the same code pairs up with them
+// immediately, bypassing the public matchmaking queue.
+const privateLobbies = new Map<string, { entry: QueueEntry; expiresAt: number }>();
+const PRIVATE_LOBBY_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MATCH_COUNTDOWN = 3;
 const REMATCH_TIMEOUT = 30000;
 
@@ -92,8 +97,33 @@ io.on('connection', (socket) => {
     rating: 1000
   };
 
-  socket.on('join_queue', ({ mode, dailySeed }) => {
+  socket.on('join_queue', ({ mode, dailySeed, inviteCode }) => {
     queue.removeFromQueue(playerId);
+
+    // Private match via invite: pair the two clients who arrive with the
+    // same invite_code regardless of the public queue.
+    if (inviteCode) {
+      // Purge any stale lobby the caller may have previously parked.
+      for (const [code, lobby] of privateLobbies) {
+        if (lobby.entry.player.id === playerId) privateLobbies.delete(code);
+        else if (lobby.expiresAt < Date.now()) privateLobbies.delete(code);
+      }
+
+      const existing = privateLobbies.get(inviteCode);
+      if (existing && existing.entry.player.id !== playerId) {
+        privateLobbies.delete(inviteCode);
+        const preferredSeed = existing.entry.dailySeed || dailySeed;
+        createMatch(existing.entry.player, player, mode, preferredSeed);
+      } else {
+        privateLobbies.set(inviteCode, {
+          entry: { player, mode, joinedAt: Date.now(), dailySeed, inviteCode },
+          expiresAt: Date.now() + PRIVATE_LOBBY_TTL_MS,
+        });
+        socket.emit('queue_status', { position: 0, mode });
+      }
+      return;
+    }
+
     const position = queue.addToQueue(player, mode, dailySeed);
 
     socket.emit('queue_status', { position, mode });
@@ -112,6 +142,10 @@ io.on('connection', (socket) => {
 
   socket.on('leave_queue', () => {
     queue.removeFromQueue(playerId);
+    // Also release any private lobby this player is parked in.
+    for (const [code, lobby] of privateLobbies) {
+      if (lobby.entry.player.id === playerId) privateLobbies.delete(code);
+    }
   });
 
   socket.on('submit_guess', ({ guess, boardIndex = 0 }) => {
@@ -362,6 +396,9 @@ io.on('connection', (socket) => {
     console.log(`Client disconnected: ${socket.id}`);
 
     queue.removeFromQueue(playerId);
+    for (const [code, lobby] of privateLobbies) {
+      if (lobby.entry.player.id === playerId) privateLobbies.delete(code);
+    }
 
     const matchId = playerToMatch.get(playerId);
     if (matchId) {

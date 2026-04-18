@@ -11,10 +11,11 @@ import solutionWords from '@/data/solutions.json';
 function VsClassicInner() {
   const searchParams = useSearchParams();
   const isDaily = searchParams.get('daily') === 'true';
+  const inviteCode = searchParams.get('inviteCode') ?? undefined;
   useEffect(() => { initDictionary(allowedWords, solutionWords); }, []);
   return (
     <AdGate>
-      <VsGame mode={GameMode.DUEL} isDaily={isDaily} />
+      <VsGame mode={GameMode.DUEL} isDaily={isDaily} inviteCode={inviteCode} />
     </AdGate>
   );
 }
