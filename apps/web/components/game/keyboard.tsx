@@ -122,8 +122,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   onClick={() => !isBlackedOut && onKey(key)}
                   disabled={isBlackedOut}
                   className={cn(
-                    useQuadrants ? 'h-12 sm:h-14' : 'h-11 sm:h-14',
-                    'px-3 sm:px-4 rounded-md font-black text-sm sm:text-base',
+                    'h-12 sm:h-14 px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
                     'transition-all duration-300 select-none',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
@@ -143,12 +142,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 <button
                   key={key}
                   disabled
-                  className={cn(
-                    useQuadrants
-                      ? 'h-12 sm:h-14 w-10 sm:w-12 text-base sm:text-lg'
-                      : 'h-11 sm:h-14 w-8 sm:w-10 text-sm sm:text-base',
-                    'rounded-md font-black opacity-40 cursor-not-allowed animate-pulse select-none',
-                  )}
+                  className="h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg opacity-40 cursor-not-allowed animate-pulse select-none"
                   style={{
                     backgroundColor: 'rgba(220,38,38,0.15)',
                     border: '1.5px solid rgba(220,38,38,0.2)',
@@ -177,7 +171,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 key={key}
                 onClick={() => onKey(key)}
                 className={cn(
-                  'h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base',
+                  'h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
                   'transition-all duration-300 select-none',
                   state === 'correct' && 'bg-green-600 text-white border-green-600',
                   state === 'present' && 'bg-yellow-600 text-white border-yellow-600',
