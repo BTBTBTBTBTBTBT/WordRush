@@ -11,7 +11,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
-import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown } from '@/lib/play-limit-service';
+import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
@@ -221,6 +221,13 @@ export default function HomePage() {
     initDictionary(allowedWords, solutionWords);
     cleanupOldPlayData();
   }, []);
+
+  // Hydrate the play-limits localStorage cache from the DB so freshly-
+  // cleared storage can't bypass the daily mode caps. Fires whenever the
+  // signed-in user changes.
+  useEffect(() => {
+    if (user) syncPlayLimits(user.id);
+  }, [user]);
 
   // Prefetch VS routes so the initial tap is instant (mode cards already
   // prefetch via <Link>, but the VS button uses router.push).
