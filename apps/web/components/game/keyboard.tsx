@@ -60,18 +60,18 @@ function QuadrantKey({
         'relative h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg overflow-hidden',
         'transition-all duration-300 select-none',
         allAbsent
-          ? 'text-[#1a1a2e]'
+          ? 'text-white'
           : hasAny
           ? 'text-white'
           : 'text-gray-700'
       )}
       style={{
         border: '1.5px solid #ede9f6',
-        textShadow: hasAny && !allAbsent ? '0 1px 2px rgba(0,0,0,0.35)' : undefined,
+        textShadow: hasAny ? '0 1px 2px rgba(0,0,0,0.35)' : undefined,
       }}
     >
       {allAbsent ? (
-        <div className="absolute inset-0" style={{ backgroundColor: '#d4d0e0' }} />
+        <div className="absolute inset-0" style={{ backgroundColor: '#9ca3af' }} />
       ) : (
         <div
           className="absolute inset-0 grid"
@@ -175,10 +175,10 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   'transition-all duration-300 select-none',
                   state === 'correct' && 'bg-green-600 text-white border-green-600',
                   state === 'present' && 'bg-yellow-600 text-white border-yellow-600',
-                  state === 'absent' && 'text-zinc-400',
+                  state === 'absent' && 'text-white',
                 )}
                 style={{
-                  backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#d4d0e0' : (skin ? undefined : '#e8e5f0'),
+                  backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#9ca3af' : (skin ? undefined : '#e8e5f0'),
                   border: state ? undefined : '1.5px solid #ede9f6',
                   color: !state ? (skin ? undefined : '#1a1a2e') : undefined,
                 }}
