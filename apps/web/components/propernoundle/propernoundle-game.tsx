@@ -20,6 +20,7 @@ import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
+import { BottomNav } from '@/components/ui/bottom-nav';
 
 const MAX_GUESSES = 6;
 const DAILY_STORAGE_KEY = 'wordocious-propernoundle-daily';
@@ -593,7 +594,10 @@ export function ProperNoundleGame() {
   const categoryLabel = puzzle.themeCategory ? CATEGORY_LABELS[puzzle.themeCategory] || puzzle.themeCategory : '';
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
+    <div
+      className={`h-[100dvh] flex flex-col relative ${gameStatus !== 'playing' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      style={{ backgroundColor: '#f8f7ff' }}
+    >
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
         {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
@@ -792,6 +796,8 @@ export function ProperNoundleGame() {
           <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} />
         </div>
       )}
+
+      {gameStatus !== 'playing' && <BottomNav />}
     </div>
   );
 }

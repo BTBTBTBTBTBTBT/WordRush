@@ -16,6 +16,7 @@ import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
+import { BottomNav } from '@/components/ui/bottom-nav';
 
 interface PracticeGameProps {
   mode: GameMode;
@@ -176,7 +177,10 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   const gameComplete = state.status === GameStatus.WON || state.status === GameStatus.LOST;
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
+    <div
+      className={`h-[100dvh] flex flex-col relative ${gameComplete ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      style={{ backgroundColor: '#f8f7ff' }}
+    >
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
         {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
@@ -243,6 +247,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           <Keyboard onKey={handleKey} letterStates={letterStates} />
         </div>
       )}
+
+      {gameComplete && <BottomNav />}
     </div>
   );
 }

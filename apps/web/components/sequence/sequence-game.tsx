@@ -14,6 +14,7 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
+import { BottomNav } from '@/components/ui/bottom-nav';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
@@ -202,7 +203,10 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   }, [state, guessesUsed, maxGuesses, elapsedTime, solvedCount]);
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
+    <div
+      className={`h-[100dvh] flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      style={{ backgroundColor: '#f8f7ff' }}
+    >
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
         {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={solvedCount} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
@@ -278,6 +282,8 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
           <Keyboard onKey={handleKeyPress} letterStates={letterStates} />
         </div>
       )}
+
+      {state.status !== 'PLAYING' && <BottomNav />}
     </div>
   );
 }
