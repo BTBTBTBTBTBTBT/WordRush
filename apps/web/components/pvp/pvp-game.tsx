@@ -115,6 +115,12 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
         return;
       }
 
+      if (currentBoard.guesses.includes(currentGuess.toUpperCase())) {
+        setMessage('Already guessed');
+        setTimeout(() => setMessage(''), 1500);
+        return;
+      }
+
       matchService.submitGuess(currentGuess, state.currentBoardIndex);
 
       try {

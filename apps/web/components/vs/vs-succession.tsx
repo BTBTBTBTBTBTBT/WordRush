@@ -6,6 +6,7 @@ import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
 import { Trophy, Clock, Lock } from 'lucide-react';
 import type { VsGameComponentProps } from './vs-classic';
+import { hasDuplicateGuess } from '@/lib/game-utils';
 
 const BOARD_ORDER = [0, 1, 2, 3];
 
@@ -95,6 +96,12 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
         setTimeout(() => setError(''), 1500);
         return;
       }
+      if (hasDuplicateGuess(state.boards, currentGuess)) {
+        setError('Already guessed');
+        setCurrentGuess('');
+        setTimeout(() => setError(''), 1500);
+        return;
+      }
 
       // Submit guess to ALL playing boards (same as solo sequence)
       onGuessSubmitted(currentGuess, 0);
@@ -173,7 +180,7 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
                 isFailed={isFailed}
                 isLocked={isLocked}
                 currentGuess={isActive ? currentGuess : ''}
-                isInvalidWord={isActive && currentGuess.length === 5 && !isValidWord(currentGuess)}
+                isInvalidWord={isActive && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
               />
             );
           })}

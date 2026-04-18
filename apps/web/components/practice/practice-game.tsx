@@ -124,6 +124,12 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         setTimeout(() => setMessage(''), 1500);
         return;
       }
+      if (currentBoard.guesses.includes(currentGuess.toUpperCase())) {
+        setMessage('Already guessed');
+        setCurrentGuess('');
+        setTimeout(() => setMessage(''), 1500);
+        return;
+      }
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess });
       setCurrentGuess('');
     } else if (key === 'BACK') {
@@ -221,7 +227,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             showSolution={false}
             solution={currentBoard.solution}
             darkMode
-            isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
+            isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || currentBoard.guesses.includes(currentGuess.toUpperCase()))}
           />
 
           {gameComplete && (

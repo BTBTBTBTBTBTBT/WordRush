@@ -19,6 +19,7 @@ import { GauntletProgress, GauntletStageHeader } from '@/components/gauntlet/gau
 import { StageTransition } from '@/components/gauntlet/stage-transition';
 import { OpponentHUD } from './opponent-hud';
 import { Lock } from 'lucide-react';
+import { hasDuplicateGuess } from '@/lib/game-utils';
 
 export interface VsGauntletProps {
   seed: string;
@@ -158,6 +159,12 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
         setTimeout(() => setMessage(''), 1500);
         return;
       }
+      if (hasDuplicateGuess(state.boards, currentGuess)) {
+        setMessage('Already guessed');
+        setCurrentGuess('');
+        setTimeout(() => setMessage(''), 1500);
+        return;
+      }
 
       onGuessSubmitted(currentGuess, state.currentBoardIndex);
       if (isSingleBoard) {
@@ -210,7 +217,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
             solution={board.solution}
             showSolution={board.status === GameStatus.LOST}
             darkMode
-            isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
+            isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
           />
         </div>
       );
@@ -237,7 +244,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
         <MultiBoard
           boards={state.boards}
           currentGuess={currentGuess}
-          isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
+          isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
       );
     }

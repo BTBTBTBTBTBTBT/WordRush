@@ -15,6 +15,7 @@ import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { hasDuplicateGuess } from '@/lib/game-utils';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
@@ -136,6 +137,13 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
 
       if (!isValidWord(currentGuess)) {
         setError('Not in word list');
+        setCurrentGuess('');
+        setTimeout(() => setError(''), 1500);
+        return;
+      }
+
+      if (hasDuplicateGuess(state.boards, currentGuess)) {
+        setError('Already guessed');
         setCurrentGuess('');
         setTimeout(() => setError(''), 1500);
         return;
@@ -275,7 +283,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
                   isFailed={isFailed}
                   isLocked={isLocked}
                   currentGuess={isActive ? currentGuess : ''}
-                  isInvalidWord={isActive && currentGuess.length === 5 && !isValidWord(currentGuess)}
+                  isInvalidWord={isActive && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
                 />
               );
             })}

@@ -461,6 +461,13 @@ export function ProperNoundleGame() {
         return;
       }
 
+      if (guesses.some((g) => normalizeString(g.word) === normalizedGuess)) {
+        setShouldShake(true);
+        setMessage('Already guessed');
+        setTimeout(() => { setShouldShake(false); setMessage(''); }, 1500);
+        return;
+      }
+
       const tiles = evaluateGuess(currentGuess, puzzle.answer);
       const newGuess: Guess = { word: currentGuess, tiles };
       const newGuesses = [...guesses, newGuess];

@@ -7,6 +7,7 @@ import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
 import { Trophy, Clock } from 'lucide-react';
 import type { VsGameComponentProps } from './vs-classic';
+import { hasDuplicateGuess } from '@/lib/game-utils';
 
 export function VsOctoword({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
@@ -58,6 +59,7 @@ export function VsOctoword({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) { setError('Word must be 5 letters'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
       if (!isWordValid(currentGuess)) { setError('Not in word list'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
+      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
 
       onGuessSubmitted(currentGuess, 0);
       state.boards.forEach((_, index) => {
@@ -117,7 +119,7 @@ export function VsOctoword({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
 
       {/* Boards */}
       <div className="flex-1 min-h-0 px-1 pb-1">
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && !isWordValid(currentGuess)} />
+        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
       </div>
 
       {/* Keyboard */}
