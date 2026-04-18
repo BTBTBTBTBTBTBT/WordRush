@@ -11,7 +11,7 @@ import { Clock } from 'lucide-react';
 import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
@@ -100,6 +100,17 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       const guesses = currentBoard.guesses.length;
       recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1)
         .then(xp => { if (xp) setXpResult(xp); });
+      recordSoloMatch({
+        userId: profile.id,
+        gameMode: 'DUEL',
+        won: state.status === GameStatus.WON,
+        score: guesses,
+        timeSeconds: elapsedTime,
+        seed: gameSeed,
+        solutions: [currentBoard.solution],
+        guesses: currentBoard.guesses,
+        startedAtIso: new Date(startTimeRef.current).toISOString(),
+      });
     }
     if (!isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
       recordModePlayed('practice');

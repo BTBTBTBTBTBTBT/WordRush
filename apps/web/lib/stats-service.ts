@@ -285,6 +285,41 @@ export async function recordMatch(data: {
 }
 
 /**
+ * Record a solo game completion as a match-history row.
+ * Writes to the `matches` table with player2_id = null so it appears in the
+ * profile's Recent Matches list alongside VS results.
+ */
+export async function recordSoloMatch(data: {
+  userId: string;
+  gameMode: string;
+  won: boolean;
+  score: number;
+  timeSeconds: number;
+  seed: string;
+  solutions: string[];
+  guesses: string[];
+  startedAtIso: string;
+}) {
+  try {
+    await (supabase as any).from('matches').insert({
+      game_mode: data.gameMode,
+      player1_id: data.userId,
+      player2_id: null,
+      winner_id: data.won ? data.userId : null,
+      player1_score: data.score,
+      player1_time: data.timeSeconds,
+      seed: data.seed,
+      solutions: data.solutions,
+      player1_guesses: data.guesses,
+      started_at: data.startedAtIso,
+      completed_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('recordSoloMatch failed:', err);
+  }
+}
+
+/**
  * Fetch recent matches for a user.
  */
 export async function fetchRecentMatches(userId: string, limit: number = 10) {

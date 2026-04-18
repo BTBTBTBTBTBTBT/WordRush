@@ -16,7 +16,7 @@ import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
@@ -310,7 +310,20 @@ export function ProperNoundleGame() {
       gameStatus === 'won' ? 1 : 0,
       1
     ).then(xp => { if (xp) setXpResult(xp); });
-  }, [profile, gameStatus, elapsedTime, mode, guesses.length]);
+    if (puzzle) {
+      recordSoloMatch({
+        userId: profile.id,
+        gameMode: 'PROPERNOUNDLE',
+        won: gameStatus === 'won',
+        score: guesses.length,
+        timeSeconds: elapsedTime,
+        seed: seed ?? puzzle.id,
+        solutions: [puzzle.answer],
+        guesses: guesses.map(g => g.word),
+        startedAtIso: new Date(startTime).toISOString(),
+      });
+    }
+  }, [profile, gameStatus, elapsedTime, mode, guesses, puzzle, startTime]);
 
   // Game over effects
   useEffect(() => {
