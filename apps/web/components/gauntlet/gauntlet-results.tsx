@@ -75,7 +75,13 @@ export function GauntletResults({
     : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 overflow-y-auto" style={{ backgroundColor: '#f8f7ff' }}>
+    <div
+      className="min-h-screen flex items-center justify-center p-4 overflow-y-auto"
+      style={{
+        backgroundColor: '#f8f7ff',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
+      }}
+    >
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

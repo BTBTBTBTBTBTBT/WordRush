@@ -75,6 +75,7 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
           stages: GAUNTLET_STAGES,
           stageResults: [],
           stageStartTime: Date.now(),
+          stageStartElapsedMs: 0,
           allSolutions,
           blackoutCount: 0
         }
@@ -235,6 +236,17 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
       }
 
+      // Stage duration preference order:
+      // 1. elapsedMs from the caller (active-play clock from the solo
+      //    gauntlet's useActivePlayTimer) minus stageStartElapsedMs. This
+      //    excludes any time the tab was hidden.
+      // 2. Wall-clock Date.now() - stageStartTime. VS gauntlet uses this
+      //    path so the opponent's and our clocks agree.
+      const stageTimeMs =
+        action.elapsedMs !== undefined && gauntlet.stageStartElapsedMs !== undefined
+          ? Math.max(0, action.elapsedMs - gauntlet.stageStartElapsedMs)
+          : Date.now() - gauntlet.stageStartTime;
+
       // Record stage result.
       // Every guess is dispatched to all PLAYING boards simultaneously, so the
       // board that took the longest to solve always holds every guess typed
@@ -243,7 +255,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         stageIndex: gauntlet.currentStage,
         status: GameStatus.WON,
         guesses: state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0),
-        timeMs: Date.now() - gauntlet.stageStartTime
+        timeMs: stageTimeMs
       };
 
       const newStageResults = [...gauntlet.stageResults, stageResult];
@@ -274,7 +286,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           ...gauntlet,
           currentStage: nextStageIndex,
           stageResults: newStageResults,
-          stageStartTime: Date.now()
+          stageStartTime: Date.now(),
+          stageStartElapsedMs: action.elapsedMs ?? gauntlet.stageStartElapsedMs
         }
       };
     }
