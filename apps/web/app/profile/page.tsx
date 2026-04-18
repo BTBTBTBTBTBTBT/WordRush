@@ -121,11 +121,13 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (profile) {
-      fetchStats();
-      fetchMatches();
-      fetchMedals();
-      loadAchievements();
       setUsernameValue(profile.username);
+      Promise.all([
+        fetchStats(),
+        fetchMatches(),
+        fetchMedals(),
+        loadAchievements(),
+      ]).finally(() => setLoadingStats(false));
     } else if (!loading) {
       setLoadingStats(false);
     }
@@ -142,7 +144,6 @@ export default function ProfilePage() {
     if (!profile) return;
     const { data } = await supabase.from('user_stats').select('*').eq('user_id', profile.id);
     if (data) setStats(data);
-    setLoadingStats(false);
   };
 
   const fetchMedals = async () => {
@@ -214,10 +215,10 @@ export default function ProfilePage() {
       return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
     });
 
-  if (loading || loadingStats) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8f7ff' }}>
-        <div className="text-lg font-black" style={{ color: '#1a1a2e' }}>Loading...</div>
+        <div className="text-lg font-black animate-pulse" style={{ color: '#1a1a2e' }}>Loading...</div>
       </div>
     );
   }
@@ -500,7 +501,27 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {filteredStats.length === 0 ? (
+        {loadingStats ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="p-4 animate-pulse"
+                style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+              >
+                <div className="h-4 w-24 rounded mb-3" style={{ background: '#ede9f6' }} />
+                <div className="grid grid-cols-3 gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((j) => (
+                    <div key={j}>
+                      <div className="h-2.5 w-10 rounded mb-1.5" style={{ background: '#f3f0ff' }} />
+                      <div className="h-5 w-8 rounded" style={{ background: '#ede9f6' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredStats.length === 0 ? (
           <div className="text-center py-8 text-xs font-bold" style={{ color: '#9ca3af' }}>
             {activeTab === 'solo' ? 'Play some solo games to see stats!' : 'Play VS matches to see stats!'}
           </div>
@@ -564,7 +585,27 @@ export default function ProfilePage() {
 
         {/* Recent Matches */}
         <div className="section-header mb-2">RECENT MATCHES</div>
-        {matches.length === 0 ? (
+        {loadingStats ? (
+          <div className="space-y-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-3 animate-pulse"
+                style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '12px' }}
+              >
+                <div className="w-9 h-9 rounded-lg flex-shrink-0" style={{ background: '#ede9f6' }} />
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="h-3 w-20 rounded" style={{ background: '#ede9f6' }} />
+                  <div className="h-2.5 w-28 rounded" style={{ background: '#f3f0ff' }} />
+                </div>
+                <div className="flex-shrink-0 space-y-1.5 text-right">
+                  <div className="h-3 w-10 rounded ml-auto" style={{ background: '#ede9f6' }} />
+                  <div className="h-2.5 w-16 rounded ml-auto" style={{ background: '#f3f0ff' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : matches.length === 0 ? (
           <div className="text-center py-8 text-xs font-bold" style={{ color: '#9ca3af' }}>
             No matches played yet.
           </div>
