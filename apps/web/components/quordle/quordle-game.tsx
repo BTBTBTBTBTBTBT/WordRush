@@ -16,6 +16,7 @@ import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { hasDuplicateGuess } from '@/lib/game-utils';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 interface QuordleGameProps {
@@ -91,6 +92,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) { setError('Word must be 5 letters'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
       if (!isWordValid(currentGuess)) { setError('Not in word list'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
+      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
 
       state.boards.forEach((_, index) => {
         if (state.boards[index].status === 'PLAYING') {
@@ -194,7 +196,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
 
       {/* Boards - fills remaining space */}
       <div className="flex-1 min-h-0 px-2 pb-2">
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && !isWordValid(currentGuess)} />
+        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
       </div>
 
       {/* Keyboard — hidden when game is complete */}

@@ -76,6 +76,12 @@ export function VsProperNoundle({
         return;
       }
 
+      if (guesses.some((g) => normalizeString(g.word) === normalized)) {
+        setMessage('Already guessed');
+        setTimeout(() => setMessage(''), 1500);
+        return;
+      }
+
       // Report guess to server for opponent progress
       onGuessSubmitted(currentGuess, 0);
 

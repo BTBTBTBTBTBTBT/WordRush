@@ -6,6 +6,7 @@ import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
 import { Clock } from 'lucide-react';
+import { hasDuplicateGuess } from '@/lib/game-utils';
 
 export interface VsGameComponentProps {
   seed: string;
@@ -82,6 +83,12 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
         setTimeout(() => setMessage(''), 1500);
         return;
       }
+      if (hasDuplicateGuess(state.boards, currentGuess)) {
+        setMessage('Already guessed');
+        setCurrentGuess('');
+        setTimeout(() => setMessage(''), 1500);
+        return;
+      }
       onGuessSubmitted(currentGuess, 0);
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess });
       setCurrentGuess('');
@@ -144,7 +151,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           showSolution={currentBoard.status === GameStatus.LOST}
           solution={currentBoard.solution}
           darkMode
-          isInvalidWord={currentGuess.length === 5 && !isValidWord(currentGuess)}
+          isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
       </div>
 

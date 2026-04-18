@@ -79,6 +79,10 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 const queue = new MatchmakingQueue();
 const matches = new Map<string, Match>();
 const playerToMatch = new Map<string, string>();
+// Per-player guess history within an active match. Keyed by matchId so
+// it clears naturally on match end. Used to reject duplicate guesses
+// server-side even if a modified client bypasses its local check.
+const submittedWordsByMatch = new Map<string, { p1: Set<string>; p2: Set<string> }>();
 // Private-match lobbies keyed by invite_code. First arrival is parked
 // here; the second arrival with the same code pairs up with them
 // immediately, bypassing the public matchmaking queue.
@@ -185,6 +189,20 @@ io.on('connection', (socket) => {
     }
 
     const isPlayer1 = match.player1.id === playerId;
+    const normalizedGuess = guess.toUpperCase();
+    const history = submittedWordsByMatch.get(matchId);
+    const playerHistory = history ? (isPlayer1 ? history.p1 : history.p2) : null;
+    if (playerHistory?.has(normalizedGuess)) {
+      socket.emit('guess_result', {
+        boardIndex,
+        isValid: false,
+        isCorrect: false,
+        reason: 'Already guessed'
+      });
+      return;
+    }
+    playerHistory?.add(normalizedGuess);
+
     const playerState = isPlayer1 ? match.player1State : match.player2State;
     const opponentState = isPlayer1 ? match.player2State : match.player1State;
     const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
@@ -369,6 +387,8 @@ io.on('connection', (socket) => {
       playerToMatch.set(match.player1.id, newMatchId);
       playerToMatch.set(match.player2.id, newMatchId);
       matches.delete(matchId);
+      submittedWordsByMatch.delete(matchId);
+      submittedWordsByMatch.set(newMatchId, { p1: new Set(), p2: new Set() });
 
       io.to(match.player1.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata });
       io.to(match.player2.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata });
@@ -390,6 +410,7 @@ io.on('connection', (socket) => {
     playerToMatch.delete(match.player1.id);
     playerToMatch.delete(match.player2.id);
     matches.delete(matchId);
+    submittedWordsByMatch.delete(matchId);
   });
 
   socket.on('disconnect', () => {
@@ -411,6 +432,7 @@ io.on('connection', (socket) => {
         playerToMatch.delete(match.player1.id);
         playerToMatch.delete(match.player2.id);
         matches.delete(matchId);
+        submittedWordsByMatch.delete(matchId);
       }
     }
   });
@@ -458,6 +480,7 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
   matches.set(matchId, match);
   playerToMatch.set(player1.id, matchId);
   playerToMatch.set(player2.id, matchId);
+  submittedWordsByMatch.set(matchId, { p1: new Set(), p2: new Set() });
 
   io.to(player1.socketId).emit('match_found', {
     matchId,

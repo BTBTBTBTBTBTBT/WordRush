@@ -25,6 +25,7 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { hasDuplicateGuess } from '@/lib/game-utils';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 const BLACKOUT_DURATION_MS = 15_000;
@@ -279,6 +280,13 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         return;
       }
 
+      if (hasDuplicateGuess(state.boards, currentGuess)) {
+        setMessage('Already guessed');
+        setCurrentGuess('');
+        setTimeout(() => setMessage(''), 1500);
+        return;
+      }
+
       if (isSingleBoard) {
         dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: state.currentBoardIndex });
       } else {
@@ -419,7 +427,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             solution={board.solution}
             showSolution={board.status === GameStatus.LOST}
             darkMode
-            isInvalidWord={!isInBlackout && currentGuess.length === 5 && !isValidWord(currentGuess)}
+            isInvalidWord={!isInBlackout && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
           />
         </div>
       );
@@ -447,7 +455,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         <MultiBoard
           boards={state.boards}
           currentGuess={isInBlackout ? '' : currentGuess}
-          isInvalidWord={!isInBlackout && currentGuess.length === 5 && !isValidWord(currentGuess)}
+          isInvalidWord={!isInBlackout && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
       );
     }
