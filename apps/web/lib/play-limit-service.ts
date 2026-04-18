@@ -7,23 +7,27 @@
  * - 1 free play per game mode per day (daily puzzle is always free and doesn't count)
  * - 2 VS matches per day across all modes combined
  *
- * Resets at midnight UTC.
+ * Resets at the user's LOCAL midnight (Wordle-style), matching daily
+ * puzzle rollover.
  */
 
 const STORAGE_KEY_PREFIX = 'wordocious-plays';
 const VS_STORAGE_KEY = 'wordocious-vs-plays';
 
-function getTodayUTC(): string {
+function getTodayLocal(): string {
   const now = new Date();
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function getStorageKey(): string {
-  return `${STORAGE_KEY_PREFIX}-${getTodayUTC()}`;
+  return `${STORAGE_KEY_PREFIX}-${getTodayLocal()}`;
 }
 
 function getVsStorageKey(): string {
-  return `${VS_STORAGE_KEY}-${getTodayUTC()}`;
+  return `${VS_STORAGE_KEY}-${getTodayLocal()}`;
 }
 
 /** Get map of which modes have been played today */
@@ -74,15 +78,11 @@ export function hasReachedVsLimit(): boolean {
   return getVsMatchesToday() >= 2;
 }
 
-/** Get seconds until midnight UTC */
+/** Get seconds until the user's local midnight */
 export function getSecondsUntilMidnightUTC(): number {
   const now = new Date();
-  const midnight = new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate() + 1,
-    0, 0, 0
-  ));
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
   return Math.floor((midnight.getTime() - now.getTime()) / 1000);
 }
 
@@ -97,7 +97,7 @@ export function formatCountdown(totalSeconds: number): string {
 /** Clean up old localStorage entries (call on app load) */
 export function cleanupOldPlayData(): void {
   if (typeof window === 'undefined') return;
-  const today = getTodayUTC();
+  const today = getTodayLocal();
   const keysToRemove: string[] = [];
 
   for (let i = 0; i < localStorage.length; i++) {
