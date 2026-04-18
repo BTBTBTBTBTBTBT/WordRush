@@ -15,6 +15,7 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
+import { BottomNav } from '@/components/ui/bottom-nav';
 
 interface RescueGameProps {
   initialSeed?: string;
@@ -143,7 +144,10 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
+    <div
+      className={`h-[100dvh] flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      style={{ backgroundColor: '#f8f7ff' }}
+    >
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={4} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
         {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} boardsSolved={completedBoards} totalBoards={4} solutions={state.boards.map(b => b.solution)} />}
@@ -194,6 +198,8 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
           <Keyboard onKey={handleKeyPress} letterStates={letterStates} boardLetterStates={boardLetterStates} />
         </div>
       )}
+
+      {state.status !== 'PLAYING' && <BottomNav />}
     </div>
   );
 }

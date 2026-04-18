@@ -24,6 +24,7 @@ import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
+import { BottomNav } from '@/components/ui/bottom-nav';
 
 const BLACKOUT_DURATION_MS = 15_000;
 const BLACKOUT_LETTER_COUNT = 3;
@@ -449,7 +450,10 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
+    <div
+      className={`h-[100dvh] flex flex-col relative ${state.status !== GameStatus.PLAYING ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      style={{ backgroundColor: '#f8f7ff' }}
+    >
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0">
         <GauntletProgress
@@ -551,6 +555,8 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           />
         </div>
       )}
+
+      {state.status !== GameStatus.PLAYING && <BottomNav />}
 
       {/* Overlays */}
       <AnimatePresence>
