@@ -61,6 +61,8 @@ const PLATFORMS: Array<{ key: keyof SocialLinks; label: string; placeholder: str
   { key: 'website',   label: 'Website',      placeholder: 'https://example.com',   color: '#2563eb', buildUrl: (v) => v },
 ];
 
+export { PLATFORMS, SocialIcon, sanitizeHandle };
+
 function sanitizeHandle(platform: keyof SocialLinks, raw: string): string {
   const v = raw.trim();
   if (!v) return '';

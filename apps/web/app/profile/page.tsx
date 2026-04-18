@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import {
@@ -15,7 +15,6 @@ import {
   User,
   Check,
   X,
-  Pencil,
   Medal,
   Crown,
   LogOut,
@@ -33,7 +32,8 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { ProStats } from '@/components/profile/pro-stats';
-import { SocialLinksEditor, type SocialLinks } from '@/components/profile/social-links';
+import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
+import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType } from '@/lib/daily-service';
 import { fetchActivityByDay } from '@/lib/stats-service';
 import { fetchUserAchievements, ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
@@ -104,13 +104,9 @@ export default function ProfilePage() {
   const [activity, setActivity] = useState<Array<{ day: string; count: number }>>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
-  const [editingUsername, setEditingUsername] = useState(false);
-  const [usernameValue, setUsernameValue] = useState('');
-  const [usernameError, setUsernameError] = useState('');
-  const [savingUsername, setSavingUsername] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const usernameInputRef = useRef<HTMLInputElement>(null);
 
   const handleDeleteAccount = async () => {
     if (!profile) return;
@@ -137,7 +133,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (profile) {
-      setUsernameValue(profile.username);
       Promise.all([
         fetchStats(),
         fetchMatches(),
@@ -150,13 +145,6 @@ export default function ProfilePage() {
       setLoadingStats(false);
     }
   }, [profile, loading]);
-
-  useEffect(() => {
-    if (editingUsername && usernameInputRef.current) {
-      usernameInputRef.current.focus();
-      usernameInputRef.current.select();
-    }
-  }, [editingUsername]);
 
   const fetchStats = async () => {
     if (!profile) return;
@@ -195,44 +183,6 @@ export default function ProfilePage() {
       .order('created_at', { ascending: false })
       .limit(5);
     if (data) setMatches(data);
-  };
-
-  const saveUsername = async () => {
-    if (!profile) return;
-    const trimmed = usernameValue.trim();
-    if (trimmed.length < 3 || trimmed.length > 20) {
-      setUsernameError('Username must be 3-20 characters');
-      return;
-    }
-    if (trimmed === profile.username) {
-      setEditingUsername(false);
-      setUsernameError('');
-      return;
-    }
-    setSavingUsername(true);
-    setUsernameError('');
-    const { error } = await (supabase as any).from('profiles').update({ username: trimmed }).eq('id', profile.id);
-    if (error) {
-      if (error.code === '23505' || error.message?.includes('unique') || error.message?.includes('duplicate')) {
-        setUsernameError('Username already taken');
-      } else {
-        setUsernameError('Failed to update username');
-      }
-      setSavingUsername(false);
-      return;
-    }
-    await refreshProfile();
-    setEditingUsername(false);
-    setSavingUsername(false);
-  };
-
-  const handleUsernameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') saveUsername();
-    else if (e.key === 'Escape') {
-      setEditingUsername(false);
-      setUsernameValue(profile?.username ?? '');
-      setUsernameError('');
-    }
   };
 
   const filteredStats = stats
@@ -351,36 +301,12 @@ export default function ProfilePage() {
       <div className="max-w-2xl mx-auto px-4 space-y-4">
         {/* Profile Header */}
         <div className="flex flex-col items-center gap-3">
-          <AvatarUpload size={96} />
+          <AvatarUpload size={96} editable={false} />
 
-          {editingUsername ? (
-            <div className="flex flex-col items-center gap-2">
-              <input
-                ref={usernameInputRef}
-                type="text"
-                value={usernameValue}
-                onChange={(e) => setUsernameValue(e.target.value)}
-                onBlur={saveUsername}
-                onKeyDown={handleUsernameKeyDown}
-                maxLength={20}
-                disabled={savingUsername}
-                className="text-2xl font-black text-center px-4 py-2 outline-none w-56"
-                style={{
-                  color: '#1a1a2e',
-                  background: '#f3f0ff',
-                  border: '1.5px solid #c4b5fd',
-                  borderRadius: '12px',
-                }}
-              />
-              {usernameError && <p className="text-red-500 text-xs font-bold">{usernameError}</p>}
-            </div>
-          ) : (
-            <button onClick={() => setEditingUsername(true)} className="group flex items-center gap-2">
-              <h1 className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.username}</h1>
-              {isProActive && <ProBadge size="md" />}
-              <Pencil className="w-4 h-4 opacity-30 group-hover:opacity-60 transition-opacity" style={{ color: '#9ca3af' }} />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.username}</h1>
+            {isProActive && <ProBadge size="md" />}
+          </div>
 
           {/* Level */}
           <div className="flex flex-col items-center gap-1.5">
@@ -408,12 +334,12 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Socials */}
-          <SocialLinksEditor
-            userId={profile.id}
-            initial={(profile as any).social_links as SocialLinks | null}
-            onSaved={() => refreshProfile()}
-          />
+          {/* Socials — only render pills when at least one is populated.
+              Editing happens inside the Edit profile modal. */}
+          <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
+
+          {/* Single edit entry point: avatar + username + socials. */}
+          <EditProfileButton onClick={() => setEditOpen(true)} />
 
           <div className="flex items-center gap-2">
             {!isProActive && (
@@ -930,6 +856,7 @@ export default function ProfilePage() {
       </div>
 
       <BottomNav />
+      <ProfileEditModal open={editOpen} onClose={() => setEditOpen(false)} />
     </div>
   );
 }
