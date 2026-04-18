@@ -57,36 +57,41 @@ function QuadrantKey({
     <button
       onClick={onClick}
       className={cn(
-        'relative h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base overflow-hidden',
+        'relative h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg overflow-hidden',
         'transition-all duration-300 select-none',
         allAbsent
-          ? 'text-gray-400'
+          ? 'text-[#1a1a2e]'
           : hasAny
           ? 'text-white'
           : 'text-gray-700'
       )}
       style={{
         border: '1.5px solid #ede9f6',
+        textShadow: hasAny && !allAbsent ? '0 1px 2px rgba(0,0,0,0.35)' : undefined,
       }}
     >
-      <div
-        className="absolute inset-0 grid"
-        style={{
-          gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gridTemplateRows: `repeat(${rows}, 1fr)`,
-        }}
-      >
-        {boardStates.map((states, i) => {
-          const state = states[letter];
-          return (
-            <div
-              key={i}
-              className={cn(state ? QUADRANT_COLORS[state] : '')}
-              style={!state ? { backgroundColor: '#e8e5f0' } : undefined}
-            />
-          );
-        })}
-      </div>
+      {allAbsent ? (
+        <div className="absolute inset-0" style={{ backgroundColor: '#d4d0e0' }} />
+      ) : (
+        <div
+          className="absolute inset-0 grid"
+          style={{
+            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            gridTemplateRows: `repeat(${rows}, 1fr)`,
+          }}
+        >
+          {boardStates.map((states, i) => {
+            const state = states[letter];
+            return (
+              <div
+                key={i}
+                className={cn(state ? QUADRANT_COLORS[state] : '')}
+                style={!state ? { backgroundColor: '#e8e5f0' } : undefined}
+              />
+            );
+          })}
+        </div>
+      )}
       <span
         className="relative z-10"
         style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitFontSmoothing: 'antialiased' }}
@@ -103,7 +108,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
   const skin = keyboardSkinId ? KEYBOARD_SKINS[keyboardSkinId] : null;
 
   return (
-    <div className="flex flex-col gap-1.5 max-w-lg mx-auto">
+    <div className="flex flex-col gap-1.5 max-w-xl mx-auto">
       {ROWS.map((row, i) => (
         <div key={i} className="flex gap-1 justify-center">
           {row.map((key) => {
@@ -117,7 +122,8 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   onClick={() => !isBlackedOut && onKey(key)}
                   disabled={isBlackedOut}
                   className={cn(
-                    'h-11 sm:h-14 px-3 sm:px-4 rounded-md font-black text-sm sm:text-base',
+                    useQuadrants ? 'h-12 sm:h-14' : 'h-11 sm:h-14',
+                    'px-3 sm:px-4 rounded-md font-black text-sm sm:text-base',
                     'transition-all duration-300 select-none',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
@@ -137,7 +143,12 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 <button
                   key={key}
                   disabled
-                  className="h-11 sm:h-14 w-8 sm:w-10 rounded-md font-black text-sm sm:text-base opacity-40 cursor-not-allowed animate-pulse select-none"
+                  className={cn(
+                    useQuadrants
+                      ? 'h-12 sm:h-14 w-10 sm:w-12 text-base sm:text-lg'
+                      : 'h-11 sm:h-14 w-8 sm:w-10 text-sm sm:text-base',
+                    'rounded-md font-black opacity-40 cursor-not-allowed animate-pulse select-none',
+                  )}
                   style={{
                     backgroundColor: 'rgba(220,38,38,0.15)',
                     border: '1.5px solid rgba(220,38,38,0.2)',
