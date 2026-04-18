@@ -58,7 +58,7 @@ function QuadrantKey({
       onClick={onClick}
       className={cn(
         'relative h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg overflow-hidden',
-        'transition-all duration-300 select-none',
+        'transition-all duration-150 select-none',
         allAbsent
           ? 'text-white'
           : hasAny
@@ -123,7 +123,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   disabled={isBlackedOut}
                   className={cn(
                     'h-12 sm:h-14 px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
-                    'transition-all duration-300 select-none',
+                    'transition-all duration-150 select-none',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
                   style={{
@@ -172,7 +172,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 onClick={() => onKey(key)}
                 className={cn(
                   'h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
-                  'transition-all duration-300 select-none',
+                  'transition-all duration-150 select-none',
                   state === 'correct' && 'bg-green-600 text-white border-green-600',
                   state === 'present' && 'bg-yellow-600 text-white border-yellow-600',
                   state === 'absent' && 'text-white',

@@ -1,14 +1,20 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import { LoginScreen } from './login-screen';
+import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
 const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback'];
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
+
+  useEffect(() => {
+    ensureDictionaryInitialized();
+  }, []);
 
   // Let public pages through without auth
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
