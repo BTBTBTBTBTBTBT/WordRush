@@ -159,8 +159,10 @@ export function clearGameSession(mode: GameMode, isDaily: boolean): void {
  *   seed,
  *   (s) => savedSession?.state ?? createInitialState(s, mode),
  * );
- * const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
- * const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
+ * const { elapsedSeconds: elapsedTime } = useActivePlayTimer(
+ *   state.status === GameStatus.PLAYING,
+ *   savedSession?.elapsedTime ?? 0,
+ * );
  * useGameSnapshot(mode, isDaily, seed, state, elapsedTime);
  * ```
  */
