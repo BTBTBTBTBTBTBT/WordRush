@@ -24,6 +24,7 @@ import {
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
+import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import type { Database } from '@/lib/database.types';
@@ -192,6 +193,8 @@ export default function PublicProfilePage() {
               </div>
             </div>
           </div>
+
+          <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
 
           <Link href="/">
             <Button variant="outline" style={{ background: '#f3f0ff', border: '1.5px solid #ede9f6', color: '#7c3aed' }}>
