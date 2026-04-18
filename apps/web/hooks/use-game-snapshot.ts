@@ -14,6 +14,12 @@ import { getTodayUTC } from '@/lib/daily-service';
 // discarded instead of being restored into an incompatible reducer.
 const SAVE_VERSION = 1;
 const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+// A game started close to local midnight can cross the day boundary.
+// Rather than wipe in-flight progress the instant the clock ticks over,
+// keep yesterday's daily save loadable for this grace window — long
+// enough to let the player finish, short enough that tomorrow's puzzle
+// takes over for anyone who walks away and comes back later in the day.
+const DAILY_CROSS_MIDNIGHT_GRACE_MS = 4 * 60 * 60 * 1000; // 4h
 
 function getStorageKey(mode: GameMode, isDaily: boolean): string {
   return `wordocious-session-${mode}-${isDaily ? 'daily' : 'practice'}`;
@@ -81,9 +87,18 @@ export function loadGameSession(mode: GameMode, isDaily: boolean): RestoredSessi
       return null;
     }
     if (isDaily) {
-      if (parsed.date !== getTodayUTC()) {
-        localStorage.removeItem(key);
-        return null;
+      const today = getTodayUTC(); // now returns local day
+      if (parsed.date !== today) {
+        // Cross-midnight grace: if this save is from yesterday but the
+        // user reopened within the grace window, AND the save is still
+        // in-progress (PLAYING), keep it so they can finish. Completed
+        // saves past midnight are discarded — tomorrow's puzzle wins.
+        const stillPlaying = parsed.state.status === GameStatus.PLAYING;
+        const withinGrace = Date.now() - parsed.savedAt < DAILY_CROSS_MIDNIGHT_GRACE_MS;
+        if (!stillPlaying || !withinGrace) {
+          localStorage.removeItem(key);
+          return null;
+        }
       }
     } else {
       if (Date.now() - parsed.savedAt > PRACTICE_TTL_MS) {

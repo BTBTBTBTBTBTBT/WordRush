@@ -59,11 +59,24 @@ export function calculateVsCompositeScore(
 // ============================================================
 
 /**
- * Get today's date as YYYY-MM-DD in UTC.
+ * Get today's date as YYYY-MM-DD in the user's LOCAL timezone.
+ *
+ * Wordocious resets its daily puzzles at each user's local midnight
+ * (like NYT Wordle). The puzzle index is deterministic from this date
+ * string, so Tokyo and LA play the same puzzle for `2026-04-18` — they
+ * just start/finish it at different real-world moments.
  */
-export function getTodayUTC(): string {
-  return new Date().toISOString().slice(0, 10);
+export function getTodayLocal(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
+
+// Backwards-compatible alias so existing call sites keep compiling during
+// the local-midnight migration. Prefer getTodayLocal in new code.
+export const getTodayUTC = getTodayLocal;
 
 /**
  * Fetch the daily seed for a specific mode and day.
@@ -702,14 +715,18 @@ export function generateShareText(
 }
 
 /**
- * Get seconds remaining until UTC midnight.
+ * Seconds remaining until the user's LOCAL midnight. Drives the
+ * "next puzzle in HH:MM:SS" countdown on the home and daily pages.
  */
-export function getSecondsUntilMidnightUTC(): number {
+export function getSecondsUntilMidnightLocal(): number {
   const now = new Date();
   const midnight = new Date(now);
-  midnight.setUTCHours(24, 0, 0, 0);
+  midnight.setHours(24, 0, 0, 0);
   return Math.floor((midnight.getTime() - now.getTime()) / 1000);
 }
+
+// Backwards-compatible alias.
+export const getSecondsUntilMidnightUTC = getSecondsUntilMidnightLocal;
 
 /**
  * Return the set of game_modes the user has completed (won or attempted)
