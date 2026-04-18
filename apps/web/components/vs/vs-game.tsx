@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
+import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, Loader2, Home, RotateCcw, Trophy, X } from 'lucide-react';
 import {
@@ -215,6 +216,14 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     matchService.onMatchFound((data) => {
       setShowCountdown(true);
       setCountdown(data.countdownSeconds);
+
+      // Private-match invites: flip the match_invites row to 'accepted'
+      // now that the matchmaking server paired both invitees. Keeps the
+      // pending-invites banner from lingering and stops a stale click
+      // from spawning a ghost lobby for the next 24 hours.
+      if (inviteCode) {
+        markInviteAcceptedByCode(inviteCode, data.matchId).catch(() => {});
+      }
 
       const interval = setInterval(() => {
         setCountdown((prev) => {

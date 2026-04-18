@@ -113,6 +113,28 @@ export async function markInviteAccepted(inviteId: string): Promise<void> {
     .eq('id', inviteId);
 }
 
+/**
+ * Mark the invite matching this code as accepted, optionally attaching
+ * the match_id. Called by either invitee or inviter the moment the
+ * matchmaking server fires `match_found`, so the pending banner clears
+ * and a second tap on the same link can't spawn a ghost lobby.
+ *
+ * Scoped to `status = 'pending'` so we don't clobber a row that was
+ * already declined/cancelled between us reading it and writing.
+ */
+export async function markInviteAcceptedByCode(code: string, matchId?: string): Promise<void> {
+  const update: Record<string, unknown> = {
+    status: 'accepted',
+    accepted_at: new Date().toISOString(),
+  };
+  if (matchId) update.match_id = matchId;
+  await (supabase as any)
+    .from('match_invites')
+    .update(update)
+    .eq('invite_code', code)
+    .eq('status', 'pending');
+}
+
 export async function markInviteDeclined(inviteId: string): Promise<void> {
   await (supabase as any)
     .from('match_invites')
