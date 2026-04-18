@@ -23,7 +23,6 @@ import {
   AlertTriangle,
   Shield,
   Skull,
-  Download,
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -110,36 +109,7 @@ export default function ProfilePage() {
   const [savingUsername, setSavingUsername] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const usernameInputRef = useRef<HTMLInputElement>(null);
-
-  const handleExportData = async () => {
-    if (!profile || exporting) return;
-    setExporting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('No session');
-      const res = await fetch('/api/account/export', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (!res.ok) throw new Error('Export failed');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `wordocious-export-${profile.username}-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Export error:', err);
-      alert('Export failed. Please try again.');
-    } finally {
-      setExporting(false);
-    }
-  };
 
   const handleDeleteAccount = async () => {
     if (!profile) return;
@@ -905,18 +875,6 @@ export default function ProfilePage() {
           >
             <LogOut className="w-5 h-5" style={{ color: '#9ca3af' }} />
             <span className="text-sm font-extrabold" style={{ color: '#1a1a2e' }}>Sign Out</span>
-          </button>
-
-          <button
-            onClick={handleExportData}
-            disabled={exporting}
-            className="w-full flex items-center gap-3 p-4 transition-colors active:scale-[0.98] disabled:opacity-50"
-            style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
-          >
-            <Download className="w-5 h-5" style={{ color: '#2563eb' }} />
-            <span className="text-sm font-extrabold" style={{ color: '#1a1a2e' }}>
-              {exporting ? 'Exporting…' : 'Export My Data'}
-            </span>
           </button>
 
           {!showDeleteConfirm ? (
