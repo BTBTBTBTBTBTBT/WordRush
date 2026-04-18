@@ -326,9 +326,11 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
 
   const handleTransitionComplete = useCallback(() => {
     setShowTransition(false);
-    dispatch({ type: 'NEXT_STAGE' });
+    // Pass the active-play elapsed so the reducer's stage-time math
+    // doesn't count any tab-hidden minutes against this stage.
+    dispatch({ type: 'NEXT_STAGE', elapsedMs: elapsedTime * 1000 });
     setCurrentGuess('');
-  }, []);
+  }, [elapsedTime]);
 
   const handleVictoryComplete = useCallback(() => {
     setShowVictory(false);
@@ -407,6 +409,11 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           onHome={handleHome}
           showPlayAgain={!isDaily && isPro}
         />
+        {/* Keep bottom navigation available on the results screen so
+            players can jump to Home / Leaderboard / Profile / Records
+            without re-entering the game tree. Matches every other
+            completed-game surface across the app. */}
+        <BottomNav />
       </>
     );
   }

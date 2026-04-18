@@ -70,6 +70,15 @@ export interface GauntletProgress {
   stages: GauntletStageConfig[];
   stageResults: GauntletStageResult[];
   stageStartTime: number;
+  /**
+   * Active-play milliseconds (from the game-wide timer) at the moment
+   * the current stage began. Used in combination with the `elapsedMs`
+   * passed on NEXT_STAGE to compute stage timing from active play only,
+   * so a stage doesn't inflate when the player backgrounds the tab.
+   * Falls back to Date.now() - stageStartTime when absent (VS gauntlet
+   * keeps wall-clock semantics so the opponent's clock and ours agree).
+   */
+  stageStartElapsedMs?: number;
   allSolutions: string[];
   blackoutCount: number;
 }
@@ -116,7 +125,7 @@ export interface MatchResult {
 export type GameAction =
   | { type: 'SUBMIT_GUESS'; guess: string; boardIndex?: number }
   | { type: 'NEXT_BOARD' }
-  | { type: 'NEXT_STAGE' }
+  | { type: 'NEXT_STAGE'; elapsedMs?: number }
   | { type: 'STEAL_GUESS' }
   | { type: 'BLACKOUT_RESTART'; boardIndex: number }
   | { type: 'ABANDON' }
