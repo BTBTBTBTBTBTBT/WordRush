@@ -247,6 +247,39 @@ export default function ProfilePage() {
     ? ((profile.total_wins / (profile.total_wins + profile.total_losses)) * 100).toFixed(1)
     : '0.0';
 
+  // Level tier: Bronze 1-10, Silver 11-25, Gold 26-50, Platinum 51-99, Diamond 100+
+  const levelTier = (() => {
+    const lvl = profile.level ?? 1;
+    if (lvl >= 100) return { label: 'Diamond', bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8' };
+    if (lvl >= 51) return { label: 'Platinum', bg: '#f5f3ff', border: '#c4b5fd', color: '#6d28d9' };
+    if (lvl >= 26) return { label: 'Gold', bg: '#fef9ec', border: '#fde68a', color: '#92400e' };
+    if (lvl >= 11) return { label: 'Silver', bg: '#f3f4f6', border: '#d1d5db', color: '#374151' };
+    return { label: 'Bronze', bg: '#fef2e8', border: '#fed7aa', color: '#9a3412' };
+  })();
+
+  const memberSince = (profile as any).created_at
+    ? new Date((profile as any).created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    : null;
+
+  // Overview-derived stats, pulled from user_stats across all modes
+  const totalGamesFromStats = stats.reduce((sum, s) => sum + (s.total_games || 0), 0);
+  const overallAvgTime = totalGamesFromStats > 0
+    ? Math.round(
+        stats.reduce((sum, s) => sum + (s.average_time || 0) * (s.total_games || 0), 0) /
+          totalGamesFromStats
+      )
+    : 0;
+  const fastestWinOverall = stats
+    .filter((s) => (s.fastest_time || 0) > 0)
+    .reduce((min, s) => (min === 0 || s.fastest_time < min ? s.fastest_time : min), 0);
+  const favoriteModeStat = stats.reduce<typeof stats[number] | null>(
+    (top, s) => (!top || s.total_games > top.total_games ? s : top),
+    null,
+  );
+  const favoriteMode = favoriteModeStat
+    ? gameModeTitles[favoriteModeStat.game_mode] || favoriteModeStat.game_mode
+    : '—';
+
   return (
     <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
       <AppHeader />
@@ -289,10 +322,12 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center gap-1.5">
             <div
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold"
-              style={{ background: '#fef9ec', border: '1.5px solid #fde68a', color: '#92400e' }}
+              style={{ background: levelTier.bg, border: `1.5px solid ${levelTier.border}`, color: levelTier.color }}
             >
               <Star className="w-3.5 h-3.5" fill="currentColor" />
               Level {profile.level}
+              <span className="opacity-70">·</span>
+              <span>{levelTier.label}</span>
             </div>
             <div className="w-40">
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#ede9f6' }}>
@@ -302,6 +337,11 @@ export default function ProfilePage() {
                 {xpToNextLevel} XP to next
               </p>
             </div>
+            {memberSince && (
+              <p className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+                Member since {memberSince}
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -338,24 +378,32 @@ export default function ProfilePage() {
         <div className="section-header mb-2">OVERVIEW</div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { icon: Star, label: 'Level', value: profile.level, color: '#d97706', fill: true },
-            { icon: Trophy, label: 'Wins', value: profile.total_wins, color: '#16a34a', sub: `${winRate}% rate` },
-            { icon: Flame, label: 'Daily Streak', value: profile.daily_login_streak, color: '#ea580c', fill: true, sub: `Best: ${(profile as any).best_daily_login_streak ?? 0}` },
-            { icon: Zap, label: 'Win Streak', value: (profile as any).current_streak ?? 0, color: '#7c3aed', sub: `Best: ${(profile as any).best_streak ?? 0}` },
+            { icon: Trophy, label: 'Wins', value: profile.total_wins, color: '#16a34a' },
             { icon: Target, label: 'Games', value: profile.total_wins + profile.total_losses, color: '#2563eb' },
+            { icon: Star, label: 'Win Rate', value: `${winRate}%`, color: '#d97706', fill: true },
+            { icon: Clock, label: 'Avg Time', value: overallAvgTime > 0 ? formatDuration(overallAvgTime) : '—', color: '#0891b2' },
+            { icon: Zap, label: 'Fastest Win', value: fastestWinOverall > 0 ? formatDuration(fastestWinOverall) : '—', color: '#7c3aed' },
+            { icon: Zap, label: 'Win Streak', value: (profile as any).current_streak ?? 0, color: '#a855f7', sub: `Best: ${(profile as any).best_streak ?? 0}` },
+            { icon: Flame, label: 'Daily Streak', value: profile.daily_login_streak, color: '#ea580c', fill: true, sub: `Best: ${(profile as any).best_daily_login_streak ?? 0}` },
+            { icon: TrendingUp, label: 'Favorite Mode', value: favoriteMode, color: '#d946ef', small: true },
           ].map((s, i) => {
             const Icon = s.icon;
             return (
               <div
                 key={i}
                 className="p-4"
-                style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+                style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #ede9f6',
+                  borderLeft: `4px solid ${s.color}`,
+                  borderRadius: '16px',
+                }}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <Icon className="w-5 h-5" style={{ color: s.color }} fill={s.fill ? 'currentColor' : 'none'} />
                   <span className="text-[10px] font-extrabold uppercase" style={{ color: '#9ca3af' }}>{s.label}</span>
                 </div>
-                <div className="text-2xl font-black" style={{ color: '#1a1a2e' }}>{s.value}</div>
+                <div className={`${s.small ? 'text-base' : 'text-2xl'} font-black`} style={{ color: '#1a1a2e' }}>{s.value}</div>
                 {s.sub && <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>{s.sub}</div>}
               </div>
             );
@@ -453,33 +501,6 @@ export default function ProfilePage() {
 
         {/* Pro Stats */}
         <ProStats userId={profile.id} isPro={isProActive} />
-
-        {/* Streaks */}
-        <div className="section-header mb-2">STREAKS</div>
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div
-            className="p-4"
-            style={{ background: '#ffffff', border: '1.5px solid #fed7aa', borderRadius: '16px' }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Flame className="w-5 h-5" style={{ color: '#ea580c' }} fill="currentColor" />
-              <span className="text-[10px] font-extrabold uppercase" style={{ color: '#9ca3af' }}>Win Streak</span>
-            </div>
-            <div className="text-2xl font-black" style={{ color: '#1a1a2e' }}>{(profile as any).current_streak ?? 0}</div>
-            <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>Best: {(profile as any).best_streak ?? 0}</div>
-          </div>
-          <div
-            className="p-4"
-            style={{ background: '#ffffff', border: '1.5px solid #c4b5fd', borderRadius: '16px' }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="w-5 h-5" style={{ color: '#7c3aed' }} />
-              <span className="text-[10px] font-extrabold uppercase" style={{ color: '#9ca3af' }}>Daily Streak</span>
-            </div>
-            <div className="text-2xl font-black" style={{ color: '#1a1a2e' }}>{profile.daily_login_streak ?? 0}</div>
-            <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>Best: {(profile as any).best_daily_login_streak ?? 0}</div>
-          </div>
-        </div>
 
         {/* Game Mode Stats */}
         <div className="section-header mb-2">GAME MODE STATS</div>
