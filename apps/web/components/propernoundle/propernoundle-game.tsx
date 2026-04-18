@@ -195,17 +195,6 @@ export function ProperNoundleGame() {
         // completed-save looks exactly like it did when the game ended.
         hints.restoreHints(saved.hintState ?? emptyHintState);
         restoredDailyRef.current = true;
-
-        // Ensure daily result is recorded even for restored games
-        // (covers case where original play didn't have the daily seed fix)
-        const seed = generateDailySeed(getTodayUTC(), 'PROPERNOUNDLE');
-        const timeMs = saved.elapsedTime * 1000;
-        const won = saved.gameStatus === 'won';
-        // Fire-and-forget: will use profile when auth loads via the separate effect
-        if (profile) {
-          recordGameResult(profile.id, 'PROPERNOUNDLE', 'solo', won, saved.guesses.length, timeMs, seed, won ? 1 : 0, 1).then(xp => { if (xp) setXpResult(xp); });
-          hasRecordedRef.current = true;
-        }
         return;
       } else if (saved && saved.gameStatus === 'playing') {
         setGuesses(saved.guesses);

@@ -222,6 +222,13 @@ export default function HomePage() {
     cleanupOldPlayData();
   }, []);
 
+  // Prefetch VS routes so the initial tap is instant (mode cards already
+  // prefetch via <Link>, but the VS button uses router.push).
+  useEffect(() => {
+    router.prefetch('/practice/vs');
+    router.prefetch('/practice/vs?daily=true');
+  }, [router]);
+
   // Countdown for locked cards
   useEffect(() => {
     const update = () => setResetCountdown(formatCountdown(getResetSeconds()));
@@ -278,6 +285,7 @@ export default function HomePage() {
             const handleCardClick = (e: React.MouseEvent) => {
               if (isLocked) {
                 e.preventDefault();
+                router.prefetch(mode.href);
                 setLimitModal({ open: true, modeName: mode.title, modeHref: mode.href });
               } else if (mode.id === 'vs') {
                 e.preventDefault();
