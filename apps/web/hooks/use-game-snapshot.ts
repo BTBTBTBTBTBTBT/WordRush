@@ -198,4 +198,18 @@ export function useGameSnapshot(
     if (state.mode !== mode) return;
     saveGameSession(mode, isDaily, seed, state, elapsedTime);
   }, [mode, isDaily, seed, state, elapsedTime]);
+
+  // `beforeunload` flush: React state updates from a just-submitted
+  // guess may not have flushed through the effect above before the user
+  // force-closes the tab. Write the latest known snapshot synchronously
+  // on unload so that one-last-guess scenario isn't lost.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (state.mode !== mode) return;
+    const onBeforeUnload = () => {
+      saveGameSession(mode, isDaily, seed, state, elapsedTime);
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [mode, isDaily, seed, state, elapsedTime]);
 }
