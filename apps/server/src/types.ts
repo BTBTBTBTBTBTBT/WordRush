@@ -18,6 +18,12 @@ export interface QueueEntry {
    * the same puzzle word.
    */
   dailySeed?: string;
+  /**
+   * Optional private-match token. Two clients arriving with the same
+   * inviteCode get paired directly, skipping the public queue. Populated
+   * from a match_invites.invite_code row on either side.
+   */
+  inviteCode?: string;
 }
 
 export interface PlayerMatchState {
@@ -43,7 +49,7 @@ export interface Match {
 }
 
 export interface ClientToServerEvents {
-  join_queue: (data: { mode: GameMode; dailySeed?: string }) => void;
+  join_queue: (data: { mode: GameMode; dailySeed?: string; inviteCode?: string }) => void;
   leave_queue: () => void;
   submit_guess: (data: { guess: string; boardIndex?: number }) => void;
   abandon_match: () => void;

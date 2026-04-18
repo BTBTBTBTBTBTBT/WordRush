@@ -85,6 +85,12 @@ function CyclingStatus() {
 interface VsGameProps {
   mode: GameMode;
   /**
+   * Private-match invite code. When present, joinQueue routes through
+   * the server's private-lobby map so the two invitees pair directly,
+   * skipping the public queue.
+   */
+  inviteCode?: string;
+  /**
    * When true, this is the freemium "daily VS" flow:
    * - The client joins the matchmaking queue with a deterministic daily
    *   seed so everyone who plays their free daily VS that day shares
@@ -134,7 +140,7 @@ const MODE_TITLE_GRADIENTS: Record<string, string> = {
   [GameMode.PROPERNOUNDLE]: 'from-red-400 via-rose-400 to-orange-400',
 };
 
-export function VsGame({ mode, isDaily = false }: VsGameProps) {
+export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   ensureDictionaryInitialized();
 
   const { profile, isProActive } = useAuth();
@@ -303,7 +309,7 @@ export function VsGame({ mode, isDaily = false }: VsGameProps) {
     // users (and freemium who haven't played yet) join the queue
     // normally, passing the daily seed only when this is the daily flow.
     if (!alreadyPlayedDaily) {
-      matchService.joinQueue(mode, todayDailySeed);
+      matchService.joinQueue(mode, todayDailySeed, inviteCode);
     }
 
     return () => {

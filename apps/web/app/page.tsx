@@ -9,6 +9,8 @@ import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
+import { InviteModal } from '@/components/invites/invite-modal';
+import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
@@ -213,6 +215,7 @@ export default function HomePage() {
   const { user, signOut, isProActive } = useAuth();
   const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string; modeHref: string }>({ open: false, modeName: '', modeHref: '' });
   const [resetCountdown, setResetCountdown] = useState('');
+  const [inviteOpen, setInviteOpen] = useState(false);
   const router = useRouter();
 
   const isPro = isProActive;
@@ -260,6 +263,8 @@ export default function HomePage() {
       <AppHeader />
 
       <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <PendingInvitesBanner userId={user?.id} />
+
         {/* Daily Challenge CTA */}
         <Link href="/daily">
           <button
@@ -395,6 +400,16 @@ export default function HomePage() {
             <Swords className="w-3 h-3 inline mr-1" />
             VS
           </button>
+          <button
+            onClick={() => setInviteOpen(true)}
+            className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md"
+            style={{
+              background: 'linear-gradient(135deg, #ec4899, #db2777)',
+              boxShadow: '0 2px 0 #9f1239',
+            }}
+          >
+            Invite
+          </button>
         </div>
 
         {/* Sign out */}
@@ -415,6 +430,7 @@ export default function HomePage() {
         modeName={limitModal.modeName}
         onViewPuzzle={() => router.push(limitModal.modeHref.includes('daily=true') ? limitModal.modeHref : `${limitModal.modeHref}?daily=true`)}
       />
+      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
     </div>
   );
 }
