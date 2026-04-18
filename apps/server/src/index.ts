@@ -6,8 +6,8 @@ import { join } from 'path';
 import { MatchmakingQueue } from './matchmaking';
 import { Match, Player, ClientToServerEvents, ServerToClientEvents } from './types';
 
-const allowedWords = JSON.parse(readFileSync(join(__dirname, '../../../data/allowed.json'), 'utf-8'));
-const solutionWords = JSON.parse(readFileSync(join(__dirname, '../../../data/solutions.json'), 'utf-8'));
+const allowedWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/allowed.json'), 'utf-8'));
+const solutionWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions.json'), 'utf-8'));
 initDictionary(allowedWords, solutionWords);
 
 // ProperNoundle puzzle data
