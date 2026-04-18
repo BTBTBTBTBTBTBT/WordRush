@@ -23,6 +23,8 @@ import {
   AlertTriangle,
   Shield,
   Skull,
+  Download,
+  Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -108,7 +110,36 @@ export default function ProfilePage() {
   const [savingUsername, setSavingUsername] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const usernameInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportData = async () => {
+    if (!profile || exporting) return;
+    setExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No session');
+      const res = await fetch('/api/account/export', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wordocious-export-${profile.username}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (!profile) return;
@@ -305,6 +336,42 @@ export default function ProfilePage() {
   const favoriteMode = favoriteModeStat
     ? gameModeTitles[favoriteModeStat.game_mode] || favoriteModeStat.game_mode
     : '—';
+
+  // Rule-based insight picker. Picks up to 2 headline-worthy facts from the
+  // fetched data; falls back to an empty array so the section simply hides.
+  const insights: string[] = (() => {
+    const out: string[] = [];
+    // Strongest mode by win rate, min 3 games, prefer solo rows
+    const qualifying = stats.filter((s) => (s.total_games || 0) >= 3);
+    if (qualifying.length > 0) {
+      const strongest = qualifying.reduce((best, s) => {
+        const rate = s.wins / s.total_games;
+        const bestRate = best ? best.wins / best.total_games : -1;
+        return rate > bestRate ? s : best;
+      }, qualifying[0]);
+      const name = gameModeTitles[strongest.game_mode] || strongest.game_mode;
+      const rate = Math.round((strongest.wins / strongest.total_games) * 100);
+      out.push(`Your strongest mode is ${name} at ${rate}% win rate.`);
+    }
+    // Activity nudge
+    const weekTotal = activity.reduce((s, a) => s + a.count, 0);
+    if (weekTotal >= 10) {
+      out.push(`You've played ${weekTotal} games this week — on a roll!`);
+    } else if (weekTotal >= 1 && weekTotal < 5) {
+      out.push(`Only ${weekTotal} game${weekTotal === 1 ? '' : 's'} this week — warm up with a daily.`);
+    }
+    // Level progress
+    if (xpToNextLevel <= 300) {
+      out.push(`Just ${xpToNextLevel} XP away from Level ${profile.level + 1}.`);
+    }
+    // Daily completion nudge
+    if (todayDailies.size === DAILY_MODES.length) {
+      out.push(`All ${DAILY_MODES.length} dailies done today. Legendary.`);
+    } else if (todayDailies.size >= 3) {
+      out.push(`${todayDailies.size}/${DAILY_MODES.length} dailies complete today — keep going.`);
+    }
+    return out.slice(0, 2);
+  })();
 
   return (
     <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
@@ -524,6 +591,28 @@ export default function ProfilePage() {
             </>
           );
         })()}
+
+        {/* Insights */}
+        {insights.length > 0 && (
+          <>
+            <div className="section-header mb-2">INSIGHTS</div>
+            <div
+              className="p-4 space-y-2"
+              style={{
+                background: 'linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%)',
+                border: '1.5px solid #ddd6fe',
+                borderRadius: '16px',
+              }}
+            >
+              {insights.map((text, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#7c3aed' }} />
+                  <p className="text-xs font-bold leading-snug" style={{ color: '#1a1a2e' }}>{text}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Medals */}
         <div className="section-header mb-2">DAILY MEDALS</div>
@@ -816,6 +905,18 @@ export default function ProfilePage() {
           >
             <LogOut className="w-5 h-5" style={{ color: '#9ca3af' }} />
             <span className="text-sm font-extrabold" style={{ color: '#1a1a2e' }}>Sign Out</span>
+          </button>
+
+          <button
+            onClick={handleExportData}
+            disabled={exporting}
+            className="w-full flex items-center gap-3 p-4 transition-colors active:scale-[0.98] disabled:opacity-50"
+            style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+          >
+            <Download className="w-5 h-5" style={{ color: '#2563eb' }} />
+            <span className="text-sm font-extrabold" style={{ color: '#1a1a2e' }}>
+              {exporting ? 'Exporting…' : 'Export My Data'}
+            </span>
           </button>
 
           {!showDeleteConfirm ? (
