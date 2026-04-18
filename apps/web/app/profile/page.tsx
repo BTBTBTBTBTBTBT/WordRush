@@ -32,7 +32,8 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { ProStats } from '@/components/profile/pro-stats';
-import { fetchUserMedals, type Medal as MedalType } from '@/lib/daily-service';
+import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType } from '@/lib/daily-service';
+import { fetchActivityByDay } from '@/lib/stats-service';
 import { fetchUserAchievements, ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import type { Database } from '@/lib/database.types';
 
@@ -73,6 +74,17 @@ const gameModeOrder: string[] = [
   'PROPERNOUNDLE',
 ];
 
+// Daily-playable modes (one per daily puzzle) + their solo-route hrefs.
+const DAILY_MODES: Array<{ id: string; href: string }> = [
+  { id: 'DUEL',          href: '/practice?daily=true' },
+  { id: 'QUORDLE',       href: '/quordle?daily=true' },
+  { id: 'OCTORDLE',      href: '/octordle?daily=true' },
+  { id: 'SEQUENCE',      href: '/sequence?daily=true' },
+  { id: 'RESCUE',        href: '/rescue?daily=true' },
+  { id: 'GAUNTLET',      href: '/gauntlet?daily=true' },
+  { id: 'PROPERNOUNDLE', href: '/propernoundle?daily=true' },
+];
+
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   const mins = Math.floor(seconds / 60);
@@ -86,6 +98,8 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [medals, setMedals] = useState<MedalType[]>([]);
   const [userAchievements, setUserAchievements] = useState<Set<string>>(new Set());
+  const [todayDailies, setTodayDailies] = useState<Set<string>>(new Set());
+  const [activity, setActivity] = useState<Array<{ day: string; count: number }>>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
   const [editingUsername, setEditingUsername] = useState(false);
@@ -127,6 +141,8 @@ export default function ProfilePage() {
         fetchMatches(),
         fetchMedals(),
         loadAchievements(),
+        loadTodayDailies(),
+        loadActivity(),
       ]).finally(() => setLoadingStats(false));
     } else if (!loading) {
       setLoadingStats(false);
@@ -156,6 +172,16 @@ export default function ProfilePage() {
     if (!profile) return;
     const data = await fetchUserAchievements(profile.id);
     setUserAchievements(new Set(data.map(a => a.key)));
+  };
+
+  const loadTodayDailies = async () => {
+    if (!profile) return;
+    setTodayDailies(await fetchTodayDailyCompletions(profile.id));
+  };
+
+  const loadActivity = async () => {
+    if (!profile) return;
+    setActivity(await fetchActivityByDay(profile.id, 7));
   };
 
   const fetchMatches = async () => {
@@ -374,6 +400,49 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Today's Dailies */}
+        <div className="section-header mb-2 flex items-center justify-between">
+          <span>TODAY'S DAILIES</span>
+          <span style={{ color: '#9ca3af' }}>{todayDailies.size}/{DAILY_MODES.length}</span>
+        </div>
+        <div
+          className="p-3 mb-1"
+          style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+        >
+          <div className="grid grid-cols-7 gap-2">
+            {DAILY_MODES.map((m) => {
+              const cfg = gameModeIcons[m.id];
+              const done = todayDailies.has(m.id);
+              const title = gameModeTitles[m.id] || m.id;
+              return (
+                <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: done ? (cfg?.color ?? '#7c3aed') : '#f8f7ff',
+                      border: `1.5px solid ${done ? (cfg?.color ?? '#7c3aed') : '#ede9f6'}`,
+                      opacity: done ? 1 : 0.7,
+                    }}
+                  >
+                    {done ? (
+                      <Check className="w-5 h-5" style={{ color: '#ffffff' }} />
+                    ) : cfg?.romanNumeral ? (
+                      <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
+                    ) : cfg?.icon ? (
+                      (() => { const I = cfg.icon; return <I className="w-4 h-4" style={{ color: cfg.color }} />; })()
+                    ) : (
+                      <Zap className="w-4 h-4" style={{ color: '#9ca3af' }} />
+                    )}
+                  </div>
+                  <span className="text-[9px] font-bold truncate w-full text-center" style={{ color: done ? '#1a1a2e' : '#9ca3af' }}>
+                    {title}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Stats Grid */}
         <div className="section-header mb-2">OVERVIEW</div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -409,6 +478,52 @@ export default function ProfilePage() {
             );
           })}
         </div>
+
+        {/* 7-day activity */}
+        {activity.length > 0 && (() => {
+          const maxCount = Math.max(1, ...activity.map((a) => a.count));
+          const totalWeek = activity.reduce((sum, a) => sum + a.count, 0);
+          return (
+            <>
+              <div className="section-header mb-2 flex items-center justify-between">
+                <span>LAST 7 DAYS</span>
+                <span style={{ color: '#9ca3af' }}>{totalWeek} {totalWeek === 1 ? 'game' : 'games'}</span>
+              </div>
+              <div
+                className="p-4"
+                style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+              >
+                <div className="flex items-end justify-between gap-1 h-16">
+                  {activity.map((a) => {
+                    const d = new Date(a.day + 'T00:00:00Z');
+                    const dow = d.toLocaleDateString('en-US', { weekday: 'narrow', timeZone: 'UTC' });
+                    const heightPct = a.count === 0 ? 6 : 12 + (a.count / maxCount) * 88;
+                    return (
+                      <div key={a.day} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full flex items-end justify-center" style={{ height: '48px' }}>
+                          <div
+                            className="w-full rounded-t"
+                            style={{
+                              height: `${heightPct}%`,
+                              background: a.count === 0
+                                ? '#ede9f6'
+                                : 'linear-gradient(180deg, #a78bfa 0%, #7c3aed 100%)',
+                              transition: 'height 300ms ease-out',
+                            }}
+                            title={`${a.count} ${a.count === 1 ? 'game' : 'games'} · ${a.day}`}
+                          />
+                        </div>
+                        <span className="text-[9px] font-extrabold uppercase" style={{ color: '#9ca3af' }}>
+                          {dow}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          );
+        })()}
 
         {/* Medals */}
         <div className="section-header mb-2">DAILY MEDALS</div>

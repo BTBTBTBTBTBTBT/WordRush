@@ -332,3 +332,33 @@ export async function fetchRecentMatches(userId: string, limit: number = 10) {
 
   return data || [];
 }
+
+/**
+ * Fetch per-day match counts for the last N days, anchored to today's
+ * UTC date. Returns an array of length `days` from oldest → newest, each
+ * entry `{ day: 'YYYY-MM-DD', count: number }`. Empty days get count 0
+ * so the caller can render a gapless bar chart.
+ */
+export async function fetchActivityByDay(userId: string, days: number = 7) {
+  const since = new Date();
+  since.setUTCHours(0, 0, 0, 0);
+  since.setUTCDate(since.getUTCDate() - (days - 1));
+
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('created_at')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .gte('created_at', since.toISOString()) as { data: Array<{ created_at: string }> | null };
+
+  const buckets = new Map<string, number>();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since);
+    d.setUTCDate(since.getUTCDate() + i);
+    buckets.set(d.toISOString().slice(0, 10), 0);
+  }
+  for (const row of data || []) {
+    const key = row.created_at.slice(0, 10);
+    if (buckets.has(key)) buckets.set(key, (buckets.get(key) || 0) + 1);
+  }
+  return Array.from(buckets.entries()).map(([day, count]) => ({ day, count }));
+}

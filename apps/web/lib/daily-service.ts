@@ -710,3 +710,20 @@ export function getSecondsUntilMidnightUTC(): number {
   midnight.setUTCHours(24, 0, 0, 0);
   return Math.floor((midnight.getTime() - now.getTime()) / 1000);
 }
+
+/**
+ * Return the set of game_modes the user has completed (won or attempted)
+ * in today's daily for the solo play_type. Used by the profile page to
+ * render the "Today's Dailies" strip.
+ */
+export async function fetchTodayDailyCompletions(userId: string): Promise<Set<string>> {
+  const day = getTodayUTC();
+  const { data } = await (supabase as any)
+    .from('daily_results')
+    .select('game_mode')
+    .eq('user_id', userId)
+    .eq('day', day)
+    .eq('play_type', 'solo') as { data: Array<{ game_mode: string }> | null };
+
+  return new Set((data || []).map((r) => r.game_mode));
+}
