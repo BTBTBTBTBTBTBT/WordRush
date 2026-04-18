@@ -10,7 +10,7 @@ import { GameOverAnimation } from '../effects/game-over-animation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
@@ -71,6 +71,18 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'QUORDLE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
+      const longestGuesses = state.boards.reduce<string[]>((longest, b) => b.guesses.length > longest.length ? b.guesses : longest, []);
+      recordSoloMatch({
+        userId: profile.id,
+        gameMode: 'QUORDLE',
+        won: state.status === 'WON',
+        score: guesses,
+        timeSeconds: elapsedTime,
+        seed: gameSeed,
+        solutions: state.boards.map(b => b.solution),
+        guesses: longestGuesses,
+        startedAtIso: new Date(startTimeRef.current).toISOString(),
+      });
     }
     if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('quordle');

@@ -164,7 +164,7 @@ export default function ProfilePage() {
       .select('*')
       .or(`player1_id.eq.${profile.id},player2_id.eq.${profile.id}`)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(5);
     if (data) setMatches(data);
   };
 
@@ -573,8 +573,10 @@ export default function ProfilePage() {
             {matches.map((match) => {
               const isWinner = match.winner_id === profile.id;
               const isPlayer1 = match.player1_id === profile.id;
+              const score = isPlayer1 ? match.player1_score : (match.player2_score ?? 0);
               const playerTime = isPlayer1 ? match.player1_time : (match.player2_time ?? 0);
               const matchDate = new Date(match.created_at);
+              const cfg = gameModeIcons[match.game_mode];
 
               return (
                 <div
@@ -583,21 +585,33 @@ export default function ProfilePage() {
                   style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '12px' }}
                 >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: isWinner ? '#f0fdf4' : '#fef2f2' }}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: cfg ? `${cfg.color}15` : '#f8f7ff' }}
                   >
-                    {isWinner ? (
-                      <Check className="w-4 h-4" style={{ color: '#16a34a' }} />
-                    ) : (
-                      <X className="w-4 h-4" style={{ color: '#dc2626' }} />
-                    )}
+                    {(() => {
+                      if (!cfg) return <Zap className="w-4 h-4" style={{ color: '#d97706' }} />;
+                      if (cfg.romanNumeral) return <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
+                      if (cfg.icon) {
+                        const Icon = cfg.icon;
+                        return <Icon className="w-4 h-4" style={{ color: cfg.color }} />;
+                      }
+                      return <Zap className="w-4 h-4" style={{ color: cfg.color }} />;
+                    })()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold truncate" style={{ color: '#1a1a2e' }}>
-                      {gameModeTitles[match.game_mode] || match.game_mode}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-extrabold truncate" style={{ color: '#1a1a2e' }}>
+                        {gameModeTitles[match.game_mode] || match.game_mode}
+                      </span>
+                      <span
+                        className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+                        style={{ background: match.player2_id ? '#ede9f6' : '#f0fdf4', color: match.player2_id ? '#7c3aed' : '#16a34a' }}
+                      >
+                        {match.player2_id ? 'VS' : 'Solo'}
+                      </span>
                     </div>
                     <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                      {!match.player2_id ? 'Solo' : 'VS'}
+                      {score} {score === 1 ? 'guess' : 'guesses'} · {playerTime > 0 ? formatDuration(playerTime) : '—'}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
@@ -606,6 +620,8 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
                       {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {' · '}
+                      {matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </div>
                   </div>
                 </div>

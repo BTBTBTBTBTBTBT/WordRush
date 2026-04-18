@@ -20,7 +20,7 @@ import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
 import { StageTransition } from './stage-transition';
 import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
@@ -246,6 +246,17 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       const totalGuesses = completedStageGuesses + currentStageGuesses;
       const boardsSolved = state.boards.filter(b => b.status === GameStatus.WON).length;
       recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, boardsSolved, 21).then(xp => { if (xp) setXpResult(xp); });
+      recordSoloMatch({
+        userId: profile.id,
+        gameMode: 'GAUNTLET',
+        won: state.status === GameStatus.WON,
+        score: totalGuesses,
+        timeSeconds: elapsedTime,
+        seed,
+        solutions: state.gauntlet?.allSolutions ?? state.boards.map(b => b.solution),
+        guesses: state.boards.flatMap(b => b.guesses),
+        startedAtIso: new Date(startTimeRef.current).toISOString(),
+      });
     }
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
       recordModePlayed('gauntlet');

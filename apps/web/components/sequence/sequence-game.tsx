@@ -9,7 +9,7 @@ import { GameOverAnimation } from '../effects/game-over-animation';
 import { AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
@@ -86,6 +86,18 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       const guesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
       const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
       recordGameResult(profile.id, 'SEQUENCE', 'solo', state.status === 'WON', guesses, timeMs, gameSeed, boardsSolved, 4).then(xp => { if (xp) setXpResult(xp); });
+      const allGuesses = state.boards.flatMap(b => b.guesses);
+      recordSoloMatch({
+        userId: profile.id,
+        gameMode: 'SEQUENCE',
+        won: state.status === 'WON',
+        score: guesses,
+        timeSeconds: elapsedTime,
+        seed: gameSeed,
+        solutions: state.boards.map(b => b.solution),
+        guesses: allGuesses,
+        startedAtIso: new Date(startTimeRef.current).toISOString(),
+      });
     }
     if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
       recordModePlayed('sequence');
