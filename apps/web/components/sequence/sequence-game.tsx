@@ -14,6 +14,7 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
+import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
@@ -40,7 +41,6 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const [error, setError] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
   const [streak, setStreak] = useState(0);
   const [copied, setCopied] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
@@ -48,7 +48,11 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   // Flag so the effect below doesn't refire victory/loss on mount when a
   // completed save is loaded. Reset in handleNextPuzzle.
   const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
-  const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
+
+  const { elapsedSeconds: elapsedTime, reset: resetTimer } = useActivePlayTimer(
+    state.status === 'PLAYING',
+    savedSession?.elapsedTime ?? 0,
+  );
 
   useGameSnapshot(GameMode.SEQUENCE, !!isDaily, gameSeed, state, elapsedTime);
 
@@ -59,15 +63,6 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
     }
     return -1; // all solved or lost
   }, [state.boards]);
-
-  useEffect(() => {
-    if (state.status === 'PLAYING') {
-      const interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [state.status]);
 
   useEffect(() => {
     if (state.status === 'WON' && !isRestoredCompleted.current) {
@@ -96,7 +91,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         seed: gameSeed,
         solutions: state.boards.map(b => b.solution),
         guesses: allGuesses,
-        startedAtIso: new Date(startTimeRef.current).toISOString(),
+        startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
       });
     }
     if (!isRestoredCompleted.current && (state.status === 'WON' || state.status === 'LOST')) {
@@ -189,8 +184,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
     dispatch({ type: 'RESET', seed: newSeed, mode: GameMode.SEQUENCE });
     setCurrentGuess('');
     setError('');
-    setElapsedTime(0);
-    startTimeRef.current = Date.now();
+    resetTimer(0);
     isRestoredCompleted.current = false;
   };
 

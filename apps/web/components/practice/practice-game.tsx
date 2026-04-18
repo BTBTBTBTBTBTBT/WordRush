@@ -16,6 +16,7 @@ import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
+import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 interface PracticeGameProps {
@@ -43,17 +44,17 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
   const [copied, setCopied] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
   // If a completed save was loaded, flag it so the victory/recording effect
-  // below doesn't refire. Reset to false on RESET (detected via elapsedTime
-  // going back to 0 while status returns to PLAYING).
+  // below doesn't refire. Reset to false on RESET.
   const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
 
-  // Rebase running-timer anchors so restored elapsed time is preserved.
-  const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
+  const { elapsedSeconds: elapsedTime, reset: resetTimer } = useActivePlayTimer(
+    state.status === GameStatus.PLAYING,
+    savedSession?.elapsedTime ?? 0,
+  );
 
   // Snapshot persistence — saves the reducer state on every change, loads
   // on mount via the lazy initializers above.
@@ -79,23 +80,12 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   }, [evaluations]);
 
   useEffect(() => {
-    if (state.status === GameStatus.PLAYING) {
-      const interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [state.status]);
-
-  useEffect(() => {
     if (state.status === GameStatus.WON && !isRestoredCompleted.current) setShowVictory(true);
     if (state.status === GameStatus.LOST && !isRestoredCompleted.current) setShowGameOver(true);
     if (profile && !isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
-      // Use the frozen elapsedTime (the timer interval cleared when status
-      // left PLAYING) so the recorded time exactly matches what the user saw
-      // in the header, VictoryAnimation, and PostGameSummary. Using
-      // Date.now() - startTimeRef would drift by up to 1000ms because the
-      // setInterval fires once per second.
+      // useActivePlayTimer freezes elapsedTime as soon as isPlaying flips
+      // false, so the value here matches what the user saw in the header,
+      // VictoryAnimation, and PostGameSummary at the moment of completion.
       const timeMs = elapsedTime * 1000;
       const guesses = currentBoard.guesses.length;
       recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1)
@@ -109,7 +99,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         seed: gameSeed,
         solutions: [currentBoard.solution],
         guesses: currentBoard.guesses,
-        startedAtIso: new Date(startTimeRef.current).toISOString(),
+        startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
       });
     }
     if (!isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
@@ -162,8 +152,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     dispatch({ type: 'RESET', seed: newSeed, mode });
     setCurrentGuess('');
     setMessage('');
-    setElapsedTime(0);
-    startTimeRef.current = Date.now();
+    resetTimer(0);
     isRestoredCompleted.current = false;
   };
 

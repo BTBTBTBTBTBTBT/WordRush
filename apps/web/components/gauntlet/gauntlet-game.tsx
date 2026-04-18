@@ -24,6 +24,7 @@ import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-se
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
+import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 const BLACKOUT_DURATION_MS = 15_000;
@@ -73,27 +74,20 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // definitely don't want to re-record the game stats.
   const [showResults, setShowResults] = useState(() => savedSession?.isCompleted ?? false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
-  const [elapsedTime, setElapsedTime] = useState(() => savedSession?.elapsedTime ?? 0);
-  const startTimeRef = useRef(Date.now() - (savedSession?.elapsedTime ?? 0) * 1000);
   // Flag so the game-over effect below doesn't refire victory/loss animations
   // or double-record stats when a completed save is loaded on mount. Reset in
   // handlePlayAgain so a fresh run behaves normally.
   const isRestoredCompletedRef = useRef(savedSession?.isCompleted ?? false);
 
+  const { elapsedSeconds: elapsedTime, reset: resetTimer } = useActivePlayTimer(
+    state.status === GameStatus.PLAYING && !showTransition,
+    savedSession?.elapsedTime ?? 0,
+  );
+
   // Persistence hook — snapshots the full reducer state to localStorage on
   // every change, and clears on game-end. This lets the user navigate away
   // and return mid-stage without losing progress.
   useGameSnapshot(GameMode.GAUNTLET, !!isDaily, seed, state, elapsedTime);
-
-  // Running timer
-  useEffect(() => {
-    if (state.status === GameStatus.PLAYING && !showTransition) {
-      const interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [state.status, showTransition]);
 
   // Letter Blackout state
   const [blackedOutLetters, setBlackedOutLetters] = useState<Set<string>>(new Set());
@@ -255,7 +249,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         seed,
         solutions: state.gauntlet?.allSolutions ?? state.boards.map(b => b.solution),
         guesses: state.boards.flatMap(b => b.guesses),
-        startedAtIso: new Date(startTimeRef.current).toISOString(),
+        startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
       });
     }
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
@@ -345,8 +339,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     setBlackedOutLetters(new Set());
     setBlackoutBoardIndex(null);
     setBlackoutTimeLeft(0);
-    setElapsedTime(0);
-    startTimeRef.current = Date.now();
+    resetTimer(0);
     blackoutTriggeredRef.current = false;
     // Re-enable the game-over effect for this fresh run. The ref was set on
     // mount if the session was already completed; clearing it here lets

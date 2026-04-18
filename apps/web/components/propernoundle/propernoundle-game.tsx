@@ -20,6 +20,7 @@ import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-se
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayUTC } from '@/lib/daily-service';
+import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 const MAX_GUESSES = 6;
@@ -152,8 +153,10 @@ export function ProperNoundleGame() {
   const [message, setMessage] = useState('');
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [startTime, setStartTime] = useState(Date.now());
+  const {
+    elapsedSeconds: elapsedTime,
+    reset: resetTimer,
+  } = useActivePlayTimer(gameStatus === 'playing', 0);
   const [playedIds, setPlayedIds] = useState<string[]>([]);
   const [wikiImageUrl, setWikiImageUrl] = useState<string | null>(null);
   const [wikiImageLoaded, setWikiImageLoaded] = useState(false);
@@ -188,7 +191,7 @@ export function ProperNoundleGame() {
         setGuesses(saved.guesses);
         setGameStatus(saved.gameStatus);
         setLetterStates(saved.letterStates);
-        setElapsedTime(saved.elapsedTime);
+        resetTimer(saved.elapsedTime);
         setCurrentGuess('');
         setMessage('');
         // Restore the clue text, revealed letters, and used flags so a
@@ -199,8 +202,7 @@ export function ProperNoundleGame() {
       } else if (saved && saved.gameStatus === 'playing') {
         setGuesses(saved.guesses);
         setLetterStates(saved.letterStates);
-        setElapsedTime(saved.elapsedTime);
-        setStartTime(Date.now() - saved.elapsedTime * 1000);
+        resetTimer(saved.elapsedTime);
         setCurrentGuess('');
         setGameStatus('playing');
         setMessage('');
@@ -216,8 +218,7 @@ export function ProperNoundleGame() {
       setGameStatus('playing');
       setLetterStates({});
       setMessage('');
-      setElapsedTime(0);
-      setStartTime(Date.now());
+      resetTimer(0);
       restoredDailyRef.current = false;
     } else {
       // Practice: first check for a saved in-progress or completed practice
@@ -228,7 +229,7 @@ export function ProperNoundleGame() {
         setPuzzle(savedPuzzle);
         setGuesses(savedPractice.guesses);
         setLetterStates(savedPractice.letterStates);
-        setElapsedTime(savedPractice.elapsedTime);
+        resetTimer(savedPractice.elapsedTime);
         setCurrentGuess('');
         setMessage('');
         if (savedPractice.gameStatus !== 'playing') {
@@ -237,7 +238,6 @@ export function ProperNoundleGame() {
           restoredDailyRef.current = true;
         } else {
           setGameStatus('playing');
-          setStartTime(Date.now() - savedPractice.elapsedTime * 1000);
           restoredDailyRef.current = false;
         }
         // Restore hints and return early so the fresh-game reset block
@@ -258,8 +258,7 @@ export function ProperNoundleGame() {
         setGameStatus('playing');
         setLetterStates({});
         setMessage('');
-        setElapsedTime(0);
-        setStartTime(Date.now());
+        resetTimer(0);
         restoredDailyRef.current = false;
       }
     }
@@ -268,15 +267,6 @@ export function ProperNoundleGame() {
     setWikiImageLoaded(false);
     hints.resetHints();
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Timer
-  useEffect(() => {
-    if (gameStatus !== 'playing') return;
-    const interval = setInterval(() => {
-      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [gameStatus, startTime]);
 
   // Track whether we've recorded this game to avoid duplicate recordings
   const hasRecordedRef = useRef(false);
@@ -309,10 +299,10 @@ export function ProperNoundleGame() {
         seed: seed ?? puzzle.id,
         solutions: [puzzle.answer],
         guesses: guesses.map(g => g.word),
-        startedAtIso: new Date(startTime).toISOString(),
+        startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
       });
     }
-  }, [profile, gameStatus, elapsedTime, mode, guesses, puzzle, startTime]);
+  }, [profile, gameStatus, elapsedTime, mode, guesses, puzzle]);
 
   // Game over effects
   useEffect(() => {
@@ -557,8 +547,7 @@ export function ProperNoundleGame() {
     setLetterStates({});
     setMessage('');
     setShowVictory(false);
-    setElapsedTime(0);
-    setStartTime(Date.now());
+    resetTimer(0);
     hasRecordedRef.current = false;
     setWikiImageUrl(null);
     setWikiImageLoaded(false);
