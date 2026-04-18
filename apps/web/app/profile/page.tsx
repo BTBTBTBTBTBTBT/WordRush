@@ -33,6 +33,7 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { ProStats } from '@/components/profile/pro-stats';
+import { SocialLinksEditor, type SocialLinks } from '@/components/profile/social-links';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType } from '@/lib/daily-service';
 import { fetchActivityByDay } from '@/lib/stats-service';
 import { fetchUserAchievements, ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
@@ -406,6 +407,13 @@ export default function ProfilePage() {
               </p>
             )}
           </div>
+
+          {/* Socials */}
+          <SocialLinksEditor
+            userId={profile.id}
+            initial={(profile as any).social_links as SocialLinks | null}
+            onSaved={() => refreshProfile()}
+          />
 
           <div className="flex items-center gap-2">
             {!isProActive && (
