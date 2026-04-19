@@ -35,6 +35,11 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'medal_10', name: 'Medal Collector', description: 'Earn 10 medals', category: 'collection', icon: 'medal' },
   { key: 'medal_50', name: 'Medal Hoarder', description: 'Earn 50 medals', category: 'collection', icon: 'medal' },
   { key: 'golden_touch', name: 'Golden Touch', description: 'Earn 10 gold medals', category: 'collection', icon: 'crown' },
+
+  // Daily sweep achievements — unlock once the corresponding
+  // daily_bonuses flag has ever been set for this user.
+  { key: 'daily_sweep', name: 'Daily Sweep', description: 'Complete all 7 dailies in a single day', category: 'skill', icon: 'sparkles' },
+  { key: 'flawless_victory', name: 'Flawless Victory', description: 'Win all 7 dailies in a single day', category: 'skill', icon: 'trophy' },
 ];
 
 // ============================================================
@@ -143,6 +148,20 @@ export async function checkAchievements(
     if (profile) {
       if (profile.daily_login_streak >= 7) await tryUnlock('streak_7');
       if (profile.daily_login_streak >= 30) await tryUnlock('streak_30');
+    }
+  }
+
+  // Daily Sweep / Flawless Victory. Piggyback on the daily_bonuses
+  // table the award helper writes to: if the user has ever had a row
+  // with the corresponding flag true, the achievement unlocks.
+  if (!alreadyUnlocked.has('daily_sweep') || !alreadyUnlocked.has('flawless_victory')) {
+    const { data: bonusRows } = await (supabase as any)
+      .from('daily_bonuses')
+      .select('sweep_awarded, flawless_awarded')
+      .eq('user_id', userId) as { data: Array<{ sweep_awarded: boolean; flawless_awarded: boolean }> | null };
+    if (bonusRows) {
+      if (bonusRows.some((r) => r.sweep_awarded)) await tryUnlock('daily_sweep');
+      if (bonusRows.some((r) => r.flawless_awarded)) await tryUnlock('flawless_victory');
     }
   }
 
