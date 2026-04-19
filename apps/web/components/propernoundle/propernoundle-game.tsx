@@ -198,6 +198,12 @@ export function ProperNoundleGame() {
         // completed-save looks exactly like it did when the game ended.
         hints.restoreHints(saved.hintState ?? emptyHintState);
         restoredDailyRef.current = true;
+        // Completed restore → recording already happened on the
+        // original play session. Mark so the game-over effects below
+        // don't re-fire recordResult on every re-mount (which was
+        // silently re-adding XP every time the player revisited the
+        // finished puzzle).
+        hasRecordedRef.current = true;
         return;
       } else if (saved && saved.gameStatus === 'playing') {
         setGuesses(saved.guesses);
@@ -236,6 +242,7 @@ export function ProperNoundleGame() {
           setGameStatus(savedPractice.gameStatus);
           // Completed save: don't re-run victory animation or re-record stats.
           restoredDailyRef.current = true;
+          hasRecordedRef.current = true; // prevent duplicate XP on re-mount
         } else {
           setGameStatus('playing');
           restoredDailyRef.current = false;
