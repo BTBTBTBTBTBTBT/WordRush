@@ -840,12 +840,3 @@ export async function awardDailyBonusesIfComplete(userId: string): Promise<Daily
 
   return { sweepAwarded: sweepNew, flawlessAwarded: flawlessNew, xpBonus };
 }
-  const { data } = await (supabase as any)
-    .from('daily_results')
-    .select('game_mode')
-    .eq('user_id', userId)
-    .eq('day', day)
-    .eq('play_type', 'solo') as { data: Array<{ game_mode: string }> | null };
-
-  return new Set((data || []).map((r) => r.game_mode));
-}
