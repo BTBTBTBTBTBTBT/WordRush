@@ -131,9 +131,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'SUBMIT_GUESS': {
       const { guess, boardIndex = state.currentBoardIndex } = action;
 
-      if (state.status !== GameStatus.PLAYING) {
-        return state;
-      }
+      // NOTE: we deliberately do NOT gate on state.status here. Multi-
+      // board modes (Rescue, Quordle, Octordle, Sequence, Gauntlet
+      // stages) submit the same user guess as one dispatch per playing
+      // board. A previous iteration of this reducer rejected any guess
+      // whose first sibling-dispatch had already tipped the game into
+      // LOST (e.g. the losing-guess also happened to be the answer on
+      // another board — it got dropped). The per-board check below is
+      // the authoritative gate; the game-status update at the bottom
+      // still winds up correct either way.
 
       if (guess.length !== 5) {
         return state;
