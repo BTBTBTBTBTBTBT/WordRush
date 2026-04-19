@@ -615,10 +615,16 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         {showVictory && (
           <VictoryAnimation
             onComplete={handleVictoryComplete}
-            // Use frozen elapsedTime so the time shown here matches the
-            // GauntletStageHeader clock at the moment of completion and the
-            // GauntletResults screen that follows — all three must agree.
-            timeSeconds={elapsedTime}
+            // Show the FINAL STAGE's timeMs (OctoWord alone) rather
+            // than the full gauntlet elapsedTime. The stage result was
+            // just pushed onto gauntlet.stageResults by the NEXT_STAGE
+            // action that triggered this victory, so the last entry
+            // is the one we want. Fall back to elapsedTime defensively
+            // in case stageResults is somehow empty.
+            timeSeconds={(() => {
+              const last = gauntlet.stageResults[gauntlet.stageResults.length - 1];
+              return last ? Math.floor(last.timeMs / 1000) : elapsedTime;
+            })()}
             // Show the 8 OctoWord solutions in board-position order. On WON
             // the reducer leaves state.boards as the final stage's boards
             // (the NEXT_STAGE action on the last stage only toggles status →
