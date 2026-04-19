@@ -8,6 +8,7 @@ import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GameOverAnimation } from '@/components/effects/game-over-animation';
 import { AnimatePresence } from 'framer-motion';
 import { Clock } from 'lucide-react';
+import Link from 'next/link';
 import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
@@ -208,10 +209,19 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           </div>
         )}
         {(state.status === GameStatus.WON || state.status === GameStatus.LOST) && (
-          <div className="mt-1 text-center">
+          <div className="mt-1 flex flex-col items-center gap-1">
             <span className={`text-xs font-bold ${state.status === GameStatus.WON ? 'text-green-600' : 'text-red-400'}`}>
-              {state.status === GameStatus.WON ? `Solved in ${guessesUsed} guesses` : ''} · {formatTime(elapsedTime)}
+              {state.status === GameStatus.WON ? `Solved in ${guessesUsed} guesses` : `Out of guesses`}  ·  {formatTime(elapsedTime)}
             </span>
+            <div className="flex items-center gap-3">
+              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {!isDaily && isPro && (
+                <button onClick={handleReset} className="text-amber-600 text-xs font-bold underline">
+                  {state.status === GameStatus.WON ? 'Play Again' : 'Try Again'}
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -231,18 +241,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           />
 
           {gameComplete && (
-            <PostGameSummary
-              solution={currentBoard.solution}
-              won={state.status === GameStatus.WON}
-              guessCount={guessesUsed}
-              maxGuesses={maxGuesses}
-              timeSeconds={elapsedTime}
-              isDaily={isDaily}
-              isPro={isPro}
-              onShare={handleShare}
-              onReset={handleReset}
-              copied={copied}
-            />
+            <PostGameSummary solution={currentBoard.solution} />
           )}
         </div>
       </div>
