@@ -69,6 +69,32 @@ const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
   .filter(Boolean);
 
 const httpServer = createServer();
+
+// Lightweight presence endpoint — home screen polls this to render the
+// "N players online" count next to the LIVE pulse. Answers with the
+// raw engine.io client count, which is every connected Socket.IO
+// client (players in queue, mid-match, or just idling on a VS page).
+// Kept on the same httpServer Socket.IO attaches to; Socket.IO's own
+// requests live under /socket.io/ so there's no path collision.
+httpServer.on('request', (req, res) => {
+  if (!req.url) return;
+  if (req.url.startsWith('/socket.io/')) return; // let Socket.IO handle it
+  if (req.url.startsWith('/presence')) {
+    const origin = req.headers.origin ?? '';
+    const allowed = clientOrigins.includes(origin) ? origin : clientOrigins[0] ?? '*';
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': allowed,
+      'Cache-Control': 'no-store',
+    });
+    res.end(JSON.stringify({ online: io.engine.clientsCount }));
+    return;
+  }
+  // Unknown path — 404 cleanly rather than hanging.
+  res.writeHead(404);
+  res.end();
+});
+
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {
     origin: clientOrigins.length === 1 ? clientOrigins[0] : clientOrigins,
