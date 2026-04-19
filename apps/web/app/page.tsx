@@ -12,6 +12,7 @@ import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
+import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { fetchTodayDailyCompletions, type DailyCompletion } from '@/lib/daily-service';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
@@ -261,6 +262,7 @@ export default function HomePage() {
   const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string; modeHref: string }>({ open: false, modeName: '', modeHref: '' });
   const [resetCountdown, setResetCountdown] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
+  const livePlayerCount = useLivePlayerCount();
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
   const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(new Map());
   const router = useRouter();
@@ -548,7 +550,10 @@ export default function HomePage() {
           })}
         </div>
 
-        {/* VS Live Banner */}
+        {/* LIVE banner — shows the real-time connected-player count
+            from the matchmaking server's /presence endpoint. VS button
+            lives on the mode cards now; Invite is Pro-only so freemium
+            sees just the count. */}
         <div
           className="flex items-center justify-between px-3 py-2"
           style={{
@@ -562,29 +567,24 @@ export default function HomePage() {
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="font-black text-xs" style={{ color: '#1a1a2e' }}>LIVE</span>
             </div>
-            <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>Players online</div>
+            <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>
+              {livePlayerCount === null
+                ? 'Players online'
+                : `${livePlayerCount.toLocaleString()} ${livePlayerCount === 1 ? 'player' : 'players'} online`}
+            </div>
           </div>
-          <button
-            onClick={() => handleVsClick(playMode === 'unlimited' ? '/practice/vs' : '/practice/vs?daily=true')}
-            className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md"
-            style={{
-              background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-              boxShadow: '0 2px 0 #3730a3',
-            }}
-          >
-            <Swords className="w-3 h-3 inline mr-1" />
-            VS
-          </button>
-          <button
-            onClick={() => setInviteOpen(true)}
-            className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md"
-            style={{
-              background: 'linear-gradient(135deg, #ec4899, #db2777)',
-              boxShadow: '0 2px 0 #9f1239',
-            }}
-          >
-            Invite
-          </button>
+          {isPro && (
+            <button
+              onClick={() => setInviteOpen(true)}
+              className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md"
+              style={{
+                background: 'linear-gradient(135deg, #ec4899, #db2777)',
+                boxShadow: '0 2px 0 #9f1239',
+              }}
+            >
+              Invite
+            </button>
+          )}
         </div>
 
         {/* Sign out */}

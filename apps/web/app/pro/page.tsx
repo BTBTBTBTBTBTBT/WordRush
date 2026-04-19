@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords, EyeOff } from 'lucide-react';
+import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords, EyeOff, Mail } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
@@ -12,6 +12,7 @@ const benefits = [
   { icon: EyeOff, text: 'Ad-free experience — no interruptions, ever' },
   { icon: WordleGridIcon, text: 'Unlimited replays of all 8 game modes, any time' },
   { icon: Swords, text: 'VS mode on every game — challenge friends in all 8 modes' },
+  { icon: Mail, text: 'Invite friends to private matches by link or username' },
   { icon: Shield, text: '4 streak shields credited each billing period' },
   { icon: Sparkles, text: 'Pro badge on profile & leaderboards' },
   { icon: BarChart3, text: 'Extended stats — win rate trends & avg speed per mode' },

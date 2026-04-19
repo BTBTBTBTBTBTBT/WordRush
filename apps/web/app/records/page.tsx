@@ -537,7 +537,14 @@ export default function RecordsPage() {
           animate={{ y: 0, opacity: 1 }}
           className="text-center mb-4"
         >
-          <h1 className="text-2xl font-black" style={{ color: '#1a1a2e' }}>Records</h1>
+          <h1
+            className="text-3xl font-black bg-clip-text text-transparent tracking-tight"
+            style={{
+              backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+            }}
+          >
+            RECORDS
+          </h1>
           <p className="text-xs font-bold mt-1" style={{ color: '#9ca3af' }}>
             The best of the best across Wordocious
           </p>
