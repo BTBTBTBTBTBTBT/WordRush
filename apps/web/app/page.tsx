@@ -12,6 +12,8 @@ import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
+import { DailySweepBanner } from '@/components/ui/daily-sweep-banner';
+import { fetchTodayDailyCompletions } from '@/lib/daily-service';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
@@ -218,6 +220,7 @@ export default function HomePage() {
   const [resetCountdown, setResetCountdown] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
+  const [todayDailies, setTodayDailies] = useState<Map<string, boolean>>(new Map());
   const router = useRouter();
 
   const isPro = isProActive;
@@ -248,6 +251,12 @@ export default function HomePage() {
   // signed-in user changes.
   useEffect(() => {
     if (user) syncPlayLimits(user.id);
+  }, [user]);
+
+  // Pull today's daily W/L map for the celebratory banner.
+  useEffect(() => {
+    if (!user) { setTodayDailies(new Map()); return; }
+    fetchTodayDailyCompletions(user.id).then(setTodayDailies).catch(() => {});
   }, [user]);
 
   // Prefetch VS routes so the initial tap is instant (mode cards already
@@ -308,6 +317,16 @@ export default function HomePage() {
             </button>
           </Link>
         )}
+
+        {/* Celebratory banner when all dailies are done today. Sits
+            between the hero and the Word of the Day so it greets the
+            user right after they finish their 7th daily. Component
+            returns null on its own when the criterion isn't met. */}
+        <DailySweepBanner
+          completed={todayDailies.size}
+          wins={Array.from(todayDailies.values()).filter(Boolean).length}
+          total={7}
+        />
 
         {/* Word of the Day */}
         <WordOfTheDay />

@@ -8,23 +8,27 @@ interface XpToastProps {
   xp: number;
   streakBonus?: number;
   dailyBonus?: number;
+  sweepBonus?: number;
+  flawlessBonus?: number;
   leveledUp?: boolean;
   newLevel?: number;
 }
 
 /**
  * Animated toast notification showing XP earned after a game.
- * Auto-dismisses after 3 seconds.
+ * Auto-dismisses after 3 seconds — stretch to 5s if the sweep/flawless
+ * bonus fired so the player actually reads the celebration.
  */
-export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, leveledUp, newLevel }: XpToastProps) {
+export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, sweepBonus = 0, flawlessBonus = 0, leveledUp, newLevel }: XpToastProps) {
   const [visible, setVisible] = useState(true);
+  const hasSweepBonus = sweepBonus > 0 || flawlessBonus > 0;
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(false), 3000);
+    const timer = setTimeout(() => setVisible(false), hasSweepBonus ? 5000 : 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [hasSweepBonus]);
 
-  const totalXp = xp + streakBonus + dailyBonus;
+  const totalXp = xp + streakBonus + dailyBonus + sweepBonus + flawlessBonus;
 
   return (
     <AnimatePresence>
@@ -48,7 +52,7 @@ export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, leveledUp, newLev
               <div className="text-white font-black text-sm">
                 +{totalXp} XP
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {streakBonus > 0 && (
                   <span className="text-[10px] font-bold text-purple-200">
                     +{streakBonus} streak
@@ -57,6 +61,16 @@ export function XpToast({ xp, streakBonus = 0, dailyBonus = 0, leveledUp, newLev
                 {dailyBonus > 0 && (
                   <span className="text-[10px] font-bold text-purple-200">
                     +{dailyBonus} daily
+                  </span>
+                )}
+                {sweepBonus > 0 && (
+                  <span className="text-[10px] font-black text-pink-200">
+                    +{sweepBonus} sweep
+                  </span>
+                )}
+                {flawlessBonus > 0 && (
+                  <span className="text-[10px] font-black text-yellow-300">
+                    +{flawlessBonus} flawless
                   </span>
                 )}
               </div>

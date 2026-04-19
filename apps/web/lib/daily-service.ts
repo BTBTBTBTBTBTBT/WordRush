@@ -729,12 +729,117 @@ export function getSecondsUntilMidnightLocal(): number {
 export const getSecondsUntilMidnightUTC = getSecondsUntilMidnightLocal;
 
 /**
- * Return the set of game_modes the user has completed (won or attempted)
- * in today's daily for the solo play_type. Used by the profile page to
- * render the "Today's Dailies" strip.
+ * Return a map of game_mode → won for today's solo daily entries. Used
+ * by the profile page and home-screen banner to render the "Today's
+ * Dailies" row with W/L indicators and to detect when all 7 have been
+ * played (for the daily-sweep celebratory banner).
  */
-export async function fetchTodayDailyCompletions(userId: string): Promise<Set<string>> {
+export async function fetchTodayDailyCompletions(userId: string): Promise<Map<string, boolean>> {
   const day = getTodayUTC();
+  const { data } = await (supabase as any)
+    .from('daily_results')
+    .select('game_mode, completed')
+    .eq('user_id', userId)
+    .eq('day', day)
+    .eq('play_type', 'solo') as { data: Array<{ game_mode: string; completed: boolean }> | null };
+
+  const out = new Map<string, boolean>();
+  for (const row of data || []) {
+    // If a user somehow has multiple rows for the same mode/day, the
+    // latest write wins for the W/L flag (they cant re-play a daily,
+    // but keep the logic resilient to DB quirks).
+    out.set(row.game_mode, !!row.completed);
+  }
+  return out;
+}
+
+// Keep in sync with DAILY_MODES on the profile page + home — 7 modes
+// have solo daily seeds today (DUEL, QUORDLE, OCTORDLE, SEQUENCE,
+// RESCUE, GAUNTLET, PROPERNOUNDLE).
+const DAILY_MODE_COUNT = 7;
+const DAILY_SWEEP_XP = 200;
+const FLAWLESS_EXTRA_XP = 400;
+
+export interface DailyBonusResult {
+  sweepAwarded: boolean;
+  flawlessAwarded: boolean;
+  xpBonus: number;
+}
+
+/**
+ * Called after recordDailyResult lands a new row. Counts today's daily
+ * results and, if the user has completed all N dailies for the first
+ * time today, writes the one-shot daily_bonuses row and adds bonus XP
+ * to their profile. Flawless Victory piles on +400 XP more if every
+ * one of those N is a win.
+ *
+ * Returns a summary so the caller can surface the bonus via XpToast.
+ * Returns null when nothing new was awarded (still short of 7, or
+ * already awarded today).
+ */
+export async function awardDailyBonusesIfComplete(userId: string): Promise<DailyBonusResult | null> {
+  const day = getTodayLocal();
+
+  const { data: existing } = await (supabase as any)
+    .from('daily_bonuses')
+    .select('sweep_awarded, flawless_awarded')
+    .eq('user_id', userId)
+    .eq('day', day)
+    .maybeSingle() as { data: { sweep_awarded: boolean; flawless_awarded: boolean } | null };
+
+  const sweepAlready = existing?.sweep_awarded ?? false;
+  const flawlessAlready = existing?.flawless_awarded ?? false;
+  if (sweepAlready && flawlessAlready) return null; // nothing to do
+
+  const { data: results } = await (supabase as any)
+    .from('daily_results')
+    .select('completed')
+    .eq('user_id', userId)
+    .eq('day', day)
+    .eq('play_type', 'solo') as { data: Array<{ completed: boolean }> | null };
+
+  if (!results || results.length < DAILY_MODE_COUNT) return null;
+
+  const wonAll = results.every((r) => r.completed);
+  let xpBonus = 0;
+  const sweepNew = !sweepAlready;
+  const flawlessNew = wonAll && !flawlessAlready;
+  if (sweepNew) xpBonus += DAILY_SWEEP_XP;
+  if (flawlessNew) xpBonus += FLAWLESS_EXTRA_XP;
+  if (xpBonus === 0) return null;
+
+  await (supabase as any)
+    .from('daily_bonuses')
+    .upsert(
+      {
+        user_id: userId,
+        day,
+        sweep_awarded: sweepAlready || sweepNew,
+        flawless_awarded: flawlessAlready || flawlessNew,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,day' },
+    );
+
+  // Add the bonus XP to profile. Re-read first so we don't race with
+  // other concurrent writers inside recordGameResult.
+  const { data: profile } = await (supabase as any)
+    .from('profiles')
+    .select('xp, level')
+    .eq('id', userId)
+    .single() as { data: { xp: number; level: number } | null };
+
+  if (profile) {
+    const newXp = (profile.xp ?? 0) + xpBonus;
+    const newLevel = Math.floor(newXp / 1000) + 1;
+    await (supabase as any)
+      .from('profiles')
+      .update({ xp: newXp, level: newLevel })
+      .eq('id', userId);
+  }
+
+  return { sweepAwarded: sweepNew, flawlessAwarded: flawlessNew, xpBonus };
+}
   const { data } = await (supabase as any)
     .from('daily_results')
     .select('game_mode')

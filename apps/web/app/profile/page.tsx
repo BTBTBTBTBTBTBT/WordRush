@@ -34,6 +34,7 @@ import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { ProStats } from '@/components/profile/pro-stats';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
+import { DailySweepBanner } from '@/components/ui/daily-sweep-banner';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType } from '@/lib/daily-service';
 import { fetchActivityByDay } from '@/lib/stats-service';
 import { fetchUserAchievements, ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
@@ -100,7 +101,7 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [medals, setMedals] = useState<MedalType[]>([]);
   const [userAchievements, setUserAchievements] = useState<Set<string>>(new Set());
-  const [todayDailies, setTodayDailies] = useState<Set<string>>(new Set());
+  const [todayDailies, setTodayDailies] = useState<Map<string, boolean>>(new Map());
   const [activity, setActivity] = useState<Array<{ day: string; count: number }>>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
@@ -287,7 +288,10 @@ export default function ProfilePage() {
     }
     // Daily completion nudge
     if (todayDailies.size === DAILY_MODES.length) {
-      out.push(`All ${DAILY_MODES.length} dailies done today. Legendary.`);
+      const allWon = Array.from(todayDailies.values()).every((w) => w);
+      out.push(allWon
+        ? `Flawless Victory — all ${DAILY_MODES.length} dailies won today.`
+        : `All ${DAILY_MODES.length} dailies done today. Legendary.`);
     } else if (todayDailies.size >= 3) {
       out.push(`${todayDailies.size}/${DAILY_MODES.length} dailies complete today — keep going.`);
     }
@@ -383,20 +387,31 @@ export default function ProfilePage() {
           <div className="grid grid-cols-7 gap-2">
             {DAILY_MODES.map((m) => {
               const cfg = gameModeIcons[m.id];
-              const done = todayDailies.has(m.id);
+              const result = todayDailies.get(m.id);
+              const played = result !== undefined;
+              const won = result === true;
               const title = gameModeTitles[m.id] || m.id;
+              // W = green tint, L = red tint, unplayed = faded mode color.
+              const tileBg = !played
+                ? '#f8f7ff'
+                : won ? '#16a34a' : '#dc2626';
+              const tileBorder = !played
+                ? '#ede9f6'
+                : won ? '#16a34a' : '#dc2626';
               return (
                 <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center"
                     style={{
-                      background: done ? (cfg?.color ?? '#7c3aed') : '#f8f7ff',
-                      border: `1.5px solid ${done ? (cfg?.color ?? '#7c3aed') : '#ede9f6'}`,
-                      opacity: done ? 1 : 0.7,
+                      background: tileBg,
+                      border: `1.5px solid ${tileBorder}`,
+                      opacity: played ? 1 : 0.7,
                     }}
                   >
-                    {done ? (
-                      <Check className="w-5 h-5" style={{ color: '#ffffff' }} />
+                    {played ? (
+                      <span className="text-base font-black" style={{ color: '#ffffff' }}>
+                        {won ? 'W' : 'L'}
+                      </span>
                     ) : cfg?.romanNumeral ? (
                       <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
                     ) : cfg?.icon ? (
@@ -405,7 +420,7 @@ export default function ProfilePage() {
                       <Zap className="w-4 h-4" style={{ color: '#9ca3af' }} />
                     )}
                   </div>
-                  <span className="text-[9px] font-bold truncate w-full text-center" style={{ color: done ? '#1a1a2e' : '#9ca3af' }}>
+                  <span className="text-[9px] font-bold truncate w-full text-center" style={{ color: played ? '#1a1a2e' : '#9ca3af' }}>
                     {title}
                   </span>
                 </Link>
@@ -413,6 +428,14 @@ export default function ProfilePage() {
             })}
           </div>
         </div>
+
+        {/* Celebratory banner when all dailies are done today. Renders
+            null otherwise; no gating logic needed here. */}
+        <DailySweepBanner
+          completed={todayDailies.size}
+          wins={Array.from(todayDailies.values()).filter(Boolean).length}
+          total={DAILY_MODES.length}
+        />
 
         {/* Stats Grid */}
         <div className="section-header mb-2">OVERVIEW</div>

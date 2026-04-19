@@ -1,6 +1,6 @@
 import { supabase } from './supabase-client';
 import { isDailySeed } from '@wordle-duel/core';
-import { recordDailyResult, recordDailyVsResult, checkAndUpdateRecord } from './daily-service';
+import { recordDailyResult, recordDailyVsResult, checkAndUpdateRecord, awardDailyBonusesIfComplete } from './daily-service';
 import { checkAchievements } from './achievement-service';
 import { awardGameCoins, awardStreakBonus } from './coin-service';
 import { grantFreeShield } from './shield-service';
@@ -12,6 +12,10 @@ export interface XpResult {
   totalXp: number;
   newLevel: number;
   leveledUp: boolean;
+  /** +200 XP the first time the user completes all 7 dailies today. */
+  sweepBonus?: number;
+  /** +400 XP additional if every one of those 7 was a win. */
+  flawlessBonus?: number;
 }
 
 /**
@@ -149,6 +153,7 @@ export async function recordGameResult(
   }
 
   // --- Daily result recording ---
+  let sweepResult: Awaited<ReturnType<typeof awardDailyBonusesIfComplete>> = null;
   if (seed && isDailySeed(seed)) {
     const boards = boardsSolved ?? (won ? (totalBoards ?? 1) : 0);
     const total = totalBoards ?? 1;
@@ -159,6 +164,11 @@ export async function recordGameResult(
       await recordDailyResult(
         userId, gameMode, playType, won, guessCount, timeSeconds, boards, total,
       );
+      // After the solo daily row lands, see whether this was the 7th
+      // of the day and award the one-shot Daily Sweep / Flawless
+      // Victory bonuses if so. Awaited so the XpResult below can carry
+      // the new XP into the XpToast in a single render.
+      sweepResult = await awardDailyBonusesIfComplete(userId);
     }
   }
 
@@ -235,13 +245,21 @@ export async function recordGameResult(
     const xpGain = won ? 100 : 25;
     const streakBonusVal = won && (profile.current_streak + (won ? 1 : 0)) > 1 ? 50 : 0;
     const dailyBonusVal = (seed && isDailySeed(seed)) ? 50 : 0;
+    const sweepExtraXp = sweepResult?.xpBonus ?? 0;
+    const sweepBonus = sweepResult?.sweepAwarded
+      ? (sweepResult.flawlessAwarded ? 200 : sweepResult.xpBonus)
+      : 0;
+    const flawlessBonus = sweepResult?.flawlessAwarded ? 400 : 0;
+    const totalXp = xpGain + streakBonusVal + dailyBonusVal + sweepExtraXp;
     return {
       xpGain,
       streakBonus: streakBonusVal,
       dailyBonus: dailyBonusVal,
-      totalXp: xpGain + streakBonusVal + dailyBonusVal,
-      newLevel: Math.floor(((profile.xp || 0) + xpGain + streakBonusVal + dailyBonusVal) / 1000) + 1,
-      leveledUp: Math.floor(((profile.xp || 0) + xpGain + streakBonusVal + dailyBonusVal) / 1000) + 1 > (profile.level || 1),
+      totalXp,
+      newLevel: Math.floor(((profile.xp || 0) + totalXp) / 1000) + 1,
+      leveledUp: Math.floor(((profile.xp || 0) + totalXp) / 1000) + 1 > (profile.level || 1),
+      sweepBonus: sweepBonus > 0 ? sweepBonus : undefined,
+      flawlessBonus: flawlessBonus > 0 ? flawlessBonus : undefined,
     };
   }
   return null;
