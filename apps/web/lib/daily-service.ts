@@ -729,12 +729,29 @@ export function getSecondsUntilMidnightLocal(): number {
 export const getSecondsUntilMidnightUTC = getSecondsUntilMidnightLocal;
 
 /**
- * Return the set of game_modes the user has completed (won or attempted)
- * in today's daily for the solo play_type. Used by the profile page to
- * render the "Today's Dailies" strip.
+ * Return a map of game_mode → won for today's solo daily entries. Used
+ * by the profile page and home-screen banner to render the "Today's
+ * Dailies" row with W/L indicators and to detect when all 7 have been
+ * played (for the daily-sweep celebratory banner).
  */
-export async function fetchTodayDailyCompletions(userId: string): Promise<Set<string>> {
+export async function fetchTodayDailyCompletions(userId: string): Promise<Map<string, boolean>> {
   const day = getTodayUTC();
+  const { data } = await (supabase as any)
+    .from('daily_results')
+    .select('game_mode, completed')
+    .eq('user_id', userId)
+    .eq('day', day)
+    .eq('play_type', 'solo') as { data: Array<{ game_mode: string; completed: boolean }> | null };
+
+  const out = new Map<string, boolean>();
+  for (const row of data || []) {
+    // If a user somehow has multiple rows for the same mode/day, the
+    // latest write wins for the W/L flag (they cant re-play a daily,
+    // but keep the logic resilient to DB quirks).
+    out.set(row.game_mode, !!row.completed);
+  }
+  return out;
+}
   const { data } = await (supabase as any)
     .from('daily_results')
     .select('game_mode')
