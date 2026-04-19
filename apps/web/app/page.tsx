@@ -11,6 +11,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
+import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
@@ -216,9 +217,26 @@ export default function HomePage() {
   const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string; modeHref: string }>({ open: false, modeName: '', modeHref: '' });
   const [resetCountdown, setResetCountdown] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [playMode, setPlayModeState] = useState<PlayMode>('daily');
   const router = useRouter();
 
   const isPro = isProActive;
+
+  // Restore the toggle preference on mount for Pro users. Freemium users
+  // never see the toggle and are forced back to 'daily' so the mode
+  // cards keep their existing daily-limit behavior.
+  useEffect(() => {
+    if (!isPro) { setPlayModeState('daily'); return; }
+    try {
+      const saved = localStorage.getItem('wordocious-play-mode');
+      if (saved === 'unlimited') setPlayModeState('unlimited');
+    } catch {}
+  }, [isPro]);
+
+  const setPlayMode = (next: PlayMode) => {
+    setPlayModeState(next);
+    try { localStorage.setItem('wordocious-play-mode', next); } catch {}
+  };
 
   useEffect(() => {
     initDictionary(allowedWords, solutionWords);
@@ -265,24 +283,31 @@ export default function HomePage() {
       <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <PendingInvitesBanner userId={user?.id} />
 
-        {/* Daily Challenge CTA */}
-        <Link href="/daily">
-          <button
-            className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
-            style={{
-              background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
-              border: '1.5px solid #c4b5fd',
-              borderRadius: '14px',
-            }}
-          >
-            <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
-              <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-              <span>Daily Challenge</span>
-              <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-            </div>
-            <DailyCountdown />
-          </button>
-        </Link>
+        {/* Pro-only: switch between Daily and Unlimited. Freemium users
+            never see the pill (playMode is forced to 'daily' above). */}
+        {isPro && <PlayModeToggle value={playMode} onChange={setPlayMode} />}
+
+        {playMode === 'unlimited' ? (
+          <UnlimitedHero />
+        ) : (
+          <Link href="/daily">
+            <button
+              className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
+              style={{
+                background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
+                border: '1.5px solid #c4b5fd',
+                borderRadius: '14px',
+              }}
+            >
+              <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
+                <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                <span>Daily Challenge</span>
+                <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+              </div>
+              <DailyCountdown />
+            </button>
+          </Link>
+        )}
 
         {/* Word of the Day */}
         <WordOfTheDay />
@@ -294,19 +319,25 @@ export default function HomePage() {
             const Icon = mode.icon;
             const isLocked = !isPro && user && hasPlayedModeToday(mode.id);
 
+            // In Unlimited mode (Pro-only), route to the non-daily
+            // variant so each tap lands on a fresh random seed.
+            const effectiveHref = playMode === 'unlimited'
+              ? (mode.id === 'vs' ? '/practice/vs' : mode.href.split('?')[0])
+              : mode.href;
+
             const handleCardClick = (e: React.MouseEvent) => {
               if (isLocked) {
                 e.preventDefault();
-                router.prefetch(mode.href);
-                setLimitModal({ open: true, modeName: mode.title, modeHref: mode.href });
+                router.prefetch(effectiveHref);
+                setLimitModal({ open: true, modeName: mode.title, modeHref: effectiveHref });
               } else if (mode.id === 'vs') {
                 e.preventDefault();
-                handleVsClick(mode.href);
+                handleVsClick(effectiveHref);
               }
             };
 
             return (
-              <Link key={mode.id} href={mode.href} onClick={handleCardClick}>
+              <Link key={mode.id} href={effectiveHref} onClick={handleCardClick}>
                 <div
                   className={`relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
                   style={{
@@ -390,7 +421,7 @@ export default function HomePage() {
             <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>Players online</div>
           </div>
           <button
-            onClick={() => handleVsClick('/practice/vs?daily=true')}
+            onClick={() => handleVsClick(playMode === 'unlimited' ? '/practice/vs' : '/practice/vs?daily=true')}
             className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md"
             style={{
               background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
