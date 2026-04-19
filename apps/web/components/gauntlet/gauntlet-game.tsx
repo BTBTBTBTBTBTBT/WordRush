@@ -14,6 +14,8 @@ import {
 } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
+import Link from 'next/link';
+import { Home } from 'lucide-react';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
@@ -476,7 +478,23 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       style={{ backgroundColor: '#f8f7ff' }}
     >
       {/* Progress Bar + Stage Header */}
-      <div className="shrink-0">
+      <div className="shrink-0 relative">
+        {/* In-game Home escape hatch. BottomNav is hidden during play
+            so the keyboard owns the bottom edge, which means the player
+            has no in-app way out of the game short of the browser back
+            button (flaky in embedded views). Tapping Home unmounts the
+            game — useGameSnapshot has already been saving state on
+            every change + beforeunload, and useActivePlayTimer pauses
+            on unmount, so the run resumes cleanly when the player taps
+            the Gauntlet mode card again. */}
+        <Link
+          href="/"
+          aria-label="Back to Home"
+          className="absolute top-1 left-2 z-10 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
+        >
+          <Home className="w-4 h-4" style={{ color: '#9ca3af' }} />
+        </Link>
         <GauntletProgress
           stages={gauntlet.stages}
           currentStage={gauntlet.currentStage}
