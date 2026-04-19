@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, Swords, Skull, LogOut, Star, BookOpen, Shield, Crown, Lock } from 'lucide-react';
+import { TrendingUp, Swords, Skull, LogOut, Star, BookOpen, Shield, Crown, Lock, Trophy, Sparkles } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,7 +12,6 @@ import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
-import { DailySweepBanner } from '@/components/ui/daily-sweep-banner';
 import { fetchTodayDailyCompletions } from '@/lib/daily-service';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
@@ -130,6 +129,29 @@ function DailyCountdown() {
   return (
     <span style={{ color: '#9ca3af' }} className="text-xs font-bold">
       Resets in {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}:{s.toString().padStart(2, '0')}
+    </span>
+  );
+}
+
+/**
+ * Bare HH:MM:SS countdown with no label or built-in styling. Used by
+ * the merged Daily Sweep hero where the surrounding copy reads
+ * "Next puzzles in <timer>" and the styling is owned by the parent.
+ */
+function DailyCountdownText() {
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    setSecs(getSecondsUntilMidnightUTC());
+    const i = setInterval(() => setSecs(getSecondsUntilMidnightUTC()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  if (secs === null) return <span>--:--:--</span>;
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  return (
+    <span>
+      {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}:{s.toString().padStart(2, '0')}
     </span>
   );
 }
@@ -298,35 +320,88 @@ export default function HomePage() {
 
         {playMode === 'unlimited' ? (
           <UnlimitedHero />
-        ) : (
-          <Link href="/daily">
-            <button
-              className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
-              style={{
-                background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
-                border: '1.5px solid #c4b5fd',
-                borderRadius: '14px',
-              }}
-            >
-              <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
-                <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-                <span>Daily Challenge</span>
-                <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-              </div>
-              <DailyCountdown />
-            </button>
-          </Link>
-        )}
+        ) : (() => {
+          const completed = todayDailies.size;
+          const wins = Array.from(todayDailies.values()).filter(Boolean).length;
+          const total = 7;
+          const allDone = completed >= total;
+          const flawless = allDone && wins === total;
 
-        {/* Celebratory banner when all dailies are done today. Sits
-            between the hero and the Word of the Day so it greets the
-            user right after they finish their 7th daily. Component
-            returns null on its own when the criterion isn't met. */}
-        <DailySweepBanner
-          completed={todayDailies.size}
-          wins={Array.from(todayDailies.values()).filter(Boolean).length}
-          total={7}
-        />
+          // Sweep / Flawless variants absorb the countdown under the
+          // celebratory header, so the user sees one "today's status"
+          // surface instead of two stacked cards. Tap still routes to
+          // /daily (the leaderboards page) like the plain button does.
+          if (allDone) {
+            const bg = flawless
+              ? 'linear-gradient(135deg, #fef3c7, #fde68a)'
+              : 'linear-gradient(135deg, #f5f3ff, #fce7f3)';
+            const border = flawless ? '1.5px solid #f59e0b' : '1.5px solid #c4b5fd';
+            const titleText = flawless ? 'Flawless Victory!' : 'Daily Sweep!';
+            const titleGradient = flawless
+              ? 'linear-gradient(135deg, #d97706, #b45309)'
+              : 'linear-gradient(135deg, #a78bfa, #ec4899)';
+            const subtitle = flawless
+              ? `All ${total} dailies won today · +600 XP earned`
+              : `All ${total} dailies completed · +200 XP earned`;
+            const subtitleColor = flawless ? '#b45309' : '#6d28d9';
+            const iconColor = flawless ? '#b45309' : '#7c3aed';
+
+            return (
+              <Link href="/daily">
+                <button
+                  className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
+                  style={{ background: bg, border, borderRadius: '14px' }}
+                >
+                  <div className="flex items-center gap-2">
+                    {flawless ? (
+                      <>
+                        <Trophy className="w-5 h-5" style={{ color: iconColor }} fill="currentColor" />
+                        <span className="text-lg font-black text-transparent bg-clip-text" style={{ backgroundImage: titleGradient }}>
+                          {titleText}
+                        </span>
+                        <Trophy className="w-5 h-5" style={{ color: iconColor }} fill="currentColor" />
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
+                        <span className="text-base font-black text-transparent bg-clip-text" style={{ backgroundImage: titleGradient }}>
+                          {titleText}
+                        </span>
+                        <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
+                      </>
+                    )}
+                  </div>
+                  <div className="text-[11px] font-extrabold mt-0.5" style={{ color: subtitleColor }}>
+                    {subtitle}
+                  </div>
+                  <div className="text-[10px] font-bold mt-0.5" style={{ color: subtitleColor, opacity: 0.75 }}>
+                    Next puzzles in <DailyCountdownText />
+                  </div>
+                </button>
+              </Link>
+            );
+          }
+
+          return (
+            <Link href="/daily">
+              <button
+                className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
+                style={{
+                  background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
+                  border: '1.5px solid #c4b5fd',
+                  borderRadius: '14px',
+                }}
+              >
+                <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
+                  <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                  <span>Daily Challenge</span>
+                  <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                </div>
+                <DailyCountdown />
+              </button>
+            </Link>
+          );
+        })()}
 
         {/* Word of the Day */}
         <WordOfTheDay />
