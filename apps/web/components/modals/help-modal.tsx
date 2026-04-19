@@ -163,7 +163,7 @@ function HowToPlayContent() {
         className="px-3 py-2.5 rounded-xl text-xs font-medium"
         style={{ background: '#f8f7ff', border: '1px solid #ede9f6', color: '#6b7280' }}
       >
-        Daily puzzles reset at midnight UTC. Everyone gets the same words so you can compare results.
+        Daily puzzles reset at your local midnight. Every player gets the same word of the day so you can compare results.
       </div>
     </div>
   );
