@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, Swords, Skull, LogOut, Star, BookOpen, Shield, Crown, Lock } from 'lucide-react';
+import { TrendingUp, Swords, Skull, LogOut, Star, BookOpen, Shield, Crown, Lock, Trophy, Sparkles } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,8 +12,7 @@ import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
-import { DailySweepBanner } from '@/components/ui/daily-sweep-banner';
-import { fetchTodayDailyCompletions } from '@/lib/daily-service';
+import { fetchTodayDailyCompletions, type DailyCompletion } from '@/lib/daily-service';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
@@ -134,6 +133,49 @@ function DailyCountdown() {
   );
 }
 
+/**
+ * Bare HH:MM:SS countdown with no label or built-in styling. Used by
+ * the merged Daily Sweep hero where the surrounding copy reads
+ * "Next puzzles in <timer>" and the styling is owned by the parent.
+ */
+function DailyCountdownText() {
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    setSecs(getSecondsUntilMidnightUTC());
+    const i = setInterval(() => setSecs(getSecondsUntilMidnightUTC()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  if (secs === null) return <span>--:--:--</span>;
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  return (
+    <span>
+      {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}:{s.toString().padStart(2, '0')}
+    </span>
+  );
+}
+
+// Home-screen mode-card id → daily_results.game_mode key. The VS card
+// isn't a daily mode (no row in daily_results), so it's absent.
+const MODE_ID_TO_DB: Record<string, string> = {
+  practice: 'DUEL',
+  quordle: 'QUORDLE',
+  octordle: 'OCTORDLE',
+  sequence: 'SEQUENCE',
+  rescue: 'RESCUE',
+  gauntlet: 'GAUNTLET',
+  propernoundle: 'PROPERNOUNDLE',
+};
+
+function formatShortTime(seconds: number): string {
+  if (seconds <= 0) return '—';
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s === 0 ? `${m}m` : `${m}m ${s}s`;
+}
+
 const MODE_CARDS = [
   {
     id: 'practice',
@@ -220,7 +262,7 @@ export default function HomePage() {
   const [resetCountdown, setResetCountdown] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
-  const [todayDailies, setTodayDailies] = useState<Map<string, boolean>>(new Map());
+  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(new Map());
   const router = useRouter();
 
   const isPro = isProActive;
@@ -298,35 +340,88 @@ export default function HomePage() {
 
         {playMode === 'unlimited' ? (
           <UnlimitedHero />
-        ) : (
-          <Link href="/daily">
-            <button
-              className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
-              style={{
-                background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
-                border: '1.5px solid #c4b5fd',
-                borderRadius: '14px',
-              }}
-            >
-              <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
-                <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-                <span>Daily Challenge</span>
-                <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-              </div>
-              <DailyCountdown />
-            </button>
-          </Link>
-        )}
+        ) : (() => {
+          const completed = todayDailies.size;
+          const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
+          const total = 7;
+          const allDone = completed >= total;
+          const flawless = allDone && wins === total;
 
-        {/* Celebratory banner when all dailies are done today. Sits
-            between the hero and the Word of the Day so it greets the
-            user right after they finish their 7th daily. Component
-            returns null on its own when the criterion isn't met. */}
-        <DailySweepBanner
-          completed={todayDailies.size}
-          wins={Array.from(todayDailies.values()).filter(Boolean).length}
-          total={7}
-        />
+          // Sweep / Flawless variants absorb the countdown under the
+          // celebratory header, so the user sees one "today's status"
+          // surface instead of two stacked cards. Tap still routes to
+          // /daily (the leaderboards page) like the plain button does.
+          if (allDone) {
+            const bg = flawless
+              ? 'linear-gradient(135deg, #fef3c7, #fde68a)'
+              : 'linear-gradient(135deg, #f5f3ff, #fce7f3)';
+            const border = flawless ? '1.5px solid #f59e0b' : '1.5px solid #c4b5fd';
+            const titleText = flawless ? 'Flawless Victory!' : 'Daily Sweep!';
+            const titleGradient = flawless
+              ? 'linear-gradient(135deg, #d97706, #b45309)'
+              : 'linear-gradient(135deg, #a78bfa, #ec4899)';
+            const subtitle = flawless
+              ? `All ${total} dailies won today · +600 XP earned`
+              : `All ${total} dailies completed · +200 XP earned`;
+            const subtitleColor = flawless ? '#b45309' : '#6d28d9';
+            const iconColor = flawless ? '#b45309' : '#7c3aed';
+
+            return (
+              <Link href="/daily">
+                <button
+                  className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
+                  style={{ background: bg, border, borderRadius: '14px' }}
+                >
+                  <div className="flex items-center gap-2">
+                    {flawless ? (
+                      <>
+                        <Trophy className="w-5 h-5" style={{ color: iconColor }} fill="currentColor" />
+                        <span className="text-lg font-black text-transparent bg-clip-text" style={{ backgroundImage: titleGradient }}>
+                          {titleText}
+                        </span>
+                        <Trophy className="w-5 h-5" style={{ color: iconColor }} fill="currentColor" />
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
+                        <span className="text-base font-black text-transparent bg-clip-text" style={{ backgroundImage: titleGradient }}>
+                          {titleText}
+                        </span>
+                        <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
+                      </>
+                    )}
+                  </div>
+                  <div className="text-[11px] font-extrabold mt-0.5" style={{ color: subtitleColor }}>
+                    {subtitle}
+                  </div>
+                  <div className="text-[10px] font-bold mt-0.5" style={{ color: subtitleColor, opacity: 0.75 }}>
+                    Next puzzles in <DailyCountdownText />
+                  </div>
+                </button>
+              </Link>
+            );
+          }
+
+          return (
+            <Link href="/daily">
+              <button
+                className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
+                style={{
+                  background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
+                  border: '1.5px solid #c4b5fd',
+                  borderRadius: '14px',
+                }}
+              >
+                <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
+                  <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                  <span>Daily Challenge</span>
+                  <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                </div>
+                <DailyCountdown />
+              </button>
+            </Link>
+          );
+        })()}
 
         {/* Word of the Day */}
         <WordOfTheDay />
@@ -337,6 +432,13 @@ export default function HomePage() {
           {MODE_CARDS.map((mode) => {
             const Icon = mode.icon;
             const isLocked = !isPro && user && hasPlayedModeToday(mode.id);
+
+            // Today's daily result for this mode, if played. Keyed by the
+            // DB game_mode string (DUEL/QUORDLE/…), so we look up via
+            // mode.id → db key. The VS Battle card has no daily row.
+            const dbKey = MODE_ID_TO_DB[mode.id];
+            const dailyResult = playMode === 'daily' && dbKey ? todayDailies.get(dbKey) : undefined;
+            const isDailyDone = !!dailyResult;
 
             // In Unlimited mode (Pro-only), route to the non-daily
             // variant so each tap lands on a fresh random seed.
@@ -360,8 +462,11 @@ export default function HomePage() {
                 <div
                   className={`relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
                   style={{
-                    background: '#ffffff',
-                    border: `1.5px solid ${isLocked ? '#d1d5db' : '#ede9f6'}`,
+                    // Completed daily: soft tint in the mode's accent
+                    // color to signal "you've played this one". Fresh/
+                    // unplayed cards stay white.
+                    background: isDailyDone ? `${mode.accentColor}0f` : '#ffffff',
+                    border: `1.5px solid ${isLocked ? '#d1d5db' : isDailyDone ? `${mode.accentColor}66` : '#ede9f6'}`,
                     borderRadius: '14px',
                   }}
                 >
@@ -383,6 +488,20 @@ export default function HomePage() {
                     </div>
                   ) : null}
 
+                  {/* W / L pill in the top-right when today's daily is
+                      already on the books. Lives in the same slot as
+                      the old lock indicator. */}
+                  {isDailyDone && (
+                    <div
+                      className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center"
+                      style={{ background: dailyResult!.won ? '#16a34a' : '#dc2626' }}
+                    >
+                      <span className="text-[10px] font-black text-white leading-none">
+                        {dailyResult!.won ? 'W' : 'L'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Icon */}
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
@@ -399,11 +518,17 @@ export default function HomePage() {
                   </div>
                   <div className="text-[13px] font-black" style={{ color: isLocked ? '#9ca3af' : '#1a1a2e' }}>{mode.title}</div>
                   <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                    {isLocked ? `Play again in ${resetCountdown}` : mode.desc}
+                    {isLocked
+                      ? `Play again in ${resetCountdown}`
+                      : isDailyDone
+                      ? `${dailyResult!.guesses} ${dailyResult!.guesses === 1 ? 'guess' : 'guesses'} · ${formatShortTime(dailyResult!.timeSeconds)}`
+                      : mode.desc}
                   </div>
 
-                  {/* VS button — Pro only (not on the VS Battle card itself) */}
-                  {!isLocked && isPro && mode.id !== 'vs' && (
+                  {/* VS button — Pro only AND only in Unlimited mode.
+                      Daily mode hides it so the card layout stays clean
+                      (VS daily has its own dedicated button below). */}
+                  {!isLocked && isPro && mode.id !== 'vs' && playMode === 'unlimited' && (
                     <button
                       onClick={(e) => {
                         e.preventDefault();

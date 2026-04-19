@@ -728,27 +728,43 @@ export function getSecondsUntilMidnightLocal(): number {
 // Backwards-compatible alias.
 export const getSecondsUntilMidnightUTC = getSecondsUntilMidnightLocal;
 
+export interface DailyCompletion {
+  won: boolean;
+  guesses: number;
+  timeSeconds: number;
+}
+
 /**
- * Return a map of game_mode → won for today's solo daily entries. Used
- * by the profile page and home-screen banner to render the "Today's
- * Dailies" row with W/L indicators and to detect when all 7 have been
- * played (for the daily-sweep celebratory banner).
+ * Return a map of game_mode → result for today's solo daily entries.
+ * Used by the home-screen mode cards (to badge completed dailies with
+ * their W/L + guesses + time), the profile page W/L pills, and the
+ * sweep-detection logic on both surfaces.
  */
-export async function fetchTodayDailyCompletions(userId: string): Promise<Map<string, boolean>> {
+export async function fetchTodayDailyCompletions(
+  userId: string,
+): Promise<Map<string, DailyCompletion>> {
   const day = getTodayUTC();
   const { data } = await (supabase as any)
     .from('daily_results')
-    .select('game_mode, completed')
+    .select('game_mode, completed, guess_count, time_seconds')
     .eq('user_id', userId)
     .eq('day', day)
-    .eq('play_type', 'solo') as { data: Array<{ game_mode: string; completed: boolean }> | null };
+    .eq('play_type', 'solo') as {
+    data: Array<{
+      game_mode: string;
+      completed: boolean;
+      guess_count: number;
+      time_seconds: number;
+    }> | null;
+  };
 
-  const out = new Map<string, boolean>();
+  const out = new Map<string, DailyCompletion>();
   for (const row of data || []) {
-    // If a user somehow has multiple rows for the same mode/day, the
-    // latest write wins for the W/L flag (they cant re-play a daily,
-    // but keep the logic resilient to DB quirks).
-    out.set(row.game_mode, !!row.completed);
+    out.set(row.game_mode, {
+      won: !!row.completed,
+      guesses: row.guess_count ?? 0,
+      timeSeconds: row.time_seconds ?? 0,
+    });
   }
   return out;
 }

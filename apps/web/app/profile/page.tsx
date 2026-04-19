@@ -34,8 +34,7 @@ import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { ProStats } from '@/components/profile/pro-stats';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
-import { DailySweepBanner } from '@/components/ui/daily-sweep-banner';
-import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType } from '@/lib/daily-service';
+import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
 import { fetchActivityByDay } from '@/lib/stats-service';
 import { fetchUserAchievements, ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import type { Database } from '@/lib/database.types';
@@ -101,7 +100,7 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [medals, setMedals] = useState<MedalType[]>([]);
   const [userAchievements, setUserAchievements] = useState<Set<string>>(new Set());
-  const [todayDailies, setTodayDailies] = useState<Map<string, boolean>>(new Map());
+  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(new Map());
   const [activity, setActivity] = useState<Array<{ day: string; count: number }>>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
@@ -288,7 +287,7 @@ export default function ProfilePage() {
     }
     // Daily completion nudge
     if (todayDailies.size === DAILY_MODES.length) {
-      const allWon = Array.from(todayDailies.values()).every((w) => w);
+      const allWon = Array.from(todayDailies.values()).every((r) => r.won);
       out.push(allWon
         ? `Flawless Victory — all ${DAILY_MODES.length} dailies won today.`
         : `All ${DAILY_MODES.length} dailies done today. Legendary.`);
@@ -375,67 +374,115 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Today's Dailies */}
-        <div className="section-header mb-2 flex items-center justify-between">
-          <span>TODAY'S DAILIES</span>
-          <span style={{ color: '#9ca3af' }}>{todayDailies.size}/{DAILY_MODES.length}</span>
-        </div>
-        <div
-          className="p-3 mb-1"
-          style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
-        >
-          <div className="grid grid-cols-7 gap-2">
-            {DAILY_MODES.map((m) => {
-              const cfg = gameModeIcons[m.id];
-              const result = todayDailies.get(m.id);
-              const played = result !== undefined;
-              const won = result === true;
-              const title = gameModeTitles[m.id] || m.id;
-              // W = green tint, L = red tint, unplayed = faded mode color.
-              const tileBg = !played
-                ? '#f8f7ff'
-                : won ? '#16a34a' : '#dc2626';
-              const tileBorder = !played
-                ? '#ede9f6'
-                : won ? '#16a34a' : '#dc2626';
-              return (
-                <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{
-                      background: tileBg,
-                      border: `1.5px solid ${tileBorder}`,
-                      opacity: played ? 1 : 0.7,
-                    }}
-                  >
-                    {played ? (
-                      <span className="text-base font-black" style={{ color: '#ffffff' }}>
-                        {won ? 'W' : 'L'}
-                      </span>
-                    ) : cfg?.romanNumeral ? (
-                      <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
-                    ) : cfg?.icon ? (
-                      (() => { const I = cfg.icon; return <I className="w-4 h-4" style={{ color: cfg.color }} />; })()
-                    ) : (
-                      <Zap className="w-4 h-4" style={{ color: '#9ca3af' }} />
-                    )}
-                  </div>
-                  <span className="text-[9px] font-bold truncate w-full text-center" style={{ color: played ? '#1a1a2e' : '#9ca3af' }}>
-                    {title}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+        {/* Today's Dailies — when all 7 are done, the card itself
+            celebrates (gradient bg, title, XP footer). When partial, it
+            stays a plain white card with the TODAY'S DAILIES header
+            + N/7 counter. */}
+        {(() => {
+          const completed = todayDailies.size;
+          const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
+          const total = DAILY_MODES.length;
+          const allDone = completed >= total;
+          const flawless = allDone && wins === total;
 
-        {/* Celebratory banner when all dailies are done today. Renders
-            null otherwise; no gating logic needed here. */}
-        <DailySweepBanner
-          completed={todayDailies.size}
-          wins={Array.from(todayDailies.values()).filter(Boolean).length}
-          total={DAILY_MODES.length}
-        />
+          const cardStyle: React.CSSProperties = flawless
+            ? { background: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '1.5px solid #f59e0b', borderRadius: '16px' }
+            : allDone
+              ? { background: 'linear-gradient(135deg, #f5f3ff, #fce7f3)', border: '1.5px solid #c4b5fd', borderRadius: '16px' }
+              : { background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' };
+
+          return (
+            <>
+              {!allDone && (
+                <div className="section-header mb-2 flex items-center justify-between">
+                  <span>TODAY'S DAILIES</span>
+                  <span style={{ color: '#9ca3af' }}>{completed}/{total}</span>
+                </div>
+              )}
+
+              <div className="p-3 mb-1" style={cardStyle}>
+                {allDone && (
+                  <div className="text-center mb-2">
+                    <div className="flex items-center justify-center gap-2">
+                      {flawless ? (
+                        <>
+                          <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
+                          <span
+                            className="text-lg font-black text-transparent bg-clip-text"
+                            style={{ backgroundImage: 'linear-gradient(135deg, #d97706, #b45309)' }}
+                          >
+                            Flawless Victory!
+                          </span>
+                          <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
+                          <span
+                            className="text-base font-black text-transparent bg-clip-text"
+                            style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
+                          >
+                            Daily Sweep!
+                          </span>
+                          <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-7 gap-2">
+                  {DAILY_MODES.map((m) => {
+                    const cfg = gameModeIcons[m.id];
+                    const result = todayDailies.get(m.id);
+                    const played = result !== undefined;
+                    const won = result?.won === true;
+                    const title = gameModeTitles[m.id] || m.id;
+                    const tileBg = !played ? '#f8f7ff' : won ? '#16a34a' : '#dc2626';
+                    const tileBorder = !played ? '#ede9f6' : won ? '#16a34a' : '#dc2626';
+                    return (
+                      <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{
+                            background: tileBg,
+                            border: `1.5px solid ${tileBorder}`,
+                            opacity: played ? 1 : 0.7,
+                          }}
+                        >
+                          {played ? (
+                            <span className="text-base font-black" style={{ color: '#ffffff' }}>
+                              {won ? 'W' : 'L'}
+                            </span>
+                          ) : cfg?.romanNumeral ? (
+                            <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
+                          ) : cfg?.icon ? (
+                            (() => { const I = cfg.icon; return <I className="w-4 h-4" style={{ color: cfg.color }} />; })()
+                          ) : (
+                            <Zap className="w-4 h-4" style={{ color: '#9ca3af' }} />
+                          )}
+                        </div>
+                        <span className="text-[9px] font-bold truncate w-full text-center" style={{ color: played ? '#1a1a2e' : '#9ca3af' }}>
+                          {title}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {allDone && (
+                  <div className="text-center mt-2">
+                    <div className="text-[11px] font-extrabold" style={{ color: flawless ? '#b45309' : '#6d28d9' }}>
+                      {flawless
+                        ? `All ${total} dailies won today · +600 XP earned`
+                        : `All ${total} dailies completed · +200 XP earned`}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
 
         {/* Stats Grid */}
         <div className="section-header mb-2">OVERVIEW</div>
