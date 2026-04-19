@@ -14,6 +14,8 @@ import {
 } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
+import Link from 'next/link';
+import { Home } from 'lucide-react';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
@@ -476,7 +478,23 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       style={{ backgroundColor: '#f8f7ff' }}
     >
       {/* Progress Bar + Stage Header */}
-      <div className="shrink-0">
+      <div className="shrink-0 relative">
+        {/* In-game Home escape hatch. BottomNav is hidden during play
+            so the keyboard owns the bottom edge, which means the player
+            has no in-app way out of the game short of the browser back
+            button (flaky in embedded views). Tapping Home unmounts the
+            game — useGameSnapshot has already been saving state on
+            every change + beforeunload, and useActivePlayTimer pauses
+            on unmount, so the run resumes cleanly when the player taps
+            the Gauntlet mode card again. */}
+        <Link
+          href="/"
+          aria-label="Back to Home"
+          className="absolute top-1 left-2 z-10 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
+        >
+          <Home className="w-4 h-4" style={{ color: '#9ca3af' }} />
+        </Link>
         <GauntletProgress
           stages={gauntlet.stages}
           currentStage={gauntlet.currentStage}
@@ -597,10 +615,16 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         {showVictory && (
           <VictoryAnimation
             onComplete={handleVictoryComplete}
-            // Use frozen elapsedTime so the time shown here matches the
-            // GauntletStageHeader clock at the moment of completion and the
-            // GauntletResults screen that follows — all three must agree.
-            timeSeconds={elapsedTime}
+            // Show the FINAL STAGE's timeMs (OctoWord alone) rather
+            // than the full gauntlet elapsedTime. The stage result was
+            // just pushed onto gauntlet.stageResults by the NEXT_STAGE
+            // action that triggered this victory, so the last entry
+            // is the one we want. Fall back to elapsedTime defensively
+            // in case stageResults is somehow empty.
+            timeSeconds={(() => {
+              const last = gauntlet.stageResults[gauntlet.stageResults.length - 1];
+              return last ? Math.floor(last.timeMs / 1000) : elapsedTime;
+            })()}
             // Show the 8 OctoWord solutions in board-position order. On WON
             // the reducer leaves state.boards as the final stage's boards
             // (the NEXT_STAGE action on the last stage only toggles status →

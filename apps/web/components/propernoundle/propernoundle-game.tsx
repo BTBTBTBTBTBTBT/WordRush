@@ -6,7 +6,7 @@ import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GameOverAnimation } from '@/components/effects/game-over-animation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
+import { Clock, Lightbulb, Eye, Hash, Loader2, Home } from 'lucide-react';
 import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
@@ -198,6 +198,12 @@ export function ProperNoundleGame() {
         // completed-save looks exactly like it did when the game ended.
         hints.restoreHints(saved.hintState ?? emptyHintState);
         restoredDailyRef.current = true;
+        // Completed restore → recording already happened on the
+        // original play session. Mark so the game-over effects below
+        // don't re-fire recordResult on every re-mount (which was
+        // silently re-adding XP every time the player revisited the
+        // finished puzzle).
+        hasRecordedRef.current = true;
         return;
       } else if (saved && saved.gameStatus === 'playing') {
         setGuesses(saved.guesses);
@@ -236,6 +242,7 @@ export function ProperNoundleGame() {
           setGameStatus(savedPractice.gameStatus);
           // Completed save: don't re-run victory animation or re-record stats.
           restoredDailyRef.current = true;
+          hasRecordedRef.current = true; // prevent duplicate XP on re-mount
         } else {
           setGameStatus('playing');
           restoredDailyRef.current = false;
@@ -603,7 +610,15 @@ export function ProperNoundleGame() {
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header */}
-      <div className="text-center py-2 px-2 shrink-0">
+      <div className="text-center py-2 px-2 shrink-0 relative">
+        <Link
+          href="/"
+          aria-label="Back to Home"
+          className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
+        >
+          <Home className="w-4 h-4" style={{ color: '#9ca3af' }} />
+        </Link>
         <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
           PROPERNOUNDLE
         </h1>

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { VictoryAnimation } from '../effects/victory-animation';
 import { GameOverAnimation } from '../effects/game-over-animation';
 import { AnimatePresence } from 'framer-motion';
-import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
+import { Trophy, Clock, ArrowRight, Lock, Home } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
@@ -228,7 +228,15 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}
-      <div className="text-center py-2 px-2 shrink-0">
+      <div className="text-center py-2 px-2 shrink-0 relative">
+        <Link
+          href="/"
+          aria-label="Back to Home"
+          className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
+        >
+          <Home className="w-4 h-4" style={{ color: '#9ca3af' }} />
+        </Link>
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
           SUCCESSION
         </h1>
