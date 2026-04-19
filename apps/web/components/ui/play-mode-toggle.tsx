@@ -1,6 +1,6 @@
 'use client';
 
-import { Infinity as InfinityIcon, Star } from 'lucide-react';
+import { Infinity as InfinityIcon, Star, Swords } from 'lucide-react';
 
 export type PlayMode = 'daily' | 'unlimited';
 
@@ -61,20 +61,30 @@ export function PlayModeToggle({ value, onChange }: Props) {
 export function UnlimitedHero() {
   return (
     <div
-      className="w-full flex flex-col items-center py-2 relative"
+      className="w-full flex flex-col items-center py-2.5 relative"
       style={{
         background: 'linear-gradient(135deg, #fce7f3, #ede9fe)',
         border: '1.5px solid #c4b5fd',
         borderRadius: '14px',
       }}
     >
-      <div className="flex items-center gap-2 text-sm font-black" style={{ color: '#5b21b6' }}>
-        <InfinityIcon className="w-4 h-4" style={{ color: '#7c3aed' }} />
-        <span>Unlimited Play</span>
-        <InfinityIcon className="w-4 h-4" style={{ color: '#7c3aed' }} />
+      <div className="flex items-center gap-2">
+        <InfinityIcon className="w-5 h-5" style={{ color: '#7c3aed' }} />
+        <span
+          className="text-lg font-black text-transparent bg-clip-text"
+          style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
+        >
+          Unlimited Play
+        </span>
+        <InfinityIcon className="w-5 h-5" style={{ color: '#ec4899' }} />
       </div>
       <div className="text-[10px] font-bold mt-0.5" style={{ color: '#7c3aed' }}>
         Infinite puzzles · All stats count
+      </div>
+      <div className="text-[10px] font-bold mt-0.5 inline-flex items-center gap-1" style={{ color: '#7c3aed' }}>
+        Tap
+        <Swords className="w-3 h-3" />
+        on any game for VS
       </div>
     </div>
   );
