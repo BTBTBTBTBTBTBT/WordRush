@@ -34,7 +34,7 @@ import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { ProStats } from '@/components/profile/pro-stats';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
-import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType } from '@/lib/daily-service';
+import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
 import { fetchActivityByDay } from '@/lib/stats-service';
 import { fetchUserAchievements, ACHIEVEMENTS, type AchievementDef } from '@/lib/achievement-service';
 import type { Database } from '@/lib/database.types';
@@ -100,7 +100,7 @@ export default function ProfilePage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [medals, setMedals] = useState<MedalType[]>([]);
   const [userAchievements, setUserAchievements] = useState<Set<string>>(new Set());
-  const [todayDailies, setTodayDailies] = useState<Map<string, boolean>>(new Map());
+  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(new Map());
   const [activity, setActivity] = useState<Array<{ day: string; count: number }>>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
@@ -287,7 +287,7 @@ export default function ProfilePage() {
     }
     // Daily completion nudge
     if (todayDailies.size === DAILY_MODES.length) {
-      const allWon = Array.from(todayDailies.values()).every((w) => w);
+      const allWon = Array.from(todayDailies.values()).every((r) => r.won);
       out.push(allWon
         ? `Flawless Victory — all ${DAILY_MODES.length} dailies won today.`
         : `All ${DAILY_MODES.length} dailies done today. Legendary.`);
@@ -380,7 +380,7 @@ export default function ProfilePage() {
             + N/7 counter. */}
         {(() => {
           const completed = todayDailies.size;
-          const wins = Array.from(todayDailies.values()).filter(Boolean).length;
+          const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
           const total = DAILY_MODES.length;
           const allDone = completed >= total;
           const flawless = allDone && wins === total;
@@ -436,7 +436,7 @@ export default function ProfilePage() {
                     const cfg = gameModeIcons[m.id];
                     const result = todayDailies.get(m.id);
                     const played = result !== undefined;
-                    const won = result === true;
+                    const won = result?.won === true;
                     const title = gameModeTitles[m.id] || m.id;
                     const tileBg = !played ? '#f8f7ff' : won ? '#16a34a' : '#dc2626';
                     const tileBorder = !played ? '#ede9f6' : won ? '#16a34a' : '#dc2626';

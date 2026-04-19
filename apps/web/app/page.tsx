@@ -12,7 +12,7 @@ import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
-import { fetchTodayDailyCompletions } from '@/lib/daily-service';
+import { fetchTodayDailyCompletions, type DailyCompletion } from '@/lib/daily-service';
 import { initDictionary } from '@wordle-duel/core';
 import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
@@ -156,6 +156,26 @@ function DailyCountdownText() {
   );
 }
 
+// Home-screen mode-card id → daily_results.game_mode key. The VS card
+// isn't a daily mode (no row in daily_results), so it's absent.
+const MODE_ID_TO_DB: Record<string, string> = {
+  practice: 'DUEL',
+  quordle: 'QUORDLE',
+  octordle: 'OCTORDLE',
+  sequence: 'SEQUENCE',
+  rescue: 'RESCUE',
+  gauntlet: 'GAUNTLET',
+  propernoundle: 'PROPERNOUNDLE',
+};
+
+function formatShortTime(seconds: number): string {
+  if (seconds <= 0) return '—';
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s === 0 ? `${m}m` : `${m}m ${s}s`;
+}
+
 const MODE_CARDS = [
   {
     id: 'practice',
@@ -242,7 +262,7 @@ export default function HomePage() {
   const [resetCountdown, setResetCountdown] = useState('');
   const [inviteOpen, setInviteOpen] = useState(false);
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
-  const [todayDailies, setTodayDailies] = useState<Map<string, boolean>>(new Map());
+  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(new Map());
   const router = useRouter();
 
   const isPro = isProActive;
@@ -322,7 +342,7 @@ export default function HomePage() {
           <UnlimitedHero />
         ) : (() => {
           const completed = todayDailies.size;
-          const wins = Array.from(todayDailies.values()).filter(Boolean).length;
+          const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
           const total = 7;
           const allDone = completed >= total;
           const flawless = allDone && wins === total;
@@ -413,6 +433,13 @@ export default function HomePage() {
             const Icon = mode.icon;
             const isLocked = !isPro && user && hasPlayedModeToday(mode.id);
 
+            // Today's daily result for this mode, if played. Keyed by the
+            // DB game_mode string (DUEL/QUORDLE/…), so we look up via
+            // mode.id → db key. The VS Battle card has no daily row.
+            const dbKey = MODE_ID_TO_DB[mode.id];
+            const dailyResult = playMode === 'daily' && dbKey ? todayDailies.get(dbKey) : undefined;
+            const isDailyDone = !!dailyResult;
+
             // In Unlimited mode (Pro-only), route to the non-daily
             // variant so each tap lands on a fresh random seed.
             const effectiveHref = playMode === 'unlimited'
@@ -435,8 +462,11 @@ export default function HomePage() {
                 <div
                   className={`relative px-3 py-3 cursor-pointer transition-transform active:scale-[0.96] overflow-hidden ${isLocked ? 'opacity-60' : ''}`}
                   style={{
-                    background: '#ffffff',
-                    border: `1.5px solid ${isLocked ? '#d1d5db' : '#ede9f6'}`,
+                    // Completed daily: soft tint in the mode's accent
+                    // color to signal "you've played this one". Fresh/
+                    // unplayed cards stay white.
+                    background: isDailyDone ? `${mode.accentColor}0f` : '#ffffff',
+                    border: `1.5px solid ${isLocked ? '#d1d5db' : isDailyDone ? `${mode.accentColor}66` : '#ede9f6'}`,
                     borderRadius: '14px',
                   }}
                 >
@@ -458,6 +488,20 @@ export default function HomePage() {
                     </div>
                   ) : null}
 
+                  {/* W / L pill in the top-right when today's daily is
+                      already on the books. Lives in the same slot as
+                      the old lock indicator. */}
+                  {isDailyDone && (
+                    <div
+                      className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center"
+                      style={{ background: dailyResult!.won ? '#16a34a' : '#dc2626' }}
+                    >
+                      <span className="text-[10px] font-black text-white leading-none">
+                        {dailyResult!.won ? 'W' : 'L'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Icon */}
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
@@ -474,11 +518,17 @@ export default function HomePage() {
                   </div>
                   <div className="text-[13px] font-black" style={{ color: isLocked ? '#9ca3af' : '#1a1a2e' }}>{mode.title}</div>
                   <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                    {isLocked ? `Play again in ${resetCountdown}` : mode.desc}
+                    {isLocked
+                      ? `Play again in ${resetCountdown}`
+                      : isDailyDone
+                      ? `${dailyResult!.guesses} ${dailyResult!.guesses === 1 ? 'guess' : 'guesses'} · ${formatShortTime(dailyResult!.timeSeconds)}`
+                      : mode.desc}
                   </div>
 
-                  {/* VS button — Pro only (not on the VS Battle card itself) */}
-                  {!isLocked && isPro && mode.id !== 'vs' && (
+                  {/* VS button — Pro only AND only in Unlimited mode.
+                      Daily mode hides it so the card layout stays clean
+                      (VS daily has its own dedicated button below). */}
+                  {!isLocked && isPro && mode.id !== 'vs' && playMode === 'unlimited' && (
                     <button
                       onClick={(e) => {
                         e.preventDefault();
