@@ -70,6 +70,13 @@ const clientOrigins = (process.env.CLIENT_URL || 'http://localhost:3000')
 
 const httpServer = createServer();
 
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+  cors: {
+    origin: clientOrigins.length === 1 ? clientOrigins[0] : clientOrigins,
+    methods: ['GET', 'POST']
+  }
+});
+
 // Lightweight presence endpoint — home screen polls this to render the
 // "N players online" count next to the LIVE pulse. Answers with the
 // raw engine.io client count, which is every connected Socket.IO
@@ -93,13 +100,6 @@ httpServer.on('request', (req, res) => {
   // Unknown path — 404 cleanly rather than hanging.
   res.writeHead(404);
   res.end();
-});
-
-const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
-  cors: {
-    origin: clientOrigins.length === 1 ? clientOrigins[0] : clientOrigins,
-    methods: ['GET', 'POST']
-  }
 });
 
 const queue = new MatchmakingQueue();
