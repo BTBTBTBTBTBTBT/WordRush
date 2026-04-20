@@ -6,7 +6,7 @@ import { GauntletGame } from '@/components/gauntlet/gauntlet-game';
 import { AdGate } from '@/components/ads/ad-gate';
 import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
-import { getTodayUTC } from '@/lib/daily-service';
+import { getTodayLocal } from '@/lib/daily-service';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
@@ -22,7 +22,7 @@ export default function GauntletPage() {
 
   if (!ready) return null;
 
-  const seed = isDaily ? generateDailySeed(getTodayUTC(), 'GAUNTLET') : undefined;
+  const seed = isDaily ? generateDailySeed(getTodayLocal(), 'GAUNTLET') : undefined;
 
   return <AdGate><GauntletGame initialSeed={seed} isDaily={isDaily} /></AdGate>;
 }

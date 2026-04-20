@@ -1,29 +1,29 @@
 import puzzles from '@/data/propernoundle-puzzles.json';
 import { Puzzle, ThemeCategory } from './types';
+import { getTodayLocal } from '@/lib/daily-service';
 
-const EPOCH_DATE = new Date('2024-01-01');
+// ISO date-only strings parse as UTC midnight, so epoch and target both sit
+// on UTC midnight and their difference is a clean multiple of 86400000 ms.
+// The resulting integer is a stable "day index" regardless of viewer TZ.
+const EPOCH_DATE_STRING = '2024-01-01';
 
 const allPuzzles: Puzzle[] = puzzles as Puzzle[];
 
-function getDaysSinceEpoch(dateString?: string): number {
-  const targetDate = dateString ? new Date(dateString) : new Date();
-  const timeDiff = targetDate.getTime() - EPOCH_DATE.getTime();
-  return Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-}
-
-export function getTodayString(): string {
-  return new Date().toISOString().slice(0, 10);
+function getDaysSinceEpoch(dateString: string): number {
+  const target = new Date(dateString).getTime();
+  const epoch = new Date(EPOCH_DATE_STRING).getTime();
+  return Math.floor((target - epoch) / 86400000);
 }
 
 export function getDailyPuzzle(dateString?: string): Puzzle {
-  const date = dateString || getTodayString();
+  const date = dateString || getTodayLocal();
   const dayNumber = getDaysSinceEpoch(date);
   const index = dayNumber % allPuzzles.length;
   return allPuzzles[index];
 }
 
 export function getDailyPuzzleNumber(dateString?: string): number {
-  return getDaysSinceEpoch(dateString) + 1;
+  return getDaysSinceEpoch(dateString || getTodayLocal()) + 1;
 }
 
 export function getRandomPuzzle(excludeIds: string[] = []): Puzzle {

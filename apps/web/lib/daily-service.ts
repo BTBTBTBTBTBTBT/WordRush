@@ -67,16 +67,21 @@ export function calculateVsCompositeScore(
  * just start/finish it at different real-world moments.
  */
 export function getTodayLocal(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return toLocalDayString(new Date());
 }
 
-// Backwards-compatible alias so existing call sites keep compiling during
-// the local-midnight migration. Prefer getTodayLocal in new code.
-export const getTodayUTC = getTodayLocal;
+export function getYesterdayLocal(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return toLocalDayString(d);
+}
+
+export function toLocalDayString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 /**
  * Fetch the daily seed for a specific mode and day.
@@ -86,7 +91,7 @@ export async function fetchDailySeed(
   gameMode: string,
   day?: string,
 ): Promise<{ seed: string; solutions: string[] } | null> {
-  const targetDay = day || getTodayUTC();
+  const targetDay = day || getTodayLocal();
 
   const { data: existing } = await (supabase as any)
     .from('daily_seeds')
@@ -139,7 +144,7 @@ export async function recordDailyResult(
   boardsSolved: number,
   totalBoards: number,
 ) {
-  const day = getTodayUTC();
+  const day = getTodayLocal();
   const compositeScore = calculateCompositeScore(
     gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards,
   );
@@ -200,7 +205,7 @@ export async function recordDailyVsResult(
   gameMode: string,
   won: boolean,
 ) {
-  const day = getTodayUTC();
+  const day = getTodayLocal();
 
   const { data: existing } = await (supabase as any)
     .from('daily_results')
@@ -275,7 +280,7 @@ export async function fetchDailyLeaderboard(
   day?: string,
   limit: number = 50,
 ): Promise<LeaderboardEntry[]> {
-  const targetDay = day || getTodayUTC();
+  const targetDay = day || getTodayLocal();
 
   const { data } = await (supabase as any)
     .from('daily_results')
@@ -324,7 +329,7 @@ export async function getUserDailyRank(
   playType: 'solo' | 'vs',
   day?: string,
 ): Promise<{ rank: number; totalPlayers: number } | null> {
-  const targetDay = day || getTodayUTC();
+  const targetDay = day || getTodayLocal();
 
   // Get the user's score
   const { data: userResult } = await (supabase as any)
@@ -368,7 +373,7 @@ export async function getDailyPlayerCount(
   gameMode: string,
   day?: string,
 ): Promise<number> {
-  const targetDay = day || getTodayUTC();
+  const targetDay = day || getTodayLocal();
 
   const { count } = await (supabase as any)
     .from('daily_results')
@@ -417,7 +422,7 @@ export async function fetchUserMedals(
  * or via a server cron. Idempotent due to UNIQUE constraint.
  */
 export async function assignDailyMedals(day?: string) {
-  const targetDay = day || new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const targetDay = day || getYesterdayLocal();
   const gameModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE'];
   const playTypes = ['solo', 'vs'] as const;
 
@@ -692,7 +697,7 @@ export function generateShareText(
   };
 
   const modeName = modeNames[gameMode] || gameMode;
-  const day = getTodayUTC();
+  const day = getTodayLocal();
   const mins = Math.floor(timeSeconds / 60);
   const secs = timeSeconds % 60;
   const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -743,7 +748,7 @@ export interface DailyCompletion {
 export async function fetchTodayDailyCompletions(
   userId: string,
 ): Promise<Map<string, DailyCompletion>> {
-  const day = getTodayUTC();
+  const day = getTodayLocal();
   const { data } = await (supabase as any)
     .from('daily_results')
     .select('game_mode, completed, guess_count, time_seconds')

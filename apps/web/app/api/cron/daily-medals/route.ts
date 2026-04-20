@@ -14,6 +14,11 @@ export async function GET(req: NextRequest) {
   }
 
   const sb = getAdminSupabase();
+  // Cron runs in Vercel's UTC clock, so "yesterday" here is yesterday-UTC.
+  // daily_results.day is stored as player-local date (see getTodayLocal),
+  // which means this cron can lag up to ~24h for players in timezones east
+  // of UTC. The client-side assignDailyMedals() best-effort path covers
+  // those cases; this cron is a safety net for players who didn't revisit.
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
   let medalsAssigned = 0;

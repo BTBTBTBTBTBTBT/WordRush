@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { GameState, GameStatus, GameMode } from '@wordle-duel/core';
-import { getTodayUTC } from '@/lib/daily-service';
+import { getTodayLocal } from '@/lib/daily-service';
 
 // Full-state snapshot persistence shared by every reducer-based game mode.
 // Unlike a flat guess-replay approach, this serializes the entire reducer
@@ -87,7 +87,7 @@ export function loadGameSession(mode: GameMode, isDaily: boolean): RestoredSessi
       return null;
     }
     if (isDaily) {
-      const today = getTodayUTC(); // now returns local day
+      const today = getTodayLocal(); // now returns local day
       if (parsed.date !== today) {
         // Cross-midnight grace: if this save is from yesterday but the
         // user reopened within the grace window, AND the save is still
@@ -133,7 +133,7 @@ function saveGameSession(
   try {
     const payload: SavedSession = {
       version: SAVE_VERSION,
-      date: getTodayUTC(),
+      date: getTodayLocal(),
       mode,
       isDaily,
       seed,

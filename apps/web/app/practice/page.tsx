@@ -6,7 +6,7 @@ import { PracticeGame } from '@/components/practice/practice-game';
 import { AdGate } from '@/components/ads/ad-gate';
 import { initDictionary, GameMode } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
-import { getTodayUTC } from '@/lib/daily-service';
+import { getTodayLocal } from '@/lib/daily-service';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
@@ -22,7 +22,7 @@ export default function PracticePage() {
 
   if (!ready) return null;
 
-  const seed = isDaily ? generateDailySeed(getTodayUTC(), 'DUEL') : undefined;
+  const seed = isDaily ? generateDailySeed(getTodayLocal(), 'DUEL') : undefined;
 
   return <AdGate><PracticeGame mode={GameMode.DUEL} onBack={() => window.location.href = '/'} initialSeed={seed} isDaily={isDaily} /></AdGate>;
 }

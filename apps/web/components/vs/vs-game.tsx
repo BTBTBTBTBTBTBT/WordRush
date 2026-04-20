@@ -18,13 +18,7 @@ import {
   formatCountdown,
 } from '@/lib/play-limit-service';
 import { VsLimitModal } from '@/components/modals/vs-limit-modal';
-
-// Same UTC-date helper the Classic daily flow uses, duplicated here so
-// this file doesn't have to reach into daily-service just for the date.
-function getTodayUTC(): string {
-  const now = new Date();
-  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
-}
+import { getTodayLocal } from '@/lib/daily-service';
 
 import { VsClassic } from './vs-classic';
 import { VsQuadword } from './vs-quadword';
@@ -159,7 +153,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Classic word even though both are derived from the same solution
   // list via generateSolutionsFromSeed.
   const todayDailySeed = useMemo(
-    () => (dailyVsActive ? generateDailySeed(getTodayUTC(), 'DUEL_VS') : undefined),
+    () => (dailyVsActive ? generateDailySeed(getTodayLocal(), 'DUEL_VS') : undefined),
     [dailyVsActive],
   );
 

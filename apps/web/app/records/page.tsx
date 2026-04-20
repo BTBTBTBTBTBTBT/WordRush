@@ -13,7 +13,7 @@ import {
   fetchDailyLeaderboard,
   getDailyPlayerCount,
   getUserDailyRank,
-  getTodayUTC,
+  getTodayLocal,
   type AllTimeRecord,
   type LeaderboardEntry,
 } from '@/lib/daily-service';
@@ -173,7 +173,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const today = getTodayUTC();
+  const today = getTodayLocal();
 
   useEffect(() => {
     async function load() {

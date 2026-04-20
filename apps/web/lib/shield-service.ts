@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client';
+import { getTodayLocal, toLocalDayString } from './daily-service';
 
 const SHIELD_COIN_COST = 50;
 
@@ -12,12 +13,10 @@ export function isStreakAtRisk(lastPlayedAt: string | null): boolean {
   const now = new Date();
   const hoursSince = (now.getTime() - last.getTime()) / (1000 * 60 * 60);
 
-  // At risk if >20h since last play
+  // At risk if >20h since last play AND the calendar day has rolled over
+  // in the player's local timezone (matches our daily reset boundary).
   if (hoursSince > 20) {
-    const lastDay = last.toISOString().slice(0, 10);
-    const today = now.toISOString().slice(0, 10);
-    // Only at risk if it's a different day
-    return lastDay !== today;
+    return toLocalDayString(last) !== getTodayLocal();
   }
 
   return false;

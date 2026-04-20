@@ -14,7 +14,8 @@ import {
   getUserDailyRank,
   getDailyPlayerCount,
   getSecondsUntilMidnightUTC,
-  getTodayUTC,
+  getTodayLocal,
+  getYesterdayLocal,
   type LeaderboardEntry,
 } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
@@ -81,10 +82,8 @@ export default function DailyPage() {
 
   const isPro = isProActive;
 
-  const today = getTodayUTC();
-  const yesterday = useMemo(() => {
-    return new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  }, []);
+  const today = getTodayLocal();
+  const yesterday = useMemo(() => getYesterdayLocal(), []);
 
   useEffect(() => {
     async function load() {

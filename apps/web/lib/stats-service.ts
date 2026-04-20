@@ -1,6 +1,14 @@
 import { supabase } from './supabase-client';
 import { isDailySeed } from '@wordle-duel/core';
-import { recordDailyResult, recordDailyVsResult, checkAndUpdateRecord, awardDailyBonusesIfComplete } from './daily-service';
+import {
+  recordDailyResult,
+  recordDailyVsResult,
+  checkAndUpdateRecord,
+  awardDailyBonusesIfComplete,
+  getTodayLocal,
+  getYesterdayLocal,
+  toLocalDayString,
+} from './daily-service';
 import { checkAchievements } from './achievement-service';
 import { awardGameCoins, awardStreakBonus } from './coin-service';
 import { grantFreeShield } from './shield-service';
@@ -104,20 +112,19 @@ export async function recordGameResult(
     const oldLevel = profile.level || Math.floor(profile.xp / 1000) + 1;
     const newLevel = Math.floor(newXp / 1000) + 1;
 
-    // --- Daily login streak (consecutive days played, UTC) ---
+    // --- Daily login streak (consecutive days played, player-local) ---
     const now = new Date();
     const lastPlayed = profile.last_played_at ? new Date(profile.last_played_at) : null;
     let newDailyStreak = profile.daily_login_streak || 0;
 
     if (lastPlayed) {
-      const lastDay = lastPlayed.toISOString().slice(0, 10);
-      const today = now.toISOString().slice(0, 10);
-      const yesterday = new Date(now.getTime() - 86400000).toISOString().slice(0, 10);
+      const lastDay = toLocalDayString(lastPlayed);
+      const today = getTodayLocal();
+      const yesterday = getYesterdayLocal();
 
       if (lastDay === today) {
-        // Same UTC day — no change to daily streak
+        // Same local day — no change to daily streak
       } else if (lastDay === yesterday) {
-        // Consecutive UTC day — increment
         newDailyStreak += 1;
         if (newDailyStreak % 7 === 0) {
           awardStreakBonus(userId, newDailyStreak).catch(() => {});

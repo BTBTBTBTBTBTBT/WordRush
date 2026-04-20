@@ -6,7 +6,7 @@ import { QuordleGame } from '@/components/quordle/quordle-game';
 import { AdGate } from '@/components/ads/ad-gate';
 import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
-import { getTodayUTC } from '@/lib/daily-service';
+import { getTodayLocal } from '@/lib/daily-service';
 import allowedWords from '@/data/allowed.json';
 import solutionWords from '@/data/solutions.json';
 
@@ -22,7 +22,7 @@ export default function QuordlePage() {
 
   if (!ready) return null;
 
-  const seed = isDaily ? generateDailySeed(getTodayUTC(), 'QUORDLE') : undefined;
+  const seed = isDaily ? generateDailySeed(getTodayLocal(), 'QUORDLE') : undefined;
 
   return <AdGate><QuordleGame initialSeed={seed} isDaily={isDaily} /></AdGate>;
 }

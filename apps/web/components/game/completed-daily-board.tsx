@@ -5,7 +5,7 @@ import { evaluateGuess, createInitialState, GameMode, TileState, gameReducer, Ga
 import { Board } from '@/components/game/board';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
-import { getTodayUTC } from '@/lib/daily-service';
+import { getTodayLocal } from '@/lib/daily-service';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
@@ -41,7 +41,7 @@ function loadCompletedGame(modeId: string): SavedGameState | null {
     const stored = localStorage.getItem(key);
     if (!stored) return null;
     const parsed: SavedGameState = JSON.parse(stored);
-    if (parsed.date !== getTodayUTC()) return null;
+    if (parsed.date !== getTodayLocal()) return null;
     if (parsed.gameStatus !== 'WON' && parsed.gameStatus !== 'LOST') return null;
     if (parsed.version !== SAVE_VERSION) return null;
     return parsed;
@@ -66,8 +66,7 @@ function loadCompletedProperNoundle(): SavedProperNoundleState | null {
     const stored = localStorage.getItem('wordocious-propernoundle-daily');
     if (!stored) return null;
     const parsed: SavedProperNoundleState = JSON.parse(stored);
-    const today = new Date().toISOString().slice(0, 10);
-    if (parsed.date !== today) return null;
+    if (parsed.date !== getTodayLocal()) return null;
     if (parsed.gameStatus !== 'won' && parsed.gameStatus !== 'lost') return null;
     return parsed;
   } catch {
@@ -229,7 +228,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const gameMode = MODE_MAP[modeId];
   const seed = useMemo(() => {
     if (!saved) return null;
-    return generateDailySeed(getTodayUTC(), modeId);
+    return generateDailySeed(getTodayLocal(), modeId);
   }, [saved, modeId]);
 
   // Reconstruct board states by replaying guesses through the reducer

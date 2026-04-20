@@ -19,7 +19,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateDailySeed } from '@wordle-duel/core';
-import { getTodayUTC } from '@/lib/daily-service';
+import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
@@ -74,10 +74,6 @@ interface PracticeState {
   hintState?: PersistedHintState;
 }
 
-function getTodayString(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function getSavedDailyState(puzzleId: string): DailyState | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -85,7 +81,7 @@ function getSavedDailyState(puzzleId: string): DailyState | null {
     if (!stored) return null;
     const parsed = JSON.parse(stored);
     // Clear if date doesn't match OR puzzle changed
-    if (parsed.date !== getTodayString() || (parsed.puzzleId && parsed.puzzleId !== puzzleId)) {
+    if (parsed.date !== getTodayLocal() || (parsed.puzzleId && parsed.puzzleId !== puzzleId)) {
       localStorage.removeItem(DAILY_STORAGE_KEY);
       return null;
     }
@@ -284,7 +280,7 @@ export function ProperNoundleGame() {
     if (gameStatus !== 'won' && gameStatus !== 'lost') return;
     hasRecordedRef.current = true;
     const timeMs = elapsedTime * 1000;
-    const seed = mode === 'daily' ? generateDailySeed(getTodayUTC(), 'PROPERNOUNDLE') : undefined;
+    const seed = mode === 'daily' ? generateDailySeed(getTodayLocal(), 'PROPERNOUNDLE') : undefined;
     recordGameResult(
       profile.id,
       'PROPERNOUNDLE',
@@ -346,7 +342,7 @@ export function ProperNoundleGame() {
         };
         if (mode === 'daily') {
           saveDailyState({
-            date: getTodayString(),
+            date: getTodayLocal(),
             puzzleId: puzzle.id,
             guesses,
             gameStatus,
@@ -398,7 +394,7 @@ export function ProperNoundleGame() {
     };
     if (mode === 'daily') {
       saveDailyState({
-        date: getTodayString(),
+        date: getTodayLocal(),
         puzzleId: puzzle.id,
         guesses,
         gameStatus,
