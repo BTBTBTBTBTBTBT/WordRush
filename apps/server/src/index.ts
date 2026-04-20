@@ -78,23 +78,32 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 });
 
 // Lightweight presence endpoint — home screen polls this to render the
-// "N players online" count next to the LIVE pulse. Answers with the
-// raw engine.io client count, which is every connected Socket.IO
-// client (players in queue, mid-match, or just idling on a VS page).
-// Kept on the same httpServer Socket.IO attaches to; Socket.IO's own
-// requests live under /socket.io/ so there's no path collision.
+// "N players online" count next to the LIVE pulse. Dedupes by the
+// `presenceId` each client sends in its handshake auth payload so a
+// single person with multiple sockets (e.g. the SitePresenceProvider's
+// idle socket + their in-match Socket.IO connection) counts as 1, not 2.
+// Signed-in users send `u:<supabase-user-id>` (dedupes across tabs AND
+// devices); anonymous visitors send `a:<per-browser-UUID>` (dedupes
+// across tabs in the same browser profile). Sockets that arrive without
+// a presenceId fall back to their socket.id, so they're counted but not
+// collapsed — matches pre-dedupe behaviour for any out-of-date clients.
 httpServer.on('request', (req, res) => {
   if (!req.url) return;
   if (req.url.startsWith('/socket.io/')) return; // let Socket.IO handle it
   if (req.url.startsWith('/presence')) {
     const origin = req.headers.origin ?? '';
     const allowed = clientOrigins.includes(origin) ? origin : clientOrigins[0] ?? '*';
+    const uniquePresence = new Set<string>();
+    io.sockets.sockets.forEach((sock) => {
+      const id = (sock.data as { presenceId?: string }).presenceId ?? sock.id;
+      uniquePresence.add(id);
+    });
     res.writeHead(200, {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': allowed,
       'Cache-Control': 'no-store',
     });
-    res.end(JSON.stringify({ online: io.engine.clientsCount }));
+    res.end(JSON.stringify({ online: uniquePresence.size }));
     return;
   }
   // Unknown path — 404 cleanly rather than hanging.
@@ -118,7 +127,14 @@ const MATCH_COUNTDOWN = 3;
 const REMATCH_TIMEOUT = 30000;
 
 io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`);
+  // Stash the presenceId from the handshake so /presence can dedupe
+  // distinct sockets belonging to the same person. Not required — clients
+  // that don't send one just fall through to socket.id on the /presence
+  // side, which preserves the pre-dedupe count for those sockets.
+  const presenceId = (socket.handshake.auth as { presenceId?: string } | undefined)?.presenceId;
+  if (presenceId) (socket.data as { presenceId?: string }).presenceId = presenceId;
+
+  console.log(`Client connected: ${socket.id}${presenceId ? ` (presence=${presenceId})` : ''}`);
 
   const playerId = socket.id;
   const player: Player = {

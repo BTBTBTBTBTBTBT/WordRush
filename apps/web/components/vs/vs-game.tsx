@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { GameMode, generateDailySeed, generateSolutionsFromSeed } from '@wordle-duel/core';
 import Link from 'next/link';
 import { SocketIOMatchService } from '@/lib/adapters/match-service';
+import { usePresenceId } from '@/lib/presence-id';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
@@ -173,6 +174,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const [vsLimitOpen, setVsLimitOpen] = useState(false);
   const [screen, setScreen] = useState<VsScreen>('queue');
   const [matchService] = useState(() => new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'));
+  const presenceId = usePresenceId();
   const [seed, setSeed] = useState('');
   const [startTime, setStartTime] = useState(0);
   const [queuePosition, setQueuePosition] = useState(0);
@@ -201,7 +203,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const label = MODE_LABELS[mode] || 'VS';
 
   useEffect(() => {
-    matchService.connect();
+    matchService.connect(presenceId);
 
     matchService.onQueueStatus((data) => {
       setQueuePosition(data.position);

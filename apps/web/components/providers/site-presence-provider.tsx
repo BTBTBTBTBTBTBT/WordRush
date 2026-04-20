@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { usePresenceId } from '@/lib/presence-id';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001';
 
@@ -23,19 +24,27 @@ const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'
  * count.
  */
 export function SitePresenceProvider({ children }: { children: React.ReactNode }) {
+  const presenceId = usePresenceId();
+
   useEffect(() => {
+    // Wait until we have an id — on SSR / first paint we skip, and on
+    // sign-in/out the id changes and this effect re-runs with a fresh
+    // socket tagged with the new id.
+    if (!presenceId) return;
+
     const socket = io(SERVER_URL, {
-      // WebSocket first, fall back to long-polling if the edge blocks WS.
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 2000,
       reconnectionDelayMax: 10000,
+      // Server dedupes /presence by this id — see apps/server/src/index.ts.
+      auth: { presenceId },
     });
     return () => {
       socket.removeAllListeners();
       socket.disconnect();
     };
-  }, []);
+  }, [presenceId]);
 
   return <>{children}</>;
 }

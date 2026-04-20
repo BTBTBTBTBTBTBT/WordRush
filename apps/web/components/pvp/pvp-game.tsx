@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SocketIOMatchService } from '@/lib/adapters/match-service';
+import { usePresenceId } from '@/lib/presence-id';
 import { Loader2 } from 'lucide-react';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
@@ -22,6 +23,7 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
   ensureDictionaryInitialized();
   const [screen, setScreen] = useState<PvPScreen>('queue');
   const [matchService] = useState(() => new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'));
+  const presenceId = usePresenceId();
   const [state, dispatch] = useReducer(gameReducer, createInitialState(generateMatchSeed(), mode));
   const [currentGuess, setCurrentGuess] = useState('');
   const [evaluations, setEvaluations] = useState<GuessResult[]>([]);
@@ -36,7 +38,7 @@ export function PvPGame({ mode, onBack }: PvPGameProps) {
   const currentBoard = state.boards[state.currentBoardIndex];
 
   useEffect(() => {
-    matchService.connect();
+    matchService.connect(presenceId);
 
     matchService.onQueueStatus((data) => {
       setQueuePosition(data.position);

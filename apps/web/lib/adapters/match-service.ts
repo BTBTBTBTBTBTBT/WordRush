@@ -2,7 +2,7 @@ import { GameMode } from '@wordle-duel/core';
 import { Socket, io } from 'socket.io-client';
 
 export interface IMatchService {
-  connect(): void;
+  connect(presenceId?: string): void;
   disconnect(): void;
   joinQueue(mode: GameMode, dailySeed?: string, inviteCode?: string): void;
   leaveQueue(): void;
@@ -35,8 +35,11 @@ export class SocketIOMatchService implements IMatchService {
     this.serverUrl = serverUrl;
   }
 
-  connect(): void {
-    this.socket = io(this.serverUrl);
+  connect(presenceId?: string): void {
+    // Pass presenceId in auth so the server's /presence count dedupes this
+    // socket against any other socket from the same user/tab (notably the
+    // SitePresenceProvider's socket that's already open in this tab).
+    this.socket = io(this.serverUrl, presenceId ? { auth: { presenceId } } : undefined);
   }
 
   disconnect(): void {
