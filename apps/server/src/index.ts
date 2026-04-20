@@ -215,10 +215,14 @@ io.on('connection', (socket) => {
     }
 
     const isPlayer1 = match.player1.id === playerId;
-    const normalizedGuess = guess.toUpperCase();
+    // Dedupe key is case-insensitive and ignores surrounding whitespace.
+    // ProperNoundle's evaluation-time normalization (see `normalizedGuess`
+    // below) strips non-alpha and lowercases, but uppercase is sufficient
+    // for dedupe purposes since equality is symmetric under case folding.
+    const dedupeKey = guess.toUpperCase();
     const history = submittedWordsByMatch.get(matchId);
     const playerHistory = history ? (isPlayer1 ? history.p1 : history.p2) : null;
-    if (playerHistory?.has(normalizedGuess)) {
+    if (playerHistory?.has(dedupeKey)) {
       socket.emit('guess_result', {
         boardIndex,
         isValid: false,
@@ -227,7 +231,7 @@ io.on('connection', (socket) => {
       });
       return;
     }
-    playerHistory?.add(normalizedGuess);
+    playerHistory?.add(dedupeKey);
 
     const playerState = isPlayer1 ? match.player1State : match.player2State;
     const opponentState = isPlayer1 ? match.player2State : match.player1State;
