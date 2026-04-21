@@ -2,15 +2,13 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Coins, Flame, X } from 'lucide-react';
+import { Shield, Flame, X } from 'lucide-react';
 
 interface StreakShieldModalProps {
   open: boolean;
   streak: number;
   shields: number;
-  coins: number;
   onUseShield: () => Promise<void>;
-  onBuyWithCoins: () => Promise<void>;
   onDecline: () => void;
   onClose: () => void;
 }
@@ -19,14 +17,11 @@ export function StreakShieldModal({
   open,
   streak,
   shields,
-  coins,
   onUseShield,
-  onBuyWithCoins,
   onDecline,
   onClose,
 }: StreakShieldModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
-  const canBuyWithCoins = coins >= 50;
 
   const handleAction = async (action: () => Promise<void>, key: string) => {
     setLoading(key);
@@ -90,7 +85,7 @@ export function StreakShieldModal({
                 day streak will be lost if you don't play today
               </p>
 
-              {/* Shield & coin status */}
+              {/* Shield status */}
               <div className="flex justify-center gap-3">
                 <div
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold"
@@ -99,18 +94,13 @@ export function StreakShieldModal({
                   <Shield className="w-3.5 h-3.5" />
                   <span>{shields}</span>
                 </div>
-                <div
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold"
-                  style={{ background: '#fef9ec', border: '1.5px solid #fde68a', color: '#92400e' }}
-                >
-                  <Coins className="w-3.5 h-3.5" />
-                  <span>{coins.toLocaleString()}</span>
-                </div>
               </div>
 
-              {/* Actions */}
+              {/* Actions. Shields are the only way to save a streak — coin
+                  purchase was removed with the coin economy. Players with
+                  no shields get the Pro upsell via the decline path. */}
               <div className="space-y-2 pt-2">
-                {shields > 0 && (
+                {shields > 0 ? (
                   <button
                     onClick={() => handleAction(onUseShield, 'shield')}
                     disabled={loading !== null}
@@ -122,19 +112,11 @@ export function StreakShieldModal({
                   >
                     {loading === 'shield' ? 'Using Shield...' : `Use Shield (${shields} left)`}
                   </button>
+                ) : (
+                  <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>
+                    You have no streak shields. Pro subscribers get 4 shields per billing period.
+                  </p>
                 )}
-
-                <button
-                  onClick={() => handleAction(onBuyWithCoins, 'coins')}
-                  disabled={loading !== null || !canBuyWithCoins}
-                  className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
-                  style={{
-                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                    boxShadow: '0 4px 0 #92400e',
-                  }}
-                >
-                  {loading === 'coins' ? 'Buying...' : 'Buy Shield (50 Coins)'}
-                </button>
 
                 <button
                   onClick={onDecline}

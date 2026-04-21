@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { isStreakAtRisk, useShield, purchaseShieldWithCoins } from '@/lib/shield-service';
+import { isStreakAtRisk, useShield } from '@/lib/shield-service';
 import { StreakShieldModal } from '@/components/modals/streak-shield-modal';
 import { supabase } from '@/lib/supabase-client';
 
@@ -31,16 +31,6 @@ export function StreakShieldProvider({ children }: { children: React.ReactNode }
     setShowModal(false);
   };
 
-  const handleBuyWithCoins = async () => {
-    if (!user) return;
-    const success = await purchaseShieldWithCoins(user.id);
-    if (success) {
-      await useShield(user.id);
-      await refreshProfile();
-      setShowModal(false);
-    }
-  };
-
   const handleDecline = async () => {
     if (!user) return;
     // Reset the streak
@@ -60,9 +50,7 @@ export function StreakShieldProvider({ children }: { children: React.ReactNode }
           open={showModal}
           streak={profile.daily_login_streak ?? 0}
           shields={(profile as any).streak_shields ?? 0}
-          coins={(profile as any).coins ?? 0}
           onUseShield={handleUseShield}
-          onBuyWithCoins={handleBuyWithCoins}
           onDecline={handleDecline}
           onClose={() => setShowModal(false)}
         />

@@ -1,8 +1,6 @@
 import { supabase } from './supabase-client';
 import { getTodayLocal, toLocalDayString } from './daily-service';
 
-const SHIELD_COIN_COST = 50;
-
 /**
  * Check if the player's streak is at risk (>20h since last play or missed a day).
  */
@@ -42,30 +40,6 @@ export async function useShield(userId: string): Promise<boolean> {
       last_played_at: new Date().toISOString(),
     })
     .eq('id', userId);
-
-  return true;
-}
-
-/**
- * Purchase a shield with SpellCoins. Returns true if successful.
- */
-export async function purchaseShieldWithCoins(userId: string): Promise<boolean> {
-  const { spendCoins } = await import('./coin-service');
-  const spent = await spendCoins(userId, SHIELD_COIN_COST, 'shield_purchase');
-  if (!spent) return false;
-
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('streak_shields')
-    .eq('id', userId)
-    .single() as { data: { streak_shields: number } | null };
-
-  if (profile) {
-    await (supabase as any)
-      .from('profiles')
-      .update({ streak_shields: profile.streak_shields + 1 })
-      .eq('id', userId);
-  }
 
   return true;
 }

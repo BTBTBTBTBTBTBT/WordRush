@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
   let query = admin
     .from('profiles')
-    .select('id, username, avatar_url, level, coins, is_pro, is_banned, last_played_at, created_at, role', { count: 'exact' });
+    .select('id, username, avatar_url, level, is_pro, is_banned, last_played_at, created_at, role', { count: 'exact' });
 
   if (q) {
     query = query.ilike('username', `%${q}%`);

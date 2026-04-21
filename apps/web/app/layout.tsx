@@ -8,7 +8,6 @@ import { StreakShieldProvider } from '@/components/providers/streak-shield-provi
 import { SitePresenceProvider } from '@/components/providers/site-presence-provider';
 import { DailyBoundaryReload } from '@/components/providers/daily-boundary-reload';
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
-import { CosmeticProvider } from '@/lib/cosmetics/cosmetic-context';
 import { AuthGate } from '@/components/auth/auth-gate';
 
 export const dynamic = 'force-dynamic';
@@ -76,12 +75,10 @@ export default function RootLayout({
           <SitePresenceProvider>
             <AuthGate>
               <ThemeProvider>
-                <CosmeticProvider>
-                  <StreakShieldProvider>
-                    {children}
-                    <ProPromptModal />
-                  </StreakShieldProvider>
-                </CosmeticProvider>
+                <StreakShieldProvider>
+                  {children}
+                  <ProPromptModal />
+                </StreakShieldProvider>
               </ThemeProvider>
             </AuthGate>
           </SitePresenceProvider>

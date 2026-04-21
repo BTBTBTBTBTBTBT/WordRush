@@ -2,13 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Coins, Crown, ShieldBan, ShieldCheck, Plus, Minus, Clock, Gamepad2, Trophy, History } from 'lucide-react';
+import { ArrowLeft, Crown, ShieldBan, ShieldCheck, Gamepad2, History } from 'lucide-react';
 
 interface UserDetail {
   profile: any;
   stats: any[];
   recentMatches: any[];
-  coinTransactions: any[];
   auditLog: any[];
 }
 
@@ -25,10 +24,6 @@ export default function AdminUserDetailPage() {
   const [data, setData] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-
-  // Coin adjustment
-  const [coinAmount, setCoinAmount] = useState('100');
-  const [coinReason, setCoinReason] = useState('');
 
   // Pro grant
   const [proDays, setProDays] = useState('30');
@@ -66,7 +61,7 @@ export default function AdminUserDetailPage() {
     return <div className="text-gray-500">User not found.</div>;
   }
 
-  const { profile: p, stats, recentMatches, coinTransactions, auditLog } = data;
+  const { profile: p, stats, recentMatches, auditLog } = data;
 
   return (
     <div className="space-y-6">
@@ -93,7 +88,6 @@ export default function AdminUserDetailPage() {
           {[
             ['Level', p.level],
             ['XP', p.xp.toLocaleString()],
-            ['Coins', p.coins.toLocaleString()],
             ['Shields', p.streak_shields],
             ['Wins', p.total_wins],
             ['Losses', p.total_losses],
@@ -114,47 +108,11 @@ export default function AdminUserDetailPage() {
           <div><span className="text-gray-400">Joined:</span> {new Date(p.created_at).toLocaleString()}</div>
           <div><span className="text-gray-400">Last Active:</span> {p.last_played_at ? new Date(p.last_played_at).toLocaleString() : 'Never'}</div>
           <div><span className="text-gray-400">Pro Expires:</span> {p.pro_expires_at ? new Date(p.pro_expires_at).toLocaleString() : 'N/A'}</div>
-          <div><span className="text-gray-400">Cosmetics:</span> {(p.owned_cosmetics || []).length} owned</div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Coin Adjustment */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-            <Coins className="w-3.5 h-3.5" /> Adjust Coins
-          </h3>
-          <div className="space-y-2">
-            <input
-              type="number" value={coinAmount} onChange={e => setCoinAmount(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Amount"
-            />
-            <input
-              type="text" value={coinReason} onChange={e => setCoinReason(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Reason"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => doAction(`/api/admin/users/${userId}/coins`, { amount: parseInt(coinAmount), reason: coinReason || 'Admin grant' })}
-                disabled={actionLoading}
-                className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 disabled:opacity-50"
-              >
-                <Plus className="w-3 h-3" /> Give
-              </button>
-              <button
-                onClick={() => doAction(`/api/admin/users/${userId}/coins`, { amount: -parseInt(coinAmount), reason: coinReason || 'Admin deduction' })}
-                disabled={actionLoading}
-                className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 disabled:opacity-50"
-              >
-                <Minus className="w-3 h-3" /> Take
-              </button>
-            </div>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Pro Management */}
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
@@ -257,28 +215,6 @@ export default function AdminUserDetailPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* Coin Transactions */}
-      {coinTransactions.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-            <Coins className="w-4 h-4" /> Coin Transactions
-          </h2>
-          <div className="space-y-1.5 max-h-60 overflow-y-auto">
-            {coinTransactions.map((t: any) => (
-              <div key={t.id} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50">
-                <div>
-                  <span className={`font-bold ${t.amount >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                    {t.amount >= 0 ? '+' : ''}{t.amount}
-                  </span>
-                  <span className="text-gray-500 ml-2">{t.reason}</span>
-                </div>
-                <span className="text-gray-400">{new Date(t.created_at).toLocaleString()}</span>
-              </div>
-            ))}
           </div>
         </div>
       )}

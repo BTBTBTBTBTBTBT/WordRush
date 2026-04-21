@@ -381,7 +381,7 @@ bold, competitive — feels like opening an arcade, not a test.
 Railway. A single commit rolls both front-end and real-time server at
 once.
 
-### Database (14 public tables)
+### Database (13 public tables)
 
 | Table | Purpose |
 |---|---|
@@ -405,7 +405,7 @@ All tables use **Row Level Security**:
 - Admin-only tables gated by role
 
 **Migration tracking**: `supabase_migrations.schema_migrations` is backfilled
-with all 16 applied migrations, so `supabase db push` is a clean no-op
+with all 17 applied migrations, so `supabase db push` is a clean no-op
 except for new migration files.
 
 ---
@@ -477,6 +477,13 @@ chronological order:
 - **LIVE multi-board win credit**: reducer now credits same-submission
   winning guesses on multi-board modes (Rescue / Quordle / Octordle /
   Sequence / Gauntlet) that would previously have been silently dropped.
+- **Removed coin economy + cosmetics.** The in-game currency, coin
+  packs, and cosmetic catalog (tile themes, keyboard skins, victory
+  animations) were cut from the product. Dropped `profiles.coins`,
+  `profiles.owned_cosmetics`, `profiles.equipped_cosmetics`, and the
+  `coin_transactions` table; removed the `/shop`, cosmetics context,
+  and all coin-granting / coin-spending code paths. Pro subscriptions
+  + ads are the sole monetization streams.
 
 ---
 

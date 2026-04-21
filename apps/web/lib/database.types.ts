@@ -26,15 +26,12 @@ export interface Database {
           last_played_at: string | null
           daily_login_streak: number
           best_daily_login_streak: number
-          coins: number
           streak_shields: number
           is_pro: boolean
           pro_expires_at: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           pro_prompt_shown: boolean
-          owned_cosmetics: string[]
-          equipped_cosmetics: Record<string, string>
           role: string
           is_banned: boolean
           ban_reason: string | null
@@ -57,15 +54,12 @@ export interface Database {
           last_played_at?: string | null
           daily_login_streak?: number
           best_daily_login_streak?: number
-          coins?: number
           streak_shields?: number
           is_pro?: boolean
           pro_expires_at?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           pro_prompt_shown?: boolean
-          owned_cosmetics?: string[]
-          equipped_cosmetics?: Record<string, string>
           role?: string
           is_banned?: boolean
           ban_reason?: string | null
@@ -88,15 +82,12 @@ export interface Database {
           last_played_at?: string | null
           daily_login_streak?: number
           best_daily_login_streak?: number
-          coins?: number
           streak_shields?: number
           is_pro?: boolean
           pro_expires_at?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           pro_prompt_shown?: boolean
-          owned_cosmetics?: string[]
-          equipped_cosmetics?: Record<string, string>
           role?: string
           is_banned?: boolean
           ban_reason?: string | null
@@ -403,32 +394,6 @@ export interface Database {
           record_value?: number
           achieved_at?: string
           updated_at?: string
-        }
-      }
-      coin_transactions: {
-        Row: {
-          id: string
-          user_id: string
-          amount: number
-          type: string
-          reason: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          amount: number
-          type: string
-          reason: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          amount?: number
-          type?: string
-          reason?: string
-          created_at?: string
         }
       }
       achievements: {

@@ -2,7 +2,19 @@
 
 import { TileState, GuessResult } from '@wordle-duel/core';
 import { cn } from '@/lib/utils';
-import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
+
+// Tile palette. Previously driven by the cosmetics system so players could
+// unlock alternate tile themes; the coin/cosmetic economy was removed and
+// these are now the single source of truth. Matches the Wordle-standard
+// green/yellow/grey semantics that players already recognize.
+const TILE = {
+  border: 'border-2 border-gray-300',
+  empty: 'bg-white',
+  absent: 'bg-gray-500',
+  present: 'bg-yellow-500',
+  correct: 'bg-green-500',
+  text: 'text-white',
+} as const;
 
 interface BoardProps {
   guesses: string[];
@@ -80,14 +92,13 @@ interface TileProps {
 
 function Tile({ letter, state, flipDelay, isInvalid }: TileProps) {
   const hasFlip = flipDelay !== undefined;
-  const { tileTheme } = useCosmetics();
 
   const colorClass = cn(
-    state === TileState.EMPTY && !isInvalid && `${tileTheme.border} ${tileTheme.empty}`,
+    state === TileState.EMPTY && !isInvalid && `${TILE.border} ${TILE.empty}`,
     state === TileState.EMPTY && isInvalid && 'border-red-400 bg-red-50',
-    state === TileState.ABSENT && `${tileTheme.border} ${tileTheme.absent} ${tileTheme.text}`,
-    state === TileState.PRESENT && `${tileTheme.present} ${tileTheme.text}`,
-    state === TileState.CORRECT && `${tileTheme.correct} ${tileTheme.text}`
+    state === TileState.ABSENT && `${TILE.border} ${TILE.absent} ${TILE.text}`,
+    state === TileState.PRESENT && `${TILE.present} ${TILE.text}`,
+    state === TileState.CORRECT && `${TILE.correct} ${TILE.text}`
   );
 
   return (

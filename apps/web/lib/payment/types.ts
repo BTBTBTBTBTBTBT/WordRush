@@ -1,36 +1,20 @@
-export interface CoinPack {
-  id: string;
-  coins: number;
-  price: number;
-  label: string;
-  popular?: boolean;
-}
-
 export interface WebhookResult {
-  type: 'coin_purchase' | 'cosmetic_purchase' | 'subscription_created' | 'subscription_cancelled';
+  type: 'subscription_created' | 'subscription_cancelled';
   userId: string;
   data: Record<string, any>;
 }
 
 /**
  * Payment provider interface — the single swap point for monetization.
- * Game logic (coins, shields, cosmetics) never imports a payment SDK directly.
- * To switch from DemoProvider to Stripe or RevenueCat, implement this interface
- * and update the factory in ./index.ts.
+ * Game logic never imports a payment SDK directly. To switch from
+ * DemoProvider to Stripe or RevenueCat, implement this interface and
+ * update the factory in ./index.ts.
+ *
+ * The coin + cosmetic purchase flows that previously lived here were
+ * removed along with the in-game economy; Pro subscriptions are the only
+ * monetized transaction.
  */
 export interface PaymentProvider {
-  createCoinPurchaseSession(
-    userId: string,
-    packId: string,
-    returnUrl: string,
-  ): Promise<{ url: string }>;
-
-  createCosmeticPurchaseSession(
-    userId: string,
-    cosmeticId: string,
-    returnUrl: string,
-  ): Promise<{ url: string }>;
-
   createSubscriptionSession(
     userId: string,
     planId: string,

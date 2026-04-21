@@ -11,11 +11,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const admin = getAdminSupabase();
   const userId = params.id;
 
-  const [profileRes, statsRes, matchesRes, transactionsRes, auditRes] = await Promise.all([
+  const [profileRes, statsRes, matchesRes, auditRes] = await Promise.all([
     admin.from('profiles').select('*').eq('id', userId).single(),
     admin.from('user_stats').select('*').eq('user_id', userId),
     admin.from('matches').select('*').or(`player1_id.eq.${userId},player2_id.eq.${userId}`).order('created_at', { ascending: false }).limit(10),
-    admin.from('coin_transactions').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(20),
     admin.from('admin_audit_log').select('*').eq('target_user_id', userId).order('created_at', { ascending: false }).limit(10),
   ]);
 
@@ -27,7 +26,6 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     profile: profileRes.data,
     stats: statsRes.data || [],
     recentMatches: matchesRes.data || [],
-    coinTransactions: transactionsRes.data || [],
     auditLog: auditRes.data || [],
   });
 }
@@ -41,7 +39,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   const body = await request.json();
 
   // Only allow specific fields to be updated
-  const allowedFields = ['username', 'coins', 'streak_shields', 'current_streak', 'xp', 'level'];
+  const allowedFields = ['username', 'streak_shields', 'current_streak', 'xp', 'level'];
   const updates: Record<string, any> = {};
   for (const field of allowedFields) {
     if (body[field] !== undefined) {

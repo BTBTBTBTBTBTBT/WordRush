@@ -10,7 +10,6 @@ import {
   toLocalDayString,
 } from './daily-service';
 import { checkAchievements } from './achievement-service';
-import { awardGameCoins, awardStreakBonus } from './coin-service';
 import { grantFreeShield } from './shield-service';
 
 export interface XpResult {
@@ -126,8 +125,10 @@ export async function recordGameResult(
         // Same local day — no change to daily streak
       } else if (lastDay === yesterday) {
         newDailyStreak += 1;
+        // Every 7 consecutive days grant a free streak shield. No coin
+        // bonus — the coin economy was removed; shields are the sole
+        // streak-milestone reward.
         if (newDailyStreak % 7 === 0) {
-          awardStreakBonus(userId, newDailyStreak).catch(() => {});
           grantFreeShield(userId).catch(() => {});
         }
       } else {
@@ -154,9 +155,6 @@ export async function recordGameResult(
         best_daily_login_streak: newBestDailyStreak,
       })
       .eq('id', userId);
-
-    // Award SpellCoins for game result
-    awardGameCoins(userId, won, isDailyGame).catch(() => {});
   }
 
   // --- Daily result recording ---

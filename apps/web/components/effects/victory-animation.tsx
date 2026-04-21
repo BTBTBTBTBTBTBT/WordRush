@@ -1,8 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Confetti, CONFETTI_PALETTES } from './confetti';
-import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
+import { Confetti } from './confetti';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 
 interface VictoryAnimationProps {
@@ -16,16 +15,7 @@ interface VictoryAnimationProps {
   solutions?: string[];
 }
 
-const VARIANT_MAP: Record<string, string> = {
-  victory_fireworks: 'fireworks',
-  victory_rainbow: 'rainbow',
-};
-
 export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions }: VictoryAnimationProps) {
-  const { victoryAnimationId } = useCosmetics();
-  const paletteKey = victoryAnimationId ? VARIANT_MAP[victoryAnimationId] : undefined;
-  const confettiColors = paletteKey ? CONFETTI_PALETTES[paletteKey] : undefined;
-
   const { definition } = useWordDefinition(solution || null);
 
   const formatTime = (s: number) => {
@@ -42,7 +32,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
       style={{ backgroundColor: 'rgba(24, 24, 46, 0.6)' }}
       onClick={onComplete}
     >
-      <Confetti colors={confettiColors} />
+      <Confetti />
 
       <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 20 }}

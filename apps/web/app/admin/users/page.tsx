@@ -9,7 +9,6 @@ interface UserRow {
   username: string;
   avatar_url: string | null;
   level: number;
-  coins: number;
   is_pro: boolean;
   is_banned: boolean;
   last_played_at: string | null;
@@ -80,7 +79,6 @@ export default function AdminUsersPage() {
             <tr className="border-b border-gray-100 bg-gray-50">
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">User</th>
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Level</th>
-              <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Coins</th>
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Status</th>
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Last Active</th>
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Joined</th>
@@ -90,12 +88,12 @@ export default function AdminUsersPage() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-b border-gray-50">
-                  <td colSpan={6} className="px-4 py-3"><div className="h-5 bg-gray-100 rounded animate-pulse" /></td>
+                  <td colSpan={5} className="px-4 py-3"><div className="h-5 bg-gray-100 rounded animate-pulse" /></td>
                 </tr>
               ))
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400 font-medium">No users found.</td>
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-400 font-medium">No users found.</td>
               </tr>
             ) : (
               users.map(user => (
@@ -116,7 +114,6 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-600 font-medium">{user.level}</td>
-                  <td className="px-4 py-3 text-gray-600 font-medium">{user.coins.toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       {user.is_pro && <span className="text-[10px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">PRO</span>}

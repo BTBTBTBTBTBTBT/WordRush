@@ -1,39 +1,9 @@
 import { supabase } from '../supabase-client';
-import { COIN_PACKS } from './coin-packs';
 
 /**
  * Fulfillment functions — bridge between payment events and game state.
  * Called by the payment provider after a successful transaction.
  */
-
-export async function fulfillCoinPurchase(userId: string, packId: string): Promise<number> {
-  const pack = COIN_PACKS.find(p => p.id === packId);
-  if (!pack) throw new Error(`Unknown coin pack: ${packId}`);
-
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('coins')
-    .eq('id', userId)
-    .single() as { data: { coins: number } | null };
-
-  if (!profile) throw new Error('Profile not found');
-
-  await (supabase as any)
-    .from('profiles')
-    .update({ coins: profile.coins + pack.coins })
-    .eq('id', userId);
-
-  await (supabase as any)
-    .from('coin_transactions')
-    .insert({
-      user_id: userId,
-      amount: pack.coins,
-      type: 'earn',
-      reason: `purchase_${packId}`,
-    });
-
-  return pack.coins;
-}
 
 export async function fulfillSubscription(
   userId: string,

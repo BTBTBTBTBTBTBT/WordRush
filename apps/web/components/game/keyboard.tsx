@@ -2,18 +2,6 @@
 
 import { cn } from '@/lib/utils';
 import { Delete } from 'lucide-react';
-import { useCosmetics } from '@/lib/cosmetics/cosmetic-context';
-
-const KEYBOARD_SKINS: Record<string, { base: string; special: string }> = {
-  kb_galaxy: {
-    base: 'bg-purple-900 border-purple-600 text-purple-100',
-    special: 'bg-purple-800 border-purple-600 text-purple-100',
-  },
-  kb_wooden: {
-    base: 'bg-amber-900 border-amber-700 text-amber-100',
-    special: 'bg-amber-800 border-amber-700 text-amber-100',
-  },
-};
 
 const ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -104,8 +92,6 @@ function QuadrantKey({
 
 export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedOutLetters }: KeyboardProps) {
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
-  const { keyboardSkinId } = useCosmetics();
-  const skin = keyboardSkinId ? KEYBOARD_SKINS[keyboardSkinId] : null;
 
   return (
     <div className="flex flex-col gap-1.5 max-w-xl mx-auto">
@@ -127,7 +113,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
                   style={{
-                    backgroundColor: skin ? undefined : '#e8e5f0',
+                    backgroundColor: '#e8e5f0',
                     border: '1.5px solid #ede9f6',
                     color: '#1a1a2e',
                   }}
@@ -178,9 +164,9 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   state === 'absent' && 'text-white',
                 )}
                 style={{
-                  backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#9ca3af' : (skin ? undefined : '#e8e5f0'),
+                  backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#9ca3af' : '#e8e5f0',
                   border: state ? undefined : '1.5px solid #ede9f6',
-                  color: !state ? (skin ? undefined : '#1a1a2e') : undefined,
+                  color: !state ? '#1a1a2e' : undefined,
                 }}
               >
                 {key}
