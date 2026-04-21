@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
 import { StreakShieldProvider } from '@/components/providers/streak-shield-provider';
 import { SitePresenceProvider } from '@/components/providers/site-presence-provider';
+import { DailyBoundaryReload } from '@/components/providers/daily-boundary-reload';
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
 import { CosmeticProvider } from '@/lib/cosmetics/cosmetic-context';
 import { AuthGate } from '@/components/auth/auth-gate';
@@ -70,6 +71,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        <DailyBoundaryReload />
         <AuthProvider>
           <SitePresenceProvider>
             <AuthGate>
