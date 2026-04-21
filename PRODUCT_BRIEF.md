@@ -97,30 +97,6 @@ VS variants live at `/<mode>/vs`. Daily variants reached via `/<mode>?daily=true
 - Day Pass **stacks**: buying mid-subscription extends expiry by 24h instead
   of resetting.
 
-### Coin Economy
-
-Virtual currency for cosmetic purchases:
-
-| Pack | Coins | Price | $/coin |
-|---|---|---|---|
-| Starter | 100 | $0.99 | $0.0099 |
-| Popular | 550 | $4.99 | $0.0091 |
-| Premium | 1,300 | $9.99 | $0.0077 |
-
-### Cosmetics Catalog (Coin Purchases)
-
-Full catalog shipped in `/shop`. Items stored per-user in `profiles.owned_cosmetics` (array) + `profiles.equipped_cosmetics` (jsonb) — no separate table needed.
-
-| Category | Item | Coins | USD equiv |
-|---|---|---|---|
-| Tile theme | Pastel Dream | 150 | $1.49 |
-| Tile theme | Neon Glow | 200 | $1.99 |
-| Tile theme | Golden Hour | 300 | $2.99 |
-| Keyboard skin | Wooden Keys | 200 | $1.99 |
-| Keyboard skin | Galaxy | 250 | $2.49 |
-| Victory animation | Rainbow Wave | 300 | $2.99 |
-| Victory animation | Fireworks | 350 | $3.49 |
-
 ### Ad Revenue
 
 - Google AdSense integration (`ca-pub-3015627373086578`)
@@ -341,7 +317,7 @@ Live admin dashboard at `/admin` (role-gated by `profiles.role`):
 
 | Section | Capability |
 |---|---|
-| `/admin` | User search, ban/unban, grant/revoke Pro, grant coins, view audit log |
+| `/admin` | User search, ban/unban, grant/revoke Pro, view audit log |
 | `/admin/users/[id]` | Per-user deep dive: level, stats, medals, match history |
 | `/admin/games` | Per-mode daily seed overrides, live leaderboard inspection |
 | `/admin/content` | Announcements (create / edit / expire) — shown in-app as banner |
@@ -409,7 +385,7 @@ once.
 
 | Table | Purpose |
 |---|---|
-| `profiles` | User identity, XP, level, wins/losses, streaks, medal counts, Pro status, Stripe ids, coins, owned/equipped cosmetics, social links, role, ban state |
+| `profiles` | User identity, XP, level, wins/losses, streaks, medal counts, Pro status, Stripe ids, social links, role, ban state |
 | `user_stats` | Per-mode per-play-type granular stats |
 | `matches` | Full game history with replay data (guesses JSON) |
 | `daily_seeds` | Deterministic daily puzzle storage |
@@ -421,7 +397,6 @@ once.
 | `play_limits` | DB-backed daily play caps (replaces old localStorage — can't be bypassed by clearing site data, incognito, or switching browsers) |
 | `match_invites` | VS invites by username or by link, with pending / accepted / declined / expired / cancelled statuses |
 | `announcements` | Admin-pushed banner announcements |
-| `coin_transactions` | Audit log of coin credits/debits |
 | `admin_audit_log` | Every admin action with actor, target, reason |
 
 All tables use **Row Level Security**:
@@ -525,8 +500,8 @@ enough for the competitive grind.
 
 ## 15. Business Context
 
-- **Revenue streams**: Pro subscriptions (3 tiers), coin packs, cosmetic
-  purchases, ad revenue (free tier).
+- **Revenue streams**: Pro subscriptions (3 tiers: Day Pass / Monthly /
+  Yearly) + ad revenue (free tier).
 - **Conversion funnel**: Free play → hit mode limit → Pro upsell modal →
   `/pro` page → subscribe (Day Pass as low-friction entry).
 - **Day Pass role**: $1 impulse buy for players who hit the limit but
@@ -571,8 +546,8 @@ Per-user, per-match, per-day data captured for every play:
 - Daily: per-mode result row, composite score, medals awarded, bonus XP.
 - Profile: XP, level, total wins, total losses, current streak, best
   streak, daily login streak, best daily login streak, medal counts (gold,
-  silver, bronze), coin balance, streak shield balance, Pro status, Pro
-  expiry, owned and equipped cosmetics, social links, role, ban state.
+  silver, bronze), streak shield balance, Pro status, Pro expiry, social
+  links, role, ban state.
 - Admin audit: every admin action with actor + target + reason.
 
 This replay-level fidelity is the foundation for future features
