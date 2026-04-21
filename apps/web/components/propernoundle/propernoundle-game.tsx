@@ -26,7 +26,6 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 const MAX_GUESSES = 6;
 const DAILY_STORAGE_KEY = 'wordocious-propernoundle-daily';
 const PRACTICE_STORAGE_KEY = 'wordocious-propernoundle-practice';
-const MODE_STORAGE_KEY = 'wordocious-propernoundle-mode';
 const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -126,26 +125,26 @@ function savePracticeState(state: Omit<PracticeState, 'savedAt'>): void {
   } catch {}
 }
 
-function loadPersistedMode(): 'daily' | 'practice' {
-  if (typeof window === 'undefined') return 'daily';
-  try {
-    const stored = localStorage.getItem(MODE_STORAGE_KEY);
-    return stored === 'practice' ? 'practice' : 'daily';
-  } catch {
-    return 'daily';
-  }
+interface ProperNoundleGameProps {
+  /**
+   * True when launched from the Daily CTA (/propernoundle?daily=true). The
+   * game pins to today's deterministic daily puzzle, gates the play-again
+   * button, and records a daily_result row on completion. When false
+   * (/propernoundle), the game runs in unlimited/practice mode — each
+   * completion offers a fresh random puzzle. Pro-gating for unlimited
+   * access is enforced by the home-screen cards, not this component.
+   */
+  isDaily?: boolean;
 }
 
-function savePersistedMode(mode: 'daily' | 'practice'): void {
-  if (typeof window === 'undefined') return;
-  try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch {}
-}
-
-export function ProperNoundleGame() {
+export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = {}) {
   const { profile, isProActive } = useAuth();
   const isPro = isProActive;
-  // Persist the last-used mode so returning lands back on the same tab.
-  const [mode, setMode] = useState<GameMode>(() => loadPersistedMode());
+  // URL-driven, no persistence — the Daily/Practice switcher is gone, so
+  // `mode` is fully derived from the route. This keeps behaviour in sync
+  // with every other mode (quordle, octordle, sequence, rescue, gauntlet)
+  // which all route daily via ?daily=true and unlimited via the bare path.
+  const mode: GameMode = isDaily ? 'daily' : 'practice';
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [guesses, setGuesses] = useState<Guess[]>([]);
   const [currentGuess, setCurrentGuess] = useState('');
@@ -433,11 +432,6 @@ export function ProperNoundleGame() {
     hints.consonantUsed,
   ]);
 
-  // Persist the current mode so the next visit lands back on the same tab.
-  useEffect(() => {
-    savePersistedMode(mode);
-  }, [mode]);
-
   const buildLetterStates = useCallback((allGuesses: Guess[]) => {
     const states: Record<string, TileState> = {};
     allGuesses.forEach(guess => {
@@ -568,7 +562,6 @@ export function ProperNoundleGame() {
     setWikiImageUrl(null);
     setWikiImageLoaded(false);
     hints.resetHints();
-    setMode('practice');
   }, [puzzle, playedIds, hints]);
 
   const handleShare = useCallback(async () => {
@@ -642,32 +635,6 @@ export function ProperNoundleGame() {
           <span className="text-gray-400 text-xs font-bold">
             <Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedTime)}
           </span>
-        </div>
-
-        {/* Mode toggle — Practice only for Pro users */}
-        <div className="flex justify-center gap-2 mt-2">
-          <button
-            onClick={() => setMode('daily')}
-            className={`text-xs font-bold px-3 py-1 rounded-full border transition-all ${
-              mode === 'daily'
-                ? 'border-red-400 bg-red-50 text-red-600'
-                : 'border-gray-200 text-gray-400'
-            }`}
-          >
-            Daily
-          </button>
-          {isPro && (
-            <button
-              onClick={() => { setMode('practice'); }}
-              className={`text-xs font-bold px-3 py-1 rounded-full border transition-all ${
-                mode === 'practice'
-                  ? 'border-red-400 bg-red-50 text-red-600'
-                  : 'border-gray-200 text-gray-400'
-              }`}
-            >
-              Practice
-            </button>
-          )}
         </div>
 
         {/* Hint display */}
