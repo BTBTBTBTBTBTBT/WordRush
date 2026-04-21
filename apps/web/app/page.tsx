@@ -404,22 +404,38 @@ export default function HomePage() {
             );
           }
 
+          // Daily hero. Sized to match UnlimitedHero exactly (same py,
+          // three lines of copy) so tapping the Pro Daily/Unlimited pill
+          // doesn't shift the game-cards grid below. Palette stays in the
+          // same purple family as Unlimited for a coherent aesthetic, but
+          // leans cool (violet→indigo) so the two modes are still visually
+          // distinct — Unlimited runs warm (pink→violet).
           return (
             <Link href="/daily">
               <button
-                className="w-full btn-3d flex flex-col items-center py-2 font-black relative"
+                className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
                 style={{
-                  background: 'linear-gradient(135deg, #f3f0ff, #ede5ff)',
-                  border: '1.5px solid #c4b5fd',
+                  background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+                  border: '1.5px solid #a78bfa',
                   borderRadius: '14px',
                 }}
               >
-                <div className="flex items-center gap-2 text-sm" style={{ color: '#5b21b6' }}>
-                  <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-                  <span>Daily Challenge</span>
-                  <Star className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5" style={{ color: '#7c3aed' }} fill="currentColor" />
+                  <span
+                    className="text-lg font-black text-transparent bg-clip-text"
+                    style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+                  >
+                    Daily Challenge
+                  </span>
+                  <Star className="w-5 h-5" style={{ color: '#4f46e5' }} fill="currentColor" />
                 </div>
-                <DailyCountdown />
+                <div className="text-[10px] font-bold mt-0.5" style={{ color: '#6d28d9' }}>
+                  7 puzzles · Leaderboards &amp; medals
+                </div>
+                <div className="text-[10px] font-bold mt-0.5" style={{ color: '#6d28d9' }}>
+                  Resets in <DailyCountdownText />
+                </div>
               </button>
             </Link>
           );
