@@ -68,6 +68,14 @@ function loadCompletedProperNoundle(): SavedProperNoundleState | null {
     const parsed: SavedProperNoundleState = JSON.parse(stored);
     if (parsed.date !== getTodayLocal()) return null;
     if (parsed.gameStatus !== 'won' && parsed.gameStatus !== 'lost') return null;
+    // Drop saves whose puzzleId doesn't match today's daily. The caller
+    // also checks this downstream, but wiping here clears the stale
+    // localStorage entry instead of carrying it forward across refreshes.
+    const today = getDailyPuzzle();
+    if (!parsed.puzzleId || parsed.puzzleId !== today.id) {
+      localStorage.removeItem('wordocious-propernoundle-daily');
+      return null;
+    }
     return parsed;
   } catch {
     return null;

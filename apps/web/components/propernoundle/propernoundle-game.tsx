@@ -80,8 +80,14 @@ function getSavedDailyState(puzzleId: string): DailyState | null {
     const stored = localStorage.getItem(DAILY_STORAGE_KEY);
     if (!stored) return null;
     const parsed = JSON.parse(stored);
-    // Clear if date doesn't match OR puzzle changed
-    if (parsed.date !== getTodayLocal() || (parsed.puzzleId && parsed.puzzleId !== puzzleId)) {
+    // Fail-closed guard: clear the save unless BOTH the date and the
+    // puzzleId match today's daily. The previous version short-circuited
+    // the puzzleId check when `parsed.puzzleId` was falsy — which made
+    // legacy saves written before puzzleId was persisted (or any save
+    // missing the field) bypass the puzzle check entirely and restore a
+    // stale completed board under the wrong puzzle. See: user stuck on
+    // "Denver" completed screen after the daily had already rolled over.
+    if (parsed.date !== getTodayLocal() || parsed.puzzleId !== puzzleId) {
       localStorage.removeItem(DAILY_STORAGE_KEY);
       return null;
     }
