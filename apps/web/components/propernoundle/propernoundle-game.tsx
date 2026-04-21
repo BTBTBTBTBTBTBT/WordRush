@@ -6,7 +6,8 @@ import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GameOverAnimation } from '@/components/effects/game-over-animation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, Lightbulb, Eye, Hash, Loader2, Home } from 'lucide-react';
+import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
+import { GameHomeButton } from '@/components/game/game-home-button';
 import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
@@ -606,14 +607,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0 relative">
-        <Link
-          href="/"
-          aria-label="Back to Home"
-          className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
-        >
-          <Home className="w-4 h-4" style={{ color: '#9ca3af' }} />
-        </Link>
+        <GameHomeButton accentColor="#dc2626" />
         <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
           PROPERNOUNDLE
         </h1>

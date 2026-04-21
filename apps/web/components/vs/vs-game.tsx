@@ -12,6 +12,7 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, Loader2, Home, RotateCcw, Trophy, X } from 'lucide-react';
+import { GameHomeButton } from '@/components/game/game-home-button';
 import {
   hasPlayedModeToday,
   recordModePlayed,
@@ -136,6 +137,19 @@ const MODE_TITLE_GRADIENTS: Record<string, string> = {
   [GameMode.PROPERNOUNDLE]: 'from-red-400 via-rose-400 to-orange-400',
 };
 
+// Per-mode accent used for the corner Home button during a VS match.
+// Matches the solid accent each mode uses on the home-screen mode cards
+// so tapping into VS keeps the visual identity consistent.
+const MODE_ACCENT_COLORS: Record<string, string> = {
+  [GameMode.DUEL]: '#7c3aed',
+  [GameMode.QUORDLE]: '#ec4899',
+  [GameMode.OCTORDLE]: '#7e22ce',
+  [GameMode.SEQUENCE]: '#2563eb',
+  [GameMode.RESCUE]: '#059669',
+  [GameMode.GAUNTLET]: '#d97706',
+  [GameMode.PROPERNOUNDLE]: '#dc2626',
+};
+
 export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   ensureDictionaryInitialized();
 
@@ -200,6 +214,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
   const gradient = MODE_GRADIENTS[mode] || MODE_GRADIENTS[GameMode.DUEL];
   const titleGradient = MODE_TITLE_GRADIENTS[mode] || MODE_TITLE_GRADIENTS[GameMode.DUEL];
+  const accentColor = MODE_ACCENT_COLORS[mode] || MODE_ACCENT_COLORS[GameMode.DUEL];
   const label = MODE_LABELS[mode] || 'VS';
 
   useEffect(() => {
@@ -681,20 +696,14 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   return (
     <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
-      {/* Match Header */}
-      <div className="text-center py-1 shrink-0">
-        <div className="flex items-center justify-between px-4">
-          <button
-            onClick={handleForfeit}
-            className="text-white/40 hover:text-gray-400 text-xs font-bold transition-colors"
-          >
-            Forfeit
-          </button>
-          <h1 className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
-            VS {label}
-          </h1>
-          <div className="w-12" /> {/* spacer */}
-        </div>
+      {/* Match Header. The Home button forfeits the match first so the
+          server can end it cleanly and credit the opponent — just navigating
+          away mid-VS leaves a dangling match. */}
+      <div className="text-center py-2 shrink-0 relative">
+        <GameHomeButton accentColor={accentColor} onClick={handleForfeit} />
+        <h1 className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
+          VS {label}
+        </h1>
       </div>
 
       {/* Game content fills remaining space */}

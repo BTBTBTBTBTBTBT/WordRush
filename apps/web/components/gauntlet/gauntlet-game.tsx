@@ -15,7 +15,7 @@ import {
 import { Board } from '@/components/game/board';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import Link from 'next/link';
-import { Home } from 'lucide-react';
+import { GameHomeButton } from '@/components/game/game-home-button';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
@@ -487,14 +487,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             every change + beforeunload, and useActivePlayTimer pauses
             on unmount, so the run resumes cleanly when the player taps
             the Gauntlet mode card again. */}
-        <Link
-          href="/"
-          aria-label="Back to Home"
-          className="absolute top-1 left-2 z-10 w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
-        >
-          <Home className="w-4 h-4" style={{ color: '#9ca3af' }} />
-        </Link>
+        <GameHomeButton accentColor="#d97706" positionClass="absolute top-1 left-2 z-10" />
         <GauntletProgress
           stages={gauntlet.stages}
           currentStage={gauntlet.currentStage}
