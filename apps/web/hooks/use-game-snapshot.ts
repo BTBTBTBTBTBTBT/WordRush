@@ -110,6 +110,59 @@ export function loadGameSession(mode: GameMode, isDaily: boolean): RestoredSessi
       localStorage.removeItem(key);
       return null;
     }
+
+    // Gauntlet-specific salvage path for saves that predate the Letter
+    // Blackout removal. Those saves look like mid-game sessions (status
+    // PLAYING) because the old reducer kept the game alive even after a
+    // board failure — it replaced the failed board with a fresh seed and
+    // bumped `blackoutCount`. The run should instead have ended the
+    // instant that first board hit max-guesses. Rewrite the state to
+    // LOST here and inject a failed GauntletStageResult for the current
+    // stage so GauntletResults can show the player where they died and
+    // the game-over effect can record the loss via the normal path.
+    // Keep `isCompleted: false` so the post-restore recording effect
+    // isn't gated off as "already handled."
+    const restoredState = parsed.state;
+    if (
+      restoredState.mode === GameMode.GAUNTLET &&
+      restoredState.gauntlet &&
+      restoredState.gauntlet.blackoutCount > 0 &&
+      restoredState.status === GameStatus.PLAYING
+    ) {
+      const stageGuesses = restoredState.boards.reduce(
+        (max, b) => Math.max(max, b.guesses.length),
+        0,
+      );
+      const stageTimeMs = Date.now() - restoredState.gauntlet.stageStartTime;
+      const alreadyRecorded = restoredState.gauntlet.stageResults.some(
+        r => r.stageIndex === restoredState.gauntlet!.currentStage,
+      );
+      const salvagedState = {
+        ...restoredState,
+        status: GameStatus.LOST,
+        gauntlet: {
+          ...restoredState.gauntlet,
+          stageResults: alreadyRecorded
+            ? restoredState.gauntlet.stageResults
+            : [
+                ...restoredState.gauntlet.stageResults,
+                {
+                  stageIndex: restoredState.gauntlet.currentStage,
+                  status: GameStatus.LOST,
+                  guesses: stageGuesses,
+                  timeMs: stageTimeMs,
+                },
+              ],
+        },
+      };
+      return {
+        seed: parsed.seed,
+        state: salvagedState,
+        elapsedTime: parsed.elapsedTime,
+        isCompleted: false,
+      };
+    }
+
     return {
       seed: parsed.seed,
       state: parsed.state,
