@@ -30,24 +30,8 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
-const BLACKOUT_DURATION_MS = 15_000;
-const BLACKOUT_LETTER_COUNT = 3;
-const ALL_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-
 function generateSeed(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-}
-
-function pickBlackoutLetters(
-  letterStates: Record<string, 'correct' | 'present' | 'absent'>,
-  count: number
-): string[] {
-  // Pick random letters that haven't been confirmed correct/present
-  const candidates = ALL_LETTERS.filter(
-    l => letterStates[l] !== 'correct' && letterStates[l] !== 'present'
-  );
-  const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
 interface GauntletGameProps {
@@ -92,13 +76,6 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // and return mid-stage without losing progress.
   useGameSnapshot(GameMode.GAUNTLET, !!isDaily, seed, state, elapsedTime);
 
-  // Letter Blackout state
-  const [blackedOutLetters, setBlackedOutLetters] = useState<Set<string>>(new Set());
-  const [blackoutBoardIndex, setBlackoutBoardIndex] = useState<number | null>(null);
-  const [blackoutTimeLeft, setBlackoutTimeLeft] = useState(0);
-  const blackoutTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const blackoutCountdownRef = useRef<NodeJS.Timeout | null>(null);
-
   // Stolen Guess visual feedback
   const [showStolenGuess, setShowStolenGuess] = useState(false);
 
@@ -106,7 +83,6 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const currentStageConfig = gauntlet.stages[gauntlet.currentStage];
   const isSequential = currentStageConfig.sequential;
   const isSingleBoard = currentStageConfig.boardCount === 1;
-  const isInBlackout = blackoutBoardIndex !== null;
 
   // For sequence stages, track the active board (first unsolved in order)
   const sequenceActiveBoardIndex = useMemo(() => {
@@ -153,69 +129,20 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     return currentBoard.guesses.map(g => evaluateGuess(currentBoard.solution, g));
   }, [currentBoard]);
 
-  // Detect board failure → trigger Letter Blackout
-  // Uses a ref to track whether we've already triggered for this failure,
-  // so the effect doesn't depend on letterStates (which would cause cleanup/restart).
-  const blackoutTriggeredRef = useRef(false);
-
+  // Check for stage completion. Stage failure (any board LOST) is handled
+  // by the reducer, which flips state.status to LOST — the game-over
+  // effect below picks that up and shows GauntletResults. The previous
+  // implementation kept a Letter Blackout second-chance mechanic here;
+  // that was a VS-style catch-up and didn't belong in solo play.
   useEffect(() => {
     if (state.status !== GameStatus.PLAYING) return;
-    if (blackoutTriggeredRef.current) return; // Already handling a blackout
 
-    const failedIndex = state.boards.findIndex(b => b.status === GameStatus.LOST);
-    if (failedIndex === -1) return;
-
-    // Mark as triggered so re-renders don't restart timers
-    blackoutTriggeredRef.current = true;
-
-    // Start blackout
-    const letters = pickBlackoutLetters(letterStates, BLACKOUT_LETTER_COUNT);
-    setBlackedOutLetters(new Set(letters));
-    setBlackoutBoardIndex(failedIndex);
-    setBlackoutTimeLeft(BLACKOUT_DURATION_MS / 1000);
-    setCurrentGuess('');
-    setMessage('LETTER BLACKOUT! Board restarting...');
-
-    // Countdown timer (visual)
-    const countdownId = setInterval(() => {
-      setBlackoutTimeLeft(prev => {
-        if (prev <= 1) return 0;
-        return prev - 1;
-      });
-    }, 1000);
-    blackoutCountdownRef.current = countdownId;
-
-    // Main blackout timer — restart board after duration
-    const timerId = setTimeout(() => {
-      clearInterval(countdownId);
-      dispatch({ type: 'BLACKOUT_RESTART', boardIndex: failedIndex });
-      setBlackedOutLetters(new Set());
-      setBlackoutBoardIndex(null);
-      setBlackoutTimeLeft(0);
-      setMessage('');
-      blackoutTriggeredRef.current = false;
-    }, BLACKOUT_DURATION_MS);
-    blackoutTimerRef.current = timerId;
-
-    return () => {
-      clearTimeout(timerId);
-      clearInterval(countdownId);
-      blackoutTriggeredRef.current = false;
-    };
-  }, [state.boards, state.status]);
-
-  // Check for stage completion
-  useEffect(() => {
-    if (state.status !== GameStatus.PLAYING) return;
-    if (isInBlackout) return;
-
-    const allBoardsDone = state.boards.every(b => b.status !== GameStatus.PLAYING);
     const allBoardsWon = state.boards.every(b => b.status === GameStatus.WON);
 
-    if (allBoardsDone && allBoardsWon) {
+    if (allBoardsWon) {
       setShowTransition(true);
     }
-  }, [state.boards, state.status, isInBlackout]);
+  }, [state.boards, state.status]);
 
   // Check for game over. Suppressed when the session was restored as already
   // completed — we don't want to replay animations or re-record a win the user
@@ -262,10 +189,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
 
   const handleKey = useCallback((key: string) => {
     if (state.status !== GameStatus.PLAYING) return;
-    if (showTransition || isInBlackout) return;
-
-    // Block blacked-out letters
-    if (blackedOutLetters.has(key)) return;
+    if (showTransition) return;
 
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
@@ -306,7 +230,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
       setCurrentGuess(prev => prev + key);
     }
-  }, [state, currentGuess, showTransition, isSingleBoard, isInBlackout, blackedOutLetters]);
+  }, [state, currentGuess, showTransition, isSingleBoard]);
 
   // Keyboard event listener
   useEffect(() => {
@@ -348,17 +272,11 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     setShowTransition(false);
     setShowVictory(false);
     setShowResults(false);
-    setBlackedOutLetters(new Set());
-    setBlackoutBoardIndex(null);
-    setBlackoutTimeLeft(0);
     resetTimer(0);
-    blackoutTriggeredRef.current = false;
     // Re-enable the game-over effect for this fresh run. The ref was set on
     // mount if the session was already completed; clearing it here lets
     // VictoryAnimation / stat-recording fire normally when the new run ends.
     isRestoredCompletedRef.current = false;
-    if (blackoutTimerRef.current) clearTimeout(blackoutTimerRef.current);
-    if (blackoutCountdownRef.current) clearInterval(blackoutCountdownRef.current);
   }, []);
 
   const handleHome = useCallback(() => {
@@ -432,13 +350,13 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         <div className="flex flex-col items-center gap-1 w-full h-full justify-center">
           <Board
             guesses={board.guesses}
-            currentGuess={isInBlackout ? '' : currentGuess}
+            currentGuess={currentGuess}
             maxGuesses={board.maxGuesses}
             evaluations={evaluations}
             solution={board.solution}
             showSolution={board.status === GameStatus.LOST}
             darkMode
-            isInvalidWord={!isInBlackout && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
+            isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
           />
         </div>
       );
@@ -455,8 +373,8 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
               isCompleted={board.status === GameStatus.WON}
               isFailed={board.status === GameStatus.LOST}
               isLocked={idx !== sequenceActiveBoardIndex && board.status === GameStatus.PLAYING}
-              currentGuess={idx === sequenceActiveBoardIndex && !isInBlackout ? currentGuess : ''}
-              isInvalidWord={idx === sequenceActiveBoardIndex && !isInBlackout && currentGuess.length === 5 && !isValidWord(currentGuess)}
+              currentGuess={idx === sequenceActiveBoardIndex ? currentGuess : ''}
+              isInvalidWord={idx === sequenceActiveBoardIndex && currentGuess.length === 5 && !isValidWord(currentGuess)}
             />
           ))}
         </div>
@@ -465,8 +383,8 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       return (
         <MultiBoard
           boards={state.boards}
-          currentGuess={isInBlackout ? '' : currentGuess}
-          isInvalidWord={!isInBlackout && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
+          currentGuess={currentGuess}
+          isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
       );
     }
@@ -514,16 +432,11 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             style={{ top: '140px' }}
           >
             <span className={`backdrop-blur-sm font-bold px-4 py-2 rounded-lg text-sm shadow-lg ${
-              isInBlackout
-                ? 'bg-red-500/30 text-red-200 border border-red-400/40'
-                : showStolenGuess
-                  ? 'bg-orange-500/30 text-orange-200 border border-orange-400/40'
-                  : 'bg-gray-800 text-white'
+              showStolenGuess
+                ? 'bg-orange-500/30 text-orange-200 border border-orange-400/40'
+                : 'bg-gray-800 text-white'
             }`}>
               {message}
-              {isInBlackout && blackoutTimeLeft > 0 && (
-                <span className="ml-2 font-mono">{blackoutTimeLeft}s</span>
-              )}
             </span>
           </motion.div>
         )}
@@ -541,35 +454,6 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         )}
       </AnimatePresence>
 
-      {/* Blackout Screen Overlay */}
-      <AnimatePresence>
-        {isInBlackout && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"
-          >
-            <div className="absolute inset-0 bg-black/40 animate-pulse" />
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="relative z-10"
-            >
-              <div className="text-center space-y-3">
-                <div className="text-9xl font-black text-red-400 drop-shadow-[0_0_30px_rgba(248,113,113,0.6)] animate-pulse">
-                  {blackoutTimeLeft}
-                </div>
-                <div className="text-red-300 text-lg font-bold uppercase tracking-widest">
-                  Letters Blacked Out
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Game Area */}
       <div className={`flex-1 min-h-0 px-1 pb-1 ${isSingleBoard ? 'flex items-center justify-center' : ''}`}>
         {renderGameArea()}
@@ -583,7 +467,6 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             onKey={handleKey}
             letterStates={letterStates}
             boardLetterStates={boardLetterStates}
-            blackedOutLetters={blackedOutLetters.size > 0 ? blackedOutLetters : undefined}
           />
         </div>
       )}

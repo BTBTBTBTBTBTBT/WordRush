@@ -1,4 +1,4 @@
-import { GameState, GameAction, GameMode, GameStatus, BoardState, GauntletStageConfig, GAUNTLET_STAGES, GAUNTLET_TOTAL_SOLUTIONS } from './types';
+import { GameState, GameAction, GameMode, GameStatus, BoardState, GauntletStageConfig, GauntletStageResult, GAUNTLET_STAGES, GAUNTLET_TOTAL_SOLUTIONS } from './types';
 import { generateSolutionsFromSeed } from './seed';
 import { evaluateGuess } from './evaluator';
 import { isValidWord, getAllowedWords } from './dictionary';
@@ -182,9 +182,41 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           gameStatus = anyWon ? GameStatus.WON : GameStatus.LOST;
         }
       } else if (state.mode === GameMode.GAUNTLET && state.gauntlet) {
-        // In gauntlet mode, losing a board triggers Letter Blackout instead of game over.
-        // The board stays LOST — the UI detects it, shows blackout, then dispatches BLACKOUT_RESTART.
-        // Game status stays PLAYING until all boards are WON (stage complete) or the game is abandoned.
+        // A failed board ends the run immediately — same semantics as
+        // every other solo mode: you ran out of guesses on a stage, you
+        // are done. The previous version of this branch kept the game
+        // PLAYING and let the UI trigger a Letter Blackout second-chance
+        // mechanic, but that was a VS-style catch-up that didn't belong
+        // in single-player and was reported as a bug (losing OctoWord
+        // in the daily gauntlet would silently restart the failed board
+        // instead of ending the run). VS Gauntlet still routes loss
+        // accounting through state.status === LOST downstream, so it
+        // picks up the new timing without any VS-specific wiring.
+        const anyLost = newBoards.some(b => b.status === GameStatus.LOST);
+        if (anyLost) {
+          // Push the failed stage into stageResults so GauntletResults
+          // renders a red "failed here" row for the stage that killed
+          // the run. NEXT_STAGE only appends on successful completion,
+          // so without this the failed stage would be invisible in the
+          // per-stage breakdown.
+          const stageGuesses = newBoards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
+          const stageTimeMs = Date.now() - state.gauntlet.stageStartTime;
+          const failedStageResult: GauntletStageResult = {
+            stageIndex: state.gauntlet.currentStage,
+            status: GameStatus.LOST,
+            guesses: stageGuesses,
+            timeMs: stageTimeMs,
+          };
+          return {
+            ...state,
+            boards: newBoards,
+            status: GameStatus.LOST,
+            gauntlet: {
+              ...state.gauntlet,
+              stageResults: [...state.gauntlet.stageResults, failedStageResult],
+            },
+          };
+        }
       } else if (state.mode === GameMode.QUORDLE || state.mode === GameMode.OCTORDLE || state.mode === GameMode.SEQUENCE) {
         // All these modes: every guess goes to all boards, win when all solved, lose when out of guesses
         const allComplete = newBoards.every(b => b.status !== GameStatus.PLAYING);
