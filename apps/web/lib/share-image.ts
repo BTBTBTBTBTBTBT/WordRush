@@ -225,17 +225,25 @@ function drawBoardCard(
   const borderWidth = won === null ? 0 : 3;
 
   const gap = 4;
-  // Inter-word gap for ProperNoundle multi-word answers. Ratio mirrors
-  // the in-game NoundleBoard which uses `gap-3` between word groups and
-  // `gap-1` between tiles (12px vs 4px = 3×). Anything ≤ 1 group means
-  // "single uniform row" and the path collapses back to the original
-  // evenly-spaced layout for every non-ProperNoundle caller.
   const groups = wordGroups && wordGroups.length > 1 ? wordGroups : null;
-  const groupGap = gap * 3;
-  const extraGroupWidth = groups ? (groups.length - 1) * (groupGap - gap) : 0;
 
   const innerMaxW = maxWidth - cardPad * 2 - borderWidth * 2;
   const innerMaxH = maxHeight - cardPad * 2 - borderWidth * 2;
+
+  // ProperNoundle multi-word answers need a *visible* break between
+  // first and last name, not a token one. Earlier this was hard-coded
+  // to `gap * 3` (12px), which on a 1080×1080 canvas with ~80px tiles
+  // looked identical to the normal 4px inter-tile gap. Scale the group
+  // gap to roughly half a tile so it reads as a space at the canvas's
+  // output resolution. Two-pass: compute tile size once assuming
+  // uniform spacing, derive group gap from that, then recompute tile
+  // size with the group gaps baked in.
+  const tile1FromW = (innerMaxW - gap * (cols - 1)) / cols;
+  const tile1FromH = (innerMaxH - gap * (rows - 1)) / rows;
+  const tile1 = Math.floor(Math.min(tile1FromW, tile1FromH));
+  const groupGap = groups ? Math.max(gap * 3, Math.round(tile1 * 0.55)) : gap;
+  const extraGroupWidth = groups ? (groups.length - 1) * (groupGap - gap) : 0;
+
   const tileFromWidth = (innerMaxW - gap * (cols - 1) - extraGroupWidth) / cols;
   const tileFromHeight = (innerMaxH - gap * (rows - 1)) / rows;
   const tile = Math.floor(Math.min(tileFromWidth, tileFromHeight));
