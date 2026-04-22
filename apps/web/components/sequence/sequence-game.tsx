@@ -203,7 +203,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   const handleShare = useCallback(async () => {
-    const grids = state.boards.map(b => boardToGrid(b));
+    const boards = state.boards.map(b => ({ grid: boardToGrid(b), won: b.status === GameStatus.WON }));
     const out = await shareResult({
       layout: 'multi',
       mode: 'Succession',
@@ -211,7 +211,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       guesses: guessesUsed,
       maxGuesses,
       timeSeconds: elapsedTime,
-      grids,
+      boards,
       boardsSolved: solvedCount,
       totalBoards: 4,
     });

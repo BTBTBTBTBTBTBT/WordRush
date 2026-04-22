@@ -41,10 +41,17 @@ export interface ShareSingleInput extends ShareBase {
   category?: string;
 }
 
+export interface ShareMultiBoard {
+  grid: TileStateString[][];
+  /** Whether this specific board was solved — drives its green/red border + tint. */
+  won: boolean;
+}
+
 export interface ShareMultiInput extends ShareBase {
   layout: 'multi';
-  /** Array of per-board grids. Each grid is rows × columns of tile states. */
-  grids: TileStateString[][][];
+  /** Per-board tile grids plus each board's win/loss — mirrors the in-app
+   *  finished-screen treatment where each board has its own colored border. */
+  boards: ShareMultiBoard[];
   boardsSolved: number;
   totalBoards: number;
 }
@@ -97,6 +104,11 @@ const WIN_BG = '#dcfce7';
 const WIN_FG = '#16a34a';
 const LOSS_BG = '#fee2e2';
 const LOSS_FG = '#dc2626';
+
+// Softer tint used behind a board's tile grid so the colored border has a
+// subtle fill to match the in-app finished screen.
+const BOARD_WIN_TINT = '#f0fdf4'; // green-50
+const BOARD_LOSS_TINT = '#fef2f2'; // red-50
 
 // ──────────────────────────────────────────────────────────────────────────
 // Helpers — BoardState → normalized grid
@@ -170,27 +182,54 @@ function drawTile(
   }
 }
 
-function drawTileGrid(
+/**
+ * Paint a board: optional colored "card" (tinted background + thick border)
+ * matching the in-app finished-screen treatment, then the tile grid inside.
+ * When `won` is null the card is omitted — used for single-board layouts that
+ * rely on the header Win/Loss pill instead.
+ */
+function drawBoardCard(
   ctx: CanvasRenderingContext2D,
   grid: TileStateString[][],
   centerX: number,
   centerY: number,
   maxWidth: number,
   maxHeight: number,
+  won: boolean | null,
 ): void {
   if (!grid.length) return;
   const rows = grid.length;
   const cols = grid[0]?.length ?? 0;
   if (!cols) return;
+
+  const cardPad = won === null ? 0 : 12;
+  const borderWidth = won === null ? 0 : 3;
+
   const gap = 4;
-  const tileFromWidth = (maxWidth - gap * (cols - 1)) / cols;
-  const tileFromHeight = (maxHeight - gap * (rows - 1)) / rows;
+  const innerMaxW = maxWidth - cardPad * 2 - borderWidth * 2;
+  const innerMaxH = maxHeight - cardPad * 2 - borderWidth * 2;
+  const tileFromWidth = (innerMaxW - gap * (cols - 1)) / cols;
+  const tileFromHeight = (innerMaxH - gap * (rows - 1)) / rows;
   const tile = Math.floor(Math.min(tileFromWidth, tileFromHeight));
   const totalW = cols * tile + gap * (cols - 1);
   const totalH = rows * tile + gap * (rows - 1);
+
+  if (won !== null) {
+    // Colored card behind the tile grid — matches in-app finished board look.
+    const cardW = totalW + cardPad * 2;
+    const cardH = totalH + cardPad * 2;
+    const cardX = centerX - cardW / 2;
+    const cardY = centerY - cardH / 2;
+    drawRoundRect(ctx, cardX, cardY, cardW, cardH, 18);
+    ctx.fillStyle = won ? BOARD_WIN_TINT : BOARD_LOSS_TINT;
+    ctx.fill();
+    ctx.strokeStyle = won ? WIN_FG : LOSS_FG;
+    ctx.lineWidth = borderWidth;
+    ctx.stroke();
+  }
+
   const x0 = centerX - totalW / 2;
   const y0 = centerY - totalH / 2;
-
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       drawTile(ctx, x0 + c * (tile + gap), y0 + r * (tile + gap), tile, grid[r][c]);
@@ -378,7 +417,9 @@ function drawSingle(
   const centerY = headerBottom + areaHeight / 2;
   const maxWidth = width - 160;
   const maxHeight = areaHeight - 80;
-  drawTileGrid(ctx, input.grid, centerX, centerY, maxWidth, maxHeight);
+  // Single-board modes: card matches the header Win/Loss pill so the border
+  // echoes the result in the body too — same treatment as multi-board.
+  drawBoardCard(ctx, input.grid, centerX, centerY, maxWidth, maxHeight, input.won);
 }
 
 function drawMulti(
@@ -388,23 +429,25 @@ function drawMulti(
   headerBottom: number,
   footerTop: number,
 ): void {
-  const n = input.grids.length;
-  // Quordle / Succession / Deliverance = 4 boards → 2×2. Octordle = 8 → 2×4.
+  const n = input.boards.length;
+  // Match the in-app finished-screen arrangement:
+  //   4 boards → 2 cols × 2 rows (Quordle / Succession / Deliverance)
+  //   8 boards → 4 cols × 2 rows (Octordle)
   let cols: number;
   let rows: number;
   if (n <= 4) {
     cols = 2;
     rows = 2;
   } else {
-    cols = 2;
-    rows = 4;
+    cols = 4;
+    rows = 2;
   }
 
-  const horizontalPad = 100;
-  const verticalPad = 40;
+  const horizontalPad = 60;
+  const verticalPad = 32;
   const areaWidth = width - horizontalPad * 2;
   const areaHeight = footerTop - headerBottom - verticalPad * 2;
-  const gap = 24;
+  const gap = 16;
   const cellW = (areaWidth - gap * (cols - 1)) / cols;
   const cellH = (areaHeight - gap * (rows - 1)) / rows;
 
@@ -413,7 +456,8 @@ function drawMulti(
     const row = Math.floor(i / cols);
     const cellCenterX = horizontalPad + col * (cellW + gap) + cellW / 2;
     const cellCenterY = headerBottom + verticalPad + row * (cellH + gap) + cellH / 2;
-    drawTileGrid(ctx, input.grids[i], cellCenterX, cellCenterY, cellW, cellH);
+    const board = input.boards[i];
+    drawBoardCard(ctx, board.grid, cellCenterX, cellCenterY, cellW, cellH, board.won);
   }
 }
 

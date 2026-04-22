@@ -130,7 +130,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   const handleShare = useCallback(async () => {
-    const grids = state.boards.map(b => boardToGrid(b));
+    const boards = state.boards.map(b => ({ grid: boardToGrid(b), won: b.status === 'WON' }));
     const out = await shareResult({
       layout: 'multi',
       mode: 'Deliverance',
@@ -138,7 +138,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
       guesses: guessesUsed,
       maxGuesses: maxGuesses,
       timeSeconds: elapsedTime,
-      grids,
+      boards,
       boardsSolved: completedBoards,
       totalBoards: 4,
     });

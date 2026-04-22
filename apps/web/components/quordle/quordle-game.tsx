@@ -128,8 +128,8 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
 
   const handleShare = useCallback(async () => {
-    const grids = state.boards.map(b => boardToGrid(b));
-    const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
+    const boards = state.boards.map(b => ({ grid: boardToGrid(b), won: b.status === 'WON' }));
+    const boardsSolved = boards.filter(b => b.won).length;
     const out = await shareResult({
       layout: 'multi',
       mode: 'QuadWord',
@@ -137,7 +137,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
       guesses: totalGuesses,
       maxGuesses: state.boards[0]?.maxGuesses || 9,
       timeSeconds: elapsedTime,
-      grids,
+      boards,
       boardsSolved,
       totalBoards: 4,
     });
