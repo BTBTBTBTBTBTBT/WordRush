@@ -168,6 +168,46 @@ export function loadGameSession(mode: GameMode, isDaily: boolean): RestoredSessi
       };
     }
 
+    // Retroactive boardsSnapshot backfill for Gauntlet saves that
+    // completed before the snapshot landed on GauntletStageResult. The
+    // failed stage's boards are still sitting in state.boards — on a
+    // LOST Gauntlet we never fire NEXT_STAGE, so restoredState.boards
+    // still matches the stage that ended the run. Patch those onto the
+    // last stage result so its Review row becomes tappable without
+    // requiring the player to start a fresh run to see the feature.
+    // Stages the player had already cleared were replaced by
+    // NEXT_STAGE's next-stage boards under the old reducer and can't
+    // be reconstructed; those rows stay non-tappable on legacy saves.
+    if (
+      restoredState.mode === GameMode.GAUNTLET &&
+      restoredState.gauntlet &&
+      restoredState.status === GameStatus.LOST &&
+      restoredState.gauntlet.stageResults.length > 0
+    ) {
+      const idx = restoredState.gauntlet.stageResults.length - 1;
+      const last = restoredState.gauntlet.stageResults[idx];
+      if (
+        last.status === GameStatus.LOST &&
+        !last.boardsSnapshot?.length &&
+        restoredState.boards.length > 0
+      ) {
+        const patchedStageResults = [...restoredState.gauntlet.stageResults];
+        patchedStageResults[idx] = { ...last, boardsSnapshot: restoredState.boards };
+        return {
+          seed: parsed.seed,
+          state: {
+            ...restoredState,
+            gauntlet: {
+              ...restoredState.gauntlet,
+              stageResults: patchedStageResults,
+            },
+          },
+          elapsedTime: parsed.elapsedTime,
+          isCompleted: parsed.state.status !== GameStatus.PLAYING,
+        };
+      }
+    }
+
     return {
       seed: parsed.seed,
       state: parsed.state,
