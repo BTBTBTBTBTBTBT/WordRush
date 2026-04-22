@@ -206,6 +206,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
             status: GameStatus.LOST,
             guesses: stageGuesses,
             timeMs: stageTimeMs,
+            // Freeze the losing boards so GauntletResults can show the
+            // player exactly which puzzle(s) ended the run, plus their
+            // solutions. Without this the player dropped straight from
+            // the game into the results screen with no way to review
+            // where they went wrong.
+            boardsSnapshot: newBoards,
           };
           return {
             ...state,
@@ -289,11 +295,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Every guess is dispatched to all PLAYING boards simultaneously, so the
       // board that took the longest to solve always holds every guess typed
       // during this stage. Using sum would multi-count each guess per board.
-      const stageResult = {
+      const stageResult: GauntletStageResult = {
         stageIndex: gauntlet.currentStage,
         status: GameStatus.WON,
         guesses: state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0),
-        timeMs: stageTimeMs
+        timeMs: stageTimeMs,
+        // Capture the cleared boards before NEXT_STAGE replaces
+        // state.boards with the next stage's fresh set. GauntletResults
+        // uses this to power the "Review" modal per stage.
+        boardsSnapshot: state.boards,
       };
 
       const newStageResults = [...gauntlet.stageResults, stageResult];

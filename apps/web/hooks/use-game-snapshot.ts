@@ -151,6 +151,11 @@ export function loadGameSession(mode: GameMode, isDaily: boolean): RestoredSessi
                   status: GameStatus.LOST,
                   guesses: stageGuesses,
                   timeMs: stageTimeMs,
+                  // Capture the failed stage's final boards so the
+                  // GauntletResults Review modal can show where the run
+                  // ended. Same treatment the live reducer now applies;
+                  // this keeps salvaged sessions on parity.
+                  boardsSnapshot: restoredState.boards,
                 },
               ],
         },

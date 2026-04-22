@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, BarChart3, Zap, Timer, Share2 } from 'lucide-react';
-import { GameStatus, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, BarChart3, Zap, Timer, Share2, Eye, X, ChevronRight } from 'lucide-react';
+import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletStageResult, TileState } from '@wordle-duel/core';
 import { Button } from '@/components/ui/button';
 import { GauntletStats, getGauntletStats, recordGauntletGame } from '@/lib/gauntlet-stats';
 import { shareResult } from '@/lib/share-utils';
@@ -37,6 +37,13 @@ export function GauntletResults({
   const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
   const stagesCompleted = stageResults.filter(r => r.status === GameStatus.WON).length;
   const [copied, setCopied] = useState(false);
+  // Stage index currently being reviewed in the modal — null = closed.
+  // Drives the "Review" modal that surfaces each stage's final board
+  // state so a losing player can see exactly what word(s) they missed,
+  // and a winning player can re-check the answers.
+  const [reviewStageIndex, setReviewStageIndex] = useState<number | null>(null);
+  const reviewStage = reviewStageIndex !== null ? stages[reviewStageIndex] : null;
+  const reviewResult = reviewStageIndex !== null ? stageResults.find(r => r.stageIndex === reviewStageIndex) : null;
 
   const handleShare = useCallback(async () => {
     // Map each stage config to a stageResult if one exists; stages the
@@ -161,21 +168,14 @@ export function GauntletResults({
             const result = stageResults.find(r => r.stageIndex === i);
             const isCompleted = result?.status === GameStatus.WON;
             const isFailed = result?.status === GameStatus.LOST;
+            // Only offer Review when we actually captured the final
+            // boards. Older saved sessions that completed before the
+            // snapshot landed still show the summary row; the chevron
+            // just disappears for those.
+            const canReview = !!result?.boardsSnapshot?.length;
 
-            return (
-              <motion.div
-                key={i}
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.9 + i * 0.1 }}
-                className={`flex items-center justify-between p-3 rounded-lg ${
-                  isCompleted
-                    ? 'bg-green-500/10 border border-green-400/20'
-                    : isFailed
-                      ? 'bg-red-500/10 border border-red-400/20'
-                      : 'bg-gray-50 border border-white/5'
-                }`}
-              >
+            const rowContent = (
+              <>
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                     isCompleted ? 'bg-green-500/30 text-green-600' :
@@ -192,7 +192,7 @@ export function GauntletResults({
                     {stage.name}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-3 text-sm">
                   {result ? (
                     <>
                       <span className="text-gray-400">
@@ -205,7 +205,47 @@ export function GauntletResults({
                   ) : (
                     <span className="text-gray-300">—</span>
                   )}
+                  {canReview && (
+                    <ChevronRight
+                      className={`w-4 h-4 shrink-0 ${
+                        isCompleted ? 'text-green-500/70' :
+                        isFailed ? 'text-red-400/70' :
+                        'text-gray-300'
+                      }`}
+                      aria-hidden
+                    />
+                  )}
                 </div>
+              </>
+            );
+
+            const className = `flex items-center justify-between p-3 rounded-lg w-full text-left transition-colors ${
+              isCompleted
+                ? 'bg-green-500/10 border border-green-400/20' + (canReview ? ' hover:bg-green-500/20 active:bg-green-500/20' : '')
+                : isFailed
+                  ? 'bg-red-500/10 border border-red-400/20' + (canReview ? ' hover:bg-red-500/20 active:bg-red-500/20' : '')
+                  : 'bg-gray-50 border border-white/5'
+            }`;
+
+            return (
+              <motion.div
+                key={i}
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.9 + i * 0.1 }}
+              >
+                {canReview ? (
+                  <button
+                    type="button"
+                    onClick={() => setReviewStageIndex(i)}
+                    className={className}
+                    aria-label={`Review ${stage.name}`}
+                  >
+                    {rowContent}
+                  </button>
+                ) : (
+                  <div className={className}>{rowContent}</div>
+                )}
               </motion.div>
             );
           })}
@@ -292,6 +332,182 @@ export function GauntletResults({
           </Button>
         </motion.div>
       </motion.div>
+
+      <AnimatePresence>
+        {reviewStage && reviewResult?.boardsSnapshot?.length && (
+          <StageReviewModal
+            stage={reviewStage}
+            result={reviewResult}
+            onClose={() => setReviewStageIndex(null)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Stage review modal — renders the stage's final boards so a losing
+// player can see which puzzle(s) ended the run plus the revealed
+// solution(s). The in-app boards and MultiBoard live in a tree wired to
+// the *active* game state; this component is a lightweight static
+// renderer that reads directly from the snapshot captured by the reducer
+// when the stage ended.
+// ────────────────────────────────────────────────────────────────────────
+
+function StageReviewModal({
+  stage,
+  result,
+  onClose,
+}: {
+  stage: GauntletStageConfig;
+  result: GauntletStageResult;
+  onClose: () => void;
+}) {
+  const boards = result.boardsSnapshot ?? [];
+  const won = result.status === GameStatus.WON;
+  const n = boards.length;
+  // Match the in-app multi-board layout: 1 board centered, 2–4 boards
+  // in a 2-col grid, 8 boards in a 4-col grid. Keeps the Review visually
+  // consistent with how the player saw the stage during play.
+  const gridCols = n === 1 ? 'grid-cols-1' : n <= 4 ? 'grid-cols-2' : 'grid-cols-4';
+  const solutionsLabel = boards.length === 1 ? 'Answer' : 'Answers';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4 overflow-y-auto"
+      style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.92, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+        onClick={(e) => e.stopPropagation()}
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3 right-3 p-1.5 rounded-full transition-colors hover:bg-gray-100 text-gray-400"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="flex items-center gap-2 mb-1">
+          <Eye className="w-4 h-4 text-gray-400" />
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            Stage {stage.stageIndex + 1}
+          </span>
+        </div>
+        <h2 className={`text-2xl font-black mb-1 ${won ? 'text-green-600' : 'text-red-400'}`}>
+          {stage.name}
+        </h2>
+        <div className="text-xs font-bold text-gray-500 mb-4">
+          {won ? 'Cleared' : 'Failed'} · {result.guesses} guess{result.guesses !== 1 ? 'es' : ''} · {formatTime(result.timeMs)}
+        </div>
+
+        {/* Solutions reveal — the whole point of this modal: show the
+            words so a losing player immediately sees what they missed. */}
+        <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mb-4">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+            {solutionsLabel}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {boards.map((b, i) => (
+              <span
+                key={i}
+                className={`text-xs font-black px-2 py-0.5 rounded ${
+                  b.status === GameStatus.WON
+                    ? 'bg-green-100 text-green-700'
+                    : b.status === GameStatus.LOST
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-gray-200 text-gray-700'
+                }`}
+              >
+                {b.solution.toUpperCase()}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Final board state — mirrors MiniBoard's tile rendering so the
+            review looks like a paused version of the in-app stage view. */}
+        <div className={`grid ${gridCols} gap-2`}>
+          {boards.map((board, i) => (
+            <StageReviewBoard key={i} board={board} />
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+const REVIEW_TILE_CLASS: Record<TileState, string> = {
+  [TileState.CORRECT]: 'bg-green-500 border-green-500 text-white',
+  [TileState.PRESENT]: 'bg-yellow-500 border-yellow-500 text-white',
+  [TileState.ABSENT]: 'bg-gray-400 border-gray-400 text-white',
+  [TileState.EMPTY]: 'bg-white border-gray-300 text-gray-800',
+};
+
+function StageReviewBoard({ board }: { board: BoardState }) {
+  const prefills = board.prefilledGuesses ?? [];
+  const prefillCount = prefills.length;
+  const totalRows = prefillCount + board.maxGuesses;
+  const width = board.solution.length;
+  const won = board.status === GameStatus.WON;
+  const lost = board.status === GameStatus.LOST;
+
+  // Pad an empty row for any slot the player never filled, so boards at
+  // the same stage render at a consistent height regardless of how far
+  // each individual board got (mirrors boardToGrid's pad logic used by
+  // the share image).
+  const rows: Array<{ kind: 'prefill' | 'guess' | 'empty'; tiles: Array<{ letter: string; state: TileState }> }> = [];
+  for (const p of prefills) {
+    rows.push({ kind: 'prefill', tiles: p.evaluation.tiles.map(t => ({ letter: t.letter, state: t.state })) });
+  }
+  for (const guess of board.guesses) {
+    const ev = evaluateGuess(board.solution, guess);
+    rows.push({ kind: 'guess', tiles: ev.tiles.map(t => ({ letter: t.letter, state: t.state })) });
+  }
+  while (rows.length < totalRows) {
+    rows.push({
+      kind: 'empty',
+      tiles: Array.from({ length: width }, () => ({ letter: '', state: TileState.EMPTY })),
+    });
+  }
+
+  return (
+    <div
+      className={`p-1.5 rounded-lg border-2 ${
+        won ? 'border-green-400 bg-green-50' :
+        lost ? 'border-red-400 bg-red-50' :
+        'border-gray-200 bg-white'
+      }`}
+    >
+      <div className="flex flex-col gap-[2px]">
+        {rows.map((row, rIdx) => (
+          <div
+            key={rIdx}
+            className={`grid gap-[2px] ${row.kind === 'prefill' ? 'opacity-75' : ''}`}
+            style={{ gridTemplateColumns: `repeat(${width}, 1fr)` }}
+          >
+            {row.tiles.map((t, tIdx) => (
+              <div
+                key={tIdx}
+                className={`aspect-square flex items-center justify-center rounded border text-[10px] sm:text-xs font-bold ${REVIEW_TILE_CLASS[t.state]}`}
+              >
+                {t.letter ? t.letter.toUpperCase() : ''}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

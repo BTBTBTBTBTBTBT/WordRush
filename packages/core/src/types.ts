@@ -62,6 +62,18 @@ export interface GauntletStageResult {
   status: GameStatus;
   guesses: number;
   timeMs: number;
+  /**
+   * Snapshot of the stage's final board state (solutions + guesses +
+   * prefilled rows + per-board status). Captured by the reducer when a
+   * stage ends — via NEXT_STAGE on a win, or alongside the failed-stage
+   * push on a loss. Powers the "Review this stage" modal on the Gauntlet
+   * results screen so the player can see exactly how the run ended on the
+   * stage that killed them (or re-inspect a stage they cleared). Optional
+   * because older saved sessions and legacy server-persisted stage
+   * results predate it — absence just disables the Review affordance for
+   * that row.
+   */
+  boardsSnapshot?: BoardState[];
 }
 
 export interface GauntletProgress {
