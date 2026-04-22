@@ -143,7 +143,7 @@ export function SharePreviewHost() {
                 }}
               >
                 {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'Caption copied' : 'Copy caption'}
+                {copied ? 'Link copied' : 'Copy link'}
               </button>
             </div>
           </motion.div>

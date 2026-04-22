@@ -26,44 +26,18 @@ export function generateEmojiGrid(evaluations: TileStateString[][]): string {
 }
 
 /**
- * Short caption text for the image share (prefilled into Web Share sheet
- * or written alongside the image on the clipboard). Also serves as the
- * final text-only fallback when neither Web Share nor clipboard-image
- * writes are available. Deliberately compact so it renders cleanly in
- * iMessage/Twitter link previews even before the image loads.
+ * Caption text attached to the image share. Deliberately just the site
+ * URL — the image itself already shows the mode, stats, date, and
+ * Win/Loss pill, so duplicating that information in the text body just
+ * produced a second message bubble on top of the image in iMessage,
+ * Messenger, etc. Leaving a bare URL lets the recipient's client
+ * auto-expand it into a clean link-preview card without adding any
+ * noise of its own. Also serves as the text-only fallback when neither
+ * Web Share nor clipboard-image writes are available — the recipient
+ * still gets a tappable route back to Wordocious.
  */
-export function buildShareCaption(opts: {
-  mode: string;
-  won: boolean;
-  guesses: number;
-  maxGuesses: number;
-  timeSeconds: number;
-  boardsSolved?: number;
-  totalBoards?: number;
-  stagesCompleted?: number;
-  totalStages?: number;
-  date?: Date;
-}): string {
-  const { mode, won, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, stagesCompleted, totalStages, date } = opts;
-  const mins = Math.floor(timeSeconds / 60);
-  const secs = timeSeconds % 60;
-  const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-  const d = date ?? new Date();
-  const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const outcome = won ? 'Win' : 'Loss';
-
-  let statLine: string;
-  if (typeof stagesCompleted === 'number' && typeof totalStages === 'number') {
-    statLine = `${stagesCompleted}/${totalStages} stages in ${guesses} guesses · ${timeStr}`;
-  } else if (typeof boardsSolved === 'number' && typeof totalBoards === 'number' && totalBoards > 1) {
-    const g = won ? `${guesses}/${maxGuesses}` : `X/${maxGuesses}`;
-    statLine = `${boardsSolved}/${totalBoards} boards · ${g} guesses · ${timeStr}`;
-  } else {
-    const g = won ? `${guesses}/${maxGuesses}` : `X/${maxGuesses}`;
-    statLine = `${g} guesses · ${timeStr}`;
-  }
-
-  return `Wordocious ${mode} — ${outcome} · ${dateStr}\n${statLine}\n\nhttps://wordocious.com/daily`;
+export function buildShareCaption(): string {
+  return 'https://wordocious.com';
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -124,18 +98,7 @@ async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> 
 export async function shareResult(
   input: ShareImageInput,
 ): Promise<ShareResultOutcome> {
-  const caption = buildShareCaption({
-    mode: input.mode,
-    won: input.won,
-    guesses: input.guesses,
-    maxGuesses: input.maxGuesses,
-    timeSeconds: input.timeSeconds,
-    boardsSolved: input.layout === 'multi' ? input.boardsSolved : undefined,
-    totalBoards: input.layout === 'multi' ? input.totalBoards : undefined,
-    stagesCompleted: input.layout === 'gauntlet' ? input.stagesCompleted : undefined,
-    totalStages: input.layout === 'gauntlet' ? input.totalStages : undefined,
-    date: input.date,
-  });
+  const caption = buildShareCaption();
 
   let blob: Blob | null = null;
   try {
