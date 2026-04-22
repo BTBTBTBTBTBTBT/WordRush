@@ -413,12 +413,26 @@ function StageReviewModal({
         </div>
 
         {/* Solutions reveal — the whole point of this modal: show the
-            words so a losing player immediately sees what they missed. */}
+            words so a losing player immediately sees what they missed.
+            Layout mirrors the VictoryAnimation / GameOverAnimation
+            solutions grid used by the standalone multi-board modes:
+            4 boards → 2×2, 8 boards → 4×2, single board → centered.
+            Aligning the pill position to each board's slot in the
+            MiniBoard grid below makes it trivial to eyeball "this is
+            the board I failed" without reading the colors. */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 mb-4">
           <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
             {solutionsLabel}
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <div
+            className={
+              n === 1
+                ? 'flex justify-center'
+                : n <= 4
+                  ? 'grid grid-cols-2 gap-x-3 gap-y-1.5 justify-items-center'
+                  : 'grid grid-cols-4 gap-x-3 gap-y-1.5 justify-items-center'
+            }
+          >
             {boards.map((b, i) => (
               <span
                 key={i}
