@@ -39,6 +39,15 @@ export interface ShareSingleInput extends ShareBase {
   grid: TileStateString[][];
   /** Optional category pill (ProperNoundle only). */
   category?: string;
+  /**
+   * Letters-per-word for the puzzle answer. Only meaningful when the
+   * answer contains a space (e.g. "Kylian Mbappe" → [6, 6]) — used
+   * exclusively by ProperNoundle to insert a visible gap between first
+   * and last name in the share image, matching the in-game board. If
+   * absent or length ≤ 1 the tiles render as a single uniformly-spaced
+   * row, which is the right default for every other mode.
+   */
+  wordGroups?: number[];
 }
 
 export interface ShareMultiBoard {
@@ -205,6 +214,7 @@ function drawBoardCard(
   maxWidth: number,
   maxHeight: number,
   won: boolean | null,
+  wordGroups?: number[],
 ): void {
   if (!grid.length) return;
   const rows = grid.length;
@@ -215,12 +225,21 @@ function drawBoardCard(
   const borderWidth = won === null ? 0 : 3;
 
   const gap = 4;
+  // Inter-word gap for ProperNoundle multi-word answers. Ratio mirrors
+  // the in-game NoundleBoard which uses `gap-3` between word groups and
+  // `gap-1` between tiles (12px vs 4px = 3×). Anything ≤ 1 group means
+  // "single uniform row" and the path collapses back to the original
+  // evenly-spaced layout for every non-ProperNoundle caller.
+  const groups = wordGroups && wordGroups.length > 1 ? wordGroups : null;
+  const groupGap = gap * 3;
+  const extraGroupWidth = groups ? (groups.length - 1) * (groupGap - gap) : 0;
+
   const innerMaxW = maxWidth - cardPad * 2 - borderWidth * 2;
   const innerMaxH = maxHeight - cardPad * 2 - borderWidth * 2;
-  const tileFromWidth = (innerMaxW - gap * (cols - 1)) / cols;
+  const tileFromWidth = (innerMaxW - gap * (cols - 1) - extraGroupWidth) / cols;
   const tileFromHeight = (innerMaxH - gap * (rows - 1)) / rows;
   const tile = Math.floor(Math.min(tileFromWidth, tileFromHeight));
-  const totalW = cols * tile + gap * (cols - 1);
+  const totalW = cols * tile + gap * (cols - 1) + extraGroupWidth;
   const totalH = rows * tile + gap * (rows - 1);
 
   if (won !== null) {
@@ -237,11 +256,37 @@ function drawBoardCard(
     ctx.stroke();
   }
 
+  // Precompute per-column x offsets once. For grouped layouts, crossing
+  // a group boundary bumps the offset by `groupGap` instead of `gap`.
+  const xOffsets: number[] = new Array(cols);
+  if (groups) {
+    let colCursor = 0;
+    let x = 0;
+    for (let g = 0; g < groups.length; g++) {
+      const size = groups[g];
+      for (let i = 0; i < size && colCursor < cols; i++) {
+        xOffsets[colCursor] = x;
+        x += tile + gap;
+        colCursor++;
+      }
+      // Replace the last intra-group `gap` with the larger `groupGap`
+      // before starting the next group, unless this was the final group.
+      if (g < groups.length - 1) x += (groupGap - gap);
+    }
+    // Safety: if group sizes don't add up to cols (shouldn't happen),
+    // fill any remaining columns with uniform spacing so we don't crash.
+    for (; colCursor < cols; colCursor++) {
+      xOffsets[colCursor] = colCursor === 0 ? 0 : xOffsets[colCursor - 1] + tile + gap;
+    }
+  } else {
+    for (let c = 0; c < cols; c++) xOffsets[c] = c * (tile + gap);
+  }
+
   const x0 = centerX - totalW / 2;
   const y0 = centerY - totalH / 2;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      drawTile(ctx, x0 + c * (tile + gap), y0 + r * (tile + gap), tile, grid[r][c]);
+      drawTile(ctx, x0 + xOffsets[c], y0 + r * (tile + gap), tile, grid[r][c]);
     }
   }
 }
@@ -428,7 +473,9 @@ function drawSingle(
   const maxHeight = areaHeight - 80;
   // Single-board modes: card matches the header Win/Loss pill so the border
   // echoes the result in the body too — same treatment as multi-board.
-  drawBoardCard(ctx, input.grid, centerX, centerY, maxWidth, maxHeight, input.won);
+  // wordGroups is only populated for multi-word ProperNoundle answers; every
+  // other caller leaves it undefined and the tiles render uniformly spaced.
+  drawBoardCard(ctx, input.grid, centerX, centerY, maxWidth, maxHeight, input.won, input.wordGroups);
 }
 
 function drawMulti(

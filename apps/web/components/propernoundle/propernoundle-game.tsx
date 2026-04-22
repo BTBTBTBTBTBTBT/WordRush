@@ -580,6 +580,14 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
         Array(answerLen).fill('EMPTY' as const),
       ),
     ];
+    // Letters-per-word, matching the in-game NoundleBoard word-group
+    // rendering. For "Kylian Mbappe" → [6, 6], which the share image
+    // uses to insert a larger gap between the first and last name so
+    // the tiles read as two words instead of one 12-letter smush.
+    const wordGroups = puzzle.answer
+      .split(/\s+/)
+      .map(w => normalizeString(w).length)
+      .filter(n => n > 0);
     const categoryLabel = puzzle.themeCategory
       ? CATEGORY_LABELS[puzzle.themeCategory] || puzzle.themeCategory
       : undefined;
@@ -592,6 +600,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       timeSeconds: elapsedTime,
       grid,
       category: categoryLabel,
+      wordGroups: wordGroups.length > 1 ? wordGroups : undefined,
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [puzzle, guesses, gameStatus, elapsedTime]);
