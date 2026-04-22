@@ -51,11 +51,20 @@ export function GauntletResults({
     // image so they visually distinguish from the cleared ones).
     const stagesForImage = stages.map((stage, i) => {
       const result = stageResults.find(r => r.stageIndex === i);
+      // A cleared stage trivially solved every board. A failed stage
+      // may still have partial credit — e.g. QuadWord where the player
+      // solved 3 of 4 before running out of guesses. Read the exact
+      // count from the snapshot we capture at stage end instead of
+      // falling back to 0, which misrepresented the run and showed
+      // "0/4 boards" on a stage where the player actually beat 3.
+      const boardsSolved = result?.status === GameStatus.WON
+        ? stage.boardCount
+        : result?.boardsSnapshot?.filter(b => b.status === GameStatus.WON).length ?? 0;
       return {
         name: stage.name,
         status: result?.status ?? GameStatus.LOST,
         guesses: result?.guesses ?? 0,
-        boardsSolved: result?.status === GameStatus.WON ? stage.boardCount : 0,
+        boardsSolved,
         totalBoards: stage.boardCount,
       };
     });
