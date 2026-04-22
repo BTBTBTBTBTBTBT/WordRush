@@ -13,7 +13,8 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { shareResult } from '@/lib/share-utils';
+import { boardToGrid } from '@/lib/share-image';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
@@ -202,19 +203,19 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   const handleShare = useCallback(async () => {
-    const summary = generateMultiBoardSummary(state.boards as any, () => []);
-    const text = generateShareText({
+    const grids = state.boards.map(b => boardToGrid(b));
+    const out = await shareResult({
+      layout: 'multi',
       mode: 'Succession',
       won: state.status === 'WON',
       guesses: guessesUsed,
       maxGuesses,
       timeSeconds: elapsedTime,
-      boardSummary: summary,
+      grids,
       boardsSolved: solvedCount,
       totalBoards: 4,
     });
-    const ok = await copyShareToClipboard(text);
-    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [state, guessesUsed, maxGuesses, elapsedTime, solvedCount]);
 
   return (

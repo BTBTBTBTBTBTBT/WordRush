@@ -15,7 +15,7 @@ import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById } 
 import { useHints, type PersistedHintState } from './use-hints';
 import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { shareResult } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
@@ -567,20 +567,33 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
   const handleShare = useCallback(async () => {
     if (!puzzle) return;
-    const grid = guesses.map(g =>
+    // ProperNoundle tile states are lowercase internally; normalize to the
+    // uppercase form the share image expects. Pad to MAX_GUESSES with
+    // empty rows sized to the puzzle's normalized answer length.
+    const answerLen = normalizeString(puzzle.answer).length;
+    const played = guesses.map(g =>
       g.tiles.map(t => (t === 'correct' ? 'CORRECT' : t === 'present' ? 'PRESENT' : 'ABSENT') as 'CORRECT' | 'PRESENT' | 'ABSENT')
     );
-    const emojiGrid = generateEmojiGrid(grid);
-    const text = generateShareText({
+    const grid: ('CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY')[][] = [
+      ...played,
+      ...Array(Math.max(0, MAX_GUESSES - played.length)).fill(
+        Array(answerLen).fill('EMPTY' as const),
+      ),
+    ];
+    const categoryLabel = puzzle.themeCategory
+      ? CATEGORY_LABELS[puzzle.themeCategory] || puzzle.themeCategory
+      : undefined;
+    const out = await shareResult({
+      layout: 'single',
       mode: 'ProperNoundle',
       won: gameStatus === 'won',
       guesses: guesses.length,
       maxGuesses: MAX_GUESSES,
       timeSeconds: elapsedTime,
-      emojiGrid,
+      grid,
+      category: categoryLabel,
     });
-    const ok = await copyShareToClipboard(text);
-    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [puzzle, guesses, gameStatus, elapsedTime]);
 
   const formatTime = (s: number) => {

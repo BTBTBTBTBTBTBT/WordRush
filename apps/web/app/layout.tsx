@@ -8,6 +8,7 @@ import { StreakShieldProvider } from '@/components/providers/streak-shield-provi
 import { SitePresenceProvider } from '@/components/providers/site-presence-provider';
 import { DailyBoundaryReload } from '@/components/providers/daily-boundary-reload';
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
+import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
 
 export const dynamic = 'force-dynamic';
@@ -78,6 +79,7 @@ export default function RootLayout({
                 <StreakShieldProvider>
                   {children}
                   <ProPromptModal />
+                  <SharePreviewHost />
                 </StreakShieldProvider>
               </ThemeProvider>
             </AuthGate>

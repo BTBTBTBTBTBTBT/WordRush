@@ -16,7 +16,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
-import { generateEmojiGrid, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { shareResult } from '@/lib/share-utils';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -165,19 +165,28 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   };
 
   const handleShare = useCallback(async () => {
-    const grid = generateEmojiGrid(
-      evaluations.map(e => e.tiles.map(t => t.state as 'CORRECT' | 'PRESENT' | 'ABSENT'))
+    // Rows the player actually guessed, as CORRECT/PRESENT/ABSENT states.
+    // Pad to maxGuesses with EMPTY rows so the share image mirrors the
+    // full played board instead of floating above empty space.
+    const played = evaluations.map(e =>
+      e.tiles.map(t => t.state as 'CORRECT' | 'PRESENT' | 'ABSENT'),
     );
-    const text = generateShareText({
+    const grid: ('CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY')[][] = [
+      ...played,
+      ...Array(Math.max(0, currentBoard.maxGuesses - played.length)).fill(
+        Array(5).fill('EMPTY' as const),
+      ),
+    ];
+    const out = await shareResult({
+      layout: 'single',
       mode: 'Classic',
       won: state.status === GameStatus.WON,
       guesses: currentBoard.guesses.length,
       maxGuesses: currentBoard.maxGuesses,
       timeSeconds: elapsedTime,
-      emojiGrid: grid,
+      grid,
     });
-    const ok = await copyShareToClipboard(text);
-    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [evaluations, state.status, currentBoard, elapsedTime]);
 
   const guessesUsed = currentBoard.guesses.length;

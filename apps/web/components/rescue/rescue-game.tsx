@@ -14,7 +14,8 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { shareResult } from '@/lib/share-utils';
+import { boardToGrid } from '@/lib/share-image';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
@@ -129,19 +130,19 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   const handleShare = useCallback(async () => {
-    const summary = generateMultiBoardSummary(state.boards as any, () => []);
-    const text = generateShareText({
+    const grids = state.boards.map(b => boardToGrid(b));
+    const out = await shareResult({
+      layout: 'multi',
       mode: 'Deliverance',
       won: state.status === 'WON',
       guesses: guessesUsed,
       maxGuesses: maxGuesses,
       timeSeconds: elapsedTime,
-      boardSummary: summary,
+      grids,
       boardsSolved: completedBoards,
       totalBoards: 4,
     });
-    const ok = await copyShareToClipboard(text);
-    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [state, guessesUsed, maxGuesses, elapsedTime, completedBoards]);
 
   const handleRestart = () => {

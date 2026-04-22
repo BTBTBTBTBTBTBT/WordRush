@@ -6,7 +6,7 @@ import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, BarChart3, Zap, Timer, S
 import { GameStatus, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { Button } from '@/components/ui/button';
 import { GauntletStats, getGauntletStats, recordGauntletGame } from '@/lib/gauntlet-stats';
-import { generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { shareResult } from '@/lib/share-utils';
 
 interface GauntletResultsProps {
   won: boolean;
@@ -39,22 +39,32 @@ export function GauntletResults({
   const [copied, setCopied] = useState(false);
 
   const handleShare = useCallback(async () => {
-    const stageSummary = stageResults.map((r, i) =>
-      `${r.status === GameStatus.WON ? '\u{2705}' : '\u{274C}'} Stage ${i + 1}: ${r.guesses} guesses`
-    ).join('\n');
-    const text = generateShareText({
+    // Map each stage config to a stageResult if one exists; stages the
+    // player never reached render as "unplayed" (treated as LOST in the
+    // image so they visually distinguish from the cleared ones).
+    const stagesForImage = stages.map((stage, i) => {
+      const result = stageResults.find(r => r.stageIndex === i);
+      return {
+        name: stage.name,
+        status: result?.status ?? GameStatus.LOST,
+        guesses: result?.guesses ?? 0,
+        boardsSolved: result?.status === GameStatus.WON ? stage.boardCount : 0,
+        totalBoards: stage.boardCount,
+      };
+    });
+    const out = await shareResult({
+      layout: 'gauntlet',
       mode: 'Gauntlet',
       won,
       guesses: totalGuesses,
       maxGuesses: totalGuesses,
       timeSeconds: Math.floor(totalTimeMs / 1000),
-      boardSummary: stageSummary,
-      boardsSolved: stagesCompleted,
-      totalBoards: 5,
+      stages: stagesForImage,
+      stagesCompleted,
+      totalStages: stages.length,
     });
-    const ok = await copyShareToClipboard(text);
-    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  }, [won, totalGuesses, totalTimeMs, stageResults, stagesCompleted]);
+    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+  }, [won, totalGuesses, totalTimeMs, stages, stageResults, stagesCompleted]);
 
   const [stats, setStats] = useState<GauntletStats | null>(null);
 

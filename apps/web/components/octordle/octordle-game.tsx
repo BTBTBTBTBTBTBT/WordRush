@@ -14,7 +14,8 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
-import { generateMultiBoardSummary, generateShareText, copyShareToClipboard } from '@/lib/share-utils';
+import { shareResult } from '@/lib/share-utils';
+import { boardToGrid } from '@/lib/share-image';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
@@ -122,20 +123,20 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
 
   const handleShare = useCallback(async () => {
-    const summary = generateMultiBoardSummary(state.boards as any, () => []);
+    const grids = state.boards.map(b => boardToGrid(b));
     const boardsSolved = state.boards.filter(b => b.status === 'WON').length;
-    const text = generateShareText({
+    const out = await shareResult({
+      layout: 'multi',
       mode: 'OctoWord',
       won: state.status === 'WON',
       guesses: totalGuesses,
       maxGuesses: state.boards[0]?.maxGuesses || 13,
       timeSeconds: elapsedTime,
-      boardSummary: summary,
+      grids,
       boardsSolved,
       totalBoards: 8,
     });
-    const ok = await copyShareToClipboard(text);
-    if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [state, totalGuesses, elapsedTime]);
 
   const handleRestart = () => {
