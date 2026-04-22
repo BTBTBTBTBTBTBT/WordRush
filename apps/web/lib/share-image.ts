@@ -430,34 +430,63 @@ function drawMulti(
   footerTop: number,
 ): void {
   const n = input.boards.length;
+  if (!n || !input.boards[0].grid.length) return;
+
   // Match the in-app finished-screen arrangement:
   //   4 boards → 2 cols × 2 rows (Quordle / Succession / Deliverance)
   //   8 boards → 4 cols × 2 rows (Octordle)
-  let cols: number;
-  let rows: number;
-  if (n <= 4) {
-    cols = 2;
-    rows = 2;
-  } else {
-    cols = 4;
-    rows = 2;
-  }
+  const cols = n <= 4 ? 2 : 4;
+  const rows = 2;
 
-  const horizontalPad = 60;
+  const boardCols = input.boards[0].grid[0]?.length ?? 5;
+  const boardRows = input.boards[0].grid.length;
+
+  // Layout constants — must match drawBoardCard so the pre-compute here
+  // produces the same `tile` value the card's internal math will pick.
+  const cardPad = 12;
+  const borderWidth = 3;
+  const tileGap = 4;
+
+  // Inter-board gaps. The previous version divided the canvas into equal
+  // cells and centered each board inside its cell — at tile sizes the
+  // boards ended up small and the intra-cell slack compounded into a huge
+  // "sea" between them. Now we size boards to their natural height
+  // constraint and place them directly with a known gap, so the 2×2 grid
+  // packs tightly with modest outer margin instead of two lonely columns.
+  const rowGap = 20;
+  const colGap = 16;
   const verticalPad = 32;
-  const areaWidth = width - horizontalPad * 2;
+  const minHorizontalPad = 40;
+
   const areaHeight = footerTop - headerBottom - verticalPad * 2;
-  const gap = 16;
-  const cellW = (areaWidth - gap * (cols - 1)) / cols;
-  const cellH = (areaHeight - gap * (rows - 1)) / rows;
+
+  // Tile size derives from whichever axis is tighter. Boards are typically
+  // tall-and-narrow (5×9, 5×10, 5×13), so the row budget binds — the width
+  // clamp is only there for defensive over-wide inputs.
+  const perRowHeight = (areaHeight - rowGap * (rows - 1)) / rows;
+  const tileFromHeight =
+    (perRowHeight - cardPad * 2 - borderWidth * 2 - tileGap * (boardRows - 1)) / boardRows;
+  const availW = width - minHorizontalPad * 2 - colGap * (cols - 1);
+  const perColWidth = availW / cols;
+  const tileFromWidth =
+    (perColWidth - cardPad * 2 - borderWidth * 2 - tileGap * (boardCols - 1)) / boardCols;
+  const tile = Math.max(8, Math.floor(Math.min(tileFromHeight, tileFromWidth)));
+
+  const boardW = boardCols * tile + (boardCols - 1) * tileGap + cardPad * 2 + borderWidth * 2;
+  const boardH = boardRows * tile + (boardRows - 1) * tileGap + cardPad * 2 + borderWidth * 2;
+
+  const totalW = cols * boardW + (cols - 1) * colGap;
+  const totalH = rows * boardH + (rows - 1) * rowGap;
+  const startX = (width - totalW) / 2;
+  const startY = headerBottom + verticalPad + (areaHeight - totalH) / 2;
 
   for (let i = 0; i < n; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
-    const cellCenterX = horizontalPad + col * (cellW + gap) + cellW / 2;
-    const cellCenterY = headerBottom + verticalPad + row * (cellH + gap) + cellH / 2;
+    const cellCenterX = startX + col * (boardW + colGap) + boardW / 2;
+    const cellCenterY = startY + row * (boardH + rowGap) + boardH / 2;
     const board = input.boards[i];
-    drawBoardCard(ctx, board.grid, cellCenterX, cellCenterY, cellW, cellH, board.won);
+    drawBoardCard(ctx, board.grid, cellCenterX, cellCenterY, boardW, boardH, board.won);
   }
 }
 
