@@ -262,9 +262,23 @@ export default function DailyPage() {
                     </div>
                     <div className="text-right">
                       <div className="font-black text-xs" style={{ color: '#1a1a2e' }}>{entry.composite_score}</div>
-                      <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                        {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
-                        {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
+                      <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+                        <span>
+                          {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
+                          {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
+                        </span>
+                        {/* Win / Loss badge next to the stats — mirrors the
+                            profile page's Recent Matches treatment so the
+                            outcome reads as cleanly here as it does there. */}
+                        <span
+                          className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+                          style={{
+                            background: entry.completed ? '#dcfce7' : '#fee2e2',
+                            color: entry.completed ? '#16a34a' : '#dc2626',
+                          }}
+                        >
+                          {entry.completed ? 'Win' : 'Loss'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -307,6 +321,15 @@ export default function DailyPage() {
                   >
                     <MedalIcon rank={index + 1} />
                     <span className="text-xs font-extrabold flex-1 truncate" style={{ color: '#1a1a2e' }}>{entry.username}</span>
+                    <span
+                      className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+                      style={{
+                        background: entry.completed ? '#dcfce7' : '#fee2e2',
+                        color: entry.completed ? '#16a34a' : '#dc2626',
+                      }}
+                    >
+                      {entry.completed ? 'W' : 'L'}
+                    </span>
                     <span className="text-xs font-black" style={{ color: '#9ca3af' }}>{entry.composite_score}</span>
                   </div>
                 ))}
