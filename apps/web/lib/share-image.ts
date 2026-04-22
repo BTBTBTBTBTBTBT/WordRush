@@ -117,12 +117,20 @@ const BOARD_LOSS_TINT = '#fef2f2'; // red-50
 /**
  * Evaluate every row of a BoardState into tile-state grids. Prefilled
  * guesses (Deliverance) appear first, followed by the player's guesses.
- * Empty rows are padded with EMPTY to reach maxGuesses so the painted
- * image preserves the full row count the player actually played on.
+ * Empty rows are padded with EMPTY so every board in a multi-board share
+ * has the same total row count the player saw in-app — specifically
+ * `prefilledGuesses.length + maxGuesses`, since `maxGuesses` is the player
+ * guess budget *excluding* prefills (see reducer.ts where the LOST check
+ * uses `newGuesses.length >= board.maxGuesses`). Without including the
+ * prefill count in the pad target, Deliverance boards would render at
+ * different heights depending on how far each player got, and downstream
+ * drawBoardCard would size tiles differently per board — the "funky sizes"
+ * bug the share image had.
  */
 export function boardToGrid(board: BoardState): TileStateString[][] {
   const width = board.solution.length;
   const rows: TileStateString[][] = [];
+  const prefillCount = board.prefilledGuesses?.length ?? 0;
 
   if (board.prefilledGuesses?.length) {
     for (const p of board.prefilledGuesses) {
@@ -133,7 +141,8 @@ export function boardToGrid(board: BoardState): TileStateString[][] {
     const ev = evaluateGuess(board.solution, guess);
     rows.push(ev.tiles.map(t => t.state as TileStateString));
   }
-  while (rows.length < board.maxGuesses) {
+  const totalRows = prefillCount + board.maxGuesses;
+  while (rows.length < totalRows) {
     rows.push(Array(width).fill('EMPTY'));
   }
   return rows;
@@ -438,8 +447,14 @@ function drawMulti(
   const cols = n <= 4 ? 2 : 4;
   const rows = 2;
 
-  const boardCols = input.boards[0].grid[0]?.length ?? 5;
-  const boardRows = input.boards[0].grid.length;
+  // Use the *max* row/col count across all boards to compute a single tile
+  // size that every board renders at. drawBoardCard later re-derives its own
+  // tile size from each board's grid — feeding it a uniform row count
+  // (via boardToGrid's pad-to-prefill+maxGuesses) keeps the sizes matched.
+  // Guarding here against a stray board being taller/wider defends against
+  // future modes that pack boards with mismatched dimensions.
+  const boardCols = Math.max(5, ...input.boards.map(b => b.grid[0]?.length ?? 0));
+  const boardRows = Math.max(1, ...input.boards.map(b => b.grid.length));
 
   // Layout constants — must match drawBoardCard so the pre-compute here
   // produces the same `tile` value the card's internal math will pick.
