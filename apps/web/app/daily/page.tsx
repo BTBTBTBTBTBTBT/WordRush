@@ -151,7 +151,13 @@ export default function DailyPage() {
           <div className="flex items-center justify-center gap-3 mt-1">
             <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>
               <Calendar className="w-3 h-3 inline mr-1" />
-              {new Date(today + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {/* `today` is already a local-day string from getTodayLocal().
+                  Appending 'T00:00:00Z' forced UTC interpretation, which
+                  toLocaleDateString then shifted back to local — giving
+                  yesterday's date for every viewer west of UTC (US users
+                  saw "Apr 22" on Apr 23 etc.). Parse as local time
+                  instead so the displayed day matches the puzzle day. */}
+              {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
             <CountdownTimer />
           </div>

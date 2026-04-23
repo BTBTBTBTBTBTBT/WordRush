@@ -637,7 +637,11 @@ export default function ProfilePage() {
                       {medal.medal_type === 'perfect' && <span className="text-[10px] font-bold ml-1" style={{ color: '#16a34a' }}>Perfect!</span>}
                     </span>
                     <span className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
-                      {new Date(medal.day + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {/* Parse as local time — medal.day is a local-day
+                          ISO string. Adding 'Z' + toLocaleDateString
+                          without a UTC format override showed yesterday's
+                          date for US viewers. */}
+                      {new Date(medal.day + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
                 );
