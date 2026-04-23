@@ -82,23 +82,39 @@ export default function DailyPage() {
 
   const isPro = isProActive;
 
-  const today = getTodayLocal();
+  // `today` must be derived on the client, not at SSR time. Next.js
+  // renders the initial HTML on Vercel's UTC servers — if we computed
+  // getTodayLocal() at module top-level, a user whose local day differs
+  // from Vercel's UTC day (e.g. Pacific evening when UTC has already
+  // rolled into tomorrow) would see the wrong day baked into the SSR
+  // HTML. Stale CDN / PWA caches can also pin that SSR value. Using
+  // null-initial state that populates in useEffect guarantees the date
+  // always matches the viewer's local calendar day.
+  const [today, setToday] = useState<string | null>(null);
+  useEffect(() => {
+    setToday(getTodayLocal());
+  }, []);
   const yesterday = useMemo(() => getYesterdayLocal(), []);
 
   useEffect(() => {
+    // today is null on the very first render (it populates in the mount
+    // effect above). Skip the leaderboard fetch until we have a real
+    // local-day string — otherwise we'd query the API with null and the
+    // initial render would flash empty state unnecessarily.
+    if (!today) return;
     async function load() {
       setLoading(true);
       setUserRank(null);
       setLeaderboard([]);
       const [lb, count] = await Promise.all([
-        fetchDailyLeaderboard(selectedMode, 'solo', today, 50),
-        getDailyPlayerCount(selectedMode, today),
+        fetchDailyLeaderboard(selectedMode, 'solo', today!, 50),
+        getDailyPlayerCount(selectedMode, today!),
       ]);
       setLeaderboard(lb);
       setPlayerCount(count);
 
       if (user) {
-        const rank = await getUserDailyRank(user.id, selectedMode, 'solo', today);
+        const rank = await getUserDailyRank(user.id, selectedMode, 'solo', today!);
         setUserRank(rank);
       }
       setLoading(false);
@@ -151,13 +167,14 @@ export default function DailyPage() {
           <div className="flex items-center justify-center gap-3 mt-1">
             <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>
               <Calendar className="w-3 h-3 inline mr-1" />
-              {/* `today` is already a local-day string from getTodayLocal().
-                  Appending 'T00:00:00Z' forced UTC interpretation, which
-                  toLocaleDateString then shifted back to local — giving
-                  yesterday's date for every viewer west of UTC (US users
-                  saw "Apr 22" on Apr 23 etc.). Parse as local time
-                  instead so the displayed day matches the puzzle day. */}
-              {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {/* `today` is a local-day string set via useEffect on mount
+                  so it always reflects the viewer's local calendar day,
+                  not Vercel's UTC SSR day (which otherwise could render
+                  "tomorrow" for viewers east of UTC or stay pinned at
+                  an old day via CDN/PWA cache). Parse as local time —
+                  no 'Z' suffix — so toLocaleDateString doesn't shift
+                  the render back by the user's UTC offset. */}
+              {today && new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
             <CountdownTimer />
           </div>
