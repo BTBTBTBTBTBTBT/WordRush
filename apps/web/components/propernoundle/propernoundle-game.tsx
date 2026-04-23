@@ -582,9 +582,16 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
     ];
     // Letters-per-word, matching the in-game NoundleBoard word-group
     // rendering. For "Kylian Mbappe" → [6, 6], which the share image
-    // uses to insert a larger gap between the first and last name so
-    // the tiles read as two words instead of one 12-letter smush.
-    const wordGroups = puzzle.answer
+    // uses to insert a larger gap between first and last name so the
+    // tiles read as two words instead of one 12-letter smush.
+    //
+    // Critical: split on `puzzle.display`, not `puzzle.answer`.
+    // `puzzle.answer` is the pre-normalized form (e.g. "rafaelnadal",
+    // "kylianmbappe") with spaces already stripped — splitting it
+    // always returns a single element, so wordGroups.length > 1 never
+    // held and the share image silently fell back to a uniform row.
+    // `puzzle.display` preserves the space the human reads.
+    const wordGroups = puzzle.display
       .split(/\s+/)
       .map(w => normalizeString(w).length)
       .filter(n => n > 0);
