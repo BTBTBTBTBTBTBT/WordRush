@@ -231,17 +231,20 @@ function drawBoardCard(
   const innerMaxH = maxHeight - cardPad * 2 - borderWidth * 2;
 
   // ProperNoundle multi-word answers need a *visible* break between
-  // first and last name, not a token one. Earlier this was hard-coded
-  // to `gap * 3` (12px), which on a 1080×1080 canvas with ~80px tiles
-  // looked identical to the normal 4px inter-tile gap. Scale the group
-  // gap to roughly half a tile so it reads as a space at the canvas's
-  // output resolution. Two-pass: compute tile size once assuming
-  // uniform spacing, derive group gap from that, then recompute tile
-  // size with the group gaps baked in.
+  // first and last name. Prior iterations scaled the gap at 3×, then
+  // 0.55×-tile, and the user still saw the two names lumped together
+  // ("Why are we having so much trouble with this?"). Escalate to a
+  // full tile-width of empty space between words — this is roughly
+  // what you'd expect from visual parity with the in-game board at
+  // 1080px output, and leaves no ambiguity that the break is a word
+  // boundary rather than a tile-grid artifact. Two-pass: compute tile
+  // size assuming uniform spacing first, derive group gap from that,
+  // then recompute tile size with the group gaps baked in so the row
+  // fits horizontally.
   const tile1FromW = (innerMaxW - gap * (cols - 1)) / cols;
   const tile1FromH = (innerMaxH - gap * (rows - 1)) / rows;
   const tile1 = Math.floor(Math.min(tile1FromW, tile1FromH));
-  const groupGap = groups ? Math.max(gap * 3, Math.round(tile1 * 0.55)) : gap;
+  const groupGap = groups ? Math.max(gap * 4, tile1) : gap;
   const extraGroupWidth = groups ? (groups.length - 1) * (groupGap - gap) : 0;
 
   const tileFromWidth = (innerMaxW - gap * (cols - 1) - extraGroupWidth) / cols;
