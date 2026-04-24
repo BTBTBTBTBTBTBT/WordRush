@@ -9,6 +9,28 @@ const EPOCH_DATE_STRING = '2024-01-01';
 
 const allPuzzles: Puzzle[] = puzzles as Puzzle[];
 
+// Group puzzles by category so the daily picker can rotate one category
+// per day instead of walking the JSON in order. The source JSON ships
+// puzzles clustered by category (50 sports in a row, 90 currentevents
+// in a row, etc.), so the previous `dayNumber % allPuzzles.length`
+// scheme produced *weeks* of consecutive same-category dailies — user
+// reported "every day has been a sports category." Grouping here lets
+// us round-robin across categories deterministically.
+const PUZZLES_BY_CATEGORY: Map<string, Puzzle[]> = (() => {
+  const groups = new Map<string, Puzzle[]>();
+  for (const p of allPuzzles) {
+    const cat = p.themeCategory || 'general';
+    if (!groups.has(cat)) groups.set(cat, []);
+    groups.get(cat)!.push(p);
+  }
+  return groups;
+})();
+
+// Alphabetical category order so the rotation is stable forever — using
+// JSON insertion order would re-shuffle the daily schedule any time
+// a new puzzle re-orders the source file.
+const CATEGORY_CYCLE: string[] = Array.from(PUZZLES_BY_CATEGORY.keys()).sort();
+
 function getDaysSinceEpoch(dateString: string): number {
   const target = new Date(dateString).getTime();
   const epoch = new Date(EPOCH_DATE_STRING).getTime();
@@ -18,8 +40,15 @@ function getDaysSinceEpoch(dateString: string): number {
 export function getDailyPuzzle(dateString?: string): Puzzle {
   const date = dateString || getTodayLocal();
   const dayNumber = getDaysSinceEpoch(date);
-  const index = dayNumber % allPuzzles.length;
-  return allPuzzles[index];
+  // Day N's category is the Nth in the alphabetical cycle, so seven-
+  // category configs guarantee no two consecutive days repeat. Within
+  // each category we advance one index every full cycle (every 7 days
+  // for the current 7-category set) so each category burns through
+  // its own list before any puzzle repeats.
+  const cat = CATEGORY_CYCLE[dayNumber % CATEGORY_CYCLE.length];
+  const list = PUZZLES_BY_CATEGORY.get(cat)!;
+  const indexInCat = Math.floor(dayNumber / CATEGORY_CYCLE.length) % list.length;
+  return list[indexInCat];
 }
 
 export function getDailyPuzzleNumber(dateString?: string): number {

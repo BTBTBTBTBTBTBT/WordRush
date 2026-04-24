@@ -54,9 +54,34 @@ export async function fetchWikipediaImage(
   }
 }
 
+// Common single-word abbreviations whose internal period must NOT trigger
+// a sentence-split. Wikipedia summaries are full of "No. 1", "Dr. X",
+// "Inc.", etc. — without protecting them the hint truncates mid-thought
+// (reported: "ranked as the world No." cutting off before the rank).
+const SINGLE_WORD_ABBREVIATIONS = [
+  'No', 'Nos',
+  'Mr', 'Mrs', 'Ms', 'Dr', 'Prof',
+  'Sr', 'Jr',
+  'St', 'Mt', 'Ft',
+  'Inc', 'Ltd', 'Co', 'Corp', 'Bros',
+  'etc', 'vs', 'cf', 'al',
+  'e.g', 'i.e',
+  'Jan', 'Feb', 'Mar', 'Apr', 'Jun', 'Jul', 'Aug', 'Sep', 'Sept', 'Oct', 'Nov', 'Dec',
+  'Mon', 'Tue', 'Tues', 'Wed', 'Thu', 'Thur', 'Thurs', 'Fri', 'Sat', 'Sun',
+];
+
 function sanitizeHint(extract: string, displayName: string): string {
-  // Protect abbreviations like "U.S.", "U.K.", "D.C." from sentence splitting
+  // Protect multi-letter capitalized abbreviations like "U.S.", "U.K.", "D.C."
   let protected_ = extract.replace(/\b([A-Z])\.\s?([A-Z])\.(\s?[A-Z]\.)?/g, (m) => m.replace(/\./g, '###'));
+
+  // Protect common single-word abbreviations (case-insensitive). Must
+  // run before sentence segmentation so the period stays welded to the
+  // preceding token rather than being treated as a sentence terminator.
+  for (const abbr of SINGLE_WORD_ABBREVIATIONS) {
+    const escaped = abbr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`\\b${escaped}\\.`, 'gi');
+    protected_ = protected_.replace(re, (m) => m.replace(/\./g, '###'));
+  }
 
   // Get first 2 sentences
   const sentences = protected_.match(/[^.!?]+[.!?]+/g) || [protected_];
