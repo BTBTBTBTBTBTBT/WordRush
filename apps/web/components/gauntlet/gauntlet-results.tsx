@@ -376,10 +376,11 @@ function StageReviewModal({
   const boards = result.boardsSnapshot ?? [];
   const won = result.status === GameStatus.WON;
   const n = boards.length;
-  // Match the in-app multi-board layout: 1 board centered, 2–4 boards
-  // in a 2-col grid, 8 boards in a 4-col grid. Keeps the Review visually
-  // consistent with how the player saw the stage during play.
-  const gridCols = n === 1 ? 'grid-cols-1' : n <= 4 ? 'grid-cols-2' : 'grid-cols-4';
+  // Always render multi-board reviews in 2 columns. The in-game OctoWord
+  // (8 boards) has the full viewport to spread across, but the review
+  // modal is phone-width — a 4-col layout there squeezes each tile below
+  // its minimum content width and clips the last column.
+  const gridCols = n === 1 ? 'grid-cols-1' : 'grid-cols-2';
   const solutionsLabel = boards.length === 1 ? 'Answer' : 'Answers';
 
   return (
