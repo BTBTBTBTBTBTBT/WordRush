@@ -91,6 +91,13 @@
   * {
     @apply border-border;
   }
+  html {
+    /* Stop iOS Safari auto-boosting text on shorter viewports — without
+       this it silently scales the in-page keyboard's rem-based key
+       heights and squeezes the boards above into the keyboard. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
   body {
     font-family: 'Nunito', sans-serif;
     background-color: #f8f7ff;
@@ -131,6 +138,21 @@
 }
 
 @layer utilities {
+  /* Viewport-height utilities with a 100vh fallback for browsers that
+     don't support dvh (iOS Safari < 15.4). The second declaration is
+     ignored where dvh is unsupported, so the first one wins. Modern
+     browsers get the dynamic value (excludes Safari's collapsing
+     toolbar). Use these instead of h-[100dvh] / min-h-[100dvh] in any
+     full-screen game shell. */
+  .h-screen-stable {
+    height: 100vh;
+    height: 100dvh;
+  }
+  .min-h-screen-stable {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
   /* 3D button push-down */
   .btn-3d {
     transition: transform 0.1s ease, box-shadow 0.1s ease;

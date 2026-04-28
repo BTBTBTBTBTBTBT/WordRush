@@ -220,7 +220,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
 
   return (
     <div
-      className={`h-[100dvh] flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
+      className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: '#f8f7ff' }}
     >
       <AnimatePresence>

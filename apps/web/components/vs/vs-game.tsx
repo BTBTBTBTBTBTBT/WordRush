@@ -406,7 +406,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Queue screen
   if (screen === 'queue') {
     return (
-      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); window.location.href = '/'; }} />
         {/* Countdown overlay */}
         <AnimatePresence>
@@ -482,7 +482,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     const headlineColor = isWin ? 'from-green-400 to-emerald-300' : isDraw ? 'from-yellow-400 to-orange-300' : 'from-red-400 to-rose-300';
 
     return (
-      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
         {/* Rematch upsell for freemium — handleRematch sets this open */}
         <VsLimitModal open={vsLimitOpen} onClose={() => setVsLimitOpen(false)} />
         <div className="text-center space-y-8 max-w-md w-full px-6">
@@ -600,7 +600,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Waiting screen — shown after player completes, waiting for opponent
   if (screen === 'waiting') {
     return (
-      <div className="h-[100dvh] flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
         <div className="text-center space-y-6 max-w-md w-full px-6">
           <h2 className={`text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
             Waiting for opponent...
@@ -694,7 +694,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="h-screen-stable flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
       {/* Match Header. The Home button forfeits the match first so the
           server can end it cleanly and credit the opponent — just navigating
@@ -750,7 +750,7 @@ function DailyVsAlreadyPlayed({
 
   return (
     <div
-      className="h-[100dvh] flex flex-col items-center justify-center relative"
+      className="h-screen-stable flex flex-col items-center justify-center relative"
       style={{ backgroundColor: '#f8f7ff' }}
     >
       <div className="text-center space-y-6 max-w-md w-full px-6">

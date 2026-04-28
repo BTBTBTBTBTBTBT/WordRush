@@ -50,7 +50,7 @@ export default function JoinInvitePage() {
   };
 
   const centered = (node: React.ReactNode) => (
-    <div className="min-h-[100dvh] flex items-center justify-center px-5" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="min-h-screen-stable flex items-center justify-center px-5" style={{ backgroundColor: '#f8f7ff' }}>
       <div className="w-full max-w-sm text-center p-6" style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '20px' }}>
         {node}
       </div>
