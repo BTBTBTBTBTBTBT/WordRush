@@ -235,13 +235,19 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord }: 
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
-      {/* Grid of mini boards */}
-      <div className={`grid ${cols} gap-2 w-full h-full`}>
+      {/* Grid of mini boards.
+          `auto-rows-fr` (= grid-auto-rows: minmax(0,1fr)) is load-bearing:
+          without it, the implicit row tracks default to `auto` and grow
+          to fit each MiniBoard's natural content height, which on shorter
+          phones makes the 2-row OctoWord layout overflow the parent flex
+          cell and slide under the keyboard. With it, both rows split the
+          available height equally and tiles shrink to fit. */}
+      <div className={`grid ${cols} gap-2 w-full h-full auto-rows-fr`}>
         {boards.map((board, index) => (
           <div
             key={index}
             ref={(el) => { boardRefs.current[index] = el; }}
-            className="h-full"
+            className="h-full min-h-0"
           >
             <MiniBoard
               board={board}

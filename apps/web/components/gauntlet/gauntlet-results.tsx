@@ -397,7 +397,7 @@ function StageReviewModal({
         exit={{ scale: 0.92, opacity: 0 }}
         transition={{ type: 'spring', damping: 24, stiffness: 320 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md h-[90vh] overflow-hidden p-5 flex flex-col"
       >
         <button
           type="button"
@@ -460,8 +460,11 @@ function StageReviewModal({
         </div>
 
         {/* Final board state — mirrors MiniBoard's tile rendering so the
-            review looks like a paused version of the in-app stage view. */}
-        <div className={`grid ${gridCols} gap-2`}>
+            review looks like a paused version of the in-app stage view.
+            `flex-1 min-h-0 auto-rows-fr` lets the boards shrink to fit
+            the modal's remaining height instead of forcing a scrollbar
+            on Wordle (1 board) and Quordle (2×2) reviews. */}
+        <div className={`grid ${gridCols} gap-2 flex-1 min-h-0 auto-rows-fr`}>
           {boards.map((board, i) => (
             <StageReviewBoard key={i} board={board} />
           ))}
@@ -505,25 +508,34 @@ function StageReviewBoard({ board }: { board: BoardState }) {
     });
   }
 
+  // Layout mirrors MiniBoard: the board fills its grid cell and rows
+  // distribute the available height via `gridTemplateRows: 1fr`. Tiles
+  // drop `aspect-square` so the row's height — not the column width —
+  // determines tile height; combined with min-h-0/min-w-0 this lets the
+  // whole stack shrink to fit the modal's flex-1 boards container so
+  // Wordle and Quordle reviews fit on screen without scrolling.
   return (
     <div
-      className={`p-1.5 rounded-lg border-2 ${
+      className={`p-1.5 rounded-lg border-2 h-full min-h-0 min-w-0 flex flex-col ${
         won ? 'border-green-400 bg-green-50' :
         lost ? 'border-red-400 bg-red-50' :
         'border-gray-200 bg-white'
       }`}
     >
-      <div className="flex flex-col gap-[2px]">
+      <div
+        className="grid gap-[2px] flex-1 min-h-0"
+        style={{ gridTemplateRows: `repeat(${totalRows}, minmax(0, 1fr))` }}
+      >
         {rows.map((row, rIdx) => (
           <div
             key={rIdx}
-            className={`grid gap-[2px] ${row.kind === 'prefill' ? 'opacity-75' : ''}`}
+            className={`grid gap-[2px] min-h-0 ${row.kind === 'prefill' ? 'opacity-75' : ''}`}
             style={{ gridTemplateColumns: `repeat(${width}, minmax(0, 1fr))` }}
           >
             {row.tiles.map((t, tIdx) => (
               <div
                 key={tIdx}
-                className={`aspect-square flex items-center justify-center rounded border text-[10px] sm:text-xs font-bold ${REVIEW_TILE_CLASS[t.state]}`}
+                className={`flex items-center justify-center min-h-0 min-w-0 rounded border text-[10px] sm:text-xs font-bold ${REVIEW_TILE_CLASS[t.state]}`}
               >
                 {t.letter ? t.letter.toUpperCase() : ''}
               </div>
