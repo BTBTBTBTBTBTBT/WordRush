@@ -319,7 +319,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           <div className="text-center mb-2">
             <span
               className="text-[10px] font-extrabold uppercase tracking-wider"
-              style={{ color: pnWon ? '#22c55e' : '#9ca3af' }}
+              style={{ color: pnWon ? '#22c55e' : 'var(--color-text-muted)' }}
             >
               {pnWon ? 'Completed' : 'Attempted'} Today
             </span>
@@ -403,7 +403,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         <div className="text-center mb-2">
           <span
             className="text-[10px] font-extrabold uppercase tracking-wider"
-            style={{ color: won ? '#22c55e' : '#9ca3af' }}
+            style={{ color: won ? '#22c55e' : 'var(--color-text-muted)' }}
           >
             {won ? 'Completed' : 'Attempted'} Today
           </span>
@@ -503,7 +503,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs font-medium mt-1 leading-snug" style={{ color: '#4a4a6a' }}>
+                      <p className="text-xs font-medium mt-1 leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
                         {definition.definition}
                       </p>
                     </>

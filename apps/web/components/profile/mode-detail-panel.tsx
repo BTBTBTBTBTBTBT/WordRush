@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { User, Swords } from 'lucide-react';
+import { User, Swords, Share2, Copy, Check } from 'lucide-react';
 import { PROFILE_MODES, type ModeConfig } from './mode-picker';
 import { ModeStatsCard } from './mode-stats-card';
 import { ProInsightsCard } from './pro-insights-card';
 import { GuessDistribution } from './guess-distribution';
 import { SolveTimeChart } from './solve-time-chart';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { createInvite, vsHrefForMode } from '@/lib/invite-service';
+import { useAuth } from '@/lib/auth-context';
 import {
   fetchGuessDistribution,
   fetchSolveTimeHistory,
@@ -40,14 +42,18 @@ interface ModeDetailPanelProps {
 }
 
 export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPanelProps) {
+  const { user } = useAuth();
   const [tab, setTab] = useState<'solo' | 'vs'>('solo');
   const [data, setData] = useState<ModeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const cacheRef = useRef<Map<string, ModeData>>(new Map());
 
   const mode = PROFILE_MODES.find((m) => m.dbKey === gameMode);
   const accentColor = mode?.accentColor || '#7c3aed';
   const Icon = mode?.icon;
+  const isOwnProfile = user?.id === userId;
 
   useEffect(() => {
     const cached = cacheRef.current.get(gameMode);
@@ -76,6 +82,29 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
     });
   }, [userId, gameMode]);
 
+  useEffect(() => {
+    setInviteCopied(false);
+  }, [gameMode]);
+
+  const handleChallenge = async () => {
+    if (!user || inviteLoading) return;
+    setInviteLoading(true);
+    try {
+      const { invite, error } = await createInvite({ inviterId: user.id, gameMode });
+      if (invite?.invite_code) {
+        const url = `${window.location.origin}/vs/join/${invite.invite_code}`;
+        if (navigator.share) {
+          await navigator.share({ title: `Challenge me in ${mode?.title}!`, url });
+        } else {
+          await navigator.clipboard.writeText(url);
+          setInviteCopied(true);
+          setTimeout(() => setInviteCopied(false), 2000);
+        }
+      }
+    } catch {}
+    setInviteLoading(false);
+  };
+
   return (
     <div className="space-y-3">
       {/* Mode Header */}
@@ -94,25 +123,48 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
           <span className="text-sm font-black" style={{ color: accentColor }}>{mode?.title || gameMode}</span>
         </div>
 
-        {/* Solo / VS toggle */}
-        <div
-          className="flex rounded-lg overflow-hidden"
-          style={{ border: '1.5px solid var(--color-border)' }}
-        >
-          {(['solo', 'vs'] as const).map((t) => (
+        <div className="flex items-center gap-2">
+          {/* Challenge button (Pro only, own profile only) */}
+          {isPro && isOwnProfile && (
             <button
-              key={t}
-              className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold transition-all"
+              onClick={handleChallenge}
+              disabled={inviteLoading}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold transition-all"
               style={{
-                background: tab === t ? `${accentColor}15` : 'var(--color-surface)',
-                color: tab === t ? accentColor : 'var(--color-text-muted)',
+                background: `${accentColor}15`,
+                border: `1.5px solid ${accentColor}`,
+                color: accentColor,
+                opacity: inviteLoading ? 0.6 : 1,
               }}
-              onClick={() => setTab(t)}
             >
-              {t === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
-              {t === 'solo' ? 'Solo' : 'VS'}
+              {inviteCopied ? (
+                <><Check className="w-3 h-3" /> Copied!</>
+              ) : (
+                <><Swords className="w-3 h-3" /> Challenge</>
+              )}
             </button>
-          ))}
+          )}
+
+          {/* Solo / VS toggle */}
+          <div
+            className="flex rounded-lg overflow-hidden"
+            style={{ border: '1.5px solid var(--color-border)' }}
+          >
+            {(['solo', 'vs'] as const).map((t) => (
+              <button
+                key={t}
+                className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold transition-all"
+                style={{
+                  background: tab === t ? `${accentColor}15` : 'var(--color-surface)',
+                  color: tab === t ? accentColor : 'var(--color-text-muted)',
+                }}
+                onClick={() => setTab(t)}
+              >
+                {t === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
+                {t === 'solo' ? 'Solo' : 'VS'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

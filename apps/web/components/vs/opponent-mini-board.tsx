@@ -11,7 +11,7 @@ interface OpponentMiniBoardProps {
 const TILE_COLORS: Record<string, string> = {
   CORRECT: '#22c55e',
   PRESENT: '#eab308',
-  ABSENT: '#6b7280',
+  ABSENT: 'var(--color-text-muted)',
   EMPTY: 'transparent',
 };
 

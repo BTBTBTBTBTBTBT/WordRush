@@ -137,7 +137,7 @@ const FAQ_ITEMS = [
 function HowToPlayContent() {
   return (
     <div className="space-y-4">
-      <p className="text-sm font-medium" style={{ color: '#4a4a6a' }}>
+      <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
         Guess the 5-letter word. Each guess must be a valid word. After each guess, the tiles change color to show how close you are.
       </p>
 
@@ -178,7 +178,7 @@ function GameModesContent() {
           <div
             key={mode.title}
             className="flex items-start gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: '#fafafa', border: '1px solid var(--color-divider)' }}
+            style={{ background: 'var(--color-surface-hover)', border: '1px solid var(--color-divider)' }}
           >
             <div
               className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
@@ -280,7 +280,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
                   className="px-3 py-1.5 rounded-full text-xs font-bold transition-all"
                   style={
                     activeTab === tab.id
-                      ? { background: '#1a1a2e', color: '#ffffff' }
+                      ? { background: 'var(--color-text)', color: 'var(--color-surface)' }
                       : { background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }
                   }
                 >

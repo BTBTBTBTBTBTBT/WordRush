@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,8 @@ import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
   fetchDailyLeaderboard,
   getUserDailyRank,
@@ -99,27 +101,28 @@ export default function DailyPage() {
   }, []);
   const yesterday = useMemo(() => getYesterdayLocal(), []);
 
-  useEffect(() => {
+  const loadLeaderboard = useCallback(async () => {
     if (!today) return;
-    async function load() {
-      setLoading(true);
-      setUserRank(null);
-      setLeaderboard([]);
-      const [lb, count] = await Promise.all([
-        fetchDailyLeaderboard(selectedMode, 'solo', today!, 50),
-        getDailyPlayerCount(selectedMode, today!),
-      ]);
-      setLeaderboard(lb);
-      setPlayerCount(count);
+    setLoading(true);
+    setUserRank(null);
+    setLeaderboard([]);
+    const [lb, count] = await Promise.all([
+      fetchDailyLeaderboard(selectedMode, 'solo', today, 50),
+      getDailyPlayerCount(selectedMode, today),
+    ]);
+    setLeaderboard(lb);
+    setPlayerCount(count);
 
-      if (user) {
-        const rank = await getUserDailyRank(user.id, selectedMode, 'solo', today!);
-        setUserRank(rank);
-      }
-      setLoading(false);
+    if (user) {
+      const rank = await getUserDailyRank(user.id, selectedMode, 'solo', today);
+      setUserRank(rank);
     }
-    load();
+    setLoading(false);
   }, [selectedMode, user, today]);
+
+  useEffect(() => {
+    loadLeaderboard();
+  }, [loadLeaderboard]);
 
   useEffect(() => {
     if (showYesterday) {
@@ -243,6 +246,7 @@ export default function DailyPage() {
           >
             <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>You're ranked </span>
             <span className="font-black text-lg" style={{ color: '#d97706' }}>#{userRank.rank}</span>
+            <RankDeltaBadge mode={selectedMode} playType="solo" pageKey="daily" currentRank={userRank.rank} />
             <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}> of {userRank.totalPlayers}</span>
           </div>
         )}
@@ -251,6 +255,7 @@ export default function DailyPage() {
         <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
           Leaderboard
         </div>
+        <PullToRefresh onRefresh={loadLeaderboard} accentColor={color}>
         <div
           className="overflow-hidden"
           style={{
@@ -315,6 +320,7 @@ export default function DailyPage() {
             </div>
           )}
         </div>
+        </PullToRefresh>
 
         {/* Yesterday's Winners */}
         <button

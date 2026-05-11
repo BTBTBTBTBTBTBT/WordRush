@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { RankDeltaBadge, saveRank } from '@/components/ui/rank-delta';
 import {
   fetchAllTimeRecords,
   fetchDailyLeaderboard,
@@ -146,25 +148,26 @@ function DailyRecordsView({ userId }: { userId?: string }) {
 
   const today = getTodayLocal();
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setUserRank(null);
-      const [lb, count] = await Promise.all([
-        fetchDailyLeaderboard(selectedMode, playType, today, 50),
-        getDailyPlayerCount(selectedMode, today),
-      ]);
-      setLeaderboard(lb);
-      setPlayerCount(count);
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setUserRank(null);
+    const [lb, count] = await Promise.all([
+      fetchDailyLeaderboard(selectedMode, playType, today, 50),
+      getDailyPlayerCount(selectedMode, today),
+    ]);
+    setLeaderboard(lb);
+    setPlayerCount(count);
 
-      if (userId) {
-        const rank = await getUserDailyRank(userId, selectedMode, playType, today);
-        setUserRank(rank);
-      }
-      setLoading(false);
+    if (userId) {
+      const rank = await getUserDailyRank(userId, selectedMode, playType, today);
+      setUserRank(rank);
     }
-    load();
+    setLoading(false);
   }, [selectedMode, playType, userId, today]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
@@ -185,6 +188,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         />
       </div>
 
+      <PullToRefresh onRefresh={loadData} accentColor={color}>
       {/* Leaderboard Card */}
       <motion.div
         key={`${selectedMode}-${playType}`}
@@ -257,6 +261,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
               <div className="flex items-center gap-1">
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Your rank:</span>
                 <span className="font-black text-xs" style={{ color: '#d97706' }}>#{userRank.rank}</span>
+                <RankDeltaBadge mode={selectedMode} playType={playType} pageKey="records-daily" currentRank={userRank.rank} />
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>of {userRank.totalPlayers}</span>
               </div>
             )}
@@ -326,6 +331,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
           </div>
         )}
       </motion.div>
+      </PullToRefresh>
     </motion.div>
   );
 }

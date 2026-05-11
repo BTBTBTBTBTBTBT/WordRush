@@ -128,19 +128,19 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
               <BarChart data={modeStats} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <XAxis
                   dataKey="mode"
-                  tick={{ fill: '#6b7280', fontSize: 10, fontWeight: 700 }}
-                  axisLine={{ stroke: '#ede9f6' }}
+                  tick={{ fill: 'var(--color-text-muted)', fontSize: 10, fontWeight: 700 }}
+                  axisLine={{ stroke: 'var(--color-border)' }}
                   tickLine={false}
                   interval={0}
                 />
                 <YAxis
-                  tick={{ fill: '#9ca3af', fontSize: 10 }}
+                  tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                   domain={[0, 100]}
                   tickFormatter={(v) => `${v}%`}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f3f0ff' }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-surface-hover)' }} />
                 <Bar dataKey="winRate" fill="#facc15" radius={[6, 6, 0, 0]} name="Win Rate" maxBarSize={40} />
               </BarChart>
             </ResponsiveContainer>
@@ -158,13 +158,13 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
               <BarChart data={modeStats} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>
                 <XAxis
                   dataKey="mode"
-                  tick={{ fill: '#6b7280', fontSize: 10, fontWeight: 700 }}
-                  axisLine={{ stroke: '#ede9f6' }}
+                  tick={{ fill: 'var(--color-text-muted)', fontSize: 10, fontWeight: 700 }}
+                  axisLine={{ stroke: 'var(--color-border)' }}
                   tickLine={false}
                   interval={0}
                 />
                 <YAxis
-                  tick={{ fill: '#9ca3af', fontSize: 10 }}
+                  tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => {
@@ -173,7 +173,7 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
                     return `${Math.floor(v / 60)}m`;
                   }}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f3f0ff' }} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--color-surface-hover)' }} />
                 <Bar dataKey="avgTime" fill="#a78bfa" radius={[6, 6, 0, 0]} name="Avg Time" maxBarSize={40} />
               </BarChart>
             </ResponsiveContainer>

@@ -128,7 +128,7 @@ export function LoginScreen() {
             onClick={handleFacebookSignIn}
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-extrabold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
-            style={{ background: '#1877F2', border: '1.5px solid #1877F2', color: '#ffffff' }}
+            style={{ background: '#1877F2', border: '1.5px solid #1877F2', color: 'var(--color-surface)' }}
           >
             <FacebookIcon className="w-5 h-5 bg-white rounded-full" />
             Continue with Facebook
@@ -211,7 +211,7 @@ export function LoginScreen() {
             {error && (
               <div
                 className="p-3 rounded-xl text-xs font-bold"
-                style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}
+                style={{ background: 'var(--color-loss-bg)', border: '1px solid #fecaca', color: 'var(--color-loss-text)' }}
               >
                 {error}
               </div>
@@ -250,7 +250,7 @@ export function LoginScreen() {
           <Link href="/privacy" className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Privacy Policy
           </Link>
-          <span className="text-[10px]" style={{ color: '#d1d5db' }}>|</span>
+          <span className="text-[10px]" style={{ color: 'var(--color-border-light)' }}>|</span>
           <Link href="/terms" className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Terms of Service
           </Link>
