@@ -86,12 +86,11 @@ interface CompletedDailyBoardProps {
   modeId: string;
 }
 
-// ── Tile color helper (matches multi-board.tsx) ──
 const getTileColor = (state: TileState) => {
   switch (state) {
-    case TileState.CORRECT: return 'bg-green-600 border-green-600';
+    case TileState.CORRECT: return 'bg-green-500 border-green-500';
     case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
-    case TileState.ABSENT: return 'bg-gray-400 border-gray-400';
+    case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
     default: return 'bg-white border-gray-300';
   }
 };
@@ -173,9 +172,9 @@ function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }:
 
   const getPNTileColor = (state: PNTileState) => {
     switch (state) {
-      case 'correct': return 'bg-green-600 border-green-600';
+      case 'correct': return 'bg-green-500 border-green-500';
       case 'present': return 'bg-yellow-500 border-yellow-500';
-      case 'absent': return 'bg-gray-400 border-gray-400';
+      case 'absent': return 'bg-gray-500 border-gray-500';
       default: return 'bg-white border-gray-300';
     }
   };

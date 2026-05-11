@@ -16,14 +16,14 @@ const getTileColor = (state: TileState, colorBlind?: boolean) => {
     switch (state) {
       case TileState.CORRECT: return 'bg-cyan-600 border-cyan-600';
       case TileState.PRESENT: return 'bg-orange-500 border-orange-500';
-      case TileState.ABSENT: return 'bg-gray-400 border-gray-400';
+      case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
       default: return 'bg-white border-gray-300';
     }
   }
   switch (state) {
-    case TileState.CORRECT: return 'bg-green-600 border-green-600';
+    case TileState.CORRECT: return 'bg-green-500 border-green-500';
     case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
-    case TileState.ABSENT: return 'bg-gray-400 border-gray-400';
+    case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
     default: return 'bg-white border-gray-300';
   }
 };

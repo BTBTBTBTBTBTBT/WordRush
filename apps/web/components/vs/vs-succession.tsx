@@ -235,7 +235,7 @@ function SequenceMiniBoard({
 
   const getTileColor = (state: TileState) => {
     switch (state) {
-      case TileState.CORRECT: return 'bg-green-600 border-green-400';
+      case TileState.CORRECT: return 'bg-green-500 border-green-400';
       case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
       case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
       default: return 'bg-zinc-800 border-zinc-600';

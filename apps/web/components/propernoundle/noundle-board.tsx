@@ -26,52 +26,16 @@ function Tile({
   shouldFlip?: boolean;
   size?: number;
 }) {
-  const [currentState, setCurrentState] = useState<TileState>(state);
-  const [isFlipping, setIsFlipping] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-
-  useEffect(() => {
-    return () => {
-      timers.current.forEach(clearTimeout);
-    };
-  }, []);
-
-  useEffect(() => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-
-    if (shouldFlip && (state === 'correct' || state === 'present' || state === 'absent' || state === 'hint-used')) {
-      const flipDelay = index * 150;
-
-      const t1 = setTimeout(() => {
-        setIsFlipping(true);
-
-        const t2 = setTimeout(() => {
-          setCurrentState(state);
-        }, 250);
-        timers.current.push(t2);
-
-        const t3 = setTimeout(() => {
-          setIsFlipping(false);
-        }, 500);
-        timers.current.push(t3);
-      }, flipDelay);
-      timers.current.push(t1);
-    } else if (!shouldFlip) {
-      setCurrentState(state);
-    }
-  }, [shouldFlip, state, index]);
-
   const fontSize = size * 0.45;
 
   const getStyles = (): { bg: string; border: string; text: string } => {
-    switch (currentState) {
+    switch (state) {
       case 'correct':
-        return { bg: '#16a34a', border: '#16a34a', text: '#ffffff' };
+        return { bg: '#22c55e', border: '#22c55e', text: '#ffffff' };
       case 'present':
         return { bg: '#eab308', border: '#eab308', text: '#ffffff' };
       case 'absent':
-        return { bg: '#9ca3af', border: '#9ca3af', text: '#ffffff' };
+        return { bg: '#6b7280', border: '#6b7280', text: '#ffffff' };
       case 'tbd':
         return { bg: '#ffffff', border: '#9ca3af', text: '#1a1a2e' };
       case 'hint-used':
@@ -82,10 +46,11 @@ function Tile({
   };
 
   const styles = getStyles();
+  const hasFlip = shouldFlip && (state === 'correct' || state === 'present' || state === 'absent' || state === 'hint-used');
 
   return (
     <div
-      className={`flex items-center justify-center font-black uppercase rounded-md transition-transform duration-100 select-none ${isFlipping ? 'scale-y-0' : 'scale-y-100'}`}
+      className={`flex items-center justify-center font-black uppercase rounded-md select-none ${hasFlip ? 'animate-tile-flip' : 'transition-colors'}`}
       style={{
         width: `${size}px`,
         height: `${size}px`,
@@ -93,6 +58,7 @@ function Tile({
         backgroundColor: styles.bg,
         border: `2px solid ${styles.border}`,
         color: styles.text,
+        ...(hasFlip ? { animationDelay: `${index * 150}ms` } : {}),
       }}
     >
       {letter}

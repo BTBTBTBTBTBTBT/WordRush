@@ -15,9 +15,9 @@ interface HelpModalProps {
 /** A single example tile */
 function ExampleTile({ letter, color }: { letter: string; color: 'green' | 'yellow' | 'gray' | 'empty' }) {
   const styles = {
-    green: 'bg-green-600 border-green-600 text-white',
+    green: 'bg-green-500 border-green-500 text-white',
     yellow: 'bg-yellow-500 border-yellow-500 text-white',
-    gray: 'bg-gray-400 border-gray-400 text-white',
+    gray: 'bg-gray-500 border-gray-500 text-white',
     empty: 'bg-white border-gray-300 text-gray-800',
   };
 

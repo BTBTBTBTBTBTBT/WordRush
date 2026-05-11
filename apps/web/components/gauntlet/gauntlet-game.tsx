@@ -557,9 +557,9 @@ function GauntletSequenceMiniBoard({
 
   const getTileColor = (state: TileState) => {
     switch (state) {
-      case TileState.CORRECT: return 'bg-green-600 border-green-600';
+      case TileState.CORRECT: return 'bg-green-500 border-green-500';
       case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
-      case TileState.ABSENT: return 'bg-gray-400 border-gray-400';
+      case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
       default: return 'bg-white border-gray-300';
     }
   };
@@ -588,6 +588,7 @@ function GauntletSequenceMiniBoard({
           const guess = allGuesses[rowIndex] || '';
           const isPastGuess = rowIndex < board.guesses.length;
           const isCurrentRow = rowIndex === board.guesses.length && isActive;
+          const isLastSubmitted = isPastGuess && rowIndex === board.guesses.length - 1 && showColors;
           const tiles = isPastGuess && showColors
             ? evalGuess(guess, board.solution)
             : Array(5).fill(TileState.EMPTY);
@@ -611,7 +612,8 @@ function GauntletSequenceMiniBoard({
                         : letter
                         ? 'bg-white border-gray-400 text-gray-800'
                         : 'bg-white border-gray-200'
-                    }`}
+                    } ${isLastSubmitted ? 'animate-tile-flip-mini' : ''}`}
+                    style={isLastSubmitted ? { animationDelay: `${letterIndex * 80}ms` } : undefined}
                   >
                     {(showColors || isCurrentRow || (isPastGuess && !isLocked)) ? letter.toUpperCase() : isPastGuess ? '•' : ''}
                   </div>

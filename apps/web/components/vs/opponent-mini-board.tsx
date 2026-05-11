@@ -12,6 +12,7 @@ const TILE_COLORS: Record<string, string> = {
   CORRECT: '#22c55e',
   PRESENT: '#eab308',
   ABSENT: '#6b7280',
+  EMPTY: 'transparent',
 };
 
 export function OpponentMiniBoard({ tiles, maxGuesses, wordLength }: OpponentMiniBoardProps) {
