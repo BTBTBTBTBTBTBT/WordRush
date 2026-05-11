@@ -9,7 +9,6 @@ import {
   Target,
   Flame,
   Clock,
-  TrendingUp,
   Star,
   Zap,
   Swords,
@@ -17,43 +16,22 @@ import {
   Check,
   X,
   ArrowLeft,
-  Shield,
-  Skull,
-  Crown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
+import { TopWordsCard } from '@/components/profile/top-words-card';
+import { fetchTopWords } from '@/lib/stats-service';
 import type { Database } from '@/lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'];
 
-const gameModeTitles: Record<string, string> = {
-  DUEL: 'Classic',
-  MULTI_DUEL: 'Multi Duel',
-  GAUNTLET: 'Gauntlet',
-  QUORDLE: 'QuadWord',
-  OCTORDLE: 'OctoWord',
-  SEQUENCE: 'Succession',
-  RESCUE: 'Deliverance',
-  PROPERNOUNDLE: 'ProperNoundle',
-  TOURNAMENT: 'Tournament',
-};
-
-const gameModeIcons: Record<string, { icon: React.ComponentType<any> | null; romanNumeral?: string; color: string }> = {
-  DUEL:          { icon: WordleGridIcon, color: '#7c3aed' },
-  QUORDLE:       { icon: null, romanNumeral: 'IV', color: '#ec4899' },
-  OCTORDLE:      { icon: null, romanNumeral: 'VIII', color: '#7e22ce' },
-  SEQUENCE:      { icon: TrendingUp, color: '#2563eb' },
-  RESCUE:        { icon: Shield, color: '#059669' },
-  GAUNTLET:      { icon: Skull, color: '#d97706' },
-  PROPERNOUNDLE: { icon: Crown, color: '#dc2626' },
-};
+const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey);
 
 function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -72,6 +50,8 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
+  const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [topWords, setTopWords] = useState<Array<{ word: string; count: number; wins: number }>>([]);
 
   useEffect(() => {
     if (profileId) {
@@ -115,7 +95,16 @@ export default function PublicProfilePage() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (selectedMode && profileId) {
+      fetchTopWords(profileId, selectedMode, 5).then(setTopWords);
+    } else {
+      setTopWords([]);
+    }
+  }, [selectedMode, profileId]);
+
   const filteredStats = stats.filter((s) => s.play_type === activeTab);
+  const selectedModeStat = selectedMode ? filteredStats.find((s) => s.game_mode === selectedMode) : null;
 
   if (loading) {
     return (
@@ -176,7 +165,7 @@ export default function PublicProfilePage() {
             {/* Level Badge & XP Bar */}
             <div className="mt-3 flex flex-col items-center gap-2">
               <div className="inline-flex items-center gap-2 rounded-full px-4 py-1"
-                style={{ background: '#fef9ec', border: '1.5px solid #fde68a' }}>
+                style={{ background: 'var(--color-highlight-gold)', border: '1.5px solid var(--color-gold-border)' }}>
                 <Star className="w-4 h-4" style={{ color: '#d97706' }} fill="currentColor" />
                 <span className="font-bold text-sm" style={{ color: '#92400e' }}>Level {profile.level}</span>
               </div>
@@ -211,7 +200,7 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="rounded-2xl p-6"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid #fde68a' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border)' }}
           >
             <div className="flex items-center gap-3 mb-3">
               <Star className="w-8 h-8" style={{ color: '#d97706' }} fill="currentColor" />
@@ -241,7 +230,7 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="rounded-2xl p-6"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid #bbf7d0' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-win-bg)' }}
           >
             <div className="flex items-center gap-3">
               <Trophy className="w-8 h-8" style={{ color: '#16a34a' }} />
@@ -258,7 +247,7 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3 }}
             className="rounded-2xl p-6"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid #fed7aa' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border-light)' }}
           >
             <div className="flex items-center gap-3">
               <Flame className="w-8 h-8" style={{ color: '#ea580c' }} fill="currentColor" />
@@ -268,7 +257,7 @@ export default function PublicProfilePage() {
                 <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Best: {profile.best_streak}</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid #fed7aa' }}>
+            <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid var(--color-gold-border-light)' }}>
               <Zap className="w-6 h-6" style={{ color: '#7c3aed' }} />
               <div>
                 <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Daily Login Streak</div>
@@ -283,7 +272,7 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.4 }}
             className="rounded-2xl p-6"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid #bfdbfe' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
           >
             <div className="flex items-center gap-3">
               <Target className="w-8 h-8" style={{ color: '#2563eb' }} />
@@ -303,97 +292,105 @@ export default function PublicProfilePage() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="rounded-2xl p-6"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+          className="space-y-3"
         >
-          <h2 className="text-2xl font-black mb-4 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-            <TrendingUp className="w-6 h-6" style={{ color: '#ec4899' }} />
+          <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
             Game Mode Statistics
-          </h2>
-
-          {/* Tab Buttons */}
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => setActiveTab('solo')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all`}
-              style={{
-                background: activeTab === 'solo' ? '#f3f0ff' : '#fafafa',
-                border: activeTab === 'solo' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-                color: activeTab === 'solo' ? '#7c3aed' : '#9ca3af',
-              }}
-            >
-              <User className="w-4 h-4" />
-              Solo
-            </button>
-            <button
-              onClick={() => setActiveTab('vs')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all`}
-              style={{
-                background: activeTab === 'vs' ? '#f3f0ff' : '#fafafa',
-                border: activeTab === 'vs' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-                color: activeTab === 'vs' ? '#7c3aed' : '#9ca3af',
-              }}
-            >
-              <Swords className="w-4 h-4" />
-              VS
-            </button>
           </div>
 
-          {filteredStats.length === 0 ? (
-            <div className="text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
-              {activeTab === 'solo'
-                ? 'No solo stats yet.'
-                : 'No VS stats yet.'}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredStats.map((stat, index) => (
-                <motion.div
-                  key={stat.id}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.1 + index * 0.1 }}
-                  className="rounded-xl p-4"
-                  style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
-                >
-                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
-                    {(() => {
-                      const cfg = gameModeIcons[stat.game_mode];
-                      if (!cfg) return <Zap className="w-5 h-5" style={{ color: '#d97706' }} />;
-                      if (cfg.romanNumeral) {
-                        return <span className="text-sm font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>;
-                      }
-                      if (cfg.icon) {
-                        const Icon = cfg.icon;
-                        return <Icon className="w-5 h-5" style={{ color: cfg.color }} />;
-                      }
-                      return <Zap className="w-5 h-5" style={{ color: cfg.color }} />;
-                    })()}
-                    {gameModeTitles[stat.game_mode] || stat.game_mode}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <div style={{ color: 'var(--color-text-muted)' }}>Wins</div>
-                      <div className="font-bold text-lg" style={{ color: '#16a34a' }}>{stat.wins}</div>
-                    </div>
-                    <div>
-                      <div style={{ color: 'var(--color-text-muted)' }}>Losses</div>
-                      <div className="font-bold text-lg" style={{ color: '#dc2626' }}>{stat.losses}</div>
-                    </div>
-                    <div>
-                      <div style={{ color: 'var(--color-text-muted)' }}>Best Score</div>
-                      <div className="font-bold text-lg" style={{ color: '#d97706' }}>{stat.best_score}</div>
-                    </div>
-                    <div>
-                      <div style={{ color: 'var(--color-text-muted)' }}>Fastest</div>
-                      <div className="font-bold text-lg" style={{ color: '#2563eb' }}>
-                        {stat.fastest_time > 0 ? formatDuration(stat.fastest_time) : '-'}
-                      </div>
+          {/* Solo / VS toggle */}
+          <div className="flex gap-2">
+            {(['solo', 'vs'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setActiveTab(t)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition-all"
+                style={{
+                  background: activeTab === t ? 'var(--color-surface)' : 'var(--color-surface-hover)',
+                  border: activeTab === t ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
+                  color: activeTab === t ? '#7c3aed' : 'var(--color-text-muted)',
+                }}
+              >
+                {t === 'solo' ? <User className="w-3.5 h-3.5" /> : <Swords className="w-3.5 h-3.5" />}
+                {t === 'solo' ? 'Solo' : 'VS'}
+              </button>
+            ))}
+          </div>
+
+          {/* Mode Picker */}
+          <ModePicker
+            showAll={false}
+            selectedMode={selectedMode || (filteredStats[0]?.game_mode ?? 'DUEL')}
+            onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
+          />
+
+          {/* Selected mode stats card */}
+          {(() => {
+            const modeKey = selectedMode || filteredStats[0]?.game_mode || 'DUEL';
+            const stat = filteredStats.find((s) => s.game_mode === modeKey);
+            const mode = getMode(modeKey);
+            const color = mode?.accentColor || '#7c3aed';
+            const Icon = mode?.icon;
+
+            return (
+              <div
+                className="overflow-hidden"
+                style={{
+                  background: 'var(--color-surface)',
+                  border: '1.5px solid var(--color-border)',
+                  borderRadius: '16px',
+                }}
+              >
+                <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+                <div className="px-4 pt-3 pb-2 flex items-center gap-2.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${color}15` }}
+                  >
+                    {mode?.romanNumeral ? (
+                      <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
+                    ) : Icon ? (
+                      <Icon className="w-4 h-4" style={{ color }} />
+                    ) : null}
+                  </div>
+                  <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
+                    {mode?.title || modeKey}
+                  </div>
+                </div>
+
+                {stat ? (
+                  <div className="p-4">
+                    <div className="grid grid-cols-4 gap-3">
+                      {[
+                        { label: 'Wins', value: stat.wins, color: '#16a34a' },
+                        { label: 'Losses', value: stat.losses, color: '#dc2626' },
+                        { label: 'Best', value: stat.best_score > 0 ? stat.best_score : '-', color: '#d97706' },
+                        { label: 'Fastest', value: stat.fastest_time > 0 ? formatDuration(stat.fastest_time) : '-', color: '#2563eb' },
+                      ].map((s) => (
+                        <div key={s.label} className="text-center">
+                          <div className="text-lg font-black leading-tight" style={{ color: 'var(--color-text)' }}>{s.value}</div>
+                          <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                ) : (
+                  <div className="p-6 text-center">
+                    <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                      No {activeTab} games played in this mode yet
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Top Words for selected mode */}
+          {topWords.length > 0 && (
+            <TopWordsCard
+              words={topWords}
+              accentColor={getMode(selectedMode || filteredStats[0]?.game_mode || 'DUEL')?.accentColor || '#7c3aed'}
+            />
           )}
         </motion.div>
 
@@ -436,8 +433,9 @@ export default function PublicProfilePage() {
                       <div
                         className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
-                          background: isWinner ? '#f0fdf4' : '#fef2f2',
-                          border: isWinner ? '1px solid #bbf7d0' : '1px solid #fecaca',
+                          background: isWinner ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
+                          border: isWinner ? '1px solid var(--color-win-text)' : '1px solid var(--color-loss-text)',
+                          opacity: 0.9,
                         }}
                       >
                         {isWinner ? (
@@ -448,7 +446,7 @@ export default function PublicProfilePage() {
                       </div>
                       <div className="min-w-0">
                         <div className="font-bold truncate" style={{ color: 'var(--color-text)' }}>
-                          {gameModeTitles[match.game_mode] || match.game_mode}
+                          {getMode(match.game_mode)?.title || match.game_mode}
                         </div>
                         <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                           {isSolo ? 'Solo' : 'VS Match'}
@@ -458,7 +456,7 @@ export default function PublicProfilePage() {
 
                     <div className="flex items-center gap-4 flex-shrink-0 text-right">
                       <div>
-                        <div className="font-bold text-sm" style={{ color: isWinner ? '#16a34a' : '#dc2626' }}>
+                        <div className="font-bold text-sm" style={{ color: isWinner ? 'var(--color-win-text)' : 'var(--color-loss-text)' }}>
                           {isWinner ? 'Win' : 'Loss'}
                         </div>
                         <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
