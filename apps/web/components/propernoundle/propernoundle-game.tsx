@@ -49,6 +49,16 @@ const CATEGORY_COLORS: Record<string, string> = {
   currentevents: '#ef4444',
 };
 
+const CATEGORY_EMOJI: Record<string, string> = {
+  music: '\u{1F3B5}',
+  videogames: '\u{1F3AE}',
+  movies: '\u{1F3AC}',
+  sports: '\u{26BD}',
+  history: '\u{1F3DB}',
+  science: '\u{1F52C}',
+  currentevents: '\u{1F4F0}',
+};
+
 type GameMode = 'daily' | 'practice';
 
 interface DailyState {
@@ -623,6 +633,24 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   const categoryColor = puzzle.themeCategory ? CATEGORY_COLORS[puzzle.themeCategory] || '#7c3aed' : '#7c3aed';
   const categoryLabel = puzzle.themeCategory ? CATEGORY_LABELS[puzzle.themeCategory] || puzzle.themeCategory : '';
 
+  const resultImage = wikiImageUrl ? (
+    <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 shadow-md shrink-0"
+      style={{ borderColor: gameStatus === 'won' ? '#bbf7d0' : '#fecaca' }}>
+      <img
+        src={wikiImageUrl}
+        alt={puzzle.display}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${wikiImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setWikiImageLoaded(true)}
+      />
+      {!wikiImageLoaded && <div className="absolute inset-0 bg-gray-100 animate-pulse" />}
+    </div>
+  ) : (
+    <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl shrink-0"
+      style={{ backgroundColor: categoryColor + '22', border: `2px solid ${categoryColor}44` }}>
+      {CATEGORY_EMOJI[puzzle.themeCategory] || '\u{2753}'}
+    </div>
+  );
+
   return (
     <div
       className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
@@ -634,7 +662,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       </AnimatePresence>
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
-      {/* Header */}
+      {/* Header — compact, matching other modes */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#dc2626" />
         <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
@@ -659,86 +687,22 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
             <Clock className="w-3 h-3 inline mr-0.5" />{formatTime(elapsedTime)}
           </span>
         </div>
-
-        {/* Hint display */}
-        {hints.hint && (
-          <div className="mt-2 mx-4 p-2 rounded-lg border border-gray-200 bg-white">
-            <p className="text-xs text-gray-500 italic leading-relaxed">{hints.hint}</p>
-          </div>
-        )}
-
-        {/* Message */}
         {message && (
-          <div className="mt-1">
+          <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>
             <span className="bg-gray-800 text-white text-xs font-bold px-3 py-1 rounded-lg">{message}</span>
           </div>
         )}
-
-        {/* Win/Loss state */}
-        {gameStatus === 'won' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-2 flex flex-col items-center gap-2"
-          >
-            {/* Wikipedia image */}
-            {wikiImageUrl && (
-              <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-green-200 shadow-md">
-                <img
-                  src={wikiImageUrl}
-                  alt={puzzle.display}
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${wikiImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  onLoad={() => setWikiImageLoaded(true)}
-                />
-                {!wikiImageLoaded && (
-                  <div className="absolute inset-0 bg-gray-100 animate-pulse" />
-                )}
-              </div>
-            )}
-            <span className="text-green-600 text-xs font-bold">
-              {puzzle.display} — solved in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'}  ·  {formatTime(elapsedTime)}
-            </span>
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-              {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
-            </div>
-          </motion.div>
-        )}
-        {gameStatus === 'lost' && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-2 flex flex-col items-center gap-2"
-          >
-            {/* Wikipedia image */}
-            {wikiImageUrl && (
-              <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-red-200 shadow-md">
-                <img
-                  src={wikiImageUrl}
-                  alt={puzzle.display}
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${wikiImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  onLoad={() => setWikiImageLoaded(true)}
-                />
-                {!wikiImageLoaded && (
-                  <div className="absolute inset-0 bg-gray-100 animate-pulse" />
-                )}
-              </div>
-            )}
-            <span className="text-red-500 text-xs font-bold">
-              The answer was: {puzzle.display}
-            </span>
-            <div className="flex items-center gap-3">
-              <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-              <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-              {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
-            </div>
-          </motion.div>
-        )}
       </div>
 
+      {/* Hint clue text — slim bar between header and board */}
+      {hints.hint && (
+        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
+          <p className="text-xs text-gray-500 italic leading-snug line-clamp-2">{hints.hint}</p>
+        </div>
+      )}
+
       {/* Board */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-2 pb-2">
+      <div className="flex-1 min-h-0 flex items-center justify-center px-2 pb-1">
         <NoundleBoard
           guesses={guesses}
           currentGuess={currentGuess}
@@ -751,7 +715,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
       {/* Hint Buttons */}
       {gameStatus === 'playing' && (
-        <div className="shrink-0 flex justify-center gap-2 px-4 pb-2">
+        <div className="shrink-0 flex justify-center gap-2 px-4 pb-1">
           <button
             onClick={handleHintClue}
             disabled={hints.hintUsed || hints.loadingHint}
@@ -800,6 +764,36 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
         <div className="shrink-0 pb-2 px-2 pt-1">
           <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} />
         </div>
+      )}
+
+      {/* Result panel — replaces keyboard area when game ends */}
+      {gameStatus !== 'playing' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="shrink-0 px-4 pb-3"
+        >
+          <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+            {resultImage}
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className={`text-sm font-bold ${gameStatus === 'won' ? 'text-green-600' : 'text-red-500'}`}>
+                {gameStatus === 'won'
+                  ? `${puzzle.display}`
+                  : `The answer was: ${puzzle.display}`}
+              </span>
+              {gameStatus === 'won' && (
+                <span className="text-xs text-gray-400">
+                  Solved in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'} · {formatTime(elapsedTime)}
+                </span>
+              )}
+              <div className="flex items-center gap-3 mt-0.5">
+                <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+                <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
+              </div>
+            </div>
+          </div>
+        </motion.div>
       )}
 
       {gameStatus !== 'playing' && <BottomNav />}

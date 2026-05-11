@@ -111,6 +111,7 @@ export default memo(function NoundleBoard({
   const [lastGuessCount, setLastGuessCount] = useState(guesses.length);
   const [shouldFlipRow, setShouldFlipRow] = useState(-1);
   const [tileSize, setTileSize] = useState(48);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (guesses.length > lastGuessCount) {
@@ -127,26 +128,24 @@ export default memo(function NoundleBoard({
   }, [answerDisplay, answerLength]);
 
   useEffect(() => {
-    const calculateTileSize = () => {
-      const vv = window.visualViewport;
-      const viewportHeight = vv ? vv.height : window.innerHeight;
-      const viewportWidth = vv ? vv.width : window.innerWidth;
+    const el = containerRef.current;
+    if (!el) return;
 
-      const reservedHeight = 360;
-      const availableHeight = viewportHeight - reservedHeight;
+    const calculateTileSize = () => {
+      const containerHeight = el.clientHeight;
+      const containerWidth = el.clientWidth;
 
       const rowGap = 6;
       const totalRowGaps = (maxGuesses - 1) * rowGap;
-      const maxTileHeightFromHeight = (availableHeight - totalRowGaps) / maxGuesses;
+      const maxTileHeightFromHeight = (containerHeight - totalRowGaps) / maxGuesses;
 
       const wordGroupGap = 12;
       const tileGap = 4;
       const totalTiles = wordGroups.reduce((sum, count) => sum + count, 0);
       const totalGroupGaps = (wordGroups.length - 1) * wordGroupGap;
       const totalTileGaps = (totalTiles - wordGroups.length) * tileGap;
-      const horizontalPadding = viewportWidth < 640 ? 32 : 64;
 
-      const availableWidth = viewportWidth - horizontalPadding - totalGroupGaps - totalTileGaps;
+      const availableWidth = containerWidth - totalGroupGaps - totalTileGaps;
       const maxTileWidthFromWidth = availableWidth / totalTiles;
 
       const calculatedSize = Math.min(maxTileHeightFromHeight, maxTileWidthFromWidth, 48);
@@ -155,18 +154,9 @@ export default memo(function NoundleBoard({
       setTileSize(finalSize);
     };
 
-    calculateTileSize();
-
-    const handleResize = () => {
-      calculateTileSize();
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.visualViewport?.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      window.visualViewport?.removeEventListener('resize', handleResize);
-    };
+    const ro = new ResizeObserver(calculateTileSize);
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [maxGuesses, wordGroups]);
 
   const renderRow = (index: number) => {
@@ -257,7 +247,7 @@ export default memo(function NoundleBoard({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
+    <div ref={containerRef} className="flex flex-col gap-1.5 w-full h-full justify-center">
       {Array(maxGuesses)
         .fill(0)
         .map((_, i) => renderRow(i))}

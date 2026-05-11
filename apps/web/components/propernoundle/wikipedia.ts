@@ -5,6 +5,7 @@ interface WikiSummary {
   title: string;
   description?: string;
   thumbnail?: { source: string; width: number; height: number };
+  originalimage?: { source: string; width: number; height: number };
 }
 
 export async function fetchWikipediaHint(
@@ -48,7 +49,7 @@ export async function fetchWikipediaImage(
     if (!response.ok) return null;
 
     const data: WikiSummary = await response.json();
-    return data.thumbnail?.source || null;
+    return data.thumbnail?.source || data.originalimage?.source || null;
   } catch {
     return null;
   }
