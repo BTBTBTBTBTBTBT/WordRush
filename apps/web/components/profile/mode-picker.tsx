@@ -27,34 +27,37 @@ interface ModePickerProps {
   selectedMode: string | null;
   onSelectMode: (dbKey: string | null) => void;
   gamesPerMode?: Record<string, number>;
+  showAll?: boolean;
 }
 
-export function ModePicker({ selectedMode, onSelectMode, gamesPerMode }: ModePickerProps) {
+export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll = true }: ModePickerProps) {
   return (
     <div
       className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1"
       style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
     >
       {/* All chip */}
-      <button
-        className="flex-shrink-0 flex flex-col items-center gap-1 transition-all duration-200"
-        style={{
-          background: selectedMode === null ? 'var(--color-surface-hover)' : 'var(--color-surface)',
-          border: selectedMode === null ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-          borderRadius: '12px',
-          padding: '8px 14px',
-          minWidth: '62px',
-        }}
-        onClick={() => onSelectMode(null)}
-      >
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center"
-          style={{ background: selectedMode === null ? '#7c3aed15' : 'var(--color-surface-alt)' }}
+      {showAll && (
+        <button
+          className="flex-shrink-0 flex flex-col items-center gap-1 transition-all duration-200"
+          style={{
+            background: selectedMode === null ? 'var(--color-surface-hover)' : 'var(--color-surface)',
+            border: selectedMode === null ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
+            borderRadius: '12px',
+            padding: '8px 14px',
+            minWidth: '62px',
+          }}
+          onClick={() => onSelectMode(null)}
         >
-          <BarChart3 className="w-3.5 h-3.5" style={{ color: selectedMode === null ? '#7c3aed' : 'var(--color-text-muted)' }} />
-        </div>
-        <span className="text-[10px] font-extrabold" style={{ color: selectedMode === null ? '#7c3aed' : 'var(--color-text-muted)' }}>All</span>
-      </button>
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{ background: selectedMode === null ? '#7c3aed15' : 'var(--color-surface-alt)' }}
+          >
+            <BarChart3 className="w-3.5 h-3.5" style={{ color: selectedMode === null ? '#7c3aed' : 'var(--color-text-muted)' }} />
+          </div>
+          <span className="text-[10px] font-extrabold" style={{ color: selectedMode === null ? '#7c3aed' : 'var(--color-text-muted)' }}>All</span>
+        </button>
+      )}
 
       {PROFILE_MODES.map((mode) => {
         const isActive = selectedMode === mode.dbKey;

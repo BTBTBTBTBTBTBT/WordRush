@@ -17,6 +17,13 @@
   --color-surface-alt: #f3f4f6;
   --color-border-alt: #e5e7eb;
   --color-divider: #f0f0f0;
+  --color-highlight-gold: #fffbeb;
+  --color-gold-border: #fde68a;
+  --color-gold-border-light: #fef3c7;
+  --color-win-bg: #dcfce7;
+  --color-loss-bg: #fee2e2;
+  --color-win-text: #16a34a;
+  --color-loss-text: #dc2626;
 }
 
 [data-theme="dark"] {
@@ -31,6 +38,13 @@
   --color-surface-alt: #2a2a48;
   --color-border-alt: #3a3a5c;
   --color-divider: #3a3a5c;
+  --color-highlight-gold: #422006;
+  --color-gold-border: #92400e;
+  --color-gold-border-light: #78350f;
+  --color-win-bg: #052e16;
+  --color-loss-bg: #450a0a;
+  --color-win-text: #4ade80;
+  --color-loss-text: #f87171;
 }
 
 [data-theme="ocean"] {

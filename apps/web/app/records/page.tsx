@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Trophy, Clock, Target, Flame, Crown, Zap, TrendingUp, Skull, Shield, Medal, Users } from 'lucide-react';
+import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import {
   fetchAllTimeRecords,
   fetchDailyLeaderboard,
@@ -18,7 +18,8 @@ import {
   type LeaderboardEntry,
 } from '@/lib/daily-service';
 
-/* ── record type config ── */
+const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey)!;
+
 const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format: (v: number) => string }> = {
   fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
   fewest_guesses: { label: 'Fewest Guesses', icon: Target, format: (v) => `${v} guesses` },
@@ -29,45 +30,9 @@ const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format
   most_daily_completions: { label: 'Most Dailies Completed', icon: Target, format: (v) => `${v} dailies` },
 };
 
-/* ── mode config ── */
-const MODE_LABELS: Record<string, string> = {
-  DUEL: 'Classic',
-  QUORDLE: 'QuadWord',
-  OCTORDLE: 'OctoWord',
-  SEQUENCE: 'Succession',
-  RESCUE: 'Deliverance',
-  GAUNTLET: 'Gauntlet',
-  PROPERNOUNDLE: 'ProperNoundle',
-};
-
-const MODE_COLORS: Record<string, string> = {
-  DUEL: '#7c3aed',
-  QUORDLE: '#ec4899',
-  OCTORDLE: '#7e22ce',
-  SEQUENCE: '#2563eb',
-  RESCUE: '#059669',
-  GAUNTLET: '#d97706',
-  PROPERNOUNDLE: '#dc2626',
-};
-
-const MODE_ICONS: Record<string, any> = {
-  DUEL: WordleGridIcon,
-  SEQUENCE: TrendingUp,
-  RESCUE: Shield,
-  GAUNTLET: Skull,
-  PROPERNOUNDLE: Crown,
-};
-
-const MODE_ROMAN: Record<string, string> = {
-  QUORDLE: 'IV',
-  OCTORDLE: 'VIII',
-};
-
-const GAME_MODES_ORDERED = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE'];
 const PER_MODE_RECORD_TYPES = ['fastest_win', 'fewest_guesses', 'most_games_played'];
 const GLOBAL_RECORD_TYPES = ['longest_streak', 'highest_level', 'most_gold_medals', 'most_daily_completions'];
 
-/* ── helpers ── */
 function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   const m = Math.floor(seconds / 60);
@@ -75,23 +40,6 @@ function formatTime(seconds: number): string {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
-/* ── mode icon renderer ── */
-function ModeIcon({ mode, color, size = 16 }: { mode: string; color: string; size?: number }) {
-  const Icon = MODE_ICONS[mode];
-  const roman = MODE_ROMAN[mode];
-
-  if (roman) {
-    return (
-      <span className="text-[11px] font-black leading-none" style={{ color }}>{roman}</span>
-    );
-  }
-  if (Icon) {
-    return <Icon style={{ color, width: size, height: size }} />;
-  }
-  return <Trophy style={{ color, width: size, height: size }} />;
-}
-
-/* ── medal icon for leaderboard ranks ── */
 function RankIcon({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#d97706' }} />;
   if (rank === 2) return <Medal className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />;
@@ -99,12 +47,6 @@ function RankIcon({ rank }: { rank: number }) {
   return <span className="text-xs font-black w-5 text-center" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
 }
 
-/* ── stat cell (matches Gauntlet All-Time Stats visual) ──
-   Mirrors the layout used in `components/gauntlet/gauntlet-results.tsx`
-   — small colored icon on the left, stacked `bold value / gray label`
-   on the right, all packed into a 2-column grid by the parent. Handles
-   both "record exists" (shows holder link + optional current-user
-   crown) and "no record yet" (em-dash placeholder in muted color). */
 function StatCell({
   recordType,
   record,
@@ -126,18 +68,18 @@ function StatCell({
       className="flex items-start gap-2.5 p-2 rounded-lg"
       style={
         isCurrentUser && hasRecord
-          ? { background: '#fffbeb', border: '1px solid #fde68a' }
+          ? { background: 'var(--color-highlight-gold)', border: '1px solid var(--color-gold-border)' }
           : { border: '1px solid transparent' }
       }
     >
       <Icon
         className="w-4 h-4 shrink-0 mt-0.5"
-        style={{ color: hasRecord ? accentColor : '#d1d5db' }}
+        style={{ color: hasRecord ? accentColor : 'var(--color-text-muted)' }}
       />
       <div className="min-w-0 flex-1">
         <div
           className="font-black text-base leading-tight"
-          style={{ color: hasRecord ? 'var(--color-text)' : '#d1d5db' }}
+          style={{ color: hasRecord ? 'var(--color-text)' : 'var(--color-text-muted)' }}
         >
           {hasRecord ? config.format(record!.record_value) : '—'}
         </div>
@@ -158,6 +100,35 @@ function StatCell({
           </Link>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── Skeleton loaders ── */
+function LeaderboardSkeleton() {
+  return (
+    <div className="space-y-0">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex items-center gap-3 px-4 py-2.5 animate-pulse">
+          <div className="w-5 h-5 rounded-full" style={{ background: 'var(--color-border)' }} />
+          <div className="flex-1 h-3 rounded" style={{ background: 'var(--color-border)' }} />
+          <div className="w-12 h-3 rounded" style={{ background: 'var(--color-border)' }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AllTimeSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="animate-pulse"
+          style={{ background: 'var(--color-border)', borderRadius: '16px', height: i === 1 ? '140px' : '100px' }}
+        />
+      ))}
     </div>
   );
 }
@@ -195,7 +166,9 @@ function DailyRecordsView({ userId }: { userId?: string }) {
     load();
   }, [selectedMode, playType, userId, today]);
 
-  const color = MODE_COLORS[selectedMode];
+  const mode = getMode(selectedMode);
+  const color = mode.accentColor;
+  const Icon = mode.icon;
 
   return (
     <motion.div
@@ -203,58 +176,16 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      {/* Mode Tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-2 mb-3">
-        {GAME_MODES_ORDERED.map((mode) => (
-          <button
-            key={mode}
-            onClick={() => setSelectedMode(mode)}
-            className="px-3 py-1.5 rounded-lg text-[10px] font-extrabold whitespace-nowrap transition-all"
-            style={{
-              background: selectedMode === mode ? 'var(--color-surface)' : 'var(--color-surface-hover)',
-              border: selectedMode === mode ? `1.5px solid ${MODE_COLORS[mode]}` : '1.5px solid var(--color-border)',
-              color: selectedMode === mode ? MODE_COLORS[mode] : '#9ca3af',
-            }}
-          >
-            {MODE_LABELS[mode]}
-          </button>
-        ))}
+      {/* Mode Picker */}
+      <div className="mb-3">
+        <ModePicker
+          showAll={false}
+          selectedMode={selectedMode}
+          onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
+        />
       </div>
 
-      {/* Solo/VS Toggle */}
-      <div className="flex gap-2 mb-4">
-        {(['solo', 'vs'] as const).map((type) => (
-          <button
-            key={type}
-            onClick={() => setPlayType(type)}
-            className="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all"
-            style={{
-              background: playType === type ? 'var(--color-surface)' : 'var(--color-surface-hover)',
-              border: playType === type ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-              color: playType === type ? '#7c3aed' : '#9ca3af',
-            }}
-          >
-            {type === 'solo' ? 'Solo' : 'VS'}
-          </button>
-        ))}
-      </div>
-
-      {/* Player Count + User Rank */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          <Users className="w-3.5 h-3.5" />
-          <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
-        </div>
-        {userRank && (
-          <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold" style={{ color: '#92400e' }}>Your rank:</span>
-            <span className="font-black text-xs" style={{ color: '#d97706' }}>#{userRank.rank}</span>
-            <span className="text-[10px] font-bold" style={{ color: '#92400e' }}>of {userRank.totalPlayers}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Mode Card + Leaderboard */}
+      {/* Leaderboard Card */}
       <motion.div
         key={`${selectedMode}-${playType}`}
         initial={{ opacity: 0 }}
@@ -270,30 +201,71 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         {/* Mode accent bar */}
         <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
 
-        {/* Mode header */}
-        <div className="flex items-center gap-2.5 px-4 pt-3 pb-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: `${color}15` }}
-          >
-            <ModeIcon mode={selectedMode} color={color} />
+        {/* Card header: mode info + solo/vs toggle */}
+        <div className="px-4 pt-3 pb-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: `${color}15` }}
+              >
+                {mode.romanNumeral ? (
+                  <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
+                ) : Icon ? (
+                  <Icon className="w-4 h-4" style={{ color }} />
+                ) : null}
+              </div>
+              <div>
+                <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
+                  {mode.title}
+                </div>
+                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  Today
+                </div>
+              </div>
+            </div>
+
+            {/* Solo/VS toggle */}
+            <div
+              className="flex rounded-lg overflow-hidden"
+              style={{ border: '1.5px solid var(--color-border)' }}
+            >
+              {(['solo', 'vs'] as const).map((t) => (
+                <button
+                  key={t}
+                  className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold transition-all"
+                  style={{
+                    background: playType === t ? `${color}15` : 'var(--color-surface)',
+                    color: playType === t ? color : 'var(--color-text-muted)',
+                  }}
+                  onClick={() => setPlayType(t)}
+                >
+                  {t === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
+                  {t === 'solo' ? 'Solo' : 'VS'}
+                </button>
+              ))}
+            </div>
           </div>
-          <div>
-            <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
-              {MODE_LABELS[selectedMode]}
+
+          {/* Player count + user rank */}
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              <Users className="w-3.5 h-3.5" />
+              <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
             </div>
-            <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              {playType === 'solo' ? 'Solo' : 'VS'} · Today
-            </div>
+            {userRank && (
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Your rank:</span>
+                <span className="font-black text-xs" style={{ color: '#d97706' }}>#{userRank.rank}</span>
+                <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>of {userRank.totalPlayers}</span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Leaderboard rows */}
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block w-5 h-5 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin mb-2" />
-            <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Loading...</p>
-          </div>
+          <LeaderboardSkeleton />
         ) : leaderboard.length === 0 ? (
           <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -309,8 +281,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                   key={entry.user_id}
                   className="flex items-center gap-3 px-4 py-2.5"
                   style={{
-                    background: isCurrentUser ? '#fffbeb' : rank <= 3 ? '#fafafa' : 'transparent',
-                    borderBottom: '1px solid #f3f0ff',
+                    background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
+                    borderBottom: '1px solid var(--color-border)',
                   }}
                 >
                   <RankIcon rank={rank} />
@@ -333,15 +305,11 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                             {entry.guess_count}G · {formatTime(entry.time_seconds)}
                             {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
                           </span>
-                          {/* Win/Loss pill. Solo only — for VS the vs_wins/
-                              vs_games numbers already encode the W/L split
-                              across multiple matches in the day, so an extra
-                              per-row W/L badge would be noise. */}
                           <span
                             className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
                             style={{
-                              background: entry.completed ? '#dcfce7' : '#fee2e2',
-                              color: entry.completed ? '#16a34a' : '#dc2626',
+                              background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
+                              color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
                             }}
                           >
                             {entry.completed ? 'Win' : 'Loss'}
@@ -368,6 +336,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
 function AllTimeRecordsView({ userId }: { userId?: string }) {
   const [records, setRecords] = useState<AllTimeRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMode, setSelectedMode] = useState('DUEL');
 
   useEffect(() => {
     fetchAllTimeRecords().then((data) => {
@@ -395,12 +364,20 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
 
   if (loading) {
     return (
-      <div className="text-center py-16">
-        <div className="inline-block w-6 h-6 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin mb-3" />
-        <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Loading records...</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <AllTimeSkeleton />
+      </motion.div>
     );
   }
+
+  const mode = getMode(selectedMode);
+  const color = mode.accentColor;
+  const Icon = mode.icon;
+  const modeRecords = modeRecordsMap.get(selectedMode) || [];
 
   return (
     <motion.div
@@ -411,8 +388,8 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
       {/* Hall of Fame */}
       <div className="mb-5">
         <div
-          className="text-[11px] font-extrabold uppercase mb-2"
-          style={{ color: 'var(--color-text-muted)', letterSpacing: '0.1em' }}
+          className="text-[10px] font-black uppercase tracking-wider mb-2"
+          style={{ color: 'var(--color-text-muted)' }}
         >
           Hall of Fame
         </div>
@@ -423,17 +400,17 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
           className="overflow-hidden"
           style={{
             background: 'var(--color-surface)',
-            border: '1.5px solid #fde68a',
+            border: '1.5px solid var(--color-gold-border)',
             borderRadius: '16px',
           }}
         >
           <div
             className="h-[3px]"
-            style={{ background: 'linear-gradient(90deg, #f59e0b, #fde68a)' }}
+            style={{ background: 'linear-gradient(90deg, #f59e0b, var(--color-gold-border))' }}
           />
           <div
             className="mx-3 my-3 rounded-xl p-3"
-            style={{ background: '#fffbeb', border: '1px solid #fef3c7' }}
+            style={{ background: 'var(--color-highlight-gold)', border: '1px solid var(--color-gold-border-light)' }}
           >
             <div className="grid grid-cols-2 gap-3">
               {GLOBAL_RECORD_TYPES.map((rt) => {
@@ -456,79 +433,83 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
       {/* By Game Mode */}
       <div>
         <div
-          className="text-[11px] font-extrabold uppercase mb-2"
-          style={{ color: 'var(--color-text-muted)', letterSpacing: '0.1em' }}
+          className="text-[10px] font-black uppercase tracking-wider mb-2"
+          style={{ color: 'var(--color-text-muted)' }}
         >
           By Game Mode
         </div>
-        <div className="space-y-3">
-          {GAME_MODES_ORDERED.map((mode, idx) => {
-            const color = MODE_COLORS[mode];
-            const modeRecords = modeRecordsMap.get(mode) || [];
 
-            return (
-              <motion.div
-                key={mode}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 + idx * 0.06 }}
-                className="overflow-hidden"
-                style={{
-                  background: 'var(--color-surface)',
-                  border: '1.5px solid var(--color-border)',
-                  borderRadius: '16px',
-                }}
-              >
-                <div
-                  className="h-[3px]"
-                  style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}
-                />
-                <div className="flex items-center gap-2.5 px-4 pt-3 pb-2">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${color}15` }}
-                  >
-                    <ModeIcon mode={mode} color={color} />
-                  </div>
-                  <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
-                    {MODE_LABELS[mode]}
-                  </div>
-                </div>
-                <div
-                  className="mx-3 mb-3 rounded-xl p-3"
-                  style={{ background: '#f9fafb', border: '1px solid #f3f4f6' }}
-                >
-                  {modeRecords.length === 0 ? (
-                    <div className="py-5 text-center">
-                      <Trophy
-                        className="w-7 h-7 mx-auto mb-1.5"
-                        style={{ color: '#d1d5db' }}
-                      />
-                      <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>
-                        No records yet
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      {PER_MODE_RECORD_TYPES.map((rt) => {
-                        const record = modeRecords.find((r) => r.record_type === rt);
-                        return (
-                          <StatCell
-                            key={rt}
-                            recordType={rt}
-                            record={record}
-                            accentColor={color}
-                            isCurrentUser={!!userId && record?.holder_id === userId}
-                          />
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
+        <div className="mb-3">
+          <ModePicker
+            showAll={false}
+            selectedMode={selectedMode}
+            onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
+          />
         </div>
+
+        <motion.div
+          key={selectedMode}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+          className="overflow-hidden"
+          style={{
+            background: 'var(--color-surface)',
+            border: '1.5px solid var(--color-border)',
+            borderRadius: '16px',
+          }}
+        >
+          <div
+            className="h-[3px]"
+            style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }}
+          />
+          <div className="flex items-center gap-2.5 px-4 pt-3 pb-2">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: `${color}15` }}
+            >
+              {mode.romanNumeral ? (
+                <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
+              ) : Icon ? (
+                <Icon className="w-4 h-4" style={{ color }} />
+              ) : null}
+            </div>
+            <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
+              {mode.title}
+            </div>
+          </div>
+          <div
+            className="mx-3 mb-3 rounded-xl p-3"
+            style={{ background: 'var(--color-surface-alt)', border: '1px solid var(--color-border-alt)' }}
+          >
+            {modeRecords.length === 0 ? (
+              <div className="py-5 text-center">
+                <Trophy
+                  className="w-7 h-7 mx-auto mb-1.5"
+                  style={{ color: 'var(--color-text-muted)' }}
+                />
+                <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>
+                  No records yet
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {PER_MODE_RECORD_TYPES.map((rt) => {
+                  const record = modeRecords.find((r) => r.record_type === rt);
+                  return (
+                    <StatCell
+                      key={rt}
+                      recordType={rt}
+                      record={record}
+                      accentColor={color}
+                      isCurrentUser={!!userId && record?.holder_id === userId}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
     </motion.div>
   );
@@ -571,12 +552,9 @@ export default function RecordsPage() {
             onClick={() => setActiveTab('daily')}
             className="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all"
             style={{
-              background: activeTab === 'daily'
-                ? 'linear-gradient(135deg, #7c3aed, #6d28d9)'
-                : '#f3f0ff',
+              background: activeTab === 'daily' ? 'var(--color-surface)' : 'var(--color-surface-hover)',
               border: activeTab === 'daily' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-              color: activeTab === 'daily' ? '#ffffff' : '#9ca3af',
-              boxShadow: activeTab === 'daily' ? '0 3px 0 #4c1d95' : 'none',
+              color: activeTab === 'daily' ? '#7c3aed' : 'var(--color-text-muted)',
             }}
           >
             Daily
@@ -585,12 +563,9 @@ export default function RecordsPage() {
             onClick={() => setActiveTab('alltime')}
             className="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all"
             style={{
-              background: activeTab === 'alltime'
-                ? 'linear-gradient(135deg, #7c3aed, #6d28d9)'
-                : '#f3f0ff',
+              background: activeTab === 'alltime' ? 'var(--color-surface)' : 'var(--color-surface-hover)',
               border: activeTab === 'alltime' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-              color: activeTab === 'alltime' ? '#ffffff' : '#9ca3af',
-              boxShadow: activeTab === 'alltime' ? '0 3px 0 #4c1d95' : 'none',
+              color: activeTab === 'alltime' ? '#7c3aed' : 'var(--color-text-muted)',
             }}
           >
             All-Time
