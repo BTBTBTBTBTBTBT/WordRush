@@ -23,7 +23,7 @@ export function TopWordsCard({ words, accentColor }: TopWordsCardProps) {
     >
       <div className="px-4 pt-3 pb-1">
         <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: accentColor }}>
-          Top Words
+          Most Played Words
         </div>
       </div>
       <div className="px-4 pb-3 space-y-1.5">

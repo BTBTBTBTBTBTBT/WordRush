@@ -634,24 +634,24 @@ export async function fetchConsistencyScore(userId: string, gameMode: string) {
 }
 
 /**
- * Fetch top N most-played target words for a user in a specific mode.
- * Unnests the `solutions` JSON array and counts frequency.
+ * Fetch top N most-used guess words for a user in a specific mode.
+ * Counts frequency from `player1_guesses` — shows the user's go-to words.
  */
 export async function fetchTopWords(userId: string, gameMode: string, limit: number = 5) {
   const { data } = await (supabase as any)
     .from('matches')
-    .select('solutions, winner_id')
+    .select('player1_guesses, winner_id')
     .eq('player1_id', userId)
     .eq('game_mode', gameMode)
-    .not('solutions', 'is', null)
+    .not('player1_guesses', 'is', null)
     .order('created_at', { ascending: false })
-    .limit(500) as { data: Array<{ solutions: string[]; winner_id: string | null }> | null };
+    .limit(500) as { data: Array<{ player1_guesses: string[]; winner_id: string | null }> | null };
 
   const wordMap = new Map<string, { count: number; wins: number }>();
   for (const row of data || []) {
-    if (!Array.isArray(row.solutions)) continue;
+    if (!Array.isArray(row.player1_guesses)) continue;
     const won = row.winner_id === userId;
-    for (const word of row.solutions) {
+    for (const word of row.player1_guesses) {
       const w = word.toUpperCase();
       const entry = wordMap.get(w) || { count: 0, wins: 0 };
       entry.count++;
