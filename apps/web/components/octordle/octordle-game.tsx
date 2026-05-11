@@ -193,7 +193,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
       </div>
 
       {/* Boards */}
-      <div className="flex-1 min-h-0 px-1 pb-1">
+      <div className="flex-1 min-h-0 overflow-hidden px-1 pb-1">
         <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
       </div>
 

@@ -46,7 +46,7 @@ function QuadrantKey({
     <button
       onClick={() => { haptic('light'); onClick(); }}
       className={cn(
-        'relative h-12 sm:h-14 ls:h-8 w-10 sm:w-12 ls:w-8 rounded-md font-black text-base sm:text-lg ls:text-sm overflow-hidden',
+        'relative h-12 sm:h-14 ls:h-7 w-10 sm:w-12 ls:w-7 rounded-md font-black text-base sm:text-lg ls:text-xs overflow-hidden',
         'transition-all duration-150 select-none',
         allAbsent
           ? 'text-white'
@@ -109,7 +109,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   onClick={() => { if (isBlackedOut) return; haptic('light'); onKey(key); }}
                   disabled={isBlackedOut}
                   className={cn(
-                    'h-12 sm:h-14 ls:h-8 px-3 sm:px-4 ls:px-2 rounded-md font-black text-base sm:text-lg ls:text-sm',
+                    'h-12 sm:h-14 ls:h-7 px-3 sm:px-4 ls:px-1.5 rounded-md font-black text-base sm:text-lg ls:text-xs',
                     'transition-all duration-150 select-none',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
@@ -129,7 +129,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 <button
                   key={key}
                   disabled
-                  className="h-12 sm:h-14 ls:h-8 w-10 sm:w-12 ls:w-8 rounded-md font-black text-base sm:text-lg ls:text-sm opacity-40 cursor-not-allowed animate-pulse select-none"
+                  className="h-12 sm:h-14 ls:h-7 w-10 sm:w-12 ls:w-7 rounded-md font-black text-base sm:text-lg ls:text-xs opacity-40 cursor-not-allowed animate-pulse select-none"
                   style={{
                     backgroundColor: 'rgba(220,38,38,0.15)',
                     border: '1.5px solid rgba(220,38,38,0.2)',

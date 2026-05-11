@@ -264,7 +264,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       </div>
 
       {/* 2x2 Board Grid */}
-      <div className="flex-1 min-h-0 px-2 pb-2">
+      <div className="flex-1 min-h-0 overflow-hidden px-2 pb-2">
         <div className="grid grid-cols-2 grid-rows-2 gap-2 w-full h-full max-w-lg mx-auto">
             {BOARD_ORDER.map((boardIdx) => {
               const board = state.boards[boardIdx];

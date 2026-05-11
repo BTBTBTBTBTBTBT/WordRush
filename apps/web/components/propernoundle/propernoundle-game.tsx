@@ -702,7 +702,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       )}
 
       {/* Board */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-2 pb-1">
+      <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-2 pb-1">
         <NoundleBoard
           guesses={guesses}
           currentGuess={currentGuess}
