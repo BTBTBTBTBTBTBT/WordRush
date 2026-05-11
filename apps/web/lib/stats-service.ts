@@ -388,14 +388,16 @@ export async function fetchActivityByDay(userId: string, days: number = 7) {
 
 /**
  * Fetch guess distribution for a user's solo wins.
- * Returns an array of { guesses: number, count: number } for guesses 1-6+.
+ * Optionally filter to a specific game mode.
  */
-export async function fetchGuessDistribution(userId: string) {
-  const { data } = await (supabase as any)
+export async function fetchGuessDistribution(userId: string, gameMode?: string) {
+  let query = (supabase as any)
     .from('matches')
-    .select('player1_score, player2_id, winner_id, player1_id')
+    .select('player1_score, player2_id, winner_id, player1_id, game_mode')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-    .not('winner_id', 'is', null) as { data: Array<{ player1_score: number; player2_id: string | null; winner_id: string; player1_id: string }> | null };
+    .not('winner_id', 'is', null);
+  if (gameMode) query = query.eq('game_mode', gameMode);
+  const { data } = await query as { data: Array<{ player1_score: number; player2_id: string | null; winner_id: string; player1_id: string; game_mode: string }> | null };
 
   const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
   for (const row of data || []) {
@@ -412,16 +414,18 @@ export async function fetchGuessDistribution(userId: string) {
 
 /**
  * Fetch recent solve times for a user (wins only, solo).
- * Returns up to `limit` entries from newest → oldest: { date, timeSeconds, mode }.
+ * Optionally filter to a specific game mode.
  */
-export async function fetchSolveTimeHistory(userId: string, limit: number = 30) {
-  const { data } = await (supabase as any)
+export async function fetchSolveTimeHistory(userId: string, limit: number = 30, gameMode?: string) {
+  let query = (supabase as any)
     .from('matches')
     .select('player1_time, player1_id, winner_id, game_mode, created_at, player2_id')
     .eq('player1_id', userId)
     .eq('winner_id', userId)
     .is('player2_id', null)
-    .gt('player1_time', 0)
+    .gt('player1_time', 0);
+  if (gameMode) query = query.eq('game_mode', gameMode);
+  const { data } = await query
     .order('created_at', { ascending: false })
     .limit(limit) as { data: Array<{ player1_time: number; game_mode: string; created_at: string }> | null };
 
@@ -462,4 +466,181 @@ export async function fetchDailyCalendar(userId: string, days: number = 90) {
     }
   }
   return Array.from(buckets.entries()).map(([day, stats]) => ({ day, ...stats }));
+}
+
+/**
+ * Fetch current and best win streak for a specific game mode.
+ */
+export async function fetchModeWinStreak(userId: string, gameMode: string) {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('winner_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .eq('game_mode', gameMode)
+    .order('created_at', { ascending: false })
+    .limit(200) as { data: Array<{ winner_id: string | null }> | null };
+
+  let current = 0;
+  let best = 0;
+  let streak = 0;
+  let foundFirstLoss = false;
+  for (const row of data || []) {
+    if (row.winner_id === userId) {
+      streak++;
+      best = Math.max(best, streak);
+      if (!foundFirstLoss) current = streak;
+    } else {
+      if (!foundFirstLoss) foundFirstLoss = true;
+      streak = 0;
+    }
+  }
+  return { current, best };
+}
+
+/**
+ * Fetch time-of-day play pattern (24 hourly buckets).
+ */
+export async function fetchTimeOfDayHeatmap(userId: string, gameMode?: string) {
+  let query = (supabase as any)
+    .from('matches')
+    .select('created_at, winner_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`);
+  if (gameMode) query = query.eq('game_mode', gameMode);
+  const { data } = await query as { data: Array<{ created_at: string; winner_id: string | null }> | null };
+
+  const hours: Array<{ hour: number; gamesPlayed: number; gamesWon: number }> = [];
+  for (let h = 0; h < 24; h++) hours.push({ hour: h, gamesPlayed: 0, gamesWon: 0 });
+  for (const row of data || []) {
+    const h = new Date(row.created_at).getHours();
+    hours[h].gamesPlayed++;
+    if (row.winner_id === userId) hours[h].gamesWon++;
+  }
+  return hours;
+}
+
+/**
+ * Compare last 10 solo win times vs overall average for a mode.
+ */
+export async function fetchImprovementTrend(userId: string, gameMode: string) {
+  const [recentData, statsData] = await Promise.all([
+    (supabase as any)
+      .from('matches')
+      .select('player1_time')
+      .eq('player1_id', userId)
+      .eq('winner_id', userId)
+      .eq('game_mode', gameMode)
+      .is('player2_id', null)
+      .gt('player1_time', 0)
+      .order('created_at', { ascending: false })
+      .limit(10),
+    (supabase as any)
+      .from('user_stats')
+      .select('average_time')
+      .eq('user_id', userId)
+      .eq('game_mode', gameMode)
+      .eq('play_type', 'solo')
+      .maybeSingle(),
+  ]);
+
+  const times: number[] = (recentData.data || []).map((r: any) => r.player1_time);
+  if (times.length === 0) return { recentAvg: 0, overallAvg: 0, percentChange: 0, improving: false };
+  const recentAvg = Math.round(times.reduce((a: number, b: number) => a + b, 0) / times.length);
+  const overallAvg = statsData.data?.average_time || recentAvg;
+  const percentChange = overallAvg > 0 ? Math.round(((overallAvg - recentAvg) / overallAvg) * 100) : 0;
+  return { recentAvg, overallAvg, percentChange, improving: recentAvg < overallAvg };
+}
+
+/**
+ * Fetch personal bests (fastest win + fewest guesses) for a mode.
+ */
+export async function fetchPersonalBests(userId: string, gameMode: string) {
+  const [fastestData, fewestData] = await Promise.all([
+    (supabase as any)
+      .from('matches')
+      .select('player1_time, created_at')
+      .eq('player1_id', userId)
+      .eq('winner_id', userId)
+      .eq('game_mode', gameMode)
+      .is('player2_id', null)
+      .gt('player1_time', 0)
+      .order('player1_time', { ascending: true })
+      .limit(1),
+    (supabase as any)
+      .from('matches')
+      .select('player1_score, created_at')
+      .eq('player1_id', userId)
+      .eq('winner_id', userId)
+      .eq('game_mode', gameMode)
+      .is('player2_id', null)
+      .gt('player1_score', 0)
+      .order('player1_score', { ascending: true })
+      .limit(1),
+  ]);
+
+  const fastest = fastestData.data?.[0];
+  const fewest = fewestData.data?.[0];
+  return {
+    fastestWin: fastest ? { time: Math.round(fastest.player1_time), date: fastest.created_at.slice(0, 10) } : null,
+    fewestGuesses: fewest ? { count: fewest.player1_score, date: fewest.created_at.slice(0, 10) } : null,
+  };
+}
+
+/**
+ * Count perfect games (1-guess wins) for a mode.
+ */
+export async function fetchPerfectGameCount(userId: string, gameMode: string) {
+  const { count } = await (supabase as any)
+    .from('matches')
+    .select('*', { count: 'exact', head: true })
+    .eq('player1_id', userId)
+    .eq('winner_id', userId)
+    .eq('game_mode', gameMode)
+    .eq('player1_score', 1) as { count: number | null };
+  return count || 0;
+}
+
+/**
+ * Calculate consistency score (0-100) from coefficient of variation of last 20 solve times.
+ */
+export async function fetchConsistencyScore(userId: string, gameMode: string) {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('player1_time')
+    .eq('player1_id', userId)
+    .eq('winner_id', userId)
+    .eq('game_mode', gameMode)
+    .is('player2_id', null)
+    .gt('player1_time', 0)
+    .order('created_at', { ascending: false })
+    .limit(20) as { data: Array<{ player1_time: number }> | null };
+
+  const times = (data || []).map((r) => r.player1_time);
+  if (times.length < 3) return { score: 0, sampleSize: times.length };
+  const avg = times.reduce((a, b) => a + b, 0) / times.length;
+  const variance = times.reduce((sum, t) => sum + (t - avg) ** 2, 0) / times.length;
+  const stdDev = Math.sqrt(variance);
+  const cv = avg > 0 ? stdDev / avg : 0;
+  const score = Math.max(0, Math.round(100 - cv * 100));
+  return { score, sampleSize: times.length };
+}
+
+/**
+ * Fetch VS head-to-head record for a game mode.
+ */
+export async function fetchHeadToHeadRecord(userId: string, gameMode: string) {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('winner_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .eq('game_mode', gameMode)
+    .not('player2_id', 'is', null) as { data: Array<{ winner_id: string | null }> | null };
+
+  let wins = 0;
+  let losses = 0;
+  for (const row of data || []) {
+    if (row.winner_id === userId) wins++;
+    else if (row.winner_id) losses++;
+  }
+  const total = wins + losses;
+  return { wins, losses, total, winRate: total > 0 ? Math.round((wins / total) * 100) : 0 };
 }

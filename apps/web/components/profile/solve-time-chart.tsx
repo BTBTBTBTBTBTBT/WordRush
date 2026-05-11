@@ -2,6 +2,7 @@
 
 interface SolveTimeChartProps {
   data: Array<{ date: string; timeSeconds: number; mode: string }>;
+  accentColor?: string;
 }
 
 const MODE_COLORS: Record<string, string> = {
@@ -21,7 +22,7 @@ function formatTime(s: number): string {
   return sec > 0 ? `${m}m${sec}s` : `${m}m`;
 }
 
-export function SolveTimeChart({ data }: SolveTimeChartProps) {
+export function SolveTimeChart({ data, accentColor: customColor }: SolveTimeChartProps) {
   if (data.length < 2) {
     return (
       <div
@@ -67,8 +68,8 @@ export function SolveTimeChart({ data }: SolveTimeChartProps) {
       <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full" style={{ height: '120px' }}>
         <defs>
           <linearGradient id="timeGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.3" />
-            <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.02" />
+            <stop offset="0%" stopColor={customColor || '#a78bfa'} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={customColor || '#a78bfa'} stopOpacity="0.02" />
           </linearGradient>
         </defs>
         <path d={areaPath} fill="url(#timeGrad)" />
@@ -81,7 +82,7 @@ export function SolveTimeChart({ data }: SolveTimeChartProps) {
           strokeWidth="1"
           strokeDasharray="4,3"
         />
-        <path d={linePath} fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke={customColor || '#7c3aed'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p, i) => (
           <circle
             key={i}

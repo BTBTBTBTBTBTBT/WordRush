@@ -2,9 +2,10 @@
 
 interface GuessDistributionProps {
   data: Array<{ guesses: number; count: number }>;
+  accentColor?: string;
 }
 
-export function GuessDistribution({ data }: GuessDistributionProps) {
+export function GuessDistribution({ data, accentColor }: GuessDistributionProps) {
   const maxCount = Math.max(1, ...data.map((d) => d.count));
   const totalGames = data.reduce((sum, d) => sum + d.count, 0);
 
@@ -43,8 +44,9 @@ export function GuessDistribution({ data }: GuessDistributionProps) {
                   className="h-full rounded-r flex items-center justify-end pr-2 transition-all duration-500"
                   style={{
                     width: `${widthPct}%`,
-                    background:
-                      d.guesses <= 2
+                    background: accentColor
+                      ? `linear-gradient(90deg, ${accentColor}, ${accentColor}cc)`
+                      : d.guesses <= 2
                         ? 'linear-gradient(90deg, #22c55e, #16a34a)'
                         : d.guesses <= 4
                         ? 'linear-gradient(90deg, #eab308, #ca8a04)'
