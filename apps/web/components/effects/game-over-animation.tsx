@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { haptic } from '@/lib/haptics';
 
 interface GameOverAnimationProps {
   onComplete?: () => void;
@@ -14,6 +16,7 @@ interface GameOverAnimationProps {
 }
 
 export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions }: GameOverAnimationProps) {
+  useEffect(() => { haptic('medium'); }, []);
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;
     return `${Math.floor(s / 60)}m ${s % 60}s`;

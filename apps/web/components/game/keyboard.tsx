@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { haptic } from '@/lib/haptics';
 import { Delete } from 'lucide-react';
 
 const ROWS = [
@@ -43,7 +44,7 @@ function QuadrantKey({
 
   return (
     <button
-      onClick={onClick}
+      onClick={() => { haptic('light'); onClick(); }}
       className={cn(
         'relative h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg overflow-hidden',
         'transition-all duration-150 select-none',
@@ -105,7 +106,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
               return (
                 <button
                   key={key}
-                  onClick={() => !isBlackedOut && onKey(key)}
+                  onClick={() => { if (isBlackedOut) return; haptic('light'); onKey(key); }}
                   disabled={isBlackedOut}
                   className={cn(
                     'h-12 sm:h-14 px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
@@ -146,7 +147,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   key={key}
                   letter={key}
                   boardStates={boardLetterStates}
-                  onClick={() => onKey(key)}
+                  onClick={() => { haptic('light'); onKey(key); }}
                 />
               );
             }
@@ -155,7 +156,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
             return (
               <button
                 key={key}
-                onClick={() => onKey(key)}
+                onClick={() => { haptic('light'); onKey(key); }}
                 className={cn(
                   'h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
                   'transition-all duration-150 select-none',

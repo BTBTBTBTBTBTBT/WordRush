@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Confetti } from './confetti';
 import { useWordDefinition } from '@/hooks/use-word-definition';
+import { haptic } from '@/lib/haptics';
 
 interface VictoryAnimationProps {
   onComplete?: () => void;
@@ -16,6 +18,7 @@ interface VictoryAnimationProps {
 }
 
 export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions }: VictoryAnimationProps) {
+  useEffect(() => { haptic('heavy'); }, []);
   const { definition } = useWordDefinition(solution || null);
 
   const formatTime = (s: number) => {
