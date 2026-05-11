@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -9,6 +9,7 @@ import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
+import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import {
   fetchDailyLeaderboard,
   getUserDailyRank,
@@ -21,15 +22,7 @@ import {
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
-const GAME_MODES = [
-  { id: 'DUEL', label: 'Classic', href: '/practice' },
-  { id: 'QUORDLE', label: 'QuadWord', href: '/quordle' },
-  { id: 'OCTORDLE', label: 'OctoWord', href: '/octordle' },
-  { id: 'SEQUENCE', label: 'Succession', href: '/sequence' },
-  { id: 'RESCUE', label: 'Deliverance', href: '/rescue' },
-  { id: 'GAUNTLET', label: 'Gauntlet', href: '/gauntlet' },
-  { id: 'PROPERNOUNDLE', label: 'ProperNoundle', href: '/propernoundle' },
-];
+const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey)!;
 
 function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -60,11 +53,25 @@ function CountdownTimer() {
   );
 }
 
-function MedalIcon({ rank }: { rank: number }) {
+function RankIcon({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#d97706' }} />;
   if (rank === 2) return <Medal className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />;
   if (rank === 3) return <Medal className="w-5 h-5" style={{ color: '#b45309' }} />;
   return <span className="text-xs font-black w-5 text-center" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
+}
+
+function LeaderboardSkeleton() {
+  return (
+    <div className="space-y-0">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
+          <div className="w-5 h-5 rounded-full" style={{ background: 'var(--color-border)' }} />
+          <div className="flex-1 h-3 rounded" style={{ background: 'var(--color-border)' }} />
+          <div className="w-12 h-3 rounded" style={{ background: 'var(--color-border)' }} />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function DailyPage() {
@@ -85,11 +92,7 @@ export default function DailyPage() {
   // `today` must be derived on the client, not at SSR time. Next.js
   // renders the initial HTML on Vercel's UTC servers — if we computed
   // getTodayLocal() at module top-level, a user whose local day differs
-  // from Vercel's UTC day (e.g. Pacific evening when UTC has already
-  // rolled into tomorrow) would see the wrong day baked into the SSR
-  // HTML. Stale CDN / PWA caches can also pin that SSR value. Using
-  // null-initial state that populates in useEffect guarantees the date
-  // always matches the viewer's local calendar day.
+  // from Vercel's UTC day would see the wrong day baked into the SSR HTML.
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => {
     setToday(getTodayLocal());
@@ -97,10 +100,6 @@ export default function DailyPage() {
   const yesterday = useMemo(() => getYesterdayLocal(), []);
 
   useEffect(() => {
-    // today is null on the very first render (it populates in the mount
-    // effect above). Skip the leaderboard fetch until we have a real
-    // local-day string — otherwise we'd query the API with null and the
-    // initial render would flash empty state unnecessarily.
     if (!today) return;
     async function load() {
       setLoading(true);
@@ -128,25 +127,22 @@ export default function DailyPage() {
     }
   }, [showYesterday, selectedMode, yesterday]);
 
-  const modeConfig = GAME_MODES.find(m => m.id === selectedMode)!;
-
-  // Play-limit key matches the lowercase mode IDs that game components record
-  // (e.g. 'practice', 'quordle', 'propernoundle'). Derived from the route
-  // href so it stays in sync without a second lookup table.
-  const playLimitKey = modeConfig.href.slice(1);
+  const mode = getMode(selectedMode);
+  const color = mode.accentColor;
+  const Icon = mode.icon;
+  const modeHref = `/${mode.id}`;
+  const playLimitKey = mode.id;
 
   const handlePlayDaily = () => {
     if (!user) {
       setAuthModalOpen(true);
       return;
     }
-    // Freemium users who've already used today's free play for this mode see
-    // the Pro upsell modal instead of going straight to the completed board.
     if (!isPro && hasPlayedModeToday(playLimitKey)) {
       setLimitModalOpen(true);
       return;
     }
-    router.push(`${modeConfig.href}?daily=true`);
+    router.push(`${modeHref}?daily=true`);
   };
 
   return (
@@ -167,60 +163,69 @@ export default function DailyPage() {
           <div className="flex items-center justify-center gap-3 mt-1">
             <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
               <Calendar className="w-3 h-3 inline mr-1" />
-              {/* `today` is a local-day string set via useEffect on mount
-                  so it always reflects the viewer's local calendar day,
-                  not Vercel's UTC SSR day (which otherwise could render
-                  "tomorrow" for viewers east of UTC or stay pinned at
-                  an old day via CDN/PWA cache). Parse as local time —
-                  no 'Z' suffix — so toLocaleDateString doesn't shift
-                  the render back by the user's UTC offset. */}
               {today && new Date(today + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
             <CountdownTimer />
           </div>
         </div>
 
-        {/* Mode Tabs */}
-        <div className="flex gap-1 overflow-x-auto pb-2 mb-4">
-          {GAME_MODES.map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => setSelectedMode(mode.id)}
-              className="px-3 py-1.5 rounded-lg text-[10px] font-extrabold whitespace-nowrap transition-all"
-              style={{
-                background: selectedMode === mode.id ? '#ffffff' : '#f3f0ff',
-                border: selectedMode === mode.id ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-                color: selectedMode === mode.id ? '#7c3aed' : '#9ca3af',
-              }}
-            >
-              {mode.label}
-            </button>
-          ))}
+        {/* Mode Picker */}
+        <div className="mb-4">
+          <ModePicker
+            showAll={false}
+            selectedMode={selectedMode}
+            onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
+          />
         </div>
 
-        {/* Play CTA + Player Count */}
+        {/* Play CTA Card */}
         <div
-          className="flex items-center justify-between p-3.5 mb-4"
+          className="overflow-hidden mb-4"
           style={{
             background: 'var(--color-surface)',
             border: '1.5px solid var(--color-border)',
             borderRadius: '16px',
           }}
         >
-          <div className="flex items-center gap-2 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <Users className="w-3.5 h-3.5" />
-            <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
+          {/* Mode accent bar */}
+          <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+
+          <div className="px-4 pt-3 pb-3">
+            {/* Mode header + Play button */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${color}15` }}
+                >
+                  {mode.romanNumeral ? (
+                    <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
+                  ) : Icon ? (
+                    <Icon className="w-4 h-4" style={{ color }} />
+                  ) : null}
+                </div>
+                <div>
+                  <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
+                    {mode.title}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    <Users className="w-3 h-3" />
+                    <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handlePlayDaily}
+                className="btn-3d px-4 py-2 rounded-lg text-white font-black text-xs"
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  boxShadow: '0 3px 0 #92400e',
+                }}
+              >
+                Play {mode.shortTitle}
+              </button>
+            </div>
           </div>
-          <button
-            onClick={handlePlayDaily}
-            className="btn-3d px-4 py-2 rounded-lg text-white font-black text-xs"
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              boxShadow: '0 3px 0 #92400e',
-            }}
-          >
-            Play {modeConfig.label}
-          </button>
         </div>
 
         {/* Completed Board Preview */}
@@ -231,19 +236,21 @@ export default function DailyPage() {
           <div
             className="text-center p-3 mb-4"
             style={{
-              background: 'linear-gradient(135deg, #fffbeb, #fff7ed)',
-              border: '1.5px solid #fde68a',
+              background: `linear-gradient(135deg, var(--color-highlight-gold), var(--color-surface))`,
+              border: '1.5px solid var(--color-gold-border)',
               borderRadius: '16px',
             }}
           >
-            <span className="text-xs font-bold" style={{ color: '#92400e' }}>You're ranked </span>
+            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>You're ranked </span>
             <span className="font-black text-lg" style={{ color: '#d97706' }}>#{userRank.rank}</span>
-            <span className="text-xs font-bold" style={{ color: '#92400e' }}> of {userRank.totalPlayers}</span>
+            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}> of {userRank.totalPlayers}</span>
           </div>
         )}
 
         {/* Leaderboard */}
-        <div className="section-header mb-2">LEADERBOARD</div>
+        <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
+          Leaderboard
+        </div>
         <div
           className="overflow-hidden"
           style={{
@@ -253,10 +260,11 @@ export default function DailyPage() {
           }}
         >
           {loading ? (
-            <div className="p-8 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Loading...</div>
+            <LeaderboardSkeleton />
           ) : leaderboard.length === 0 ? (
-            <div className="p-8 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-              No results yet. Be the first!
+            <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+              <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-xs font-bold">No results yet. Be the first!</p>
             </div>
           ) : (
             <div>
@@ -268,11 +276,11 @@ export default function DailyPage() {
                     key={entry.user_id}
                     className="flex items-center gap-3 px-4 py-3"
                     style={{
-                      background: isCurrentUser ? '#fffbeb' : rank <= 3 ? '#fafafa' : 'transparent',
+                      background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
                       borderBottom: '1px solid var(--color-border)',
                     }}
                   >
-                    <MedalIcon rank={rank} />
+                    <RankIcon rank={rank} />
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/profile/${entry.user_id}`}
@@ -290,14 +298,11 @@ export default function DailyPage() {
                           {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
                           {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
                         </span>
-                        {/* Win / Loss badge next to the stats — mirrors the
-                            profile page's Recent Matches treatment so the
-                            outcome reads as cleanly here as it does there. */}
                         <span
                           className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
                           style={{
-                            background: entry.completed ? '#dcfce7' : '#fee2e2',
-                            color: entry.completed ? '#16a34a' : '#dc2626',
+                            background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
+                            color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
                           }}
                         >
                           {entry.completed ? 'Win' : 'Loss'}
@@ -342,13 +347,13 @@ export default function DailyPage() {
                     className="flex items-center gap-3 px-4 py-3"
                     style={{ borderBottom: '1px solid var(--color-border)' }}
                   >
-                    <MedalIcon rank={index + 1} />
+                    <RankIcon rank={index + 1} />
                     <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>{entry.username}</span>
                     <span
                       className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
                       style={{
-                        background: entry.completed ? '#dcfce7' : '#fee2e2',
-                        color: entry.completed ? '#16a34a' : '#dc2626',
+                        background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
+                        color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
                       }}
                     >
                       {entry.completed ? 'W' : 'L'}
@@ -367,8 +372,8 @@ export default function DailyPage() {
       <ModeLimitModal
         open={limitModalOpen}
         onClose={() => setLimitModalOpen(false)}
-        modeName={modeConfig.label}
-        onViewPuzzle={() => router.push(`${modeConfig.href}?daily=true`)}
+        modeName={mode.title}
+        onViewPuzzle={() => router.push(`${modeHref}?daily=true`)}
       />
     </div>
   );

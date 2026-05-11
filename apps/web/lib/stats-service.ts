@@ -207,6 +207,15 @@ export async function recordGameResult(
     }
   }
 
+  // Per-mode longest win streak
+  if (won) {
+    fetchModeWinStreak(userId, gameMode).then(({ best }) => {
+      if (best > 0) {
+        checkAndUpdateRecord('longest_streak', gameMode, playType, userId, best, true).catch(() => {});
+      }
+    }).catch(() => {});
+  }
+
   // Highest level (global)
   if (profile) {
     const xpForLevel = (won ? 100 : 25) + (won && (profile.current_streak || 0) > 0 ? 50 : 0) + ((seed && isDailySeed(seed)) ? 50 : 0);

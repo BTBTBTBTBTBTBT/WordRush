@@ -30,7 +30,7 @@ const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format
   most_daily_completions: { label: 'Most Dailies Completed', icon: Target, format: (v) => `${v} dailies` },
 };
 
-const PER_MODE_RECORD_TYPES = ['fastest_win', 'fewest_guesses', 'most_games_played'];
+const PER_MODE_RECORD_TYPES = ['fastest_win', 'fewest_guesses', 'most_games_played', 'longest_streak'];
 const GLOBAL_RECORD_TYPES = ['longest_streak', 'highest_level', 'most_gold_medals', 'most_daily_completions'];
 
 function formatTime(seconds: number): string {
