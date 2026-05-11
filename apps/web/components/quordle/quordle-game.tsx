@@ -203,7 +203,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
       </div>
 
       {/* Boards - fills remaining space */}
-      <div className="flex-1 min-h-0 overflow-hidden px-2 pb-2">
+      <div className="flex-1 min-h-0 overflow-hidden px-2 pt-2 pb-2">
         <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
       </div>
 

@@ -204,7 +204,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
       </div>
 
       {/* Boards */}
-      <div className="flex-1 min-h-0 overflow-hidden px-2 pb-1">
+      <div className="flex-1 min-h-0 overflow-hidden px-2 pt-2 pb-1">
         <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
       </div>
 

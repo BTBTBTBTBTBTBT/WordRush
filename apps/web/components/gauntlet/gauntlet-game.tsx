@@ -469,7 +469,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       </AnimatePresence>
 
       {/* Game Area */}
-      <div className={`flex-1 min-h-0 overflow-hidden px-1 pb-1 ${isSingleBoard ? 'flex items-center justify-center' : ''}`}>
+      <div className={`flex-1 min-h-0 overflow-hidden px-1 pt-2 pb-1 ${isSingleBoard ? 'flex items-center justify-center' : ''}`}>
         {renderGameArea()}
       </div>
 
