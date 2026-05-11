@@ -10,6 +10,7 @@ import { DailyBoundaryReload } from '@/components/providers/daily-boundary-reloa
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
 import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
+import { RotateOverlay } from '@/components/ui/rotate-overlay';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +79,7 @@ export default function RootLayout({
               <ThemeProvider>
                 <StreakShieldProvider>
                   {children}
+                  <RotateOverlay />
                   <ProPromptModal />
                   <SharePreviewHost />
                 </StreakShieldProvider>

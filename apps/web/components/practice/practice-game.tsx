@@ -205,12 +205,12 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header */}
-      <div className="game-header text-center py-2 px-2 shrink-0 relative">
+      <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#7c3aed" />
         <h1 className="text-3xl font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>
           CLASSIC
         </h1>
-        <div className="game-stats flex justify-center gap-3 mt-1">
+        <div className="flex justify-center gap-3 mt-1">
           <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-xs font-bold" style={{ color: '#9ca3af' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
