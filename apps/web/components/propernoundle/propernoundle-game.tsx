@@ -647,7 +647,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   ) : (
     <div className="w-16 h-16 rounded-xl flex items-center justify-center text-3xl shrink-0"
       style={{ backgroundColor: categoryColor + '22', border: `2px solid ${categoryColor}44` }}>
-      {CATEGORY_EMOJI[puzzle.themeCategory] || '\u{2753}'}
+      {(puzzle.themeCategory && CATEGORY_EMOJI[puzzle.themeCategory]) || '\u{2753}'}
     </div>
   );
 
