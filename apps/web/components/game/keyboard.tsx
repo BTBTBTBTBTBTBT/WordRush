@@ -56,7 +56,7 @@ function QuadrantKey({
           : 'text-gray-700'
       )}
       style={{
-        border: '1.5px solid #ede9f6',
+        border: '1.5px solid var(--color-border)',
         textShadow: hasAny ? '0 1px 2px rgba(0,0,0,0.35)' : undefined,
       }}
     >
@@ -107,7 +107,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
               return (
                 <button
                   key={key}
-                  onClick={() => { if (isBlackedOut) return; haptic('light'); playKeyTap(); onKey(key); }}
+                  onClick={() => { if (isBlackedOut) return; if (key === 'ENTER') haptic('medium'); else if (key !== 'BACK') haptic('light'); playKeyTap(); onKey(key); }}
                   disabled={isBlackedOut}
                   className={cn(
                     'h-12 sm:h-14 px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
@@ -116,8 +116,8 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   )}
                   style={{
                     backgroundColor: '#e8e5f0',
-                    border: '1.5px solid #ede9f6',
-                    color: '#1a1a2e',
+                    border: '1.5px solid var(--color-border)',
+                    color: 'var(--color-text)',
                   }}
                 >
                   {key === 'BACK' ? <Delete className="h-5 w-5" /> : key}
@@ -167,8 +167,8 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 )}
                 style={{
                   backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#9ca3af' : '#e8e5f0',
-                  border: state ? undefined : '1.5px solid #ede9f6',
-                  color: !state ? '#1a1a2e' : undefined,
+                  border: state ? undefined : '1.5px solid var(--color-border)',
+                  color: !state ? 'var(--color-text)' : undefined,
                 }}
               >
                 {key}

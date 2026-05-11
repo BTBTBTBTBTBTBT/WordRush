@@ -385,3 +385,81 @@ export async function fetchActivityByDay(userId: string, days: number = 7) {
   }
   return Array.from(buckets.entries()).map(([day, count]) => ({ day, count }));
 }
+
+/**
+ * Fetch guess distribution for a user's solo wins.
+ * Returns an array of { guesses: number, count: number } for guesses 1-6+.
+ */
+export async function fetchGuessDistribution(userId: string) {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('player1_score, player2_id, winner_id, player1_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .not('winner_id', 'is', null) as { data: Array<{ player1_score: number; player2_id: string | null; winner_id: string; player1_id: string }> | null };
+
+  const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  for (const row of data || []) {
+    const isP1 = row.player1_id === userId;
+    const won = row.winner_id === userId;
+    if (!won) continue;
+    const score = isP1 ? row.player1_score : 0;
+    if (score <= 0) continue;
+    const bucket = Math.min(score, 6);
+    dist[bucket] = (dist[bucket] || 0) + 1;
+  }
+  return Object.entries(dist).map(([g, c]) => ({ guesses: Number(g), count: c }));
+}
+
+/**
+ * Fetch recent solve times for a user (wins only, solo).
+ * Returns up to `limit` entries from newest → oldest: { date, timeSeconds, mode }.
+ */
+export async function fetchSolveTimeHistory(userId: string, limit: number = 30) {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('player1_time, player1_id, winner_id, game_mode, created_at, player2_id')
+    .eq('player1_id', userId)
+    .eq('winner_id', userId)
+    .is('player2_id', null)
+    .gt('player1_time', 0)
+    .order('created_at', { ascending: false })
+    .limit(limit) as { data: Array<{ player1_time: number; game_mode: string; created_at: string }> | null };
+
+  return (data || []).reverse().map((r) => ({
+    date: r.created_at.slice(0, 10),
+    timeSeconds: Math.round(r.player1_time),
+    mode: r.game_mode,
+  }));
+}
+
+/**
+ * Fetch daily calendar data: which days the user played in the last N days.
+ * Returns { day: string, gamesPlayed: number, gamesWon: number }.
+ */
+export async function fetchDailyCalendar(userId: string, days: number = 90) {
+  const since = new Date();
+  since.setUTCHours(0, 0, 0, 0);
+  since.setUTCDate(since.getUTCDate() - (days - 1));
+
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('created_at, winner_id, player1_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .gte('created_at', since.toISOString()) as { data: Array<{ created_at: string; winner_id: string | null; player1_id: string }> | null };
+
+  const buckets = new Map<string, { gamesPlayed: number; gamesWon: number }>();
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since);
+    d.setUTCDate(since.getUTCDate() + i);
+    buckets.set(d.toISOString().slice(0, 10), { gamesPlayed: 0, gamesWon: 0 });
+  }
+  for (const row of data || []) {
+    const key = row.created_at.slice(0, 10);
+    const entry = buckets.get(key);
+    if (entry) {
+      entry.gamesPlayed++;
+      if (row.winner_id === userId) entry.gamesWon++;
+    }
+  }
+  return Array.from(buckets.entries()).map(([day, stats]) => ({ day, ...stats }));
+}

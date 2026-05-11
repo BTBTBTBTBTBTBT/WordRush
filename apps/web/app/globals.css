@@ -10,6 +10,27 @@
   --color-surface: #ffffff;
   --color-border: #ede9f6;
   --color-border-light: #e0daf0;
+  --color-text: #1a1a2e;
+  --color-text-muted: #9ca3af;
+  --color-text-secondary: #6b7280;
+  --color-surface-hover: #f3f0ff;
+  --color-surface-alt: #f3f4f6;
+  --color-border-alt: #e5e7eb;
+  --color-divider: #f0f0f0;
+}
+
+[data-theme="dark"] {
+  --color-bg: #1a1a2e;
+  --color-surface: #252542;
+  --color-border: #3a3a5c;
+  --color-border-light: #2e2e4a;
+  --color-text: #f0eef6;
+  --color-text-muted: #9ca3af;
+  --color-text-secondary: #a0a0b8;
+  --color-surface-hover: #2e2e4a;
+  --color-surface-alt: #2a2a48;
+  --color-border-alt: #3a3a5c;
+  --color-divider: #3a3a5c;
 }
 
 [data-theme="ocean"] {
@@ -100,8 +121,8 @@
   }
   body {
     font-family: 'Nunito', sans-serif;
-    background-color: #f8f7ff;
-    color: #1a1a2e;
+    background-color: var(--color-bg);
+    color: var(--color-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Theme = 'default' | 'ocean' | 'forest';
+export type Theme = 'default' | 'ocean' | 'forest' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;

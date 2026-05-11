@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { haptic } from '@/lib/haptics';
 import { playGameOver } from '@/lib/sounds';
+import { useWordDefinition } from '@/hooks/use-word-definition';
+import { useWordDefinitions } from '@/hooks/use-word-definitions';
 
 interface GameOverAnimationProps {
   onComplete?: () => void;
@@ -18,6 +20,8 @@ interface GameOverAnimationProps {
 
 export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds, boardsSolved, totalBoards, solution, solutions }: GameOverAnimationProps) {
   useEffect(() => { haptic('medium'); playGameOver(); }, []);
+  const { definition: singleDef } = useWordDefinition(solution || null);
+  const multiDefs = useWordDefinitions(solutions || []);
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;
     return `${Math.floor(s / 60)}m ${s % 60}s`;
@@ -41,8 +45,8 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
         <div
           className="relative overflow-hidden text-center"
           style={{
-            background: '#ffffff',
-            border: '1.5px solid #ede9f6',
+            background: 'var(--color-surface)',
+            border: '1.5px solid var(--color-border)',
             borderRadius: '16px',
             boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
           }}
@@ -65,39 +69,61 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
             {/* Single solution word */}
             {solution && (
               <div className="mt-2">
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#9ca3af' }}>The answer was</div>
-                <div className="text-2xl font-black tracking-wider" style={{ color: '#1a1a2e' }}>
+                <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>The answer was</div>
+                <div className="text-2xl font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
                   {solution.toUpperCase()}
                 </div>
+              </div>
+            )}
+
+            {/* Single solution definition */}
+            {solution && singleDef?.definition && (
+              <div
+                className="mt-3 px-4 py-3"
+                style={{ background: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca' }}
+              >
+                {singleDef.phonetic && (
+                  <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-text-muted)' }}>{singleDef.phonetic}</div>
+                )}
+                {singleDef.partOfSpeech && (
+                  <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: '#fee2e2', color: '#ef4444' }}>
+                    {singleDef.partOfSpeech}
+                  </span>
+                )}
+                <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
+                  {singleDef.definition}
+                </p>
               </div>
             )}
 
             {/* Multiple solutions (multi-board games) */}
             {!solution && solutions && solutions.length > 0 && (
               <div
-                className="mt-3 px-4 py-3"
+                className="mt-3 px-4 py-3 max-h-48 overflow-y-auto"
                 style={{
                   background: '#fef2f2',
                   borderRadius: '12px',
                   border: '1px solid #fecaca',
                 }}
               >
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#9ca3af' }}>Solutions</div>
-                <div className={solutions.length === 8
-                  ? 'grid grid-cols-4 gap-x-3 gap-y-1.5 justify-items-center'
-                  : solutions.length === 4
-                  ? 'grid grid-cols-2 gap-x-4 gap-y-1.5 justify-items-center'
-                  : `flex flex-wrap justify-center gap-2 ${solutions.length > 4 ? 'gap-x-3 gap-y-1.5' : 'gap-3'}`
-                }>
-                  {solutions.map((word, i) => (
-                    <span
-                      key={i}
-                      className={`font-black tracking-wider ${solutions.length > 4 ? 'text-sm' : 'text-lg'}`}
-                      style={{ color: '#1a1a2e' }}
-                    >
-                      {word.toUpperCase()}
-                    </span>
-                  ))}
+                <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Solutions</div>
+                <div className="space-y-2">
+                  {solutions.map((word, i) => {
+                    const def = multiDefs.get(word.toLowerCase());
+                    return (
+                      <div key={i}>
+                        <span className="font-black tracking-wider text-sm" style={{ color: 'var(--color-text)' }}>
+                          {word.toUpperCase()}
+                        </span>
+                        {def && (
+                          <p className="text-[11px] font-medium leading-snug mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                            {def.partOfSpeech && <span className="italic">{def.partOfSpeech}. </span>}
+                            {def.definition}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -107,26 +133,26 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
               <div className="flex justify-center gap-5 mt-4">
                 {boardsSolved != null && totalBoards != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                       {boardsSolved}/{totalBoards}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Boards Completed</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Boards Completed</div>
                   </div>
                 )}
                 {guesses != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                       {guesses}{maxGuesses ? `/${maxGuesses}` : ''}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Guesses</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Guesses</div>
                   </div>
                 )}
                 {timeSeconds != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                       {formatTime(timeSeconds)}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Time</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Time</div>
                   </div>
                 )}
               </div>

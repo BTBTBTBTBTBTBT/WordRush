@@ -1,8 +1,10 @@
 'use client';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, Theme } from '@/lib/theme-context';
+import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -11,22 +13,24 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
+  const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
 
   const themes: { value: Theme; label: string; description: string }[] = [
     { value: 'default', label: 'Default', description: 'Classic Wordle colors' },
+    { value: 'dark', label: 'Dark', description: 'Easy on the eyes' },
     { value: 'ocean', label: 'Ocean', description: 'Blue and teal tones' },
-    { value: 'forest', label: 'Forest', description: 'Green and earth tones' }
+    { value: 'forest', label: 'Forest', description: 'Green and earth tones' },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-md border"
-        style={{ background: '#ffffff', borderColor: '#ede9f6' }}
+        style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
       >
         <DialogHeader>
-          <DialogTitle className="font-black" style={{ color: '#1a1a2e' }}>Settings</DialogTitle>
-          <DialogDescription style={{ color: '#9ca3af' }} className="text-xs font-bold">
+          <DialogTitle className="font-black" style={{ color: 'var(--color-text)' }}>Settings</DialogTitle>
+          <DialogDescription style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold">
             Customize your Wordocious experience
           </DialogDescription>
         </DialogHeader>
@@ -41,14 +45,25 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   className="w-full text-left p-3 rounded-xl transition-all"
                   onClick={() => setTheme(t.value)}
                   style={{
-                    background: theme === t.value ? '#f3f0ff' : '#f8f7ff',
-                    border: theme === t.value ? '1.5px solid #c4b5fd' : '1.5px solid #ede9f6',
+                    background: theme === t.value ? 'var(--color-surface-hover)' : 'var(--color-bg)',
+                    border: theme === t.value ? '1.5px solid #c4b5fd' : '1.5px solid var(--color-border)',
                   }}
                 >
-                  <div className="font-extrabold text-xs" style={{ color: '#1a1a2e' }}>{t.label}</div>
-                  <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>{t.description}</div>
+                  <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{t.label}</div>
+                  <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{t.description}</div>
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="section-header">SOUND & FEEDBACK</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>Sound Effects</div>
+                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Key taps, win/loss jingles</div>
+              </div>
+              <Switch checked={soundOn} onCheckedChange={(v) => { setSoundOn(v); setSoundEnabled(v); }} />
             </div>
           </div>
 
@@ -56,15 +71,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="section-header">ACCESSIBILITY</div>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-extrabold" style={{ color: '#1a1a2e' }}>Colorblind Mode</div>
-                <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>High contrast colors</div>
+                <div className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>Colorblind Mode</div>
+                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>High contrast colors</div>
               </div>
               <Switch checked={colorblindMode} onCheckedChange={setColorblindMode} />
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-extrabold" style={{ color: '#1a1a2e' }}>Reduced Motion</div>
-                <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>Minimize animations</div>
+                <div className="text-xs font-extrabold" style={{ color: 'var(--color-text)' }}>Reduced Motion</div>
+                <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Minimize animations</div>
               </div>
               <Switch checked={reducedMotion} onCheckedChange={setReducedMotion} />
             </div>
