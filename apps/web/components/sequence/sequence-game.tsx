@@ -230,12 +230,12 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-header text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#2563eb" />
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
           SUCCESSION
         </h1>
-        <div className="flex justify-center gap-3 mt-1">
+        <div className="game-stats flex justify-center gap-3 mt-1">
           <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{solvedCount}/4</span>
           <span className="text-gray-400 text-xs font-bold">{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>

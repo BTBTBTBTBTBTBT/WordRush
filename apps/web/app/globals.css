@@ -380,14 +380,17 @@
 
 /* ── Landscape phone compact mode ──
    Triggers on short landscape viewports (phones only, not desktop).
-   Shrinks headers so the board+keyboard fit without scrolling. */
+   Shrinks game headers so the board+keyboard fit without scrolling. */
 @media (orientation: landscape) and (max-height: 500px) {
-  .h-screen-stable h1 {
+  .game-header {
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+  }
+  .game-header h1 {
     font-size: 1.25rem !important;
     line-height: 1.5rem !important;
   }
-  .h-screen-stable .shrink-0 {
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
+  .game-header .game-stats {
+    display: none;
   }
 }

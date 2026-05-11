@@ -159,12 +159,12 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Compact Header */}
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-header text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#7e22ce" />
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
           OCTOWORD
         </h1>
-        <div className="flex justify-center gap-3 mt-1">
+        <div className="game-stats flex justify-center gap-3 mt-1">
           <span className="text-gray-400 text-xs font-bold"><Trophy className="w-3 h-3 inline mr-1 text-amber-600" />{completedBoards}/8</span>
           <span className="text-gray-400 text-xs font-bold">{totalGuesses}/{state.boards[0]?.maxGuesses} guesses</span>
           <span className="text-gray-400 text-xs font-bold"><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>

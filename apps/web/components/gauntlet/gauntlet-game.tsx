@@ -396,7 +396,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       style={{ backgroundColor: '#f8f7ff' }}
     >
       {/* Progress Bar + Stage Header */}
-      <div className="shrink-0 relative">
+      <div className="game-header shrink-0 relative">
         {/* In-game Home escape hatch. BottomNav is hidden during play
             so the keyboard owns the bottom edge, which means the player
             has no in-app way out of the game short of the browser back

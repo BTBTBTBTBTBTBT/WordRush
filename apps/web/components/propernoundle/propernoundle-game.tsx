@@ -663,12 +663,12 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header — compact, matching other modes */}
-      <div className="text-center py-2 px-2 shrink-0 relative">
+      <div className="game-header text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#dc2626" />
         <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
           PROPERNOUNDLE
         </h1>
-        <div className="flex justify-center items-center gap-2 mt-1">
+        <div className="game-stats flex justify-center items-center gap-2 mt-1">
           {mode === 'daily' && (
             <span className="text-gray-400 text-xs font-bold">#{getDailyPuzzleNumber()}</span>
           )}
