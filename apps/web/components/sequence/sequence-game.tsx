@@ -9,6 +9,7 @@ import { GameOverAnimation } from '../effects/game-over-animation';
 import { AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { SoundToggle } from '@/components/game/sound-toggle';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
@@ -18,6 +19,7 @@ import { boardToGrid } from '@/lib/share-image';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
@@ -42,6 +44,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -126,27 +129,34 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
+    if (isShaking) return;
 
     setError('');
 
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
         setError('Word must be 5 letters');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setError(''), 1500);
         return;
       }
 
       if (!isValidWord(currentGuess)) {
         setError('Not in word list');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setError(''), 1500);
         return;
       }
 
       if (hasDuplicateGuess(state.boards, currentGuess)) {
         setError('Already guessed');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setError(''), 1500);
         return;
       }
@@ -164,7 +174,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess((prev) => prev + key);
     }
-  }, [state, currentGuess]);
+  }, [state, currentGuess, isShaking]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -232,6 +242,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       {/* Compact Header */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#2563eb" />
+        <SoundToggle accentColor="#2563eb" />
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
           SUCCESSION
         </h1>
@@ -286,6 +297,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
                   isFailed={isFailed}
                   isLocked={isLocked}
                   currentGuess={isActive ? currentGuess : ''}
+                  isShaking={isActive && isShaking}
                   isInvalidWord={isActive && currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
                 />
               );
@@ -314,6 +326,7 @@ function SequenceMiniBoard({
   isFailed,
   isLocked,
   currentGuess,
+  isShaking,
   isInvalidWord,
 }: {
   board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
@@ -323,6 +336,7 @@ function SequenceMiniBoard({
   isFailed: boolean;
   isLocked: boolean;
   currentGuess: string;
+  isShaking?: boolean;
   isInvalidWord?: boolean;
 }) {
   const evalGuess = (guess: string, solution: string): TileState[] => {
@@ -400,7 +414,7 @@ function SequenceMiniBoard({
             : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className="grid grid-cols-5 gap-[2px] min-h-0">
+            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}>
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = tiles[letterIndex];

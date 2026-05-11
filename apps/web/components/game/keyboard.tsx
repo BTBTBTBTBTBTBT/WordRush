@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
+import { playKeyTap } from '@/lib/sounds';
 import { Delete } from 'lucide-react';
 
 const ROWS = [
@@ -44,7 +45,7 @@ function QuadrantKey({
 
   return (
     <button
-      onClick={() => { haptic('light'); onClick(); }}
+      onClick={() => { haptic('light'); playKeyTap(); onClick(); }}
       className={cn(
         'relative h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg overflow-hidden',
         'transition-all duration-150 select-none',
@@ -106,7 +107,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
               return (
                 <button
                   key={key}
-                  onClick={() => { if (isBlackedOut) return; haptic('light'); onKey(key); }}
+                  onClick={() => { if (isBlackedOut) return; haptic('light'); playKeyTap(); onKey(key); }}
                   disabled={isBlackedOut}
                   className={cn(
                     'h-12 sm:h-14 px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
@@ -147,7 +148,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   key={key}
                   letter={key}
                   boardStates={boardLetterStates}
-                  onClick={() => { haptic('light'); onKey(key); }}
+                  onClick={() => { haptic('light'); playKeyTap(); onKey(key); }}
                 />
               );
             }
@@ -156,7 +157,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
             return (
               <button
                 key={key}
-                onClick={() => { haptic('light'); onKey(key); }}
+                onClick={() => { haptic('light'); playKeyTap(); onKey(key); }}
                 className={cn(
                   'h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
                   'transition-all duration-150 select-none',

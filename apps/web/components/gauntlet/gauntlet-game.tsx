@@ -16,6 +16,7 @@ import { Board } from '@/components/game/board';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import Link from 'next/link';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
 import { VictoryAnimation } from '@/components/effects/victory-animation';
 import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
@@ -28,6 +29,7 @@ import { recordModePlayed } from '@/lib/play-limit-service';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 function generateSeed(): string {
@@ -54,6 +56,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   );
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
   const [showTransition, setShowTransition] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   // When a completed session is restored, skip straight to GauntletResults —
@@ -190,25 +193,32 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   const handleKey = useCallback((key: string) => {
     if (state.status !== GameStatus.PLAYING) return;
     if (showTransition) return;
+    if (isShaking) return;
 
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
         setMessage('Not enough letters');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
 
       if (!isValidWord(currentGuess)) {
         setMessage('Not in word list');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
 
       if (hasDuplicateGuess(state.boards, currentGuess)) {
         setMessage('Already guessed');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -356,6 +366,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             solution={board.solution}
             showSolution={board.status === GameStatus.LOST}
             darkMode
+            isShaking={isShaking}
             isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
           />
         </div>
@@ -374,6 +385,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
               isFailed={board.status === GameStatus.LOST}
               isLocked={idx !== sequenceActiveBoardIndex && board.status === GameStatus.PLAYING}
               currentGuess={idx === sequenceActiveBoardIndex ? currentGuess : ''}
+              isShaking={idx === sequenceActiveBoardIndex && isShaking}
               isInvalidWord={idx === sequenceActiveBoardIndex && currentGuess.length === 5 && !isValidWord(currentGuess)}
             />
           ))}
@@ -384,6 +396,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         <MultiBoard
           boards={state.boards}
           currentGuess={currentGuess}
+          isShaking={isShaking}
           isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
       );
@@ -406,6 +419,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             on unmount, so the run resumes cleanly when the player taps
             the Gauntlet mode card again. */}
         <GameHomeButton accentColor="#d97706" positionClass="absolute top-1 left-2 z-10" />
+        <SoundToggle accentColor="#d97706" positionClass="absolute top-1 right-2 z-10" />
         <GauntletProgress
           stages={gauntlet.stages}
           currentStage={gauntlet.currentStage}
@@ -525,6 +539,7 @@ function GauntletSequenceMiniBoard({
   isFailed,
   isLocked,
   currentGuess,
+  isShaking,
   isInvalidWord,
 }: {
   board: { solution: string; guesses: string[]; maxGuesses: number; status: string };
@@ -534,6 +549,7 @@ function GauntletSequenceMiniBoard({
   isFailed: boolean;
   isLocked: boolean;
   currentGuess: string;
+  isShaking?: boolean;
   isInvalidWord?: boolean;
 }) {
   const evalGuess = (guess: string, solution: string): TileState[] => {
@@ -594,7 +610,7 @@ function GauntletSequenceMiniBoard({
             : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className="grid grid-cols-5 gap-[2px] min-h-0">
+            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}>
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = tiles[letterIndex];

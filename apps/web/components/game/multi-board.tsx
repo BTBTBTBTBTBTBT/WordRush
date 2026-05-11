@@ -9,6 +9,7 @@ interface MultiBoardProps {
   currentGuess?: string;
   colorBlind?: boolean;
   isInvalidWord?: boolean;
+  isShaking?: boolean;
 }
 
 const getTileColor = (state: TileState, colorBlind?: boolean) => {
@@ -57,7 +58,7 @@ const evaluateGuess = (guess: string, solution: string) => {
 };
 
 // Memoized MiniBoard — only re-renders when its own board data or currentGuess changes
-const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord }: {
+const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord, isShaking }: {
   board: BoardState;
   index: number;
   currentGuess?: string;
@@ -66,6 +67,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   isExpanded?: boolean;
   invisible?: boolean;
   isInvalidWord?: boolean;
+  isShaking?: boolean;
 }) {
   const prefills = board.prefilledGuesses || [];
   const prefillCount = prefills.length;
@@ -134,7 +136,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
           const tiles = isPastGuess ? evaluateGuess(guess, board.solution) : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className="grid grid-cols-5 gap-[2px] min-h-0">
+            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}>
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = isPastGuess ? tiles[letterIndex] : TileState.EMPTY;
@@ -164,7 +166,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   );
 });
 
-export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord }: MultiBoardProps) {
+export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, isShaking }: MultiBoardProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [sourceRect, setSourceRect] = useState<DOMRect | null>(null);
   const boardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -257,6 +259,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord }: 
               onClick={boardClickHandlers?.[index]}
               invisible={expandedIndex === index}
               isInvalidWord={isInvalidWord}
+              isShaking={isShaking}
             />
           </div>
         ))}
@@ -300,6 +303,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord }: 
                   colorBlind={colorBlind}
                   isExpanded
                   isInvalidWord={isInvalidWord}
+                  isShaking={isShaking}
                 />
               </div>
             </motion.div>

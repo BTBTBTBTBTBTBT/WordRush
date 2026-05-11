@@ -9,6 +9,7 @@ import { GameOverAnimation } from '@/components/effects/game-over-animation';
 import { AnimatePresence } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { SoundToggle } from '@/components/game/sound-toggle';
 import Link from 'next/link';
 import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
@@ -17,6 +18,7 @@ import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-se
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { shareResult } from '@/lib/share-utils';
+import { playInvalid } from '@/lib/sounds';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -44,6 +46,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   );
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -111,24 +114,31 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   const handleKey = useCallback((key: string) => {
     if (currentBoard.status !== GameStatus.PLAYING) return;
+    if (isShaking) return;
     setMessage('');
 
     if (key === 'ENTER') {
       if (currentGuess.length !== 5) {
         setMessage('Not enough letters');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
       if (!isValidWord(currentGuess)) {
         setMessage('Not in word list');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
       if (currentBoard.guesses.includes(currentGuess.toUpperCase())) {
         setMessage('Already guessed');
-        setCurrentGuess('');
+        playInvalid();
+        setIsShaking(true);
+        setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600);
         setTimeout(() => setMessage(''), 1500);
         return;
       }
@@ -139,7 +149,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
       setCurrentGuess(prev => prev + key);
     }
-  }, [currentGuess, currentBoard.status]);
+  }, [currentGuess, currentBoard.status, isShaking]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -207,6 +217,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#7c3aed" />
+        <SoundToggle accentColor="#7c3aed" />
         <h1 className="text-3xl font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>
           CLASSIC
         </h1>
@@ -248,6 +259,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             showSolution={false}
             solution={currentBoard.solution}
             darkMode
+            isShaking={isShaking}
             isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || currentBoard.guesses.includes(currentGuess.toUpperCase()))}
           />
 

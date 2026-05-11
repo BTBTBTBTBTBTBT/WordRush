@@ -10,6 +10,7 @@ import { GameOverAnimation } from '../effects/game-over-animation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Clock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { SoundToggle } from '@/components/game/sound-toggle';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
@@ -19,6 +20,7 @@ import { boardToGrid } from '@/lib/share-image';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 interface OctordleGameProps {
@@ -40,6 +42,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
   const [currentGuess, setCurrentGuess] = useState('');
   const [error, setError] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
   const [showVictory, setShowVictory] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -84,12 +87,13 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
   const handleKeyPress = useCallback((key: string) => {
     if (state.status !== 'PLAYING') return;
+    if (isShaking) return;
     setError('');
 
     if (key === 'ENTER') {
-      if (currentGuess.length !== 5) { setError('Word must be 5 letters'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
-      if (!isWordValid(currentGuess)) { setError('Not in word list'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
-      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
+      if (currentGuess.length !== 5) { setError('Word must be 5 letters'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600); setTimeout(() => setError(''), 1500); return; }
+      if (!isWordValid(currentGuess)) { setError('Not in word list'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600); setTimeout(() => setError(''), 1500); return; }
+      if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600); setTimeout(() => setError(''), 1500); return; }
 
       state.boards.forEach((_, index) => {
         if (state.boards[index].status === 'PLAYING') {
@@ -102,7 +106,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess((prev) => prev + key);
     }
-  }, [state, currentGuess]);
+  }, [state, currentGuess, isShaking]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -161,6 +165,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
       {/* Compact Header */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#7e22ce" />
+        <SoundToggle accentColor="#7e22ce" />
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
           OCTOWORD
         </h1>
@@ -194,7 +199,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
       {/* Boards */}
       <div className="flex-1 min-h-0 overflow-hidden px-1 pb-1">
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
+        <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
       </div>
 
       {/* Keyboard — hidden when game is complete */}

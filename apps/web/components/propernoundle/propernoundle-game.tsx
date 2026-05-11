@@ -8,6 +8,7 @@ import { GameOverAnimation } from '@/components/effects/game-over-animation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { SoundToggle } from '@/components/game/sound-toggle';
 import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
@@ -22,6 +23,7 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
+import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 const MAX_GUESSES = 6;
@@ -470,6 +472,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       const normalizedGuess = normalizeString(currentGuess);
       if (normalizedGuess.length !== answerLength) {
         setShouldShake(true);
+        playInvalid();
         setMessage(`Need ${answerLength} letters`);
         setTimeout(() => { setShouldShake(false); setMessage(''); }, 1500);
         return;
@@ -477,6 +480,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
       if (guesses.some((g) => normalizeString(g.word) === normalizedGuess)) {
         setShouldShake(true);
+        playInvalid();
         setMessage('Already guessed');
         setTimeout(() => { setShouldShake(false); setMessage(''); }, 1500);
         return;
@@ -665,6 +669,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       {/* Header — compact, matching other modes */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#dc2626" />
+        <SoundToggle accentColor="#dc2626" />
         <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
           PROPERNOUNDLE
         </h1>

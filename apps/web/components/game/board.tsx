@@ -25,9 +25,10 @@ interface BoardProps {
   showSolution?: boolean;
   darkMode?: boolean;
   isInvalidWord?: boolean;
+  isShaking?: boolean;
 }
 
-export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode, isInvalidWord }: BoardProps) {
+export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode, isInvalidWord, isShaking }: BoardProps) {
   const emptyRows = Math.max(0, maxGuesses - guesses.length - 1);
 
   return (
@@ -44,7 +45,7 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
             animate={rowIndex === guesses.length - 1 && evaluations[rowIndex]?.isCorrect === true}
           />
         ))}
-        {guesses.length < maxGuesses && <Row guess={currentGuess} isInvalid={isInvalidWord} />}
+        {guesses.length < maxGuesses && <Row guess={currentGuess} isInvalid={isInvalidWord} isShaking={isShaking} />}
         {Array.from({ length: emptyRows }).map((_, i) => (
           <Row key={`empty-${i}`} guess="" />
         ))}
@@ -63,13 +64,14 @@ interface RowProps {
   evaluation?: GuessResult;
   animate?: boolean;
   isInvalid?: boolean;
+  isShaking?: boolean;
 }
 
-function Row({ guess, evaluation, animate, isInvalid }: RowProps) {
+function Row({ guess, evaluation, animate, isInvalid, isShaking }: RowProps) {
   const tiles = guess.padEnd(5, ' ').split('');
 
   return (
-    <div className="flex gap-1 justify-center flex-1 min-h-0">
+    <div className={cn('flex gap-1 justify-center flex-1 min-h-0', isShaking && 'animate-shake')}>
       {tiles.map((letter, i) => (
         <Tile
           key={i}

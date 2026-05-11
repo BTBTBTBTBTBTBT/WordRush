@@ -85,6 +85,11 @@ const config: Config = {
           '50%': { transform: 'scale(1.1)' },
           '100%': { transform: 'scale(1)' },
         },
+        'shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '10%, 50%, 90%': { transform: 'translateX(-4px)' },
+          '30%, 70%': { transform: 'translateX(4px)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -92,6 +97,7 @@ const config: Config = {
         'tile-flip': 'tile-flip 0.5s ease-in-out both',
         'tile-flip-mini': 'tile-flip-mini 0.3s ease-in-out both',
         'tile-pop': 'tile-pop 0.1s ease-in-out',
+        'shake': 'shake 0.4s ease-in-out',
       },
     },
   },
