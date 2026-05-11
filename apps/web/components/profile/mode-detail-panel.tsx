@@ -139,6 +139,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
             bestScore={stats.best_score}
             fastestTime={stats.fastest_time}
             accentColor={accentColor}
+            winStreak={data?.winStreak}
           />
 
           {/* Guess Distribution */}
