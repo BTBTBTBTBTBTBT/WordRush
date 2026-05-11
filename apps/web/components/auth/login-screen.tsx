@@ -76,7 +76,7 @@ export function LoginScreen() {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center px-6"
-      style={{ backgroundColor: '#f8f7ff' }}
+      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       <div className="w-full max-w-sm space-y-6">
         {/* Branding */}
@@ -91,7 +91,7 @@ export function LoginScreen() {
           >
             WORDOCIOUS
           </h1>
-          <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>
+          <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Epic Word Battles
           </p>
         </div>
@@ -100,13 +100,13 @@ export function LoginScreen() {
         <div
           className="p-6 space-y-4"
           style={{
-            background: '#ffffff',
+            background: 'var(--color-surface)',
             border: '1.5px solid #c4b5fd',
             borderRadius: '20px',
             boxShadow: '0 4px 24px rgba(124, 58, 237, 0.08)',
           }}
         >
-          <h2 className="text-lg font-black text-center" style={{ color: '#1a1a2e' }}>
+          <h2 className="text-lg font-black text-center" style={{ color: 'var(--color-text)' }}>
             {mode === 'signin' ? 'Welcome Back!' : 'Join the Fun!'}
           </h2>
 
@@ -116,7 +116,7 @@ export function LoginScreen() {
             onClick={handleGoogleSignIn}
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-extrabold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-            style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', color: '#1a1a2e' }}
+            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
           >
             <GoogleIcon className="w-5 h-5" />
             Continue with Google
@@ -136,16 +136,16 @@ export function LoginScreen() {
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
-            <span className="text-[10px] font-extrabold" style={{ color: '#9ca3af' }}>or</span>
-            <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
+            <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+            <span className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
           </div>
 
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'signup' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
+                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
                   <User className="w-3.5 h-3.5" />
                   Username
                 </label>
@@ -159,16 +159,16 @@ export function LoginScreen() {
                   maxLength={20}
                   className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                   style={{
-                    color: '#1a1a2e',
-                    background: '#f8f7ff',
-                    border: '1.5px solid #ede9f6',
+                    color: 'var(--color-text)',
+                    background: 'var(--color-bg)',
+                    border: '1.5px solid var(--color-border)',
                   }}
                 />
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
+              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
                 <Mail className="w-3.5 h-3.5" />
                 Email
               </label>
@@ -180,15 +180,15 @@ export function LoginScreen() {
                 required
                 className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                 style={{
-                  color: '#1a1a2e',
-                  background: '#f8f7ff',
-                  border: '1.5px solid #ede9f6',
+                  color: 'var(--color-text)',
+                  background: 'var(--color-bg)',
+                  border: '1.5px solid var(--color-border)',
                 }}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
+              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
                 <Lock className="w-3.5 h-3.5" />
                 Password
               </label>
@@ -201,9 +201,9 @@ export function LoginScreen() {
                 minLength={6}
                 className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                 style={{
-                  color: '#1a1a2e',
-                  background: '#f8f7ff',
-                  border: '1.5px solid #ede9f6',
+                  color: 'var(--color-text)',
+                  background: 'var(--color-bg)',
+                  border: '1.5px solid var(--color-border)',
                 }}
               />
             </div>
@@ -237,7 +237,7 @@ export function LoginScreen() {
                   setError('');
                 }}
                 className="text-xs font-bold transition-colors"
-                style={{ color: '#9ca3af' }}
+                style={{ color: 'var(--color-text-muted)' }}
               >
                 {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
               </button>
@@ -247,11 +247,11 @@ export function LoginScreen() {
 
         {/* Legal links */}
         <div className="flex items-center justify-center gap-4">
-          <Link href="/privacy" className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+          <Link href="/privacy" className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Privacy Policy
           </Link>
           <span className="text-[10px]" style={{ color: '#d1d5db' }}>|</span>
-          <Link href="/terms" className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+          <Link href="/terms" className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Terms of Service
           </Link>
         </div>

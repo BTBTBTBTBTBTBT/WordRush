@@ -119,22 +119,22 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f8f7ff' }}>
-        <div className="text-lg font-black" style={{ color: '#1a1a2e' }}>Loading...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="text-lg font-black" style={{ color: 'var(--color-text)' }}>Loading...</div>
       </div>
     );
   }
 
   if (notFound || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#f8f7ff' }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-bg)' }}>
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="text-center space-y-4"
         >
-          <h1 className="text-4xl font-black" style={{ color: '#1a1a2e' }}>Player not found</h1>
-          <p style={{ color: '#9ca3af' }}>This profile doesn't exist or may have been removed.</p>
+          <h1 className="text-4xl font-black" style={{ color: 'var(--color-text)' }}>Player not found</h1>
+          <p style={{ color: 'var(--color-text-muted)' }}>This profile doesn't exist or may have been removed.</p>
           <Link href="/">
             <Button className="bg-gradient-to-r from-yellow-400 to-pink-500 text-white">
               Go Home
@@ -153,7 +153,7 @@ export default function PublicProfilePage() {
     : '0.0';
 
   return (
-    <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
         <motion.div
@@ -181,7 +181,7 @@ export default function PublicProfilePage() {
                 <span className="font-bold text-sm" style={{ color: '#92400e' }}>Level {profile.level}</span>
               </div>
               <div className="w-48">
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: '#ede9f6' }}>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${levelProgress}%` }}
@@ -189,7 +189,7 @@ export default function PublicProfilePage() {
                     className="h-full bg-gradient-to-r from-yellow-400 to-orange-500"
                   />
                 </div>
-                <p className="text-xs mt-1" style={{ color: '#9ca3af' }}>{xpToNextLevel} XP to next level</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{xpToNextLevel} XP to next level</p>
               </div>
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function PublicProfilePage() {
           <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
 
           <Link href="/">
-            <Button variant="outline" style={{ background: '#f3f0ff', border: '1.5px solid #ede9f6', color: '#7c3aed' }}>
+            <Button variant="outline" style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -211,21 +211,21 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="rounded-2xl p-6"
-            style={{ background: '#ffffff', border: '1.5px solid #fde68a' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid #fde68a' }}
           >
             <div className="flex items-center gap-3 mb-3">
               <Star className="w-8 h-8" style={{ color: '#d97706' }} fill="currentColor" />
               <div>
-                <div className="text-sm" style={{ color: '#9ca3af' }}>Level</div>
-                <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.level}</div>
+                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Level</div>
+                <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.level}</div>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between text-sm" style={{ color: '#9ca3af' }}>
+              <div className="flex justify-between text-sm" style={{ color: 'var(--color-text-muted)' }}>
                 <span>Progress</span>
                 <span>{xpToNextLevel} XP to next level</span>
               </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: '#ede9f6' }}>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${levelProgress}%` }}
@@ -241,14 +241,14 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="rounded-2xl p-6"
-            style={{ background: '#ffffff', border: '1.5px solid #bbf7d0' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid #bbf7d0' }}
           >
             <div className="flex items-center gap-3">
               <Trophy className="w-8 h-8" style={{ color: '#16a34a' }} />
               <div>
-                <div className="text-sm" style={{ color: '#9ca3af' }}>Total Wins</div>
-                <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.total_wins}</div>
-                <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>{winRate}% win rate</div>
+                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Total Wins</div>
+                <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.total_wins}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{winRate}% win rate</div>
               </div>
             </div>
           </motion.div>
@@ -258,22 +258,22 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3 }}
             className="rounded-2xl p-6"
-            style={{ background: '#ffffff', border: '1.5px solid #fed7aa' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid #fed7aa' }}
           >
             <div className="flex items-center gap-3">
               <Flame className="w-8 h-8" style={{ color: '#ea580c' }} fill="currentColor" />
               <div>
-                <div className="text-sm" style={{ color: '#9ca3af' }}>Win Streak</div>
-                <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>{profile.current_streak}</div>
-                <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>Best: {profile.best_streak}</div>
+                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Win Streak</div>
+                <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.current_streak}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Best: {profile.best_streak}</div>
               </div>
             </div>
             <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid #fed7aa' }}>
               <Zap className="w-6 h-6" style={{ color: '#7c3aed' }} />
               <div>
-                <div className="text-xs" style={{ color: '#9ca3af' }}>Daily Login Streak</div>
-                <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>{(profile as any).daily_login_streak ?? 0}</div>
-                <div className="text-[10px] mt-0.5" style={{ color: '#9ca3af' }}>Best: {(profile as any).best_daily_login_streak ?? 0}</div>
+                <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Daily Login Streak</div>
+                <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>{(profile as any).daily_login_streak ?? 0}</div>
+                <div className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Best: {(profile as any).best_daily_login_streak ?? 0}</div>
               </div>
             </div>
           </motion.div>
@@ -283,16 +283,16 @@ export default function PublicProfilePage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.4 }}
             className="rounded-2xl p-6"
-            style={{ background: '#ffffff', border: '1.5px solid #bfdbfe' }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid #bfdbfe' }}
           >
             <div className="flex items-center gap-3">
               <Target className="w-8 h-8" style={{ color: '#2563eb' }} />
               <div>
-                <div className="text-sm" style={{ color: '#9ca3af' }}>Total Games</div>
-                <div className="text-3xl font-black" style={{ color: '#1a1a2e' }}>
+                <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Total Games</div>
+                <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>
                   {profile.total_wins + profile.total_losses}
                 </div>
-                <div className="text-xs mt-1" style={{ color: '#9ca3af' }}>{profile.total_losses} losses</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{profile.total_losses} losses</div>
               </div>
             </div>
           </motion.div>
@@ -304,9 +304,9 @@ export default function PublicProfilePage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
           className="rounded-2xl p-6"
-          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
         >
-          <h2 className="text-2xl font-black mb-4 flex items-center gap-2" style={{ color: '#1a1a2e' }}>
+          <h2 className="text-2xl font-black mb-4 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
             <TrendingUp className="w-6 h-6" style={{ color: '#ec4899' }} />
             Game Mode Statistics
           </h2>
@@ -318,7 +318,7 @@ export default function PublicProfilePage() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all`}
               style={{
                 background: activeTab === 'solo' ? '#f3f0ff' : '#fafafa',
-                border: activeTab === 'solo' ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+                border: activeTab === 'solo' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
                 color: activeTab === 'solo' ? '#7c3aed' : '#9ca3af',
               }}
             >
@@ -330,7 +330,7 @@ export default function PublicProfilePage() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all`}
               style={{
                 background: activeTab === 'vs' ? '#f3f0ff' : '#fafafa',
-                border: activeTab === 'vs' ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+                border: activeTab === 'vs' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
                 color: activeTab === 'vs' ? '#7c3aed' : '#9ca3af',
               }}
             >
@@ -340,7 +340,7 @@ export default function PublicProfilePage() {
           </div>
 
           {filteredStats.length === 0 ? (
-            <div className="text-center py-8" style={{ color: '#9ca3af' }}>
+            <div className="text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
               {activeTab === 'solo'
                 ? 'No solo stats yet.'
                 : 'No VS stats yet.'}
@@ -354,9 +354,9 @@ export default function PublicProfilePage() {
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.1 + index * 0.1 }}
                   className="rounded-xl p-4"
-                  style={{ background: '#f8f7ff', border: '1px solid #ede9f6' }}
+                  style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
                 >
-                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: '#1a1a2e' }}>
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
                     {(() => {
                       const cfg = gameModeIcons[stat.game_mode];
                       if (!cfg) return <Zap className="w-5 h-5" style={{ color: '#d97706' }} />;
@@ -373,19 +373,19 @@ export default function PublicProfilePage() {
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <div style={{ color: '#9ca3af' }}>Wins</div>
+                      <div style={{ color: 'var(--color-text-muted)' }}>Wins</div>
                       <div className="font-bold text-lg" style={{ color: '#16a34a' }}>{stat.wins}</div>
                     </div>
                     <div>
-                      <div style={{ color: '#9ca3af' }}>Losses</div>
+                      <div style={{ color: 'var(--color-text-muted)' }}>Losses</div>
                       <div className="font-bold text-lg" style={{ color: '#dc2626' }}>{stat.losses}</div>
                     </div>
                     <div>
-                      <div style={{ color: '#9ca3af' }}>Best Score</div>
+                      <div style={{ color: 'var(--color-text-muted)' }}>Best Score</div>
                       <div className="font-bold text-lg" style={{ color: '#d97706' }}>{stat.best_score}</div>
                     </div>
                     <div>
-                      <div style={{ color: '#9ca3af' }}>Fastest</div>
+                      <div style={{ color: 'var(--color-text-muted)' }}>Fastest</div>
                       <div className="font-bold text-lg" style={{ color: '#2563eb' }}>
                         {stat.fastest_time > 0 ? formatDuration(stat.fastest_time) : '-'}
                       </div>
@@ -403,15 +403,15 @@ export default function PublicProfilePage() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
           className="rounded-2xl p-6"
-          style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
         >
-          <h2 className="text-2xl font-black mb-6 flex items-center gap-2" style={{ color: '#1a1a2e' }}>
+          <h2 className="text-2xl font-black mb-6 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
             <Clock className="w-6 h-6" style={{ color: '#2563eb' }} />
             Recent Matches
           </h2>
 
           {matches.length === 0 ? (
-            <div className="text-center py-8" style={{ color: '#9ca3af' }}>
+            <div className="text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
               No matches played yet.
             </div>
           ) : (
@@ -430,7 +430,7 @@ export default function PublicProfilePage() {
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.7 + index * 0.05 }}
                     className="rounded-xl p-4 flex items-center justify-between gap-4"
-                    style={{ background: '#f8f7ff', border: '1px solid #ede9f6' }}
+                    style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
@@ -447,10 +447,10 @@ export default function PublicProfilePage() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold truncate" style={{ color: '#1a1a2e' }}>
+                        <div className="font-bold truncate" style={{ color: 'var(--color-text)' }}>
                           {gameModeTitles[match.game_mode] || match.game_mode}
                         </div>
-                        <div className="text-sm" style={{ color: '#9ca3af' }}>
+                        <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
                           {isSolo ? 'Solo' : 'VS Match'}
                         </div>
                       </div>
@@ -461,11 +461,11 @@ export default function PublicProfilePage() {
                         <div className="font-bold text-sm" style={{ color: isWinner ? '#16a34a' : '#dc2626' }}>
                           {isWinner ? 'Win' : 'Loss'}
                         </div>
-                        <div className="text-xs" style={{ color: '#9ca3af' }}>
+                        <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                           {playerTime > 0 ? `${playerTime}s` : '-'}
                         </div>
                       </div>
-                      <div className="text-xs text-right" style={{ color: '#9ca3af' }}>
+                      <div className="text-xs text-right" style={{ color: 'var(--color-text-muted)' }}>
                         <div>{matchDate.toLocaleDateString()}</div>
                         <div>{matchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                       </div>

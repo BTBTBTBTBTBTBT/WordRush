@@ -128,15 +128,15 @@ export function InviteModal({ open, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(26,26,46,0.55)' }}>
       <div
         className="w-full max-w-sm p-5 relative"
-        style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '20px' }}
+        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}
       >
         <button
           onClick={() => { reset(); onClose(); }}
           className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full"
-          style={{ background: '#f8f7ff' }}
+          style={{ background: 'var(--color-bg)' }}
           aria-label="Close"
         >
-          <XIcon className="w-4 h-4" style={{ color: '#9ca3af' }} />
+          <XIcon className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
         </button>
 
         {/* Branded title — matches the gradient treatment used for the
@@ -147,7 +147,7 @@ export function InviteModal({ open, onClose }: Props) {
         >
           Invite a friend
         </h2>
-        <p className="text-xs font-bold mb-4" style={{ color: '#9ca3af' }}>
+        <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Pick a mode, then send a link or a username invite.
         </p>
 
@@ -157,9 +157,9 @@ export function InviteModal({ open, onClose }: Props) {
             onClick={() => { setTab('link'); reset(); }}
             className="flex-1 py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5"
             style={{
-              background: tab === 'link' ? '#7c3aed' : '#f8f7ff',
-              color: tab === 'link' ? '#ffffff' : '#9ca3af',
-              border: tab === 'link' ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+              background: tab === 'link' ? '#7c3aed' : 'var(--color-bg)',
+              color: tab === 'link' ? '#ffffff' : 'var(--color-text-muted)',
+              border: tab === 'link' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
             }}
           >
             <LinkIcon className="w-3 h-3" />
@@ -169,9 +169,9 @@ export function InviteModal({ open, onClose }: Props) {
             onClick={() => { setTab('username'); reset(); }}
             className="flex-1 py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5"
             style={{
-              background: tab === 'username' ? '#7c3aed' : '#f8f7ff',
-              color: tab === 'username' ? '#ffffff' : '#9ca3af',
-              border: tab === 'username' ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+              background: tab === 'username' ? '#7c3aed' : 'var(--color-bg)',
+              color: tab === 'username' ? '#ffffff' : 'var(--color-text-muted)',
+              border: tab === 'username' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
             }}
           >
             <UserIcon className="w-3 h-3" />
@@ -182,16 +182,16 @@ export function InviteModal({ open, onClose }: Props) {
         {/* Body — fixed min-height so modal doesn't jump between tabs */}
         <div className="flex flex-col" style={{ minHeight: '220px' }}>
           {/* Mode picker — custom dropdown with brand color + icon */}
-          <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: '#9ca3af' }}>Mode</label>
+          <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: 'var(--color-text-muted)' }}>Mode</label>
           <div ref={modeRef} className="relative mb-3">
             <button
               onClick={() => setModeOpen((o) => !o)}
               className="w-full px-3 py-2 flex items-center justify-between outline-none"
               style={{
-                background: '#ffffff',
+                background: 'var(--color-surface)',
                 border: `1.5px solid ${mode.color}`,
                 borderRadius: '10px',
-                color: '#1a1a2e',
+                color: 'var(--color-text)',
               }}
             >
               <span className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export function InviteModal({ open, onClose }: Props) {
             {modeOpen && (
               <div
                 className="absolute left-0 right-0 top-full mt-1 z-10 overflow-hidden"
-                style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '10px', boxShadow: '0 8px 24px rgba(26,26,46,0.12)' }}
+                style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(26,26,46,0.12)' }}
               >
                 {MODES.map((m) => (
                   <button
@@ -249,10 +249,10 @@ export function InviteModal({ open, onClose }: Props) {
                 <>
                   <div
                     className="p-3 mb-3 flex items-center gap-2"
-                    style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', borderRadius: '10px' }}
+                    style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '10px' }}
                   >
-                    <code className="flex-1 text-[11px] font-bold truncate" style={{ color: '#1a1a2e' }}>{inviteUrl}</code>
-                    <button onClick={handleCopy} className="p-1.5 rounded" style={{ background: '#ffffff', border: '1.5px solid #ede9f6' }}>
+                    <code className="flex-1 text-[11px] font-bold truncate" style={{ color: 'var(--color-text)' }}>{inviteUrl}</code>
+                    <button onClick={handleCopy} className="p-1.5 rounded" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}>
                       {copied ? <Check className="w-3.5 h-3.5" style={{ color: '#16a34a' }} /> : <Copy className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />}
                     </button>
                   </div>
@@ -264,7 +264,7 @@ export function InviteModal({ open, onClose }: Props) {
                     <Share2 className="w-4 h-4" />
                     Share
                   </button>
-                  <p className="text-[10px] font-bold mt-2 text-center" style={{ color: '#9ca3af' }}>
+                  <p className="text-[10px] font-bold mt-2 text-center" style={{ color: 'var(--color-text-muted)' }}>
                     Link expires in 24 hours.
                   </p>
                 </>
@@ -276,14 +276,14 @@ export function InviteModal({ open, onClose }: Props) {
             <>
               {!sentToUser ? (
                 <>
-                  <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: '#9ca3af' }}>Username</label>
+                  <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: 'var(--color-text-muted)' }}>Username</label>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. wordmaster"
                     className="w-full px-3 py-2 text-sm font-bold mb-3 outline-none"
-                    style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', borderRadius: '10px', color: '#1a1a2e' }}
+                    style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '10px', color: 'var(--color-text)' }}
                   />
                   <button
                     onClick={handleSendToUsername}

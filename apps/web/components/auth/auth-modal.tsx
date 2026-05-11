@@ -92,14 +92,14 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
       <DialogContent
         className="sm:max-w-md border"
         style={{
-          background: '#ffffff',
+          background: 'var(--color-surface)',
           borderColor: '#c4b5fd',
         }}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="w-5 h-5" style={{ color: '#d97706' }} />
-            <span className="font-black" style={{ color: '#1a1a2e' }}>
+            <span className="font-black" style={{ color: 'var(--color-text)' }}>
               {mode === 'signin' ? 'Welcome Back!' : 'Join the Fun!'}
             </span>
           </DialogTitle>
@@ -112,7 +112,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
             onClick={handleGoogleSignIn}
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-extrabold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-            style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', color: '#1a1a2e' }}
+            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
           >
             <GoogleIcon className="w-5 h-5" />
             Continue with Google
@@ -132,16 +132,16 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
           {/* Divider */}
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
-            <span className="text-[10px] font-extrabold" style={{ color: '#9ca3af' }}>or</span>
-            <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
+            <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+            <span className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
           </div>
 
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'signup' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
+                <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
                   <User className="w-3.5 h-3.5" />
                   Username
                 </label>
@@ -155,16 +155,16 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   maxLength={20}
                   className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                   style={{
-                    color: '#1a1a2e',
-                    background: '#f8f7ff',
-                    border: '1.5px solid #ede9f6',
+                    color: 'var(--color-text)',
+                    background: 'var(--color-bg)',
+                    border: '1.5px solid var(--color-border)',
                   }}
                 />
               </div>
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
+              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
                 <Mail className="w-3.5 h-3.5" />
                 Email
               </label>
@@ -176,15 +176,15 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 required
                 className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                 style={{
-                  color: '#1a1a2e',
-                  background: '#f8f7ff',
-                  border: '1.5px solid #ede9f6',
+                  color: 'var(--color-text)',
+                  background: 'var(--color-bg)',
+                  border: '1.5px solid var(--color-border)',
                 }}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: '#9ca3af' }}>
+              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
                 <Lock className="w-3.5 h-3.5" />
                 Password
               </label>
@@ -197,9 +197,9 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 minLength={6}
                 className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
                 style={{
-                  color: '#1a1a2e',
-                  background: '#f8f7ff',
-                  border: '1.5px solid #ede9f6',
+                  color: 'var(--color-text)',
+                  background: 'var(--color-bg)',
+                  border: '1.5px solid var(--color-border)',
                 }}
               />
             </div>
@@ -233,7 +233,7 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   setError('');
                 }}
                 className="text-xs font-bold transition-colors"
-                style={{ color: '#9ca3af' }}
+                style={{ color: 'var(--color-text-muted)' }}
               >
                 {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
               </button>

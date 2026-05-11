@@ -50,14 +50,14 @@ export default function ProPage() {
   };
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
         <div className="text-center mb-8">
           <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#d97706' }} />
-          <h1 className="text-4xl font-black mb-1" style={{ color: '#1a1a2e' }}>Go Pro</h1>
-          <p className="text-sm font-bold" style={{ color: '#9ca3af' }}>
+          <h1 className="text-4xl font-black mb-1" style={{ color: 'var(--color-text)' }}>Go Pro</h1>
+          <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Play unlimited & ad-free — all 8 modes, any time
           </p>
         </div>
@@ -66,7 +66,7 @@ export default function ProPage() {
           <div
             className="text-center p-8"
             style={{
-              background: '#ffffff',
+              background: 'var(--color-surface)',
               border: '1.5px solid #fde68a',
               borderRadius: '16px',
             }}
@@ -78,7 +78,7 @@ export default function ProPage() {
               <Crown className="w-4 h-4 text-white" />
               <span className="text-white font-black text-sm">ACTIVE PRO</span>
             </div>
-            <p className="text-sm font-bold" style={{ color: '#9ca3af' }}>
+            <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
               You're enjoying all Pro benefits!
             </p>
           </div>
@@ -92,13 +92,13 @@ export default function ProPage() {
                   key={i}
                   className="flex items-center gap-3 p-3.5"
                   style={{
-                    background: '#ffffff',
-                    border: '1.5px solid #ede9f6',
+                    background: 'var(--color-surface)',
+                    border: '1.5px solid var(--color-border)',
                     borderRadius: '16px',
                   }}
                 >
                   <b.icon className="w-5 h-5 flex-shrink-0" style={{ color: '#d97706' }} />
-                  <span className="text-xs font-bold" style={{ color: '#1a1a2e' }}>{b.text}</span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--color-text)' }}>{b.text}</span>
                 </div>
               ))}
             </div>
@@ -110,16 +110,16 @@ export default function ProPage() {
               <div
                 className="p-5"
                 style={{
-                  background: '#ffffff',
-                  border: '1.5px solid #ede9f6',
+                  background: 'var(--color-surface)',
+                  border: '1.5px solid var(--color-border)',
                   borderRadius: '16px',
                 }}
               >
-                <h3 className="text-sm font-extrabold mb-1" style={{ color: '#1a1a2e' }}>Monthly</h3>
-                <div className="text-3xl font-black mb-0.5" style={{ color: '#1a1a2e' }}>
-                  ${PRO_PLANS.monthly.price}<span className="text-sm font-bold" style={{ color: '#9ca3af' }}>/mo</span>
+                <h3 className="text-sm font-extrabold mb-1" style={{ color: 'var(--color-text)' }}>Monthly</h3>
+                <div className="text-3xl font-black mb-0.5" style={{ color: 'var(--color-text)' }}>
+                  ${PRO_PLANS.monthly.price}<span className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>/mo</span>
                 </div>
-                <p className="text-xs font-bold mb-5" style={{ color: '#9ca3af' }}>Cancel anytime</p>
+                <p className="text-xs font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>Cancel anytime</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.monthly.id)}
                   disabled={loading !== null}
@@ -137,7 +137,7 @@ export default function ProPage() {
               <div
                 className="p-5 relative"
                 style={{
-                  background: '#ffffff',
+                  background: 'var(--color-surface)',
                   border: '1.5px solid #fde68a',
                   borderRadius: '16px',
                 }}
@@ -148,11 +148,11 @@ export default function ProPage() {
                 >
                   BEST VALUE
                 </div>
-                <h3 className="text-sm font-extrabold mb-1" style={{ color: '#1a1a2e' }}>Yearly</h3>
-                <div className="text-3xl font-black mb-0.5" style={{ color: '#1a1a2e' }}>
-                  ${PRO_PLANS.yearly.price}<span className="text-sm font-bold" style={{ color: '#9ca3af' }}>/yr</span>
+                <h3 className="text-sm font-extrabold mb-1" style={{ color: 'var(--color-text)' }}>Yearly</h3>
+                <div className="text-3xl font-black mb-0.5" style={{ color: 'var(--color-text)' }}>
+                  ${PRO_PLANS.yearly.price}<span className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>/yr</span>
                 </div>
-                <p className="text-xs font-bold mb-5" style={{ color: '#9ca3af' }}>$4.99/mo billed annually</p>
+                <p className="text-xs font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>$4.99/mo billed annually</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.yearly.id)}
                   disabled={loading !== null}
@@ -172,19 +172,19 @@ export default function ProPage() {
                 plans for attention (and cannibalize monthly conversions). */}
             <div className="mt-6 mb-2">
               <div className="flex items-center gap-3 mb-3">
-                <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
-                <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   or try it first
                 </span>
-                <div className="flex-1 h-px" style={{ background: '#ede9f6' }} />
+                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
               </div>
               <button
                 onClick={() => handleSubscribe(PRO_PLANS.day.id)}
                 disabled={loading !== null}
                 className="w-full py-3 rounded-xl font-black text-sm transition-opacity disabled:opacity-50"
                 style={{
-                  background: '#ffffff',
-                  border: '1.5px solid #ede9f6',
+                  background: 'var(--color-surface)',
+                  border: '1.5px solid var(--color-border)',
                   color: '#7c3aed',
                 }}
               >
@@ -192,7 +192,7 @@ export default function ProPage() {
                   ? 'Processing...'
                   : `Just today — $${PRO_PLANS.day.price.toFixed(0)} for 24 hours of Pro →`}
               </button>
-              <p className="mt-2 text-center text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+              <p className="mt-2 text-center text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 Eight day passes cost more than a month of Pro.
               </p>
             </div>

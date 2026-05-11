@@ -658,7 +658,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   return (
     <div
       className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: '#f8f7ff' }}
+      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}

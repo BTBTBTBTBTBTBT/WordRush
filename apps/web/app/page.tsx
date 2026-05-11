@@ -72,15 +72,15 @@ function WordOfTheDay() {
     <div
       className="px-3 py-2"
       style={{
-        background: '#ffffff',
-        border: '1.5px solid #ede9f6',
+        background: 'var(--color-surface)',
+        border: '1.5px solid var(--color-border)',
         borderRadius: '14px',
       }}
     >
       <div className="flex items-center justify-between mb-0.5">
         <div className="flex items-center gap-1.5">
-          <BookOpen className="w-3 h-3" style={{ color: '#9ca3af' }} />
-          <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+          <BookOpen className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
+          <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
             Word of the Day
           </span>
         </div>
@@ -90,11 +90,11 @@ function WordOfTheDay() {
       </div>
 
       <div className="flex items-baseline gap-2">
-        <span className="text-base font-black" style={{ color: '#1a1a2e' }}>
+        <span className="text-base font-black" style={{ color: 'var(--color-text)' }}>
           {dailyWord.charAt(0) + dailyWord.slice(1).toLowerCase()}
         </span>
         {info.phonetic && (
-          <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>
+          <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
             {info.phonetic}
           </span>
         )}
@@ -122,13 +122,13 @@ function DailyCountdown() {
     return () => clearInterval(i);
   }, []);
   if (secs === null) {
-    return <span style={{ color: '#9ca3af' }} className="text-xs font-bold">Resets in --:--:--</span>;
+    return <span style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold">Resets in --:--:--</span>;
   }
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
   return (
-    <span style={{ color: '#9ca3af' }} className="text-xs font-bold">
+    <span style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold">
       Resets in {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}:{s.toString().padStart(2, '0')}
     </span>
   );
@@ -330,7 +330,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="fixed inset-0 flex flex-col" style={{ backgroundColor: 'var(--color-bg)' }}>
       <AppHeader />
 
       <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -483,8 +483,8 @@ export default function HomePage() {
                     // Completed daily: soft tint in the mode's accent
                     // color to signal "you've played this one". Fresh/
                     // unplayed cards stay white.
-                    background: isDailyDone ? `${mode.accentColor}0f` : '#ffffff',
-                    border: `1.5px solid ${isLocked ? '#d1d5db' : isDailyDone ? `${mode.accentColor}66` : '#ede9f6'}`,
+                    background: isDailyDone ? `${mode.accentColor}0f` : 'var(--color-surface)',
+                    border: `1.5px solid ${isLocked ? '#d1d5db' : isDailyDone ? `${mode.accentColor}66` : 'var(--color-border)'}`,
                     borderRadius: '14px',
                   }}
                 >
@@ -502,7 +502,7 @@ export default function HomePage() {
                   {/* Lock */}
                   {isLocked ? (
                     <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
-                      <Lock className="w-3 h-3" style={{ color: '#9ca3af' }} />
+                      <Lock className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
                     </div>
                   ) : null}
 
@@ -526,7 +526,7 @@ export default function HomePage() {
                     style={{ background: isLocked ? '#f3f4f6' : `${mode.accentColor}15` }}
                   >
                     {isLocked
-                      ? <Lock className="w-4 h-4" style={{ color: '#9ca3af' }} />
+                      ? <Lock className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
                       : mode.romanNumeral
                       ? <span className="text-[11px] font-black leading-none" style={{ color: mode.accentColor }}>{mode.romanNumeral}</span>
                       : Icon
@@ -534,8 +534,8 @@ export default function HomePage() {
                       : null
                     }
                   </div>
-                  <div className="text-[13px] font-black" style={{ color: isLocked ? '#9ca3af' : '#1a1a2e' }}>{mode.title}</div>
-                  <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+                  <div className="text-[13px] font-black" style={{ color: isLocked ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{mode.title}</div>
+                  <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                     {isLocked
                       ? `Play again in ${resetCountdown}`
                       : isDailyDone
@@ -573,17 +573,17 @@ export default function HomePage() {
         <div
           className="flex items-center justify-between px-3 py-2"
           style={{
-            background: '#ffffff',
-            border: '1.5px solid #ede9f6',
+            background: 'var(--color-surface)',
+            border: '1.5px solid var(--color-border)',
             borderRadius: '14px',
           }}
         >
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-black text-xs" style={{ color: '#1a1a2e' }}>LIVE</span>
+              <span className="font-black text-xs" style={{ color: 'var(--color-text)' }}>LIVE</span>
             </div>
-            <div className="text-[9px] font-bold" style={{ color: '#9ca3af' }}>
+            <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
               {livePlayerCount === null
                 ? 'Players online'
                 : `${livePlayerCount.toLocaleString()} ${livePlayerCount === 1 ? 'player' : 'players'} online`}
@@ -607,7 +607,7 @@ export default function HomePage() {
         <button
           onClick={() => signOut()}
           className="w-full py-1 text-center text-[10px] font-bold hover:opacity-70 transition-colors"
-          style={{ color: '#9ca3af' }}
+          style={{ color: 'var(--color-text-muted)' }}
         >
           <LogOut className="w-3 h-3 inline mr-1" />
           Sign Out

@@ -43,7 +43,7 @@ export function ProPromptModal() {
           <div
             className="flex items-center gap-3 p-3.5"
             style={{
-              background: '#ffffff',
+              background: 'var(--color-surface)',
               border: '1.5px solid #fde68a',
               borderRadius: '16px',
               boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
@@ -51,8 +51,8 @@ export function ProPromptModal() {
           >
             <Crown className="w-8 h-8 flex-shrink-0" style={{ color: '#d97706' }} />
             <div className="flex-1 min-w-0">
-              <p className="font-extrabold text-xs" style={{ color: '#1a1a2e' }}>You're on a streak!</p>
-              <p className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+              <p className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>You're on a streak!</p>
+              <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 Upgrade to Pro for ad-free play, stats, shields, and more.
               </p>
             </div>
@@ -68,7 +68,7 @@ export function ProPromptModal() {
                   Go Pro
                 </button>
               </Link>
-              <button onClick={dismiss} style={{ color: '#9ca3af' }} className="hover:opacity-80 transition-opacity">
+              <button onClick={dismiss} style={{ color: 'var(--color-text-muted)' }} className="hover:opacity-80 transition-opacity">
                 <X className="w-4 h-4" />
               </button>
             </div>

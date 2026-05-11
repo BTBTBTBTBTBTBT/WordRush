@@ -206,7 +206,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   return (
     <div
       className={`h-screen-stable flex flex-col relative ${gameComplete ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: '#f8f7ff' }}
+      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
@@ -222,8 +222,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           CLASSIC
         </h1>
         <div className="flex justify-center gap-3 mt-1">
-          <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>{guessesUsed}/{maxGuesses} guesses</span>
-          <span className="text-xs font-bold" style={{ color: '#9ca3af' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
+          <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{guessesUsed}/{maxGuesses} guesses</span>
+          <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
         </div>
         {message && (
           <div className="absolute left-0 right-0 z-20 text-center" style={{ top: '90px' }}>

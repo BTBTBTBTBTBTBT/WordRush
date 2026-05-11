@@ -154,7 +154,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
   return (
     <div
       className={`h-screen-stable flex flex-col relative ${state.status !== 'PLAYING' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: '#f8f7ff' }}
+      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       <AnimatePresence>
         {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={totalGuesses} maxGuesses={state.boards[0]?.maxGuesses} timeSeconds={elapsedTime} boardsSolved={8} totalBoards={8} solutions={state.boards.map(b => b.solution)} />}

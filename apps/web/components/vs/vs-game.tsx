@@ -406,7 +406,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Queue screen
   if (screen === 'queue') {
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); window.location.href = '/'; }} />
         {/* Countdown overlay */}
         <AnimatePresence>
@@ -482,7 +482,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     const headlineColor = isWin ? 'from-green-400 to-emerald-300' : isDraw ? 'from-yellow-400 to-orange-300' : 'from-red-400 to-rose-300';
 
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
         {/* Rematch upsell for freemium — handleRematch sets this open */}
         <VsLimitModal open={vsLimitOpen} onClose={() => setVsLimitOpen(false)} />
         <div className="text-center space-y-8 max-w-md w-full px-6">
@@ -600,7 +600,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Waiting screen — shown after player completes, waiting for opponent
   if (screen === 'waiting') {
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: '#f8f7ff' }}>
+      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
         <div className="text-center space-y-6 max-w-md w-full px-6">
           <h2 className={`text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
             Waiting for opponent...
@@ -694,7 +694,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   };
 
   return (
-    <div className="h-screen-stable flex flex-col relative" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="h-screen-stable flex flex-col relative" style={{ backgroundColor: 'var(--color-bg)' }}>
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
       {/* Match Header. The Home button forfeits the match first so the
           server can end it cleanly and credit the opponent — just navigating
@@ -751,7 +751,7 @@ function DailyVsAlreadyPlayed({
   return (
     <div
       className="h-screen-stable flex flex-col items-center justify-center relative"
-      style={{ backgroundColor: '#f8f7ff' }}
+      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       <div className="text-center space-y-6 max-w-md w-full px-6">
         {/* Headline */}
@@ -763,7 +763,7 @@ function DailyVsAlreadyPlayed({
         >
           <div
             className="text-[10px] font-extrabold uppercase tracking-widest"
-            style={{ color: '#9ca3af' }}
+            style={{ color: 'var(--color-text-muted)' }}
           >
             Today&apos;s VS Puzzle
           </div>
@@ -803,7 +803,7 @@ function DailyVsAlreadyPlayed({
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25 }}
           className="inline-block px-4 py-2 rounded-lg"
-          style={{ background: '#f3f0ff', border: '1px solid #ede9f6' }}
+          style={{ background: 'var(--color-surface-hover)', border: '1px solid var(--color-border)' }}
         >
           <span className="text-xs font-bold" style={{ color: '#7c3aed' }}>
             Next daily VS in {countdown}
@@ -816,7 +816,7 @@ function DailyVsAlreadyPlayed({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.35 }}
           className="text-xs font-bold px-4"
-          style={{ color: '#6b7280' }}
+          style={{ color: 'var(--color-text-secondary)' }}
         >
           Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.
         </motion.p>
@@ -844,9 +844,9 @@ function DailyVsAlreadyPlayed({
             <button
               className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
               style={{
-                background: '#f3f4f6',
+                background: 'var(--color-surface-alt)',
                 border: '1px solid #e5e7eb',
-                color: '#6b7280',
+                color: 'var(--color-text-secondary)',
               }}
             >
               <Home className="w-4 h-4" />

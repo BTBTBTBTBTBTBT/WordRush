@@ -301,8 +301,8 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
       <div
         className="mb-4"
         style={{
-          background: '#ffffff',
-          border: '1.5px solid #ede9f6',
+          background: 'var(--color-surface)',
+          border: '1.5px solid var(--color-border)',
           borderRadius: '16px',
           overflow: 'hidden',
         }}
@@ -336,7 +336,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
 
           {/* Answer display */}
           <div className="text-center mt-3">
-            <div className="text-lg font-black tracking-wider" style={{ color: '#1a1a2e' }}>
+            <div className="text-lg font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
               {pnPuzzle.display.toUpperCase()}
             </div>
           </div>
@@ -344,18 +344,18 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           {/* Stats */}
           <div className="flex justify-center gap-5 mt-3">
             <div className="text-center">
-              <div className="text-sm font-black" style={{ color: '#1a1a2e' }}>
+              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
                 {pnSaved.guesses.length}/6
               </div>
-              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 Guesses
               </div>
             </div>
             <div className="text-center">
-              <div className="text-sm font-black" style={{ color: '#1a1a2e' }}>
+              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
                 {pnFormatTime(pnSaved.elapsedTime)}
               </div>
-              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 Time
               </div>
             </div>
@@ -382,8 +382,8 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     <div
       className="mb-4"
       style={{
-        background: '#ffffff',
-        border: '1.5px solid #ede9f6',
+        background: 'var(--color-surface)',
+        border: '1.5px solid var(--color-border)',
         borderRadius: '16px',
         overflow: 'hidden',
       }}
@@ -430,26 +430,26 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             {/* Stats */}
             <div className="flex justify-center gap-5 mt-3">
               <div className="text-center">
-                <div className="text-sm font-black" style={{ color: '#1a1a2e' }}>
+                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
                   {boardsSolved}/{totalBoards}
                 </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Boards
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-sm font-black" style={{ color: '#1a1a2e' }}>
+                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
                   {saved.guesses.length}
                 </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Guesses
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-sm font-black" style={{ color: '#1a1a2e' }}>
+                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
                   {formatTime(saved.elapsedTime)}
                 </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Time
                 </div>
               </div>
@@ -473,16 +473,16 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
 
             {/* Solution + Definition */}
             <div className="text-center mt-3">
-              <div className="text-lg font-black tracking-wider" style={{ color: '#1a1a2e' }}>
+              <div className="text-lg font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
                 {solution!.toUpperCase()}
               </div>
               {defLoaded && (
                 <div
                   className="mt-2 mx-auto px-3 py-2 text-left"
                   style={{
-                    background: '#f8f7ff',
+                    background: 'var(--color-bg)',
                     borderRadius: '10px',
-                    border: '1px solid #ede9f6',
+                    border: '1px solid var(--color-border)',
                     maxWidth: '320px',
                   }}
                 >
@@ -490,14 +490,14 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
                     <>
                       <div className="flex items-center gap-2 flex-wrap">
                         {definition.phonetic && (
-                          <span className="text-[11px] font-medium" style={{ color: '#9ca3af' }}>
+                          <span className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
                             {definition.phonetic}
                           </span>
                         )}
                         {definition.partOfSpeech && (
                           <span
                             className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                            style={{ background: '#ede9f6', color: '#a78bfa' }}
+                            style={{ background: 'var(--color-border)', color: '#a78bfa' }}
                           >
                             {definition.partOfSpeech}
                           </span>
@@ -508,7 +508,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
                       </p>
                     </>
                   ) : (
-                    <p className="text-xs font-medium italic" style={{ color: '#9ca3af' }}>
+                    <p className="text-xs font-medium italic" style={{ color: 'var(--color-text-muted)' }}>
                       No definition available for this word.
                     </p>
                   )}
@@ -519,18 +519,18 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             {/* Stats */}
             <div className="flex justify-center gap-5 mt-3">
               <div className="text-center">
-                <div className="text-sm font-black" style={{ color: '#1a1a2e' }}>
+                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
                   {saved.guesses.length}/6
                 </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Guesses
                 </div>
               </div>
               <div className="text-center">
-                <div className="text-sm font-black" style={{ color: '#1a1a2e' }}>
+                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
                   {formatTime(saved.elapsedTime)}
                 </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>
+                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Time
                 </div>
               </div>

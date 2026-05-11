@@ -21,15 +21,15 @@ export function PlayModeToggle({ value, onChange }: Props) {
     <div
       className="flex items-center p-0.5 rounded-full mb-1"
       style={{
-        background: '#f3f0ff',
-        border: '1.5px solid #ede9f6',
+        background: 'var(--color-surface-hover)',
+        border: '1.5px solid var(--color-border)',
       }}
     >
       <button
         onClick={() => onChange('daily')}
         className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-extrabold transition-colors"
         style={{
-          background: value === 'daily' ? '#ffffff' : 'transparent',
+          background: value === 'daily' ? 'var(--color-surface)' : 'transparent',
           color: value === 'daily' ? '#7c3aed' : '#9ca3af',
           boxShadow: value === 'daily' ? '0 1px 3px rgba(124,58,237,0.12)' : undefined,
         }}
@@ -41,7 +41,7 @@ export function PlayModeToggle({ value, onChange }: Props) {
         onClick={() => onChange('unlimited')}
         className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-xs font-extrabold transition-colors"
         style={{
-          background: value === 'unlimited' ? '#ffffff' : 'transparent',
+          background: value === 'unlimited' ? 'var(--color-surface)' : 'transparent',
           color: value === 'unlimited' ? '#7c3aed' : '#9ca3af',
           boxShadow: value === 'unlimited' ? '0 1px 3px rgba(124,58,237,0.12)' : undefined,
         }}

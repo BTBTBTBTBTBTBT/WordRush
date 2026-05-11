@@ -57,7 +57,7 @@ export function PendingInvitesBanner({ userId }: Props) {
         <Mail className="w-4 h-4 text-white" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-black truncate" style={{ color: '#1a1a2e' }}>
+        <p className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
           @{name} invited you to {top.game_mode}
         </p>
         {invites.length > 1 && (
@@ -76,7 +76,7 @@ export function PendingInvitesBanner({ userId }: Props) {
       <button
         onClick={handleDismiss}
         className="w-7 h-7 flex items-center justify-center rounded-full"
-        style={{ background: '#ffffff', border: '1.5px solid #f5d0fe', color: '#a21caf' }}
+        style={{ background: 'var(--color-surface)', border: '1.5px solid #f5d0fe', color: '#a21caf' }}
         aria-label="Dismiss"
       >
         <XIcon className="w-3.5 h-3.5" />

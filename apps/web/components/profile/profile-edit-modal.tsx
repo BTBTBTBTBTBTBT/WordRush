@@ -86,32 +86,32 @@ export function ProfileEditModal({ open, onClose }: Props) {
     >
       <div
         className="w-full max-w-sm max-h-[90vh] overflow-y-auto p-5 relative"
-        style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '20px' }}
+        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}
       >
         <button
           onClick={onClose}
           className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full"
-          style={{ background: '#f8f7ff' }}
+          style={{ background: 'var(--color-bg)' }}
           aria-label="Close"
         >
-          <XIcon className="w-4 h-4" style={{ color: '#9ca3af' }} />
+          <XIcon className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
         </button>
 
-        <h2 className="text-lg font-black mb-1" style={{ color: '#1a1a2e' }}>Edit profile</h2>
-        <p className="text-xs font-bold mb-4" style={{ color: '#9ca3af' }}>
+        <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>Edit profile</h2>
+        <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Avatar, name, and links — all in one place.
         </p>
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-4">
           <AvatarUpload size={88} editable />
-          <p className="text-[10px] font-bold mt-1" style={{ color: '#9ca3af' }}>
+          <p className="text-[10px] font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
             Tap the avatar to upload a new photo.
           </p>
         </div>
 
         {/* Username */}
-        <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: '#9ca3af' }}>Username</label>
+        <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: 'var(--color-text-muted)' }}>Username</label>
         <input
           ref={inputRef}
           type="text"
@@ -120,11 +120,11 @@ export function ProfileEditModal({ open, onClose }: Props) {
           maxLength={20}
           disabled={saving}
           className="w-full px-3 py-2 text-sm font-bold outline-none mb-4"
-          style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', borderRadius: '10px', color: '#1a1a2e' }}
+          style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '10px', color: 'var(--color-text)' }}
         />
 
         {/* Socials */}
-        <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: '#9ca3af' }}>Socials</label>
+        <label className="block text-[10px] font-extrabold uppercase mb-1" style={{ color: 'var(--color-text-muted)' }}>Socials</label>
         <div className="space-y-2 mb-4">
           {PLATFORMS.map((p) => (
             <div key={p.key} className="flex items-center gap-2">
@@ -138,7 +138,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
                 placeholder={p.placeholder}
                 disabled={saving}
                 className="flex-1 text-xs font-bold px-2.5 py-1.5 outline-none"
-                style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', borderRadius: '8px', color: '#1a1a2e' }}
+                style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
               />
             </div>
           ))}
@@ -151,7 +151,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
             onClick={onClose}
             disabled={saving}
             className="flex-1 py-2.5 rounded-xl text-sm font-black"
-            style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', color: '#1a1a2e' }}
+            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
           >
             Cancel
           </button>
@@ -175,7 +175,7 @@ export function EditProfileButton({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       className="inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1.5 rounded-full"
-      style={{ background: '#f3f0ff', border: '1.5px solid #ede9f6', color: '#7c3aed' }}
+      style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
     >
       <Pencil className="w-3 h-3" />
       Edit profile

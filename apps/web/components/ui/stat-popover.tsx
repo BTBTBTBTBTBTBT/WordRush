@@ -52,8 +52,8 @@ export function StatPopover({ open, onClose, children }: StatPopoverProps) {
             style={{
               width: '12px',
               height: '12px',
-              background: '#ffffff',
-              border: '1.5px solid #ede9f6',
+              background: 'var(--color-surface)',
+              border: '1.5px solid var(--color-border)',
               borderRight: 'none',
               borderBottom: 'none',
               transform: 'rotate(45deg)',
@@ -63,8 +63,8 @@ export function StatPopover({ open, onClose, children }: StatPopoverProps) {
           {/* Card */}
           <div
             style={{
-              background: '#ffffff',
-              border: '1.5px solid #ede9f6',
+              background: 'var(--color-surface)',
+              border: '1.5px solid var(--color-border)',
               borderRadius: '14px',
               boxShadow: '0 8px 30px rgba(0,0,0,0.1)',
               padding: '14px 16px',

@@ -20,23 +20,23 @@ export function PostGameSummary({ solution }: PostGameSummaryProps) {
     <div
       className="w-full max-w-[400px] mx-auto mt-3 px-3 py-2.5"
       style={{
-        background: '#f8f7ff',
+        background: 'var(--color-bg)',
         borderRadius: '12px',
-        border: '1px solid #ede9f6',
+        border: '1px solid var(--color-border)',
       }}
     >
       {definition ? (
         <>
           <div className="flex items-center gap-2 flex-wrap">
             {definition.phonetic && (
-              <span className="text-xs font-medium" style={{ color: '#9ca3af' }}>
+              <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
                 {definition.phonetic}
               </span>
             )}
             {definition.partOfSpeech && (
               <span
                 className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                style={{ background: '#ede9f6', color: '#a78bfa' }}
+                style={{ background: 'var(--color-border)', color: '#a78bfa' }}
               >
                 {definition.partOfSpeech}
               </span>
@@ -47,7 +47,7 @@ export function PostGameSummary({ solution }: PostGameSummaryProps) {
           </p>
         </>
       ) : (
-        <p className="text-xs font-medium italic" style={{ color: '#9ca3af' }}>
+        <p className="text-xs font-medium italic" style={{ color: 'var(--color-text-muted)' }}>
           No definition available for this word.
         </p>
       )}

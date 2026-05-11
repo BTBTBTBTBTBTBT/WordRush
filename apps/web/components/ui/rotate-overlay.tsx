@@ -18,7 +18,7 @@ export function RotateOverlay() {
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 px-8"
-      style={{ backgroundColor: '#f8f7ff' }}
+      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       <div
         className="text-5xl animate-bounce-in"
@@ -34,7 +34,7 @@ export function RotateOverlay() {
       </h2>
       <p
         className="text-sm font-bold text-center max-w-xs"
-        style={{ color: '#9ca3af' }}
+        style={{ color: 'var(--color-text-muted)' }}
       >
         Wordocious plays best in portrait mode
       </p>

@@ -59,7 +59,7 @@ export function AdInterstitial({ onAdLoaded, onAdFailed }: AdInterstitialProps) 
           >
             Advertisement
           </div>
-          <div className="text-xs font-bold" style={{ color: '#9ca3af' }}>
+          <div className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
             Ad space — coming soon
           </div>
         </div>

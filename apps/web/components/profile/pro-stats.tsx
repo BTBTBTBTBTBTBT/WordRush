@@ -36,14 +36,14 @@ function CustomTooltip({ active, payload, label }: any) {
   return (
     <div
       style={{
-        background: '#ffffff',
-        border: '1.5px solid #ede9f6',
+        background: 'var(--color-surface)',
+        border: '1.5px solid var(--color-border)',
         borderRadius: '10px',
         padding: '8px 12px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
       }}
     >
-      <p className="text-xs font-black" style={{ color: '#1a1a2e' }}>{label}</p>
+      <p className="text-xs font-black" style={{ color: 'var(--color-text)' }}>{label}</p>
       {payload.map((entry: any, i: number) => (
         <p key={i} className="text-[11px] font-bold" style={{ color: entry.color }}>
           {entry.name}: {entry.name.includes('Time') ? formatTime(entry.value) : `${entry.value}%`}
@@ -85,14 +85,14 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
         <div className="section-header mb-2">PRO STATS</div>
         <div
           className="relative overflow-hidden"
-          style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
         >
           <div
             className="absolute inset-0 z-10 flex flex-col items-center justify-center"
             style={{ background: 'rgba(248, 247, 255, 0.85)', backdropFilter: 'blur(4px)' }}
           >
             <Lock className="w-7 h-7 mb-2" style={{ color: '#c4b5fd' }} />
-            <p className="text-xs font-bold mb-3" style={{ color: '#9ca3af' }}>Pro Feature</p>
+            <p className="text-xs font-bold mb-3" style={{ color: 'var(--color-text-muted)' }}>Pro Feature</p>
             <Link href="/pro">
               <button
                 className="btn-3d flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-xs font-black"
@@ -104,7 +104,7 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
             </Link>
           </div>
           <div className="p-5">
-            <div className="h-40 rounded-xl" style={{ background: '#f3f0ff' }} />
+            <div className="h-40 rounded-xl" style={{ background: 'var(--color-surface-hover)' }} />
           </div>
         </div>
       </>
@@ -120,9 +120,9 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
         {/* Win Rate Chart */}
         <div
           className="p-4"
-          style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
         >
-          <h3 className="text-sm font-black mb-3" style={{ color: '#1a1a2e' }}>Win Rate by Mode</h3>
+          <h3 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>Win Rate by Mode</h3>
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={modeStats} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -150,9 +150,9 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
         {/* Avg Solve Time Chart */}
         <div
           className="p-4"
-          style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
         >
-          <h3 className="text-sm font-black mb-3" style={{ color: '#1a1a2e' }}>Avg Solve Time by Mode</h3>
+          <h3 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>Avg Solve Time by Mode</h3>
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={modeStats} margin={{ top: 0, right: 0, left: -10, bottom: 0 }}>

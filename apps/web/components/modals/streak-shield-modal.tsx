@@ -48,7 +48,7 @@ export function StreakShieldModal({
             exit={{ scale: 0.9, opacity: 0 }}
             className="relative w-full max-w-sm p-6"
             style={{
-              background: '#ffffff',
+              background: 'var(--color-surface)',
               border: '1.5px solid #c4b5fd',
               borderRadius: '20px',
               boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
@@ -57,7 +57,7 @@ export function StreakShieldModal({
             <button
               onClick={onClose}
               className="absolute top-4 right-4 transition-opacity hover:opacity-80"
-              style={{ color: '#9ca3af' }}
+              style={{ color: 'var(--color-text-muted)' }}
             >
               <X className="w-5 h-5" />
             </button>
@@ -77,11 +77,11 @@ export function StreakShieldModal({
                 </div>
               </div>
 
-              <h2 className="text-xl font-black" style={{ color: '#1a1a2e' }}>Streak at Risk!</h2>
+              <h2 className="text-xl font-black" style={{ color: 'var(--color-text)' }}>Streak at Risk!</h2>
 
               {/* Large streak number */}
-              <div className="text-5xl font-black" style={{ color: '#1a1a2e' }}>{streak}</div>
-              <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>
+              <div className="text-5xl font-black" style={{ color: 'var(--color-text)' }}>{streak}</div>
+              <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 day streak will be lost if you don't play today
               </p>
 
@@ -89,7 +89,7 @@ export function StreakShieldModal({
               <div className="flex justify-center gap-3">
                 <div
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold"
-                  style={{ background: '#f3f0ff', border: '1.5px solid #c4b5fd', color: '#5b21b6' }}
+                  style={{ background: 'var(--color-surface-hover)', border: '1.5px solid #c4b5fd', color: '#5b21b6' }}
                 >
                   <Shield className="w-3.5 h-3.5" />
                   <span>{shields}</span>
@@ -113,7 +113,7 @@ export function StreakShieldModal({
                     {loading === 'shield' ? 'Using Shield...' : `Use Shield (${shields} left)`}
                   </button>
                 ) : (
-                  <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>
+                  <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
                     You have no streak shields. Pro subscribers get 4 shields per billing period.
                   </p>
                 )}
@@ -122,7 +122,7 @@ export function StreakShieldModal({
                   onClick={onDecline}
                   disabled={loading !== null}
                   className="w-full py-2 text-xs font-bold transition-colors disabled:opacity-50"
-                  style={{ color: '#9ca3af' }}
+                  style={{ color: 'var(--color-text-muted)' }}
                 >
                   Let Streak Reset
                 </button>

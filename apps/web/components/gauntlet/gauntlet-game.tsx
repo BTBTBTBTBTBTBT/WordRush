@@ -406,7 +406,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   return (
     <div
       className={`h-screen-stable flex flex-col relative ${state.status !== GameStatus.PLAYING ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
-      style={{ backgroundColor: '#f8f7ff' }}
+      style={{ backgroundColor: 'var(--color-bg)' }}
     >
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0 relative">

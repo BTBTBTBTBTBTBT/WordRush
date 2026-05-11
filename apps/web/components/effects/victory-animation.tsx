@@ -47,8 +47,8 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
         <div
           className="relative overflow-hidden text-center"
           style={{
-            background: '#ffffff',
-            border: '1.5px solid #ede9f6',
+            background: 'var(--color-surface)',
+            border: '1.5px solid var(--color-border)',
             borderRadius: '16px',
             boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
           }}
@@ -70,7 +70,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
 
             {/* Single solution word */}
             {solution && (
-              <div className="mt-2 text-2xl font-black tracking-wider" style={{ color: '#1a1a2e' }}>
+              <div className="mt-2 text-2xl font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
                 {solution.toUpperCase()}
               </div>
             )}
@@ -80,20 +80,20 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
               <div
                 className="mt-3 px-4 py-3"
                 style={{
-                  background: '#f8f7ff',
+                  background: 'var(--color-bg)',
                   borderRadius: '12px',
-                  border: '1px solid #ede9f6',
+                  border: '1px solid var(--color-border)',
                 }}
               >
                 {definition.phonetic && (
-                  <div className="text-xs font-medium mb-1.5" style={{ color: '#9ca3af' }}>
+                  <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-text-muted)' }}>
                     {definition.phonetic}
                   </div>
                 )}
                 {definition.partOfSpeech && (
                   <span
                     className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                    style={{ background: '#ede9f6', color: '#a78bfa' }}
+                    style={{ background: 'var(--color-border)', color: '#a78bfa' }}
                   >
                     {definition.partOfSpeech}
                   </span>
@@ -109,9 +109,9 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
               <div
                 className="mt-3 px-4 py-3"
                 style={{
-                  background: '#f8f7ff',
+                  background: 'var(--color-bg)',
                   borderRadius: '12px',
-                  border: '1px solid #ede9f6',
+                  border: '1px solid var(--color-border)',
                 }}
               >
                 <div className={solutions.length > 8
@@ -130,7 +130,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                       className={`font-black tracking-wider ${
                         solutions.length > 8 ? 'text-xs' : solutions.length > 4 ? 'text-sm' : 'text-lg'
                       }`}
-                      style={{ color: '#1a1a2e' }}
+                      style={{ color: 'var(--color-text)' }}
                     >
                       {word.toUpperCase()}
                     </span>
@@ -144,26 +144,26 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
               <div className="flex justify-center gap-5 mt-4">
                 {guesses != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                       {guesses}{maxGuesses ? `/${maxGuesses}` : ''}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Guesses</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Guesses</div>
                   </div>
                 )}
                 {boardsSolved != null && totalBoards != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                       {boardsSolved}/{totalBoards}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Boards</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Boards</div>
                   </div>
                 )}
                 {timeSeconds != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                       {formatTime(timeSeconds)}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#9ca3af' }}>Time</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Time</div>
                   </div>
                 )}
               </div>

@@ -26,7 +26,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return (
       <div
         className="fixed inset-0 flex flex-col items-center justify-center"
-        style={{ backgroundColor: '#f8f7ff' }}
+        style={{ backgroundColor: 'var(--color-bg)' }}
       >
         <h1
           className="text-2xl font-black tracking-tight animate-pulse"

@@ -37,7 +37,7 @@ export function GameHomeButton({
 }: GameHomeButtonProps) {
   const className = `${positionClass} w-11 h-11 rounded-full flex items-center justify-center transition-transform active:scale-95`;
   const style = {
-    background: '#ffffff',
+    background: 'var(--color-surface)',
     border: `2px solid ${accentColor}`,
     boxShadow: `0 2px 0 ${accentColor}33, 0 4px 12px rgba(0,0,0,0.08)`,
   } as const;

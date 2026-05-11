@@ -93,7 +93,7 @@ export function SharePreviewHost() {
             onClick={(e) => e.stopPropagation()}
             className="relative w-full max-w-sm p-5"
             style={{
-              background: '#ffffff',
+              background: 'var(--color-surface)',
               borderRadius: '24px',
               boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
             }}
@@ -102,12 +102,12 @@ export function SharePreviewHost() {
               onClick={closeSharePreview}
               aria-label="Close"
               className="absolute top-3 right-3 p-1.5 rounded-full transition-colors hover:bg-gray-100"
-              style={{ color: '#9ca3af' }}
+              style={{ color: 'var(--color-text-muted)' }}
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-black text-center mb-3" style={{ color: '#1a1a2e' }}>
+            <h3 className="text-lg font-black text-center mb-3" style={{ color: 'var(--color-text)' }}>
               Share your result
             </h3>
 
@@ -116,7 +116,7 @@ export function SharePreviewHost() {
                 src={imageUrl}
                 alt="Share preview"
                 className="w-full rounded-xl mb-3"
-                style={{ border: '1.5px solid #ede9f6' }}
+                style={{ border: '1.5px solid var(--color-border)' }}
               />
             )}
 
@@ -137,9 +137,9 @@ export function SharePreviewHost() {
                 onClick={handleCopyCaption}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-extrabold text-sm transition-colors"
                 style={{
-                  background: '#f8f7ff',
-                  border: '1.5px solid #ede9f6',
-                  color: '#1a1a2e',
+                  background: 'var(--color-bg)',
+                  border: '1.5px solid var(--color-border)',
+                  color: 'var(--color-text)',
                 }}
               >
                 {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}

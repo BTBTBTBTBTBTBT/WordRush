@@ -51,8 +51,8 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
         ))}
       </div>
       {showSolution && solution && (
-        <div className="mt-1 text-center text-xs font-bold" style={{ color: '#9ca3af' }}>
-          Solution: <span className="font-black" style={{ color: '#1a1a2e' }}>{solution}</span>
+        <div className="mt-1 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+          Solution: <span className="font-black" style={{ color: 'var(--color-text)' }}>{solution}</span>
         </div>
       )}
     </div>

@@ -64,7 +64,7 @@ export function AdGate({ children }: AdGateProps) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
           className="fixed inset-0 z-[60] flex flex-col items-center justify-between"
-          style={{ backgroundColor: '#f8f7ff' }}
+          style={{ backgroundColor: 'var(--color-bg)' }}
         >
           {/* ── Top branding ── */}
           <div className="pt-10 text-center">
@@ -74,7 +74,7 @@ export function AdGate({ children }: AdGateProps) {
             >
               WORDOCIOUS
             </h1>
-            <p className="text-[10px] font-bold mt-1" style={{ color: '#9ca3af' }}>
+            <p className="text-[10px] font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
               Your game is loading&hellip;
             </p>
           </div>
@@ -100,7 +100,7 @@ export function AdGate({ children }: AdGateProps) {
             ) : (
               <div
                 className="inline-block px-5 py-2 rounded-full"
-                style={{ background: '#ede9f6' }}
+                style={{ background: 'var(--color-border)' }}
               >
                 <span className="text-xs font-extrabold" style={{ color: '#7c3aed' }}>
                   Game starts in {countdown}s

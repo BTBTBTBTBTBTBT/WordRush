@@ -99,7 +99,7 @@ export function SocialLinksDisplay({ links }: DisplayProps) {
             target="_blank"
             rel="noopener noreferrer nofollow"
             className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
-            style={{ background: '#ffffff', border: '1.5px solid #ede9f6', color: p.color }}
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', color: p.color }}
             aria-label={p.label}
             title={p.label}
           >
@@ -153,7 +153,7 @@ export function SocialLinksEditor({ userId, initial, onSaved }: EditorProps) {
         <button
           onClick={() => { setValues(initial ?? {}); setOpen(true); }}
           className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full"
-          style={{ background: '#f3f0ff', border: '1.5px solid #ede9f6', color: '#7c3aed' }}
+          style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
         >
           <Pencil className="w-3 h-3" />
           {initial && Object.keys(initial).length > 0 ? 'Edit socials' : 'Add socials'}
@@ -165,7 +165,7 @@ export function SocialLinksEditor({ userId, initial, onSaved }: EditorProps) {
   return (
     <div
       className="w-full max-w-sm mx-auto p-4 space-y-2.5"
-      style={{ background: '#ffffff', border: '1.5px solid #ede9f6', borderRadius: '16px' }}
+      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
     >
       {PLATFORMS.map((p) => (
         <div key={p.key} className="flex items-center gap-2">
@@ -178,7 +178,7 @@ export function SocialLinksEditor({ userId, initial, onSaved }: EditorProps) {
             onChange={(e) => setValues((v) => ({ ...v, [p.key]: e.target.value }))}
             placeholder={p.placeholder}
             className="flex-1 text-xs font-bold px-2.5 py-1.5 outline-none"
-            style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', borderRadius: '8px', color: '#1a1a2e' }}
+            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
           />
         </div>
       ))}
@@ -188,7 +188,7 @@ export function SocialLinksEditor({ userId, initial, onSaved }: EditorProps) {
           onClick={() => setOpen(false)}
           disabled={saving}
           className="flex-1 py-1.5 rounded-lg text-xs font-black"
-          style={{ background: '#f8f7ff', border: '1.5px solid #ede9f6', color: '#1a1a2e' }}
+          style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
         >
           <XIcon className="w-3 h-3 inline mr-1" />
           Cancel

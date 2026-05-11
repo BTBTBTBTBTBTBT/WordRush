@@ -43,7 +43,7 @@ function ExampleRow({ letters, colors, caption }: {
           <ExampleTile key={i} letter={letter} color={colors[i]} />
         ))}
       </div>
-      <p className="text-xs text-center" style={{ color: '#6b7280' }}>{caption}</p>
+      <p className="text-xs text-center" style={{ color: 'var(--color-text-secondary)' }}>{caption}</p>
     </div>
   );
 }
@@ -161,7 +161,7 @@ function HowToPlayContent() {
 
       <div
         className="px-3 py-2.5 rounded-xl text-xs font-medium"
-        style={{ background: '#f8f7ff', border: '1px solid #ede9f6', color: '#6b7280' }}
+        style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
       >
         Daily puzzles reset at your local midnight. Every player gets the same word of the day so you can compare results.
       </div>
@@ -178,7 +178,7 @@ function GameModesContent() {
           <div
             key={mode.title}
             className="flex items-start gap-3 px-3 py-2.5 rounded-xl"
-            style={{ background: '#fafafa', border: '1px solid #f0f0f0' }}
+            style={{ background: '#fafafa', border: '1px solid var(--color-divider)' }}
           >
             <div
               className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
@@ -191,8 +191,8 @@ function GameModesContent() {
               ) : null}
             </div>
             <div className="min-w-0">
-              <span className="text-sm font-black" style={{ color: '#1a1a2e' }}>{mode.title}</span>
-              <p className="text-xs mt-0.5" style={{ color: '#6b7280' }}>{mode.desc}</p>
+              <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{mode.title}</span>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{mode.desc}</p>
             </div>
           </div>
         );
@@ -206,8 +206,8 @@ function FAQContent() {
     <div className="space-y-3">
       {FAQ_ITEMS.map((item, i) => (
         <div key={i}>
-          <h4 className="text-sm font-black" style={{ color: '#1a1a2e' }}>{item.q}</h4>
-          <p className="text-xs mt-0.5" style={{ color: '#6b7280' }}>{item.a}</p>
+          <h4 className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{item.q}</h4>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{item.a}</p>
         </div>
       ))}
     </div>
@@ -234,8 +234,8 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
             exit={{ scale: 0.9, opacity: 0 }}
             className="relative w-full max-w-sm"
             style={{
-              background: '#ffffff',
-              border: '1.5px solid #ede9f6',
+              background: 'var(--color-surface)',
+              border: '1.5px solid var(--color-border)',
               borderRadius: '20px',
               overflow: 'hidden',
               boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
@@ -257,14 +257,14 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
             <button
               onClick={onClose}
               className="absolute top-4 right-4 transition-opacity hover:opacity-80 z-10"
-              style={{ color: '#9ca3af' }}
+              style={{ color: 'var(--color-text-muted)' }}
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Header */}
             <div className="px-5 pt-4 pb-0 flex-shrink-0">
-              <h2 className="text-xl font-black" style={{ color: '#1a1a2e' }}>
+              <h2 className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                 {activeTab === 'how-to-play' && 'How to Play'}
                 {activeTab === 'modes' && 'Game Modes'}
                 {activeTab === 'faq' && 'FAQ'}
@@ -281,7 +281,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
                   style={
                     activeTab === tab.id
                       ? { background: '#1a1a2e', color: '#ffffff' }
-                      : { background: '#f3f4f6', color: '#6b7280' }
+                      : { background: 'var(--color-surface-alt)', color: 'var(--color-text-secondary)' }
                   }
                 >
                   {tab.label}

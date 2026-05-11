@@ -53,7 +53,7 @@ function CountdownTimer() {
   const secs = secondsLeft % 60;
 
   return (
-    <span className="font-mono text-xs font-bold" style={{ color: '#9ca3af' }}>
+    <span className="font-mono text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
       <Clock className="w-3 h-3 inline mr-1" />
       {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
     </span>
@@ -62,9 +62,9 @@ function CountdownTimer() {
 
 function MedalIcon({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#d97706' }} />;
-  if (rank === 2) return <Medal className="w-5 h-5" style={{ color: '#9ca3af' }} />;
+  if (rank === 2) return <Medal className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />;
   if (rank === 3) return <Medal className="w-5 h-5" style={{ color: '#b45309' }} />;
-  return <span className="text-xs font-black w-5 text-center" style={{ color: '#9ca3af' }}>{rank}</span>;
+  return <span className="text-xs font-black w-5 text-center" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
 }
 
 export default function DailyPage() {
@@ -150,7 +150,7 @@ export default function DailyPage() {
   };
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
@@ -165,7 +165,7 @@ export default function DailyPage() {
             DAILY CHALLENGE
           </h1>
           <div className="flex items-center justify-center gap-3 mt-1">
-            <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>
+            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
               <Calendar className="w-3 h-3 inline mr-1" />
               {/* `today` is a local-day string set via useEffect on mount
                   so it always reflects the viewer's local calendar day,
@@ -189,7 +189,7 @@ export default function DailyPage() {
               className="px-3 py-1.5 rounded-lg text-[10px] font-extrabold whitespace-nowrap transition-all"
               style={{
                 background: selectedMode === mode.id ? '#ffffff' : '#f3f0ff',
-                border: selectedMode === mode.id ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+                border: selectedMode === mode.id ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
                 color: selectedMode === mode.id ? '#7c3aed' : '#9ca3af',
               }}
             >
@@ -202,12 +202,12 @@ export default function DailyPage() {
         <div
           className="flex items-center justify-between p-3.5 mb-4"
           style={{
-            background: '#ffffff',
-            border: '1.5px solid #ede9f6',
+            background: 'var(--color-surface)',
+            border: '1.5px solid var(--color-border)',
             borderRadius: '16px',
           }}
         >
-          <div className="flex items-center gap-2 text-xs font-bold" style={{ color: '#9ca3af' }}>
+          <div className="flex items-center gap-2 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
             <Users className="w-3.5 h-3.5" />
             <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
           </div>
@@ -247,15 +247,15 @@ export default function DailyPage() {
         <div
           className="overflow-hidden"
           style={{
-            background: '#ffffff',
-            border: '1.5px solid #ede9f6',
+            background: 'var(--color-surface)',
+            border: '1.5px solid var(--color-border)',
             borderRadius: '16px',
           }}
         >
           {loading ? (
-            <div className="p-8 text-center text-xs font-bold" style={{ color: '#9ca3af' }}>Loading...</div>
+            <div className="p-8 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Loading...</div>
           ) : leaderboard.length === 0 ? (
-            <div className="p-8 text-center text-xs font-bold" style={{ color: '#9ca3af' }}>
+            <div className="p-8 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
               No results yet. Be the first!
             </div>
           ) : (
@@ -269,7 +269,7 @@ export default function DailyPage() {
                     className="flex items-center gap-3 px-4 py-3"
                     style={{
                       background: isCurrentUser ? '#fffbeb' : rank <= 3 ? '#fafafa' : 'transparent',
-                      borderBottom: '1px solid #ede9f6',
+                      borderBottom: '1px solid var(--color-border)',
                     }}
                   >
                     <MedalIcon rank={rank} />
@@ -277,15 +277,15 @@ export default function DailyPage() {
                       <Link
                         href={`/profile/${entry.user_id}`}
                         className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-                        style={{ color: '#1a1a2e' }}
+                        style={{ color: 'var(--color-text)' }}
                       >
                         {entry.username}
                         {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
                       </Link>
                     </div>
                     <div className="text-right">
-                      <div className="font-black text-xs" style={{ color: '#1a1a2e' }}>{entry.composite_score}</div>
-                      <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+                      <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{entry.composite_score}</div>
+                      <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                         <span>
                           {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
                           {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
@@ -315,7 +315,7 @@ export default function DailyPage() {
         <button
           onClick={() => setShowYesterday(!showYesterday)}
           className="w-full mt-4 flex items-center justify-center gap-1.5 text-xs font-extrabold py-2 transition-colors"
-          style={{ color: '#9ca3af' }}
+          style={{ color: 'var(--color-text-muted)' }}
         >
           Yesterday's Winners
           {showYesterday ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -325,13 +325,13 @@ export default function DailyPage() {
           <div
             className="overflow-hidden mb-4"
             style={{
-              background: '#ffffff',
-              border: '1.5px solid #ede9f6',
+              background: 'var(--color-surface)',
+              border: '1.5px solid var(--color-border)',
               borderRadius: '16px',
             }}
           >
             {yesterdayLeaderboard.length === 0 ? (
-              <div className="p-6 text-center text-xs font-bold" style={{ color: '#9ca3af' }}>
+              <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 No results from yesterday
               </div>
             ) : (
@@ -340,10 +340,10 @@ export default function DailyPage() {
                   <div
                     key={entry.user_id}
                     className="flex items-center gap-3 px-4 py-3"
-                    style={{ borderBottom: '1px solid #ede9f6' }}
+                    style={{ borderBottom: '1px solid var(--color-border)' }}
                   >
                     <MedalIcon rank={index + 1} />
-                    <span className="text-xs font-extrabold flex-1 truncate" style={{ color: '#1a1a2e' }}>{entry.username}</span>
+                    <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>{entry.username}</span>
                     <span
                       className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
                       style={{
@@ -353,7 +353,7 @@ export default function DailyPage() {
                     >
                       {entry.completed ? 'W' : 'L'}
                     </span>
-                    <span className="text-xs font-black" style={{ color: '#9ca3af' }}>{entry.composite_score}</span>
+                    <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{entry.composite_score}</span>
                   </div>
                 ))}
               </div>

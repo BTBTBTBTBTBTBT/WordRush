@@ -104,7 +104,7 @@ export function GauntletResults({
     <div
       className="min-h-screen flex items-center justify-center p-4 overflow-y-auto"
       style={{
-        backgroundColor: '#f8f7ff',
+        backgroundColor: 'var(--color-bg)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
       }}
     >

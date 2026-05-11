@@ -37,11 +37,11 @@ function Tile({
       case 'absent':
         return { bg: '#6b7280', border: '#6b7280', text: '#ffffff' };
       case 'tbd':
-        return { bg: '#ffffff', border: '#9ca3af', text: '#1a1a2e' };
+        return { bg: 'var(--color-surface)', border: 'var(--color-text-muted)', text: 'var(--color-text)' };
       case 'hint-used':
         return { bg: '#e5e7eb', border: '#d1d5db', text: '#9ca3af' };
       default:
-        return { bg: '#ffffff', border: '#d1d5db', text: '#1a1a2e' };
+        return { bg: 'var(--color-surface)', border: '#d1d5db', text: 'var(--color-text)' };
     }
   };
 

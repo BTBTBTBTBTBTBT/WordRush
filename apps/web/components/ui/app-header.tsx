@@ -59,9 +59,9 @@ export function AppHeader() {
             onClick={() => setHelpOpen(true)}
             className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
             style={{
-              background: '#f3f4f6',
-              border: '1.5px solid #e5e7eb',
-              color: '#9ca3af',
+              background: 'var(--color-surface-alt)',
+              border: '1.5px solid var(--color-border-alt)',
+              color: 'var(--color-text-muted)',
             }}
             aria-label="How to play"
           >
@@ -91,7 +91,7 @@ export function AppHeader() {
                 onClick={openShield}
                 className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm transition-transform active:scale-95"
                 style={{
-                  background: '#f3f0ff',
+                  background: 'var(--color-surface-hover)',
                   border: '1.5px solid #c4b5fd',
                   borderRadius: '20px',
                   color: '#5b21b6',
@@ -106,22 +106,22 @@ export function AppHeader() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Flame className="w-5 h-5" style={{ color: '#f97316' }} />
-                    <span className="text-sm font-black" style={{ color: '#1a1a2e' }}>Daily Streak</span>
+                    <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>Daily Streak</span>
                   </div>
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>Current</span>
-                      <span className="text-sm font-black" style={{ color: '#1a1a2e' }}>{streak} {streak === 1 ? 'day' : 'days'}</span>
+                      <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Current</span>
+                      <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{streak} {streak === 1 ? 'day' : 'days'}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>Best</span>
-                      <span className="text-sm font-black" style={{ color: '#1a1a2e' }}>{bestStreak} {bestStreak === 1 ? 'day' : 'days'}</span>
+                      <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Best</span>
+                      <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{bestStreak} {bestStreak === 1 ? 'day' : 'days'}</span>
                     </div>
                   </div>
 
-                  <div style={{ borderTop: '1px solid #f0f0f0' }} className="pt-2.5">
-                    <p className="text-[11px] leading-relaxed" style={{ color: '#6b7280' }}>
+                  <div style={{ borderTop: '1px solid var(--color-divider)' }} className="pt-2.5">
+                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                       Play any daily puzzle each day to keep your streak going. Miss a day and it resets — unless you use a streak shield.
                     </p>
                   </div>
@@ -133,16 +133,16 @@ export function AppHeader() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <ShieldIcon className="w-5 h-5" />
-                    <span className="text-sm font-black" style={{ color: '#1a1a2e' }}>Streak Shields</span>
+                    <span className="text-sm font-black" style={{ color: 'var(--color-text)' }}>Streak Shields</span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold" style={{ color: '#9ca3af' }}>Available</span>
+                    <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Available</span>
                     <span className="text-sm font-black" style={{ color: '#5b21b6' }}>{shields} {shields === 1 ? 'shield' : 'shields'}</span>
                   </div>
 
-                  <div style={{ borderTop: '1px solid #f0f0f0' }} className="pt-2.5">
-                    <p className="text-[11px] leading-relaxed" style={{ color: '#6b7280' }}>
+                  <div style={{ borderTop: '1px solid var(--color-divider)' }} className="pt-2.5">
+                    <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                       Shields protect your streak if you miss a day. Earn a free shield every 7-day streak milestone. PRO members get 4 shields each billing period.
                     </p>
                   </div>

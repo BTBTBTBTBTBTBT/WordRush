@@ -94,9 +94,9 @@ function ModeIcon({ mode, color, size = 16 }: { mode: string; color: string; siz
 /* ── medal icon for leaderboard ranks ── */
 function RankIcon({ rank }: { rank: number }) {
   if (rank === 1) return <Crown className="w-5 h-5" style={{ color: '#d97706' }} />;
-  if (rank === 2) return <Medal className="w-5 h-5" style={{ color: '#9ca3af' }} />;
+  if (rank === 2) return <Medal className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />;
   if (rank === 3) return <Medal className="w-5 h-5" style={{ color: '#b45309' }} />;
-  return <span className="text-xs font-black w-5 text-center" style={{ color: '#9ca3af' }}>{rank}</span>;
+  return <span className="text-xs font-black w-5 text-center" style={{ color: 'var(--color-text-muted)' }}>{rank}</span>;
 }
 
 /* ── stat cell (matches Gauntlet All-Time Stats visual) ──
@@ -137,13 +137,13 @@ function StatCell({
       <div className="min-w-0 flex-1">
         <div
           className="font-black text-base leading-tight"
-          style={{ color: hasRecord ? '#1a1a2e' : '#d1d5db' }}
+          style={{ color: hasRecord ? 'var(--color-text)' : '#d1d5db' }}
         >
           {hasRecord ? config.format(record!.record_value) : '—'}
         </div>
         <div
           className="text-[10px] font-bold leading-tight mt-0.5"
-          style={{ color: '#9ca3af' }}
+          style={{ color: 'var(--color-text-muted)' }}
         >
           {config.label}
         </div>
@@ -211,8 +211,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
             onClick={() => setSelectedMode(mode)}
             className="px-3 py-1.5 rounded-lg text-[10px] font-extrabold whitespace-nowrap transition-all"
             style={{
-              background: selectedMode === mode ? '#ffffff' : '#f3f0ff',
-              border: selectedMode === mode ? `1.5px solid ${MODE_COLORS[mode]}` : '1.5px solid #ede9f6',
+              background: selectedMode === mode ? 'var(--color-surface)' : 'var(--color-surface-hover)',
+              border: selectedMode === mode ? `1.5px solid ${MODE_COLORS[mode]}` : '1.5px solid var(--color-border)',
               color: selectedMode === mode ? MODE_COLORS[mode] : '#9ca3af',
             }}
           >
@@ -229,8 +229,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
             onClick={() => setPlayType(type)}
             className="flex-1 py-2 rounded-xl text-xs font-extrabold transition-all"
             style={{
-              background: playType === type ? '#ffffff' : '#f3f0ff',
-              border: playType === type ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+              background: playType === type ? 'var(--color-surface)' : 'var(--color-surface-hover)',
+              border: playType === type ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
               color: playType === type ? '#7c3aed' : '#9ca3af',
             }}
           >
@@ -241,7 +241,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
 
       {/* Player Count + User Rank */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+        <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
           <Users className="w-3.5 h-3.5" />
           <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
         </div>
@@ -262,8 +262,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         transition={{ duration: 0.15 }}
         className="overflow-hidden"
         style={{
-          background: '#ffffff',
-          border: '1.5px solid #ede9f6',
+          background: 'var(--color-surface)',
+          border: '1.5px solid var(--color-border)',
           borderRadius: '16px',
         }}
       >
@@ -271,7 +271,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
 
         {/* Mode header */}
-        <div className="flex items-center gap-2.5 px-4 pt-3 pb-2" style={{ borderBottom: '1px solid #ede9f6' }}>
+        <div className="flex items-center gap-2.5 px-4 pt-3 pb-2" style={{ borderBottom: '1px solid var(--color-border)' }}>
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ background: `${color}15` }}
@@ -279,10 +279,10 @@ function DailyRecordsView({ userId }: { userId?: string }) {
             <ModeIcon mode={selectedMode} color={color} />
           </div>
           <div>
-            <div className="font-black text-sm" style={{ color: '#1a1a2e' }}>
+            <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
               {MODE_LABELS[selectedMode]}
             </div>
-            <div className="text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+            <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
               {playType === 'solo' ? 'Solo' : 'VS'} · Today
             </div>
           </div>
@@ -292,10 +292,10 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         {loading ? (
           <div className="p-8 text-center">
             <div className="inline-block w-5 h-5 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin mb-2" />
-            <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>Loading...</p>
+            <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Loading...</p>
           </div>
         ) : leaderboard.length === 0 ? (
-          <div className="p-8 text-center" style={{ color: '#9ca3af' }}>
+          <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
             <p className="text-xs font-bold">No results yet today. Be the first!</p>
           </div>
@@ -318,15 +318,15 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                     <Link
                       href={`/profile/${entry.user_id}`}
                       className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-                      style={{ color: '#1a1a2e' }}
+                      style={{ color: 'var(--color-text)' }}
                     >
                       {entry.username}
                       {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
                     </Link>
                   </div>
                   <div className="text-right">
-                    <div className="font-black text-xs" style={{ color: '#1a1a2e' }}>{entry.composite_score}</div>
-                    <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: '#9ca3af' }}>
+                    <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{entry.composite_score}</div>
+                    <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                       {playType === 'solo' ? (
                         <>
                           <span>
@@ -397,7 +397,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
     return (
       <div className="text-center py-16">
         <div className="inline-block w-6 h-6 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin mb-3" />
-        <p className="text-xs font-bold" style={{ color: '#9ca3af' }}>Loading records...</p>
+        <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>Loading records...</p>
       </div>
     );
   }
@@ -412,7 +412,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
       <div className="mb-5">
         <div
           className="text-[11px] font-extrabold uppercase mb-2"
-          style={{ color: '#9ca3af', letterSpacing: '0.1em' }}
+          style={{ color: 'var(--color-text-muted)', letterSpacing: '0.1em' }}
         >
           Hall of Fame
         </div>
@@ -422,7 +422,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
           transition={{ delay: 0.1 }}
           className="overflow-hidden"
           style={{
-            background: '#ffffff',
+            background: 'var(--color-surface)',
             border: '1.5px solid #fde68a',
             borderRadius: '16px',
           }}
@@ -457,7 +457,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
       <div>
         <div
           className="text-[11px] font-extrabold uppercase mb-2"
-          style={{ color: '#9ca3af', letterSpacing: '0.1em' }}
+          style={{ color: 'var(--color-text-muted)', letterSpacing: '0.1em' }}
         >
           By Game Mode
         </div>
@@ -474,8 +474,8 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                 transition={{ delay: 0.15 + idx * 0.06 }}
                 className="overflow-hidden"
                 style={{
-                  background: '#ffffff',
-                  border: '1.5px solid #ede9f6',
+                  background: 'var(--color-surface)',
+                  border: '1.5px solid var(--color-border)',
                   borderRadius: '16px',
                 }}
               >
@@ -490,7 +490,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                   >
                     <ModeIcon mode={mode} color={color} />
                   </div>
-                  <div className="font-black text-sm" style={{ color: '#1a1a2e' }}>
+                  <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
                     {MODE_LABELS[mode]}
                   </div>
                 </div>
@@ -504,7 +504,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                         className="w-7 h-7 mx-auto mb-1.5"
                         style={{ color: '#d1d5db' }}
                       />
-                      <p className="text-[11px] font-extrabold" style={{ color: '#9ca3af' }}>
+                      <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>
                         No records yet
                       </p>
                     </div>
@@ -542,7 +542,7 @@ export default function RecordsPage() {
   const [activeTab, setActiveTab] = useState<'daily' | 'alltime'>('daily');
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: '#f8f7ff' }}>
+    <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
       <AppHeader />
 
       <div className="max-w-lg mx-auto px-4">
@@ -560,7 +560,7 @@ export default function RecordsPage() {
           >
             RECORDS
           </h1>
-          <p className="text-xs font-bold mt-1" style={{ color: '#9ca3af' }}>
+          <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
             The best of the best across Wordocious
           </p>
         </motion.div>
@@ -574,7 +574,7 @@ export default function RecordsPage() {
               background: activeTab === 'daily'
                 ? 'linear-gradient(135deg, #7c3aed, #6d28d9)'
                 : '#f3f0ff',
-              border: activeTab === 'daily' ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+              border: activeTab === 'daily' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
               color: activeTab === 'daily' ? '#ffffff' : '#9ca3af',
               boxShadow: activeTab === 'daily' ? '0 3px 0 #4c1d95' : 'none',
             }}
@@ -588,7 +588,7 @@ export default function RecordsPage() {
               background: activeTab === 'alltime'
                 ? 'linear-gradient(135deg, #7c3aed, #6d28d9)'
                 : '#f3f0ff',
-              border: activeTab === 'alltime' ? '1.5px solid #7c3aed' : '1.5px solid #ede9f6',
+              border: activeTab === 'alltime' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
               color: activeTab === 'alltime' ? '#ffffff' : '#9ca3af',
               boxShadow: activeTab === 'alltime' ? '0 3px 0 #4c1d95' : 'none',
             }}
