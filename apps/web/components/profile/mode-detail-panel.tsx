@@ -5,6 +5,7 @@ import { User, Swords, Share2, Copy, Check } from 'lucide-react';
 import { PROFILE_MODES, type ModeConfig } from './mode-picker';
 import { ModeStatsCard } from './mode-stats-card';
 import { ProInsightsCard } from './pro-insights-card';
+import { TopWordsCard } from './top-words-card';
 import { GuessDistribution } from './guess-distribution';
 import { SolveTimeChart } from './solve-time-chart';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
@@ -20,6 +21,8 @@ import {
   fetchPerfectGameCount,
   fetchConsistencyScore,
   fetchHeadToHeadRecord,
+  fetchTopWords,
+  fetchWordInsights,
 } from '@/lib/stats-service';
 
 interface ModeData {
@@ -32,6 +35,13 @@ interface ModeData {
   perfectGames: number;
   consistency: { score: number; sampleSize: number };
   headToHead: { wins: number; losses: number; total: number; winRate: number };
+  topWords: Array<{ word: string; count: number; wins: number }>;
+  wordInsights: {
+    nemesis: { word: string; losses: number } | null;
+    luckyWord: { word: string; time: number } | null;
+    avgGuesses: number;
+    firstTryRate: number;
+  };
 }
 
 interface ModeDetailPanelProps {
@@ -74,8 +84,10 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
       fetchPerfectGameCount(userId, gameMode),
       fetchConsistencyScore(userId, gameMode),
       fetchHeadToHeadRecord(userId, gameMode),
-    ]).then(([guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead]) => {
-      const modeData: ModeData = { guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead };
+      fetchTopWords(userId, gameMode, 5),
+      fetchWordInsights(userId, gameMode),
+    ]).then(([guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights]) => {
+      const modeData: ModeData = { guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights };
       cacheRef.current.set(gameMode, modeData);
       setData(modeData);
       setLoading(false);
@@ -202,6 +214,11 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
             <SolveTimeChart data={data.solveHistory} accentColor={accentColor} />
           )}
 
+          {/* Top Words */}
+          {data && data.topWords.length > 0 && (
+            <TopWordsCard words={data.topWords} accentColor={accentColor} />
+          )}
+
           {/* Pro Insights */}
           {data && (
             <ProInsightsCard
@@ -215,6 +232,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
               improvement={data.improvement}
               perfectGames={data.perfectGames}
               headToHead={tab === 'vs' ? data.headToHead : null}
+              wordInsights={data.wordInsights}
             />
           )}
         </>

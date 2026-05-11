@@ -634,6 +634,106 @@ export async function fetchConsistencyScore(userId: string, gameMode: string) {
 }
 
 /**
+ * Fetch top N most-played target words for a user in a specific mode.
+ * Unnests the `solutions` JSON array and counts frequency.
+ */
+export async function fetchTopWords(userId: string, gameMode: string, limit: number = 5) {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('solutions, winner_id')
+    .eq('player1_id', userId)
+    .eq('game_mode', gameMode)
+    .not('solutions', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(500) as { data: Array<{ solutions: string[]; winner_id: string | null }> | null };
+
+  const wordMap = new Map<string, { count: number; wins: number }>();
+  for (const row of data || []) {
+    if (!Array.isArray(row.solutions)) continue;
+    const won = row.winner_id === userId;
+    for (const word of row.solutions) {
+      const w = word.toUpperCase();
+      const entry = wordMap.get(w) || { count: 0, wins: 0 };
+      entry.count++;
+      if (won) entry.wins++;
+      wordMap.set(w, entry);
+    }
+  }
+
+  return Array.from(wordMap.entries())
+    .map(([word, stats]) => ({ word, count: stats.count, wins: stats.wins }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/**
+ * Fetch word-based insights: nemesis word (most losses), lucky word (fastest solve).
+ */
+export async function fetchWordInsights(userId: string, gameMode: string) {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('solutions, winner_id, player1_time, player1_score')
+    .eq('player1_id', userId)
+    .eq('game_mode', gameMode)
+    .not('solutions', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(500) as { data: Array<{ solutions: string[]; winner_id: string | null; player1_time: number; player1_score: number }> | null };
+
+  const lossMap = new Map<string, number>();
+  const speedMap = new Map<string, { bestTime: number; guesses: number }>();
+  let totalGuesses = 0;
+  let totalWins = 0;
+  let firstTryWins = 0;
+
+  for (const row of data || []) {
+    if (!Array.isArray(row.solutions)) continue;
+    const won = row.winner_id === userId;
+    if (won) {
+      totalWins++;
+      if (row.player1_score === 1) firstTryWins++;
+      totalGuesses += row.player1_score || 0;
+      for (const word of row.solutions) {
+        const w = word.toUpperCase();
+        const existing = speedMap.get(w);
+        if (!existing || (row.player1_time > 0 && row.player1_time < existing.bestTime)) {
+          speedMap.set(w, { bestTime: row.player1_time, guesses: row.player1_score });
+        }
+      }
+    } else {
+      for (const word of row.solutions) {
+        const w = word.toUpperCase();
+        lossMap.set(w, (lossMap.get(w) || 0) + 1);
+      }
+    }
+  }
+
+  let nemesis: { word: string; losses: number } | null = null;
+  let maxLosses = 0;
+  for (const [word, losses] of lossMap) {
+    if (losses > maxLosses) {
+      maxLosses = losses;
+      nemesis = { word, losses };
+    }
+  }
+
+  let luckyWord: { word: string; time: number } | null = null;
+  let bestTime = Infinity;
+  for (const [word, stats] of speedMap) {
+    if (stats.bestTime > 0 && stats.bestTime < bestTime) {
+      bestTime = stats.bestTime;
+      luckyWord = { word, time: stats.bestTime };
+    }
+  }
+
+  return {
+    nemesis,
+    luckyWord,
+    avgGuesses: totalWins > 0 ? Math.round((totalGuesses / totalWins) * 10) / 10 : 0,
+    firstTryRate: totalWins > 0 ? Math.round((firstTryWins / totalWins) * 100) : 0,
+  };
+}
+
+/**
  * Fetch VS head-to-head record for a game mode.
  */
 export async function fetchHeadToHeadRecord(userId: string, gameMode: string) {

@@ -7,6 +7,13 @@ import { TimeOfDayHeatmap } from './time-of-day-heatmap';
 import { ConsistencyGauge } from './consistency-gauge';
 import { HeadToHeadCard } from './head-to-head-card';
 
+interface WordInsights {
+  nemesis: { word: string; losses: number } | null;
+  luckyWord: { word: string; time: number } | null;
+  avgGuesses: number;
+  firstTryRate: number;
+}
+
 interface ProInsightsCardProps {
   isPro: boolean;
   accentColor: string;
@@ -18,6 +25,7 @@ interface ProInsightsCardProps {
   improvement: { recentAvg: number; overallAvg: number; percentChange: number; improving: boolean } | null;
   perfectGames: number;
   headToHead: { wins: number; losses: number; total: number; winRate: number } | null;
+  wordInsights?: WordInsights | null;
 }
 
 function formatTime(seconds: number): string {
@@ -28,11 +36,39 @@ function formatTime(seconds: number): string {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
+function formatTimeSec(seconds: number): string {
+  if (seconds <= 0) return '-';
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
+
+function peakHourLabel(timeOfDay: Array<{ hour: number; gamesPlayed: number; gamesWon: number }> | null): string | null {
+  if (!timeOfDay) return null;
+  let bestHour = -1;
+  let bestWinRate = -1;
+  let bestCount = 0;
+  for (const h of timeOfDay) {
+    if (h.gamesPlayed < 3) continue;
+    const rate = h.gamesWon / h.gamesPlayed;
+    if (rate > bestWinRate || (rate === bestWinRate && h.gamesPlayed > bestCount)) {
+      bestWinRate = rate;
+      bestHour = h.hour;
+      bestCount = h.gamesPlayed;
+    }
+  }
+  if (bestHour < 0) return null;
+  const ampm = bestHour >= 12 ? 'PM' : 'AM';
+  const h12 = bestHour === 0 ? 12 : bestHour > 12 ? bestHour - 12 : bestHour;
+  return `${h12} ${ampm}`;
+}
+
 export function ProInsightsCard({
   isPro, accentColor, showVs,
-  personalBests, winStreak, timeOfDay, consistency, improvement, perfectGames, headToHead,
+  personalBests, winStreak, timeOfDay, consistency, improvement, perfectGames, headToHead, wordInsights,
 }: ProInsightsCardProps) {
-  const hasData = personalBests || timeOfDay || consistency || improvement || headToHead;
+  const hasData = personalBests || timeOfDay || consistency || improvement || headToHead || wordInsights;
 
   return (
     <div
@@ -107,6 +143,56 @@ export function ProInsightsCard({
                 <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Win Streak</div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Word Insights + Extra Stats */}
+        {(wordInsights || timeOfDay) && (
+          <div className="grid grid-cols-2 gap-2">
+            {wordInsights && wordInsights.avgGuesses > 0 && (
+              <div className="text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
+                <div className="text-lg font-black" style={{ color: accentColor }}>{wordInsights.avgGuesses}</div>
+                <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Avg Guesses</div>
+              </div>
+            )}
+            {wordInsights && wordInsights.firstTryRate > 0 && (
+              <div className="text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
+                <div className="text-lg font-black" style={{ color: accentColor }}>{wordInsights.firstTryRate}%</div>
+                <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>First Try Rate</div>
+              </div>
+            )}
+            {(() => {
+              const peak = peakHourLabel(timeOfDay);
+              return peak ? (
+                <div className="text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
+                  <div className="text-lg font-black" style={{ color: accentColor }}>{peak}</div>
+                  <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Peak Hour</div>
+                </div>
+              ) : null;
+            })()}
+            {wordInsights?.luckyWord && (
+              <div className="text-center p-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
+                <div className="text-sm font-black tracking-wider" style={{ color: accentColor }}>{wordInsights.luckyWord.word}</div>
+                <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  Fastest ({formatTimeSec(wordInsights.luckyWord.time)})
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Nemesis Word */}
+        {wordInsights?.nemesis && wordInsights.nemesis.losses >= 2 && (
+          <div className="flex items-center gap-3 px-3 py-2" style={{ background: `${accentColor}08`, borderRadius: '10px' }}>
+            <span className="text-xl">💀</span>
+            <div>
+              <div className="text-xs font-black" style={{ color: 'var(--color-text)' }}>
+                Nemesis: <span style={{ color: accentColor, letterSpacing: '1px' }}>{wordInsights.nemesis.word}</span>
+              </div>
+              <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                Lost {wordInsights.nemesis.losses} time{wordInsights.nemesis.losses !== 1 ? 's' : ''} to this word
+              </div>
+            </div>
           </div>
         )}
 
