@@ -30,10 +30,11 @@ import { ProStats } from '@/components/profile/pro-stats';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
-import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar } from '@/lib/stats-service';
+import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar, fetchTopWordsAllTime } from '@/lib/stats-service';
 import { GuessDistribution } from '@/components/profile/guess-distribution';
 import { SolveTimeChart } from '@/components/profile/solve-time-chart';
 import { DailyCalendar } from '@/components/profile/daily-calendar';
+import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { GlobalSummaryRow } from '@/components/profile/global-summary-row';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -94,6 +95,7 @@ export default function ProfilePage() {
   const [guessDist, setGuessDist] = useState<Array<{ guesses: number; count: number }>>([]);
   const [solveHistory, setSolveHistory] = useState<Array<{ date: string; timeSeconds: number; mode: string }>>([]);
   const [calendar, setCalendar] = useState<Array<{ day: string; gamesPlayed: number; gamesWon: number }>>([]);
+  const [topWordsAllTime, setTopWordsAllTime] = useState<Array<{ word: string; count: number; wins: number }>>([]);
   const [loadingStats, setLoadingStats] = useState(true);
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -132,6 +134,7 @@ export default function ProfilePage() {
         loadGuessDist(),
         loadSolveHistory(),
         loadCalendar(),
+        loadTopWordsAllTime(),
       ]).finally(() => setLoadingStats(false));
     } else if (!loading) {
       setLoadingStats(false);
@@ -171,6 +174,10 @@ export default function ProfilePage() {
   const loadCalendar = async () => {
     if (!profile) return;
     setCalendar(await fetchDailyCalendar(profile.id, 90));
+  };
+  const loadTopWordsAllTime = async () => {
+    if (!profile) return;
+    setTopWordsAllTime(await fetchTopWordsAllTime(profile.id, 5));
   };
   const fetchMatches = async () => {
     if (!profile) return;
@@ -491,6 +498,14 @@ export default function ProfilePage() {
               <>
                 <div className="section-header mb-2">SOLVE TIME TREND</div>
                 <SolveTimeChart data={solveHistory} />
+              </>
+            )}
+
+            {/* All-Time Top Words */}
+            {topWordsAllTime.length > 0 && (
+              <>
+                <div className="section-header mb-2">TOP WORDS — ALL TIME</div>
+                <TopWordsCard words={topWordsAllTime} accentColor="#7c3aed" />
               </>
             )}
 

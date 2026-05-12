@@ -634,6 +634,39 @@ export async function fetchConsistencyScore(userId: string, gameMode: string) {
 }
 
 /**
+ * Fetch top N most-used guess words across ALL modes for a user.
+ */
+export async function fetchTopWordsAllTime(userId: string, limit: number = 5) {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('player1_id, player1_guesses, player2_guesses, winner_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .not('player1_guesses', 'is', null)
+    .order('created_at', { ascending: false }) as {
+    data: Array<{ player1_id: string; player1_guesses: string[]; player2_guesses: string[] | null; winner_id: string | null }> | null;
+  };
+
+  const wordMap = new Map<string, { count: number; wins: number }>();
+  for (const row of data || []) {
+    const guesses = row.player1_id === userId ? row.player1_guesses : row.player2_guesses;
+    if (!Array.isArray(guesses)) continue;
+    const won = row.winner_id === userId;
+    for (const word of guesses) {
+      const w = word.toUpperCase();
+      const entry = wordMap.get(w) || { count: 0, wins: 0 };
+      entry.count++;
+      if (won) entry.wins++;
+      wordMap.set(w, entry);
+    }
+  }
+
+  return Array.from(wordMap.entries())
+    .map(([word, stats]) => ({ word, count: stats.count, wins: stats.wins }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+/**
  * Fetch top N most-used guess words for a user in a specific mode.
  * Counts frequency from `player1_guesses` — shows the user's go-to words.
  */
