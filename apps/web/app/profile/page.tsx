@@ -26,7 +26,8 @@ import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
-import { ProStats } from '@/components/profile/pro-stats';
+import dynamic from 'next/dynamic';
+const ProStats = dynamic(() => import('@/components/profile/pro-stats').then(m => m.ProStats), { ssr: false });
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
@@ -183,7 +184,7 @@ export default function ProfilePage() {
     if (!profile) return;
     const { data } = await supabase
       .from('matches')
-      .select('*')
+      .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
       .or(`player1_id.eq.${profile.id},player2_id.eq.${profile.id}`)
       .order('created_at', { ascending: false })
       .limit(5);

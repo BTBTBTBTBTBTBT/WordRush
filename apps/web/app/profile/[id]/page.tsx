@@ -83,7 +83,7 @@ export default function PublicProfilePage() {
         .eq('user_id', profileId),
       supabase
         .from('matches')
-        .select('*')
+        .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
         .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
         .order('created_at', { ascending: false })
         .limit(10),

@@ -357,7 +357,7 @@ export async function recordSoloMatch(data: {
 export async function fetchRecentMatches(userId: string, limit: number = 10) {
   const { data } = await (supabase as any)
     .from('matches')
-    .select('*')
+    .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .order('created_at', { ascending: false })
     .limit(limit) as { data: any[] | null };
@@ -406,6 +406,7 @@ export async function fetchGuessDistribution(userId: string, gameMode?: string) 
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .not('winner_id', 'is', null);
   if (gameMode) query = query.eq('game_mode', gameMode);
+  query = query.limit(2000);
   const { data } = await query as { data: Array<{ player1_score: number; player2_id: string | null; winner_id: string; player1_id: string; game_mode: string }> | null };
 
   const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
@@ -458,7 +459,8 @@ export async function fetchDailyCalendar(userId: string, days: number = 90) {
     .from('matches')
     .select('created_at, winner_id, player1_id')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-    .gte('created_at', since.toISOString()) as { data: Array<{ created_at: string; winner_id: string | null; player1_id: string }> | null };
+    .gte('created_at', since.toISOString())
+    .limit(2000) as { data: Array<{ created_at: string; winner_id: string | null; player1_id: string }> | null };
 
   const buckets = new Map<string, { gamesPlayed: number; gamesWon: number }>();
   for (let i = 0; i < days; i++) {
@@ -515,6 +517,7 @@ export async function fetchTimeOfDayHeatmap(userId: string, gameMode?: string) {
     .select('created_at, winner_id')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`);
   if (gameMode) query = query.eq('game_mode', gameMode);
+  query = query.limit(2000);
   const { data } = await query as { data: Array<{ created_at: string; winner_id: string | null }> | null };
 
   const hours: Array<{ hour: number; gamesPlayed: number; gamesWon: number }> = [];
@@ -642,7 +645,8 @@ export async function fetchTopWordsAllTime(userId: string, limit: number = 5) {
     .select('player1_id, player1_guesses, player2_guesses, winner_id')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .not('player1_guesses', 'is', null)
-    .order('created_at', { ascending: false }) as {
+    .order('created_at', { ascending: false })
+    .limit(1000) as {
     data: Array<{ player1_id: string; player1_guesses: string[]; player2_guesses: string[] | null; winner_id: string | null }> | null;
   };
 
@@ -775,7 +779,8 @@ export async function fetchHeadToHeadRecord(userId: string, gameMode: string) {
     .select('winner_id')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .eq('game_mode', gameMode)
-    .not('player2_id', 'is', null) as { data: Array<{ winner_id: string | null }> | null };
+    .not('player2_id', 'is', null)
+    .limit(1000) as { data: Array<{ winner_id: string | null }> | null };
 
   let wins = 0;
   let losses = 0;

@@ -12,8 +12,6 @@ import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { RotateOverlay } from '@/components/ui/rotate-overlay';
 
-export const dynamic = 'force-dynamic';
-
 const nunito = Nunito({
   subsets: ['latin'],
   weight: ['700', '800', '900'],
