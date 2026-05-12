@@ -44,6 +44,9 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
               boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
             }}
             onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Daily VS limit reached"
           >
             <Swords className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--color-text-muted)' }} />
             <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>

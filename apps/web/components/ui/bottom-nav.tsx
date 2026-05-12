@@ -21,6 +21,7 @@ export function BottomNav() {
         backgroundColor: 'var(--color-bg)',
         borderTop: '1.5px solid var(--color-border)',
       }}
+      aria-label="Main navigation"
     >
       {NAV_ITEMS.map((item) => {
         const isActive = pathname === item.href;
@@ -31,11 +32,14 @@ export function BottomNav() {
             key={item.href}
             href={item.href}
             className="flex flex-col items-center gap-0.5 py-1 px-3 min-w-[60px]"
+            aria-current={isActive ? 'page' : undefined}
+            aria-label={item.label}
           >
             <Icon
               className="w-5 h-5 transition-colors"
               style={{ color: isActive ? '#7c3aed' : 'var(--color-text-muted)' }}
               fill={isActive ? '#7c3aed' : 'none'}
+              aria-hidden="true"
             />
             <span
               className="text-[10px] font-extrabold transition-colors"

@@ -46,6 +46,9 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLi
               boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
             }}
             onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${modeName} daily limit reached`}
           >
             <Lock className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--color-text-muted)' }} />
             <h2 className="text-lg font-black mb-1" style={{ color: 'var(--color-text)' }}>

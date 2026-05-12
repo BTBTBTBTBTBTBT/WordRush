@@ -96,7 +96,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
 
   return (
-    <div className="flex flex-col gap-1.5 max-w-xl mx-auto">
+    <div className="flex flex-col gap-1.5 max-w-xl mx-auto" role="group" aria-label="Game keyboard">
       {ROWS.map((row, i) => (
         <div key={i} className="flex gap-1 justify-center">
           {row.map((key) => {
@@ -109,6 +109,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   key={key}
                   onClick={() => { if (isBlackedOut) return; if (key === 'ENTER') haptic('medium'); else if (key !== 'BACK') haptic('light'); playKeyTap(); onKey(key); }}
                   disabled={isBlackedOut}
+                  aria-label={key === 'BACK' ? 'Backspace' : 'Submit guess'}
                   className={cn(
                     'h-12 sm:h-14 px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
                     'transition-all duration-150 select-none',
@@ -120,7 +121,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                     color: 'var(--color-text)',
                   }}
                 >
-                  {key === 'BACK' ? <Delete className="h-5 w-5" /> : key}
+                  {key === 'BACK' ? <Delete className="h-5 w-5" aria-hidden="true" /> : key}
                 </button>
               );
             }
@@ -130,6 +131,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 <button
                   key={key}
                   disabled
+                  aria-label={`${key}, unavailable`}
                   className="h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg opacity-40 cursor-not-allowed animate-pulse select-none"
                   style={{
                     backgroundColor: 'rgba(220,38,38,0.15)',
@@ -158,6 +160,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
               <button
                 key={key}
                 onClick={() => { haptic('light'); playKeyTap(); onKey(key); }}
+                aria-label={state ? `${key}, ${state}` : key}
                 className={cn(
                   'h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
                   'transition-all duration-150 select-none',

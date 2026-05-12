@@ -53,11 +53,15 @@ export function StreakShieldModal({
               borderRadius: '20px',
               boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
             }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Streak shield"
           >
             <button
               onClick={onClose}
               className="absolute top-4 right-4 transition-opacity hover:opacity-80"
               style={{ color: 'var(--color-text-muted)' }}
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>

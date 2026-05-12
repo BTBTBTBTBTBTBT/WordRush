@@ -244,6 +244,9 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
               flexDirection: 'column',
             }}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Help"
           >
             {/* Top accent bar */}
             <div
@@ -258,8 +261,9 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
               onClick={onClose}
               className="absolute top-4 right-4 transition-opacity hover:opacity-80 z-10"
               style={{ color: 'var(--color-text-muted)' }}
+              aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
 
             {/* Header */}

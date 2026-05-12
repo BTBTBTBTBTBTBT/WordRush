@@ -31,11 +31,24 @@ interface BoardProps {
 export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode, isInvalidWord, isShaking }: BoardProps) {
   const emptyRows = Math.max(0, maxGuesses - guesses.length - 1);
 
+  const lastEval = evaluations[evaluations.length - 1];
+  const lastGuess = guesses[guesses.length - 1];
+  const announcement = lastEval && lastGuess
+    ? lastEval.isCorrect
+      ? `${lastGuess}, correct!`
+      : lastEval.tiles.map(t => `${t.letter} ${TILE_STATE_LABEL[t.state] || 'empty'}`).join(', ')
+    : '';
+
   return (
     <div
       className="w-full max-w-[400px] mx-auto max-h-full"
       style={{ aspectRatio: `5 / ${maxGuesses}` }}
+      role="grid"
+      aria-label="Game board"
     >
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </div>
       <div className="flex flex-col gap-1 h-full w-full">
         {guesses.map((guess, rowIndex) => (
           <Row
@@ -71,7 +84,7 @@ function Row({ guess, evaluation, animate, isInvalid, isShaking }: RowProps) {
   const tiles = guess.padEnd(5, ' ').split('');
 
   return (
-    <div className={cn('flex gap-1 justify-center flex-1 min-h-0', isShaking && 'animate-shake')}>
+    <div className={cn('flex gap-1 justify-center flex-1 min-h-0', isShaking && 'animate-shake')} role="row">
       {tiles.map((letter, i) => (
         <Tile
           key={i}
@@ -91,6 +104,13 @@ interface TileProps {
   flipDelay?: number;
   isInvalid?: boolean;
 }
+
+const TILE_STATE_LABEL: Record<string, string> = {
+  [TileState.EMPTY]: 'empty',
+  [TileState.ABSENT]: 'absent',
+  [TileState.PRESENT]: 'present in word',
+  [TileState.CORRECT]: 'correct position',
+};
 
 function Tile({ letter, state, flipDelay, isInvalid }: TileProps) {
   const hasFlip = flipDelay !== undefined;
@@ -113,6 +133,8 @@ function Tile({ letter, state, flipDelay, isInvalid }: TileProps) {
         state === TileState.EMPTY && isInvalid && 'text-red-500'
       )}
       style={hasFlip ? { animationDelay: `${flipDelay}ms` } : undefined}
+      role="gridcell"
+      aria-label={letter ? `${letter}, ${TILE_STATE_LABEL[state] || 'empty'}` : 'empty'}
     >
       {letter}
     </div>
