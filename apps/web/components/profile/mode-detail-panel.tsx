@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import { User, Swords, Share2, Copy, Check } from 'lucide-react';
 import { PROFILE_MODES, type ModeConfig } from './mode-picker';
 import { ModeStatsCard } from './mode-stats-card';
@@ -54,45 +55,34 @@ interface ModeDetailPanelProps {
 export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPanelProps) {
   const { user } = useAuth();
   const [tab, setTab] = useState<'solo' | 'vs'>('solo');
-  const [data, setData] = useState<ModeData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
-  const cacheRef = useRef<Map<string, ModeData>>(new Map());
 
   const mode = PROFILE_MODES.find((m) => m.dbKey === gameMode);
   const accentColor = mode?.accentColor || '#7c3aed';
   const Icon = mode?.icon;
   const isOwnProfile = user?.id === userId;
 
-  useEffect(() => {
-    const cached = cacheRef.current.get(gameMode);
-    if (cached) {
-      setData(cached);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    Promise.all([
-      fetchGuessDistribution(userId, gameMode),
-      fetchSolveTimeHistory(userId, 30, gameMode),
-      fetchModeWinStreak(userId, gameMode),
-      fetchTimeOfDayHeatmap(userId, gameMode),
-      fetchImprovementTrend(userId, gameMode),
-      fetchPersonalBests(userId, gameMode),
-      fetchPerfectGameCount(userId, gameMode),
-      fetchConsistencyScore(userId, gameMode),
-      fetchHeadToHeadRecord(userId, gameMode),
-      fetchTopWords(userId, gameMode, 5),
-      fetchWordInsights(userId, gameMode),
-    ]).then(([guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights]) => {
-      const modeData: ModeData = { guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights };
-      cacheRef.current.set(gameMode, modeData);
-      setData(modeData);
-      setLoading(false);
-    });
-  }, [userId, gameMode]);
+  const { data, isLoading: loading } = useSWR(
+    ['mode-detail', userId, gameMode],
+    async () => {
+      const [guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights] = await Promise.all([
+        fetchGuessDistribution(userId, gameMode),
+        fetchSolveTimeHistory(userId, 30, gameMode),
+        fetchModeWinStreak(userId, gameMode),
+        fetchTimeOfDayHeatmap(userId, gameMode),
+        fetchImprovementTrend(userId, gameMode),
+        fetchPersonalBests(userId, gameMode),
+        fetchPerfectGameCount(userId, gameMode),
+        fetchConsistencyScore(userId, gameMode),
+        fetchHeadToHeadRecord(userId, gameMode),
+        fetchTopWords(userId, gameMode, 5),
+        fetchWordInsights(userId, gameMode),
+      ]);
+      return { guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights } as ModeData;
+    },
+    { revalidateOnFocus: false },
+  );
 
   useEffect(() => {
     setInviteCopied(false);

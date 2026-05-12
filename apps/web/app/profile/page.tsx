@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import {
@@ -87,17 +88,53 @@ function formatDuration(seconds: number): string {
 
 export default function ProfilePage() {
   const { profile, loading, refreshProfile, signOut, isProActive } = useAuth();
-  const [stats, setStats] = useState<UserStats[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [medals, setMedals] = useState<MedalType[]>([]);
-  const [userAchievements, setUserAchievements] = useState<Set<string>>(new Set());
-  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(new Map());
-  const [activity, setActivity] = useState<Array<{ day: string; count: number }>>([]);
-  const [guessDist, setGuessDist] = useState<Array<{ guesses: number; count: number }>>([]);
-  const [solveHistory, setSolveHistory] = useState<Array<{ date: string; timeSeconds: number; mode: string }>>([]);
-  const [calendar, setCalendar] = useState<Array<{ day: string; gamesPlayed: number; gamesWon: number }>>([]);
-  const [topWordsAllTime, setTopWordsAllTime] = useState<Array<{ word: string; count: number; wins: number }>>([]);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const { data: profileData, isLoading: loadingStats } = useSWR(
+    profile ? ['profile-data', profile.id] : null,
+    async () => {
+      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes] = await Promise.all([
+        supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
+        supabase.from('matches')
+          .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
+          .or(`player1_id.eq.${profile!.id},player2_id.eq.${profile!.id}`)
+          .order('created_at', { ascending: false })
+          .limit(5)
+          .then(r => r.data || []),
+        fetchUserMedals(profile!.id, 10),
+        fetchUserAchievements(profile!.id),
+        fetchTodayDailyCompletions(profile!.id),
+        fetchActivityByDay(profile!.id, 7),
+        fetchGuessDistribution(profile!.id),
+        fetchSolveTimeHistory(profile!.id, 30),
+        fetchDailyCalendar(profile!.id, 90),
+        fetchTopWordsAllTime(profile!.id, 5),
+      ]);
+      return {
+        stats: statsRes as UserStats[],
+        matches: matchesRes as Match[],
+        medals: medalsRes,
+        userAchievements: new Set(achievementsRes.map(a => a.key)),
+        todayDailies: dailiesRes,
+        activity: activityRes,
+        guessDist: guessDistRes,
+        solveHistory: solveRes,
+        calendar: calendarRes,
+        topWordsAllTime: topWordsRes,
+      };
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const stats = profileData?.stats ?? [];
+  const matches = profileData?.matches ?? [];
+  const medals = profileData?.medals ?? [];
+  const userAchievements = profileData?.userAchievements ?? new Set<string>();
+  const todayDailies = profileData?.todayDailies ?? new Map<string, DailyCompletion>();
+  const activity = profileData?.activity ?? [];
+  const guessDist = profileData?.guessDist ?? [];
+  const solveHistory = profileData?.solveHistory ?? [];
+  const calendar = profileData?.calendar ?? [];
+  const topWordsAllTime = profileData?.topWordsAllTime ?? [];
+
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -121,74 +158,6 @@ export default function ProfilePage() {
       alert('Failed to delete account. Please try again or contact support@wordocious.com.');
       setDeleting(false);
     }
-  };
-
-  useEffect(() => {
-    if (profile) {
-      Promise.all([
-        fetchStats(),
-        fetchMatches(),
-        fetchMedals(),
-        loadAchievements(),
-        loadTodayDailies(),
-        loadActivity(),
-        loadGuessDist(),
-        loadSolveHistory(),
-        loadCalendar(),
-        loadTopWordsAllTime(),
-      ]).finally(() => setLoadingStats(false));
-    } else if (!loading) {
-      setLoadingStats(false);
-    }
-  }, [profile, loading]);
-
-  const fetchStats = async () => {
-    if (!profile) return;
-    const { data } = await supabase.from('user_stats').select('*').eq('user_id', profile.id);
-    if (data) setStats(data);
-  };
-  const fetchMedals = async () => {
-    if (!profile) return;
-    setMedals(await fetchUserMedals(profile.id, 10));
-  };
-  const loadAchievements = async () => {
-    if (!profile) return;
-    const data = await fetchUserAchievements(profile.id);
-    setUserAchievements(new Set(data.map(a => a.key)));
-  };
-  const loadTodayDailies = async () => {
-    if (!profile) return;
-    setTodayDailies(await fetchTodayDailyCompletions(profile.id));
-  };
-  const loadActivity = async () => {
-    if (!profile) return;
-    setActivity(await fetchActivityByDay(profile.id, 7));
-  };
-  const loadGuessDist = async () => {
-    if (!profile) return;
-    setGuessDist(await fetchGuessDistribution(profile.id));
-  };
-  const loadSolveHistory = async () => {
-    if (!profile) return;
-    setSolveHistory(await fetchSolveTimeHistory(profile.id, 30));
-  };
-  const loadCalendar = async () => {
-    if (!profile) return;
-    setCalendar(await fetchDailyCalendar(profile.id, 90));
-  };
-  const loadTopWordsAllTime = async () => {
-    if (!profile) return;
-    setTopWordsAllTime(await fetchTopWordsAllTime(profile.id, 5));
-  };
-  const fetchMatches = async () => {
-    if (!profile) return;
-    const { data } = await supabase
-      .from('matches')
-      .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
-      .or(`player1_id.eq.${profile.id},player2_id.eq.${profile.id}`)
-      .order('created_at', { ascending: false })
-      .limit(5);
-    if (data) setMatches(data);
   };
 
   // Games per mode for the mode picker badge
