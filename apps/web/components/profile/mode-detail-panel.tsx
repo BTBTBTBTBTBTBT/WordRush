@@ -172,14 +172,35 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="animate-pulse"
-              style={{ background: 'var(--color-border)', borderRadius: '16px', height: i === 1 ? '120px' : '80px' }}
-            />
-          ))}
+        <div className="space-y-3 animate-pulse">
+          {/* Stats card skeleton — 4×2 grid */}
+          <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+            <div className="grid grid-cols-4 gap-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1">
+                  <div className="h-5 w-8 rounded" style={{ background: 'var(--color-border)' }} />
+                  <div className="h-2 w-10 rounded" style={{ background: 'var(--color-border)' }} />
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Guess distribution skeleton — bars */}
+          <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+            <div className="h-2.5 w-24 rounded mb-3" style={{ background: 'var(--color-border)' }} />
+            <div className="space-y-2">
+              {[75, 100, 55, 30, 15, 8].map((w, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded" style={{ background: 'var(--color-border)' }} />
+                  <div className="h-3 rounded-full" style={{ background: 'var(--color-border)', width: `${w}%` }} />
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Chart skeleton */}
+          <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+            <div className="h-2.5 w-28 rounded mb-3" style={{ background: 'var(--color-border)' }} />
+            <div className="h-[80px] rounded" style={{ background: 'var(--color-border)', opacity: 0.5 }} />
+          </div>
         </div>
       )}
 

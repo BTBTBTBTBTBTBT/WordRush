@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { Keyboard } from '@/components/game/keyboard';
-import { VictoryAnimation } from '@/components/effects/victory-animation';
-import { GameOverAnimation } from '@/components/effects/game-over-animation';
+import dynamic from 'next/dynamic';
+const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
+const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';

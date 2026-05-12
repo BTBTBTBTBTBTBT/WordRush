@@ -4,8 +4,9 @@ import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'r
 import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess, TileState } from '@wordle-duel/core';
 import { Keyboard } from '../game/keyboard';
 import Link from 'next/link';
-import { VictoryAnimation } from '../effects/victory-animation';
-import { GameOverAnimation } from '../effects/game-over-animation';
+import dynamic from 'next/dynamic';
+const VictoryAnimation = dynamic(() => import('../effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
+const GameOverAnimation = dynamic(() => import('../effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { AnimatePresence } from 'framer-motion';
 import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';

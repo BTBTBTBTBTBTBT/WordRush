@@ -21,23 +21,46 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username }
   const displayName = username ?? profile?.username ?? '?';
   const initials = displayName.slice(0, 2).toUpperCase();
 
+  const resizeImage = (file: File, maxSize: number): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = maxSize;
+        canvas.height = maxSize;
+        const ctx = canvas.getContext('2d')!;
+        const min = Math.min(img.width, img.height);
+        const sx = (img.width - min) / 2;
+        const sy = (img.height - min) / 2;
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, maxSize, maxSize);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('Canvas toBlob failed'))),
+          'image/jpeg',
+          0.85,
+        );
+        URL.revokeObjectURL(img.src);
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Image must be under 2MB');
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be under 5MB');
       return;
     }
 
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `${profile.id}/avatar.${ext}`;
+      const resized = await resizeImage(file, 256);
+      const path = `${profile.id}/avatar.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true });
+        .upload(path, resized, { upsert: true, contentType: 'image/jpeg' });
 
       if (uploadError) throw uploadError;
 
