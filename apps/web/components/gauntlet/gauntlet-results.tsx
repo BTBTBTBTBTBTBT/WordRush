@@ -7,6 +7,7 @@ import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletSta
 import { Button } from '@/components/ui/button';
 import { GauntletStats, getGauntletStats, recordGauntletGame } from '@/lib/gauntlet-stats';
 import { shareResult } from '@/lib/share-utils';
+import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 
 interface GauntletResultsProps {
   won: boolean;
@@ -16,6 +17,7 @@ interface GauntletResultsProps {
   onPlayAgain: () => void;
   onHome: () => void;
   showPlayAgain?: boolean;
+  isDaily?: boolean;
 }
 
 function formatTime(ms: number): string {
@@ -33,6 +35,7 @@ export function GauntletResults({
   onPlayAgain,
   onHome,
   showPlayAgain = true,
+  isDaily,
 }: GauntletResultsProps) {
   const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
   const stagesCompleted = stageResults.filter(r => r.status === GameStatus.WON).length;
@@ -332,6 +335,7 @@ export function GauntletResults({
             <Share2 className="w-5 h-5 mr-2" />
             {copied ? 'Copied!' : 'Share'}
           </Button>
+          {isDaily && <DailyRankBadge gameMode="GAUNTLET" />}
           <Button
             onClick={onHome}
             className="bg-gray-100 border-2 border-gray-200 hover:bg-gray-200 text-gray-700 font-bold py-6"

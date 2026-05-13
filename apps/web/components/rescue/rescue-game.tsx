@@ -23,6 +23,7 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 
 interface RescueGameProps {
   initialSeed?: string;
@@ -188,6 +189,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
               <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {isDaily && <DailyRankBadge gameMode="RESCUE" />}
               {!isDaily && isPro && <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Play Again</button>}
             </div>
           </div>
@@ -198,6 +200,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
               <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {isDaily && <DailyRankBadge gameMode="RESCUE" />}
               {!isDaily && isPro && <button onClick={handleRestart} className="text-amber-600 text-xs font-bold underline">Try Again</button>}
             </div>
           </div>

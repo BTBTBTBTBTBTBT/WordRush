@@ -23,6 +23,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { generateDailySeed } from '@wordle-duel/core';
+import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { playInvalid } from '@/lib/sounds';
@@ -798,6 +799,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
               <div className="flex items-center gap-3 mt-0.5">
                 <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
                 <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                {mode === 'daily' && <DailyRankBadge gameMode="PROPERNOUNDLE" />}
                 {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
               </div>
             </div>

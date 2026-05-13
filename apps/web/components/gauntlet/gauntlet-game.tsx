@@ -341,6 +341,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           onPlayAgain={handlePlayAgain}
           onHome={handleHome}
           showPlayAgain={!isDaily && isPro}
+          isDaily={isDaily}
         />
         {/* Keep bottom navigation available on the results screen so
             players can jump to Home / Leaderboard / Profile / Records

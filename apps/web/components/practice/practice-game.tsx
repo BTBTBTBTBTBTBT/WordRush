@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
+import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { shareResult } from '@/lib/share-utils';
 import { playInvalid } from '@/lib/sounds';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
@@ -239,6 +240,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
               <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+              {isDaily && <DailyRankBadge gameMode="DUEL" />}
               {!isDaily && isPro && (
                 <button onClick={handleReset} className="text-amber-600 text-xs font-bold underline">
                   {state.status === GameStatus.WON ? 'Play Again' : 'Try Again'}
