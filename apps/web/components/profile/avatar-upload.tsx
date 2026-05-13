@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
 import { Camera } from 'lucide-react';
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { toast } from '@/hooks/use-toast';
 
 interface AvatarUploadProps {
@@ -94,7 +94,7 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username }
       onClick={() => editable && fileInputRef.current?.click()}
     >
       {displayUrl ? (
-        <Image
+        <NextImage
           src={displayUrl}
           alt={displayName}
           width={size}
