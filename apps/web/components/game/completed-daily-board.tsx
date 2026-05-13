@@ -1,50 +1,43 @@
 'use client';
 
 import { useMemo } from 'react';
-import { evaluateGuess, createInitialState, GameMode, TileState, gameReducer, GameStatus, BoardState } from '@wordle-duel/core';
-import type { GauntletStageConfig, GauntletStageResult, GauntletProgress } from '@wordle-duel/core';
+import { evaluateGuess, TileState, GameStatus, BoardState } from '@wordle-duel/core';
+import type { GauntletProgress } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { getTodayLocal } from '@/lib/daily-service';
-import { generateDailySeed } from '@wordle-duel/core';
 import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
 import type { Guess as ProperNoundleGuess, TileState as PNTileState } from '@/components/propernoundle/types';
 
-const SAVE_VERSION = 3;
-
-interface SavedGameState {
-  version?: number;
-  date: string;
-  seed: string;
-  mode: string;
-  guesses: string[];
-  elapsedTime: number;
-  gameStatus: string;
-}
-
-const MODE_MAP: Record<string, GameMode> = {
-  DUEL: GameMode.DUEL,
-  QUORDLE: GameMode.QUORDLE,
-  OCTORDLE: GameMode.OCTORDLE,
-  SEQUENCE: GameMode.SEQUENCE,
-  RESCUE: GameMode.RESCUE,
-  GAUNTLET: GameMode.GAUNTLET,
-};
-
 const MULTI_BOARD_MODES = new Set(['QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE']);
 
-function loadCompletedGame(modeId: string): SavedGameState | null {
+interface SavedSession {
+  version: number;
+  date: string;
+  mode: string;
+  isDaily: boolean;
+  seed: string;
+  elapsedTime: number;
+  savedAt: number;
+  state: {
+    status: string;
+    boards: BoardState[];
+    gauntlet?: GauntletProgress;
+  };
+}
+
+function loadCompletedSession(modeId: string): SavedSession | null {
   if (typeof window === 'undefined') return null;
   try {
-    const key = `wordocious-daily-${modeId}`;
+    const key = `wordocious-session-${modeId}-daily`;
     const stored = localStorage.getItem(key);
     if (!stored) return null;
-    const parsed: SavedGameState = JSON.parse(stored);
+    const parsed: SavedSession = JSON.parse(stored);
     if (parsed.date !== getTodayLocal()) return null;
-    if (parsed.gameStatus !== 'WON' && parsed.gameStatus !== 'LOST') return null;
-    if (parsed.version !== SAVE_VERSION) return null;
+    if (parsed.state.status !== 'WON' && parsed.state.status !== 'LOST') return null;
+    if (parsed.version !== 1) return null;
     return parsed;
   } catch {
     return null;
@@ -77,36 +70,6 @@ function loadCompletedProperNoundle(): SavedProperNoundleState | null {
       localStorage.removeItem('wordocious-propernoundle-daily');
       return null;
     }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-interface SavedGauntletSession {
-  version: number;
-  date: string;
-  mode: string;
-  isDaily: boolean;
-  seed: string;
-  elapsedTime: number;
-  savedAt: number;
-  state: {
-    status: string;
-    gauntlet?: GauntletProgress;
-    boards: BoardState[];
-  };
-}
-
-function loadCompletedGauntlet(): SavedGauntletSession | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const stored = localStorage.getItem('wordocious-session-GAUNTLET-daily');
-    if (!stored) return null;
-    const parsed: SavedGauntletSession = JSON.parse(stored);
-    if (parsed.date !== getTodayLocal()) return null;
-    if (parsed.state.status !== 'WON' && parsed.state.status !== 'LOST') return null;
-    if (parsed.version !== 1) return null;
     return parsed;
   } catch {
     return null;
@@ -276,75 +239,43 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
 
   const isGauntlet = modeId === 'GAUNTLET';
   const isProperNoundle = modeId === 'PROPERNOUNDLE';
-  const gauntletSaved = useMemo(() => isGauntlet ? loadCompletedGauntlet() : null, [isGauntlet]);
+
+  const session = useMemo(
+    () => (!isProperNoundle ? loadCompletedSession(modeId) : null),
+    [modeId, isProperNoundle],
+  );
   const pnSaved = useMemo(() => isProperNoundle ? loadCompletedProperNoundle() : null, [isProperNoundle]);
   const pnPuzzle = useMemo(() => isProperNoundle ? getDailyPuzzle() : null, [isProperNoundle]);
 
-  const saved = useMemo(() => (isProperNoundle || isGauntlet) ? null : loadCompletedGame(modeId), [modeId, isProperNoundle, isGauntlet]);
-
-  const gameMode = MODE_MAP[modeId];
-  const seed = useMemo(() => {
-    if (!saved) return null;
-    return generateDailySeed(getTodayLocal(), modeId);
-  }, [saved, modeId]);
-
-  // Reconstruct board states by replaying guesses through the reducer
-  const replayedState = useMemo(() => {
-    if (!seed || !gameMode) return null;
-    if (!saved) return null;
-    try {
-      let state = createInitialState(seed, gameMode);
-      const isMulti = MULTI_BOARD_MODES.has(modeId);
-
-      if (!isMulti) {
-        // Single-board: just replay guesses
-        for (const guess of saved.guesses) {
-          state = gameReducer(state, { type: 'SUBMIT_GUESS', guess });
-        }
-      } else {
-        // All multi-board modes (parallel AND sequential):
-        // Each guess goes to all playing boards (matching persistence replay logic)
-        for (const guess of saved.guesses) {
-          state.boards.forEach((board, index) => {
-            if (board.status === 'PLAYING') {
-              state = gameReducer(state, { type: 'SUBMIT_GUESS', guess, boardIndex: index });
-            }
-          });
-        }
-      }
-      return state;
-    } catch {
-      return null;
-    }
-  }, [seed, gameMode, saved, modeId]);
-
-  // For single-board: get solution + evaluations
-  const solution = useMemo(() => {
-    if (!replayedState) return null;
-    return replayedState.boards[0]?.solution || null;
-  }, [replayedState]);
+  const boards = session?.state.boards ?? [];
+  const solution = boards[0]?.solution || null;
 
   const evaluations = useMemo(() => {
-    if (!saved || !solution || MULTI_BOARD_MODES.has(modeId)) return [];
-    return saved.guesses.map(g => evaluateGuess(solution, g));
-  }, [saved, solution, modeId]);
+    if (!session || !solution || MULTI_BOARD_MODES.has(modeId) || isGauntlet) return [];
+    return boards[0].guesses.map(g => evaluateGuess(solution, g));
+  }, [session, solution, modeId, isGauntlet]);
 
   const { definition, loaded: defLoaded } = useWordDefinition(
-    MULTI_BOARD_MODES.has(modeId) || isProperNoundle ? null : solution
+    (MULTI_BOARD_MODES.has(modeId) || isProperNoundle || isGauntlet) ? null : solution
   );
 
-  // Gauntlet path — reads from session snapshot, not the SAVE_VERSION=3 format
+  const formatTime = (s: number) => {
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}m ${s % 60}s`;
+  };
+
+  // Gauntlet path
   if (isGauntlet) {
-    if (!gauntletSaved) return null;
-    const gauntlet = gauntletSaved.state.gauntlet;
+    if (!session) return null;
+    const gauntlet = session.state.gauntlet;
     if (!gauntlet) return null;
 
-    const gWon = gauntletSaved.state.status === 'WON';
+    const gWon = session.state.status === 'WON';
     const stageResults = gauntlet.stageResults;
     const stages = gauntlet.stages;
     const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
     const stagesCleared = stageResults.filter(r => r.status === GameStatus.WON).length;
-    const totalTimeMs = gauntletSaved.elapsedTime * 1000;
+    const totalTimeMs = session.elapsedTime * 1000;
     const gFormatTime = (ms: number) => {
       const s = Math.floor(ms / 1000);
       if (s < 60) return `${s}s`;
@@ -542,17 +473,14 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   }
 
   // Standard modes
-  if (!saved || !replayedState) return null;
+  if (!session) return null;
 
-  const won = saved.gameStatus === 'WON';
-  const formatTime = (s: number) => {
-    if (s < 60) return `${s}s`;
-    return `${Math.floor(s / 60)}m ${s % 60}s`;
-  };
+  const won = session.state.status === 'WON';
 
   const isMulti = MULTI_BOARD_MODES.has(modeId);
-  const boardsSolved = replayedState.boards.filter(b => b.status === GameStatus.WON).length;
-  const totalBoards = replayedState.boards.length;
+  const boardsSolved = boards.filter(b => b.status === GameStatus.WON).length;
+  const totalBoards = boards.length;
+  const totalGuesses = boards.reduce((sum, b) => sum + b.guesses.length, 0);
 
   return (
     <div
@@ -592,7 +520,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
               className={`mx-auto grid gap-2 ${totalBoards > 4 ? 'grid-cols-4' : 'grid-cols-2'}`}
               style={{ maxWidth: totalBoards > 4 ? '320px' : '240px' }}
             >
-              {replayedState.boards.map((board, i) => (
+              {boards.map((board, i) => (
                 <CompletedMiniBoard
                   key={i}
                   solution={board.solution}
@@ -615,7 +543,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
               </div>
               <div className="text-center">
                 <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {saved.guesses.length}
+                  {totalGuesses}
                 </div>
                 <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Guesses
@@ -623,7 +551,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
               </div>
               <div className="text-center">
                 <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {formatTime(saved.elapsedTime)}
+                  {formatTime(session.elapsedTime)}
                 </div>
                 <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Time
@@ -637,7 +565,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             {/* Compact board */}
             <div className="mx-auto" style={{ maxWidth: '200px' }}>
               <Board
-                guesses={saved.guesses}
+                guesses={boards[0]?.guesses ?? []}
                 currentGuess=""
                 maxGuesses={6}
                 evaluations={evaluations}
@@ -696,7 +624,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             <div className="flex justify-center gap-5 mt-3">
               <div className="text-center">
                 <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {saved.guesses.length}/6
+                  {(boards[0]?.guesses.length ?? 0)}/6
                 </div>
                 <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Guesses
@@ -704,7 +632,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
               </div>
               <div className="text-center">
                 <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {formatTime(saved.elapsedTime)}
+                  {formatTime(session.elapsedTime)}
                 </div>
                 <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                   Time
