@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/daily-medals",
       "schedule": "5 5 * * *"
+    },
+    {
+      "path": "/api/cron/daily-reminder",
+      "schedule": "0 14 * * *"
     }
   ]
 }

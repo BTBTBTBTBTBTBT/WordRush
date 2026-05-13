@@ -44,6 +44,7 @@ import { GlobalSummaryRow } from '@/components/profile/global-summary-row';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import { CollapsibleSection } from '@/components/profile/collapsible-section';
+import { NotificationToggle } from '@/components/profile/notification-toggle';
 import type { Database } from '@/lib/database.types';
 
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -656,6 +657,7 @@ export default function ProfilePage() {
         {/* ── H. Account Actions ── */}
         <div className="section-header mb-2 mt-4">ACCOUNT</div>
         <div className="space-y-2">
+          <NotificationToggle />
           <button
             onClick={() => signOut()}
             className="w-full flex items-center gap-3 p-4 transition-colors active:scale-[0.98]"
