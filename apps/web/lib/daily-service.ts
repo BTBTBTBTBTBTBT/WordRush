@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client';
+import { handleSupabaseError } from './supabase-error-handler';
 
 // ============================================================
 // Composite Score Calculation
@@ -149,50 +150,55 @@ export async function recordDailyResult(
     gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards,
   );
 
-  const { data: existing } = await (supabase as any)
-    .from('daily_results')
-    .select('id, composite_score')
-    .eq('user_id', userId)
-    .eq('day', day)
-    .eq('game_mode', gameMode)
-    .eq('play_type', playType)
-    .maybeSingle();
+  try {
+    const { data: existing } = await (supabase as any)
+      .from('daily_results')
+      .select('id, composite_score')
+      .eq('user_id', userId)
+      .eq('day', day)
+      .eq('game_mode', gameMode)
+      .eq('play_type', playType)
+      .maybeSingle();
 
-  if (existing) {
-    // Only update if new score is better
-    if (compositeScore > existing.composite_score) {
+    if (existing) {
+      // Only update if new score is better
+      if (compositeScore > existing.composite_score) {
+        await (supabase as any)
+          .from('daily_results')
+          .update({
+            completed,
+            guess_count: guessCount,
+            time_seconds: timeSeconds,
+            boards_solved: boardsSolved,
+            total_boards: totalBoards,
+            composite_score: compositeScore,
+          })
+          .eq('id', existing.id);
+      }
+    } else {
       await (supabase as any)
         .from('daily_results')
-        .update({
+        .insert({
+          user_id: userId,
+          day,
+          game_mode: gameMode,
+          play_type: playType,
           completed,
           guess_count: guessCount,
           time_seconds: timeSeconds,
           boards_solved: boardsSolved,
           total_boards: totalBoards,
           composite_score: compositeScore,
-        })
-        .eq('id', existing.id);
+        });
     }
-  } else {
-    await (supabase as any)
-      .from('daily_results')
-      .insert({
-        user_id: userId,
-        day,
-        game_mode: gameMode,
-        play_type: playType,
-        completed,
-        guess_count: guessCount,
-        time_seconds: timeSeconds,
-        boards_solved: boardsSolved,
-        total_boards: totalBoards,
-        composite_score: compositeScore,
-      });
-  }
 
-  // Check for streak and perfect game medals (fire-and-forget)
-  checkAndAwardStreakMedals(userId, day).catch(() => {});
-  checkAndAwardPerfectMedal(userId, gameMode, day, guessCount, boardsSolved, totalBoards, completed).catch(() => {});
+    // Check for streak and perfect game medals (fire-and-forget)
+    checkAndAwardStreakMedals(userId, day).catch(() => {});
+    checkAndAwardPerfectMedal(userId, gameMode, day, guessCount, boardsSolved, totalBoards, completed).catch(() => {});
+  } catch (err) {
+    console.error('recordDailyResult failed:', err);
+    handleSupabaseError(err, 'recordDailyResult');
+  }
 
   return compositeScore;
 }
@@ -207,49 +213,54 @@ export async function recordDailyVsResult(
 ) {
   const day = getTodayLocal();
 
-  const { data: existing } = await (supabase as any)
-    .from('daily_results')
-    .select('id, vs_wins, vs_losses, vs_games')
-    .eq('user_id', userId)
-    .eq('day', day)
-    .eq('game_mode', gameMode)
-    .eq('play_type', 'vs')
-    .maybeSingle();
-
-  if (existing) {
-    const newWins = existing.vs_wins + (won ? 1 : 0);
-    const newLosses = existing.vs_losses + (won ? 0 : 1);
-    const newGames = existing.vs_games + 1;
-    const compositeScore = calculateVsCompositeScore(newWins, newLosses, newGames);
-
-    await (supabase as any)
+  try {
+    const { data: existing } = await (supabase as any)
       .from('daily_results')
-      .update({
-        vs_wins: newWins,
-        vs_losses: newLosses,
-        vs_games: newGames,
-        composite_score: compositeScore,
-        completed: true,
-      })
-      .eq('id', existing.id);
-  } else {
-    const wins = won ? 1 : 0;
-    const losses = won ? 0 : 1;
-    const compositeScore = calculateVsCompositeScore(wins, losses, 1);
+      .select('id, vs_wins, vs_losses, vs_games')
+      .eq('user_id', userId)
+      .eq('day', day)
+      .eq('game_mode', gameMode)
+      .eq('play_type', 'vs')
+      .maybeSingle();
 
-    await (supabase as any)
-      .from('daily_results')
-      .insert({
-        user_id: userId,
-        day,
-        game_mode: gameMode,
-        play_type: 'vs',
-        completed: true,
-        vs_wins: wins,
-        vs_losses: losses,
-        vs_games: 1,
-        composite_score: compositeScore,
-      });
+    if (existing) {
+      const newWins = existing.vs_wins + (won ? 1 : 0);
+      const newLosses = existing.vs_losses + (won ? 0 : 1);
+      const newGames = existing.vs_games + 1;
+      const compositeScore = calculateVsCompositeScore(newWins, newLosses, newGames);
+
+      await (supabase as any)
+        .from('daily_results')
+        .update({
+          vs_wins: newWins,
+          vs_losses: newLosses,
+          vs_games: newGames,
+          composite_score: compositeScore,
+          completed: true,
+        })
+        .eq('id', existing.id);
+    } else {
+      const wins = won ? 1 : 0;
+      const losses = won ? 0 : 1;
+      const compositeScore = calculateVsCompositeScore(wins, losses, 1);
+
+      await (supabase as any)
+        .from('daily_results')
+        .insert({
+          user_id: userId,
+          day,
+          game_mode: gameMode,
+          play_type: 'vs',
+          completed: true,
+          vs_wins: wins,
+          vs_losses: losses,
+          vs_games: 1,
+          composite_score: compositeScore,
+        });
+    }
+  } catch (err) {
+    console.error('recordDailyVsResult failed:', err);
+    handleSupabaseError(err, 'recordDailyVsResult');
   }
 }
 

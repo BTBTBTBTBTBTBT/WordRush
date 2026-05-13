@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { Camera } from 'lucide-react';
 import NextImage from 'next/image';
 import { toast } from '@/hooks/use-toast';
+import { handleSupabaseError } from '@/lib/supabase-error-handler';
 
 interface AvatarUploadProps {
   size?: number;
@@ -81,6 +82,7 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username }
       await refreshProfile();
     } catch (err) {
       console.error('Avatar upload failed:', err);
+      handleSupabaseError(err, 'avatar-upload');
       toast({ title: 'Avatar upload failed', description: 'Please try again.', variant: 'destructive' });
     } finally {
       setUploading(false);

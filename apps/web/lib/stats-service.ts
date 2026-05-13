@@ -1,5 +1,6 @@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from './supabase-client';
+import { handleSupabaseError } from './supabase-error-handler';
 import { isDailySeed } from '@wordle-duel/core';
 import {
   recordDailyResult,
@@ -44,6 +45,7 @@ export async function recordGameResult(
 ): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
 
+  try {
   // Fetch existing stats for this mode+playType
   const { data: existing } = await (supabase as any)
     .from('user_stats')
@@ -278,6 +280,11 @@ export async function recordGameResult(
     };
   }
   return null;
+  } catch (err) {
+    console.error('recordGameResult failed:', err);
+    handleSupabaseError(err, 'recordGameResult');
+    return null;
+  }
 }
 
 /**
@@ -349,6 +356,7 @@ export async function recordSoloMatch(data: {
     });
   } catch (err) {
     console.error('recordSoloMatch failed:', err);
+    handleSupabaseError(err, 'recordSoloMatch');
     toast({ title: 'Failed to save game results', description: 'Your stats may not be recorded.', variant: 'destructive' });
   }
 }

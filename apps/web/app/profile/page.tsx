@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
+import { handleSupabaseError } from '@/lib/supabase-error-handler';
 import { ProBadge } from '@/components/ui/pro-badge';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { AppHeader } from '@/components/ui/app-header';
@@ -122,7 +123,7 @@ export default function ProfilePage() {
         topWordsAllTime: topWordsRes,
       };
     },
-    { revalidateOnFocus: true },
+    { revalidateOnFocus: true, onError: (err: any) => handleSupabaseError(err, 'profile-data') },
   );
 
   const stats = profileData?.stats ?? [];
