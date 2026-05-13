@@ -4,10 +4,10 @@ import webpush from 'web-push';
 
 const MESSAGES = [
   { title: '🔥 Keep your streak alive!', body: "Today's daily puzzles are waiting for you." },
-  { title: '🧩 New puzzles are here!', body: 'Can you beat yesterday's score?' },
+  { title: '🧩 New puzzles are here!', body: "Can you beat yesterday's score?" },
   { title: '⚔️ Daily challenge is live!', body: 'Your word skills are needed.' },
   { title: '🏆 Climb the leaderboard!', body: "Play today's puzzles before time runs out." },
-  { title: '💪 Don't break your streak!', body: 'A quick game keeps the streak going.' },
+  { title: "💪 Don't break your streak!", body: 'A quick game keeps the streak going.' },
 ];
 
 export async function GET(req: NextRequest) {
