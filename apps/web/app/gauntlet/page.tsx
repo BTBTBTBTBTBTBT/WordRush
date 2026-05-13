@@ -20,7 +20,11 @@ export default function GauntletPage() {
     setReady(true);
   }, []);
 
-  if (!ready) return null;
+  if (!ready) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <div className="text-lg font-black animate-pulse" style={{ color: 'var(--color-text)' }}>Loading...</div>
+    </div>
+  );
 
   const seed = isDaily ? generateDailySeed(getTodayLocal(), 'GAUNTLET') : undefined;
 
