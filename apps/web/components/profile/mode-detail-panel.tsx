@@ -81,7 +81,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
       ]);
       return { guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights } as ModeData;
     },
-    { revalidateOnFocus: false },
+    { revalidateOnFocus: true },
   );
 
   useEffect(() => {

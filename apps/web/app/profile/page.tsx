@@ -22,6 +22,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from '@/hooks/use-toast';
 import { ProBadge } from '@/components/ui/pro-badge';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { AppHeader } from '@/components/ui/app-header';
@@ -121,7 +122,7 @@ export default function ProfilePage() {
         topWordsAllTime: topWordsRes,
       };
     },
-    { revalidateOnFocus: false },
+    { revalidateOnFocus: true },
   );
 
   const stats = profileData?.stats ?? [];
@@ -155,7 +156,7 @@ export default function ProfilePage() {
       window.location.href = '/';
     } catch (err) {
       console.error('Delete account error:', err);
-      alert('Failed to delete account. Please try again or contact support@wordocious.com.');
+      toast({ title: 'Failed to delete account', description: 'Please try again or contact support@wordocious.com.', variant: 'destructive' });
       setDeleting(false);
     }
   };

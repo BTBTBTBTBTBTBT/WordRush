@@ -15,6 +15,7 @@ import { Puzzle, Guess, TileState } from './types';
 import { normalizeString, evaluateGuess, checkWin } from './game-logic';
 import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById } from './puzzle-service';
 import { useHints, type PersistedHintState } from './use-hints';
+import Image from 'next/image';
 import { fetchWikipediaImage } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
@@ -641,9 +642,11 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   const resultImage = wikiImageUrl ? (
     <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 shadow-md shrink-0"
       style={{ borderColor: gameStatus === 'won' ? '#bbf7d0' : '#fecaca' }}>
-      <img
+      <Image
         src={wikiImageUrl}
         alt={puzzle.display}
+        width={64}
+        height={64}
         className={`w-full h-full object-cover transition-opacity duration-300 ${wikiImageLoaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setWikiImageLoaded(true)}
       />

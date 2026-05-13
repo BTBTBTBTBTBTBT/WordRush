@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Flame, X } from 'lucide-react';
 
@@ -22,6 +22,13 @@ export function StreakShieldModal({
   onClose,
 }: StreakShieldModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
 
   const handleAction = async (action: () => Promise<void>, key: string) => {
     setLoading(key);

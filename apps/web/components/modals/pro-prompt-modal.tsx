@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, X } from 'lucide-react';
 import Link from 'next/link';
@@ -20,6 +20,13 @@ export function ProPromptModal() {
       setShow(true);
     }
   }, [user, profile, isProActive]);
+
+  useEffect(() => {
+    if (!show) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') dismiss(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [show]);
 
   const dismiss = async () => {
     if (!user) return;

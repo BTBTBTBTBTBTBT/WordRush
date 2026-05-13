@@ -1,3 +1,4 @@
+import { toast } from '@/hooks/use-toast';
 import { supabase } from './supabase-client';
 import { isDailySeed } from '@wordle-duel/core';
 import {
@@ -348,6 +349,7 @@ export async function recordSoloMatch(data: {
     });
   } catch (err) {
     console.error('recordSoloMatch failed:', err);
+    toast({ title: 'Failed to save game results', description: 'Your stats may not be recorded.', variant: 'destructive' });
   }
 }
 

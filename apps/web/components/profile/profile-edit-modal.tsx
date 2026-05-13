@@ -37,6 +37,13 @@ export function ProfileEditModal({ open, onClose }: Props) {
     }
   }, [open, profile]);
 
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
+
   if (!open || !profile) return null;
 
   const handleSave = async () => {

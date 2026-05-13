@@ -12,6 +12,7 @@ import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { RotateOverlay } from '@/components/ui/rotate-overlay';
 import { PwaProvider } from '@/components/providers/pwa-provider';
+import { Toaster } from '@/components/ui/toaster';
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -82,6 +83,7 @@ export default function RootLayout({
                   <ProPromptModal />
                   <SharePreviewHost />
                   <PwaProvider />
+                  <Toaster />
                 </StreakShieldProvider>
               </ThemeProvider>
             </AuthGate>

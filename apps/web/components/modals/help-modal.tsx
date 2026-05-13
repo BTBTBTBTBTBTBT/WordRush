@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Swords, TrendingUp, Shield, Skull, Crown } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
@@ -216,6 +216,13 @@ function FAQContent() {
 
 export function HelpModal({ open, onClose }: HelpModalProps) {
   const [activeTab, setActiveTab] = useState<HelpTab>('how-to-play');
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
 
   return (
     <AnimatePresence>

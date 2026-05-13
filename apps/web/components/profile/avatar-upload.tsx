@@ -4,6 +4,8 @@ import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
 import { Camera } from 'lucide-react';
+import Image from 'next/image';
+import { toast } from '@/hooks/use-toast';
 
 interface AvatarUploadProps {
   size?: number;
@@ -49,7 +51,7 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username }
     if (!file || !profile) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be under 5MB');
+      toast({ title: 'Image must be under 5MB', variant: 'destructive' });
       return;
     }
 
@@ -79,6 +81,7 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username }
       await refreshProfile();
     } catch (err) {
       console.error('Avatar upload failed:', err);
+      toast({ title: 'Avatar upload failed', description: 'Please try again.', variant: 'destructive' });
     } finally {
       setUploading(false);
     }
@@ -91,11 +94,13 @@ export function AvatarUpload({ size = 96, editable = true, avatarUrl, username }
       onClick={() => editable && fileInputRef.current?.click()}
     >
       {displayUrl ? (
-        <img
+        <Image
           src={displayUrl}
           alt={displayName}
+          width={size}
+          height={size}
           className="w-full h-full rounded-full object-cover border-3 border-white/30"
-          style={{ width: size, height: size }}
+          unoptimized
         />
       ) : (
         <div
