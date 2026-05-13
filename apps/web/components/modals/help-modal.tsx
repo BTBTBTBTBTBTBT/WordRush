@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Swords, TrendingUp, Shield, Skull, Crown } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 type HelpTab = 'how-to-play' | 'modes' | 'faq';
 
@@ -216,6 +217,8 @@ function FAQContent() {
 
 export function HelpModal({ open, onClose }: HelpModalProps) {
   const [activeTab, setActiveTab] = useState<HelpTab>('how-to-play');
+  const focusRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -236,6 +239,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
           onClick={onClose}
         >
           <motion.div
+            ref={focusRef}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, Lock, X } from 'lucide-react';
 import Link from 'next/link';
 import { getSecondsUntilMidnightUTC, formatCountdown } from '@/lib/play-limit-service';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface ModeLimitModalProps {
   open: boolean;
@@ -15,6 +16,8 @@ interface ModeLimitModalProps {
 
 export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLimitModalProps) {
   const [countdown, setCountdown] = useState('');
+  const focusRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +46,7 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLi
           onClick={onClose}
         >
           <motion.div
+            ref={focusRef}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}

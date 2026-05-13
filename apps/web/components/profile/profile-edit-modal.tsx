@@ -11,6 +11,7 @@ import {
   sanitizeHandle,
   type SocialLinks,
 } from '@/components/profile/social-links';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface Props {
   open: boolean;
@@ -20,6 +21,8 @@ interface Props {
 export function ProfileEditModal({ open, onClose }: Props) {
   const { profile, refreshProfile } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
+  const focusRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusRef, open);
 
   const [username, setUsername] = useState('');
   const [socials, setSocials] = useState<SocialLinks>({});
@@ -92,8 +95,11 @@ export function ProfileEditModal({ open, onClose }: Props) {
       style={{ background: 'rgba(26,26,46,0.55)' }}
     >
       <div
+        ref={focusRef}
         className="w-full max-w-sm max-h-[90vh] overflow-y-auto p-5 relative"
         style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '20px' }}
+        role="dialog"
+        aria-modal="true"
       >
         <button
           onClick={onClose}

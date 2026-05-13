@@ -1,15 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, X } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 export function ProPromptModal() {
   const { user, profile, refreshProfile, isProActive } = useAuth();
   const [show, setShow] = useState(false);
+  const focusRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusRef, show);
 
   useEffect(() => {
     if (!user || !profile) return;
@@ -48,6 +51,7 @@ export function ProPromptModal() {
           className="fixed bottom-16 left-4 right-4 z-50 max-w-md mx-auto"
         >
           <div
+            ref={focusRef}
             className="flex items-center gap-3 p-3.5"
             style={{
               background: 'var(--color-surface)',

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, Swords, X } from 'lucide-react';
 import Link from 'next/link';
 import { getSecondsUntilMidnightUTC, formatCountdown } from '@/lib/play-limit-service';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface VsLimitModalProps {
   open: boolean;
@@ -13,6 +14,8 @@ interface VsLimitModalProps {
 
 export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
   const [countdown, setCountdown] = useState('');
+  const focusRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +44,7 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
           onClick={onClose}
         >
           <motion.div
+            ref={focusRef}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}

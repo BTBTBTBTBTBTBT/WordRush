@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Flame, X } from 'lucide-react';
+import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface StreakShieldModalProps {
   open: boolean;
@@ -22,6 +23,8 @@ export function StreakShieldModal({
   onClose,
 }: StreakShieldModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
+  const focusRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(focusRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -50,6 +53,7 @@ export function StreakShieldModal({
           style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
         >
           <motion.div
+            ref={focusRef}
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
