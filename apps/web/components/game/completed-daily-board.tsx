@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { evaluateGuess, TileState, GameStatus, BoardState } from '@wordle-duel/core';
-import type { GauntletProgress } from '@wordle-duel/core';
+import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
@@ -216,6 +216,149 @@ function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }:
   );
 }
 
+function GauntletCompletedCard({
+  won, stages, stageResults, stagesCleared, totalGuesses, totalTimeMs,
+}: {
+  won: boolean;
+  stages: GauntletStageConfig[];
+  stageResults: GauntletStageResult[];
+  stagesCleared: number;
+  totalGuesses: number;
+  totalTimeMs: number;
+}) {
+  const [expandedStage, setExpandedStage] = useState<number | null>(null);
+
+  const fmtTime = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}m ${s % 60}s`;
+  };
+
+  return (
+    <div
+      className="mb-4"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1.5px solid var(--color-border)',
+        borderRadius: '16px',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        className="h-1"
+        style={{
+          background: won
+            ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+            : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
+        }}
+      />
+      <div className="px-4 pt-3 pb-4">
+        <div className="text-center mb-2">
+          <span
+            className="text-[10px] font-extrabold uppercase tracking-wider"
+            style={{ color: won ? '#22c55e' : 'var(--color-text-muted)' }}
+          >
+            {won ? 'Gauntlet Cleared' : 'Gauntlet Attempted'} Today
+          </span>
+        </div>
+
+        {/* Summary stats */}
+        <div className="flex justify-center gap-5 mb-3">
+          <div className="text-center">
+            <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+              {stagesCleared}/5
+            </div>
+            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              Stages
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+              {totalGuesses}
+            </div>
+            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              Guesses
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+              {fmtTime(totalTimeMs)}
+            </div>
+            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              Time
+            </div>
+          </div>
+        </div>
+
+        {/* Compact stage rows */}
+        <div className="space-y-1">
+          {stages.map((stage, i) => {
+            const result = stageResults.find(r => r.stageIndex === i);
+            if (!result) return null;
+            const stageWon = result.status === GameStatus.WON;
+            const hasBoards = !!result.boardsSnapshot?.length;
+            const isExpanded = expandedStage === i;
+
+            return (
+              <div key={i}>
+                <button
+                  type="button"
+                  onClick={() => hasBoards && setExpandedStage(isExpanded ? null : i)}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors"
+                  style={{
+                    background: stageWon ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${stageWon ? '#bbf7d0' : '#fecaca'}`,
+                    cursor: hasBoards ? 'pointer' : 'default',
+                  }}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black"
+                      style={{
+                        background: stageWon ? '#dcfce7' : '#fee2e2',
+                        color: stageWon ? '#16a34a' : '#dc2626',
+                      }}
+                    >
+                      {stageWon ? '✓' : '✗'}
+                    </span>
+                    <span className="text-[10px] font-bold" style={{ color: 'var(--color-text)' }}>
+                      {stage.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                      {result.guesses}g · {fmtTime(result.timeMs)}
+                    </span>
+                    {hasBoards && (
+                      <span
+                        className="text-[8px] transition-transform"
+                        style={{
+                          color: 'var(--color-text-muted)',
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}
+                      >
+                        ▼
+                      </span>
+                    )}
+                  </div>
+                </button>
+                {isExpanded && hasBoards && (
+                  <div className="px-1 pt-1.5 pb-1">
+                    <GauntletStageMiniBoards
+                      boards={result.boardsSnapshot!}
+                      maxGuesses={stage.maxGuesses}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GauntletStageMiniBoards({ boards, maxGuesses }: { boards: BoardState[]; maxGuesses: number }) {
   const n = boards.length;
   const gridCols = n === 1 ? 'grid-cols-1' : n <= 4 ? 'grid-cols-2' : 'grid-cols-4';
@@ -270,126 +413,16 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     const gauntlet = session.state.gauntlet;
     if (!gauntlet) return null;
 
-    const gWon = session.state.status === 'WON';
     const stageResults = gauntlet.stageResults;
-    const stages = gauntlet.stages;
-    const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
-    const stagesCleared = stageResults.filter(r => r.status === GameStatus.WON).length;
-    const totalTimeMs = session.elapsedTime * 1000;
-    const gFormatTime = (ms: number) => {
-      const s = Math.floor(ms / 1000);
-      if (s < 60) return `${s}s`;
-      return `${Math.floor(s / 60)}m ${s % 60}s`;
-    };
-
     return (
-      <div
-        className="mb-4"
-        style={{
-          background: 'var(--color-surface)',
-          border: '1.5px solid var(--color-border)',
-          borderRadius: '16px',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          className="h-1"
-          style={{
-            background: gWon
-              ? 'linear-gradient(90deg, #22c55e, #4ade80)'
-              : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
-          }}
-        />
-        <div className="px-4 pt-3 pb-4">
-          <div className="text-center mb-3">
-            <span
-              className="text-[10px] font-extrabold uppercase tracking-wider"
-              style={{ color: gWon ? '#22c55e' : 'var(--color-text-muted)' }}
-            >
-              {gWon ? 'Gauntlet Cleared' : 'Gauntlet Attempted'} Today
-            </span>
-          </div>
-
-          {/* Stage breakdown */}
-          <div className="space-y-2">
-            {stages.map((stage, i) => {
-              const result = stageResults.find(r => r.stageIndex === i);
-              if (!result) return null;
-              const stageWon = result.status === GameStatus.WON;
-              const hasBoards = !!result.boardsSnapshot?.length;
-
-              return (
-                <div
-                  key={i}
-                  className="rounded-lg overflow-hidden"
-                  style={{
-                    border: `1px solid ${stageWon ? '#bbf7d0' : '#fecaca'}`,
-                    background: stageWon ? '#f0fdf4' : '#fef2f2',
-                  }}
-                >
-                  <div className="flex items-center justify-between px-3 py-1.5">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black"
-                        style={{
-                          background: stageWon ? '#dcfce7' : '#fee2e2',
-                          color: stageWon ? '#16a34a' : '#dc2626',
-                        }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text)' }}>
-                        {stage.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                        {result.guesses}g · {gFormatTime(result.timeMs)}
-                      </span>
-                    </div>
-                  </div>
-                  {hasBoards && (
-                    <div className="px-2 pb-2">
-                      <GauntletStageMiniBoards
-                        boards={result.boardsSnapshot!}
-                        maxGuesses={stage.maxGuesses}
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Summary stats */}
-          <div className="flex justify-center gap-5 mt-3">
-            <div className="text-center">
-              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {stagesCleared}/5
-              </div>
-              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                Stages
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {totalGuesses}
-              </div>
-              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                Guesses
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {gFormatTime(totalTimeMs)}
-              </div>
-              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                Time
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <GauntletCompletedCard
+        won={session.state.status === 'WON'}
+        stages={gauntlet.stages}
+        stageResults={stageResults}
+        stagesCleared={stageResults.filter(r => r.status === GameStatus.WON).length}
+        totalGuesses={stageResults.reduce((sum, r) => sum + r.guesses, 0)}
+        totalTimeMs={session.elapsedTime * 1000}
+      />
     );
   }
 
