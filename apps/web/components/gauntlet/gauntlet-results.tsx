@@ -442,20 +442,24 @@ function StageReviewModal({
                   : 'grid grid-cols-4 gap-x-3 gap-y-1.5 justify-items-center'
             }
           >
-            {boards.map((b, i) => (
-              <span
-                key={i}
-                className={`text-xs font-black px-2 py-0.5 rounded ${
-                  b.status === GameStatus.WON
-                    ? 'bg-green-100 text-green-700'
-                    : b.status === GameStatus.LOST
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-gray-200 text-gray-700'
-                }`}
-              >
-                {b.solution.toUpperCase()}
-              </span>
-            ))}
+            {boards.map((b, i) => {
+              const boardWon = b.status === GameStatus.WON;
+              const boardFailed = !won && !boardWon;
+              return (
+                <span
+                  key={i}
+                  className={`text-xs font-black px-2 py-0.5 rounded ${
+                    boardWon
+                      ? 'bg-green-100 text-green-700'
+                      : boardFailed
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-200 text-gray-700'
+                  }`}
+                >
+                  {b.solution.toUpperCase()}
+                </span>
+              );
+            })}
           </div>
         </div>
 
@@ -466,7 +470,7 @@ function StageReviewModal({
             on Wordle (1 board) and Quordle (2×2) reviews. */}
         <div className={`grid ${gridCols} gap-2 flex-1 min-h-0 auto-rows-fr`}>
           {boards.map((board, i) => (
-            <StageReviewBoard key={i} board={board} />
+            <StageReviewBoard key={i} board={board} stageWon={won} />
           ))}
         </div>
       </motion.div>
@@ -481,13 +485,13 @@ const REVIEW_TILE_CLASS: Record<TileState, string> = {
   [TileState.EMPTY]: 'bg-white border-gray-300 text-gray-800',
 };
 
-function StageReviewBoard({ board }: { board: BoardState }) {
+function StageReviewBoard({ board, stageWon }: { board: BoardState; stageWon: boolean }) {
   const prefills = board.prefilledGuesses ?? [];
   const prefillCount = prefills.length;
   const totalRows = prefillCount + board.maxGuesses;
   const width = board.solution.length;
   const won = board.status === GameStatus.WON;
-  const lost = board.status === GameStatus.LOST;
+  const lost = !stageWon && !won;
 
   // Pad an empty row for any slot the player never filled, so boards at
   // the same stage render at a consistent height regardless of how far
