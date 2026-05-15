@@ -76,12 +76,16 @@ export function WelcomeModal() {
   const handleSkip = async () => {
     if (!user) return;
     setSaving(true);
-    await (supabase as any)
-      .from('profiles')
-      .update({ has_onboarded: true })
-      .eq('id', user.id);
-    await refreshProfile();
-    setShow(false);
+    try {
+      await (supabase as any)
+        .from('profiles')
+        .update({ has_onboarded: true })
+        .eq('id', user.id);
+      await refreshProfile();
+      setShow(false);
+    } catch {
+      setSaving(false);
+    }
   };
 
   return (
