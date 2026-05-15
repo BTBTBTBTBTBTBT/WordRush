@@ -41,9 +41,15 @@ export function DailyBoundaryReload() {
     };
 
     const onPageShow = (e: PageTransitionEvent) => {
-      // `persisted` means the browser served the page from bfcache — always
-      // re-check, since any arbitrary amount of time may have passed.
-      if (e.persisted) maybeReload();
+      // `persisted` means the browser served the page from bfcache.
+      // Always force a full reload — bfcache restores a frozen DOM with
+      // stale React state, which produces a broken half-rendered page
+      // (e.g. header visible but content empty). This also handles the
+      // day-boundary case since the fresh page will read the current day.
+      if (e.persisted) {
+        window.location.reload();
+        return;
+      }
     };
 
     const onVisibility = () => {
