@@ -22,7 +22,7 @@ export function WelcomeModal() {
       process.env.NODE_ENV === 'development' &&
       new URLSearchParams(window.location.search).has('__force_welcome');
 
-    if (!(profile as any).has_onboarded || forceWelcome) {
+    if ((profile as any).has_onboarded === false || forceWelcome) {
       setUsername(profile.username);
       setShow(true);
     }
