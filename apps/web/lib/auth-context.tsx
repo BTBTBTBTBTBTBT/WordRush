@@ -58,19 +58,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // No profile exists — auto-create for OAuth users
       const u = userData;
       if (u) {
-        const displayName = u.user_metadata?.full_name || u.user_metadata?.name || u.email?.split('@')[0] || 'Player';
-        const username = displayName.slice(0, 20).replace(/[^a-zA-Z0-9_]/g, '') || 'Player';
         const avatarUrl = u.user_metadata?.avatar_url || u.user_metadata?.picture || null;
 
-        const { data: newProfile } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            username,
-            avatar_url: avatarUrl,
-          } as any)
-          .select()
-          .single();
+        // Generate anonymous default username — never expose real names
+        let newProfile = null;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const suffix = Math.floor(10000 + Math.random() * 90000);
+          const username = `Wordocious${suffix}`;
+          const { data, error: insertErr } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              username,
+              avatar_url: avatarUrl,
+              has_onboarded: false,
+            } as any)
+            .select()
+            .single();
+
+          if (data) { newProfile = data; break; }
+          // 23505 = unique violation — retry with new suffix
+          if (insertErr?.code !== '23505') break;
+        }
 
         if (newProfile) {
           setProfile(newProfile as Profile);

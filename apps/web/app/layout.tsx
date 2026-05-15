@@ -8,6 +8,7 @@ import { StreakShieldProvider } from '@/components/providers/streak-shield-provi
 import { SitePresenceProvider } from '@/components/providers/site-presence-provider';
 import { DailyBoundaryReload } from '@/components/providers/daily-boundary-reload';
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
+import { WelcomeModal } from '@/components/modals/welcome-modal';
 import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { RotateOverlay } from '@/components/ui/rotate-overlay';
@@ -80,6 +81,7 @@ export default function RootLayout({
                 <StreakShieldProvider>
                   {children}
                   <RotateOverlay />
+                  <WelcomeModal />
                   <ProPromptModal />
                   <SharePreviewHost />
                   <PwaProvider />

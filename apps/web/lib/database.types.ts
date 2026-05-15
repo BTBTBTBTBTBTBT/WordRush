@@ -35,6 +35,7 @@ export interface Database {
           role: string
           is_banned: boolean
           ban_reason: string | null
+          has_onboarded: boolean
           created_at: string
           updated_at: string
         }
@@ -63,6 +64,7 @@ export interface Database {
           role?: string
           is_banned?: boolean
           ban_reason?: string | null
+          has_onboarded?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -91,6 +93,7 @@ export interface Database {
           role?: string
           is_banned?: boolean
           ban_reason?: string | null
+          has_onboarded?: boolean
           created_at?: string
           updated_at?: string
         }
