@@ -610,7 +610,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
     // `puzzle.display` preserves the space the human reads.
     const wordGroups = puzzle.display
       .split(/\s+/)
-      .map(w => normalizeString(w).length)
+      .map(w => normalizeString(w).replace(/[^a-z]/g, '').length)
       .filter(n => n > 0);
     const categoryLabel = puzzle.themeCategory
       ? CATEGORY_LABELS[puzzle.themeCategory] || puzzle.themeCategory

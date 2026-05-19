@@ -619,7 +619,7 @@
   },
   {
     "id": "vg036",
-    "answer": "spidermanmiles",
+    "answer": "spidermanmilesmorales",
     "display": "Spider-Man Miles Morales",
     "category": "other",
     "themeCategory": "videogames",
@@ -1424,7 +1424,7 @@
   },
   {
     "id": "his005",
-    "answer": "declaration",
+    "answer": "declarationofindependence",
     "display": "Declaration of Independence",
     "category": "other",
     "themeCategory": "history",
@@ -1454,7 +1454,7 @@
   },
   {
     "id": "his009",
-    "answer": "pyramid",
+    "answer": "greatpyramidofgiza",
     "display": "Great Pyramid of Giza",
     "category": "geography",
     "themeCategory": "history",
@@ -1476,7 +1476,7 @@
   },
   {
     "id": "his012",
-    "answer": "joanofearc",
+    "answer": "joanofarc",
     "display": "Joan of Arc",
     "category": "celebrity",
     "themeCategory": "history",
@@ -1673,7 +1673,7 @@
   },
   {
     "id": "sci009",
-    "answer": "periodic",
+    "answer": "periodictable",
     "display": "Periodic Table",
     "category": "other",
     "themeCategory": "science",
@@ -1775,7 +1775,7 @@
   },
   {
     "id": "sci023",
-    "answer": "neiltyson",
+    "answer": "neildegrassetyson",
     "display": "Neil deGrasse Tyson",
     "category": "celebrity",
     "themeCategory": "science",
@@ -2355,7 +2355,7 @@
   },
   {
     "id": "geo029",
-    "answer": "greatwall",
+    "answer": "greatwallofchina",
     "display": "Great Wall of China",
     "category": "geography",
     "themeCategory": "currentevents",

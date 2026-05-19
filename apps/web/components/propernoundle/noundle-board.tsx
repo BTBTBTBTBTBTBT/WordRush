@@ -90,7 +90,14 @@ export default memo(function NoundleBoard({
 
   const wordGroups = useMemo((): number[] => {
     if (!answerDisplay) return [answerLength];
-    return answerDisplay.split(' ').map(word => normalizeString(word).length);
+    // Strip non-alpha chars (hyphens, digits) from each word's tile count
+    // so the grid only shows tiles for letters the keyboard can produce.
+    // e.g. "Counter-Strike" → 13 tiles (not 14), "Cyberpunk 2077" → [9]
+    const groups = answerDisplay
+      .split(' ')
+      .map(word => normalizeString(word).replace(/[^a-z]/g, '').length)
+      .filter(n => n > 0);
+    return groups.length > 0 ? groups : [answerLength];
   }, [answerDisplay, answerLength]);
 
   useEffect(() => {
