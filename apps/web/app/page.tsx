@@ -618,6 +618,14 @@ export default function HomePage() {
           <LogOut className="w-3 h-3 inline mr-1" />
           Sign Out
         </button>
+
+        {/* Footer links for SEO */}
+        <div className="flex justify-center gap-3 pt-2 pb-4">
+          <Link href="/about" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>About</Link>
+          <Link href="/how-to-play" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>How to Play</Link>
+          <Link href="/privacy" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Privacy</Link>
+          <Link href="/terms" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Terms</Link>
+        </div>
       </div>
 
       <BottomNav />
