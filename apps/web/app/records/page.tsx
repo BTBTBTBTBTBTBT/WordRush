@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
@@ -174,11 +173,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   const Icon = mode.icon;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-    >
+    <div className="animate-fade-in-up">
       {/* Mode Picker */}
       <div className="mb-3">
         <ModePicker
@@ -190,12 +185,9 @@ function DailyRecordsView({ userId }: { userId?: string }) {
 
       <PullToRefresh onRefresh={loadData} accentColor={color}>
       {/* Leaderboard Card */}
-      <motion.div
+      <div
         key={`${selectedMode}-${playType}`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.15 }}
-        className="overflow-hidden"
+        className="overflow-hidden animate-fade-in"
         style={{
           background: 'var(--color-surface)',
           border: '1.5px solid var(--color-border)',
@@ -330,9 +322,9 @@ function DailyRecordsView({ userId }: { userId?: string }) {
             })}
           </div>
         )}
-      </motion.div>
+      </div>
       </PullToRefresh>
-    </motion.div>
+    </div>
   );
 }
 
@@ -370,13 +362,9 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
 
   if (loading) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
-      >
+      <div className="animate-fade-in-up">
         <AllTimeSkeleton />
-      </motion.div>
+      </div>
     );
   }
 
@@ -386,11 +374,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
   const modeRecords = modeRecordsMap.get(selectedMode) || [];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-    >
+    <div className="animate-fade-in-up">
       {/* Hall of Fame */}
       <div className="mb-5">
         <div
@@ -399,11 +383,8 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
         >
           Hall of Fame
         </div>
-        <motion.div
-          initial={{ scale: 0.97, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="overflow-hidden"
+        <div
+          className="overflow-hidden animate-fade-in-scale"
           style={{
             background: 'var(--color-surface)',
             border: '1.5px solid var(--color-gold-border)',
@@ -433,7 +414,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
               })}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* By Game Mode */}
@@ -453,12 +434,9 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
           />
         </div>
 
-        <motion.div
+        <div
           key={selectedMode}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
-          className="overflow-hidden"
+          className="overflow-hidden animate-fade-in"
           style={{
             background: 'var(--color-surface)',
             border: '1.5px solid var(--color-border)',
@@ -515,9 +493,9 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -534,11 +512,7 @@ export default function RecordsPage() {
 
       <div className="max-w-lg mx-auto px-4">
         {/* Header */}
-        <motion.div
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="text-center mb-4"
-        >
+        <div className="text-center mb-4 animate-fade-in-up">
           <h1
             className="text-3xl font-black bg-clip-text text-transparent tracking-tight"
             style={{
@@ -550,7 +524,7 @@ export default function RecordsPage() {
           <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
             The best of the best across Wordocious
           </p>
-        </motion.div>
+        </div>
 
         {/* Daily / All-Time Toggle */}
         <div className="flex gap-2 mb-5">
@@ -579,13 +553,11 @@ export default function RecordsPage() {
         </div>
 
         {/* Tab Content */}
-        <AnimatePresence mode="wait">
-          {activeTab === 'daily' ? (
-            <DailyRecordsView key="daily" userId={user?.id} />
-          ) : (
-            <AllTimeRecordsView key="alltime" userId={user?.id} />
-          )}
-        </AnimatePresence>
+        {activeTab === 'daily' ? (
+          <DailyRecordsView key="daily" userId={user?.id} />
+        ) : (
+          <AllTimeRecordsView key="alltime" userId={user?.id} />
+        )}
       </div>
 
       <BottomNav />

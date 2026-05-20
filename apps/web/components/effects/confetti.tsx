@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 
 interface ConfettiPiece {
   id: number;
@@ -47,21 +46,14 @@ export function Confetti({ colors }: { colors?: string[] }) {
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
       {pieces.map((piece) => (
-        <motion.div
+        <div
           key={piece.id}
-          initial={{ y: -20, x: `${piece.x}vw`, opacity: 1, rotate: 0 }}
-          animate={{
-            y: '100vh',
-            rotate: 720,
-            opacity: 0,
-          }}
-          transition={{
-            duration: piece.duration,
-            delay: piece.delay,
-            ease: 'linear',
-          }}
           className="absolute w-3 h-3 rounded-sm"
-          style={{ backgroundColor: piece.color }}
+          style={{
+            left: `${piece.x}vw`,
+            backgroundColor: piece.color,
+            animation: `confetti ${piece.duration}s linear ${piece.delay}s forwards`,
+          }}
         />
       ))}
     </div>

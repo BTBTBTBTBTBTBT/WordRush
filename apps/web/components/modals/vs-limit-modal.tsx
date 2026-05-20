@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Crown, Swords, X } from 'lucide-react';
 import Link from 'next/link';
 import { getSecondsUntilMidnightUTC, formatCountdown } from '@/lib/play-limit-service';
@@ -33,22 +33,16 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
   }, [open, onClose]);
 
   return (
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-modal-overlay"
           style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
           onClick={onClose}
         >
-          <motion.div
+          <div
             ref={focusRef}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="w-full max-w-sm p-6 text-center"
+            className="w-full max-w-sm p-6 text-center animate-modal-content"
             style={{
               background: 'var(--color-surface)',
               borderRadius: '20px',
@@ -96,9 +90,9 @@ export function VsLimitModal({ open, onClose }: VsLimitModalProps) {
             >
               Come back tomorrow
             </button>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

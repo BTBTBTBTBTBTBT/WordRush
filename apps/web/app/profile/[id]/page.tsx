@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
-import { motion } from 'framer-motion';
 import {
   Trophy,
   Target,
@@ -117,11 +116,7 @@ export default function PublicProfilePage() {
   if (notFound || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-bg)' }}>
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="text-center space-y-4"
-        >
+        <div className="text-center space-y-4 animate-fade-in-scale">
           <h1 className="text-4xl font-black" style={{ color: 'var(--color-text)' }}>Player not found</h1>
           <p style={{ color: 'var(--color-text-muted)' }}>This profile doesn't exist or may have been removed.</p>
           <Link href="/">
@@ -129,7 +124,7 @@ export default function PublicProfilePage() {
               Go Home
             </Button>
           </Link>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -145,11 +140,7 @@ export default function PublicProfilePage() {
     <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
+        <div className="flex flex-col items-center gap-4 animate-fade-in-up">
           <AvatarUpload
             size={112}
             editable={false}
@@ -171,11 +162,9 @@ export default function PublicProfilePage() {
               </div>
               <div className="w-48">
                 <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${levelProgress}%` }}
-                    transition={{ duration: 1, delay: 0.3 }}
-                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500"
+                  <div
+                    className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-1000"
+                    style={{ width: `${levelProgress}%` }}
                   />
                 </div>
                 <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{xpToNextLevel} XP to next level</p>
@@ -191,16 +180,13 @@ export default function PublicProfilePage() {
               Back
             </Button>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Overall Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-2xl p-6"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border)' }}
+          <div
+            className="rounded-2xl p-6 animate-fade-in-scale"
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border)', animationDelay: '0.1s', animationFillMode: 'both' }}
           >
             <div className="flex items-center gap-3 mb-3">
               <Star className="w-8 h-8" style={{ color: '#d97706' }} fill="currentColor" />
@@ -215,22 +201,17 @@ export default function PublicProfilePage() {
                 <span>{xpToNextLevel} XP to next level</span>
               </div>
               <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${levelProgress}%` }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                  className="h-full bg-gradient-to-r from-yellow-400 to-orange-500"
+                <div
+                  className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-1000"
+                  style={{ width: `${levelProgress}%` }}
                 />
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-2xl p-6"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-win-bg)' }}
+          <div
+            className="rounded-2xl p-6 animate-fade-in-scale"
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-win-bg)', animationDelay: '0.2s', animationFillMode: 'both' }}
           >
             <div className="flex items-center gap-3">
               <Trophy className="w-8 h-8" style={{ color: '#16a34a' }} />
@@ -240,14 +221,11 @@ export default function PublicProfilePage() {
                 <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{winRate}% win rate</div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-2xl p-6"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border-light)' }}
+          <div
+            className="rounded-2xl p-6 animate-fade-in-scale"
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-gold-border-light)', animationDelay: '0.3s', animationFillMode: 'both' }}
           >
             <div className="flex items-center gap-3">
               <Flame className="w-8 h-8" style={{ color: '#ea580c' }} fill="currentColor" />
@@ -265,14 +243,11 @@ export default function PublicProfilePage() {
                 <div className="text-[10px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Best: {(profile as any).best_daily_login_streak ?? 0}</div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="rounded-2xl p-6"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+          <div
+            className="rounded-2xl p-6 animate-fade-in-scale"
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', animationDelay: '0.4s', animationFillMode: 'both' }}
           >
             <div className="flex items-center gap-3">
               <Target className="w-8 h-8" style={{ color: '#2563eb' }} />
@@ -284,15 +259,13 @@ export default function PublicProfilePage() {
                 <div className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{profile.total_losses} losses</div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Stats Tabs */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="space-y-3"
+        <div
+          className="space-y-3 animate-fade-in-up"
+          style={{ animationDelay: '0.5s', animationFillMode: 'both' }}
         >
           <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
             Game Mode Statistics
@@ -392,15 +365,12 @@ export default function PublicProfilePage() {
               accentColor={getMode(selectedMode || filteredStats[0]?.game_mode || 'DUEL')?.accentColor || '#7c3aed'}
             />
           )}
-        </motion.div>
+        </div>
 
         {/* Recent Matches Section */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="rounded-2xl p-6"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+        <div
+          className="rounded-2xl p-6 animate-fade-in-up"
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', animationDelay: '0.6s', animationFillMode: 'both' }}
         >
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
             <Clock className="w-6 h-6" style={{ color: '#2563eb' }} />
@@ -421,13 +391,10 @@ export default function PublicProfilePage() {
                 const matchDate = new Date(match.created_at);
 
                 return (
-                  <motion.div
+                  <div
                     key={match.id}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.7 + index * 0.05 }}
-                    className="rounded-xl p-4 flex items-center justify-between gap-4"
-                    style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+                    className="rounded-xl p-4 flex items-center justify-between gap-4 animate-fade-in-up"
+                    style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', animationDelay: `${0.7 + index * 0.05}s`, animationFillMode: 'both' }}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div
@@ -468,12 +435,12 @@ export default function PublicProfilePage() {
                         <div>{matchDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
       <BottomNav />

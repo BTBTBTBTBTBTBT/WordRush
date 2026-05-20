@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Swords, Users, Trophy, Clock, Zap } from 'lucide-react';
 import { GameMode } from '@wordle-duel/core';
 
@@ -55,27 +54,19 @@ export function ModeTiles({ selectedMode, onSelectMode }: ModeTilesProps) {
       {modes.map((mode, index) => {
         const isSelected = selectedMode === mode.mode;
         return (
-          <motion.button
+          <button
             key={mode.mode}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.02, y: -4 }}
-            whileTap={{ scale: 0.98 }}
             onClick={() => onSelectMode(mode.mode)}
-            className={`relative overflow-hidden rounded-xl border-2 transition-all ${
+            className={`animate-fade-in-up relative overflow-hidden rounded-xl border-2 transition-all hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.98] ${
               isSelected
                 ? 'border-cyan-400 shadow-lg shadow-cyan-500/50'
                 : 'border-slate-700 hover:border-slate-600'
             }`}
+            style={{ animationDelay: `${index * 0.1}s` }}
           >
             <div className="relative bg-slate-900/90 backdrop-blur-sm p-6 text-left">
               {isSelected && (
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent"
-                  layoutId="selectedMode"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                />
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent" />
               )}
 
               <div className="relative space-y-4">
@@ -109,21 +100,17 @@ export function ModeTiles({ selectedMode, onSelectMode }: ModeTilesProps) {
                 </div>
 
                 {isSelected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute top-2 right-2"
-                  >
+                  <div className="absolute top-2 right-2 animate-fade-in-scale">
                     <div className="bg-cyan-400 rounded-full p-1">
                       <Zap className="h-4 w-4 text-slate-900" />
                     </div>
-                  </motion.div>
+                  </div>
                 )}
               </div>
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
-          </motion.button>
+          </button>
         );
       })}
     </div>

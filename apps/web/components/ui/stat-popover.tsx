@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface StatPopoverProps {
   open: boolean;
@@ -33,15 +32,11 @@ export function StatPopover({ open, onClose, children }: StatPopoverProps) {
   }, [open, onClose]);
 
   return (
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.div
+        <div
           ref={ref}
-          initial={{ opacity: 0, y: -4, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -4, scale: 0.96 }}
-          transition={{ duration: 0.15 }}
-          className="absolute right-0 top-full mt-2 z-50"
+          className="absolute right-0 top-full mt-2 z-50 animate-fade-in-scale"
           style={{
             width: '240px',
           }}
@@ -73,8 +68,8 @@ export function StatPopover({ open, onClose, children }: StatPopoverProps) {
           >
             {children}
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

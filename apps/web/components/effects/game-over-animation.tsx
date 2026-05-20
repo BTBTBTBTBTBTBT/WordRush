@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { haptic } from '@/lib/haptics';
 import { playGameOver } from '@/lib/sounds';
 import { useWordDefinition } from '@/hooks/use-word-definition';
@@ -28,20 +27,12 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center px-5"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-5 animate-fade-in"
       style={{ backgroundColor: 'rgba(24, 24, 46, 0.6)' }}
       onClick={onComplete}
     >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="relative max-w-sm w-full"
-      >
+      <div className="relative max-w-sm w-full animate-fade-in-scale">
         <div
           className="relative overflow-hidden text-center"
           style={{
@@ -163,7 +154,7 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
             </p>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }

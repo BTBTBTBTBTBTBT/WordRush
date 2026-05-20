@@ -7,7 +7,6 @@ import { Keyboard } from '@/components/game/keyboard';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { AnimatePresence } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
@@ -210,10 +209,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       className={`h-screen-stable flex flex-col relative ${gameComplete ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      <AnimatePresence>
-        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
-        {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
-      </AnimatePresence>
+      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
+      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guessesUsed} maxGuesses={maxGuesses} timeSeconds={elapsedTime} solution={currentBoard.solution} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header */}

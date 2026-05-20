@@ -2,7 +2,6 @@
 
 import { memo, useState, useCallback, useRef, useMemo } from 'react';
 import { BoardState, TileState, PrefilledGuess, evaluateGuess as coreEvaluateGuess } from '@wordle-duel/core';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface MultiBoardProps {
   boards: BoardState[];
@@ -266,50 +265,39 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
       </div>
 
       {/* Expanded board overlay (octordle only) */}
-      <AnimatePresence>
-        {expandedIndex !== null && sourceRect && (
-          <>
-            {/* Backdrop — only covers the board area, not the keyboard */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              onClick={handleCloseExpanded}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 rounded-lg"
-            />
-            {/* Expanded board — uses scale transform for smooth text scaling */}
-            <motion.div
-              initial={getSourceTransform()}
-              animate={{ scaleX: 1, scaleY: 1, x: 0, y: 0 }}
-              exit={getSourceTransform()}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              style={{
-                position: 'fixed',
-                ...getExpandedRect(),
-                transformOrigin: 'center center',
-                willChange: 'transform',
-              }}
-              className="z-50"
-              onClick={handleCloseExpanded}
+      {expandedIndex !== null && sourceRect && (
+        <>
+          {/* Backdrop — only covers the board area, not the keyboard */}
+          <div
+            onClick={handleCloseExpanded}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 rounded-lg animate-fade-in"
+          />
+          {/* Expanded board — uses scale transform for smooth text scaling */}
+          <div
+            style={{
+              position: 'fixed',
+              ...getExpandedRect(),
+              transformOrigin: 'center center',
+            }}
+            className="z-50 animate-fade-in-scale"
+            onClick={handleCloseExpanded}
+          >
+            <div
+              className="w-full h-full"
             >
-              <div
-                className="w-full h-full"
-              >
-                <MiniBoard
-                  board={boards[expandedIndex]}
-                  index={expandedIndex}
-                  currentGuess={boards[expandedIndex].status === 'PLAYING' ? currentGuess : undefined}
-                  colorBlind={colorBlind}
-                  isExpanded
-                  isInvalidWord={isInvalidWord}
-                  isShaking={isShaking}
-                />
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              <MiniBoard
+                board={boards[expandedIndex]}
+                index={expandedIndex}
+                currentGuess={boards[expandedIndex].status === 'PLAYING' ? currentGuess : undefined}
+                colorBlind={colorBlind}
+                isExpanded
+                isInvalidWord={isInvalidWord}
+                isShaking={isShaking}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

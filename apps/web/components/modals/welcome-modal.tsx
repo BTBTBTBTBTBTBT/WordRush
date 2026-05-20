@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Sparkles, Trophy, Swords } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
@@ -89,21 +89,14 @@ export function WelcomeModal() {
   };
 
   return (
-    <AnimatePresence>
+    <>
       {show && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[60] flex items-center justify-center p-6"
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-6 animate-modal-overlay"
           style={{ backgroundColor: 'rgba(26,26,46,0.55)' }}
         >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="w-full max-w-sm overflow-hidden"
+          <div
+            className="w-full max-w-sm overflow-hidden animate-modal-content"
             style={{
               background: 'var(--color-surface)',
               border: '1.5px solid var(--color-border)',
@@ -249,9 +242,9 @@ export function WelcomeModal() {
                 Skip for now
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

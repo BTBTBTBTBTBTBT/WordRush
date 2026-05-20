@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Check, Play, Clock, Trophy } from 'lucide-react';
 import { GauntletStageConfig } from '@wordle-duel/core';
 
@@ -27,16 +26,14 @@ export function GauntletProgress({ stages, currentStage, stageResults }: Gauntle
                 }`}
               />
             )}
-            <motion.div
-              animate={isActive ? { scale: [1, 1.1, 1] } : {}}
-              transition={isActive ? { duration: 1.5, repeat: Infinity } : {}}
+            <div
               className={`
                 relative flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold
                 transition-all duration-300 border-2
                 ${isCompleted
                   ? 'bg-green-100 border-green-400 text-green-600'
                   : isActive
-                    ? 'bg-purple-100 border-purple-400 text-purple-600 shadow shadow-purple-200'
+                    ? 'bg-purple-100 border-purple-400 text-purple-600 shadow shadow-purple-200 animate-pulse'
                     : 'bg-gray-50 border-gray-200 text-gray-400'
                 }
               `}
@@ -48,7 +45,7 @@ export function GauntletProgress({ stages, currentStage, stageResults }: Gauntle
               ) : (
                 <span>{i + 1}</span>
               )}
-            </motion.div>
+            </div>
           </div>
         );
       })}

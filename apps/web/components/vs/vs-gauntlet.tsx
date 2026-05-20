@@ -1,7 +1,6 @@
 'use client';
 
 import { useReducer, useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   gameReducer,
   initializeGame,
@@ -276,21 +275,16 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
       </div>
 
       {/* Message */}
-      <AnimatePresence>
-        {message && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute left-0 right-0 z-20 flex justify-center"
-            style={{ top: '180px' }}
-          >
-            <span className="bg-black/70 text-white font-bold px-4 py-2 rounded-lg text-sm shadow-lg">
-              {message}
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {message && (
+        <div
+          className="absolute left-0 right-0 z-20 flex justify-center animate-fade-in-scale"
+          style={{ top: '180px' }}
+        >
+          <span className="bg-black/70 text-white font-bold px-4 py-2 rounded-lg text-sm shadow-lg">
+            {message}
+          </span>
+        </div>
+      )}
 
       {/* Game Area */}
       <div className="flex-1 flex items-center justify-center px-4 min-h-0">
@@ -307,18 +301,16 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
       </div>
 
       {/* Stage Transition Overlay */}
-      <AnimatePresence>
-        {showTransition && (
-          <StageTransition
-            completedStage={currentStageConfig}
-            nextStage={gauntlet.currentStage + 1 < gauntlet.totalStages
-              ? gauntlet.stages[gauntlet.currentStage + 1]
-              : null
-            }
-            onComplete={handleTransitionComplete}
-          />
-        )}
-      </AnimatePresence>
+      {showTransition && (
+        <StageTransition
+          completedStage={currentStageConfig}
+          nextStage={gauntlet.currentStage + 1 < gauntlet.totalStages
+            ? gauntlet.stages[gauntlet.currentStage + 1]
+            : null
+          }
+          onComplete={handleTransitionComplete}
+        />
+      )}
     </div>
   );
 }

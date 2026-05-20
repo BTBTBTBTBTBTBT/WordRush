@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Shield, Flame, X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 
@@ -43,21 +43,15 @@ export function StreakShieldModal({
   };
 
   return (
-    <AnimatePresence>
+    <>
       {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-overlay"
           style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
         >
-          <motion.div
+          <div
             ref={focusRef}
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="relative w-full max-w-sm p-6"
+            className="relative w-full max-w-sm p-6 animate-modal-content"
             style={{
               background: 'var(--color-surface)',
               border: '1.5px solid #c4b5fd',
@@ -82,13 +76,11 @@ export function StreakShieldModal({
               <div className="flex justify-center">
                 <div className="relative">
                   <Flame className="w-14 h-14" style={{ color: '#f97316' }} fill="currentColor" />
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center"
+                  <div
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-fade-in-scale"
                   >
                     <span className="text-white text-[10px] font-black">!</span>
-                  </motion.div>
+                  </div>
                 </div>
               </div>
 
@@ -143,9 +135,9 @@ export function StreakShieldModal({
                 </button>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Crown, X } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -42,13 +42,10 @@ export function ProPromptModal() {
   };
 
   return (
-    <AnimatePresence>
+    <>
       {show && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-16 left-4 right-4 z-50 max-w-md mx-auto"
+        <div
+          className="fixed bottom-16 left-4 right-4 z-50 max-w-md mx-auto animate-slide-up"
         >
           <div
             ref={focusRef}
@@ -85,8 +82,8 @@ export function ProPromptModal() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

@@ -6,7 +6,6 @@ import { Keyboard } from '@/components/game/keyboard';
 import dynamic from 'next/dynamic';
 const VictoryAnimation = dynamic(() => import('@/components/effects/victory-animation').then(m => m.VictoryAnimation), { ssr: false });
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
-import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
@@ -665,10 +664,8 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       className={`h-screen-stable flex flex-col relative ${gameStatus !== 'playing' ? 'pb-[calc(env(safe-area-inset-bottom)+64px)]' : ''}`}
       style={{ backgroundColor: 'var(--color-bg)' }}
     >
-      <AnimatePresence>
-        {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
-        {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
-      </AnimatePresence>
+      {showVictory && <VictoryAnimation onComplete={() => setShowVictory(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
+      {showGameOver && <GameOverAnimation onComplete={() => setShowGameOver(false)} guesses={guesses.length} maxGuesses={MAX_GUESSES} timeSeconds={elapsedTime} solution={puzzle.display} />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
 
       {/* Header — compact, matching other modes */}
@@ -778,10 +775,8 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
       {/* Result panel — replaces keyboard area when game ends */}
       {gameStatus !== 'playing' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="shrink-0 px-4 pb-3"
+        <div
+          className="shrink-0 px-4 pb-3 animate-fade-in-up"
         >
           <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
             {resultImage}
@@ -804,7 +799,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {gameStatus !== 'playing' && <BottomNav />}

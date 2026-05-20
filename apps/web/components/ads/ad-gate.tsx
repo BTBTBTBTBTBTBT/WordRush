@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Crown } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -55,17 +54,10 @@ export function AdGate({ children }: AdGateProps) {
   }
 
   return (
-    <AnimatePresence>
-      {phase === 'ad' && (
-        <motion.div
-          key="ad-gate"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-[60] flex flex-col items-center justify-between"
-          style={{ backgroundColor: 'var(--color-bg)' }}
-        >
+    <div
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-between animate-fade-in"
+      style={{ backgroundColor: 'var(--color-bg)' }}
+    >
           {/* ── Top branding ── */}
           <div className="pt-10 text-center">
             <h1
@@ -114,9 +106,7 @@ export function AdGate({ children }: AdGateProps) {
                 Go Pro for ad-free play
               </span>
             </Link>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
+    </div>
   );
 }

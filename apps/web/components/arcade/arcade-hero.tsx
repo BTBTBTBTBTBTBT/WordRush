@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Sparkles, Play } from 'lucide-react';
 
 interface ArcadeHeroProps {
@@ -10,73 +9,35 @@ interface ArcadeHeroProps {
 export function ArcadeHero({ onPlayNow }: ArcadeHeroProps) {
   return (
     <div className="relative text-center space-y-8">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="space-y-4"
-      >
-        <motion.div
-          animate={{
-            scale: [1, 1.02, 1],
-            rotate: [0, 1, -1, 0]
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: 'easeInOut'
-          }}
-          className="inline-block"
-        >
+      <div className="animate-fade-in-up space-y-4">
+        <div className="inline-block animate-pulse-subtle">
           <h1 className="text-6xl md:text-8xl font-black bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
             WORDLE DUEL
           </h1>
-        </motion.div>
+        </div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-xl md:text-2xl text-slate-300 font-medium"
+        <p
+          className="text-xl md:text-2xl text-slate-300 font-medium animate-fade-in"
+          style={{ animationDelay: '0.3s' }}
         >
           Matched instantly. Same puzzle. <span className="text-cyan-400 font-bold">First to finish wins.</span>
-        </motion.p>
-      </motion.div>
+        </p>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
-        className="flex justify-center"
+      <div
+        className="flex justify-center animate-fade-in-scale"
+        style={{ animationDelay: '0.5s' }}
       >
-        <motion.button
+        <button
           onClick={onPlayNow}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="group relative px-12 py-6 rounded-2xl font-black text-2xl overflow-hidden shadow-2xl"
+          className="group relative px-12 py-6 rounded-2xl font-black text-2xl overflow-hidden shadow-2xl hover:scale-105 active:scale-95 transition-transform"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 animate-gradient-x" />
 
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"
-            animate={{
-              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-            }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-          />
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
           <div className="absolute inset-0 opacity-50">
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent"
-              animate={{
-                x: ['-200%', '200%']
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: 'linear'
-              }}
-            />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent animate-shimmer" />
           </div>
 
           <div className="relative flex items-center gap-3 text-white">
@@ -85,25 +46,13 @@ export function ArcadeHero({ onPlayNow }: ArcadeHeroProps) {
             <Sparkles className="h-6 w-6" />
           </div>
 
-          <motion.div
-            className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-75 blur-xl transition-opacity"
-            animate={{
-              scale: [1, 1.1, 1]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut'
-            }}
-          />
-        </motion.button>
-      </motion.div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 rounded-2xl opacity-0 group-hover:opacity-75 blur-xl transition-opacity" />
+        </button>
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
-        className="flex items-center justify-center gap-4 text-sm"
+      <div
+        className="flex items-center justify-center gap-4 text-sm animate-fade-in"
+        style={{ animationDelay: '0.7s' }}
       >
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
@@ -111,7 +60,7 @@ export function ArcadeHero({ onPlayNow }: ArcadeHeroProps) {
         </div>
         <div className="h-4 w-px bg-slate-700" />
         <span className="text-slate-400">Rematch in one tap</span>
-      </motion.div>
+      </div>
     </div>
   );
 }

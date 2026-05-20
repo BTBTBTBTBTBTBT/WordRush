@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 
 interface OpponentMiniBoardProps {
   tiles: string[][]; // array of tile-state arrays for one board
@@ -23,12 +22,9 @@ export function OpponentMiniBoard({ tiles, maxGuesses, wordLength }: OpponentMin
         const isNew = rowIndex === tiles.length - 1;
 
         return (
-          <motion.div
+          <div
             key={rowIndex}
-            className="flex gap-[1px]"
-            initial={isNew && row ? { opacity: 0, scale: 0.8 } : false}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
+            className={`flex gap-[1px] ${isNew && row ? 'animate-fade-in-scale' : ''}`}
           >
             {Array.from({ length: wordLength }).map((_, colIndex) => {
               const tileState = row?.[colIndex];
@@ -47,7 +43,7 @@ export function OpponentMiniBoard({ tiles, maxGuesses, wordLength }: OpponentMin
                 />
               );
             })}
-          </motion.div>
+          </div>
         );
       })}
     </div>

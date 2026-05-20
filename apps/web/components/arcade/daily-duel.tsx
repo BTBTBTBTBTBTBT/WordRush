@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Calendar, Users, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
@@ -12,10 +11,9 @@ export function DailyDuel() {
   });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.9 }}
+    <div
+      className="animate-fade-in-up"
+      style={{ animationDelay: '0.9s' }}
     >
       <Card className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-orange-500/10 to-red-500/10 border-amber-500/30">
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
@@ -30,18 +28,9 @@ export function DailyDuel() {
               <h3 className="text-2xl font-bold text-white">Daily Duel</h3>
               <p className="text-sm text-slate-400">Race today&apos;s seed. Everyone gets the same puzzle.</p>
             </div>
-            <motion.div
-              animate={{
-                rotate: [0, 5, -5, 0]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: 'easeInOut'
-              }}
-            >
+            <div className="animate-pulse">
               <Trophy className="h-8 w-8 text-amber-400" />
-            </motion.div>
+            </div>
           </div>
 
           <div className="flex items-center justify-between pt-2">
@@ -49,16 +38,14 @@ export function DailyDuel() {
               <Users className="h-4 w-4" />
               <span>1,247 played today</span>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-lg shadow-lg hover:shadow-amber-500/50 transition-shadow"
+            <button
+              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-lg shadow-lg hover:shadow-amber-500/50 hover:scale-105 active:scale-95 transition-all"
             >
               Play Daily
-            </motion.button>
+            </button>
           </div>
         </div>
       </Card>
-    </motion.div>
+    </div>
   );
 }

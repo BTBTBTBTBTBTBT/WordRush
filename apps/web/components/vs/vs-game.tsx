@@ -10,7 +10,6 @@ import { recordGameResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Crown, Loader2, Home, RotateCcw, Trophy, X } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import {
@@ -64,18 +63,12 @@ function CyclingStatus() {
   }, []);
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.p
-        key={index}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.3 }}
-        className="text-gray-500 text-lg font-bold"
-      >
-        {WAITING_PHRASES[index]}...
-      </motion.p>
-    </AnimatePresence>
+    <p
+      key={index}
+      className="text-gray-500 text-lg font-bold animate-fade-in-up"
+    >
+      {WAITING_PHRASES[index]}...
+    </p>
   );
 }
 
@@ -409,47 +402,32 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); window.location.href = '/'; }} />
         {/* Countdown overlay */}
-        <AnimatePresence>
-          {showCountdown && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            >
-              <div className="text-center space-y-4">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="text-gray-400 text-lg font-bold uppercase tracking-widest"
-                >
-                  Match Found
-                </motion.div>
-                <motion.div
-                  key={countdown}
-                  initial={{ scale: 2, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.5, opacity: 0 }}
-                  className={`text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}
-                >
-                  {countdown}
-                </motion.div>
+        {showCountdown && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
+          >
+            <div className="text-center space-y-4">
+              <div className="text-gray-400 text-lg font-bold uppercase tracking-widest animate-fade-in-scale">
+                Match Found
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div
+                key={countdown}
+                className={`text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient} animate-fade-in-scale`}
+              >
+                {countdown}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="text-center space-y-6">
           <h1 className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
             VS {label}
           </h1>
 
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          >
-            <Loader2 className="h-16 w-16 text-purple-300 mx-auto" />
-          </motion.div>
+          <div>
+            <Loader2 className="h-16 w-16 text-purple-300 mx-auto animate-spin" />
+          </div>
 
           <div className="space-y-2">
             <CyclingStatus />
@@ -487,22 +465,16 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         <VsLimitModal open={vsLimitOpen} onClose={() => setVsLimitOpen(false)} />
         <div className="text-center space-y-8 max-w-md w-full px-6">
           {/* Headline */}
-          <motion.div
-            initial={{ scale: 0, rotate: -10 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: 'spring', damping: 10, stiffness: 200 }}
-          >
+          <div className="animate-fade-in-scale">
             <h1 className={`text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${headlineColor}`}>
               {headlineText}
             </h1>
-          </motion.div>
+          </div>
 
           {/* Stats */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="bg-gray-100 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 space-y-3"
+          <div
+            className="bg-gray-100 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 space-y-3 animate-fade-in-up"
+            style={{ animationDelay: '0.3s' }}
           >
             <div className="flex justify-between text-gray-400 text-sm font-bold">
               <span>Your Guesses</span>
@@ -535,14 +507,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 <p className="text-gray-400 text-[10px] text-center mt-1">Score = guesses + time penalty (lower is better)</p>
               </>
             )}
-          </motion.div>
+          </div>
 
           {/* Rematch Status */}
           {rematchState === 'received' && (
-            <motion.div
-              initial={{ y: 10, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="bg-white border-2 border-purple-300 rounded-xl p-4 text-center"
+            <div
+              className="bg-white border-2 border-purple-300 rounded-xl p-4 text-center animate-fade-in-up"
             >
               <p className="text-sm font-bold text-gray-700 mb-3">Opponent wants a rematch!</p>
               <div className="flex gap-3">
@@ -559,15 +529,13 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                   Accept
                 </button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Actions */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex gap-3"
+          <div
+            className="flex gap-3 animate-fade-in-up"
+            style={{ animationDelay: '0.5s' }}
           >
             <button
               onClick={handleHome}
@@ -591,7 +559,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 <RotateCcw className="w-4 h-4" /> Rematch
               </button>
             ) : null}
-          </motion.div>
+          </div>
         </div>
       </div>
     );
@@ -606,12 +574,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             Waiting for opponent...
           </h2>
 
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          >
-            <Loader2 className="h-12 w-12 text-purple-300 mx-auto" />
-          </motion.div>
+          <div>
+            <Loader2 className="h-12 w-12 text-purple-300 mx-auto animate-spin" />
+          </div>
 
           {/* Your stats */}
           {playerStats && (
@@ -755,12 +720,7 @@ function DailyVsAlreadyPlayed({
     >
       <div className="text-center space-y-6 max-w-md w-full px-6">
         {/* Headline */}
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-          className="space-y-2"
-        >
+        <div className="space-y-2 animate-fade-in-scale">
           <div
             className="text-[10px] font-extrabold uppercase tracking-widest"
             style={{ color: 'var(--color-text-muted)' }}
@@ -772,15 +732,13 @@ function DailyVsAlreadyPlayed({
           >
             Already Played
           </h1>
-        </motion.div>
+        </div>
 
         {/* Answer tiles */}
         {letters.length > 0 && (
-          <motion.div
-            initial={{ y: 12, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.15 }}
-            className="flex items-center justify-center gap-1.5"
+          <div
+            className="flex items-center justify-center gap-1.5 animate-fade-in-up"
+            style={{ animationDelay: '0.15s' }}
           >
             {letters.map((ch, i) => (
               <div
@@ -794,39 +752,31 @@ function DailyVsAlreadyPlayed({
                 {ch}
               </div>
             ))}
-          </motion.div>
+          </div>
         )}
 
         {/* Countdown */}
-        <motion.div
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.25 }}
-          className="inline-block px-4 py-2 rounded-lg"
-          style={{ background: 'var(--color-surface-hover)', border: '1px solid var(--color-border)' }}
+        <div
+          className="inline-block px-4 py-2 rounded-lg animate-fade-in-up"
+          style={{ background: 'var(--color-surface-hover)', border: '1px solid var(--color-border)', animationDelay: '0.25s' }}
         >
           <span className="text-xs font-bold" style={{ color: '#7c3aed' }}>
             Next daily VS in {countdown}
           </span>
-        </motion.div>
+        </div>
 
         {/* Pro upsell copy */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
-          className="text-xs font-bold px-4"
-          style={{ color: 'var(--color-text-secondary)' }}
+        <p
+          className="text-xs font-bold px-4 animate-fade-in"
+          style={{ color: 'var(--color-text-secondary)', animationDelay: '0.35s' }}
         >
           Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.
-        </motion.p>
+        </p>
 
         {/* Actions */}
-        <motion.div
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.45 }}
-          className="space-y-2"
+        <div
+          className="space-y-2 animate-fade-in-up"
+          style={{ animationDelay: '0.45s' }}
         >
           <Link href="/pro" className="block">
             <button
@@ -853,7 +803,7 @@ function DailyVsAlreadyPlayed({
               Home
             </button>
           </Link>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

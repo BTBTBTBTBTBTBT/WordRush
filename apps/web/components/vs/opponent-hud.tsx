@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
 
 interface OpponentHUDProps {
@@ -18,11 +17,8 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
   const hasTiles = opponentTiles && Object.keys(opponentTiles).length > 0;
 
   return (
-    <motion.div
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-      className="bg-gray-100 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-3"
+    <div
+      className="bg-gray-100 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-2 flex items-center gap-3 animate-fade-in-up"
     >
       <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">Opponent</span>
       <div className="h-4 w-px bg-gray-200" />
@@ -42,13 +38,11 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
       )}
 
       {allSolved && (
-        <motion.span
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="bg-green-500/30 border border-green-400/40 text-green-300 text-xs font-bold px-2 py-0.5 rounded-full"
+        <span
+          className="bg-green-500/30 border border-green-400/40 text-green-300 text-xs font-bold px-2 py-0.5 rounded-full animate-fade-in-scale"
         >
           Solved!
-        </motion.span>
+        </span>
       )}
 
       {/* Live opponent tiles */}
@@ -71,6 +65,6 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
           )}
         </>
       )}
-    </motion.div>
+    </div>
   );
 }

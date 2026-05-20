@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Download, Copy, X, Check } from 'lucide-react';
 import { copyShareToClipboard } from '@/lib/share-utils';
 
@@ -75,23 +75,16 @@ export function SharePreviewHost() {
   };
 
   return (
-    <AnimatePresence>
+    <>
       {open && blob && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 animate-modal-overlay"
           style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
           onClick={closeSharePreview}
         >
-          <motion.div
-            initial={{ scale: 0.92, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.92, opacity: 0 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+          <div
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm p-5"
+            className="relative w-full max-w-sm p-5 animate-modal-content"
             style={{
               background: 'var(--color-surface)',
               borderRadius: '24px',
@@ -146,9 +139,9 @@ export function SharePreviewHost() {
                 {copied ? 'Link copied' : 'Copy link'}
               </button>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }

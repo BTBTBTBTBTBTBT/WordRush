@@ -1,7 +1,6 @@
 'use client';
 
 import { useReducer, useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   gameReducer,
   initializeGame,
@@ -438,37 +437,28 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       </div>
 
       {/* Message / Blackout Warning — absolutely positioned so it doesn't shift layout */}
-      <AnimatePresence>
-        {message && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute left-0 right-0 z-20 flex justify-center"
-            style={{ top: '140px' }}
-          >
-            <span className={`backdrop-blur-sm font-bold px-4 py-2 rounded-lg text-sm shadow-lg ${
-              showStolenGuess
-                ? 'bg-orange-500/30 text-orange-200 border border-orange-400/40'
-                : 'bg-gray-800 text-white'
-            }`}>
-              {message}
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {message && (
+        <div
+          className="absolute left-0 right-0 z-20 flex justify-center animate-fade-in-scale"
+          style={{ top: '140px' }}
+        >
+          <span className={`backdrop-blur-sm font-bold px-4 py-2 rounded-lg text-sm shadow-lg ${
+            showStolenGuess
+              ? 'bg-orange-500/30 text-orange-200 border border-orange-400/40'
+              : 'bg-gray-800 text-white'
+          }`}>
+            {message}
+          </span>
+        </div>
+      )}
 
       {/* Stolen Guess Flash */}
-      <AnimatePresence>
-        {showStolenGuess && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.3, 0] }}
-            transition={{ duration: 0.6, times: [0, 0.3, 1] }}
-            className="fixed inset-0 bg-orange-500 pointer-events-none z-40"
-          />
-        )}
-      </AnimatePresence>
+      {showStolenGuess && (
+        <div
+          className="fixed inset-0 bg-orange-500 pointer-events-none z-40 animate-fade-in"
+          style={{ opacity: 0.3 }}
+        />
+      )}
 
       {/* Game Area */}
       <div className={`flex-1 min-h-0 overflow-hidden px-1 pt-2 pb-1 ${isSingleBoard ? 'flex items-center justify-center' : ''}`}>
@@ -490,43 +480,27 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       {state.status !== GameStatus.PLAYING && <BottomNav />}
 
       {/* Overlays */}
-      <AnimatePresence>
-        {showTransition && (
-          <StageTransition
-            completedStage={currentStageConfig}
-            nextStage={gauntlet.currentStage + 1 < gauntlet.totalStages
-              ? gauntlet.stages[gauntlet.currentStage + 1]
-              : null
-            }
-            onComplete={handleTransitionComplete}
-          />
-        )}
-      </AnimatePresence>
+      {showTransition && (
+        <StageTransition
+          completedStage={currentStageConfig}
+          nextStage={gauntlet.currentStage + 1 < gauntlet.totalStages
+            ? gauntlet.stages[gauntlet.currentStage + 1]
+            : null
+          }
+          onComplete={handleTransitionComplete}
+        />
+      )}
 
-      <AnimatePresence>
-        {showVictory && (
-          <VictoryAnimation
-            onComplete={handleVictoryComplete}
-            // Show the FINAL STAGE's timeMs (OctoWord alone) rather
-            // than the full gauntlet elapsedTime. The stage result was
-            // just pushed onto gauntlet.stageResults by the NEXT_STAGE
-            // action that triggered this victory, so the last entry
-            // is the one we want. Fall back to elapsedTime defensively
-            // in case stageResults is somehow empty.
-            timeSeconds={(() => {
-              const last = gauntlet.stageResults[gauntlet.stageResults.length - 1];
-              return last ? Math.floor(last.timeMs / 1000) : elapsedTime;
-            })()}
-            // Show the 8 OctoWord solutions in board-position order. On WON
-            // the reducer leaves state.boards as the final stage's boards
-            // (the NEXT_STAGE action on the last stage only toggles status →
-            // WON without rebuilding boards), so this matches how standalone
-            // multi-board modes display their solutions. Full 21-word stage
-            // breakdown is shown on the subsequent GauntletResults screen.
-            solutions={state.boards.map(b => b.solution)}
-          />
-        )}
-      </AnimatePresence>
+      {showVictory && (
+        <VictoryAnimation
+          onComplete={handleVictoryComplete}
+          timeSeconds={(() => {
+            const last = gauntlet.stageResults[gauntlet.stageResults.length - 1];
+            return last ? Math.floor(last.timeMs / 1000) : elapsedTime;
+          })()}
+          solutions={state.boards.map(b => b.solution)}
+        />
+      )}
       {xpToast}
     </div>
   );

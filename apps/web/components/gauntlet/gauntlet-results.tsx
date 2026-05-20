@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, BarChart3, Zap, Timer, Share2, Eye, X, ChevronRight } from 'lucide-react';
 import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletStageResult, TileState } from '@wordle-duel/core';
 import { Button } from '@/components/ui/button';
@@ -111,45 +110,33 @@ export function GauntletResults({
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
       }}
     >
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', damping: 15 }}
-        className="max-w-lg w-full space-y-6 py-6"
+      <div
+        className="max-w-lg w-full space-y-6 py-6 animate-fade-in-scale"
       >
         {/* Header */}
         <div className="text-center space-y-3">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: 'spring', damping: 10 }}
-          >
+          <div className="animate-fade-in-scale" style={{ animationDelay: '0.2s' }}>
             {won ? (
               <Trophy className="w-20 h-20 text-amber-600 mx-auto" fill="currentColor" />
             ) : (
               <XCircle className="w-20 h-20 text-red-400 mx-auto" />
             )}
-          </motion.div>
-          <motion.h1
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className={`text-5xl font-black ${
+          </div>
+          <h1
+            className={`text-5xl font-black animate-fade-in-up ${
               won
                 ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400'
                 : 'text-red-300'
             }`}
           >
             {won ? 'GAUNTLET CLEARED!' : 'GAUNTLET FAILED'}
-          </motion.h1>
+          </h1>
         </div>
 
         {/* Summary Stats */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="grid grid-cols-3 gap-3"
+        <div
+          className="grid grid-cols-3 gap-3 animate-fade-in-up"
+          style={{ animationDelay: '0.6s' }}
         >
           <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
             <Trophy className="w-5 h-5 text-green-400 mx-auto mb-1" />
@@ -166,14 +153,12 @@ export function GauntletResults({
             <div className="text-2xl font-black text-gray-800">{formatTime(totalTimeMs)}</div>
             <div className="text-gray-400 text-xs">Time</div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Per-Stage Breakdown */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 space-y-2"
+        <div
+          className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 space-y-2 animate-fade-in-up"
+          style={{ animationDelay: '0.8s' }}
         >
           <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-3">Stage Breakdown</h3>
           {stages.map((stage, i) => {
@@ -240,11 +225,10 @@ export function GauntletResults({
             }`;
 
             return (
-              <motion.div
+              <div
                 key={i}
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: 0.9 + i * 0.1 }}
+                className="animate-fade-in-up"
+                style={{ animationDelay: `${0.9 + i * 0.1}s` }}
               >
                 {canReview ? (
                   <button
@@ -258,18 +242,16 @@ export function GauntletResults({
                 ) : (
                   <div className={className}>{rowContent}</div>
                 )}
-              </motion.div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
 
         {/* All-Time Stats */}
         {stats && stats.gamesPlayed > 0 && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.4 }}
-            className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200"
+          <div
+            className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 animate-fade-in-up"
+            style={{ animationDelay: '1.4s' }}
           >
             <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-3">All-Time Stats</h3>
             <div className="grid grid-cols-2 gap-3">
@@ -309,15 +291,13 @@ export function GauntletResults({
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Actions */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.6 }}
-          className="flex gap-3"
+        <div
+          className="flex gap-3 animate-fade-in-up"
+          style={{ animationDelay: '1.6s' }}
         >
           {showPlayAgain && (
             <Button
@@ -343,18 +323,16 @@ export function GauntletResults({
             <Home className="w-5 h-5 mr-2" />
             Home
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
-      <AnimatePresence>
-        {reviewStage && reviewResult?.boardsSnapshot?.length && (
+      {reviewStage && reviewResult?.boardsSnapshot?.length && (
           <StageReviewModal
             stage={reviewStage}
             result={reviewResult}
             onClose={() => setReviewStageIndex(null)}
           />
-        )}
-      </AnimatePresence>
+      )}
     </div>
   );
 }
@@ -387,21 +365,14 @@ function StageReviewModal({
   const solutionsLabel = boards.length === 1 ? 'Answer' : 'Answers';
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4 overflow-y-auto"
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4 overflow-y-auto animate-modal-overlay"
       style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
       onClick={onClose}
     >
-      <motion.div
-        initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.92, opacity: 0 }}
-        transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+      <div
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md h-[90vh] overflow-hidden p-5 flex flex-col"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md h-[90vh] overflow-hidden p-5 flex flex-col animate-modal-content"
       >
         <button
           type="button"
@@ -477,8 +448,8 @@ function StageReviewModal({
             <StageReviewBoard key={i} board={board} stageWon={won} />
           ))}
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
