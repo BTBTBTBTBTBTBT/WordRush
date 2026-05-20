@@ -76,10 +76,10 @@ export default function RootLayout({
         />
         <DailyBoundaryReload />
         <AuthProvider>
-          <SitePresenceProvider>
-            <AuthGate>
-              <ThemeProvider>
-                <DailyCompletionsProvider>
+          <DailyCompletionsProvider>
+            <SitePresenceProvider>
+              <AuthGate>
+                <ThemeProvider>
                   <StreakShieldProvider>
                     {children}
                     <RotateOverlay />
@@ -89,10 +89,10 @@ export default function RootLayout({
                     <PwaProvider />
                     <Toaster />
                   </StreakShieldProvider>
-                </DailyCompletionsProvider>
-              </ThemeProvider>
-            </AuthGate>
-          </SitePresenceProvider>
+                </ThemeProvider>
+              </AuthGate>
+            </SitePresenceProvider>
+          </DailyCompletionsProvider>
         </AuthProvider>
       </body>
     </html>
