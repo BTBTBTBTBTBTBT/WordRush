@@ -13,12 +13,9 @@ import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
-import { fetchTodayDailyCompletions, type DailyCompletion } from '@/lib/daily-service';
-import { initDictionary } from '@wordle-duel/core';
-import { getSecondsUntilMidnightUTC } from '@/lib/daily-service';
+import { useCountdown } from '@/hooks/use-countdown';
+import { fetchTodayDailyCompletions, getSecondsUntilMidnightUTC, type DailyCompletion } from '@/lib/daily-service';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
-import allowedWords from '@/data/allowed.json';
-import solutionWords from '@/data/solutions.json';
 
 interface WordDefinition {
   word: string;
@@ -35,9 +32,11 @@ function WordOfTheDay() {
     const daysSinceEpoch = Math.floor(now.getTime() / 86400000);
 
     async function findWordWithDefinition() {
+      // Lazy-load solutions list (shared chunk with game pages)
+      const solutions = (await import('@/data/solutions.json')).default;
       // Try up to 20 words starting from today's index until we find one with a definition
       for (let offset = 0; offset < 20; offset++) {
-        const word = solutionWords[(daysSinceEpoch + offset) % solutionWords.length];
+        const word = solutions[(daysSinceEpoch + offset) % solutions.length];
         try {
           const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
           if (res.ok) {
@@ -57,7 +56,7 @@ function WordOfTheDay() {
         } catch {}
       }
       // Fallback: show the original daily word without definition
-      const fallback = solutionWords[daysSinceEpoch % solutionWords.length];
+      const fallback = solutions[daysSinceEpoch % solutions.length];
       setInfo({ word: fallback });
     }
 
@@ -127,12 +126,7 @@ function WordOfTheDay() {
 }
 
 function DailyCountdown() {
-  const [secs, setSecs] = useState<number | null>(null);
-  useEffect(() => {
-    setSecs(getSecondsUntilMidnightUTC());
-    const i = setInterval(() => setSecs(getSecondsUntilMidnightUTC()), 1000);
-    return () => clearInterval(i);
-  }, []);
+  const secs = useCountdown(getSecondsUntilMidnightUTC);
   if (secs === null) {
     return <span style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold">Resets in --:--:--</span>;
   }
@@ -152,12 +146,7 @@ function DailyCountdown() {
  * "Next puzzles in <timer>" and the styling is owned by the parent.
  */
 function DailyCountdownText() {
-  const [secs, setSecs] = useState<number | null>(null);
-  useEffect(() => {
-    setSecs(getSecondsUntilMidnightUTC());
-    const i = setInterval(() => setSecs(getSecondsUntilMidnightUTC()), 1000);
-    return () => clearInterval(i);
-  }, []);
+  const secs = useCountdown(getSecondsUntilMidnightUTC);
   if (secs === null) return <span>--:--:--</span>;
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
@@ -272,7 +261,7 @@ const MODE_CARDS = [
 export default function HomePage() {
   const { user, signOut, isProActive } = useAuth();
   const [limitModal, setLimitModal] = useState<{ open: boolean; modeName: string; modeHref: string }>({ open: false, modeName: '', modeHref: '' });
-  const [resetCountdown, setResetCountdown] = useState('');
+  // resetCountdown is derived from useCountdown hook below (no useState needed)
   const [inviteOpen, setInviteOpen] = useState(false);
   const livePlayerCount = useLivePlayerCount();
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
@@ -297,9 +286,18 @@ export default function HomePage() {
     try { localStorage.setItem('wordocious-play-mode', next); } catch {}
   };
 
+  // Lazy-load word lists to keep them out of the home page's critical JS bundle.
+  // Game pages import them synchronously (they need them immediately), but the
+  // home page only uses them for pre-warming and Word of the Day — both can wait.
   useEffect(() => {
-    initDictionary(allowedWords, solutionWords);
     cleanupOldPlayData();
+    Promise.all([
+      import('@/data/allowed.json').then(m => m.default),
+      import('@/data/solutions.json').then(m => m.default),
+      import('@wordle-duel/core'),
+    ]).then(([allowed, solutions, core]) => {
+      core.initDictionary(allowed, solutions);
+    });
   }, []);
 
   // Hydrate the play-limits localStorage cache from the DB so freshly-
@@ -322,13 +320,9 @@ export default function HomePage() {
     router.prefetch('/practice/vs?daily=true');
   }, [router]);
 
-  // Countdown for locked cards
-  useEffect(() => {
-    const update = () => setResetCountdown(formatCountdown(getResetSeconds()));
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  // Countdown for locked cards — uses shared global timer via useCountdown
+  const resetSecs = useCountdown(getResetSeconds);
+  const resetCountdownText = resetSecs !== null ? formatCountdown(resetSecs) : '';
 
   const handleVsClick = (vsHref: string) => {
     // Pro users playing the main VS Classic tile skip the daily flow
@@ -549,7 +543,7 @@ export default function HomePage() {
                   <div className="text-[13px] font-black" style={{ color: isLocked ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{mode.title}</div>
                   <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                     {isLocked
-                      ? `Play again in ${resetCountdown}`
+                      ? `Play again in ${resetCountdownText}`
                       : isDailyDone
                       ? `${dailyResult!.guesses} ${dailyResult!.guesses === 1 ? 'guess' : 'guesses'} · ${formatShortTime(dailyResult!.timeSeconds)}`
                       : mode.desc}

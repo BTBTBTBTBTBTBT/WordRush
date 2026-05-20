@@ -32,17 +32,28 @@ export function SitePresenceProvider({ children }: { children: React.ReactNode }
     // socket tagged with the new id.
     if (!presenceId) return;
 
-    const socket = io(SERVER_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: 2000,
-      reconnectionDelayMax: 10000,
-      // Server dedupes /presence by this id — see apps/server/src/index.ts.
-      auth: { presenceId },
-    });
+    // Defer the socket connection by 3 seconds so it doesn't compete
+    // with the initial page load's critical network requests (auth,
+    // profile fetch, daily completions). Presence is a background signal
+    // — a few-second delay is invisible to the user.
+    let socket: ReturnType<typeof io> | null = null;
+    const timer = setTimeout(() => {
+      socket = io(SERVER_URL, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
+        // Server dedupes /presence by this id — see apps/server/src/index.ts.
+        auth: { presenceId },
+      });
+    }, 3000);
+
     return () => {
-      socket.removeAllListeners();
-      socket.disconnect();
+      clearTimeout(timer);
+      if (socket) {
+        socket.removeAllListeners();
+        socket.disconnect();
+      }
     };
   }, [presenceId]);
 

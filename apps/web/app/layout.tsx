@@ -64,14 +64,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={nunito.className} style={{ backgroundColor: 'var(--color-bg)' }}>
-        {/* Google AdSense — loaded for site verification & ad serving */}
+    <html lang="en" suppressHydrationWarning>
+      <body className={nunito.className} style={{ backgroundColor: 'var(--color-bg)' }} suppressHydrationWarning>
+        {/* Google AdSense — deferred until after page is interactive and idle */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3015627373086578"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
         <DailyBoundaryReload />
         <AuthProvider>

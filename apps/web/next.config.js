@@ -4,12 +4,43 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ['@wordle-duel/core'],
+  // Disable source maps in production to reduce bundle size
+  productionBrowserSourceMaps: false,
+  // Remove the X-Powered-By header
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: '*.supabase.in' },
       { protocol: 'https', hostname: 'upload.wikimedia.org' },
     ],
+  },
+  async headers() {
+    return [
+      {
+        // Cache static assets aggressively (fonts, images, JS/CSS chunks)
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        // Cache images served through next/image
+        source: '/_next/image',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+        ],
+      },
+      {
+        // Security headers for all routes
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+    ];
   },
 };
 

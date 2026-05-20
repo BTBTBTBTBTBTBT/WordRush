@@ -1,20 +1,27 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+/**
+ * Page transition template. Previously used framer-motion (~50KB gzipped)
+ * for a simple opacity fade. Replaced with a CSS animation to eliminate
+ * the library from the critical path of every route.
+ *
+ * The `key={pathname}` trick forces React to remount on navigation,
+ * replaying the CSS animation. `usePathname()` changes on every
+ * client-side navigation — identical behaviour to the old motion.div.
+ */
+
 import { usePathname } from 'next/navigation';
 
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const reduceMotion = useReducedMotion();
 
   return (
-    <motion.div
+    <div
       key={pathname}
-      initial={reduceMotion ? false : { opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      className="animate-page-fade-in"
+      style={{ animationDuration: '200ms' }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
