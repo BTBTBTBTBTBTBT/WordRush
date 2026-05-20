@@ -14,7 +14,8 @@ import { PendingInvitesBanner } from '@/components/invites/pending-invites-banne
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { useCountdown } from '@/hooks/use-countdown';
-import { fetchTodayDailyCompletions, getSecondsUntilMidnightUTC, type DailyCompletion } from '@/lib/daily-service';
+import { getSecondsUntilMidnightUTC, type DailyCompletion } from '@/lib/daily-service';
+import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
 
 interface WordDefinition {
@@ -265,7 +266,7 @@ export default function HomePage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const livePlayerCount = useLivePlayerCount();
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
-  const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(new Map());
+  const { todayDailies } = useDailyCompletions();
   const router = useRouter();
 
   const isPro = isProActive;
@@ -307,11 +308,8 @@ export default function HomePage() {
     if (user) syncPlayLimits(user.id);
   }, [user]);
 
-  // Pull today's daily W/L map for the celebratory banner.
-  useEffect(() => {
-    if (!user) { setTodayDailies(new Map()); return; }
-    fetchTodayDailyCompletions(user.id).then(setTodayDailies).catch(() => {});
-  }, [user]);
+  // Daily completions are now served from the DailyCompletionsProvider
+  // context (persists across navigations — no flash on return).
 
   // Prefetch VS routes so the initial tap is instant (mode cards already
   // prefetch via <Link>, but the VS button uses router.push).

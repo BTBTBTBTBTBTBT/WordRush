@@ -5,6 +5,7 @@ import { Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
 import { StreakShieldProvider } from '@/components/providers/streak-shield-provider';
+import { DailyCompletionsProvider } from '@/lib/daily-completions-context';
 import { SitePresenceProvider } from '@/components/providers/site-presence-provider';
 import { DailyBoundaryReload } from '@/components/providers/daily-boundary-reload';
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
@@ -78,15 +79,17 @@ export default function RootLayout({
           <SitePresenceProvider>
             <AuthGate>
               <ThemeProvider>
-                <StreakShieldProvider>
-                  {children}
-                  <RotateOverlay />
-                  <WelcomeModal />
-                  <ProPromptModal />
-                  <SharePreviewHost />
-                  <PwaProvider />
-                  <Toaster />
-                </StreakShieldProvider>
+                <DailyCompletionsProvider>
+                  <StreakShieldProvider>
+                    {children}
+                    <RotateOverlay />
+                    <WelcomeModal />
+                    <ProPromptModal />
+                    <SharePreviewHost />
+                    <PwaProvider />
+                    <Toaster />
+                  </StreakShieldProvider>
+                </DailyCompletionsProvider>
               </ThemeProvider>
             </AuthGate>
           </SitePresenceProvider>

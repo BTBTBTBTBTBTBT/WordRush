@@ -172,6 +172,13 @@ export async function recordGameResult(
       await recordDailyResult(
         userId, gameMode, playType, won, guessCount, timeSeconds, boards, total,
       );
+      // Notify the DailyCompletionsProvider so the sweep banner updates
+      // instantly when navigating back to the home screen.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('daily-completion', {
+          detail: { gameMode, won, guesses: guessCount, timeSeconds },
+        }));
+      }
       // After the solo daily row lands, see whether this was the 7th
       // of the day and award the one-shot Daily Sweep / Flawless
       // Victory bonuses if so. Awaited so the XpResult below can carry
