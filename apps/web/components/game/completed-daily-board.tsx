@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { evaluateGuess, TileState, GameStatus, BoardState } from '@wordle-duel/core';
 import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
@@ -12,6 +13,88 @@ import { normalizeString } from '@/components/propernoundle/game-logic';
 import type { Guess as ProperNoundleGuess, TileState as PNTileState } from '@/components/propernoundle/types';
 
 const MULTI_BOARD_MODES = new Set(['QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE']);
+
+/** Collapsible card wrapper used by all completed daily board variants */
+function CollapsibleCompletedCard({
+  won,
+  summaryLabel,
+  children,
+}: {
+  won: boolean;
+  summaryLabel: string;
+  children: React.ReactNode;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div
+      className="mb-4"
+      style={{
+        background: 'var(--color-surface)',
+        border: '1.5px solid var(--color-border)',
+        borderRadius: '16px',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Top accent */}
+      <div
+        className="h-1"
+        style={{
+          background: won
+            ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+            : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
+        }}
+      />
+
+      {/* Collapsible header */}
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-2.5"
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0"
+            style={{
+              background: won ? '#dcfce7' : '#fee2e2',
+              color: won ? '#16a34a' : '#dc2626',
+            }}
+          >
+            {won ? '✓' : '✗'}
+          </span>
+          <span
+            className="text-[10px] font-extrabold uppercase tracking-wider"
+            style={{ color: won ? '#22c55e' : 'var(--color-text-muted)' }}
+          >
+            {won ? 'Completed' : 'Attempted'} Today
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            {summaryLabel}
+          </span>
+          <ChevronDown
+            className="w-3.5 h-3.5 transition-transform duration-200"
+            style={{
+              color: 'var(--color-text-muted)',
+              transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          />
+        </div>
+      </button>
+
+      {/* Collapsible content */}
+      <div
+        className="overflow-hidden transition-all duration-200"
+        style={{ maxHeight: expanded ? '2000px' : '0px', opacity: expanded ? 1 : 0 }}
+      >
+        <div className="px-4 pb-4">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface SavedSession {
   version: number;
@@ -235,127 +318,103 @@ function GauntletCompletedCard({
   };
 
   return (
-    <div
-      className="mb-4"
-      style={{
-        background: 'var(--color-surface)',
-        border: '1.5px solid var(--color-border)',
-        borderRadius: '16px',
-        overflow: 'hidden',
-      }}
+    <CollapsibleCompletedCard
+      won={won}
+      summaryLabel={`${stagesCleared}/5 · ${totalGuesses}g · ${fmtTime(totalTimeMs)}`}
     >
-      <div
-        className="h-1"
-        style={{
-          background: won
-            ? 'linear-gradient(90deg, #22c55e, #4ade80)'
-            : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
-        }}
-      />
-      <div className="px-4 pt-3 pb-4">
-        <div className="text-center mb-2">
-          <span
-            className="text-[10px] font-extrabold uppercase tracking-wider"
-            style={{ color: won ? '#22c55e' : 'var(--color-text-muted)' }}
-          >
-            {won ? 'Gauntlet Cleared' : 'Gauntlet Attempted'} Today
-          </span>
-        </div>
-
-        {/* Summary stats */}
-        <div className="flex justify-center gap-5 mb-3">
-          <div className="text-center">
-            <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-              {stagesCleared}/5
-            </div>
-            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-              Stages
-            </div>
+      {/* Summary stats */}
+      <div className="flex justify-center gap-5 mb-3">
+        <div className="text-center">
+          <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+            {stagesCleared}/5
           </div>
-          <div className="text-center">
-            <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-              {totalGuesses}
-            </div>
-            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-              Guesses
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-              {fmtTime(totalTimeMs)}
-            </div>
-            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-              Time
-            </div>
+          <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            Stages
           </div>
         </div>
-
-        {/* Compact stage rows */}
-        <div className="space-y-1">
-          {stages.map((stage, i) => {
-            const result = stageResults.find(r => r.stageIndex === i);
-            if (!result) return null;
-            const stageWon = result.status === GameStatus.WON;
-            const hasBoards = !!result.boardsSnapshot?.length;
-            const isExpanded = expandedStage === i;
-
-            return (
-              <div key={i}>
-                <button
-                  type="button"
-                  onClick={() => hasBoards && setExpandedStage(isExpanded ? null : i)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors"
-                  style={{
-                    background: stageWon ? '#f0fdf4' : '#fef2f2',
-                    border: `1px solid ${stageWon ? '#bbf7d0' : '#fecaca'}`,
-                    cursor: hasBoards ? 'pointer' : 'default',
-                  }}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black"
-                      style={{
-                        background: stageWon ? '#dcfce7' : '#fee2e2',
-                        color: stageWon ? '#16a34a' : '#dc2626',
-                      }}
-                    >
-                      {stageWon ? '✓' : '✗'}
-                    </span>
-                    <span className="text-[10px] font-bold" style={{ color: 'var(--color-text)' }}>
-                      {stage.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                      {result.guesses}g · {fmtTime(result.timeMs)}
-                    </span>
-                    {hasBoards && (
-                      <span
-                        className="text-[8px] transition-transform"
-                        style={{
-                          color: 'var(--color-text-muted)',
-                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                        }}
-                      >
-                        ▼
-                      </span>
-                    )}
-                  </div>
-                </button>
-                {isExpanded && hasBoards && (
-                  <div className="px-1 pt-1.5 pb-1">
-                    <GauntletStageMiniBoards
-                      boards={result.boardsSnapshot!}
-                      maxGuesses={stage.maxGuesses}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="text-center">
+          <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+            {totalGuesses}
+          </div>
+          <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            Guesses
+          </div>
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+            {fmtTime(totalTimeMs)}
+          </div>
+          <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            Time
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Compact stage rows */}
+      <div className="space-y-1">
+        {stages.map((stage, i) => {
+          const result = stageResults.find(r => r.stageIndex === i);
+          if (!result) return null;
+          const stageWon = result.status === GameStatus.WON;
+          const hasBoards = !!result.boardsSnapshot?.length;
+          const isExpanded = expandedStage === i;
+
+          return (
+            <div key={i}>
+              <button
+                type="button"
+                onClick={() => hasBoards && setExpandedStage(isExpanded ? null : i)}
+                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors"
+                style={{
+                  background: stageWon ? '#f0fdf4' : '#fef2f2',
+                  border: `1px solid ${stageWon ? '#bbf7d0' : '#fecaca'}`,
+                  cursor: hasBoards ? 'pointer' : 'default',
+                }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black"
+                    style={{
+                      background: stageWon ? '#dcfce7' : '#fee2e2',
+                      color: stageWon ? '#16a34a' : '#dc2626',
+                    }}
+                  >
+                    {stageWon ? '✓' : '✗'}
+                  </span>
+                  <span className="text-[10px] font-bold" style={{ color: 'var(--color-text)' }}>
+                    {stage.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    {result.guesses}g · {fmtTime(result.timeMs)}
+                  </span>
+                  {hasBoards && (
+                    <span
+                      className="text-[8px] transition-transform"
+                      style={{
+                        color: 'var(--color-text-muted)',
+                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                      }}
+                    >
+                      ▼
+                    </span>
+                  )}
+                </div>
+              </button>
+              {isExpanded && hasBoards && (
+                <div className="px-1 pt-1.5 pb-1">
+                  <GauntletStageMiniBoards
+                    boards={result.boardsSnapshot!}
+                    maxGuesses={stage.maxGuesses}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </CollapsibleCompletedCard>
   );
 }
 
@@ -432,76 +491,48 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     if (pnSaved.puzzleId !== pnPuzzle.id) return null;
 
     const pnWon = pnSaved.gameStatus === 'won';
-    const pnFormatTime = (s: number) => {
-      if (s < 60) return `${s}s`;
-      return `${Math.floor(s / 60)}m ${s % 60}s`;
-    };
 
     return (
-      <div
-        className="mb-4"
-        style={{
-          background: 'var(--color-surface)',
-          border: '1.5px solid var(--color-border)',
-          borderRadius: '16px',
-          overflow: 'hidden',
-        }}
+      <CollapsibleCompletedCard
+        won={pnWon}
+        summaryLabel={`${pnSaved.guesses.length}/6 · ${formatTime(pnSaved.elapsedTime)}`}
       >
-        <div
-          className="h-1"
-          style={{
-            background: pnWon
-              ? 'linear-gradient(90deg, #22c55e, #4ade80)'
-              : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
-          }}
-        />
-        <div className="px-4 pt-3 pb-4">
-          <div className="text-center mb-2">
-            <span
-              className="text-[10px] font-extrabold uppercase tracking-wider"
-              style={{ color: pnWon ? '#22c55e' : 'var(--color-text-muted)' }}
-            >
-              {pnWon ? 'Completed' : 'Attempted'} Today
-            </span>
-          </div>
+        {/* Compact ProperNoundle board */}
+        <div className="mx-auto" style={{ maxWidth: '240px' }}>
+          <CompletedProperNoundleMiniBoard
+            guesses={pnSaved.guesses}
+            maxGuesses={6}
+            answerDisplay={pnPuzzle.display}
+          />
+        </div>
 
-          {/* Compact ProperNoundle board */}
-          <div className="mx-auto" style={{ maxWidth: '240px' }}>
-            <CompletedProperNoundleMiniBoard
-              guesses={pnSaved.guesses}
-              maxGuesses={6}
-              answerDisplay={pnPuzzle.display}
-            />
+        {/* Answer display */}
+        <div className="text-center mt-3">
+          <div className="text-lg font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
+            {pnPuzzle.display.toUpperCase()}
           </div>
+        </div>
 
-          {/* Answer display */}
-          <div className="text-center mt-3">
-            <div className="text-lg font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
-              {pnPuzzle.display.toUpperCase()}
+        {/* Stats */}
+        <div className="flex justify-center gap-5 mt-3">
+          <div className="text-center">
+            <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+              {pnSaved.guesses.length}/6
+            </div>
+            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              Guesses
             </div>
           </div>
-
-          {/* Stats */}
-          <div className="flex justify-center gap-5 mt-3">
-            <div className="text-center">
-              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {pnSaved.guesses.length}/6
-              </div>
-              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                Guesses
-              </div>
+          <div className="text-center">
+            <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+              {formatTime(pnSaved.elapsedTime)}
             </div>
-            <div className="text-center">
-              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {pnFormatTime(pnSaved.elapsedTime)}
-              </div>
-              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                Time
-              </div>
+            <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+              Time
             </div>
           </div>
         </div>
-      </div>
+      </CollapsibleCompletedCard>
     );
   }
 
@@ -515,166 +546,140 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const totalBoards = boards.length;
   const totalGuesses = boards.reduce((sum, b) => sum + b.guesses.length, 0);
 
+  const summaryLabel = isMulti
+    ? `${boardsSolved}/${totalBoards} · ${totalGuesses}g · ${formatTime(session.elapsedTime)}`
+    : `${(boards[0]?.guesses.length ?? 0)}/6 · ${formatTime(session.elapsedTime)}`;
+
   return (
-    <div
-      className="mb-4"
-      style={{
-        background: 'var(--color-surface)',
-        border: '1.5px solid var(--color-border)',
-        borderRadius: '16px',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Top accent */}
-      <div
-        className="h-1"
-        style={{
-          background: won
-            ? 'linear-gradient(90deg, #22c55e, #4ade80)'
-            : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
-        }}
-      />
-
-      <div className="px-4 pt-3 pb-4">
-        {/* Header */}
-        <div className="text-center mb-2">
-          <span
-            className="text-[10px] font-extrabold uppercase tracking-wider"
-            style={{ color: won ? '#22c55e' : 'var(--color-text-muted)' }}
+    <CollapsibleCompletedCard won={won} summaryLabel={summaryLabel}>
+      {isMulti ? (
+        /* ── Multi-board compact grid ── */
+        <>
+          <div
+            className={`mx-auto grid gap-2 ${totalBoards > 4 ? 'grid-cols-4' : 'grid-cols-2'}`}
+            style={{ maxWidth: totalBoards > 4 ? '320px' : '240px' }}
           >
-            {won ? 'Completed' : 'Attempted'} Today
-          </span>
-        </div>
-
-        {isMulti ? (
-          /* ── Multi-board compact grid ── */
-          <>
-            <div
-              className={`mx-auto grid gap-2 ${totalBoards > 4 ? 'grid-cols-4' : 'grid-cols-2'}`}
-              style={{ maxWidth: totalBoards > 4 ? '320px' : '240px' }}
-            >
-              {boards.map((board, i) => (
-                <CompletedMiniBoard
-                  key={i}
-                  solution={board.solution}
-                  guesses={board.guesses}
-                  maxGuesses={board.maxGuesses}
-                  won={board.status === GameStatus.WON}
-                />
-              ))}
-            </div>
-
-            {/* Stats */}
-            <div className="flex justify-center gap-5 mt-3">
-              <div className="text-center">
-                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {boardsSolved}/{totalBoards}
-                </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                  Boards
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {totalGuesses}
-                </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                  Guesses
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {formatTime(session.elapsedTime)}
-                </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                  Time
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          /* ── Single-board (Classic) ── */
-          <>
-            {/* Compact board */}
-            <div className="mx-auto" style={{ maxWidth: '200px' }}>
-              <Board
-                guesses={boards[0]?.guesses ?? []}
-                currentGuess=""
-                maxGuesses={6}
-                evaluations={evaluations}
-                showSolution={false}
-                solution={solution!}
-                darkMode
+            {boards.map((board, i) => (
+              <CompletedMiniBoard
+                key={i}
+                solution={board.solution}
+                guesses={board.guesses}
+                maxGuesses={board.maxGuesses}
+                won={board.status === GameStatus.WON}
               />
-            </div>
+            ))}
+          </div>
 
-            {/* Solution + Definition */}
-            <div className="text-center mt-3">
-              <div className="text-lg font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
-                {solution!.toUpperCase()}
+          {/* Stats */}
+          <div className="flex justify-center gap-5 mt-3">
+            <div className="text-center">
+              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+                {boardsSolved}/{totalBoards}
               </div>
-              {defLoaded && (
-                <div
-                  className="mt-2 mx-auto px-3 py-2 text-left"
-                  style={{
-                    background: 'var(--color-bg)',
-                    borderRadius: '10px',
-                    border: '1px solid var(--color-border)',
-                    maxWidth: '320px',
-                  }}
-                >
-                  {definition ? (
-                    <>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {definition.phonetic && (
-                          <span className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
-                            {definition.phonetic}
-                          </span>
-                        )}
-                        {definition.partOfSpeech && (
-                          <span
-                            className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                            style={{ background: 'var(--color-border)', color: '#a78bfa' }}
-                          >
-                            {definition.partOfSpeech}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs font-medium mt-1 leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
-                        {definition.definition}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-xs font-medium italic" style={{ color: 'var(--color-text-muted)' }}>
-                      No definition available for this word.
+              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Boards
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+                {totalGuesses}
+              </div>
+              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Guesses
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+                {formatTime(session.elapsedTime)}
+              </div>
+              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Time
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* ── Single-board (Classic) ── */
+        <>
+          {/* Compact board */}
+          <div className="mx-auto" style={{ maxWidth: '200px' }}>
+            <Board
+              guesses={boards[0]?.guesses ?? []}
+              currentGuess=""
+              maxGuesses={6}
+              evaluations={evaluations}
+              showSolution={false}
+              solution={solution!}
+              darkMode
+            />
+          </div>
+
+          {/* Solution + Definition */}
+          <div className="text-center mt-3">
+            <div className="text-lg font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
+              {solution!.toUpperCase()}
+            </div>
+            {defLoaded && (
+              <div
+                className="mt-2 mx-auto px-3 py-2 text-left"
+                style={{
+                  background: 'var(--color-bg)',
+                  borderRadius: '10px',
+                  border: '1px solid var(--color-border)',
+                  maxWidth: '320px',
+                }}
+              >
+                {definition ? (
+                  <>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {definition.phonetic && (
+                        <span className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
+                          {definition.phonetic}
+                        </span>
+                      )}
+                      {definition.partOfSpeech && (
+                        <span
+                          className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+                          style={{ background: 'var(--color-border)', color: '#a78bfa' }}
+                        >
+                          {definition.partOfSpeech}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-medium mt-1 leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
+                      {definition.definition}
                     </p>
-                  )}
-                </div>
-              )}
-            </div>
+                  </>
+                ) : (
+                  <p className="text-xs font-medium italic" style={{ color: 'var(--color-text-muted)' }}>
+                    No definition available for this word.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
 
-            {/* Stats */}
-            <div className="flex justify-center gap-5 mt-3">
-              <div className="text-center">
-                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {(boards[0]?.guesses.length ?? 0)}/6
-                </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                  Guesses
-                </div>
+          {/* Stats */}
+          <div className="flex justify-center gap-5 mt-3">
+            <div className="text-center">
+              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+                {(boards[0]?.guesses.length ?? 0)}/6
               </div>
-              <div className="text-center">
-                <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                  {formatTime(session.elapsedTime)}
-                </div>
-                <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                  Time
-                </div>
+              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Guesses
               </div>
             </div>
-          </>
-        )}
-      </div>
-    </div>
+            <div className="text-center">
+              <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
+                {formatTime(session.elapsedTime)}
+              </div>
+              <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Time
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </CollapsibleCompletedCard>
   );
 }
