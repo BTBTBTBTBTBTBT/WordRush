@@ -2,6 +2,8 @@
 
 import { TrendingUp, Shield, Skull, Crown, BarChart3 } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { SixIcon } from '@/components/ui/six-icon';
+import { SevenIcon } from '@/components/ui/seven-icon';
 
 export interface ModeConfig {
   id: string;
@@ -19,8 +21,8 @@ export const PROFILE_MODES: ModeConfig[] = [
   { id: 'octordle', dbKey: 'OCTORDLE', title: 'OctoWord', shortTitle: 'Octo', icon: null, romanNumeral: 'VIII', accentColor: '#7e22ce' },
   { id: 'sequence', dbKey: 'SEQUENCE', title: 'Succession', shortTitle: 'Succ.', icon: TrendingUp, accentColor: '#2563eb' },
   { id: 'rescue', dbKey: 'RESCUE', title: 'Deliverance', shortTitle: 'Deliv.', icon: Shield, accentColor: '#059669' },
-  { id: 'six', dbKey: 'DUEL_6', title: 'Six', shortTitle: 'Six', icon: null, romanNumeral: '6', accentColor: '#06b6d4' },
-  { id: 'seven', dbKey: 'DUEL_7', title: 'Seven', shortTitle: 'Seven', icon: null, romanNumeral: '7', accentColor: '#84cc16' },
+  { id: 'six', dbKey: 'DUEL_6', title: 'Six', shortTitle: 'Six', icon: SixIcon, accentColor: '#06b6d4' },
+  { id: 'seven', dbKey: 'DUEL_7', title: 'Seven', shortTitle: 'Seven', icon: SevenIcon, accentColor: '#84cc16' },
   { id: 'gauntlet', dbKey: 'GAUNTLET', title: 'Gauntlet', shortTitle: 'Gauntlet', icon: Skull, accentColor: '#d97706' },
   { id: 'propernoundle', dbKey: 'PROPERNOUNDLE', title: 'ProperNoundle', shortTitle: 'Proper', icon: Crown, accentColor: '#dc2626' },
 ];

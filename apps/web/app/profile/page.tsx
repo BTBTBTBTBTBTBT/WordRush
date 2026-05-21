@@ -26,6 +26,8 @@ import { toast } from '@/hooks/use-toast';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
 import { ProBadge } from '@/components/ui/pro-badge';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { SixIcon } from '@/components/ui/six-icon';
+import { SevenIcon } from '@/components/ui/seven-icon';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
@@ -72,8 +74,8 @@ const gameModeIcons: Record<string, { icon: React.ComponentType<any> | null; rom
   RESCUE:        { icon: Shield, color: '#059669' },
   GAUNTLET:      { icon: Skull, color: '#d97706' },
   PROPERNOUNDLE: { icon: Crown, color: '#dc2626' },
-  DUEL_6:        { icon: null, romanNumeral: '6', color: '#06b6d4' },
-  DUEL_7:        { icon: null, romanNumeral: '7', color: '#84cc16' },
+  DUEL_6:        { icon: SixIcon, color: '#06b6d4' },
+  DUEL_7:        { icon: SevenIcon, color: '#84cc16' },
 };
 
 const DAILY_MODES: Array<{ id: string; href: string }> = [
@@ -357,7 +359,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 )}
-                <div className="grid grid-cols-7 gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {DAILY_MODES.map((m) => {
                     const cfg = gameModeIcons[m.id];
                     const result = todayDailies.get(m.id);
@@ -367,19 +369,19 @@ export default function ProfilePage() {
                     const tileBg = !played ? 'var(--color-bg)' : won ? '#16a34a' : '#dc2626';
                     const tileBorder = !played ? 'var(--color-border)' : won ? '#16a34a' : '#dc2626';
                     return (
-                      <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: tileBg, border: `1.5px solid ${tileBorder}`, opacity: played ? 1 : 0.7 }}>
+                      <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1" style={{ width: '38px' }}>
+                        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: tileBg, border: `1.5px solid ${tileBorder}`, opacity: played ? 1 : 0.7 }}>
                           {played ? (
-                            <span className="text-base font-black" style={{ color: '#ffffff' }}>{won ? 'W' : 'L'}</span>
+                            <span className="text-sm font-black" style={{ color: '#ffffff' }}>{won ? 'W' : 'L'}</span>
                           ) : cfg?.romanNumeral ? (
                             <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
                           ) : cfg?.icon ? (
-                            (() => { const I = cfg.icon; return <I className="w-4 h-4" style={{ color: cfg.color }} />; })()
+                            (() => { const I = cfg.icon; return <I className="w-3.5 h-3.5" style={{ color: cfg.color }} />; })()
                           ) : (
-                            <Zap className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+                            <Zap className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
                           )}
                         </div>
-                        <span className="text-[9px] font-bold truncate w-full text-center" style={{ color: played ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{title}</span>
+                        <span className="text-[8px] font-bold truncate w-full text-center" style={{ color: played ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{title}</span>
                       </Link>
                     );
                   })}

@@ -13,30 +13,45 @@ export function SevenIcon({ className, size = 20 }: SevenIconProps) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Rightward cupped hand silhouette (mirrored) */}
+      {/* Right-facing open hand (mirrored palm out, fingers up) */}
       <path
-        d="M18 18c1.5-1 2.5-3 2.5-5.5C20.5 9 18.5 6 15 5c-1-.3-2-.3-3 0-.8.2-1.5.7-2 1.3-.3.4-.5.8-.6 1.2-.2.8-.1 1.5.2 2.2.4.8 1 1.4 1.8 1.8 1 .5 2 .6 3.2.4.9-.2 1.4-.9 1.4-1.9 0-.8-.5-1.5-1.2-1.8"
+        d="M16 14.5V7.5C16 6.67 15.33 6 14.5 6S13 6.67 13 7.5V12"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
-        fill="none"
+        strokeLinejoin="round"
       />
       <path
-        d="M9.5 8c-.5-.2-1.2-.1-1.6.3-.5.5-.6 1.2-.4 1.8l1 3M7.5 8.3c-.5-.3-1.2-.2-1.6.2-.4.5-.5 1.1-.3 1.7l.8 2.5M5.6 9c-.5-.2-1-.1-1.4.3-.3.4-.4 1-.2 1.5l.5 1.8M10 13.5c.5 1.5.5 3-.2 4.5"
+        d="M13 6.5V5C13 4.17 12.33 3.5 11.5 3.5S10 4.17 10 5V12"
         stroke="currentColor"
-        strokeWidth="1.3"
+        strokeWidth="1.5"
         strokeLinecap="round"
-        fill="none"
+        strokeLinejoin="round"
       />
-      {/* Bold "7" overlay */}
+      <path
+        d="M10 5.5V4.5C10 3.67 9.33 3 8.5 3S7 3.67 7 4.5V12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7 6V5.5C7 4.67 6.33 4 5.5 4S4 4.67 4 5.5V14C4 18.42 7.58 22 12 22H13C16.31 22 19 19.31 19 16V14.5C19 13.67 18.33 13 17.5 13S16 13.67 16 14.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Bold "7" */}
+      <circle cx="11" cy="14" r="5.5" fill="currentColor" fillOpacity="0.15" />
       <text
-        x="12"
-        y="16.5"
+        x="11"
+        y="17.5"
         textAnchor="middle"
         fontWeight="900"
-        fontSize="11"
+        fontSize="10"
         fill="currentColor"
-        fontFamily="system-ui, sans-serif"
+        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
       >
         7
       </text>

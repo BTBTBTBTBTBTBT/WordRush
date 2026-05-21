@@ -216,11 +216,23 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0 relative">
-        <GameHomeButton accentColor="#7c3aed" />
-        <SoundToggle accentColor="#7c3aed" />
-        <h1 className="text-3xl font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>
-          CLASSIC
-        </h1>
+        {(() => {
+          const modeConfig: Record<string, { title: string; accent: string; gradient: string }> = {
+            DUEL:   { title: 'CLASSIC',       accent: '#7c3aed', gradient: 'linear-gradient(135deg, #a78bfa, #ec4899)' },
+            DUEL_6: { title: 'CLASSIC SIX',   accent: '#06b6d4', gradient: 'linear-gradient(135deg, #06b6d4, #22d3ee)' },
+            DUEL_7: { title: 'CLASSIC SEVEN', accent: '#84cc16', gradient: 'linear-gradient(135deg, #84cc16, #a3e635)' },
+          };
+          const cfg = modeConfig[mode] || modeConfig.DUEL;
+          return (
+            <>
+              <GameHomeButton accentColor={cfg.accent} />
+              <SoundToggle accentColor={cfg.accent} />
+              <h1 className="text-3xl font-black text-transparent bg-clip-text" style={{ backgroundImage: cfg.gradient }}>
+                {cfg.title}
+              </h1>
+            </>
+          );
+        })()}
         <div className="flex justify-center gap-3 mt-1">
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>{guessesUsed}/{maxGuesses} guesses</span>
           <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}><Clock className="w-3 h-3 inline mr-1 text-blue-400" />{formatTime(elapsedTime)}</span>
@@ -238,7 +250,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             <div className="flex items-center gap-3">
               <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
               <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-              {isDaily && <DailyRankBadge gameMode="DUEL" />}
+              {isDaily && <DailyRankBadge gameMode={mode} />}
               {!isDaily && isPro && (
                 <button onClick={handleReset} className="text-amber-600 text-xs font-bold underline">
                   {state.status === GameStatus.WON ? 'Play Again' : 'Try Again'}

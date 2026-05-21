@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 
 import { X, Swords, TrendingUp, Shield, Skull, Crown } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { SixIcon } from '@/components/ui/six-icon';
+import { SevenIcon } from '@/components/ui/seven-icon';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 type HelpTab = 'how-to-play' | 'modes' | 'faq';
@@ -95,18 +97,16 @@ const GAME_MODES = [
     color: '#059669',
   },
   {
-    icon: null,
+    icon: SixIcon,
     title: 'Six',
     desc: 'Guess a 6-letter word in 7 tries. Same rules as Classic, bigger vocabulary.',
     color: '#06b6d4',
-    romanNumeral: '6',
   },
   {
-    icon: null,
+    icon: SevenIcon,
     title: 'Seven',
     desc: 'Guess a 7-letter word in 8 tries. The ultimate single-word challenge.',
     color: '#84cc16',
-    romanNumeral: '7',
   },
   {
     icon: Skull,

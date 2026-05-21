@@ -13,30 +13,45 @@ export function SixIcon({ className, size = 20 }: SixIconProps) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Leftward cupped hand silhouette */}
+      {/* Left-facing open hand (palm out, fingers up) */}
       <path
-        d="M6 18c-1.5-1-2.5-3-2.5-5.5C3.5 9 5.5 6 9 5c1-.3 2-.3 3 0 .8.2 1.5.7 2 1.3.3.4.5.8.6 1.2.2.8.1 1.5-.2 2.2-.4.8-1 1.4-1.8 1.8-1 .5-2 .6-3.2.4C8.5 11.7 8 11 8 10c0-.8.5-1.5 1.2-1.8"
+        d="M8 14.5V7.5C8 6.67 8.67 6 9.5 6S11 6.67 11 7.5V12"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
-        fill="none"
+        strokeLinejoin="round"
       />
       <path
-        d="M14.5 8c.5-.2 1.2-.1 1.6.3.5.5.6 1.2.4 1.8l-1 3M16.5 8.3c.5-.3 1.2-.2 1.6.2.4.5.5 1.1.3 1.7l-.8 2.5M18.4 9c.5-.2 1-.1 1.4.3.3.4.4 1 .2 1.5l-.5 1.8M14 13.5c-.5 1.5-.5 3 .2 4.5"
+        d="M11 6.5V5C11 4.17 11.67 3.5 12.5 3.5S14 4.17 14 5V12"
         stroke="currentColor"
-        strokeWidth="1.3"
+        strokeWidth="1.5"
         strokeLinecap="round"
-        fill="none"
+        strokeLinejoin="round"
       />
-      {/* Bold "6" overlay */}
+      <path
+        d="M14 5.5V4.5C14 3.67 14.67 3 15.5 3S17 3.67 17 4.5V12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M17 6V5.5C17 4.67 17.67 4 18.5 4S20 4.67 20 5.5V14C20 18.42 16.42 22 12 22H11C7.69 22 5 19.31 5 16V14.5C5 13.67 5.67 13 6.5 13S8 13.67 8 14.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Bold "6" */}
+      <circle cx="13" cy="14" r="5.5" fill="currentColor" fillOpacity="0.15" />
       <text
-        x="12"
-        y="16.5"
+        x="13"
+        y="17.5"
         textAnchor="middle"
         fontWeight="900"
-        fontSize="11"
+        fontSize="10"
         fill="currentColor"
-        fontFamily="system-ui, sans-serif"
+        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
       >
         6
       </text>

@@ -5,6 +5,8 @@ import { X as XIcon, Share2, Copy, Check, Link as LinkIcon, User as UserIcon, Tr
 import { useAuth } from '@/lib/auth-context';
 import { createInvite } from '@/lib/invite-service';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { SixIcon } from '@/components/ui/six-icon';
+import { SevenIcon } from '@/components/ui/seven-icon';
 
 interface ModeOption {
   id: string;
@@ -20,8 +22,8 @@ const MODES: ModeOption[] = [
   { id: 'OCTORDLE',      label: 'OctoWord',     color: '#7e22ce', romanNumeral: 'VIII' },
   { id: 'SEQUENCE',      label: 'Succession',   color: '#2563eb', icon: TrendingUp },
   { id: 'RESCUE',        label: 'Deliverance',  color: '#059669', icon: Shield },
-  { id: 'DUEL_6',        label: 'Six',          color: '#06b6d4', romanNumeral: '6' },
-  { id: 'DUEL_7',        label: 'Seven',        color: '#84cc16', romanNumeral: '7' },
+  { id: 'DUEL_6',        label: 'Six',          color: '#06b6d4', icon: SixIcon },
+  { id: 'DUEL_7',        label: 'Seven',        color: '#84cc16', icon: SevenIcon },
   { id: 'GAUNTLET',      label: 'Gauntlet',     color: '#d97706', icon: Skull },
   { id: 'PROPERNOUNDLE', label: 'ProperNoundle',color: '#dc2626', icon: Crown },
 ];

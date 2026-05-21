@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { TrendingUp, Swords, Skull, LogOut, Star, BookOpen, Shield, Crown, Lock, Trophy, Sparkles } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { SixIcon } from '@/components/ui/six-icon';
+import { SevenIcon } from '@/components/ui/seven-icon';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -243,8 +245,7 @@ const MODE_CARDS = [
   {
     id: 'six',
     title: 'Six',
-    icon: null,
-    romanNumeral: '6',
+    icon: SixIcon,
     desc: '6 letters, 7 tries',
     accentColor: '#06b6d4',
     href: '/six?daily=true',
@@ -253,8 +254,7 @@ const MODE_CARDS = [
   {
     id: 'seven',
     title: 'Seven',
-    icon: null,
-    romanNumeral: '7',
+    icon: SevenIcon,
     desc: '7 letters, 8 tries',
     accentColor: '#84cc16',
     href: '/seven?daily=true',
