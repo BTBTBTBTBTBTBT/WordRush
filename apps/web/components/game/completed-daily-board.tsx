@@ -429,8 +429,11 @@ function GauntletCompletedCard({
 function GauntletStageMiniBoards({ boards, maxGuesses }: { boards: BoardState[]; maxGuesses: number }) {
   const n = boards.length;
   const gridCols = n === 1 ? 'grid-cols-1' : n <= 4 ? 'grid-cols-2' : 'grid-cols-4';
+  // Single-board stages need a max-width so the mini board doesn't
+  // stretch to full width and render enormous tiles.
+  const maxW = n === 1 ? '140px' : n <= 4 ? '240px' : undefined;
   return (
-    <div className={`grid ${gridCols} gap-1`}>
+    <div className={`mx-auto grid ${gridCols} gap-1`} style={maxW ? { maxWidth: maxW } : undefined}>
       {boards.map((board, i) => (
         <CompletedMiniBoard
           key={i}
