@@ -436,7 +436,7 @@ export async function fetchUserMedals(
  */
 export async function assignDailyMedals(day?: string) {
   const targetDay = day || getYesterdayLocal();
-  const gameModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE'];
+  const gameModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
   const playTypes = ['solo', 'vs'] as const;
 
   for (const mode of gameModes) {
@@ -554,6 +554,8 @@ export async function checkAndAwardPerfectMedal(
   const perfectCriteria: Record<string, () => boolean> = {
     DUEL: () => guessCount === 1,
     PROPERNOUNDLE: () => guessCount === 1,
+    DUEL_6: () => guessCount === 1,
+    DUEL_7: () => guessCount === 1,
     QUORDLE: () => boardsSolved === 4 && guessCount <= 4,
     OCTORDLE: () => boardsSolved === 8 && guessCount <= 8,
     SEQUENCE: () => boardsSolved === 4 && guessCount <= 4,
