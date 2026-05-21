@@ -475,14 +475,17 @@ export default function HomePage() {
         <div className="grid grid-cols-2 gap-2">
           {MODE_CARDS.map((mode) => {
             const Icon = mode.icon;
-            const isLocked = !isPro && user && hasPlayedModeToday(mode.id);
-
             // Today's daily result for this mode, if played. Keyed by the
             // DB game_mode string (DUEL/QUORDLE/…), so we look up via
             // mode.id → db key. The VS Battle card has no daily row.
             const dbKey = MODE_ID_TO_DB[mode.id];
             const dailyResult = playMode === 'daily' && dbKey ? todayDailies.get(dbKey) : undefined;
             const isDailyDone = !!dailyResult;
+
+            // Freemium users: lock card once the daily is done OR the
+            // play-limit cache says played. isDailyDone covers modes
+            // whose play-limit modeId was recorded under the wrong key.
+            const isLocked = !isPro && user && (isDailyDone || hasPlayedModeToday(mode.id));
 
             // In Unlimited mode (Pro-only), route to the non-daily
             // variant so each tap lands on a fresh random seed.
@@ -525,16 +528,16 @@ export default function HomePage() {
                     }}
                   />
 
-                  {/* Lock */}
-                  {isLocked ? (
+                  {/* Lock icon (only when locked but NOT daily-done — the
+                      W/L badge takes this slot when the daily is complete) */}
+                  {isLocked && !isDailyDone ? (
                     <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
                       <Lock className="w-3 h-3" style={{ color: 'var(--color-text-muted)' }} />
                     </div>
                   ) : null}
 
                   {/* W / L pill in the top-right when today's daily is
-                      already on the books. Lives in the same slot as
-                      the old lock indicator. */}
+                      already on the books. */}
                   {isDailyDone && (
                     <div
                       className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center"
@@ -546,12 +549,13 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  {/* Icon */}
+                  {/* Icon — show mode icon when daily is done (even if
+                      locked), show lock only when locked without a result */}
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center mb-1.5"
-                    style={{ background: isLocked ? '#f3f4f6' : `${mode.accentColor}15` }}
+                    style={{ background: (isLocked && !isDailyDone) ? '#f3f4f6' : `${mode.accentColor}15` }}
                   >
-                    {isLocked
+                    {(isLocked && !isDailyDone)
                       ? <Lock className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
                       : mode.romanNumeral
                       ? <span className="text-[11px] font-black leading-none" style={{ color: mode.accentColor }}>{mode.romanNumeral}</span>
@@ -562,10 +566,10 @@ export default function HomePage() {
                   </div>
                   <div className="text-[13px] font-black" style={{ color: isLocked ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{mode.title}</div>
                   <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    {isLocked
-                      ? `Play again in ${resetCountdownText}`
-                      : isDailyDone
+                    {isDailyDone
                       ? `${dailyResult!.guesses} ${dailyResult!.guesses === 1 ? 'guess' : 'guesses'} · ${formatShortTime(dailyResult!.timeSeconds)}`
+                      : isLocked
+                      ? `Play again in ${resetCountdownText}`
                       : mode.desc}
                   </div>
 
