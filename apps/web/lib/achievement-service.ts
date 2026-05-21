@@ -15,7 +15,7 @@ export interface AchievementDef {
 export const ACHIEVEMENTS: AchievementDef[] = [
   // Beginner
   { key: 'first_win', name: 'First Win', description: 'Win any game', category: 'beginner', icon: 'trophy' },
-  { key: 'all_modes', name: 'All Modes Played', description: 'Play each of the 6 game modes', category: 'beginner', icon: 'grid' },
+  { key: 'all_modes', name: 'All Modes Played', description: 'Play all 9 game modes', category: 'beginner', icon: 'grid' },
   { key: 'daily_debut', name: 'Daily Debut', description: 'Complete your first daily challenge', category: 'beginner', icon: 'calendar' },
 
   // Consistency
@@ -38,8 +38,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // Daily sweep achievements — unlock once the corresponding
   // daily_bonuses flag has ever been set for this user.
-  { key: 'daily_sweep', name: 'Daily Sweep', description: 'Complete all 7 dailies in a single day', category: 'skill', icon: 'sparkles' },
-  { key: 'flawless_victory', name: 'Flawless Victory', description: 'Win all 7 dailies in a single day', category: 'skill', icon: 'trophy' },
+  { key: 'daily_sweep', name: 'Daily Sweep', description: 'Complete all 9 dailies in a single day', category: 'skill', icon: 'sparkles' },
+  { key: 'flawless_victory', name: 'Flawless Victory', description: 'Win all 9 dailies in a single day', category: 'skill', icon: 'trophy' },
 ];
 
 // ============================================================
