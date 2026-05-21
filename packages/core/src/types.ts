@@ -16,7 +16,8 @@ export enum TileState {
   CORRECT = 'CORRECT',
   PRESENT = 'PRESENT',
   ABSENT = 'ABSENT',
-  EMPTY = 'EMPTY'
+  EMPTY = 'EMPTY',
+  HINT_USED = 'HINT_USED'
 }
 
 export enum GameStatus {
@@ -47,6 +48,8 @@ export interface BoardState {
   maxGuesses: number;
   status: GameStatus;
   prefilledGuesses?: PrefilledGuess[];
+  /** Stores custom evaluations for hint rows (keyed by guess index). */
+  hintEvaluations?: Record<number, GuessResult>;
 }
 
 export interface GauntletStageConfig {
@@ -138,6 +141,7 @@ export interface MatchResult {
 
 export type GameAction =
   | { type: 'SUBMIT_GUESS'; guess: string; boardIndex?: number }
+  | { type: 'SUBMIT_HINT'; hintWord: string; hintEvaluation: GuessResult; boardIndex?: number }
   | { type: 'NEXT_BOARD' }
   | { type: 'NEXT_STAGE'; elapsedMs?: number }
   | { type: 'STEAL_GUESS' }

@@ -23,6 +23,7 @@ import { playInvalid } from '@/lib/sounds';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { useClassicHints, type PersistedClassicHintState } from '@/hooks/use-classic-hints';
 
 interface PracticeGameProps {
   mode: GameMode;
@@ -53,6 +54,37 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   const [copied, setCopied] = useState(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
 
+  // --- Classic hints (Six/Seven only) ---
+  const hasHints = mode === GameMode.DUEL_6 || mode === GameMode.DUEL_7;
+  const hints = useClassicHints();
+  const hintStorageKey = `wordocious-hints-${mode}-${isDaily ? 'daily' : 'practice'}`;
+
+  // Restore hint state on mount
+  useState(() => {
+    if (!hasHints || typeof window === 'undefined') return;
+    try {
+      const saved = localStorage.getItem(hintStorageKey);
+      if (saved) {
+        const parsed: PersistedClassicHintState = JSON.parse(saved);
+        hints.restoreHints(parsed);
+      }
+    } catch {}
+  });
+
+  // Persist hint state on change
+  useEffect(() => {
+    if (!hasHints || typeof window === 'undefined') return;
+    try {
+      const payload: PersistedClassicHintState = {
+        vowelUsed: hints.vowelUsed,
+        consonantUsed: hints.consonantUsed,
+        vowelRevealed: hints.vowelRevealed,
+        consonantRevealed: hints.consonantRevealed,
+      };
+      localStorage.setItem(hintStorageKey, JSON.stringify(payload));
+    } catch {}
+  }, [hasHints, hintStorageKey, hints.vowelUsed, hints.consonantUsed, hints.vowelRevealed, hints.consonantRevealed]);
+
   // If a completed save was loaded, flag it so the victory/recording effect
   // below doesn't refire. Reset to false on RESET.
   const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
@@ -69,14 +101,19 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   const currentBoard = state.boards[state.currentBoardIndex];
 
   const evaluations = useMemo(() => {
-    return currentBoard.guesses.map(g => evaluateGuess(currentBoard.solution, g));
-  }, [currentBoard.guesses, currentBoard.solution]);
+    return currentBoard.guesses.map((g, i) => {
+      // Use stored hint evaluation for hint rows instead of evaluateGuess
+      if (currentBoard.hintEvaluations?.[i]) return currentBoard.hintEvaluations[i];
+      return evaluateGuess(currentBoard.solution, g);
+    });
+  }, [currentBoard.guesses, currentBoard.solution, currentBoard.hintEvaluations]);
 
   const letterStates = useMemo(() => {
     const states: Record<string, 'correct' | 'present' | 'absent'> = {};
     for (const eval_ of evaluations) {
       for (const tile of eval_.tiles) {
         const letter = tile.letter.toUpperCase();
+        if (letter < 'A' || letter > 'Z') continue; // skip blanks from hint rows
         if (tile.state === 'CORRECT') states[letter] = 'correct';
         else if (tile.state === 'PRESENT' && states[letter] !== 'correct') states[letter] = 'present';
         else if (tile.state === 'ABSENT' && !states[letter]) states[letter] = 'absent';
@@ -165,6 +202,22 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
+  const handleVowelHint = useCallback(() => {
+    if (!hasHints || currentBoard.status !== GameStatus.PLAYING) return;
+    const result = hints.revealVowel(currentBoard.solution, currentBoard.guesses);
+    if (result) {
+      dispatch({ type: 'SUBMIT_HINT', hintWord: result.hintWord, hintEvaluation: result.hintEvaluation });
+    }
+  }, [hasHints, currentBoard.status, currentBoard.solution, currentBoard.guesses, hints.revealVowel]);
+
+  const handleConsonantHint = useCallback(() => {
+    if (!hasHints || currentBoard.status !== GameStatus.PLAYING) return;
+    const result = hints.revealConsonant(currentBoard.solution, currentBoard.guesses);
+    if (result) {
+      dispatch({ type: 'SUBMIT_HINT', hintWord: result.hintWord, hintEvaluation: result.hintEvaluation });
+    }
+  }, [hasHints, currentBoard.status, currentBoard.solution, currentBoard.guesses, hints.revealConsonant]);
+
   const handleReset = () => {
     const newSeed = generateMatchSeed();
     setGameSeed(newSeed);
@@ -173,6 +226,10 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     setMessage('');
     resetTimer(0);
     isRestoredCompleted.current = false;
+    if (hasHints) {
+      hints.resetHints();
+      try { localStorage.removeItem(hintStorageKey); } catch {}
+    }
   };
 
   const handleShare = useCallback(async () => {
@@ -180,7 +237,10 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     // Pad to maxGuesses with EMPTY rows so the share image mirrors the
     // full played board instead of floating above empty space.
     const played = evaluations.map(e =>
-      e.tiles.map(t => t.state as 'CORRECT' | 'PRESENT' | 'ABSENT'),
+      e.tiles.map(t => {
+        if (t.state === 'HINT_USED') return 'ABSENT' as const;
+        return t.state as 'CORRECT' | 'PRESENT' | 'ABSENT';
+      }),
     );
     const grid: ('CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY')[][] = [
       ...played,
@@ -282,6 +342,36 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           )}
         </div>
       </div>
+
+      {/* Hint buttons — Six/Seven only, hidden when game is complete */}
+      {hasHints && !gameComplete && (
+        <div className="shrink-0 flex justify-center gap-3 px-4 pb-1">
+          <button
+            onClick={handleVowelHint}
+            disabled={hints.vowelUsed}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
+            style={{
+              background: hints.vowelUsed ? 'var(--color-surface-alt)' : (mode === GameMode.DUEL_6 ? '#06b6d415' : '#84cc1615'),
+              border: `1.5px solid ${hints.vowelUsed ? 'var(--color-border)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16')}`,
+              color: hints.vowelUsed ? 'var(--color-text-muted)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16'),
+            }}
+          >
+            {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : '💡 Vowel'}
+          </button>
+          <button
+            onClick={handleConsonantHint}
+            disabled={hints.consonantUsed}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
+            style={{
+              background: hints.consonantUsed ? 'var(--color-surface-alt)' : (mode === GameMode.DUEL_6 ? '#06b6d415' : '#84cc1615'),
+              border: `1.5px solid ${hints.consonantUsed ? 'var(--color-border)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16')}`,
+              color: hints.consonantUsed ? 'var(--color-text-muted)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16'),
+            }}
+          >
+            {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : '💡 Consonant'}
+          </button>
+        </div>
+      )}
 
       {/* Keyboard — hidden when game is complete */}
       {!gameComplete && (

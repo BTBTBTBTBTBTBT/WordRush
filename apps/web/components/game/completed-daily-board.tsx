@@ -168,6 +168,7 @@ const getTileColor = (state: TileState) => {
     case TileState.CORRECT: return 'bg-green-500 border-green-500';
     case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
     case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
+    case TileState.HINT_USED: return 'bg-gray-100 border-gray-200';
     default: return 'bg-white border-gray-300';
   }
 };
@@ -193,10 +194,11 @@ const evaluateGuessTiles = (guess: string, solution: string): TileState[] => {
 };
 
 // ── Compact mini board for multi-board completed view ──
-function CompletedMiniBoard({ solution, guesses, maxGuesses, won }: {
+function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluations }: {
   solution: string;
   guesses: string[];
   maxGuesses: number;
+  hintEvaluations?: Record<number, import('@wordle-duel/core').GuessResult>;
   won: boolean;
 }) {
   return (
@@ -213,7 +215,11 @@ function CompletedMiniBoard({ solution, guesses, maxGuesses, won }: {
           const guess = guesses[rowIndex] || '';
           const isPast = rowIndex < guesses.length;
           const wordLen = solution.length;
-          const tiles = isPast ? evaluateGuessTiles(guess, solution) : Array(wordLen).fill(TileState.EMPTY);
+          const tiles = isPast
+            ? (hintEvaluations?.[rowIndex]
+                ? hintEvaluations[rowIndex].tiles.map(t => t.state)
+                : evaluateGuessTiles(guess, solution))
+            : Array(wordLen).fill(TileState.EMPTY);
 
           return (
             <div key={rowIndex} className="grid gap-[1px]" style={{ gridTemplateColumns: `repeat(${wordLen}, 1fr)` }}>
@@ -456,7 +462,12 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
 
   const evaluations = useMemo(() => {
     if (!session || !solution || MULTI_BOARD_MODES.has(modeId) || isGauntlet) return [];
-    return boards[0].guesses.map(g => evaluateGuess(solution, g));
+    const board = boards[0];
+    return board.guesses.map((g, i) => {
+      // Use stored hint evaluation for hint rows (Six/Seven)
+      if (board.hintEvaluations?.[i]) return board.hintEvaluations[i];
+      return evaluateGuess(solution, g);
+    });
   }, [session, solution, modeId, isGauntlet]);
 
   const { definition, loaded: defLoaded } = useWordDefinition(

@@ -258,6 +258,35 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
+    case 'SUBMIT_HINT': {
+      const { hintWord, hintEvaluation, boardIndex = state.currentBoardIndex } = action;
+      const board = state.boards[boardIndex];
+      if (board.status !== GameStatus.PLAYING) return state;
+
+      const newGuesses = [...board.guesses, hintWord];
+      const hintIndex = newGuesses.length - 1;
+
+      let newStatus: GameStatus = board.status;
+      if (newGuesses.length >= board.maxGuesses) {
+        newStatus = GameStatus.LOST;
+      }
+
+      const newBoards = [...state.boards];
+      newBoards[boardIndex] = {
+        ...board,
+        guesses: newGuesses,
+        status: newStatus,
+        hintEvaluations: { ...board.hintEvaluations, [hintIndex]: hintEvaluation },
+      };
+
+      let gameStatus: GameStatus = state.status;
+      if (state.mode === GameMode.DUEL || state.mode === GameMode.DUEL_6 || state.mode === GameMode.DUEL_7) {
+        gameStatus = newStatus;
+      }
+
+      return { ...state, boards: newBoards, status: gameStatus };
+    }
+
     case 'NEXT_BOARD': {
       // For sequential modes: advance to the next board within the current stage/game
       const currentBoard = state.boards[state.currentBoardIndex];

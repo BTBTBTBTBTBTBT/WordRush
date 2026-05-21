@@ -113,6 +113,7 @@ const TILE_STATE_LABEL: Record<string, string> = {
   [TileState.ABSENT]: 'absent',
   [TileState.PRESENT]: 'present in word',
   [TileState.CORRECT]: 'correct position',
+  [TileState.HINT_USED]: 'hint',
 };
 
 function Tile({ letter, state, flipDelay, isInvalid }: TileProps) {
@@ -123,7 +124,8 @@ function Tile({ letter, state, flipDelay, isInvalid }: TileProps) {
     state === TileState.EMPTY && isInvalid && 'border-red-400 bg-red-50',
     state === TileState.ABSENT && `${TILE.border} ${TILE.absent} ${TILE.text}`,
     state === TileState.PRESENT && `${TILE.present} ${TILE.text}`,
-    state === TileState.CORRECT && `${TILE.correct} ${TILE.text}`
+    state === TileState.CORRECT && `${TILE.correct} ${TILE.text}`,
+    state === TileState.HINT_USED && 'border-2 border-gray-200 bg-gray-100 text-gray-300'
   );
 
   return (
