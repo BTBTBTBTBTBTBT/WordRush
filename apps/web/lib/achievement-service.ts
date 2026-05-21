@@ -103,6 +103,28 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'close_call', name: 'Close Call', description: 'Win a game on your final guess', category: 'skill', icon: 'star' },
   { key: 'hat_trick', name: 'Hat Trick', description: 'Win 3 daily games in under 60 seconds each in one day', category: 'skill', icon: 'zap' },
   { key: 'eagle_eye', name: 'Eagle Eye', description: 'Solve 10 games in 1 guess lifetime', category: 'skill', icon: 'crown' },
+
+  // Collection depth
+  { key: 'gold_rush', name: 'Gold Rush', description: 'Earn 50 gold medals', category: 'collection', icon: 'crown' },
+  { key: 'diamond_hands', name: 'Diamond Hands', description: 'Earn 100 gold medals', category: 'collection', icon: 'crown' },
+
+  // Skill ceiling
+  { key: 'unbreakable', name: 'Unbreakable', description: 'Achieve a 25-win streak', category: 'skill', icon: 'flame' },
+  { key: 'the_natural', name: 'The Natural', description: 'Win 10 games in under 30 seconds', category: 'skill', icon: 'zap' },
+
+  // Cumulative
+  { key: 'wordsmith', name: 'Wordsmith', description: 'Win 500 total games', category: 'consistency', icon: 'trophy' },
+  { key: 'endurance', name: 'Endurance', description: 'Play 1,000 total games', category: 'consistency', icon: 'flame' },
+
+  // Time investment
+  { key: 'marathon_runner', name: 'Marathon Runner', description: 'Accumulate 5 hours of total playtime', category: 'consistency', icon: 'flame' },
+
+  // Mode variety
+  { key: 'linguist', name: 'Linguist', description: 'Win Classic, Six, and Seven daily in the same day', category: 'beginner', icon: 'grid' },
+
+  // Long-term streaks
+  { key: 'streak_master', name: 'Streak Master', description: 'Achieve a 50-day login streak', category: 'consistency', icon: 'flame' },
+  { key: 'daily_regular', name: 'Daily Regular', description: 'Complete dailies on 100 different days', category: 'consistency', icon: 'calendar' },
 ];
 
 // ============================================================
@@ -517,6 +539,125 @@ export async function checkAchievements(
         }
       }
       if (consecutive) await tryUnlock('flawless_streak');
+    }
+  }
+
+  // Gold Rush (50 gold) / Diamond Hands (100 gold)
+  if (!alreadyUnlocked.has('gold_rush') || !alreadyUnlocked.has('diamond_hands')) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('gold_medals')
+      .eq('id', userId)
+      .single();
+    if (profile) {
+      if ((profile.gold_medals || 0) >= 50) await tryUnlock('gold_rush');
+      if ((profile.gold_medals || 0) >= 100) await tryUnlock('diamond_hands');
+    }
+  }
+
+  // Unbreakable (25-win streak)
+  if (won && !alreadyUnlocked.has('unbreakable')) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('current_streak, best_streak')
+      .eq('id', userId)
+      .single();
+    if (profile && (profile.current_streak >= 25 || profile.best_streak >= 25)) {
+      await tryUnlock('unbreakable');
+    }
+  }
+
+  // The Natural (10 wins under 30 seconds)
+  if (won && timeSeconds < 30 && !alreadyUnlocked.has('the_natural')) {
+    const { count } = await (supabase as any)
+      .from('daily_results')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('completed', true)
+      .lt('time_seconds', 30)
+      .gt('boards_solved', 0);
+    if ((count || 0) >= 10) await tryUnlock('the_natural');
+  }
+
+  // Wordsmith (500 wins)
+  if (won && !alreadyUnlocked.has('wordsmith')) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('total_wins')
+      .eq('id', userId)
+      .single();
+    if (profile && profile.total_wins >= 500) await tryUnlock('wordsmith');
+  }
+
+  // Endurance (1000 total games)
+  if (!alreadyUnlocked.has('endurance')) {
+    const { data: allStats } = await (supabase as any)
+      .from('user_stats')
+      .select('total_games')
+      .eq('user_id', userId);
+    if (allStats) {
+      const total = allStats.reduce((s: number, r: any) => s + (r.total_games || 0), 0);
+      if (total >= 1000) await tryUnlock('endurance');
+    }
+  }
+
+  // Marathon Runner (5 hours / 18000 seconds of total playtime)
+  if (!alreadyUnlocked.has('marathon_runner') && seed?.startsWith('daily-')) {
+    const { data: timeResults } = await (supabase as any)
+      .from('daily_results')
+      .select('time_seconds')
+      .eq('user_id', userId)
+      .eq('completed', true);
+    if (timeResults) {
+      const totalSec = timeResults.reduce((s: number, r: any) => s + (r.time_seconds || 0), 0);
+      if (totalSec >= 18000) await tryUnlock('marathon_runner');
+    }
+  }
+
+  // Linguist (Classic + Six + Seven daily wins in same day)
+  if (['DUEL', 'DUEL_6', 'DUEL_7'].includes(gameMode) && won && seed?.startsWith('daily-') && !alreadyUnlocked.has('linguist')) {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: langResults } = await (supabase as any)
+      .from('daily_results')
+      .select('game_mode')
+      .eq('user_id', userId)
+      .eq('day', today)
+      .eq('completed', true)
+      .in('game_mode', ['DUEL', 'DUEL_6', 'DUEL_7']);
+    if (langResults) {
+      const modes = new Set(langResults.map((r: any) => r.game_mode));
+      if (modes.has('DUEL') && modes.has('DUEL_6') && modes.has('DUEL_7')) {
+        await tryUnlock('linguist');
+      }
+    }
+  }
+
+  // Streak Master (50-day login streak)
+  if (!alreadyUnlocked.has('streak_master')) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('daily_login_streak')
+      .eq('id', userId)
+      .single();
+    if (profile && profile.daily_login_streak >= 50) await tryUnlock('streak_master');
+  }
+
+  // Daily Regular (100 different days with dailies)
+  if (!alreadyUnlocked.has('daily_regular') && seed?.startsWith('daily-')) {
+    const { count } = await (supabase as any)
+      .from('daily_results')
+      .select('day', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('completed', true);
+    // count returns total rows, but we need distinct days — use a workaround
+    const { data: distinctDays } = await (supabase as any)
+      .from('daily_results')
+      .select('day')
+      .eq('user_id', userId)
+      .eq('completed', true);
+    if (distinctDays) {
+      const uniqueDays = new Set(distinctDays.map((r: any) => r.day));
+      if (uniqueDays.size >= 100) await tryUnlock('daily_regular');
     }
   }
 

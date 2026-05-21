@@ -120,6 +120,19 @@ export async function POST(req: NextRequest) {
 
     // Untouchable (10-win streak) — use best_streak
     await award('untouchable', allProfiles.filter((p) => p.best_streak >= 10).map((p) => p.id));
+
+    // Gold Rush / Diamond Hands
+    await award('gold_rush', allProfiles.filter((p) => (p.gold_medals || 0) >= 50).map((p) => p.id));
+    await award('diamond_hands', allProfiles.filter((p) => (p.gold_medals || 0) >= 100).map((p) => p.id));
+
+    // Unbreakable (25-win streak)
+    await award('unbreakable', allProfiles.filter((p) => p.best_streak >= 25).map((p) => p.id));
+
+    // Wordsmith (500 wins)
+    await award('wordsmith', allProfiles.filter((p) => p.total_wins >= 500).map((p) => p.id));
+
+    // Streak Master (50-day login streak)
+    await award('streak_master', allProfiles.filter((p) => p.daily_login_streak >= 50).map((p) => p.id));
   }
 
   // ── User-stats-based achievements ──────────────────────────────
@@ -183,6 +196,7 @@ export async function POST(req: NextRequest) {
     }
     await award('dedicated', [...totalGamesByUser.entries()].filter(([, g]) => g >= 500).map(([uid]) => uid));
     await award('obsessed', [...totalGamesByUser.entries()].filter(([, g]) => g >= 2000).map(([uid]) => uid));
+    await award('endurance', [...totalGamesByUser.entries()].filter(([, g]) => g >= 1000).map(([uid]) => uid));
   }
 
   // ── Daily-results-based achievements ───────────────────────────
@@ -328,6 +342,47 @@ export async function POST(req: NextRequest) {
       if (count >= 3) tripleThreatUsers.add(key.split('|')[0]);
     }
     await award('triple_threat', [...tripleThreatUsers]);
+
+    // The Natural (10 wins under 30 seconds)
+    const sub30sByUser = new Map<string, number>();
+    for (const r of allDailyResults) {
+      if (r.boards_solved === r.total_boards && (r.time_seconds || 999) < 30) {
+        sub30sByUser.set(r.user_id, (sub30sByUser.get(r.user_id) || 0) + 1);
+      }
+    }
+    await award('the_natural', [...sub30sByUser.entries()].filter(([, c]) => c >= 10).map(([uid]) => uid));
+
+    // Marathon Runner (5 hours = 18000 seconds total playtime)
+    const totalTimeByUser = new Map<string, number>();
+    for (const r of allDailyResults) {
+      totalTimeByUser.set(r.user_id, (totalTimeByUser.get(r.user_id) || 0) + (r.time_seconds || 0));
+    }
+    await award('marathon_runner', [...totalTimeByUser.entries()].filter(([, t]) => t >= 18000).map(([uid]) => uid));
+
+    // Linguist (Classic + Six + Seven won in same day)
+    const classicSixSevenByUserDay = new Map<string, Set<string>>();
+    for (const r of allDailyResults) {
+      if (['DUEL', 'DUEL_6', 'DUEL_7'].includes(r.game_mode) && r.boards_solved === r.total_boards) {
+        const key = `${r.user_id}|${r.day}`;
+        if (!classicSixSevenByUserDay.has(key)) classicSixSevenByUserDay.set(key, new Set());
+        classicSixSevenByUserDay.get(key)!.add(r.game_mode);
+      }
+    }
+    const linguistUsers = new Set<string>();
+    for (const [key, modes] of classicSixSevenByUserDay) {
+      if (modes.has('DUEL') && modes.has('DUEL_6') && modes.has('DUEL_7')) {
+        linguistUsers.add(key.split('|')[0]);
+      }
+    }
+    await award('linguist', [...linguistUsers]);
+
+    // Daily Regular (100 different days with completed dailies)
+    const daysByUser = new Map<string, Set<string>>();
+    for (const r of allDailyResults) {
+      if (!daysByUser.has(r.user_id)) daysByUser.set(r.user_id, new Set());
+      daysByUser.get(r.user_id)!.add(r.day);
+    }
+    await award('daily_regular', [...daysByUser.entries()].filter(([, days]) => days.size >= 100).map(([uid]) => uid));
   }
 
   // ── Daily-bonuses-based achievements ───────────────────────────
