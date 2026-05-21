@@ -458,6 +458,7 @@ const REVIEW_TILE_CLASS: Record<TileState, string> = {
   [TileState.PRESENT]: 'bg-yellow-500 border-yellow-500 text-white',
   [TileState.ABSENT]: 'bg-gray-400 border-gray-400 text-white',
   [TileState.EMPTY]: 'bg-white border-gray-300 text-gray-800',
+  [TileState.HINT_USED]: 'bg-gray-100 border-gray-200 text-gray-300',
 };
 
 function StageReviewBoard({ board, stageWon }: { board: BoardState; stageWon: boolean }) {
