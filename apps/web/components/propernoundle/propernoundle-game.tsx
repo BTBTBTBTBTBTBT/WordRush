@@ -36,7 +36,7 @@ const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 const CATEGORY_LABELS: Record<string, string> = {
   music: 'Music',
   videogames: 'Video Games',
-  movies: 'Movies',
+  movies: 'Movies & TV',
   sports: 'Sports',
   history: 'History',
   science: 'Science',
@@ -703,8 +703,8 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
       {/* Hint clue text — slim bar between header and board */}
       {hints.hint && (
-        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
-          <p className="text-xs text-gray-500 italic leading-snug line-clamp-2">{hints.hint}</p>
+        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white max-h-20 overflow-y-auto">
+          <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
         </div>
       )}
 
