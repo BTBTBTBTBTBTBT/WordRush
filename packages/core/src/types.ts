@@ -7,7 +7,9 @@ export enum GameMode {
   SEQUENCE = 'SEQUENCE',
   RESCUE = 'RESCUE',
   TOURNAMENT = 'TOURNAMENT',
-  PROPERNOUNDLE = 'PROPERNOUNDLE'
+  PROPERNOUNDLE = 'PROPERNOUNDLE',
+  DUEL_6 = 'DUEL_6',
+  DUEL_7 = 'DUEL_7'
 }
 
 export enum TileState {

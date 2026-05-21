@@ -20,6 +20,8 @@ const MODE_SCORE_CONFIG: Record<string, ScoreConfig> = {
   RESCUE:        { maxGuesses: 6,  guessWeight: 80,  timeCap: 480,  totalBoards: 4 },
   GAUNTLET:      { maxGuesses: 44, guessWeight: 20,  timeCap: 1800, totalBoards: 21 },
   PROPERNOUNDLE: { maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1 },
+  DUEL_6:        { maxGuesses: 7,  guessWeight: 90,  timeCap: 360,  totalBoards: 1 },
+  DUEL_7:        { maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1 },
 };
 
 export function calculateCompositeScore(
@@ -705,6 +707,8 @@ export function generateShareText(
     RESCUE: 'Deliverance',
     GAUNTLET: 'Gauntlet',
     PROPERNOUNDLE: 'ProperNoundle',
+    DUEL_6: 'Six',
+    DUEL_7: 'Seven',
   };
 
   const modeName = modeNames[gameMode] || gameMode;
@@ -785,10 +789,10 @@ export async function fetchTodayDailyCompletions(
   return out;
 }
 
-// Keep in sync with DAILY_MODES on the profile page + home — 7 modes
+// Keep in sync with DAILY_MODES on the profile page + home — 9 modes
 // have solo daily seeds today (DUEL, QUORDLE, OCTORDLE, SEQUENCE,
-// RESCUE, GAUNTLET, PROPERNOUNDLE).
-const DAILY_MODE_COUNT = 7;
+// RESCUE, DUEL_6, DUEL_7, GAUNTLET, PROPERNOUNDLE).
+const DAILY_MODE_COUNT = 9;
 const DAILY_SWEEP_XP = 200;
 const FLAWLESS_EXTRA_XP = 400;
 

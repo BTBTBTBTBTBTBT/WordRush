@@ -1,5 +1,5 @@
 import { GameState, GameAction, GameMode, GameStatus, BoardState, GauntletStageConfig, GauntletStageResult, GAUNTLET_STAGES, GAUNTLET_TOTAL_SOLUTIONS } from './types';
-import { generateSolutionsFromSeed } from './seed';
+import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from './seed';
 import { evaluateGuess } from './evaluator';
 import { isValidWord, getAllowedWords } from './dictionary';
 import { generatePrefillGuesses, generatePrefillWords } from './prefill';
@@ -101,6 +101,16 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
       boardCount = 5;
       maxGuesses = 6;
       break;
+    case GameMode.DUEL_6: {
+      const solutions6 = generateSolutionsFromSeedForLength(seed, 1, 6);
+      const boards6 = solutions6.map(sol => createBoardState(sol, 7));
+      return { mode, seed, startTime: Date.now(), boards: boards6, currentBoardIndex: 0, status: GameStatus.PLAYING };
+    }
+    case GameMode.DUEL_7: {
+      const solutions7 = generateSolutionsFromSeedForLength(seed, 1, 7);
+      const boards7 = solutions7.map(sol => createBoardState(sol, 8));
+      return { mode, seed, startTime: Date.now(), boards: boards7, currentBoardIndex: 0, status: GameStatus.PLAYING };
+    }
   }
 
   const solutions = generateSolutionsFromSeed(seed, boardCount);
@@ -141,7 +151,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // the authoritative gate; the game-status update at the bottom
       // still winds up correct either way.
 
-      if (guess.length !== 5) {
+      const board = state.boards[boardIndex];
+      if (guess.length !== board.solution.length) {
         return state;
       }
 
@@ -149,7 +160,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         return state;
       }
 
-      const board = state.boards[boardIndex];
       if (board.status !== GameStatus.PLAYING) {
         return state;
       }
@@ -173,7 +183,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       let gameStatus: GameStatus = state.status;
 
-      if (state.mode === GameMode.DUEL) {
+      if (state.mode === GameMode.DUEL || state.mode === GameMode.DUEL_6 || state.mode === GameMode.DUEL_7) {
         gameStatus = newStatus;
       } else if (state.mode === GameMode.MULTI_DUEL) {
         const allComplete = newBoards.every(b => b.status !== GameStatus.PLAYING);

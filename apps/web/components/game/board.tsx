@@ -26,9 +26,10 @@ interface BoardProps {
   darkMode?: boolean;
   isInvalidWord?: boolean;
   isShaking?: boolean;
+  wordLength?: number;
 }
 
-export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode, isInvalidWord, isShaking }: BoardProps) {
+export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode, isInvalidWord, isShaking, wordLength = 5 }: BoardProps) {
   const emptyRows = Math.max(0, maxGuesses - guesses.length - 1);
 
   const lastEval = evaluations[evaluations.length - 1];
@@ -42,7 +43,7 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
   return (
     <div
       className="w-full max-w-[400px] mx-auto max-h-full"
-      style={{ aspectRatio: `5 / ${maxGuesses}` }}
+      style={{ aspectRatio: `${wordLength} / ${maxGuesses}` }}
       role="grid"
       aria-label="Game board"
     >
@@ -56,11 +57,12 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
             guess={guess}
             evaluation={evaluations[rowIndex]}
             animate={rowIndex === guesses.length - 1 && evaluations[rowIndex]?.isCorrect === true}
+            wordLength={wordLength}
           />
         ))}
-        {guesses.length < maxGuesses && <Row guess={currentGuess} isInvalid={isInvalidWord} isShaking={isShaking} />}
+        {guesses.length < maxGuesses && <Row guess={currentGuess} isInvalid={isInvalidWord} isShaking={isShaking} wordLength={wordLength} />}
         {Array.from({ length: emptyRows }).map((_, i) => (
-          <Row key={`empty-${i}`} guess="" />
+          <Row key={`empty-${i}`} guess="" wordLength={wordLength} />
         ))}
       </div>
       {showSolution && solution && (
@@ -78,10 +80,11 @@ interface RowProps {
   animate?: boolean;
   isInvalid?: boolean;
   isShaking?: boolean;
+  wordLength?: number;
 }
 
-function Row({ guess, evaluation, animate, isInvalid, isShaking }: RowProps) {
-  const tiles = guess.padEnd(5, ' ').split('');
+function Row({ guess, evaluation, animate, isInvalid, isShaking, wordLength = 5 }: RowProps) {
+  const tiles = guess.padEnd(wordLength, ' ').split('');
 
   return (
     <div className={cn('flex gap-1 justify-center flex-1 min-h-0', isShaking && 'animate-shake')} role="row">

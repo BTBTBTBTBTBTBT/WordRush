@@ -21,7 +21,9 @@ export type ShareMode =
   | 'Succession'
   | 'Deliverance'
   | 'Gauntlet'
-  | 'ProperNoundle';
+  | 'ProperNoundle'
+  | 'Six'
+  | 'Seven';
 
 interface ShareBase {
   mode: ShareMode;
@@ -101,6 +103,8 @@ const MODE_ACCENT: Record<ShareMode, string> = {
   Deliverance: '#059669',
   Gauntlet: '#d97706',
   ProperNoundle: '#dc2626',
+  Six: '#06b6d4',
+  Seven: '#84cc16',
 };
 
 const WORDMARK_GRADIENT: [string, string] = ['#a78bfa', '#ec4899'];

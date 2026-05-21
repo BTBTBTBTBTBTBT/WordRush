@@ -71,7 +71,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
     setMessage('');
 
     if (key === 'ENTER') {
-      if (currentGuess.length !== 5) {
+      if (currentGuess.length !== currentBoard.solution.length) {
         setMessage('Not enough letters');
         setCurrentGuess('');
         setTimeout(() => setMessage(''), 1500);
@@ -94,7 +94,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
       setCurrentGuess('');
     } else if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
+    } else if (/^[A-Z]$/.test(key) && currentGuess.length < currentBoard.solution.length) {
       setCurrentGuess(prev => prev + key);
     }
   }, [currentGuess, currentBoard.status]);
@@ -137,7 +137,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           totalBoards={opponentProgress.totalBoards}
           opponentTiles={opponentTiles}
           maxGuesses={currentBoard.maxGuesses}
-          wordLength={5}
+          wordLength={currentBoard.solution.length}
         />
       </div>
 
@@ -151,7 +151,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           showSolution={currentBoard.status === GameStatus.LOST}
           solution={currentBoard.solution}
           darkMode
-          isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
+          isInvalidWord={currentGuess.length === currentBoard.solution.length && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
       </div>
 

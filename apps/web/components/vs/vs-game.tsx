@@ -108,6 +108,8 @@ const MODE_LABELS: Record<string, string> = {
   [GameMode.RESCUE]: 'DELIVERANCE',
   [GameMode.GAUNTLET]: 'GAUNTLET',
   [GameMode.PROPERNOUNDLE]: 'PROPERNOUNDLE',
+  [GameMode.DUEL_6]: 'SIX',
+  [GameMode.DUEL_7]: 'SEVEN',
 };
 
 const MODE_GRADIENTS: Record<string, string> = {
@@ -118,6 +120,8 @@ const MODE_GRADIENTS: Record<string, string> = {
   [GameMode.RESCUE]: 'from-indigo-900 via-purple-800 to-fuchsia-700',
   [GameMode.GAUNTLET]: 'from-purple-900 via-pink-800 to-orange-700',
   [GameMode.PROPERNOUNDLE]: 'from-red-900 via-rose-800 to-orange-700',
+  [GameMode.DUEL_6]: 'from-cyan-900 via-teal-800 to-sky-700',
+  [GameMode.DUEL_7]: 'from-lime-900 via-green-800 to-emerald-700',
 };
 
 const MODE_TITLE_GRADIENTS: Record<string, string> = {
@@ -128,6 +132,8 @@ const MODE_TITLE_GRADIENTS: Record<string, string> = {
   [GameMode.RESCUE]: 'from-indigo-400 via-purple-400 to-fuchsia-400',
   [GameMode.GAUNTLET]: 'from-yellow-400 via-pink-400 to-purple-400',
   [GameMode.PROPERNOUNDLE]: 'from-red-400 via-rose-400 to-orange-400',
+  [GameMode.DUEL_6]: 'from-cyan-400 via-teal-400 to-sky-400',
+  [GameMode.DUEL_7]: 'from-lime-400 via-green-400 to-emerald-400',
 };
 
 // Per-mode accent used for the corner Home button during a VS match.
@@ -141,6 +147,8 @@ const MODE_ACCENT_COLORS: Record<string, string> = {
   [GameMode.RESCUE]: '#059669',
   [GameMode.GAUNTLET]: '#d97706',
   [GameMode.PROPERNOUNDLE]: '#dc2626',
+  [GameMode.DUEL_6]: '#06b6d4',
+  [GameMode.DUEL_7]: '#84cc16',
 };
 
 export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
@@ -653,6 +661,10 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         return <VsGauntlet {...commonProps} onStageCompleted={handleStageCompleted} />;
       case GameMode.PROPERNOUNDLE:
         return <VsProperNoundle {...commonProps} puzzleMetadata={puzzleMetadata} />;
+      case GameMode.DUEL_6:
+        return <VsClassic {...commonProps} />;
+      case GameMode.DUEL_7:
+        return <VsClassic {...commonProps} />;
       default:
         return <VsClassic {...commonProps} />;
     }

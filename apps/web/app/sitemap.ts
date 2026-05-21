@@ -11,6 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/octordle',
     '/sequence',
     '/rescue',
+    '/six',
+    '/seven',
     '/gauntlet',
     '/propernoundle',
     '/pro',

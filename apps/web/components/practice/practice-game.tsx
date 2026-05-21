@@ -94,11 +94,11 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       // VictoryAnimation, and PostGameSummary at the moment of completion.
       const timeMs = elapsedTime * 1000;
       const guesses = currentBoard.guesses.length;
-      recordGameResult(profile.id, 'DUEL', 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1)
+      recordGameResult(profile.id, mode, 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1)
         .then(xp => { if (xp) setXpResult(xp); });
       recordSoloMatch({
         userId: profile.id,
-        gameMode: 'DUEL',
+        gameMode: mode,
         won: state.status === GameStatus.WON,
         score: guesses,
         timeSeconds: elapsedTime,
@@ -119,7 +119,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     setMessage('');
 
     if (key === 'ENTER') {
-      if (currentGuess.length !== 5) {
+      if (currentGuess.length !== currentBoard.solution.length) {
         setMessage('Not enough letters');
         playInvalid();
         setIsShaking(true);
@@ -147,7 +147,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       setCurrentGuess('');
     } else if (key === 'BACK') {
       setCurrentGuess(prev => prev.slice(0, -1));
-    } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
+    } else if (/^[A-Z]$/.test(key) && currentGuess.length < currentBoard.solution.length) {
       setCurrentGuess(prev => prev + key);
     }
   }, [currentGuess, currentBoard.status, isShaking]);
@@ -185,12 +185,13 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     const grid: ('CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY')[][] = [
       ...played,
       ...Array(Math.max(0, currentBoard.maxGuesses - played.length)).fill(
-        Array(5).fill('EMPTY' as const),
+        Array(currentBoard.solution.length).fill('EMPTY' as const),
       ),
     ];
+    const shareModeMap: Record<string, string> = { DUEL: 'Classic', DUEL_6: 'Six', DUEL_7: 'Seven' };
     const out = await shareResult({
       layout: 'single',
-      mode: 'Classic',
+      mode: (shareModeMap[mode] || 'Classic') as 'Classic' | 'Six' | 'Seven',
       won: state.status === GameStatus.WON,
       guesses: currentBoard.guesses.length,
       maxGuesses: currentBoard.maxGuesses,
@@ -260,7 +261,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             solution={currentBoard.solution}
             darkMode
             isShaking={isShaking}
-            isInvalidWord={currentGuess.length === 5 && (!isValidWord(currentGuess) || currentBoard.guesses.includes(currentGuess.toUpperCase()))}
+            wordLength={currentBoard.solution.length}
+            isInvalidWord={currentGuess.length === currentBoard.solution.length && (!isValidWord(currentGuess) || currentBoard.guesses.includes(currentGuess.toUpperCase()))}
           />
 
           {gameComplete && (

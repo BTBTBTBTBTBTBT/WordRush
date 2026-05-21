@@ -133,7 +133,7 @@ export async function checkAchievements(
       .select('game_mode')
       .eq('user_id', userId);
     const modes = new Set((modeStats || []).map((s: any) => s.game_mode));
-    if (['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE'].every(m => modes.has(m))) {
+    if (['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'].every(m => modes.has(m))) {
       await tryUnlock('all_modes');
     }
   }

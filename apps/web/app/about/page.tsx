@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'About Wordocious — Epic Word Battles',
   description:
-    'Wordocious is a free online word puzzle game with 8 unique game modes including Classic, QuadWord, OctoWord, Succession, Deliverance, Gauntlet, ProperNoundle, and real-time VS Battles. Play daily puzzles, climb leaderboards, and compete with friends.',
+    'Wordocious is a free online word puzzle game with 10 unique game modes including Classic, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, ProperNoundle, and real-time VS Battles. Play daily puzzles, climb leaderboards, and compete with friends.',
 };
 
 export default function AboutPage() {
@@ -25,7 +25,7 @@ export default function AboutPage() {
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>What is Wordocious?</h2>
             <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-              Wordocious is a free word puzzle game that goes far beyond the classic five-letter guess. With eight distinct game modes, daily challenges, real-time multiplayer battles, and global leaderboards, Wordocious gives word game fans something new to play every single day.
+              Wordocious is a free word puzzle game that goes far beyond the classic five-letter guess. With ten distinct game modes, daily challenges, real-time multiplayer battles, and global leaderboards, Wordocious gives word game fans something new to play every single day.
             </p>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               Whether you enjoy a quick solo puzzle on your morning commute or a competitive showdown against friends, Wordocious has a mode for you. Every daily puzzle is the same for all players worldwide, so you can compare scores and strategies with anyone.
@@ -34,7 +34,7 @@ export default function AboutPage() {
 
           {/* Game Modes Overview */}
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>8 Unique Game Modes</h2>
+            <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>10 Unique Game Modes</h2>
             <div className="space-y-3">
               <div>
                 <h3 className="text-xs font-black" style={{ color: '#7c3aed' }}>Classic</h3>
@@ -70,6 +70,18 @@ export default function AboutPage() {
                 <h3 className="text-xs font-black" style={{ color: '#059669' }}>Deliverance</h3>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                   Four boards with pre-filled letter hints to help you get started. You have six guesses to solve all four words. The hints give you a head start, but the tight guess limit keeps things challenging. A great mode for players who enjoy deduction puzzles.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xs font-black" style={{ color: '#06b6d4' }}>Six</h3>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                  Step up from the classic formula with six-letter words and seven guesses. The extra letter opens up a much wider vocabulary, demanding sharper deduction and broader word knowledge. Same rules, bigger challenge.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-xs font-black" style={{ color: '#84cc16' }}>Seven</h3>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                  The ultimate single-word challenge. Seven-letter words with eight guesses push your vocabulary to its limits. With thousands of possible solutions, every guess counts. Only the most dedicated word game masters will conquer Seven consistently.
                 </p>
               </div>
               <div>

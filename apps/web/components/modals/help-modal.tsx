@@ -95,6 +95,20 @@ const GAME_MODES = [
     color: '#059669',
   },
   {
+    icon: null,
+    title: 'Six',
+    desc: 'Guess a 6-letter word in 7 tries. Same rules as Classic, bigger vocabulary.',
+    color: '#06b6d4',
+    romanNumeral: '6',
+  },
+  {
+    icon: null,
+    title: 'Seven',
+    desc: 'Guess a 7-letter word in 8 tries. The ultimate single-word challenge.',
+    color: '#84cc16',
+    romanNumeral: '7',
+  },
+  {
     icon: Skull,
     title: 'Gauntlet',
     desc: '5 stages of increasing difficulty — Classic through OctoWord. Survive them all.',

@@ -161,6 +161,8 @@ export function vsHrefForMode(gameMode: string): string {
     case 'RESCUE':        return '/rescue/vs';
     case 'GAUNTLET':      return '/gauntlet/vs';
     case 'PROPERNOUNDLE': return '/propernoundle/vs';
+    case 'DUEL_6':        return '/six/vs';
+    case 'DUEL_7':        return '/seven/vs';
     default:              return '/practice/vs';
   }
 }

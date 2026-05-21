@@ -169,6 +169,8 @@ const MODE_ID_TO_DB: Record<string, string> = {
   rescue: 'RESCUE',
   gauntlet: 'GAUNTLET',
   propernoundle: 'PROPERNOUNDLE',
+  six: 'DUEL_6',
+  seven: 'DUEL_7',
 };
 
 function formatShortTime(seconds: number): string {
@@ -237,6 +239,26 @@ const MODE_CARDS = [
     accentColor: '#059669',
     href: '/rescue?daily=true',
     vsHref: '/rescue/vs',
+  },
+  {
+    id: 'six',
+    title: 'Six',
+    icon: null,
+    romanNumeral: '6',
+    desc: '6 letters, 7 tries',
+    accentColor: '#06b6d4',
+    href: '/six?daily=true',
+    vsHref: '/six/vs',
+  },
+  {
+    id: 'seven',
+    title: 'Seven',
+    icon: null,
+    romanNumeral: '7',
+    desc: '7 letters, 8 tries',
+    accentColor: '#84cc16',
+    href: '/seven?daily=true',
+    vsHref: '/seven/vs',
   },
   {
     id: 'gauntlet',
@@ -349,7 +371,7 @@ export default function HomePage() {
         ) : (() => {
           const completed = todayDailies.size;
           const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
-          const total = 7;
+          const total = 9;
           const allDone = completed >= total;
           const flawless = allDone && wins === total;
 
@@ -435,7 +457,7 @@ export default function HomePage() {
                   <Star className="w-5 h-5" style={{ color: '#4f46e5' }} fill="currentColor" />
                 </div>
                 <div className="text-[10px] font-bold mt-0.5" style={{ color: '#6d28d9' }}>
-                  7 puzzles · Leaderboards &amp; medals
+                  9 puzzles · Leaderboards &amp; medals
                 </div>
                 <div className="text-[10px] font-bold mt-0.5" style={{ color: '#6d28d9' }}>
                   Resets in <DailyCountdownText />

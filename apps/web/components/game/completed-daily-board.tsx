@@ -173,10 +173,11 @@ const getTileColor = (state: TileState) => {
 };
 
 const evaluateGuessTiles = (guess: string, solution: string): TileState[] => {
-  const result: TileState[] = Array(5).fill(TileState.EMPTY);
+  const len = solution.length;
+  const result: TileState[] = Array(len).fill(TileState.EMPTY);
   const solutionArray = solution.split('');
   const guessArray = guess.split('');
-  const used = Array(5).fill(false);
+  const used = Array(len).fill(false);
 
   guessArray.forEach((letter, i) => {
     if (letter === solutionArray[i]) { result[i] = TileState.CORRECT; used[i] = true; }
@@ -211,11 +212,12 @@ function CompletedMiniBoard({ solution, guesses, maxGuesses, won }: {
         {Array.from({ length: maxGuesses }).map((_, rowIndex) => {
           const guess = guesses[rowIndex] || '';
           const isPast = rowIndex < guesses.length;
-          const tiles = isPast ? evaluateGuessTiles(guess, solution) : Array(5).fill(TileState.EMPTY);
+          const wordLen = solution.length;
+          const tiles = isPast ? evaluateGuessTiles(guess, solution) : Array(wordLen).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className="grid grid-cols-5 gap-[1px]">
-              {Array.from({ length: 5 }).map((_, li) => {
+            <div key={rowIndex} className="grid gap-[1px]" style={{ gridTemplateColumns: `repeat(${wordLen}, 1fr)` }}>
+              {Array.from({ length: wordLen }).map((_, li) => {
                 const letter = guess[li] || '';
                 const tileState = isPast ? tiles[li] : TileState.EMPTY;
                 return (
@@ -546,9 +548,10 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const totalBoards = boards.length;
   const totalGuesses = boards.reduce((sum, b) => sum + b.guesses.length, 0);
 
+  const singleMaxGuesses = boards[0]?.maxGuesses ?? 6;
   const summaryLabel = isMulti
     ? `${boardsSolved}/${totalBoards} · ${totalGuesses}g · ${formatTime(session.elapsedTime)}`
-    : `${(boards[0]?.guesses.length ?? 0)}/6 · ${formatTime(session.elapsedTime)}`;
+    : `${(boards[0]?.guesses.length ?? 0)}/${singleMaxGuesses} · ${formatTime(session.elapsedTime)}`;
 
   return (
     <CollapsibleCompletedCard won={won} summaryLabel={summaryLabel}>
@@ -606,11 +609,12 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             <Board
               guesses={boards[0]?.guesses ?? []}
               currentGuess=""
-              maxGuesses={6}
+              maxGuesses={singleMaxGuesses}
               evaluations={evaluations}
               showSolution={false}
               solution={solution!}
               darkMode
+              wordLength={solution!.length}
             />
           </div>
 
@@ -663,7 +667,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           <div className="flex justify-center gap-5 mt-3">
             <div className="text-center">
               <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {(boards[0]?.guesses.length ?? 0)}/6
+                {(boards[0]?.guesses.length ?? 0)}/{singleMaxGuesses}
               </div>
               <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 Guesses

@@ -20,6 +20,8 @@ const MODES: ModeOption[] = [
   { id: 'OCTORDLE',      label: 'OctoWord',     color: '#7e22ce', romanNumeral: 'VIII' },
   { id: 'SEQUENCE',      label: 'Succession',   color: '#2563eb', icon: TrendingUp },
   { id: 'RESCUE',        label: 'Deliverance',  color: '#059669', icon: Shield },
+  { id: 'DUEL_6',        label: 'Six',          color: '#06b6d4', romanNumeral: '6' },
+  { id: 'DUEL_7',        label: 'Seven',        color: '#84cc16', romanNumeral: '7' },
   { id: 'GAUNTLET',      label: 'Gauntlet',     color: '#d97706', icon: Skull },
   { id: 'PROPERNOUNDLE', label: 'ProperNoundle',color: '#dc2626', icon: Crown },
 ];

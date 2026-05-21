@@ -1,4 +1,4 @@
-import { getSolutionWord, getSolutionCount } from './dictionary';
+import { getSolutionWord, getSolutionCount, getSolutionWordForLength, getSolutionCountForLength } from './dictionary';
 
 function simpleHash(str: string): number {
   let hash = 0;
@@ -28,6 +28,29 @@ export function generateSolutionsFromSeed(seed: string, count: number): string[]
     const index = hash % solutionCount;
     used.add(index);
     solutions.push(getSolutionWord(index));
+  }
+
+  return solutions;
+}
+
+export function generateSolutionsFromSeedForLength(seed: string, count: number, wordLength: number): string[] {
+  const solutions: string[] = [];
+  const solutionCount = getSolutionCountForLength(wordLength);
+  const used = new Set<number>();
+
+  for (let i = 0; i < count; i++) {
+    const seedWithIndex = `${seed}-${i}`;
+    let hash = simpleHash(seedWithIndex);
+    let attempts = 0;
+
+    while (used.has(hash % solutionCount) && attempts < solutionCount) {
+      hash = simpleHash(`${seedWithIndex}-${attempts}`);
+      attempts++;
+    }
+
+    const index = hash % solutionCount;
+    used.add(index);
+    solutions.push(getSolutionWordForLength(wordLength, index));
   }
 
   return solutions;

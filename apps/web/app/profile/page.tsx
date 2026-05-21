@@ -59,6 +59,8 @@ const gameModeTitles: Record<string, string> = {
   SEQUENCE: 'Succession',
   RESCUE: 'Deliverance',
   PROPERNOUNDLE: 'ProperNoundle',
+  DUEL_6: 'Six',
+  DUEL_7: 'Seven',
   TOURNAMENT: 'Tournament',
 };
 
@@ -70,6 +72,8 @@ const gameModeIcons: Record<string, { icon: React.ComponentType<any> | null; rom
   RESCUE:        { icon: Shield, color: '#059669' },
   GAUNTLET:      { icon: Skull, color: '#d97706' },
   PROPERNOUNDLE: { icon: Crown, color: '#dc2626' },
+  DUEL_6:        { icon: null, romanNumeral: '6', color: '#06b6d4' },
+  DUEL_7:        { icon: null, romanNumeral: '7', color: '#84cc16' },
 };
 
 const DAILY_MODES: Array<{ id: string; href: string }> = [
@@ -78,6 +82,8 @@ const DAILY_MODES: Array<{ id: string; href: string }> = [
   { id: 'OCTORDLE',      href: '/octordle?daily=true' },
   { id: 'SEQUENCE',      href: '/sequence?daily=true' },
   { id: 'RESCUE',        href: '/rescue?daily=true' },
+  { id: 'DUEL_6',        href: '/six?daily=true' },
+  { id: 'DUEL_7',        href: '/seven?daily=true' },
   { id: 'GAUNTLET',      href: '/gauntlet?daily=true' },
   { id: 'PROPERNOUNDLE', href: '/propernoundle?daily=true' },
 ];

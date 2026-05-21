@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'How to Play Wordocious — Rules, Tips & Game Mode Guide',
   description:
-    'Learn how to play Wordocious. Complete guide to all 8 game modes: Classic, VS Battle, QuadWord, OctoWord, Succession, Deliverance, Gauntlet, and ProperNoundle. Scoring, streaks, medals, and tips for beginners.',
+    'Learn how to play Wordocious. Complete guide to all 10 game modes: Classic, VS Battle, QuadWord, OctoWord, Succession, Deliverance, Six, Seven, Gauntlet, and ProperNoundle. Scoring, streaks, medals, and tips for beginners.',
 };
 
 function TileExample({ letter, color }: { letter: string; color: 'green' | 'yellow' | 'gray' | 'empty' }) {
@@ -155,6 +155,20 @@ export default function HowToPlayPage() {
                 <h3 className="text-xs font-black mb-1" style={{ color: '#059669' }}>Deliverance &mdash; 4 Boards with Hints, 6 Guesses</h3>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                   Four boards that come pre-loaded with letter hints to give you a head start. Some tiles are already revealed before you make your first guess. With only six guesses to solve all four words, you need to use the given hints wisely. Look for patterns in the revealed letters to deduce the answers quickly.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-black mb-1" style={{ color: '#06b6d4' }}>Six &mdash; 6-Letter Words, 7 Guesses</h3>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                  The same Classic rules applied to six-letter words. You get seven guesses to find the answer. The extra letter opens up a much wider pool of possible words, demanding deeper vocabulary knowledge and more strategic letter placement. A natural step up for players who have mastered the five-letter format.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-black mb-1" style={{ color: '#84cc16' }}>Seven &mdash; 7-Letter Words, 8 Guesses</h3>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+                  The biggest single-word challenge in Wordocious. Seven-letter words with eight guesses push your vocabulary and deduction skills to their absolute limits. With thousands of possible solutions, every guess needs to eliminate as many possibilities as it can. Recommended for experienced players looking for a real test.
                 </p>
               </div>
 

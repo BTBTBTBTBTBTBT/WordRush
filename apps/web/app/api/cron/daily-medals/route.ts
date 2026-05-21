@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 
-const GAME_MODES = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'GAUNTLET', 'PROPERNOUNDLE'];
+const GAME_MODES = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
 const PLAY_TYPES = ['solo', 'vs'] as const;
 const MEDAL_TYPES = ['gold', 'silver', 'bronze'] as const;
 const MEDAL_XP: Record<string, number> = { gold: 100, silver: 50, bronze: 25 };
