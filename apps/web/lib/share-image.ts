@@ -389,7 +389,11 @@ function drawHeader(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = MODE_ACCENT[input.mode];
-  const modeLabel = input.mode.toUpperCase();
+  const MODE_DISPLAY: Partial<Record<ShareMode, string>> = {
+    Six: 'CLASSIC SIX',
+    Seven: 'CLASSIC SEVEN',
+  };
+  const modeLabel = MODE_DISPLAY[input.mode] ?? input.mode.toUpperCase();
   ctx.fillText(modeLabel, width / 2, modeY);
 
   // Metadata line
