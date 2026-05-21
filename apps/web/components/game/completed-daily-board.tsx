@@ -571,7 +571,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         <>
           <div
             className={`mx-auto grid gap-2 ${totalBoards > 4 ? 'grid-cols-4' : 'grid-cols-2'}`}
-            style={{ maxWidth: totalBoards > 4 ? '320px' : '240px' }}
+            style={{ maxWidth: totalBoards > 4 ? 'min(320px, 100%)' : '240px' }}
           >
             {boards.map((board, i) => (
               <CompletedMiniBoard
