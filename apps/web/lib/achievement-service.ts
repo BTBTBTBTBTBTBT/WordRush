@@ -65,6 +65,44 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // Collection
   { key: 'medal_wall', name: 'Medal Wall', description: 'Earn 100 medals', category: 'collection', icon: 'medal' },
+
+  // Six & Seven
+  { key: 'six_shooter', name: 'Six Shooter', description: 'Win 50 Classic Six games', category: 'skill', icon: 'zap' },
+  { key: 'lucky_seven', name: 'Lucky Seven', description: 'Win 50 Classic Seven games', category: 'skill', icon: 'star' },
+  { key: 'extended_vocab', name: 'Extended Vocabulary', description: 'Win both a Six and Seven daily in the same day', category: 'beginner', icon: 'grid' },
+
+  // Mode mastery completion
+  { key: 'proper_scholar', name: 'Proper Scholar', description: 'Win 50 Propernoundle games', category: 'skill', icon: 'grid' },
+  { key: 'classic_master', name: 'Classic Master', description: 'Win 100 Classic games', category: 'skill', icon: 'trophy' },
+
+  // Speed
+  { key: 'blitz', name: 'Blitz', description: 'Win any game in under 15 seconds', category: 'skill', icon: 'zap' },
+  { key: 'speed_sweep', name: 'Speed Sweep', description: 'Complete the daily sweep in under 15 minutes', category: 'skill', icon: 'zap' },
+
+  // Cumulative play
+  { key: 'dedicated', name: 'Dedicated', description: 'Play 500 total games', category: 'consistency', icon: 'flame' },
+  { key: 'obsessed', name: 'Obsessed', description: 'Play 2,000 total games', category: 'consistency', icon: 'flame' },
+
+  // Sweep milestones
+  { key: 'daily_devotee', name: 'Daily Devotee', description: 'Complete 50 daily sweeps', category: 'consistency', icon: 'sparkles' },
+  { key: 'centurion', name: 'Centurion', description: 'Complete 100 daily sweeps', category: 'consistency', icon: 'sparkles' },
+
+  // Level milestones
+  { key: 'rising_star', name: 'Rising Star', description: 'Reach level 10', category: 'beginner', icon: 'star' },
+  { key: 'elite', name: 'Elite', description: 'Reach level 50', category: 'skill', icon: 'crown' },
+
+  // Ultimate streaks
+  { key: 'year_one', name: 'Year One', description: 'Play 365 consecutive days', category: 'consistency', icon: 'flame' },
+  { key: 'flawless_streak', name: 'Flawless Streak', description: 'Achieve Flawless Victory 3 days in a row', category: 'skill', icon: 'trophy' },
+
+  // VS / Social
+  { key: 'versatile_victor', name: 'Versatile Victor', description: 'Win VS matches in 5 different game modes', category: 'social', icon: 'swords' },
+  { key: 'triple_threat', name: 'Triple Threat', description: 'Win 3 VS matches in a single day', category: 'social', icon: 'swords' },
+
+  // Special moments
+  { key: 'close_call', name: 'Close Call', description: 'Win a game on your final guess', category: 'skill', icon: 'star' },
+  { key: 'hat_trick', name: 'Hat Trick', description: 'Win 3 daily games in under 60 seconds each in one day', category: 'skill', icon: 'zap' },
+  { key: 'eagle_eye', name: 'Eagle Eye', description: 'Solve 10 games in 1 guess lifetime', category: 'skill', icon: 'crown' },
 ];
 
 // ============================================================
@@ -246,14 +284,18 @@ export async function checkAchievements(
     }
   }
 
-  // Mode mastery achievements (50 wins in specific modes)
-  const modeMasteryChecks: [string, string][] = [
-    ['quad_king', 'QUORDLE'],
-    ['octo_boss', 'OCTORDLE'],
-    ['sequence_ace', 'SEQUENCE'],
-    ['rescue_hero', 'RESCUE'],
+  // Mode mastery achievements (wins in specific modes)
+  const modeMasteryChecks: [string, string, number][] = [
+    ['quad_king', 'QUORDLE', 50],
+    ['octo_boss', 'OCTORDLE', 50],
+    ['sequence_ace', 'SEQUENCE', 50],
+    ['rescue_hero', 'RESCUE', 50],
+    ['six_shooter', 'DUEL_6', 50],
+    ['lucky_seven', 'DUEL_7', 50],
+    ['proper_scholar', 'PROPERNOUNDLE', 50],
+    ['classic_master', 'DUEL', 100],
   ];
-  for (const [key, mode] of modeMasteryChecks) {
+  for (const [key, mode, threshold] of modeMasteryChecks) {
     if (!alreadyUnlocked.has(key)) {
       const { data: stats } = await (supabase as any)
         .from('user_stats')
@@ -262,13 +304,12 @@ export async function checkAchievements(
         .eq('game_mode', mode)
         .eq('play_type', 'solo');
       const totalWins = (stats || []).reduce((s: number, r: any) => s + (r.wins || 0), 0);
-      if (totalWins >= 50) await tryUnlock(key);
+      if (totalWins >= threshold) await tryUnlock(key);
     }
   }
 
-  // Lightning Round (daily sweep in under 20 minutes)
-  if (!alreadyUnlocked.has('lightning_round') && seed?.startsWith('daily-')) {
-    // Check if today's sweep is complete and total time < 1200s
+  // Lightning Round (under 20 min) / Speed Sweep (under 15 min)
+  if (seed?.startsWith('daily-') && (!alreadyUnlocked.has('lightning_round') || !alreadyUnlocked.has('speed_sweep') || !alreadyUnlocked.has('hat_trick'))) {
     const today = new Date().toISOString().slice(0, 10);
     const { data: todayResults } = await (supabase as any)
       .from('daily_results')
@@ -276,12 +317,20 @@ export async function checkAchievements(
       .eq('user_id', userId)
       .eq('day', today)
       .eq('completed', true);
-    if (todayResults && todayResults.length >= 9) {
-      const modes = new Set(todayResults.map((r: any) => r.game_mode));
-      const allModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
-      if (allModes.every(m => modes.has(m))) {
-        const totalTime = todayResults.reduce((s: number, r: any) => s + (r.time_seconds || 0), 0);
-        if (totalTime < 1200) await tryUnlock('lightning_round');
+    if (todayResults) {
+      // Hat Trick: 3 daily games each won in under 60 seconds
+      const fastWins = todayResults.filter((r: any) => (r.time_seconds || 0) < 60);
+      if (fastWins.length >= 3) await tryUnlock('hat_trick');
+
+      // Sweep speed checks
+      if (todayResults.length >= 9) {
+        const modes = new Set(todayResults.map((r: any) => r.game_mode));
+        const allModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
+        if (allModes.every(m => modes.has(m))) {
+          const totalTime = todayResults.reduce((s: number, r: any) => s + (r.time_seconds || 0), 0);
+          if (totalTime < 1200) await tryUnlock('lightning_round');
+          if (totalTime < 900) await tryUnlock('speed_sweep');
+        }
       }
     }
   }
@@ -320,11 +369,11 @@ export async function checkAchievements(
     }
   }
 
-  // Rival (50 VS matches played) / Dominant (50 VS wins)
-  if (playType === 'vs' && (!alreadyUnlocked.has('rival') || !alreadyUnlocked.has('dominant'))) {
+  // Rival (50 VS matches played) / Dominant (50 VS wins) / Versatile Victor (5 modes)
+  if (playType === 'vs' && (!alreadyUnlocked.has('rival') || !alreadyUnlocked.has('dominant') || !alreadyUnlocked.has('versatile_victor'))) {
     const { data: vsStats } = await (supabase as any)
       .from('user_stats')
-      .select('total_games, wins')
+      .select('total_games, wins, game_mode')
       .eq('user_id', userId)
       .eq('play_type', 'vs');
     if (vsStats) {
@@ -332,6 +381,142 @@ export async function checkAchievements(
       const totalWins = vsStats.reduce((s: number, r: any) => s + (r.wins || 0), 0);
       if (totalGames >= 50) await tryUnlock('rival');
       if (totalWins >= 50) await tryUnlock('dominant');
+      // Versatile Victor: won in 5+ different modes
+      const modesWon = vsStats.filter((r: any) => (r.wins || 0) > 0).length;
+      if (modesWon >= 5) await tryUnlock('versatile_victor');
+    }
+  }
+
+  // Triple Threat (3 VS wins in a single day)
+  if (playType === 'vs' && won && !alreadyUnlocked.has('triple_threat')) {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: todayDaily } = await (supabase as any)
+      .from('daily_results')
+      .select('vs_wins')
+      .eq('user_id', userId)
+      .eq('day', today);
+    if (todayDaily) {
+      const totalVsWins = todayDaily.reduce((s: number, r: any) => s + (r.vs_wins || 0), 0);
+      if (totalVsWins >= 3) await tryUnlock('triple_threat');
+    }
+  }
+
+  // Blitz (win any game in under 15 seconds)
+  if (won && timeSeconds < 15) {
+    await tryUnlock('blitz');
+  }
+
+  // Close Call (win on final guess)
+  if (won) {
+    const FINAL_GUESS: Record<string, number> = {
+      DUEL: 6, DUEL_6: 7, DUEL_7: 8, PROPERNOUNDLE: 6,
+      QUORDLE: 9, OCTORDLE: 13,
+    };
+    if (FINAL_GUESS[gameMode] && guessCount === FINAL_GUESS[gameMode]) {
+      await tryUnlock('close_call');
+    }
+  }
+
+  // Eagle Eye (10 lifetime 1-guess wins)
+  if (won && guessCount === 1 && !alreadyUnlocked.has('eagle_eye')) {
+    const { count } = await (supabase as any)
+      .from('daily_results')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('guess_count', 1)
+      .eq('completed', true);
+    if ((count || 0) >= 10) await tryUnlock('eagle_eye');
+  }
+
+  // Extended Vocabulary (win both Six and Seven daily in same day)
+  if ((gameMode === 'DUEL_6' || gameMode === 'DUEL_7') && won && seed?.startsWith('daily-') && !alreadyUnlocked.has('extended_vocab')) {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: sixSevenResults } = await (supabase as any)
+      .from('daily_results')
+      .select('game_mode')
+      .eq('user_id', userId)
+      .eq('day', today)
+      .eq('completed', true)
+      .in('game_mode', ['DUEL_6', 'DUEL_7']);
+    if (sixSevenResults) {
+      const modes = new Set(sixSevenResults.map((r: any) => r.game_mode));
+      if (modes.has('DUEL_6') && modes.has('DUEL_7')) {
+        await tryUnlock('extended_vocab');
+      }
+    }
+  }
+
+  // Dedicated (500 games) / Obsessed (2000 games)
+  if (!alreadyUnlocked.has('dedicated') || !alreadyUnlocked.has('obsessed')) {
+    const { data: allStats } = await (supabase as any)
+      .from('user_stats')
+      .select('total_games')
+      .eq('user_id', userId);
+    if (allStats) {
+      const totalPlayed = allStats.reduce((s: number, r: any) => s + (r.total_games || 0), 0);
+      if (totalPlayed >= 500) await tryUnlock('dedicated');
+      if (totalPlayed >= 2000) await tryUnlock('obsessed');
+    }
+  }
+
+  // Daily Devotee (50 sweeps) / Centurion (100 sweeps)
+  if (!alreadyUnlocked.has('daily_devotee') || !alreadyUnlocked.has('centurion')) {
+    const { count: sweepCount } = await (supabase as any)
+      .from('daily_bonuses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('sweep_awarded', true);
+    if ((sweepCount || 0) >= 50) await tryUnlock('daily_devotee');
+    if ((sweepCount || 0) >= 100) await tryUnlock('centurion');
+  }
+
+  // Rising Star (level 10) / Elite (level 50)
+  if (!alreadyUnlocked.has('rising_star') || !alreadyUnlocked.has('elite')) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('level')
+      .eq('id', userId)
+      .single();
+    if (profile) {
+      if (profile.level >= 10) await tryUnlock('rising_star');
+      if (profile.level >= 50) await tryUnlock('elite');
+    }
+  }
+
+  // Year One (365 consecutive days)
+  if (!alreadyUnlocked.has('year_one')) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('daily_login_streak')
+      .eq('id', userId)
+      .single();
+    if (profile && profile.daily_login_streak >= 365) {
+      await tryUnlock('year_one');
+    }
+  }
+
+  // Flawless Streak (Flawless Victory 3 days in a row)
+  if (!alreadyUnlocked.has('flawless_streak')) {
+    const { data: flawlessDays } = await (supabase as any)
+      .from('daily_bonuses')
+      .select('day')
+      .eq('user_id', userId)
+      .eq('flawless_awarded', true)
+      .order('day', { ascending: false })
+      .limit(3);
+    if (flawlessDays && flawlessDays.length >= 3) {
+      // Check if all 3 are consecutive
+      let consecutive = true;
+      for (let i = 1; i < flawlessDays.length; i++) {
+        const prev = new Date(flawlessDays[i - 1].day);
+        const curr = new Date(flawlessDays[i].day);
+        const diffMs = prev.getTime() - curr.getTime();
+        if (diffMs < 82800000 || diffMs > 90000000) {
+          consecutive = false;
+          break;
+        }
+      }
+      if (consecutive) await tryUnlock('flawless_streak');
     }
   }
 
