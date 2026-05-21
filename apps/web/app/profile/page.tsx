@@ -359,32 +359,37 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 )}
-                <div className="flex flex-wrap justify-center gap-2">
-                  {DAILY_MODES.map((m) => {
-                    const cfg = gameModeIcons[m.id];
-                    const result = todayDailies.get(m.id);
-                    const played = result !== undefined;
-                    const won = result?.won === true;
-                    const title = gameModeTitles[m.id] || m.id;
-                    const tileBg = !played ? 'var(--color-bg)' : won ? '#16a34a' : '#dc2626';
-                    const tileBorder = !played ? 'var(--color-border)' : won ? '#16a34a' : '#dc2626';
-                    return (
-                      <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1" style={{ width: '38px' }}>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: tileBg, border: `1.5px solid ${tileBorder}`, opacity: played ? 1 : 0.7 }}>
-                          {played ? (
-                            <span className="text-sm font-black" style={{ color: '#ffffff' }}>{won ? 'W' : 'L'}</span>
-                          ) : cfg?.romanNumeral ? (
-                            <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
-                          ) : cfg?.icon ? (
-                            (() => { const I = cfg.icon; return <I className="w-3.5 h-3.5" style={{ color: cfg.color }} />; })()
-                          ) : (
-                            <Zap className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
-                          )}
-                        </div>
-                        <span className="text-[8px] font-bold truncate w-full text-center" style={{ color: played ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{title}</span>
-                      </Link>
-                    );
-                  })}
+                {/* 5-on-top, 4-on-bottom grid so badges are balanced */}
+                <div className="flex flex-col items-center gap-2">
+                  {[DAILY_MODES.slice(0, 5), DAILY_MODES.slice(5)].map((row, ri) => (
+                    <div key={ri} className="flex justify-center gap-3">
+                      {row.map((m) => {
+                        const cfg = gameModeIcons[m.id];
+                        const result = todayDailies.get(m.id);
+                        const played = result !== undefined;
+                        const won = result?.won === true;
+                        const title = gameModeTitles[m.id] || m.id;
+                        const tileBg = !played ? 'var(--color-bg)' : won ? '#16a34a' : '#dc2626';
+                        const tileBorder = !played ? 'var(--color-border)' : won ? '#16a34a' : '#dc2626';
+                        return (
+                          <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1" style={{ width: '42px' }}>
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: tileBg, border: `1.5px solid ${tileBorder}`, opacity: played ? 1 : 0.7 }}>
+                              {played ? (
+                                <span className="text-sm font-black" style={{ color: '#ffffff' }}>{won ? 'W' : 'L'}</span>
+                              ) : cfg?.romanNumeral ? (
+                                <span className="text-[11px] font-black" style={{ color: cfg.color }}>{cfg.romanNumeral}</span>
+                              ) : cfg?.icon ? (
+                                (() => { const I = cfg.icon; return <I className="w-3.5 h-3.5" style={{ color: cfg.color }} />; })()
+                              ) : (
+                                <Zap className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                              )}
+                            </div>
+                            <span className="text-[8px] font-bold truncate w-full text-center" style={{ color: played ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{title}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
                 {allDone && (
                   <div className="text-center mt-2">

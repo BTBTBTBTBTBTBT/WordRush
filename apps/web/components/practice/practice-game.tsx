@@ -91,10 +91,14 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   // Re-record a restored daily completion that may have failed to persist
   // (e.g. if a DB constraint was missing when the game was originally played).
-  // This is idempotent — recordDailyResult does an upsert.
+  // Only re-records the daily_results row (upsert) — NOT solo matches (which
+  // would create duplicates). Guarded by sessionStorage so it fires at most
+  // once per browser session per mode.
   useEffect(() => {
     if (!isRestoredCompleted.current || !profile || !isDaily) return;
     if (state.status !== GameStatus.WON && state.status !== GameStatus.LOST) return;
+    const guardKey = `wordocious-rerecord-${mode}-${gameSeed}`;
+    try { if (sessionStorage.getItem(guardKey)) return; } catch {}
     const guesses = currentBoard.guesses.length;
     const timeMs = (savedSession?.elapsedTime ?? 0) * 1000;
     recordGameResult(
@@ -102,18 +106,10 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       state.status === GameStatus.WON, guesses, timeMs, gameSeed,
       state.status === GameStatus.WON ? 1 : 0, 1,
     ).catch(() => {});
-    // Also ensure the solo match row exists
-    recordSoloMatch({
-      userId: profile.id,
-      gameMode: mode,
-      won: state.status === GameStatus.WON,
-      score: guesses,
-      timeSeconds: savedSession?.elapsedTime ?? 0,
-      seed: gameSeed,
-      solutions: [currentBoard.solution],
-      guesses: currentBoard.guesses,
-      startedAtIso: new Date().toISOString(),
-    }).catch(() => {});
+    // Ensure freemium lock shows correctly for this mode
+    const modePlayId = mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'practice';
+    recordModePlayed(modePlayId);
+    try { sessionStorage.setItem(guardKey, '1'); } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
 
