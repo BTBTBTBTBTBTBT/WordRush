@@ -701,108 +701,131 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
         )}
       </div>
 
-      {/* Hint clue text — slim bar between header and board */}
-      {hints.hint && (
-        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white max-h-20 overflow-y-auto">
-          <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
-        </div>
-      )}
+      {/* During play: hint, board, hint buttons, keyboard are in a fixed flex column.
+           After game ends: hint + board + result card flow in a scrollable area so
+           nothing gets clipped by the fixed BottomNav on small screens. */}
+      {gameStatus === 'playing' ? (
+        <>
+          {/* Hint clue text */}
+          {hints.hint && (
+            <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
+              <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
+            </div>
+          )}
 
-      {/* Board */}
-      <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-2 pb-1">
-        <NoundleBoard
-          guesses={guesses}
-          currentGuess={currentGuess}
-          maxGuesses={MAX_GUESSES}
-          answerLength={answerLength}
-          answerDisplay={puzzle.display}
-          shouldShake={shouldShake}
-        />
-      </div>
+          {/* Board */}
+          <div className="flex-1 min-h-0 overflow-hidden flex items-center justify-center px-2 pb-1">
+            <NoundleBoard
+              guesses={guesses}
+              currentGuess={currentGuess}
+              maxGuesses={MAX_GUESSES}
+              answerLength={answerLength}
+              answerDisplay={puzzle.display}
+              shouldShake={shouldShake}
+            />
+          </div>
 
-      {/* Hint Buttons */}
-      {gameStatus === 'playing' && (
-        <div className="shrink-0 flex justify-center gap-2 px-4 pb-1">
-          <button
-            onClick={handleHintClue}
-            disabled={hints.hintUsed || hints.loadingHint}
-            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-              hints.hintUsed
-                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                : 'border-purple-300 text-purple-600 bg-purple-50 hover:bg-purple-100'
-            }`}
-          >
-            {hints.loadingHint ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <Lightbulb className="w-3 h-3" />
-            )}
-            Clue
-          </button>
-          <button
-            onClick={handleVowelReveal}
-            disabled={hints.vowelUsed}
-            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-              hints.vowelUsed
-                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                : 'border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100'
-            }`}
-          >
-            <Eye className="w-3 h-3" />
-            {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
-          </button>
-          <button
-            onClick={handleConsonantReveal}
-            disabled={hints.consonantUsed}
-            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
-              hints.consonantUsed
-                ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                : 'border-green-300 text-green-600 bg-green-50 hover:bg-green-100'
-            }`}
-          >
-            <Hash className="w-3 h-3" />
-            {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
-          </button>
-        </div>
-      )}
-
-      {/* Keyboard — hidden when game is complete */}
-      {gameStatus === 'playing' && (
-        <div className="shrink-0 pb-2 px-2 pt-1">
-          <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} />
-        </div>
-      )}
-
-      {/* Result panel — replaces keyboard area when game ends */}
-      {gameStatus !== 'playing' && (
-        <div
-          className="shrink-0 px-4 pb-3 animate-fade-in-up"
-        >
-          <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
-            {resultImage}
-            <div className="flex flex-col gap-1 min-w-0">
-              <span className={`text-sm font-bold ${gameStatus === 'won' ? 'text-green-600' : 'text-red-500'}`}>
-                {gameStatus === 'won'
-                  ? `${puzzle.display}`
-                  : `The answer was: ${puzzle.display}`}
-              </span>
-              {gameStatus === 'won' && (
-                <span className="text-xs text-gray-400">
-                  Solved in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'} · {formatTime(elapsedTime)}
-                </span>
+          {/* Hint Buttons */}
+          <div className="shrink-0 flex justify-center gap-2 px-4 pb-1">
+            <button
+              onClick={handleHintClue}
+              disabled={hints.hintUsed || hints.loadingHint}
+              className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+                hints.hintUsed
+                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                  : 'border-purple-300 text-purple-600 bg-purple-50 hover:bg-purple-100'
+              }`}
+            >
+              {hints.loadingHint ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Lightbulb className="w-3 h-3" />
               )}
-              <div className="flex items-center gap-3 mt-0.5">
-                <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
-                <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
-                {mode === 'daily' && <DailyRankBadge gameMode="PROPERNOUNDLE" />}
-                {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
+              Clue
+            </button>
+            <button
+              onClick={handleVowelReveal}
+              disabled={hints.vowelUsed}
+              className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+                hints.vowelUsed
+                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                  : 'border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100'
+              }`}
+            >
+              <Eye className="w-3 h-3" />
+              {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
+            </button>
+            <button
+              onClick={handleConsonantReveal}
+              disabled={hints.consonantUsed}
+              className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+                hints.consonantUsed
+                  ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                  : 'border-green-300 text-green-600 bg-green-50 hover:bg-green-100'
+              }`}
+            >
+              <Hash className="w-3 h-3" />
+              {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
+            </button>
+          </div>
+
+          {/* Keyboard */}
+          <div className="shrink-0 pb-2 px-2 pt-1">
+            <Keyboard onKey={handleKey} letterStates={keyboardLetterStates} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Completed: scrollable area with hint + board + result */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {/* Hint clue text */}
+            {hints.hint && (
+              <div className="mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
+                <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
+              </div>
+            )}
+
+            {/* Board */}
+            <div className="flex items-center justify-center px-2 py-2">
+              <NoundleBoard
+                guesses={guesses}
+                currentGuess={currentGuess}
+                maxGuesses={MAX_GUESSES}
+                answerLength={answerLength}
+                answerDisplay={puzzle.display}
+                shouldShake={shouldShake}
+              />
+            </div>
+
+            {/* Result panel */}
+            <div className="px-4 pb-4 animate-fade-in-up">
+              <div className="flex items-center gap-3 rounded-xl p-3 bg-white border border-gray-100 shadow-sm">
+                {resultImage}
+                <div className="flex flex-col gap-1 min-w-0">
+                  <span className={`text-sm font-bold ${gameStatus === 'won' ? 'text-green-600' : 'text-red-500'}`}>
+                    {gameStatus === 'won'
+                      ? `${puzzle.display}`
+                      : `The answer was: ${puzzle.display}`}
+                  </span>
+                  {gameStatus === 'won' && (
+                    <span className="text-xs text-gray-400">
+                      Solved in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'} · {formatTime(elapsedTime)}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-3 mt-0.5">
+                    <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>
+                    <button onClick={handleShare} className="text-blue-500 text-xs font-bold underline">{copied ? 'Copied!' : 'Share'}</button>
+                    {mode === 'daily' && <DailyRankBadge gameMode="PROPERNOUNDLE" />}
+                    {mode !== 'daily' && isPro && <button onClick={handlePlayAgain} className="text-red-600 text-xs font-bold underline">Play Again</button>}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {gameStatus !== 'playing' && <BottomNav />}
+          <BottomNav />
+        </>
+      )}
     </div>
   );
 }
