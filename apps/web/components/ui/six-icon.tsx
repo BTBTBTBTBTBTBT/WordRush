@@ -13,7 +13,7 @@ export function SixIcon({ className, size = 20, style }: SixIconProps) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 24 26"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
@@ -21,38 +21,38 @@ export function SixIcon({ className, size = 20, style }: SixIconProps) {
     >
       {/* Right-facing open hand — palm faces viewer, thumb on left */}
       <path
-        d="M16 13V6.5C16 5.67 15.33 5 14.5 5S13 5.67 13 6.5V11"
+        d="M16 13V6C16 5.17 15.33 4.5 14.5 4.5S13 5.17 13 6V11"
         stroke={dark}
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M13 5.5V4C13 3.17 12.33 2.5 11.5 2.5S10 3.17 10 4V11"
+        d="M13 5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V11"
         stroke={dark}
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M10 4.5V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5V11"
+        d="M10 4V3C10 2.17 9.33 1.5 8.5 1.5S7 2.17 7 3V11"
         stroke={dark}
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M7 5V4.5C7 3.67 6.33 3 5.5 3S4 3.67 4 4.5V13C4 17.97 8.03 22 13 22C16.31 22 19 19.31 19 16V13C19 12.17 18.33 11.5 17.5 11.5S16 12.17 16 13"
+        d="M7 4.5V4C7 3.17 6.33 2.5 5.5 2.5S4 3.17 4 4V14C4 19.52 8.48 24 14 24C16.76 24 19 21.76 19 19V13C19 12.17 18.33 11.5 17.5 11.5S16 12.17 16 13"
         stroke={dark}
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       {/* Number badge */}
-      <circle cx="11.5" cy="15" r="5" fill={light} />
+      <circle cx="11.5" cy="17" r="5.5" fill={light} />
       <text
         x="11.5"
-        y="18.2"
+        y="20.5"
         textAnchor="middle"
         fontWeight="900"
         fontSize="10"
