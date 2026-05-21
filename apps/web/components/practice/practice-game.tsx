@@ -89,6 +89,34 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   // below doesn't refire. Reset to false on RESET.
   const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
 
+  // Re-record a restored daily completion that may have failed to persist
+  // (e.g. if a DB constraint was missing when the game was originally played).
+  // This is idempotent — recordDailyResult does an upsert.
+  useEffect(() => {
+    if (!isRestoredCompleted.current || !profile || !isDaily) return;
+    if (state.status !== GameStatus.WON && state.status !== GameStatus.LOST) return;
+    const guesses = currentBoard.guesses.length;
+    const timeMs = (savedSession?.elapsedTime ?? 0) * 1000;
+    recordGameResult(
+      profile.id, mode, 'solo',
+      state.status === GameStatus.WON, guesses, timeMs, gameSeed,
+      state.status === GameStatus.WON ? 1 : 0, 1,
+    ).catch(() => {});
+    // Also ensure the solo match row exists
+    recordSoloMatch({
+      userId: profile.id,
+      gameMode: mode,
+      won: state.status === GameStatus.WON,
+      score: guesses,
+      timeSeconds: savedSession?.elapsedTime ?? 0,
+      seed: gameSeed,
+      solutions: [currentBoard.solution],
+      guesses: currentBoard.guesses,
+      startedAtIso: new Date().toISOString(),
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id]);
+
   const { elapsedSeconds: elapsedTime, reset: resetTimer } = useActivePlayTimer(
     state.status === GameStatus.PLAYING,
     savedSession?.elapsedTime ?? 0,
@@ -146,7 +174,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       });
     }
     if (!isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
-      recordModePlayed('practice');
+      const modePlayId = mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'practice';
+      recordModePlayed(modePlayId);
     }
   }, [state.status]);
 
