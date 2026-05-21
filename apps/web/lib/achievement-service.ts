@@ -40,6 +40,31 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // daily_bonuses flag has ever been set for this user.
   { key: 'daily_sweep', name: 'Daily Sweep', description: 'Complete all 9 dailies in a single day', category: 'skill', icon: 'sparkles' },
   { key: 'flawless_victory', name: 'Flawless Victory', description: 'Win all 9 dailies in a single day', category: 'skill', icon: 'trophy' },
+
+  // Cumulative milestones
+  { key: 'century_club', name: 'Century Club', description: 'Win 100 total games', category: 'consistency', icon: 'trophy' },
+  { key: 'thousand_words', name: 'Thousand Words', description: 'Win 1,000 total games', category: 'consistency', icon: 'crown' },
+  { key: 'sweep_streak_7', name: 'Sweep Streak', description: 'Complete the daily sweep 7 days in a row', category: 'consistency', icon: 'sparkles' },
+  { key: 'iron_will', name: 'Iron Will', description: 'Complete the daily sweep 30 days in a row', category: 'consistency', icon: 'flame' },
+
+  // Mode mastery
+  { key: 'quad_king', name: 'Quad King', description: 'Win 50 QuadWord games', category: 'skill', icon: 'grid' },
+  { key: 'octo_boss', name: 'Octo Boss', description: 'Win 50 OctoWord games', category: 'skill', icon: 'grid' },
+  { key: 'sequence_ace', name: 'Sequence Ace', description: 'Win 50 Sequence games', category: 'skill', icon: 'zap' },
+  { key: 'rescue_hero', name: 'Rescue Hero', description: 'Win 50 Deliverance games', category: 'skill', icon: 'star' },
+
+  // Skill ceiling
+  { key: 'lightning_round', name: 'Lightning Round', description: 'Complete the daily sweep in under 20 minutes', category: 'skill', icon: 'zap' },
+  { key: 'no_sweat', name: 'No Sweat', description: 'Win Classic in 2 guesses', category: 'skill', icon: 'star' },
+  { key: 'untouchable', name: 'Untouchable', description: 'Achieve a 10-win VS streak', category: 'social', icon: 'swords' },
+  { key: 'gauntlet_god', name: 'Gauntlet God', description: 'Complete Gauntlet without failing any board', category: 'skill', icon: 'crown' },
+
+  // Social/competitive
+  { key: 'rival', name: 'Rival', description: 'Play 50 VS matches', category: 'social', icon: 'swords' },
+  { key: 'dominant', name: 'Dominant', description: 'Win 50 VS matches', category: 'social', icon: 'trophy' },
+
+  // Collection
+  { key: 'medal_wall', name: 'Medal Wall', description: 'Earn 100 medals', category: 'collection', icon: 'medal' },
 ];
 
 // ============================================================
@@ -166,7 +191,7 @@ export async function checkAchievements(
   }
 
   // Medal collection achievements
-  if (!alreadyUnlocked.has('medal_10') || !alreadyUnlocked.has('medal_50') || !alreadyUnlocked.has('golden_touch')) {
+  if (!alreadyUnlocked.has('medal_10') || !alreadyUnlocked.has('medal_50') || !alreadyUnlocked.has('golden_touch') || !alreadyUnlocked.has('medal_wall')) {
     const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('gold_medals, silver_medals, bronze_medals')
@@ -176,7 +201,137 @@ export async function checkAchievements(
       const totalMedals = (profile.gold_medals || 0) + (profile.silver_medals || 0) + (profile.bronze_medals || 0);
       if (totalMedals >= 10) await tryUnlock('medal_10');
       if (totalMedals >= 50) await tryUnlock('medal_50');
+      if (totalMedals >= 100) await tryUnlock('medal_wall');
       if ((profile.gold_medals || 0) >= 10) await tryUnlock('golden_touch');
+    }
+  }
+
+  // Century Club / Thousand Words (cumulative wins)
+  if (!alreadyUnlocked.has('century_club') || !alreadyUnlocked.has('thousand_words')) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('total_wins')
+      .eq('id', userId)
+      .single();
+    if (profile) {
+      if (profile.total_wins >= 100) await tryUnlock('century_club');
+      if (profile.total_wins >= 1000) await tryUnlock('thousand_words');
+    }
+  }
+
+  // Sweep Streak (7 days) / Iron Will (30 days)
+  if (!alreadyUnlocked.has('sweep_streak_7') || !alreadyUnlocked.has('iron_will')) {
+    const { data: bonusDays } = await (supabase as any)
+      .from('daily_bonuses')
+      .select('day')
+      .eq('user_id', userId)
+      .eq('sweep_awarded', true)
+      .order('day', { ascending: false })
+      .limit(30);
+    if (bonusDays && bonusDays.length > 0) {
+      // Count consecutive days backwards from the most recent sweep day
+      let streak = 1;
+      for (let i = 1; i < bonusDays.length; i++) {
+        const prev = new Date(bonusDays[i - 1].day);
+        const curr = new Date(bonusDays[i].day);
+        const diffMs = prev.getTime() - curr.getTime();
+        if (diffMs >= 82800000 && diffMs <= 90000000) { // ~23-25h to handle timezone edges
+          streak++;
+        } else {
+          break;
+        }
+      }
+      if (streak >= 7) await tryUnlock('sweep_streak_7');
+      if (streak >= 30) await tryUnlock('iron_will');
+    }
+  }
+
+  // Mode mastery achievements (50 wins in specific modes)
+  const modeMasteryChecks: [string, string][] = [
+    ['quad_king', 'QUORDLE'],
+    ['octo_boss', 'OCTORDLE'],
+    ['sequence_ace', 'SEQUENCE'],
+    ['rescue_hero', 'RESCUE'],
+  ];
+  for (const [key, mode] of modeMasteryChecks) {
+    if (!alreadyUnlocked.has(key)) {
+      const { data: stats } = await (supabase as any)
+        .from('user_stats')
+        .select('wins')
+        .eq('user_id', userId)
+        .eq('game_mode', mode)
+        .eq('play_type', 'solo');
+      const totalWins = (stats || []).reduce((s: number, r: any) => s + (r.wins || 0), 0);
+      if (totalWins >= 50) await tryUnlock(key);
+    }
+  }
+
+  // Lightning Round (daily sweep in under 20 minutes)
+  if (!alreadyUnlocked.has('lightning_round') && seed?.startsWith('daily-')) {
+    // Check if today's sweep is complete and total time < 1200s
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: todayResults } = await (supabase as any)
+      .from('daily_results')
+      .select('game_mode, time_seconds, completed')
+      .eq('user_id', userId)
+      .eq('day', today)
+      .eq('completed', true);
+    if (todayResults && todayResults.length >= 9) {
+      const modes = new Set(todayResults.map((r: any) => r.game_mode));
+      const allModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
+      if (allModes.every(m => modes.has(m))) {
+        const totalTime = todayResults.reduce((s: number, r: any) => s + (r.time_seconds || 0), 0);
+        if (totalTime < 1200) await tryUnlock('lightning_round');
+      }
+    }
+  }
+
+  // No Sweat (Classic in 2 guesses)
+  if (gameMode === 'DUEL' && won && guessCount <= 2) {
+    await tryUnlock('no_sweat');
+  }
+
+  // Untouchable (10-win VS streak)
+  if (playType === 'vs' && won && !alreadyUnlocked.has('untouchable')) {
+    const { data: profile } = await (supabase as any)
+      .from('profiles')
+      .select('current_streak')
+      .eq('id', userId)
+      .single();
+    if (profile && profile.current_streak >= 10) {
+      await tryUnlock('untouchable');
+    }
+  }
+
+  // Gauntlet God (complete gauntlet with all boards solved)
+  if (gameMode === 'GAUNTLET' && won && !alreadyUnlocked.has('gauntlet_god')) {
+    // Check most recent gauntlet daily result for boards_solved === total_boards
+    const { data: gauntletResult } = await (supabase as any)
+      .from('daily_results')
+      .select('boards_solved, total_boards')
+      .eq('user_id', userId)
+      .eq('game_mode', 'GAUNTLET')
+      .eq('completed', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (gauntletResult && gauntletResult.boards_solved === gauntletResult.total_boards) {
+      await tryUnlock('gauntlet_god');
+    }
+  }
+
+  // Rival (50 VS matches played) / Dominant (50 VS wins)
+  if (playType === 'vs' && (!alreadyUnlocked.has('rival') || !alreadyUnlocked.has('dominant'))) {
+    const { data: vsStats } = await (supabase as any)
+      .from('user_stats')
+      .select('total_games, wins')
+      .eq('user_id', userId)
+      .eq('play_type', 'vs');
+    if (vsStats) {
+      const totalGames = vsStats.reduce((s: number, r: any) => s + (r.total_games || 0), 0);
+      const totalWins = vsStats.reduce((s: number, r: any) => s + (r.wins || 0), 0);
+      if (totalGames >= 50) await tryUnlock('rival');
+      if (totalWins >= 50) await tryUnlock('dominant');
     }
   }
 
