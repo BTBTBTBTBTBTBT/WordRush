@@ -32,7 +32,7 @@ export function CollapsibleSection({ title, badge, defaultOpen = false, children
       </button>
       <div
         className="overflow-hidden transition-all duration-200"
-        style={{ maxHeight: open ? '2000px' : '0px', opacity: open ? 1 : 0 }}
+        style={{ maxHeight: open ? '9999px' : '0px', opacity: open ? 1 : 0 }}
       >
         {children}
       </div>

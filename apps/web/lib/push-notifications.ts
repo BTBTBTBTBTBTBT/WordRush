@@ -54,7 +54,7 @@ export async function removeSubscription(userId: string): Promise<boolean> {
 }
 
 export function isPushSupported(): boolean {
-  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  return !!(VAPID_PUBLIC_KEY) && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 
 export function getNotificationPermission(): NotificationPermission | 'unsupported' {
