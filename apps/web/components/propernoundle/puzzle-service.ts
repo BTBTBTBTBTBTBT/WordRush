@@ -7,7 +7,13 @@ import { getTodayLocal } from '@/lib/daily-service';
 // The resulting integer is a stable "day index" regardless of viewer TZ.
 const EPOCH_DATE_STRING = '2024-01-01';
 
-const allPuzzles: Puzzle[] = puzzles as Puzzle[];
+// Cap answer length so tiles fit on mobile screens (~375px).
+// 15 letters keeps 91% of the library while guaranteeing every
+// puzzle is playable without horizontal overflow.
+const MAX_ANSWER_LENGTH = 15;
+const allPuzzles: Puzzle[] = (puzzles as Puzzle[]).filter(
+  p => p.answer.length <= MAX_ANSWER_LENGTH,
+);
 
 // Group puzzles by category so the daily picker can rotate one category
 // per day instead of walking the JSON in order. The source JSON ships
