@@ -88,7 +88,7 @@ export default function RootLayout({
             style={{
               fontSize: '28px',
               fontWeight: 900,
-              fontFamily: '"Nunito", sans-serif',
+              letterSpacing: '-0.02em',
               backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
