@@ -312,7 +312,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
             <>
               <GameHomeButton accentColor={cfg.accent} />
               <SoundToggle accentColor={cfg.accent} />
-              <h1 className="text-3xl font-black text-transparent bg-clip-text" style={{ backgroundImage: cfg.gradient }}>
+              <h1 className="text-3xl font-black" style={{ backgroundImage: cfg.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}>
                 {cfg.title}
               </h1>
             </>

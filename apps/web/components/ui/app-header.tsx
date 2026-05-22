@@ -43,9 +43,13 @@ export function AppHeader() {
       <header className="flex items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-1.5">
           <span
-            className="text-xl font-black bg-clip-text text-transparent"
+            className="text-xl font-black"
             style={{
               backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              color: 'transparent',
             }}
           >
             WORDOCIOUS

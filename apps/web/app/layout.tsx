@@ -14,6 +14,7 @@ import { SharePreviewHost } from '@/components/share/share-preview-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { RotateOverlay } from '@/components/ui/rotate-overlay';
 import { PwaProvider } from '@/components/providers/pwa-provider';
+import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
 import { Toaster } from '@/components/ui/toaster';
 
 const nunito = Nunito({
@@ -67,6 +68,56 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={nunito.className} style={{ backgroundColor: 'var(--color-bg)' }} suppressHydrationWarning>
+        {/* Branded loading screen — visible until React hydrates and removes it.
+            Uses only inline styles so it renders correctly before Tailwind loads. */}
+        <div
+          id="app-loader"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: '16px',
+            background: '#f8f7ff',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '28px',
+              fontWeight: 900,
+              fontFamily: '"Nunito", sans-serif',
+              backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              color: 'transparent',
+            }}
+          >
+            WORDOCIOUS
+          </span>
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              border: '3px solid #ede9f6',
+              borderTopColor: '#a78bfa',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }}
+          />
+        </div>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes spin { to { transform: rotate(360deg) } }
+          /* Fade out once React hydrates */
+          #app-loader.loaded {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+          }
+        ` }} />
         {/* Google AdSense — deferred until after page is interactive and idle */}
         <Script
           async
@@ -87,6 +138,7 @@ export default function RootLayout({
                     <ProPromptModal />
                     <SharePreviewHost />
                     <PwaProvider />
+                    <AppLoaderDismiss />
                     <Toaster />
                   </StreakShieldProvider>
                 </ThemeProvider>

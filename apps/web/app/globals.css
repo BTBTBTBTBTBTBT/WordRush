@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+/* Nunito is loaded via next/font in layout.tsx — no separate @import needed */
 
 @tailwind base;
 @tailwind components;
