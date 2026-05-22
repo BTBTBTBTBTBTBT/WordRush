@@ -33,10 +33,13 @@ export function GauntletProgress({ stages, currentStage, stageResults }: Gauntle
                 ${isCompleted
                   ? 'bg-green-100 border-green-400 text-green-600'
                   : isActive
-                    ? 'bg-purple-100 border-purple-400 text-purple-600 shadow shadow-purple-200 animate-pulse'
+                    ? 'bg-purple-100 border-purple-400 text-purple-600'
                     : 'bg-gray-50 border-gray-200 text-gray-400'
                 }
               `}
+              style={isActive ? {
+                animation: 'gauntlet-glow 2.5s ease-in-out infinite',
+              } : undefined}
             >
               {isCompleted ? (
                 <Check className="w-2.5 h-2.5" />

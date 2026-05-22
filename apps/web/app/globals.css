@@ -321,6 +321,15 @@
     }
   }
 
+  @keyframes gauntlet-glow {
+    0%, 100% {
+      box-shadow: 0 0 3px rgba(168, 85, 247, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 8px rgba(168, 85, 247, 0.6), 0 0 14px rgba(168, 85, 247, 0.25);
+    }
+  }
+
   .animate-gradient-x {
     background-size: 200% 200%;
     animation: gradient-x 3s ease infinite;
