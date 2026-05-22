@@ -57,7 +57,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   // --- Classic hints (Six/Seven only) ---
   const hasHints = mode === GameMode.DUEL_6 || mode === GameMode.DUEL_7;
   const hints = useClassicHints();
-  const hintStorageKey = `wordocious-hints-${mode}-${isDaily ? 'daily' : 'practice'}`;
+  // Include seed in key so daily hints don't carry over to the next day's puzzle
+  const hintStorageKey = `wordocious-hints-${mode}-${gameSeed}`;
 
   // Restore hint state on mount
   useState(() => {
@@ -67,6 +68,13 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       if (saved) {
         const parsed: PersistedClassicHintState = JSON.parse(saved);
         hints.restoreHints(parsed);
+      }
+      // Clean up old hint keys for this mode (previous seeds/days)
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(`wordocious-hints-${mode}-`) && key !== hintStorageKey) {
+          localStorage.removeItem(key);
+        }
       }
     } catch {}
   });
