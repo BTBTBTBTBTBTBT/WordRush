@@ -162,12 +162,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         return;
       }
 
-      // Submit guess to ALL boards (like quordle)
-      state.boards.forEach((board, index) => {
-        if (board.status === GameStatus.PLAYING) {
-          dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
-        }
-      });
+      dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
 
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {

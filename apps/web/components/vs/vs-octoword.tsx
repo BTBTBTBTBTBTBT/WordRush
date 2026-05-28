@@ -62,11 +62,7 @@ export function VsOctoword({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
       if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); setCurrentGuess(''); setTimeout(() => setError(''), 1500); return; }
 
       onGuessSubmitted(currentGuess, 0);
-      state.boards.forEach((_, index) => {
-        if (state.boards[index].status === 'PLAYING') {
-          dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
-        }
-      });
+      dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess(prev => prev.slice(0, -1));

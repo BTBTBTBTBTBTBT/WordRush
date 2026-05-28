@@ -140,7 +140,7 @@ export interface MatchResult {
 }
 
 export type GameAction =
-  | { type: 'SUBMIT_GUESS'; guess: string; boardIndex?: number }
+  | { type: 'SUBMIT_GUESS'; guess: string; boardIndex?: number; applyToAll?: boolean }
   | { type: 'SUBMIT_HINT'; hintWord: string; hintEvaluation: GuessResult; boardIndex?: number }
   | { type: 'NEXT_BOARD' }
   | { type: 'NEXT_STAGE'; elapsedMs?: number }

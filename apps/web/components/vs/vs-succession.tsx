@@ -103,13 +103,8 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
         return;
       }
 
-      // Submit guess to ALL playing boards (same as solo sequence)
       onGuessSubmitted(currentGuess, 0);
-      state.boards.forEach((board, index) => {
-        if (board.status === GameStatus.PLAYING) {
-          dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
-        }
-      });
+      dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess(prev => prev.slice(0, -1));

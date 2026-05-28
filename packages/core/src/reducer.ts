@@ -139,52 +139,54 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'SUBMIT_GUESS': {
-      const { guess, boardIndex = state.currentBoardIndex } = action;
-
-      // NOTE: we deliberately do NOT gate on state.status here. Multi-
-      // board modes (Rescue, Quordle, Octordle, Sequence, Gauntlet
-      // stages) submit the same user guess as one dispatch per playing
-      // board. A previous iteration of this reducer rejected any guess
-      // whose first sibling-dispatch had already tipped the game into
-      // LOST (e.g. the losing-guess also happened to be the answer on
-      // another board — it got dropped). The per-board check below is
-      // the authoritative gate; the game-status update at the bottom
-      // still winds up correct either way.
-
-      const board = state.boards[boardIndex];
-      if (guess.length !== board.solution.length) {
-        return state;
-      }
+      const { guess, applyToAll, boardIndex = state.currentBoardIndex } = action;
 
       if (!isValidWord(guess)) {
         return state;
       }
 
-      if (board.status !== GameStatus.PLAYING) {
-        return state;
-      }
-
-      const result = evaluateGuess(board.solution, guess);
-      const newGuesses = [...board.guesses, guess.toUpperCase()];
-
-      let newStatus: GameStatus = board.status;
-      if (result.isCorrect) {
-        newStatus = GameStatus.WON;
-      } else if (newGuesses.length >= board.maxGuesses) {
-        newStatus = GameStatus.LOST;
-      }
-
-      const newBoards = [...state.boards];
-      newBoards[boardIndex] = {
-        ...board,
-        guesses: newGuesses,
-        status: newStatus
+      // Apply the guess to one board (single-board path) or every
+      // PLAYING board atomically (applyToAll path). Multi-board modes
+      // — Rescue/Deliverance, Quordle, Octordle, Sequence and the
+      // 4-board Gauntlet stages, plus their VS counterparts — pass
+      // applyToAll so the win/loss check below runs on the fully
+      // updated board array. Previously each board was dispatched
+      // separately; if the final guess both won one board and busted
+      // another in the same submission, the GAUNTLET branch froze its
+      // failed-stage snapshot mid-batch and the sibling board's win
+      // never made it onto the results screen.
+      const updateBoard = (board: BoardState): BoardState => {
+        if (board.status !== GameStatus.PLAYING) return board;
+        if (guess.length !== board.solution.length) return board;
+        const result = evaluateGuess(board.solution, guess);
+        const newGuesses = [...board.guesses, guess.toUpperCase()];
+        let newStatus: GameStatus = board.status;
+        if (result.isCorrect) {
+          newStatus = GameStatus.WON;
+        } else if (newGuesses.length >= board.maxGuesses) {
+          newStatus = GameStatus.LOST;
+        }
+        return { ...board, guesses: newGuesses, status: newStatus };
       };
+
+      let newBoards: BoardState[];
+      if (applyToAll) {
+        newBoards = state.boards.map(updateBoard);
+        if (newBoards.every((b, i) => b === state.boards[i])) {
+          return state;
+        }
+      } else {
+        const board = state.boards[boardIndex];
+        if (board.status !== GameStatus.PLAYING) return state;
+        if (guess.length !== board.solution.length) return state;
+        newBoards = [...state.boards];
+        newBoards[boardIndex] = updateBoard(board);
+      }
 
       let gameStatus: GameStatus = state.status;
 
       if (state.mode === GameMode.DUEL || state.mode === GameMode.DUEL_6 || state.mode === GameMode.DUEL_7) {
-        gameStatus = newStatus;
+        gameStatus = newBoards[0].status;
       } else if (state.mode === GameMode.MULTI_DUEL) {
         const allComplete = newBoards.every(b => b.status !== GameStatus.PLAYING);
         if (allComplete) {
@@ -203,7 +205,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         // accounting through state.status === LOST downstream, so it
         // picks up the new timing without any VS-specific wiring.
         const anyLost = newBoards.some(b => b.status === GameStatus.LOST);
-        if (anyLost) {
+        const allWon = newBoards.every(b => b.status === GameStatus.WON);
+        // Only fail the stage if at least one board went bust AND there
+        // is no path forward — i.e. some other board didn't simultaneously
+        // win on the same submission to clear the stage. The allWon check
+        // is defensive: if every board is now WON the NEXT_STAGE dispatch
+        // (or game completion) handles it, no failed-stage snapshot needed.
+        if (anyLost && !allWon) {
           // Push the failed stage into stageResults so GauntletResults
           // renders a red "failed here" row for the stage that killed
           // the run. NEXT_STAGE only appends on successful completion,
@@ -234,20 +242,18 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           };
         }
       } else if (state.mode === GameMode.QUORDLE || state.mode === GameMode.OCTORDLE || state.mode === GameMode.SEQUENCE) {
-        // All these modes: every guess goes to all boards, win when all solved, lose when out of guesses
         const allComplete = newBoards.every(b => b.status !== GameStatus.PLAYING);
         if (allComplete) {
           const allWon = newBoards.every(b => b.status === GameStatus.WON);
           gameStatus = allWon ? GameStatus.WON : GameStatus.LOST;
         }
       } else if (state.mode === GameMode.RESCUE || state.mode === GameMode.TOURNAMENT) {
-        if (newStatus === GameStatus.LOST) {
+        const allWon = newBoards.every(b => b.status === GameStatus.WON);
+        const anyLost = newBoards.some(b => b.status === GameStatus.LOST);
+        if (allWon) {
+          gameStatus = GameStatus.WON;
+        } else if (anyLost) {
           gameStatus = GameStatus.LOST;
-        } else if (newStatus === GameStatus.WON) {
-          const allWon = newBoards.every(b => b.status === GameStatus.WON);
-          if (allWon) {
-            gameStatus = GameStatus.WON;
-          }
         }
       }
 

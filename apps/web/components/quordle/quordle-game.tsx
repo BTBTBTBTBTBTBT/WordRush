@@ -101,11 +101,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
       if (!isWordValid(currentGuess)) { setError('Not in word list'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600); setTimeout(() => setError(''), 1500); return; }
       if (hasDuplicateGuess(state.boards, currentGuess)) { setError('Already guessed'); playInvalid(); setIsShaking(true); setTimeout(() => { setCurrentGuess(''); setIsShaking(false); }, 600); setTimeout(() => setError(''), 1500); return; }
 
-      state.boards.forEach((_, index) => {
-        if (state.boards[index].status === 'PLAYING') {
-          dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
-        }
-      });
+      dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {
       setCurrentGuess((prev) => prev.slice(0, -1));
