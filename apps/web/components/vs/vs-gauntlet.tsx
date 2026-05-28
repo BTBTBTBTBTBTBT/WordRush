@@ -169,11 +169,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
       if (isSingleBoard) {
         dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: state.currentBoardIndex });
       } else {
-        state.boards.forEach((board, index) => {
-          if (board.status === GameStatus.PLAYING) {
-            dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
-          }
-        });
+        dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
       }
       setCurrentGuess('');
     } else if (key === 'BACK') {

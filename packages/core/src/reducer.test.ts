@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createInitialState, gameReducer } from './reducer';
-import { GameMode, GameStatus } from './types';
+import { BoardState, GameMode, GameState, GameStatus, GAUNTLET_STAGES } from './types';
 import { initDictionary } from './dictionary';
 
 describe('game reducer', () => {
   beforeAll(() => {
-    const solutions = ['APPLE', 'BREAD', 'CRANE', 'DELTA', 'EARTH'];
+    const solutions = ['APPLE', 'BREAD', 'CRANE', 'DELTA', 'EARTH', 'PANDA', 'PURDY'];
     const allowed = [...solutions, 'WRONG', 'TESTS', 'WORDS'];
     initDictionary(allowed, solutions);
   });
@@ -107,6 +107,54 @@ describe('game reducer', () => {
       }
 
       expect(state.status).toBe(GameStatus.WON);
+    });
+  });
+
+  describe('multi-board atomic submit', () => {
+    it('records the sibling-board win in a failed Gauntlet stage snapshot when the same guess simultaneously busts another board', () => {
+      // Reproduces the Deliverance bug: a guess that wins one board
+      // (PURDY) and busts another (PANDA) on the same submission must
+      // mark both boards in the stage snapshot. Previously the snapshot
+      // was frozen as soon as PANDA flipped LOST, before PURDY's board
+      // was updated, leaving the results screen reporting 2/4 instead
+      // of 3/4 even though the live tiles rendered PURDY all-green.
+      const stageBoards: BoardState[] = [
+        { solution: 'PANDA', guesses: ['CRANE', 'BREAD', 'DELTA', 'EARTH', 'WORDS'], maxGuesses: 6, status: GameStatus.PLAYING },
+        { solution: 'APPLE', guesses: ['APPLE'], maxGuesses: 6, status: GameStatus.WON },
+        { solution: 'PURDY', guesses: ['CRANE', 'BREAD', 'DELTA', 'EARTH', 'WORDS'], maxGuesses: 6, status: GameStatus.PLAYING },
+        { solution: 'BREAD', guesses: ['BREAD'], maxGuesses: 6, status: GameStatus.WON },
+      ];
+
+      const state: GameState = {
+        mode: GameMode.GAUNTLET,
+        seed: 'test',
+        startTime: 0,
+        currentBoardIndex: 0,
+        status: GameStatus.PLAYING,
+        boards: stageBoards,
+        gauntlet: {
+          currentStage: 3,
+          totalStages: GAUNTLET_STAGES.length,
+          stages: GAUNTLET_STAGES,
+          stageResults: [],
+          stageStartTime: Date.now(),
+          allSolutions: [],
+          blackoutCount: 0,
+        },
+      };
+
+      const newState = gameReducer(state, { type: 'SUBMIT_GUESS', guess: 'PURDY', applyToAll: true });
+
+      expect(newState.boards[0].status).toBe(GameStatus.LOST);
+      expect(newState.boards[2].status).toBe(GameStatus.WON);
+      expect(newState.status).toBe(GameStatus.LOST);
+
+      const failedStage = newState.gauntlet?.stageResults[0];
+      expect(failedStage?.status).toBe(GameStatus.LOST);
+      expect(failedStage?.boardsSnapshot?.[0].status).toBe(GameStatus.LOST);
+      expect(failedStage?.boardsSnapshot?.[1].status).toBe(GameStatus.WON);
+      expect(failedStage?.boardsSnapshot?.[2].status).toBe(GameStatus.WON);
+      expect(failedStage?.boardsSnapshot?.[3].status).toBe(GameStatus.WON);
     });
   });
 

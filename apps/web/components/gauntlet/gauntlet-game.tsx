@@ -226,12 +226,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
       if (isSingleBoard) {
         dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: state.currentBoardIndex });
       } else {
-        // For quordle, sequence, octordle, rescue — submit to all playing boards
-        state.boards.forEach((board, index) => {
-          if (board.status === GameStatus.PLAYING) {
-            dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: index });
-          }
-        });
+        dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
       }
 
       setCurrentGuess('');
