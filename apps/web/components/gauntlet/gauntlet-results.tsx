@@ -115,14 +115,14 @@ export function GauntletResults({
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 overflow-y-auto"
+      className="h-screen-stable overflow-y-auto p-4"
       style={{
         backgroundColor: 'var(--color-bg)',
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)',
       }}
     >
       <div
-        className="max-w-lg w-full space-y-6 py-6 animate-fade-in-scale"
+        className="max-w-lg w-full mx-auto space-y-6 py-6 animate-fade-in-scale"
       >
         {/* Header */}
         <div className="text-center space-y-3">
