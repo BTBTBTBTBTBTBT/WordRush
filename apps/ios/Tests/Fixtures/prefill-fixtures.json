@@ -1,0 +1,746 @@
+[
+  {
+    "seed": "test",
+    "solutions": [
+      "DIVVY",
+      "SATIN",
+      "GANJA",
+      "PROMO"
+    ],
+    "prefillWords": [
+      "MAZER",
+      "IDEAL",
+      "FLAVO"
+    ],
+    "boardPrefills": [
+      {
+        "solution": "DIVVY",
+        "prefillGuesses": [
+          {
+            "word": "MAZER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "Z",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "IDEAL",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "I",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "D",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "FLAVO",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "F",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "V",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      },
+      {
+        "solution": "SATIN",
+        "prefillGuesses": [
+          {
+            "word": "MAZER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "Z",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "IDEAL",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "I",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "D",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "FLAVO",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "F",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "V",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      },
+      {
+        "solution": "GANJA",
+        "prefillGuesses": [
+          {
+            "word": "MAZER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "Z",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "IDEAL",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "I",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "D",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "FLAVO",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "F",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "V",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      },
+      {
+        "solution": "PROMO",
+        "prefillGuesses": [
+          {
+            "word": "MAZER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "M",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "Z",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "PRESENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "IDEAL",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "I",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "D",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "FLAVO",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "F",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "V",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "CORRECT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "seed": "daily-2026-01-15-RESCUE",
+    "solutions": [
+      "SLINK",
+      "ALIGN",
+      "BURST",
+      "FRYER"
+    ],
+    "prefillWords": [
+      "TIMBE",
+      "WIPER",
+      "BANKS"
+    ],
+    "boardPrefills": [
+      {
+        "solution": "SLINK",
+        "prefillGuesses": [
+          {
+            "word": "TIMBE",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "T",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "I",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "B",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "WIPER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "W",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "I",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "P",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "BANKS",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "B",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "N",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "K",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "PRESENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      },
+      {
+        "solution": "ALIGN",
+        "prefillGuesses": [
+          {
+            "word": "TIMBE",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "T",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "I",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "B",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "WIPER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "W",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "I",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "P",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "BANKS",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "B",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "N",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "K",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      },
+      {
+        "solution": "BURST",
+        "prefillGuesses": [
+          {
+            "word": "TIMBE",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "T",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "I",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "B",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "WIPER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "W",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "I",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "P",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "PRESENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "BANKS",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "B",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "N",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "K",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "PRESENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      },
+      {
+        "solution": "FRYER",
+        "prefillGuesses": [
+          {
+            "word": "TIMBE",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "T",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "I",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "B",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "PRESENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "WIPER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "W",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "I",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "P",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "R",
+                  "state": "CORRECT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "BANKS",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "B",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "N",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "K",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

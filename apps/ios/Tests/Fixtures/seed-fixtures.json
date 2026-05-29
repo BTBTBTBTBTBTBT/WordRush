@@ -1,0 +1,174 @@
+{
+  "standard": [
+    {
+      "seed": "test",
+      "count": 1,
+      "solutions": [
+        "DIVVY"
+      ]
+    },
+    {
+      "seed": "test",
+      "count": 4,
+      "solutions": [
+        "DIVVY",
+        "SATIN",
+        "GANJA",
+        "PROMO"
+      ]
+    },
+    {
+      "seed": "test",
+      "count": 8,
+      "solutions": [
+        "DIVVY",
+        "SATIN",
+        "GANJA",
+        "PROMO",
+        "ANISE",
+        "SINUS",
+        "SWEEP",
+        "CROFT"
+      ]
+    },
+    {
+      "seed": "daily-2026-01-15-DUEL",
+      "count": 1,
+      "solutions": [
+        "GRUMP"
+      ]
+    },
+    {
+      "seed": "daily-2026-01-15-QUORDLE",
+      "count": 4,
+      "solutions": [
+        "FLOWN",
+        "TAXED",
+        "BAKED",
+        "ASCOT"
+      ]
+    },
+    {
+      "seed": "daily-2026-01-15-OCTORDLE",
+      "count": 8,
+      "solutions": [
+        "SCRAP",
+        "BRAWL",
+        "EARLY",
+        "BOARD",
+        "SWOON",
+        "BLURT",
+        "FROST",
+        "OFTEN"
+      ]
+    },
+    {
+      "seed": "daily-2026-01-15-SEQUENCE",
+      "count": 4,
+      "solutions": [
+        "OWNED",
+        "HIRED",
+        "WINDY",
+        "ALERT"
+      ]
+    },
+    {
+      "seed": "daily-2026-01-15-RESCUE",
+      "count": 4,
+      "solutions": [
+        "SLINK",
+        "ALIGN",
+        "BURST",
+        "FRYER"
+      ]
+    },
+    {
+      "seed": "gauntlet-abc-123",
+      "count": 21,
+      "solutions": [
+        "PIPER",
+        "EXUDE",
+        "NACHO",
+        "UNITY",
+        "DEPTH",
+        "CLOCK",
+        "THUMP",
+        "SYRUP",
+        "SCORE",
+        "ALTER",
+        "ADORN",
+        "BONER",
+        "TRIED",
+        "BITCH",
+        "FORTE",
+        "BLUFF",
+        "ASHES",
+        "LEERY",
+        "TULLE",
+        "SEWER",
+        "BLAME"
+      ]
+    },
+    {
+      "seed": "match-seed-xyz",
+      "count": 1,
+      "solutions": [
+        "DUVET"
+      ]
+    },
+    {
+      "seed": "match-seed-xyz",
+      "count": 2,
+      "solutions": [
+        "DUVET",
+        "LOCAL"
+      ]
+    }
+  ],
+  "sixLetter": [
+    {
+      "seed": "test",
+      "count": 1,
+      "solutions": [
+        "UNTIDY"
+      ]
+    },
+    {
+      "seed": "daily-2026-01-15-DUEL_6",
+      "count": 1,
+      "solutions": [
+        "CRUISE"
+      ]
+    },
+    {
+      "seed": "match-6-abc",
+      "count": 1,
+      "solutions": [
+        "ANTLER"
+      ]
+    }
+  ],
+  "sevenLetter": [
+    {
+      "seed": "test",
+      "count": 1,
+      "solutions": [
+        "DISRUPT"
+      ]
+    },
+    {
+      "seed": "daily-2026-01-15-DUEL_7",
+      "count": 1,
+      "solutions": [
+        "STERILE"
+      ]
+    },
+    {
+      "seed": "match-7-abc",
+      "count": 1,
+      "solutions": [
+        "CONCISE"
+      ]
+    }
+  ]
+}

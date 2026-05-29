@@ -1,0 +1,449 @@
+[
+  {
+    "solution": "HELLO",
+    "guess": "HELLO",
+    "result": {
+      "tiles": [
+        {
+          "letter": "H",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "E",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "L",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "L",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "O",
+          "state": "CORRECT"
+        }
+      ],
+      "isCorrect": true
+    }
+  },
+  {
+    "solution": "HELLO",
+    "guess": "HXXXX",
+    "result": {
+      "tiles": [
+        {
+          "letter": "H",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "HELLO",
+    "guess": "OXXXX",
+    "result": {
+      "tiles": [
+        {
+          "letter": "O",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "HELLO",
+    "guess": "TRAPS",
+    "result": {
+      "tiles": [
+        {
+          "letter": "T",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "R",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "A",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "P",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "S",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "SPEED",
+    "guess": "EEXXX",
+    "result": {
+      "tiles": [
+        {
+          "letter": "E",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "E",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "HELLO",
+    "guess": "LXLXX",
+    "result": {
+      "tiles": [
+        {
+          "letter": "L",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "L",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "HELLO",
+    "guess": "LLLXX",
+    "result": {
+      "tiles": [
+        {
+          "letter": "L",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "L",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "L",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "X",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "CRANE",
+    "guess": "REACT",
+    "result": {
+      "tiles": [
+        {
+          "letter": "R",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "E",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "A",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "C",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "T",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "APPLE",
+    "guess": "PAPAL",
+    "result": {
+      "tiles": [
+        {
+          "letter": "P",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "A",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "P",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "A",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "L",
+          "state": "PRESENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "AABBB",
+    "guess": "BBAAA",
+    "result": {
+      "tiles": [
+        {
+          "letter": "B",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "B",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "A",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "A",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "A",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "ABBEY",
+    "guess": "BABES",
+    "result": {
+      "tiles": [
+        {
+          "letter": "B",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "A",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "B",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "E",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "S",
+          "state": "ABSENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "QUEUE",
+    "guess": "QUEUE",
+    "result": {
+      "tiles": [
+        {
+          "letter": "Q",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "U",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "E",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "U",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "E",
+          "state": "CORRECT"
+        }
+      ],
+      "isCorrect": true
+    }
+  },
+  {
+    "solution": "FUZZY",
+    "guess": "FIZZY",
+    "result": {
+      "tiles": [
+        {
+          "letter": "F",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "I",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "Z",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "Z",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "Y",
+          "state": "CORRECT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "BRIDGE",
+    "guess": "DANGER",
+    "result": {
+      "tiles": [
+        {
+          "letter": "D",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "A",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "N",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "G",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "E",
+          "state": "PRESENT"
+        },
+        {
+          "letter": "R",
+          "state": "PRESENT"
+        }
+      ],
+      "isCorrect": false
+    }
+  },
+  {
+    "solution": "AMAZING",
+    "guess": "GLAZING",
+    "result": {
+      "tiles": [
+        {
+          "letter": "G",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "L",
+          "state": "ABSENT"
+        },
+        {
+          "letter": "A",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "Z",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "I",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "N",
+          "state": "CORRECT"
+        },
+        {
+          "letter": "G",
+          "state": "CORRECT"
+        }
+      ],
+      "isCorrect": false
+    }
+  }
+]
