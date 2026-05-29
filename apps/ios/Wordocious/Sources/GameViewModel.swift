@@ -147,10 +147,12 @@ final class GameViewModel: ObservableObject {
             total = boardCount
         }
 
+        let theSeed = state.seed
         Task {
-            await DailyResultsService.record(
-                gameMode: modeRaw, completed: completed, guessCount: guesses,
-                timeSeconds: elapsedSeconds, boardsSolved: solved, totalBoards: total
+            await GameResultsService.record(
+                gameMode: modeRaw, won: completed, guessCount: guesses,
+                timeSeconds: elapsedSeconds, boardsSolved: solved, totalBoards: total,
+                seed: theSeed
             )
         }
     }

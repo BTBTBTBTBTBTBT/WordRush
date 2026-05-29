@@ -1,0 +1,187 @@
+import Foundation
+import Supabase
+import WordociousCore
+
+/// Records a finished game's full progression, porting the core of
+/// lib/stats-service.ts recordGameResult(): user_stats (wins/losses/games/
+/// best/avg/fastest), profile XP + level + win-streak + daily-login-streak
+/// (+ 7-day shield grant), and the daily_results leaderboard row.
+///
+/// Deferred vs web (best-effort / fire-and-forget there): all_time_records
+/// checkAndUpdateRecord writes and the daily "sweep" bonus. See bible §7.
+enum GameResultsService {
+    private struct StatsRow: Decodable {
+        let id: String
+        let wins: Int
+        let losses: Int
+        let totalGames: Int
+        let bestScore: Int
+        let averageTime: Int
+        let fastestTime: Int
+        enum CodingKeys: String, CodingKey {
+            case id, wins, losses
+            case totalGames = "total_games"
+            case bestScore = "best_score"
+            case averageTime = "average_time"
+            case fastestTime = "fastest_time"
+        }
+    }
+
+    private struct StatsUpdate: Encodable {
+        let wins: Int, losses: Int, total_games: Int
+        let best_score: Int, average_time: Int, fastest_time: Int
+    }
+    private struct StatsInsert: Encodable {
+        let user_id: String, game_mode: String, play_type: String
+        let wins: Int, losses: Int, total_games: Int
+        let best_score: Int, average_time: Int, fastest_time: Int
+    }
+
+    private struct ProfileRow: Decodable {
+        let totalWins: Int, totalLosses: Int
+        let currentStreak: Int, bestStreak: Int
+        let xp: Int
+        let level: Int?
+        let lastPlayedAt: String?
+        let dailyLoginStreak: Int, bestDailyLoginStreak: Int
+        let streakShields: Int
+        enum CodingKeys: String, CodingKey {
+            case xp
+            case totalWins = "total_wins"
+            case totalLosses = "total_losses"
+            case currentStreak = "current_streak"
+            case bestStreak = "best_streak"
+            case level
+            case lastPlayedAt = "last_played_at"
+            case dailyLoginStreak = "daily_login_streak"
+            case bestDailyLoginStreak = "best_daily_login_streak"
+            case streakShields = "streak_shields"
+        }
+    }
+
+    private struct ProfileUpdate: Encodable {
+        let total_wins: Int, total_losses: Int
+        let current_streak: Int, best_streak: Int
+        let xp: Int, level: Int
+        let last_played_at: String
+        let daily_login_streak: Int, best_daily_login_streak: Int
+        let streak_shields: Int
+    }
+
+    static func record(
+        gameMode: GameMode,
+        playType: String = "solo",
+        won: Bool,
+        guessCount: Int,
+        timeSeconds: Int,
+        boardsSolved: Int,
+        totalBoards: Int,
+        seed: String,
+        hintsUsed: Int = 0
+    ) async {
+        let client = AuthService.shared.client
+        guard let session = try? await client.auth.session else { return }
+        let userId = session.user.id.uuidString
+        let mode = gameMode.rawValue
+
+        await updateUserStats(client, userId: userId, mode: mode, playType: playType,
+                              won: won, guessCount: guessCount, timeSeconds: timeSeconds)
+        await updateProfileProgression(client, userId: userId, won: won, seed: seed)
+
+        if isDailySeed(seed), playType == "solo" {
+            await DailyResultsService.record(
+                gameMode: gameMode, completed: won, guessCount: guessCount,
+                timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+                hintsUsed: hintsUsed
+            )
+        }
+        // Refresh the in-memory profile so XP/streak/Pro reflect immediately.
+        await AuthService.shared.refreshProfile()
+    }
+
+    private static func updateUserStats(
+        _ client: SupabaseClient, userId: String, mode: String, playType: String,
+        won: Bool, guessCount: Int, timeSeconds: Int
+    ) async {
+        do {
+            let rows: [StatsRow] = try await client.from("user_stats")
+                .select("id, wins, losses, total_games, best_score, average_time, fastest_time")
+                .eq("user_id", value: userId).eq("game_mode", value: mode).eq("play_type", value: playType)
+                .limit(1).execute().value
+
+            if let s = rows.first {
+                let newTotal = s.totalGames + 1
+                let newAvg = s.averageTime > 0 ? Int((Double(s.averageTime * s.totalGames + timeSeconds) / Double(newTotal)).rounded()) : timeSeconds
+                let newBest = (guessCount > 0 && (s.bestScore == 0 || guessCount < s.bestScore)) ? guessCount : s.bestScore
+                let newFastest = (timeSeconds > 0 && (s.fastestTime == 0 || timeSeconds < s.fastestTime)) ? timeSeconds : s.fastestTime
+                let upd = StatsUpdate(wins: s.wins + (won ? 1 : 0), losses: s.losses + (won ? 0 : 1),
+                                      total_games: newTotal, best_score: newBest,
+                                      average_time: newAvg, fastest_time: newFastest)
+                try await client.from("user_stats").update(upd).eq("id", value: s.id).execute()
+            } else {
+                let ins = StatsInsert(user_id: userId, game_mode: mode, play_type: playType,
+                                      wins: won ? 1 : 0, losses: won ? 0 : 1, total_games: 1,
+                                      best_score: guessCount, average_time: timeSeconds, fastest_time: timeSeconds)
+                try await client.from("user_stats").insert(ins).execute()
+            }
+        } catch { /* best-effort */ }
+    }
+
+    private static func updateProfileProgression(
+        _ client: SupabaseClient, userId: String, won: Bool, seed: String
+    ) async {
+        do {
+            let rows: [ProfileRow] = try await client.from("profiles")
+                .select("total_wins,total_losses,current_streak,best_streak,xp,level,last_played_at,daily_login_streak,best_daily_login_streak,streak_shields")
+                .eq("id", value: userId).limit(1).execute().value
+            guard let p = rows.first else { return }
+
+            let newWinStreak = won ? p.currentStreak + 1 : 0
+            let newBestWinStreak = max(p.bestStreak, newWinStreak)
+
+            let xpGain = won ? 100 : 25
+            let streakBonus = (won && newWinStreak > 1) ? 50 : 0
+            let dailyBonus = isDailySeed(seed) ? 50 : 0
+            let newXp = p.xp + xpGain + streakBonus + dailyBonus
+            let newLevel = newXp / 1000 + 1
+
+            // Daily-login streak (player-local days).
+            let today = LeaderboardService.todayLocal()
+            let yesterday = localDayString(daysAgo: 1)
+            var newDailyStreak = p.dailyLoginStreak
+            var grantShield = false
+            if let last = p.lastPlayedAt, let lastDate = parseTimestamp(last) {
+                let lastDay = localDayString(from: lastDate)
+                if lastDay == today { /* same day, no change */ }
+                else if lastDay == yesterday {
+                    newDailyStreak += 1
+                    if newDailyStreak % 7 == 0 { grantShield = true }
+                } else { newDailyStreak = 1 }
+            } else {
+                newDailyStreak = 1
+            }
+            let newBestDaily = max(p.bestDailyLoginStreak, newDailyStreak)
+
+            let upd = ProfileUpdate(
+                total_wins: p.totalWins + (won ? 1 : 0),
+                total_losses: p.totalLosses + (won ? 0 : 1),
+                current_streak: newWinStreak, best_streak: newBestWinStreak,
+                xp: newXp, level: newLevel,
+                last_played_at: ISO8601DateFormatter().string(from: Date()),
+                daily_login_streak: newDailyStreak, best_daily_login_streak: newBestDaily,
+                streak_shields: p.streakShields + (grantShield ? 1 : 0)
+            )
+            try await client.from("profiles").update(upd).eq("id", value: userId).execute()
+        } catch { /* best-effort */ }
+    }
+
+    // MARK: - Local day helpers (match lib/daily-service.ts toLocalDayString)
+
+    private static func localDayString(from date: Date = Date()) -> String {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
+        return f.string(from: date)
+    }
+    private static func localDayString(daysAgo: Int) -> String {
+        localDayString(from: Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date()) ?? Date())
+    }
+}
