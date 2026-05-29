@@ -1,0 +1,161 @@
+import SwiftUI
+import WordociousCore
+
+/// Identical port of apps/web/components/modals/help-modal.tsx — three tabs
+/// (How to Play / Game Modes / FAQ), same copy, examples, and mode list.
+struct HelpView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var tab: Tab = .howToPlay
+
+    enum Tab: String, CaseIterable {
+        case howToPlay = "How to Play"
+        case modes = "Game Modes"
+        case faq = "FAQ"
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Top accent bar (purple → pink → amber)
+            LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)],
+                           startPoint: .leading, endPoint: .trailing)
+                .frame(height: 6)
+
+            HStack {
+                Text(tab.rawValue).font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary)
+                Spacer()
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.textMuted)
+                }
+            }
+            .padding(.horizontal, 20).padding(.top, 16)
+
+            // Tabs
+            HStack(spacing: 6) {
+                ForEach(Tab.allCases, id: \.self) { t in
+                    Button { tab = t } label: {
+                        Text(t.rawValue).font(Brand.font(12, .bold))
+                            .foregroundStyle(tab == t ? Theme.surface : Theme.textSecondary)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Capsule().fill(tab == t ? Theme.textPrimary : Theme.surfaceAlt))
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
+
+            ScrollView {
+                Group {
+                    switch tab {
+                    case .howToPlay: howToPlay
+                    case .modes: gameModes
+                    case .faq: faq
+                    }
+                }
+                .padding(.horizontal, 20).padding(.bottom, 20)
+            }
+        }
+        .background(Theme.surface.ignoresSafeArea())
+    }
+
+    // MARK: How to Play
+
+    private var howToPlay: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Guess the 5-letter word. Each guess must be a valid word. After each guess, the tiles change color to show how close you are.")
+                .font(Brand.font(14, .semibold)).foregroundStyle(Theme.textSecondary)
+
+            exampleRow(["W","E","A","R","Y"], [.correct,.empty,.empty,.empty,.empty],
+                       "W", Theme.correct, " is in the word and in the correct spot.")
+            exampleRow(["P","I","L","L","S"], [.empty,.present,.empty,.empty,.empty],
+                       "I", Theme.present, " is in the word but in the wrong spot.")
+            exampleRow(["V","A","G","U","E"], [.empty,.empty,.empty,.absent,.empty],
+                       "U", Theme.absent, " is not in the word at all.")
+
+            Text("Daily puzzles reset at your local midnight. Every player gets the same word of the day so you can compare results.")
+                .font(Brand.font(12, .semibold)).foregroundStyle(Theme.textSecondary)
+                .padding(.horizontal, 12).padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
+        }
+    }
+
+    private func exampleRow(_ letters: [String], _ colors: [TileState], _ hi: String, _ hiColor: Color, _ rest: String) -> some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 4) {
+                ForEach(Array(letters.enumerated()), id: \.offset) { i, l in
+                    let filled = colors[i] != .empty
+                    Text(l).font(Brand.font(14, .black))
+                        .foregroundStyle(filled ? .white : Theme.textPrimary)
+                        .frame(width: 36, height: 36)
+                        .background(RoundedRectangle(cornerRadius: 5).fill(filled ? Theme.tileColor(for: colors[i]) : Color.white))
+                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(filled ? Theme.tileColor(for: colors[i]) : Color(hex: 0xD1D5DB), lineWidth: 2))
+                }
+            }
+            (Text(hi).font(Brand.font(12, .black)).foregroundColor(hiColor)
+             + Text(rest).font(Brand.font(12, .semibold)).foregroundColor(Theme.textSecondary))
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    // MARK: Game Modes
+
+    private var gameModes: some View {
+        VStack(spacing: 8) {
+            ForEach(homeModes) { mode in
+                HStack(alignment: .top, spacing: 12) {
+                    ModeIconView(icon: mode.icon, accent: mode.accent, box: 32)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(mode.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                        Text(helpDesc[mode.id] ?? mode.desc).font(Brand.font(12, .semibold))
+                            .foregroundStyle(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 12).padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border.opacity(0.6), lineWidth: 1))
+            }
+        }
+    }
+
+    private let helpDesc: [String: String] = [
+        "practice": "1 word, 6 guesses. The original formula.",
+        "vs": "Race an opponent in real-time. First to solve wins.",
+        "quordle": "4 words at once. 9 guesses total. Each guess applies to all 4 boards.",
+        "octordle": "8 words at once. 13 guesses. Same idea, bigger challenge.",
+        "sequence": "4 words solved in order. Solve one to unlock the next. 10 guesses total.",
+        "rescue": "4 boards with pre-filled hints to get you started. 6 guesses to solve them all.",
+        "six": "Guess a 6-letter word in 7 tries. Same rules as Classic, bigger vocabulary.",
+        "seven": "Guess a 7-letter word in 8 tries. The ultimate single-word challenge.",
+        "gauntlet": "5 stages of increasing difficulty — Classic through OctoWord. Survive them all.",
+        "propernoundle": "Guess famous names instead of dictionary words. Themed daily puzzles.",
+    ]
+
+    // MARK: FAQ
+
+    private let faqItems: [(String, String)] = [
+        ("How are scores calculated?", "Your score combines a 1,000-point base for solving, a guess bonus for fewer guesses, and a speed bonus for finishing fast. For example, Classic with 4 guesses in 13s = 1,000 + 200 (guess) + 287 (speed) + 200 (completion) = 1,687 pts. Fewer guesses and less time = higher score."),
+        ("How do XP and levels work?", "Win = 100 XP, loss = 25 XP. Bonuses: +50 for win streaks, +50 for daily challenges, and medal XP (gold +100, silver +50, bronze +25). Every 1,000 XP = 1 level."),
+        ("What's a streak?", "Play at least one daily puzzle each day to build your streak. Miss a day and it resets — unless you use a Streak Shield."),
+        ("What are Streak Shields?", "Shields protect your streak if you miss a day. You can earn them through gameplay."),
+        ("What does PRO unlock?", "Unlimited daily plays (free users get one per mode per day) and ad-free gameplay."),
+        ("Do daily puzzles use the same words for everyone?", "Yes! All players get the same puzzle each day so you can compare results."),
+    ]
+
+    private var faq: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(Array(faqItems.enumerated()), id: \.offset) { _, item in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.0).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    Text(item.1).font(Brand.font(12, .semibold)).foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+}

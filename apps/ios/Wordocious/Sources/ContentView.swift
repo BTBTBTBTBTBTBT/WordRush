@@ -7,14 +7,11 @@ struct ContentView: View {
     }
 }
 
-/// Computes today's daily seed in UTC, matching the web app's
-/// generateDailySeed(date, mode) convention.
+/// Computes today's daily seed using the player's LOCAL date, matching the
+/// web app's generateDailySeed(getTodayLocal(), mode) — puzzles reset at
+/// local midnight (and daily_results.day is local too).
 enum DailySeed {
     static func today(mode: GameMode) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.timeZone = TimeZone(identifier: "UTC")
-        let date = f.string(from: Date())
-        return generateDailySeed(date: date, gameMode: mode.rawValue)
+        generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: mode.rawValue)
     }
 }

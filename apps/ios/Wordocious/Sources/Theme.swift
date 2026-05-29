@@ -12,6 +12,7 @@ enum Theme {
     static let border = Color(hex: 0xEDE9F6)             // --color-border
     static let borderAlt = Color(hex: 0xE5E7EB)          // --color-border-alt
     static let surfaceAlt = Color(hex: 0xF3F4F6)         // --color-surface-alt
+    static let surfaceHover = Color(hex: 0xF3F0FF)       // --color-surface-hover
     static let textPrimary = Color(hex: 0x1A1A2E)        // --color-text
     static let textMuted = Color(hex: 0x9CA3AF)          // --color-text-muted
     static let textSecondary = Color(hex: 0x6B7280)      // --color-text-secondary

@@ -56,4 +56,9 @@ public final class GameDictionary {
     public func getAllowedWords() -> [String] {
         return allowedWordsArray
     }
+
+    /// Full 5-letter solutions list (uppercased) — used for Word of the Day.
+    public func allSolutions() -> [String] {
+        return solutionWords
+    }
 }
