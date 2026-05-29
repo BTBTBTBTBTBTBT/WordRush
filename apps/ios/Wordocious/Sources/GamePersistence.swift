@@ -1,0 +1,46 @@
+import Foundation
+import WordociousCore
+
+/// Persists in-progress games to disk so backgrounding/relaunch resumes the
+/// exact board. Keyed by seed+mode, mirroring the web app's localStorage keys.
+final class GamePersistence {
+    static let shared = GamePersistence()
+    private init() {}
+
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+
+    private var directory: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let dir = base.appendingPathComponent("games", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    private func key(seed: String, mode: GameMode) -> String {
+        let safeSeed = seed.replacingOccurrences(of: "/", with: "_")
+        return "wordocious-\(mode.rawValue)-\(safeSeed)"
+    }
+
+    private func url(seed: String, mode: GameMode) -> URL {
+        directory.appendingPathComponent("\(key(seed: seed, mode: mode)).json")
+    }
+
+    func save(_ state: GameState) {
+        guard let data = try? encoder.encode(state) else { return }
+        try? data.write(to: url(seed: state.seed, mode: state.mode), options: .atomic)
+    }
+
+    func load(seed: String, mode: GameMode) -> GameState? {
+        let u = url(seed: seed, mode: mode)
+        guard let data = try? Data(contentsOf: u),
+              let state = try? decoder.decode(GameState.self, from: data) else {
+            return nil
+        }
+        return state
+    }
+
+    func clear(seed: String, mode: GameMode) {
+        try? FileManager.default.removeItem(at: url(seed: seed, mode: mode))
+    }
+}
