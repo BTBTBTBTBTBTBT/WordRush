@@ -15,9 +15,33 @@ final class GameViewModel: ObservableObject {
     /// elapsed is computed from startEpochMs while playing.
     @Published private(set) var finalTimeSeconds: Int?
 
-    var startEpochMs: Double { state.startTime }
+    // Active-play timer: accumulates only while the game is foregrounded,
+    // pauses on background, persists across relaunch. Mirrors the web
+    // useActivePlayTimer so a backgrounded game doesn't inflate the clock.
+    private var accumulatedMs: Double = 0
+    private var resumeAtMs: Double?
+    private var nowMs: Double { Date().timeIntervalSince1970 * 1000 }
+
     var elapsedSeconds: Int {
-        finalTimeSeconds ?? max(0, Int((Date().timeIntervalSince1970 * 1000 - state.startTime) / 1000))
+        if let f = finalTimeSeconds { return f }
+        let running = resumeAtMs.map { nowMs - $0 } ?? 0
+        return max(0, Int((accumulatedMs + running) / 1000))
+    }
+
+    /// Call when the game becomes active (onAppear / foreground).
+    func resumeTimer() {
+        guard !isFinished, resumeAtMs == nil else { return }
+        resumeAtMs = nowMs
+    }
+
+    /// Call when the game goes inactive (onDisappear / background).
+    func pauseTimer() {
+        if let r = resumeAtMs { accumulatedMs += nowMs - r; resumeAtMs = nil }
+        persistence.saveElapsed(accumulatedMs, seed: state.seed, mode: mode)
+    }
+
+    private func freezeTimer() {
+        if let r = resumeAtMs { accumulatedMs += nowMs - r; resumeAtMs = nil }
     }
 
     /// Single-board share grid (board 0), padded to maxGuesses rows.
@@ -28,6 +52,31 @@ final class GameViewModel: ObservableObject {
         while rows.count < b.maxGuesses { rows.append(Array(repeating: .empty, count: width)) }
         return rows
     }
+
+    /// Per-board share grids (multi-board), each padded to prefill+maxGuesses.
+    func shareBoards() -> [(grid: [[TileState]], won: Bool)] {
+        state.boards.enumerated().map { i, b in
+            var rows: [[TileState]] = (b.prefilledGuesses ?? []).map { $0.evaluation.tiles.map(\.state) }
+            rows += (evaluations[safe: i] ?? []).map { $0.tiles.map(\.state) }
+            let total = (b.prefilledGuesses?.count ?? 0) + b.maxGuesses
+            let width = b.solution.count
+            while rows.count < total { rows.append(Array(repeating: .empty, count: width)) }
+            return (rows, b.status == .won)
+        }
+    }
+
+    func gauntletStagesShare() -> [GauntletStageShare] {
+        guard let g = state.gauntlet else { return [] }
+        return g.stageResults.map { r in
+            let stage = g.stages[safe: r.stageIndex]
+            let bc = stage?.boardCount ?? 0
+            let solved = r.status == .won ? bc : (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0)
+            return GauntletStageShare(name: stage?.name ?? "Stage \(r.stageIndex + 1)",
+                                      won: r.status == .won, guesses: r.guesses,
+                                      boardsSolved: solved, totalBoards: bc)
+        }
+    }
+    var boardsSolvedCount: Int { state.boards.filter { $0.status == .won }.count }
 
     let mode: GameMode
     let wordLength: Int
@@ -92,6 +141,7 @@ final class GameViewModel: ObservableObject {
             state = createInitialState(seed: seed, mode: mode)
         }
         recomputeEvaluations()
+        accumulatedMs = GamePersistence.shared.loadElapsed(seed: seed, mode: mode)
         // A game restored from disk that's already finished shouldn't re-post.
         resultRecorded = state.status != .playing
     }
@@ -135,8 +185,10 @@ final class GameViewModel: ObservableObject {
     /// Post the finished daily result to Supabase (once). No-ops for
     /// non-daily games or when signed out (handled in the service).
     private func recordResultIfNeeded() {
-        let elapsedSeconds = max(0, Int((Date().timeIntervalSince1970 * 1000 - state.startTime) / 1000))
-        if finalTimeSeconds == nil { finalTimeSeconds = elapsedSeconds }
+        freezeTimer()
+        let secs = max(0, Int(accumulatedMs / 1000))
+        if finalTimeSeconds == nil { finalTimeSeconds = secs }
+        persistence.saveElapsed(accumulatedMs, seed: state.seed, mode: mode)
         guard isDaily, !resultRecorded else { return }
         resultRecorded = true
         let completed = state.status == .won
@@ -169,7 +221,7 @@ final class GameViewModel: ObservableObject {
         Task {
             await GameResultsService.record(
                 gameMode: modeRaw, won: completed, guessCount: guesses,
-                timeSeconds: elapsedSeconds, boardsSolved: solved, totalBoards: total,
+                timeSeconds: secs, boardsSolved: solved, totalBoards: total,
                 seed: theSeed
             )
         }

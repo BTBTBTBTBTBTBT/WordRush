@@ -4,6 +4,7 @@ import WordociousCore
 struct GameScreen: View {
     @StateObject private var vm: GameViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     let mode: GameMode
 
     init(seed: String, mode: GameMode, title: String) {
@@ -49,6 +50,11 @@ struct GameScreen: View {
         .onChange(of: vm.status) { newValue in
             if newValue == .won { Haptics.success() } else if newValue == .lost { Haptics.error() }
         }
+        .onAppear { vm.resumeTimer() }
+        .onDisappear { vm.pauseTimer() }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active { vm.resumeTimer() } else { vm.pauseTimer() }
+        }
     }
 
     // MARK: Header
@@ -93,17 +99,26 @@ struct GameScreen: View {
         HStack(spacing: 16) {
             Button("Home") { dismiss() }
                 .font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
-            if vm.boardCount == 1 {
-                Button("Share") {
-                    ShareService.shareSingle(
-                        modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
-                        won: vm.status == .won, guesses: vm.rowsUsed, maxGuesses: vm.maxGuesses,
-                        timeSeconds: vm.elapsedSeconds, grid: vm.shareGrid())
-                }
+            Button("Share") { share() }
                 .font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x3B82F6))
-            }
         }
         .padding(.top, 4)
+    }
+
+    private func share() {
+        let kind: ShareCardView.Kind
+        if vm.isGauntlet {
+            kind = .gauntlet(stages: vm.gauntletStagesShare(),
+                             stagesCompleted: vm.gauntletStagesShare().filter { $0.won }.count,
+                             totalStages: vm.gauntletStagesShare().count)
+        } else if vm.boardCount > 1 {
+            kind = .multi(boards: vm.shareBoards(), boardsSolved: vm.boardsSolvedCount, totalBoards: vm.boardCount)
+        } else {
+            kind = .single(grid: vm.shareGrid())
+        }
+        ShareService.share(kind: kind, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
+                           won: vm.status == .won, guesses: vm.rowsUsed, maxGuesses: vm.maxGuesses,
+                           timeSeconds: vm.elapsedSeconds)
     }
 
     // MARK: Gauntlet stage-clear

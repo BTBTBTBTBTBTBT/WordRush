@@ -8,17 +8,17 @@ import UIKit
 /// mirroring the web shareResult flow (image + wordocious.com caption).
 enum ShareService {
     @MainActor
-    static func shareSingle(
-        modeLabel: String, accent: Color, won: Bool, guesses: Int, maxGuesses: Int,
-        timeSeconds: Int, grid: [[TileState]]
+    static func share(
+        kind: ShareCardView.Kind, modeLabel: String, accent: Color, won: Bool,
+        guesses: Int, maxGuesses: Int, timeSeconds: Int
     ) {
         #if canImport(UIKit)
         let card = ShareCardView(
-            modeLabel: modeLabel, accent: accent, won: won, guesses: guesses,
-            maxGuesses: maxGuesses, timeSeconds: timeSeconds, dateStr: shortDate(), grid: grid
+            kind: kind, modeLabel: modeLabel, accent: accent, won: won, guesses: guesses,
+            maxGuesses: maxGuesses, timeSeconds: timeSeconds, dateStr: shortDate()
         )
         let renderer = ImageRenderer(content: card)
-        renderer.proposedSize = .init(ShareCardView.size)
+        renderer.proposedSize = .init(card.size)
         renderer.scale = 1
         guard let image = renderer.uiImage else { return }
 

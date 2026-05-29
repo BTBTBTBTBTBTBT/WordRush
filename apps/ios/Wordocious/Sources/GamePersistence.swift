@@ -43,4 +43,18 @@ final class GamePersistence {
     func clear(seed: String, mode: GameMode) {
         try? FileManager.default.removeItem(at: url(seed: seed, mode: mode))
     }
+
+    // MARK: - Active-play elapsed (milliseconds), persisted per seed+mode
+
+    private func elapsedKey(seed: String, mode: GameMode) -> String {
+        "wordocious-elapsed-\(mode.rawValue)-\(seed.replacingOccurrences(of: "/", with: "_"))"
+    }
+
+    func saveElapsed(_ ms: Double, seed: String, mode: GameMode) {
+        UserDefaults.standard.set(ms, forKey: elapsedKey(seed: seed, mode: mode))
+    }
+
+    func loadElapsed(seed: String, mode: GameMode) -> Double {
+        UserDefaults.standard.double(forKey: elapsedKey(seed: seed, mode: mode))
+    }
 }
