@@ -79,11 +79,8 @@ struct Wordmark: View {
         Text("WORDOCIOUS")
             .font(Brand.wordmark(size))
             .tracking(0.5)
-            .overlay(Theme.wordmarkGradient)
-            .mask(
-                Text("WORDOCIOUS")
-                    .font(Brand.wordmark(size))
-                    .tracking(0.5)
-            )
+            .foregroundStyle(Theme.wordmarkGradient)
+            .lineLimit(1)
+            .fixedSize()
     }
 }
