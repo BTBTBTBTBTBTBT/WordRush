@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 struct ProfileTab: View {
     @EnvironmentObject private var auth: AuthService
@@ -102,17 +103,99 @@ struct ProfileTab: View {
     }
 }
 
-/// Placeholder tabs — wired to Supabase reads in the next pass.
+/// Live daily leaderboard from Supabase `daily_results`.
 struct LeaderboardTab: View {
+    @EnvironmentObject private var auth: AuthService
+    @State private var mode: GameMode = .duel
+    @State private var entries: [LeaderboardEntry] = []
+    @State private var loading = false
+    @State private var error: String?
+    @State private var showAuth = false
+
+    private let modes: [(GameMode, String)] = [
+        (.duel, "Classic"), (.quordle, "Quad"), (.octordle, "Octo"), (.sequence, "Seq")
+    ]
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Theme.background.ignoresSafeArea()
-                placeholder(icon: "trophy.fill", title: "Daily Leaderboard",
-                            subtitle: "Today's rankings — wiring live data next.")
+                if !auth.isAuthenticated {
+                    signedOut
+                } else {
+                    leaderboard
+                }
             }
             .navigationTitle("Leaderboard")
         }
+    }
+
+    private var signedOut: some View {
+        VStack(spacing: 16) {
+            placeholder(icon: "trophy.fill", title: "Sign in to see rankings",
+                        subtitle: "Daily leaderboards are available to signed-in players.")
+            Button("Sign in") { showAuth = true }
+                .buttonStyle(.borderedProminent).tint(Theme.primary)
+        }
+        .sheet(isPresented: $showAuth) { AuthView() }
+    }
+
+    private var leaderboard: some View {
+        VStack(spacing: 10) {
+                    Picker("Mode", selection: $mode) {
+                        ForEach(modes, id: \.0) { Text($0.1).tag($0.0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal)
+
+                    if loading {
+                        Spacer(); ProgressView(); Spacer()
+                    } else if let error {
+                        Spacer(); placeholder(icon: "exclamationmark.triangle", title: "Couldn't load", subtitle: error); Spacer()
+                    } else if entries.isEmpty {
+                        Spacer(); placeholder(icon: "trophy.fill", title: "No entries yet", subtitle: "Be the first to finish today's \(mode.rawValue) puzzle."); Spacer()
+                    } else {
+                        List(Array(entries.enumerated()), id: \.element.id) { idx, entry in
+                            row(rank: idx + 1, entry: entry)
+                                .listRowBackground(Color.clear)
+                        }
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
+                    }
+        }
+        .task(id: mode) { await load() }
+    }
+
+    private func row(rank: Int, entry: LeaderboardEntry) -> some View {
+        HStack(spacing: 12) {
+            Text("\(rank)")
+                .font(Brand.title(18))
+                .foregroundStyle(rank <= 3 ? Theme.primary : Theme.textMuted)
+                .frame(width: 30, alignment: .center)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.username).font(Brand.headline(16)).foregroundStyle(Theme.textPrimary)
+                Text(detail(entry)).font(Brand.body(13)).foregroundStyle(Theme.textSecondary)
+            }
+            Spacer()
+            Text("\(Int(entry.compositeScore))")
+                .font(Brand.title(18)).foregroundStyle(Theme.textPrimary)
+        }
+        .padding(.vertical, 8).padding(.horizontal, 12)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    private func detail(_ e: LeaderboardEntry) -> String {
+        var parts = [e.completed ? "Win" : "Loss", "\(e.guessCount) guesses", "\(Int(e.timeSeconds))s"]
+        if let h = e.hintsUsed, h > 0 { parts.append("\(h) hint\(h == 1 ? "" : "s")") }
+        return parts.joined(separator: " · ")
+    }
+
+    private func load() async {
+        loading = true; error = nil
+        do { entries = try await LeaderboardService.fetch(gameMode: mode) }
+        catch { self.error = error.localizedDescription; entries = [] }
+        loading = false
     }
 }
 
