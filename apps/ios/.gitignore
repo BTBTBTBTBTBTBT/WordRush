@@ -9,5 +9,6 @@ Package.resolved
 DerivedData/
 *.xcuserstate
 
-# XcodeGen-generated project — reproducible from project.yml via `xcodegen generate`
+# XcodeGen-generated artifacts — reproducible from project.yml via `xcodegen generate`
 Wordocious.xcodeproj/
+Wordocious/Info.plist

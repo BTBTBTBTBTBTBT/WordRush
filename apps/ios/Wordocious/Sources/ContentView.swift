@@ -2,12 +2,8 @@ import SwiftUI
 import WordociousCore
 
 struct ContentView: View {
-    init() {
-        DictionaryLoader.ensureInitialized()
-    }
-
     var body: some View {
-        HomeView()
+        RootTabView()
     }
 }
 

@@ -49,10 +49,10 @@ struct GameScreen: View {
     private var header: some View {
         VStack(spacing: 2) {
             Text(title)
-                .font(.system(size: 24, weight: .heavy, design: .rounded))
+                .font(Brand.title(24))
                 .foregroundStyle(Theme.textPrimary)
             Text(progressLabel)
-                .font(.caption).foregroundStyle(.secondary)
+                .font(Brand.caption(12)).foregroundStyle(Theme.textSecondary)
         }
         .padding(.top, 6)
     }

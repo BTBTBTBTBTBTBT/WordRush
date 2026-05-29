@@ -41,7 +41,7 @@ struct KeyboardView: View {
             Haptics.tap()
         } label: {
             Text(letter)
-                .font(.system(size: 18, weight: .semibold))
+                .font(Brand.font(18, .bold))
                 .foregroundStyle(fg)
                 .frame(maxWidth: .infinity)
                 .frame(height: 52)
@@ -53,7 +53,7 @@ struct KeyboardView: View {
     private func actionKey(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
-                .font(.system(size: 14, weight: .bold))
+                .font(Brand.font(14, .bold))
                 .foregroundStyle(Theme.textPrimary)
                 .frame(width: 54, height: 52)
                 .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))

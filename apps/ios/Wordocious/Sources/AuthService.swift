@@ -84,7 +84,7 @@ final class AuthService: ObservableObject {
         isAuthenticated = true
         do {
             let row: Profile = try await client.from("profiles")
-                .select("id,username,avatar_url,is_pro,pro_expires_at,is_banned,has_onboarded")
+                .select(Profile.selectColumns)
                 .eq("id", value: userId)
                 .single()
                 .execute()

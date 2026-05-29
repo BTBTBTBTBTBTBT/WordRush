@@ -48,19 +48,17 @@ struct HomeView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Wordocious")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Wordmark(size: 20)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        if auth.isAuthenticated { Task { await auth.signOut() } }
-                        else { showAuth = true }
-                    } label: {
-                        Image(systemName: auth.isProActive ? "crown.fill" :
-                              (auth.isAuthenticated ? "person.crop.circle.fill" : "person.crop.circle"))
-                            .foregroundStyle(auth.isProActive ? Theme.present : Theme.textPrimary)
+                    if auth.profile != nil, auth.profile!.dailyLoginStreak > 0 {
+                        streakPill(auth.profile!.dailyLoginStreak)
                     }
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showAuth) { AuthView() }
         }
     }
@@ -69,17 +67,32 @@ struct HomeView: View {
         HStack(spacing: 14) {
             Image(systemName: info.symbol)
                 .font(.title2)
-                .foregroundStyle(Theme.correct)
+                .foregroundStyle(Theme.primary)
                 .frame(width: 44, height: 44)
-                .background(RoundedRectangle(cornerRadius: 10).fill(.white.opacity(0.7)))
+                .background(RoundedRectangle(cornerRadius: 10).fill(Theme.surfaceAlt))
             VStack(alignment: .leading, spacing: 2) {
-                Text(info.title).font(.headline).foregroundStyle(Theme.textPrimary)
-                Text(info.subtitle).font(.subheadline).foregroundStyle(.secondary)
+                Text(info.title).font(Brand.headline(17)).foregroundStyle(Theme.textPrimary)
+                Text(info.subtitle).font(Brand.body(14)).foregroundStyle(Theme.textSecondary)
             }
             Spacer()
-            Image(systemName: "chevron.right").foregroundStyle(.secondary)
+            Image(systemName: "chevron.right").foregroundStyle(Theme.textMuted)
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 14).fill(.white.opacity(0.55)))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    /// Gold flame streak pill, matching the web app-header.
+    private func streakPill(_ streak: Int) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "flame.fill").font(.system(size: 13)).foregroundStyle(Color(hex: 0xF97316))
+            Text("\(streak)").font(Brand.caption(14)).foregroundStyle(Color(hex: 0x92400E))
+        }
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(
+            Capsule().fill(LinearGradient(colors: [Color(hex: 0xFFFBEB), Color(hex: 0xFFF7ED)],
+                                          startPoint: .topLeading, endPoint: .bottomTrailing))
+        )
+        .overlay(Capsule().stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
     }
 }

@@ -10,7 +10,7 @@ struct TileView: View {
     var body: some View {
         let filled = state != .empty
         Text(letter)
-            .font(.system(size: size * 0.5, weight: .bold, design: .rounded))
+            .font(Brand.font(size * 0.5, .heavy))
             .foregroundStyle(filled && revealed ? .white : Theme.textPrimary)
             .frame(width: size, height: size)
             .background(

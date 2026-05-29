@@ -10,15 +10,38 @@ struct Profile: Codable, Identifiable, Equatable {
     var proExpiresAt: String?
     var isBanned: Bool
     var hasOnboarded: Bool
+    var level: Int
+    var xp: Int
+    var totalWins: Int
+    var totalLosses: Int
+    var currentStreak: Int
+    var bestStreak: Int
+    var dailyLoginStreak: Int
+    var streakShields: Int
+    var goldMedals: Int
+    var silverMedals: Int
+    var bronzeMedals: Int
 
     enum CodingKeys: String, CodingKey {
-        case id, username
+        case id, username, level, xp
         case avatarUrl = "avatar_url"
         case isPro = "is_pro"
         case proExpiresAt = "pro_expires_at"
         case isBanned = "is_banned"
         case hasOnboarded = "has_onboarded"
+        case totalWins = "total_wins"
+        case totalLosses = "total_losses"
+        case currentStreak = "current_streak"
+        case bestStreak = "best_streak"
+        case dailyLoginStreak = "daily_login_streak"
+        case streakShields = "streak_shields"
+        case goldMedals = "gold_medals"
+        case silverMedals = "silver_medals"
+        case bronzeMedals = "bronze_medals"
     }
+
+    /// Columns to request from the profiles table.
+    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,streak_shields,gold_medals,silver_medals,bronze_medals"
 }
 
 /// Expiry-aware Pro check — 1:1 with apps/web/lib/pro.ts isProActive().
