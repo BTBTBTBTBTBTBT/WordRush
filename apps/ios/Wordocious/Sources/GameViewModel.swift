@@ -24,6 +24,38 @@ final class GameViewModel: ObservableObject {
     var status: GameStatus { state.status }
     var isFinished: Bool { status != .playing }
 
+    // MARK: - Gauntlet
+
+    var isGauntlet: Bool { mode == .gauntlet }
+
+    /// All boards in the current stage solved, but the run isn't over yet —
+    /// the player taps Continue to advance (or finish) via NEXT_STAGE.
+    var stageCleared: Bool {
+        isGauntlet && status == .playing && !state.boards.isEmpty && state.boards.allSatisfy { $0.status == .won }
+    }
+
+    var gauntletStageLabel: String? {
+        guard isGauntlet, let g = state.gauntlet else { return nil }
+        let name = g.stages[safe: g.currentStage]?.name ?? ""
+        return "Stage \(g.currentStage + 1)/\(g.totalStages) · \(name)"
+    }
+
+    var isLastStage: Bool {
+        guard let g = state.gauntlet else { return false }
+        return g.currentStage >= g.totalStages - 1
+    }
+
+    /// Advance to the next stage (or finish the run on the last stage).
+    func nextStage() {
+        guard isGauntlet, stageCleared else { return }
+        let elapsedMs = Date().timeIntervalSince1970 * 1000 - state.startTime
+        state = gameReducer(state: state, action: .nextStage(elapsedMs: elapsedMs))
+        currentInput = ""
+        recomputeEvaluations()
+        persistence.save(state)
+        if isFinished { recordResultIfNeeded() }   // last stage → WON
+    }
+
     /// Max rows to render = the largest maxGuesses across boards (multi-board
     /// modes share a guess budget; single boards use their own).
     var maxGuesses: Int { state.boards.map(\.maxGuesses).max() ?? 6 }
@@ -89,11 +121,32 @@ final class GameViewModel: ObservableObject {
         guard isDaily, !resultRecorded else { return }
         resultRecorded = true
         let elapsedSeconds = max(0, Int((Date().timeIntervalSince1970 * 1000 - state.startTime) / 1000))
-        let solved = state.boards.filter { $0.status == .won }.count
         let completed = state.status == .won
-        let guesses = rowsUsed
-        let total = boardCount
         let modeRaw = mode
+
+        let guesses: Int
+        let solved: Int
+        let total: Int
+
+        if isGauntlet, let g = state.gauntlet {
+            // Mirror web gauntlet-game recording: sum across stageResults.
+            // On WON the final NEXT_STAGE already pushed the last stage, so the
+            // current boards would double-count → currentStageGuesses = 0.
+            // On LOST the failed stage is in stageResults (with snapshot).
+            let completedStageGuesses = g.stageResults.reduce(0) { $0 + $1.guesses }
+            let currentStageGuesses = completed ? 0 : state.boards.reduce(0) { max($0, $1.guesses.count) }
+            guesses = completedStageGuesses + currentStageGuesses
+            solved = g.stageResults.reduce(0) { sum, r in
+                if r.status == .won { return sum + (g.stages[safe: r.stageIndex]?.boardCount ?? 0) }
+                return sum + (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0)
+            }
+            total = g.stageResults.reduce(0) { $0 + (g.stages[safe: $1.stageIndex]?.boardCount ?? 0) }
+        } else {
+            guesses = rowsUsed
+            solved = state.boards.filter { $0.status == .won }.count
+            total = boardCount
+        }
+
         Task {
             await DailyResultsService.record(
                 gameMode: modeRaw, completed: completed, guessCount: guesses,
@@ -157,5 +210,11 @@ final class GameViewModel: ObservableObject {
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             if toast == message { toast = nil }
         }
+    }
+}
+
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

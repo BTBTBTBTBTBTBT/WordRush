@@ -319,4 +319,38 @@ final class EngineParityTests: XCTestCase {
         XCTAssertEqual(state.boards[0].solution.count, 7)
         XCTAssertEqual(state.boards[0].maxGuesses, 8)
     }
+
+    /// Plays a complete Gauntlet run: clear each stage by submitting every
+    /// board's own solution, then NEXT_STAGE. Confirms the 5-stage progression
+    /// reaches WON with the expected board counts (1→4→4→4→8) and that
+    /// stageResults accumulates all five WON stages.
+    func testGauntletFullRunReachesWon() {
+        var state = createInitialState(seed: "gauntlet-run-test", mode: .gauntlet)
+        let expectedBoardCounts = [1, 4, 4, 4, 8]
+        var stagesPlayed = 0
+
+        while state.status == .playing && stagesPlayed < 6 {
+            let stageIdx = state.gauntlet?.currentStage ?? -1
+            if stageIdx >= 0 && stageIdx < expectedBoardCounts.count {
+                XCTAssertEqual(state.boards.count, expectedBoardCounts[stageIdx], "Stage \(stageIdx) board count")
+            }
+            // Solve every board by submitting each one's solution (applyToAll
+            // solves the matching board; others just consume a row).
+            let solutions = Set(state.boards.map { $0.solution })
+            for sol in solutions {
+                if state.boards.allSatisfy({ $0.status == .won }) { break }
+                state = gameReducer(state: state, action: .submitGuess(guess: sol, boardIndex: nil, applyToAll: true))
+            }
+            XCTAssertTrue(state.boards.allSatisfy { $0.status == .won },
+                          "All boards should be solved in stage \(stagesPlayed)")
+            // Advance / finish.
+            state = gameReducer(state: state, action: .nextStage(elapsedMs: nil))
+            stagesPlayed += 1
+        }
+
+        XCTAssertEqual(state.status, .won)
+        XCTAssertEqual(stagesPlayed, 5)
+        XCTAssertEqual(state.gauntlet?.stageResults.count, 5)
+        XCTAssertTrue(state.gauntlet?.stageResults.allSatisfy { $0.status == .won } ?? false)
+    }
 }

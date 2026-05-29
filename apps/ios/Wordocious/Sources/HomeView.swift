@@ -17,6 +17,7 @@ let soloModes: [ModeInfo] = [
     ModeInfo(mode: .octordle,      title: "OctoWord",      subtitle: "8 boards at once",         symbol: "square.grid.4x3.fill"),
     ModeInfo(mode: .sequence,      title: "Sequence",      subtitle: "4 boards in order",        symbol: "list.number"),
     ModeInfo(mode: .rescue,        title: "Deliverance",   subtitle: "4 boards, head start",     symbol: "lifepreserver"),
+    ModeInfo(mode: .gauntlet,      title: "Gauntlet",      subtitle: "5 stages, one run",        symbol: "flag.checkered"),
 ]
 
 struct HomeView: View {

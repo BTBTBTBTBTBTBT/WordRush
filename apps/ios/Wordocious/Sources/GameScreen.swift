@@ -23,8 +23,13 @@ struct GameScreen: View {
                 Spacer(minLength: 6)
                 BoardLayout(vm: vm)
                 Spacer(minLength: 6)
-                if vm.isFinished { resultBanner }
-                KeyboardView(vm: vm).padding(.bottom, 6)
+                if vm.stageCleared {
+                    stageClearedBanner
+                } else if vm.isFinished {
+                    resultBanner
+                } else {
+                    KeyboardView(vm: vm).padding(.bottom, 6)
+                }
             }
             .padding(.horizontal, 10)
 
@@ -57,7 +62,22 @@ struct GameScreen: View {
         .padding(.top, 6)
     }
 
+    private var stageClearedBanner: some View {
+        VStack(spacing: 10) {
+            Text(vm.isLastStage ? "🏆 Final stage cleared!" : "✅ Stage cleared!")
+                .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
+            Button(vm.isLastStage ? "Finish Gauntlet" : "Continue") {
+                Haptics.success(); vm.nextStage()
+            }
+            .buttonStyle(.borderedProminent).tint(Theme.primary)
+            .controlSize(.large)
+        }
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity)
+    }
+
     private var progressLabel: String {
+        if let g = vm.gauntletStageLabel { return g }
         if vm.isMultiBoard {
             let solved = vm.boards.filter { $0.status == .won }.count
             return "\(solved)/\(vm.boardCount) solved · \(vm.rowsUsed)/\(vm.maxGuesses) guesses"
