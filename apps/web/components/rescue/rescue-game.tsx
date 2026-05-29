@@ -22,6 +22,7 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 
 interface RescueGameProps {
@@ -200,9 +201,19 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
         )}
       </div>
 
-      {/* Boards */}
-      <div className="flex-1 min-h-0 overflow-hidden px-2 pt-2 pb-1">
+      {/* Boards (scrolls post-game so the ScoreBreakdownCard fits). */}
+      <div className={`flex-1 min-h-0 px-2 pt-2 pb-1 ${state.status === 'PLAYING' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
+        {state.status !== 'PLAYING' && (
+          <ScoreBreakdownCard
+            gameMode="RESCUE"
+            completed={state.status === 'WON'}
+            guessCount={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
+            timeSeconds={elapsedTime}
+            boardsSolved={state.boards.filter(b => b.status === 'WON').length}
+            totalBoards={4}
+          />
+        )}
       </div>
 
       {/* Keyboard — hidden when game is complete */}

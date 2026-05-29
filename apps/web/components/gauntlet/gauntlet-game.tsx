@@ -171,8 +171,23 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         ? state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)
         : 0;
       const totalGuesses = completedStageGuesses + currentStageGuesses;
-      const boardsSolved = state.boards.filter(b => b.status === GameStatus.WON).length;
-      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, boardsSolved, 21).then(xp => { if (xp) setXpResult(xp); });
+      // Cross-stage boards-solved tally. Every cleared stage in
+      // stageResults contributes its full boardCount; the failed stage
+      // (if any) contributes its partial WON count from the snapshot.
+      // The previous version only counted the current stage's WON
+      // boards, which crushed completionBonus on the leaderboard —
+      // e.g. a fully-won Gauntlet was logging 8/21 instead of 21/21
+      // because state.boards still pointed at the final OctoWord stage.
+      const stageCfgs = state.gauntlet?.stages ?? [];
+      const cumulativeBoardsSolved = (state.gauntlet?.stageResults ?? []).reduce((sum, r) => {
+        const stage = stageCfgs[r.stageIndex];
+        if (!stage) return sum;
+        if (r.status === GameStatus.WON) return sum + stage.boardCount;
+        const snapshot = r.boardsSnapshot ?? [];
+        return sum + snapshot.filter(b => b.status === GameStatus.WON).length;
+      }, 0);
+      const cumulativeTotalBoards = stageCfgs.reduce((sum, s) => sum + s.boardCount, 0) || 21;
+      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, cumulativeBoardsSolved, cumulativeTotalBoards).then(xp => { if (xp) setXpResult(xp); });
       recordSoloMatch({
         userId: profile.id,
         gameMode: 'GAUNTLET',

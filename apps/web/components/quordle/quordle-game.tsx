@@ -23,6 +23,7 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
+import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 
 interface QuordleGameProps {
   initialSeed?: string;
@@ -199,9 +200,20 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
         )}
       </div>
 
-      {/* Boards - fills remaining space */}
-      <div className="flex-1 min-h-0 overflow-hidden px-2 pt-2 pb-2">
+      {/* Boards - fills remaining space (scrolls when game is complete so
+          the ScoreBreakdownCard can stack underneath without clipping). */}
+      <div className={`flex-1 min-h-0 px-2 pt-2 pb-2 ${state.status === 'PLAYING' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
         <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
+        {state.status !== 'PLAYING' && (
+          <ScoreBreakdownCard
+            gameMode="QUORDLE"
+            completed={state.status === 'WON'}
+            guessCount={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
+            timeSeconds={elapsedTime}
+            boardsSolved={state.boards.filter(b => b.status === 'WON').length}
+            totalBoards={4}
+          />
+        )}
       </div>
 
       {/* Keyboard — hidden when game is complete */}
