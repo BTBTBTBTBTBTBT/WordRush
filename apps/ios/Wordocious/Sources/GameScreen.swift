@@ -3,100 +3,125 @@ import WordociousCore
 
 struct GameScreen: View {
     @StateObject private var vm: GameViewModel
-    let title: String
+    @Environment(\.dismiss) private var dismiss
+    let mode: GameMode
 
     init(seed: String, mode: GameMode, title: String) {
         _vm = StateObject(wrappedValue: GameViewModel(seed: seed, mode: mode))
-        self.title = title
+        self.mode = mode
     }
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [Theme.background, Theme.backgroundGradientEnd],
-                startPoint: .top, endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
+                           startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header
                 Spacer(minLength: 6)
-                BoardLayout(vm: vm)
-                Spacer(minLength: 6)
-                if vm.stageCleared {
-                    stageClearedBanner
-                } else if vm.isFinished {
-                    resultBanner
+                if vm.isFinished {
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            BoardLayout(vm: vm)
+                            resultActions
+                            ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
+                                               guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
+                                               boardsSolved: vm.boards.filter { $0.status == .won }.count,
+                                               totalBoards: vm.boardCount)
+                            if vm.boardCount == 1 {
+                                DefinitionCard(solution: vm.boards[0].solution)
+                            }
+                        }
+                        .padding(.bottom, 16)
+                    }
                 } else {
-                    KeyboardView(vm: vm).padding(.bottom, 6)
+                    BoardLayout(vm: vm)
+                    Spacer(minLength: 6)
+                    if vm.stageCleared { stageClearedBanner } else { KeyboardView(vm: vm).padding(.bottom, 6) }
                 }
             }
             .padding(.horizontal, 10)
 
-            if let toast = vm.toast {
-                Text(toast)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
-                    .padding(.top, 90)
-                    .frame(maxHeight: .infinity, alignment: .top)
-                    .transition(.opacity)
-            }
+            if let toast = vm.toast { toastView(toast) }
         }
+        .navigationBarTitleDisplayMode(.inline)
         .animation(.easeInOut(duration: 0.2), value: vm.toast)
         .onChange(of: vm.status) { newValue in
-            if newValue == .won { Haptics.success() }
-            else if newValue == .lost { Haptics.error() }
+            if newValue == .won { Haptics.success() } else if newValue == .lost { Haptics.error() }
         }
     }
 
+    // MARK: Header
+
     private var header: some View {
-        VStack(spacing: 2) {
-            Text(title)
-                .font(Brand.title(24))
-                .foregroundStyle(Theme.textPrimary)
-            Text(progressLabel)
-                .font(Brand.caption(12)).foregroundStyle(Theme.textSecondary)
+        VStack(spacing: 4) {
+            Text(ModeStyle.title(mode))
+                .font(Brand.font(28, .black))
+                .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
+            HStack(spacing: 12) {
+                Text(progressLabel).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                if !vm.stageCleared {
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        HStack(spacing: 3) {
+                            Image(systemName: "clock").font(.system(size: 11)).foregroundStyle(Color(hex: 0x60A5FA))
+                            Text(timeString).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        }
+                    }
+                }
+            }
         }
         .padding(.top, 6)
     }
 
-    private var stageClearedBanner: some View {
-        VStack(spacing: 10) {
-            Text(vm.isLastStage ? "🏆 Final stage cleared!" : "✅ Stage cleared!")
-                .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
-            Button(vm.isLastStage ? "Finish Gauntlet" : "Continue") {
-                Haptics.success(); vm.nextStage()
-            }
-            .buttonStyle(.borderedProminent).tint(Theme.primary)
-            .controlSize(.large)
-        }
-        .padding(.vertical, 16)
-        .frame(maxWidth: .infinity)
+    private var timeString: String {
+        let s = vm.elapsedSeconds
+        return "\(s / 60):\(String(format: "%02d", s % 60))"
     }
 
     private var progressLabel: String {
         if let g = vm.gauntletStageLabel { return g }
         if vm.isMultiBoard {
             let solved = vm.boards.filter { $0.status == .won }.count
-            return "\(solved)/\(vm.boardCount) solved · \(vm.rowsUsed)/\(vm.maxGuesses) guesses"
+            return "\(solved)/\(vm.boardCount) solved"
         }
-        let n = min(vm.rowsUsed + (vm.isFinished ? 0 : 1), vm.maxGuesses)
-        return "Guess \(n) of \(vm.maxGuesses)"
+        return "\(vm.rowsUsed)/\(vm.maxGuesses) guesses"
     }
 
-    private var resultBanner: some View {
-        VStack(spacing: 4) {
-            Text(vm.status == .won ? "🎉 Solved!" : "Out of guesses")
-                .font(.headline)
-            if vm.status == .lost {
-                let answers = vm.boards.filter { $0.status != .won }.map(\.solution)
-                Text("Answer\(answers.count > 1 ? "s" : ""): \(answers.joined(separator: ", "))")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+    // MARK: Post-game actions (Home / Share / Play Again-ish)
+
+    private var resultActions: some View {
+        HStack(spacing: 16) {
+            Button("Home") { dismiss() }
+                .font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
+            if vm.boardCount == 1 {
+                Button("Share") {
+                    ShareService.shareSingle(
+                        modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
+                        won: vm.status == .won, guesses: vm.rowsUsed, maxGuesses: vm.maxGuesses,
+                        timeSeconds: vm.elapsedSeconds, grid: vm.shareGrid())
+                }
+                .font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x3B82F6))
             }
         }
-        .padding(.vertical, 6)
+        .padding(.top, 4)
+    }
+
+    // MARK: Gauntlet stage-clear
+
+    private var stageClearedBanner: some View {
+        VStack(spacing: 10) {
+            Text(vm.isLastStage ? "🏆 Final stage cleared!" : "✅ Stage cleared!")
+                .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
+            Button(vm.isLastStage ? "Finish Gauntlet" : "Continue") { Haptics.success(); vm.nextStage() }
+                .buttonStyle(.borderedProminent).tint(Theme.primary).controlSize(.large)
+        }
+        .padding(.vertical, 16).frame(maxWidth: .infinity)
+    }
+
+    private func toastView(_ toast: String) -> some View {
+        Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
+            .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
     }
 }

@@ -10,7 +10,7 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 
 | Web route | Web source | Native | Status |
 |---|---|---|---|
-| `/` (home) | `app/page.tsx` + `arcade/` | `HomeView` | 🟡 redesigned to match (verify pills/banner/all states) |
+| `/` (home) | `app/page.tsx` + `arcade/` | `HomeView` | ✅ audited + matched (grid/icons/banner/word-of-day/pills); verified live |
 | `/practice` (Classic) | `app/practice/page.tsx` + `practice/`, `game/` | `GameScreen` | 🟡 board+keyboard match; audit completed-daily view, share, results modal |
 | `/quordle` `/octordle` `/sequence` `/rescue` `/six` `/seven` | `app/<mode>/page.tsx` + `<mode>/` | `GameScreen` (multi-board) | 🟡 audit each mode's specific UX |
 | `/gauntlet` | `app/gauntlet/page.tsx` + `gauntlet/` | `GameScreen` (gauntlet) | 🟡 audit transition/results screens |
@@ -19,7 +19,7 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 | `/records` | `app/records/page.tsx` | `RecordsTab` | 🟡 re-audit (sections, mode tabs, current-user highlight) |
 | `/profile` `/profile/[id]` | `app/profile/page.tsx` + `profile/` | `ProfileTab` | 🟡 re-audit full profile (stats grid, heatmap, personality, edit) |
 | `/pro` | `app/pro/page.tsx` | — | ⛔ Pro/subscription page + StoreKit (Phase 2) |
-| `/how-to-play` | `app/how-to-play/page.tsx` | Help modal | 🟡 auditing now |
+| `/how-to-play` | `app/how-to-play/page.tsx` | Help modal | ✅ Help modal matched; verify standalone /how-to-play page too |
 | `/about` `/privacy` `/terms` `/support` | `app/<x>/page.tsx` | — | ⛔ static info pages (link from settings) |
 | `/practice/vs` + all `/<mode>/vs` | `app/<mode>/vs/` + `vs/`, `pvp/` | — | ⛔ VS multiplayer (Phase 3, socket.io) |
 | `/vs/join/[code]` | `app/vs/join/[code]/` | — | ⛔ invite join (Phase 3) |
@@ -29,7 +29,7 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 
 | Web | Source | Native | Status |
 |---|---|---|---|
-| Help (How to Play / Game Modes / FAQ) | `modals/help-modal.tsx` | `HelpView` | 🟡 auditing/building now |
+| Help (How to Play / Game Modes / FAQ) | `modals/help-modal.tsx` | `HelpView` | ✅ identical port (copy/examples/modes/FAQ/accent bar) |
 | Mode limit (free daily cap) | `modals/mode-limit-modal.tsx` | — | ⛔ (Pro gating) |
 | Pro prompt | `modals/pro-prompt-modal.tsx` | — | ⛔ |
 | Streak shield | `modals/streak-shield-modal.tsx` | — | ⛔ |

@@ -25,22 +25,44 @@ enum DailyScoring {
         "DUEL_7":        Config(maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1, hintCost: 150),
     ]
 
-    static func compositeScore(
-        gameMode: String,
-        completed: Bool,
-        guessCount: Int,
-        timeSeconds: Int,
-        boardsSolved: Int,
-        totalBoards: Int,
-        hintsUsed: Int = 0
-    ) -> Double {
-        guard let c = config[gameMode] else { return 0 }
+    /// Full per-component breakdown — 1:1 with computeScoreBreakdown in
+    /// lib/daily-service.ts. Drives both the leaderboard score and the
+    /// post-game ScoreBreakdown card (so they can never drift).
+    struct Breakdown {
+        let basePoints: Double, guessBonus: Double, timeBonus: Double
+        let completionBonus: Double, hintPenalty: Double, total: Double
+        let hasHints: Bool
+        let maxGuesses: Int, timeCap: Int, guessWeight: Int, hintCost: Int
+    }
+
+    static func breakdown(
+        gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Int,
+        boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0
+    ) -> Breakdown {
+        guard let c = config[gameMode] else {
+            return Breakdown(basePoints: 0, guessBonus: 0, timeBonus: 0, completionBonus: 0,
+                             hintPenalty: 0, total: 0, hasHints: false,
+                             maxGuesses: 0, timeCap: 0, guessWeight: 0, hintCost: 0)
+        }
         let basePoints = completed ? 1000.0 : 0.0
         let guessBonus = completed ? Double(max(0, c.maxGuesses - guessCount) * c.guessWeight) : 0.0
         let timeBonus = completed ? Double(max(0, c.timeCap - timeSeconds)) : 0.0
         let completionBonus = (Double(boardsSolved) / Double(max(1, totalBoards))) * 200.0
-        let hintPenalty = c.hintCost.map { Double(hintsUsed * $0) } ?? 0.0
-        let raw = max(0, basePoints + guessBonus + timeBonus + completionBonus - hintPenalty)
-        return (raw * 100).rounded() / 100
+        let hasHints = c.hintCost != nil
+        let hintPenalty = hasHints ? Double(hintsUsed * (c.hintCost ?? 0)) : 0.0
+        let total = ((max(0, basePoints + guessBonus + timeBonus + completionBonus - hintPenalty)) * 100).rounded() / 100
+        return Breakdown(basePoints: basePoints, guessBonus: guessBonus, timeBonus: timeBonus,
+                         completionBonus: completionBonus, hintPenalty: hintPenalty, total: total,
+                         hasHints: hasHints, maxGuesses: c.maxGuesses, timeCap: c.timeCap,
+                         guessWeight: c.guessWeight, hintCost: c.hintCost ?? 0)
+    }
+
+    static func compositeScore(
+        gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Int,
+        boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0
+    ) -> Double {
+        breakdown(gameMode: gameMode, completed: completed, guessCount: guessCount,
+                  timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+                  hintsUsed: hintsUsed).total
     }
 }

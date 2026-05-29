@@ -79,7 +79,10 @@ struct WordOfTheDayView: View {
         return WordInfo(word: solutions[daysSinceEpoch % solutions.count])
     }
 
-    private func lookup(_ word: String) async -> WordInfo? {
+    private func lookup(_ word: String) async -> WordInfo? { await Self.definition(for: word) }
+
+    /// Shared dictionaryapi.dev lookup (used by Word of the Day + post-game).
+    static func definition(for word: String) async -> WordInfo? {
         guard let url = URL(string: "https://api.dictionaryapi.dev/api/v2/entries/en/\(word.lowercased())") else { return nil }
         guard let (data, resp) = try? await URLSession.shared.data(from: url),
               (resp as? HTTPURLResponse)?.statusCode == 200,

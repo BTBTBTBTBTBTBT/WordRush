@@ -11,6 +11,23 @@ final class GameViewModel: ObservableObject {
     @Published var toast: String?
     /// Per-board evaluations: evaluations[boardIndex][rowIndex].
     @Published private(set) var evaluations: [[GuessResult]] = []
+    /// Frozen elapsed seconds at completion (for the header + score). Live
+    /// elapsed is computed from startEpochMs while playing.
+    @Published private(set) var finalTimeSeconds: Int?
+
+    var startEpochMs: Double { state.startTime }
+    var elapsedSeconds: Int {
+        finalTimeSeconds ?? max(0, Int((Date().timeIntervalSince1970 * 1000 - state.startTime) / 1000))
+    }
+
+    /// Single-board share grid (board 0), padded to maxGuesses rows.
+    func shareGrid() -> [[TileState]] {
+        let b = state.boards[0]
+        var rows: [[TileState]] = evaluations.first?.map { $0.tiles.map(\.state) } ?? []
+        let width = b.solution.count
+        while rows.count < b.maxGuesses { rows.append(Array(repeating: .empty, count: width)) }
+        return rows
+    }
 
     let mode: GameMode
     let wordLength: Int
@@ -118,9 +135,10 @@ final class GameViewModel: ObservableObject {
     /// Post the finished daily result to Supabase (once). No-ops for
     /// non-daily games or when signed out (handled in the service).
     private func recordResultIfNeeded() {
+        let elapsedSeconds = max(0, Int((Date().timeIntervalSince1970 * 1000 - state.startTime) / 1000))
+        if finalTimeSeconds == nil { finalTimeSeconds = elapsedSeconds }
         guard isDaily, !resultRecorded else { return }
         resultRecorded = true
-        let elapsedSeconds = max(0, Int((Date().timeIntervalSince1970 * 1000 - state.startTime) / 1000))
         let completed = state.status == .won
         let modeRaw = mode
 
