@@ -199,16 +199,87 @@ struct LeaderboardTab: View {
     }
 }
 
+/// All-time "hall of records" from Supabase all_time_records.
 struct RecordsTab: View {
+    @EnvironmentObject private var auth: AuthService
+    @State private var records: [AllTimeRecord] = []
+    @State private var loading = true
+    @State private var error: String?
+    @State private var showAuth = false
+
+    private var globalRecords: [AllTimeRecord] {
+        records.filter { $0.gameMode == nil && RecordCatalog.global.contains($0.recordType) }
+    }
+    private var classicRecords: [AllTimeRecord] {
+        records.filter { $0.gameMode == "DUEL" && RecordCatalog.perMode.contains($0.recordType) }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Theme.background.ignoresSafeArea()
-                placeholder(icon: "crown.fill", title: "Records",
-                            subtitle: "Your personal bests and achievements — coming next.")
+                if !auth.isAuthenticated {
+                    VStack(spacing: 16) {
+                        placeholder(icon: "crown.fill", title: "Sign in to see records",
+                                    subtitle: "The all-time hall of records is available to signed-in players.")
+                        Button("Sign in") { showAuth = true }
+                            .buttonStyle(.borderedProminent).tint(Theme.primary)
+                    }
+                    .sheet(isPresented: $showAuth) { AuthView() }
+                } else if loading {
+                    ProgressView()
+                } else if let error {
+                    placeholder(icon: "exclamationmark.triangle", title: "Couldn't load", subtitle: error)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            section("Global Records", types: RecordCatalog.global, from: globalRecords)
+                            section("Classic", types: RecordCatalog.perMode, from: classicRecords)
+                        }
+                        .padding()
+                    }
+                }
             }
             .navigationTitle("Records")
+            .task(id: auth.isAuthenticated) { if auth.isAuthenticated { await load() } }
         }
+    }
+
+    private func section(_ title: String, types: [String], from pool: [AllTimeRecord]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(Brand.title(18)).foregroundStyle(Theme.textPrimary)
+            ForEach(types, id: \.self) { type in
+                recordCard(type, record: pool.first { $0.recordType == type })
+            }
+        }
+    }
+
+    private func recordCard(_ type: String, record: AllTimeRecord?) -> some View {
+        let meta = RecordCatalog.labels[type]
+        return HStack(spacing: 12) {
+            Image(systemName: meta?.symbol ?? "rosette")
+                .font(.title3).foregroundStyle(Theme.primary)
+                .frame(width: 38, height: 38)
+                .background(RoundedRectangle(cornerRadius: 9).fill(Theme.surfaceAlt))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(meta?.label ?? type).font(Brand.headline(15)).foregroundStyle(Theme.textPrimary)
+                Text(record?.holderUsername ?? "No record yet")
+                    .font(Brand.body(13)).foregroundStyle(Theme.textSecondary)
+            }
+            Spacer()
+            Text(record?.formattedValue ?? "—")
+                .font(Brand.title(16)).foregroundStyle(record == nil ? Theme.textMuted : Theme.primary)
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    private func load() async {
+        loading = true; error = nil
+        do { records = try await RecordsService.fetchAll() }
+        catch { self.error = error.localizedDescription }
+        loading = false
     }
 }
 
