@@ -46,7 +46,12 @@ enum LeaderboardService {
         return f.string(from: Date())
     }
 
-    static func fetch(gameMode: GameMode, playType: String = "solo", limit: Int = 50) async throws -> [LeaderboardEntry] {
+    static func yesterdayLocal() -> String {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
+        return f.string(from: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date())
+    }
+
+    static func fetch(gameMode: GameMode, day: String? = nil, playType: String = "solo", limit: Int = 50) async throws -> [LeaderboardEntry] {
         try await AuthService.shared.client
             .from("daily_results")
             .select("""
@@ -54,7 +59,7 @@ enum LeaderboardService {
                 total_boards, hints_used, vs_wins, vs_games, completed,
                 profiles!inner(username, avatar_url)
                 """)
-            .eq("day", value: todayLocal())
+            .eq("day", value: day ?? todayLocal())
             .eq("game_mode", value: gameMode.rawValue)
             .eq("play_type", value: playType)
             .order("composite_score", ascending: false)
@@ -62,5 +67,39 @@ enum LeaderboardService {
             .limit(limit)
             .execute()
             .value
+    }
+
+    private struct ScoreOnly: Decodable { let composite_score: Double }
+
+    /// Current user's rank for today's daily (mirrors getUserDailyRank).
+    static func userRank(gameMode: GameMode, userId: String) async -> (rank: Int, total: Int)? {
+        let client = AuthService.shared.client
+        let day = todayLocal()
+        do {
+            let mine: [ScoreOnly] = try await client.from("daily_results")
+                .select("composite_score").eq("user_id", value: userId).eq("day", value: day)
+                .eq("game_mode", value: gameMode.rawValue).eq("play_type", value: "solo")
+                .limit(1).execute().value
+            guard let myScore = mine.first?.composite_score else { return nil }
+
+            let total = try await client.from("daily_results")
+                .select("user_id", head: true, count: .exact)
+                .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: "solo")
+                .execute().count ?? 0
+            let ahead = try await client.from("daily_results")
+                .select("user_id", head: true, count: .exact)
+                .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: "solo")
+                .gt("composite_score", value: myScore)
+                .execute().count ?? 0
+            return (ahead + 1, total)
+        } catch { return nil }
+    }
+
+    static func playerCount(gameMode: GameMode) async -> Int {
+        let client = AuthService.shared.client
+        return (try? await client.from("daily_results")
+            .select("user_id", head: true, count: .exact)
+            .eq("day", value: todayLocal()).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: "solo")
+            .execute().count) ?? 0
     }
 }

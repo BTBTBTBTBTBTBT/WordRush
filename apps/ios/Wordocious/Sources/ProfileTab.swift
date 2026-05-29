@@ -103,28 +103,29 @@ struct ProfileTab: View {
     }
 }
 
-/// Live daily leaderboard from Supabase `daily_results`.
+/// Daily leaderboard — matches app/daily/page.tsx (full mode picker,
+/// your-rank banner, rank icons, current-user highlight, win/loss pill,
+/// yesterday toggle, player count).
 struct LeaderboardTab: View {
     @EnvironmentObject private var auth: AuthService
     @State private var mode: GameMode = .duel
     @State private var entries: [LeaderboardEntry] = []
+    @State private var yesterday: [LeaderboardEntry] = []
+    @State private var userRank: (rank: Int, total: Int)?
+    @State private var playerCount = 0
     @State private var loading = false
-    @State private var error: String?
+    @State private var showYesterday = false
     @State private var showAuth = false
 
-    private let modes: [(GameMode, String)] = [
-        (.duel, "Classic"), (.quordle, "Quad"), (.octordle, "Octo"), (.sequence, "Seq")
-    ]
+    /// The 9 daily modes, in PROFILE_MODES order.
+    private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.background.ignoresSafeArea()
-                if !auth.isAuthenticated {
-                    signedOut
-                } else {
-                    leaderboard
-                }
+                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
+                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                if !auth.isAuthenticated { signedOut } else { content }
             }
             .navigationTitle("Leaderboard")
         }
@@ -134,70 +135,155 @@ struct LeaderboardTab: View {
         VStack(spacing: 16) {
             placeholder(icon: "trophy.fill", title: "Sign in to see rankings",
                         subtitle: "Daily leaderboards are available to signed-in players.")
-            Button("Sign in") { showAuth = true }
-                .buttonStyle(.borderedProminent).tint(Theme.primary)
+            Button("Sign in") { showAuth = true }.buttonStyle(.borderedProminent).tint(Theme.primary)
         }
         .sheet(isPresented: $showAuth) { AuthView() }
     }
 
-    private var leaderboard: some View {
-        VStack(spacing: 10) {
-                    Picker("Mode", selection: $mode) {
-                        ForEach(modes, id: \.0) { Text($0.1).tag($0.0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
+    private var content: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                modePicker
+                if let r = userRank { rankBanner(r) }
 
-                    if loading {
-                        Spacer(); ProgressView(); Spacer()
-                    } else if let error {
-                        Spacer(); placeholder(icon: "exclamationmark.triangle", title: "Couldn't load", subtitle: error); Spacer()
-                    } else if entries.isEmpty {
-                        Spacer(); placeholder(icon: "trophy.fill", title: "No entries yet", subtitle: "Be the first to finish today's \(mode.rawValue) puzzle."); Spacer()
-                    } else {
-                        List(Array(entries.enumerated()), id: \.element.id) { idx, entry in
-                            row(rank: idx + 1, entry: entry)
-                                .listRowBackground(Color.clear)
-                        }
-                        .listStyle(.plain)
-                        .scrollContentBackground(.hidden)
+                Text("LEADERBOARD").font(Brand.font(10, .black)).tracking(0.8)
+                    .foregroundStyle(Theme.textMuted).frame(maxWidth: .infinity, alignment: .leading)
+
+                if loading {
+                    ProgressView().padding(.vertical, 40)
+                } else if entries.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
+                        Text("No results yet. Be the first!").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
                     }
+                    .frame(maxWidth: .infinity).padding(.vertical, 40)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
+                            row(rank: idx + 1, entry: entry)
+                            if idx < entries.count - 1 { Divider().overlay(Theme.border) }
+                        }
+                    }
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                }
+
+                if playerCount > 0 {
+                    Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
+                        .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
+                }
+
+                Button { showYesterday.toggle(); if showYesterday { Task { await loadYesterday() } } } label: {
+                    HStack(spacing: 6) {
+                        Text("Yesterday's Winners").font(Brand.font(12, .heavy))
+                        Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
+                    }.foregroundStyle(Theme.textMuted)
+                }
+                if showYesterday {
+                    VStack(spacing: 0) {
+                        ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
+                            row(rank: idx + 1, entry: entry)
+                            if idx < yesterday.count - 1 { Divider().overlay(Theme.border) }
+                        }
+                    }
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
         }
         .task(id: mode) { await load() }
     }
 
-    private func row(rank: Int, entry: LeaderboardEntry) -> some View {
-        HStack(spacing: 12) {
-            Text("\(rank)")
-                .font(Brand.title(18))
-                .foregroundStyle(rank <= 3 ? Theme.primary : Theme.textMuted)
-                .frame(width: 30, alignment: .center)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.username).font(Brand.headline(16)).foregroundStyle(Theme.textPrimary)
-                Text(detail(entry)).font(Brand.body(13)).foregroundStyle(Theme.textSecondary)
+    private var modePicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(pickerModes) { m in
+                    let active = m.mode == mode
+                    Button { mode = m.mode! } label: {
+                        HStack(spacing: 6) {
+                            ModeIconView(icon: m.icon, accent: m.accent, box: 22)
+                            Text(m.title).font(Brand.font(13, .heavy))
+                                .foregroundStyle(active ? m.accent : Theme.textMuted)
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-            Spacer()
-            Text("\(Int(entry.compositeScore))")
-                .font(Brand.title(18)).foregroundStyle(Theme.textPrimary)
         }
-        .padding(.vertical, 8).padding(.horizontal, 12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    private func rankBanner(_ r: (rank: Int, total: Int)) -> some View {
+        (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
+         + Text("#\(r.rank)").font(Brand.title(18)).foregroundColor(Color(hex: 0xD97706))
+         + Text(" of \(r.total)").font(Brand.body(12)).foregroundColor(Theme.textMuted))
+            .frame(maxWidth: .infinity).padding(.vertical, 12)
+            .background(RoundedRectangle(cornerRadius: 16).fill(
+                LinearGradient(colors: [Color(hex: 0xFFFBEB), Theme.surface], startPoint: .topLeading, endPoint: .bottomTrailing)))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+    }
+
+    @ViewBuilder
+    private func rankIcon(_ rank: Int) -> some View {
+        switch rank {
+        case 1: Image(systemName: "crown.fill").foregroundStyle(Color(hex: 0xD97706))
+        case 2: Image(systemName: "medal.fill").foregroundStyle(Theme.textMuted)
+        case 3: Image(systemName: "medal.fill").foregroundStyle(Color(hex: 0xB45309))
+        default: Text("\(rank)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted).frame(width: 20)
+        }
+    }
+
+    private func row(rank: Int, entry: LeaderboardEntry) -> some View {
+        let isMe = entry.userId == auth.profile?.id
+        return HStack(spacing: 12) {
+            rankIcon(rank).frame(width: 22)
+            (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(Int(entry.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                HStack(spacing: 5) {
+                    Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
+                        .foregroundStyle(entry.completed ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+                }
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(isMe ? Color(hex: 0xFFFBEB) : rank <= 3 ? Theme.surfaceAlt : Color.clear)
     }
 
     private func detail(_ e: LeaderboardEntry) -> String {
-        var parts = [e.completed ? "Win" : "Loss", "\(e.guessCount) guesses", "\(Int(e.timeSeconds))s"]
-        if let h = e.hintsUsed, h > 0 { parts.append("\(h) hint\(h == 1 ? "" : "s")") }
-        return parts.joined(separator: " · ")
+        let t = "\(Int(e.timeSeconds) / 60):\(String(format: "%02d", Int(e.timeSeconds) % 60))"
+        var s = "\(e.guessCount) Guesses · \(t)"
+        if e.totalBoards > 1 { s += " · \(e.boardsSolved)/\(e.totalBoards)" }
+        if HINT_MODES.contains(mode.rawValue), let h = e.hintsUsed { s += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints" }
+        return s
     }
 
     private func load() async {
-        loading = true; error = nil
-        do { entries = try await LeaderboardService.fetch(gameMode: mode) }
-        catch { self.error = error.localizedDescription; entries = [] }
+        loading = true
+        async let e = try? LeaderboardService.fetch(gameMode: mode)
+        async let pc = LeaderboardService.playerCount(gameMode: mode)
+        entries = (await e) ?? []
+        playerCount = await pc
+        if let uid = auth.profile?.id { userRank = await LeaderboardService.userRank(gameMode: mode, userId: uid) }
         loading = false
     }
+
+    private func loadYesterday() async {
+        yesterday = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 3)) ?? []
+    }
 }
+
+let HINT_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE"]
 
 /// All-time "hall of records" from Supabase all_time_records.
 struct RecordsTab: View {
