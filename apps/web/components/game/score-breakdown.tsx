@@ -61,7 +61,7 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
         detail={completed ? '' : 'no win bonus'}
         value={b.basePoints}
       />
-      {completed && (
+      {completed && b.hasHints && (
         <Row
           label="Guess bonus"
           detail={`${guessesLeft} unused × ${b.guessWeight}`}

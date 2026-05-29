@@ -69,15 +69,18 @@ export function computeScoreBreakdown(
       maxGuesses: 0, timeCap: 0, guessWeight: 0, hintCost: 0,
     };
   }
+  const hasHints = config.hintCost !== undefined;
   const basePoints = completed ? 1000 : 0;
-  const guessBonus = completed
+  // Guess bonus applies ONLY to hint-bearing modes (Six / Seven /
+  // ProperNoundle). For every other mode it's omitted entirely — those
+  // modes score on win + time (+ completion) alone.
+  const guessBonus = completed && hasHints
     ? Math.max(0, config.maxGuesses - guessCount) * config.guessWeight
     : 0;
   const timeBonus = completed
     ? Math.max(0, config.timeCap - timeSeconds)
     : 0;
   const completionBonus = (boardsSolved / Math.max(1, totalBoards)) * 200;
-  const hasHints = config.hintCost !== undefined;
   const hintPenalty = hasHints ? hintsUsed * (config.hintCost ?? 0) : 0;
   // Floor at 0 so a winning game with a heavy hint stack can't dip
   // negative on the leaderboard — the leaderboard sort still places
