@@ -44,11 +44,13 @@ enum DailyScoring {
                              hintPenalty: 0, total: 0, hasHints: false,
                              maxGuesses: 0, timeCap: 0, guessWeight: 0, hintCost: 0)
         }
+        let hasHints = c.hintCost != nil
         let basePoints = completed ? 1000.0 : 0.0
-        let guessBonus = completed ? Double(max(0, c.maxGuesses - guessCount) * c.guessWeight) : 0.0
+        // Guess bonus applies ONLY to hint-bearing modes (Six/Seven/
+        // ProperNoundle) — matches lib/daily-service.ts.
+        let guessBonus = (completed && hasHints) ? Double(max(0, c.maxGuesses - guessCount) * c.guessWeight) : 0.0
         let timeBonus = completed ? Double(max(0, c.timeCap - timeSeconds)) : 0.0
         let completionBonus = (Double(boardsSolved) / Double(max(1, totalBoards))) * 200.0
-        let hasHints = c.hintCost != nil
         let hintPenalty = hasHints ? Double(hintsUsed * (c.hintCost ?? 0)) : 0.0
         let total = ((max(0, basePoints + guessBonus + timeBonus + completionBonus - hintPenalty)) * 100).rounded() / 100
         return Breakdown(basePoints: basePoints, guessBonus: guessBonus, timeBonus: timeBonus,

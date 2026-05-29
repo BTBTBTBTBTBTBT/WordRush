@@ -11,8 +11,8 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 | Web route | Web source | Native | Status |
 |---|---|---|---|
 | `/` (home) | `app/page.tsx` + `arcade/` | `HomeView` | ✅ audited + matched (grid/icons/banner/word-of-day/pills); verified live |
-| `/practice` (Classic) | `app/practice/page.tsx` + `practice/`, `game/` | `GameScreen` | 🟡 board+keyboard match; audit completed-daily view, share, results modal |
-| `/quordle` `/octordle` `/sequence` `/rescue` `/six` `/seven` | `app/<mode>/page.tsx` + `<mode>/` | `GameScreen` (multi-board) | 🟡 audit each mode's specific UX |
+| `/practice` (Classic) | `app/practice/page.tsx` + `practice/`, `game/` | `GameScreen` | ✅ audited+matched: gradient title, timer, post-game score breakdown + definition + Home/Share, exact share image; verified live. (TODO: active-play timer, completed-daily read-only view) |
+| `/quordle` `/octordle` `/sequence` `/rescue` `/six` `/seven` | `app/<mode>/page.tsx` + `<mode>/` | `GameScreen` (multi-board) | 🟡 shared GameScreen covers them; audit each page's title gradient + multi-board share layout |
 | `/gauntlet` | `app/gauntlet/page.tsx` + `gauntlet/` | `GameScreen` (gauntlet) | 🟡 audit transition/results screens |
 | `/propernoundle` | `app/propernoundle/` | — | ⛔ needs proper-noun data + UX |
 | `/daily` (leaderboard) | `app/daily/page.tsx` | `LeaderboardTab` | 🟡 re-audit vs /daily page UX |
