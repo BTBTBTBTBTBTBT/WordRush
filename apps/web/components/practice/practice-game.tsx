@@ -12,6 +12,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import Link from 'next/link';
 import { PostGameSummary } from '@/components/game/post-game-summary';
+import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
@@ -97,6 +98,14 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   // below doesn't refire. Reset to false on RESET.
   const isRestoredCompleted = useRef(savedSession?.isCompleted ?? false);
 
+  // Count the hint actions the player burned. Six/Seven expose two
+  // hint slots (vowel + consonant); each counts independently toward
+  // the score-breakdown penalty and the Pure achievement gate. Modes
+  // without hints stay at 0 and the breakdown card hides the row.
+  const hintsUsed = hasHints
+    ? (hints.vowelUsed ? 1 : 0) + (hints.consonantUsed ? 1 : 0)
+    : 0;
+
   // Re-record a restored daily completion that may have failed to persist
   // (e.g. if a DB constraint was missing when the game was originally played).
   // Only re-records the daily_results row (upsert) — NOT solo matches (which
@@ -112,7 +121,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     recordGameResult(
       profile.id, mode, 'solo',
       state.status === GameStatus.WON, guesses, timeMs, gameSeed,
-      state.status === GameStatus.WON ? 1 : 0, 1,
+      state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed,
     ).catch(() => {});
     // Ensure freemium lock shows correctly for this mode
     const modePlayId = mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'practice';
@@ -163,7 +172,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       // VictoryAnimation, and PostGameSummary at the moment of completion.
       const timeMs = elapsedTime * 1000;
       const guesses = currentBoard.guesses.length;
-      recordGameResult(profile.id, mode, 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1)
+      recordGameResult(profile.id, mode, 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed)
         .then(xp => { if (xp) setXpResult(xp); });
       recordSoloMatch({
         userId: profile.id,
@@ -175,6 +184,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         solutions: [currentBoard.solution],
         guesses: currentBoard.guesses,
         startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
+        hintsUsed,
       });
     }
     if (!isRestoredCompleted.current && (state.status === GameStatus.WON || state.status === GameStatus.LOST)) {
@@ -371,7 +381,18 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           />
 
           {gameComplete && (
-            <PostGameSummary solution={currentBoard.solution} />
+            <>
+              <ScoreBreakdownCard
+                gameMode={mode}
+                completed={state.status === GameStatus.WON}
+                guessCount={guessesUsed}
+                timeSeconds={elapsedTime}
+                boardsSolved={state.status === GameStatus.WON ? 1 : 0}
+                totalBoards={1}
+                hintsUsed={hintsUsed}
+              />
+              <PostGameSummary solution={currentBoard.solution} />
+            </>
           )}
         </div>
       </div>

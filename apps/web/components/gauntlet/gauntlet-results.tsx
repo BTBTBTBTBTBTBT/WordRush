@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { GauntletStats, getGauntletStats, recordGauntletGame } from '@/lib/gauntlet-stats';
 import { shareResult } from '@/lib/share-utils';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
+import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 
 interface GauntletResultsProps {
   won: boolean;
@@ -38,6 +39,16 @@ export function GauntletResults({
 }: GauntletResultsProps) {
   const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
   const stagesCompleted = stageResults.filter(r => r.status === GameStatus.WON).length;
+  // Same cross-stage tally that gauntlet-game.tsx passes to
+  // recordGameResult, so the breakdown card's composite score matches
+  // the leaderboard value exactly.
+  const cumulativeBoardsSolved = stageResults.reduce((sum, r) => {
+    const stage = stages[r.stageIndex];
+    if (!stage) return sum;
+    if (r.status === GameStatus.WON) return sum + stage.boardCount;
+    return sum + (r.boardsSnapshot?.filter(b => b.status === GameStatus.WON).length ?? 0);
+  }, 0);
+  const cumulativeTotalBoards = stages.reduce((sum, s) => sum + s.boardCount, 0) || 21;
   const [copied, setCopied] = useState(false);
   // Stage index currently being reviewed in the modal — null = closed.
   // Drives the "Review" modal that surfaces each stage's final board
@@ -153,6 +164,18 @@ export function GauntletResults({
             <div className="text-2xl font-black text-gray-800">{formatTime(totalTimeMs)}</div>
             <div className="text-gray-400 text-xs">Time</div>
           </div>
+        </div>
+
+        {/* Composite-score breakdown — same formula as the leaderboard. */}
+        <div className="animate-fade-in-up" style={{ animationDelay: '0.7s' }}>
+          <ScoreBreakdownCard
+            gameMode="GAUNTLET"
+            completed={won}
+            guessCount={totalGuesses}
+            timeSeconds={Math.floor(totalTimeMs / 1000)}
+            boardsSolved={cumulativeBoardsSolved}
+            totalBoards={cumulativeTotalBoards}
+          />
         </div>
 
         {/* Per-Stage Breakdown */}

@@ -42,6 +42,7 @@ export async function recordGameResult(
   seed?: string,
   boardsSolved?: number,
   totalBoards?: number,
+  hintsUsed: number = 0,
 ): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
 
@@ -170,7 +171,7 @@ export async function recordGameResult(
       await recordDailyVsResult(userId, gameMode, won);
     } else {
       await recordDailyResult(
-        userId, gameMode, playType, won, guessCount, timeSeconds, boards, total,
+        userId, gameMode, playType, won, guessCount, timeSeconds, boards, total, hintsUsed,
       );
       // Notify the DailyCompletionsProvider so the sweep banner updates
       // instantly when navigating back to the home screen.
@@ -262,7 +263,7 @@ export async function recordGameResult(
   }
 
   // Check achievements (fire-and-forget, don't block game flow)
-  checkAchievements(userId, gameMode, playType, won, guessCount, timeSeconds, seed).catch(() => {});
+  checkAchievements(userId, gameMode, playType, won, guessCount, timeSeconds, seed, hintsUsed).catch(() => {});
 
   // Return XP details for post-game display
   if (profile) {
@@ -346,6 +347,14 @@ export async function recordSoloMatch(data: {
   solutions: string[];
   guesses: string[];
   startedAtIso: string;
+  /**
+   * Number of hint actions used during the match. Powers the Pure
+   * achievement ladder (hintless wins per mode) and the per-game
+   * score-breakdown penalty. Defaults to 0 for modes that don't
+   * expose hints — those rows just never get queried by the Pure
+   * checks.
+   */
+  hintsUsed?: number;
 }) {
   try {
     await (supabase as any).from('matches').insert({
@@ -358,6 +367,7 @@ export async function recordSoloMatch(data: {
       seed: data.seed,
       solutions: data.solutions,
       player1_guesses: data.guesses,
+      hints_used: data.hintsUsed ?? 0,
       started_at: data.startedAtIso,
       completed_at: new Date().toISOString(),
     });

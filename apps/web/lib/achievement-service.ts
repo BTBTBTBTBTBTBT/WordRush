@@ -125,6 +125,24 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // Long-term streaks
   { key: 'streak_master', name: 'Streak Master', description: 'Achieve a 50-day login streak', category: 'consistency', icon: 'flame' },
   { key: 'daily_regular', name: 'Daily Regular', description: 'Complete dailies on 100 different days', category: 'consistency', icon: 'calendar' },
+
+  // ────────────────────────────────────────────────────────────
+  // "Pure" ladder — win without using a single hint. One tier
+  // per mode that exposes hints (Six / Seven / ProperNoundle),
+  // gated on `matches.hints_used = 0 AND winner_id IS NOT NULL`.
+  // The cross-mode capstone unlocks at 50 hintless wins summed
+  // across all three modes for players who never lean on a hint.
+  // ────────────────────────────────────────────────────────────
+  { key: 'pure_six_initiate',     name: 'Pure Six',            description: 'Win Classic Six without using any hints',         category: 'skill', icon: 'star' },
+  { key: 'pure_six_adept',        name: 'Pure Six Adept',      description: 'Win 10 Classic Six games without hints',          category: 'skill', icon: 'star' },
+  { key: 'pure_six_master',       name: 'Pure Six Master',     description: 'Win 50 Classic Six games without hints',          category: 'skill', icon: 'crown' },
+  { key: 'pure_seven_initiate',   name: 'Pure Seven',          description: 'Win Classic Seven without using any hints',       category: 'skill', icon: 'star' },
+  { key: 'pure_seven_adept',      name: 'Pure Seven Adept',    description: 'Win 10 Classic Seven games without hints',        category: 'skill', icon: 'star' },
+  { key: 'pure_seven_master',     name: 'Pure Seven Master',   description: 'Win 50 Classic Seven games without hints',        category: 'skill', icon: 'crown' },
+  { key: 'pure_proper_initiate',  name: 'Pure Proper',         description: 'Win ProperNoundle without using any hints',       category: 'skill', icon: 'star' },
+  { key: 'pure_proper_adept',     name: 'Pure Proper Adept',   description: 'Win 10 ProperNoundle games without hints',        category: 'skill', icon: 'star' },
+  { key: 'pure_proper_master',    name: 'Pure Proper Master',  description: 'Win 50 ProperNoundle games without hints',        category: 'skill', icon: 'crown' },
+  { key: 'pure_player',           name: 'Pure Player',         description: 'Win 50 hintless games across Six, Seven, and ProperNoundle combined', category: 'skill', icon: 'crown' },
 ];
 
 // ============================================================
@@ -143,6 +161,7 @@ export async function checkAchievements(
   guessCount: number,
   timeSeconds: number,
   seed?: string,
+  hintsUsed: number = 0,
 ): Promise<string[]> {
   const unlocked: string[] = [];
 
@@ -640,6 +659,51 @@ export async function checkAchievements(
       .eq('id', userId)
       .single();
     if (profile && profile.daily_login_streak >= 50) await tryUnlock('streak_master');
+  }
+
+  // ─── Pure ladder ────────────────────────────────────────────
+  // Hintless wins per mode, queried from `matches` so both daily and
+  // practice games count. Only fires after a hintless win in one of
+  // the three hint-bearing modes so we don't query Supabase on every
+  // unrelated game.
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE'];
+  if (won && hintsUsed === 0 && PURE_MODES.includes(gameMode)) {
+    const tierKey = (mode: string, tier: 'initiate' | 'adept' | 'master') => {
+      const slug = mode === 'DUEL_6' ? 'six' : mode === 'DUEL_7' ? 'seven' : 'proper';
+      return `pure_${slug}_${tier}`;
+    };
+    const keys = (['initiate', 'adept', 'master'] as const).map(t => tierKey(gameMode, t));
+    const anyPerModeLeft = keys.some(k => !alreadyUnlocked.has(k));
+    const playerLeft = !alreadyUnlocked.has('pure_player');
+
+    if (anyPerModeLeft || playerLeft) {
+      // Per-mode count: hintless solo wins in this specific mode.
+      const { count: modeCount } = await (supabase as any)
+        .from('matches')
+        .select('*', { count: 'exact', head: true })
+        .eq('player1_id', userId)
+        .is('player2_id', null)
+        .eq('winner_id', userId)
+        .eq('game_mode', gameMode)
+        .eq('hints_used', 0);
+      const c = modeCount || 0;
+      if (c >= 1)  await tryUnlock(tierKey(gameMode, 'initiate'));
+      if (c >= 10) await tryUnlock(tierKey(gameMode, 'adept'));
+      if (c >= 50) await tryUnlock(tierKey(gameMode, 'master'));
+
+      // Cross-mode capstone: 50 hintless solo wins across all three modes.
+      if (playerLeft) {
+        const { count: allCount } = await (supabase as any)
+          .from('matches')
+          .select('*', { count: 'exact', head: true })
+          .eq('player1_id', userId)
+          .is('player2_id', null)
+          .eq('winner_id', userId)
+          .in('game_mode', PURE_MODES)
+          .eq('hints_used', 0);
+        if ((allCount || 0) >= 50) await tryUnlock('pure_player');
+      }
+    }
   }
 
   // Daily Regular (100 different days with dailies)

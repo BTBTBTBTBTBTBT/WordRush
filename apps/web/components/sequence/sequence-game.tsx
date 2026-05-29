@@ -21,6 +21,7 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
@@ -270,9 +271,10 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
         )}
       </div>
 
-      {/* 2x2 Board Grid */}
-      <div className="flex-1 min-h-0 overflow-hidden px-2 pb-2">
-        <div className="grid grid-cols-2 grid-rows-2 gap-2 w-full h-full max-w-lg mx-auto">
+      {/* 2x2 Board Grid (scrolls post-game so the ScoreBreakdownCard fits). */}
+      <div className={`flex-1 min-h-0 px-2 pb-2 ${state.status === GameStatus.PLAYING ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+        <div className="grid grid-cols-2 grid-rows-2 gap-2 w-full max-w-lg mx-auto" style={{ height: state.status === GameStatus.PLAYING ? '100%' : 'auto' }}>
+
             {BOARD_ORDER.map((boardIdx) => {
               const board = state.boards[boardIdx];
               if (!board) return null;
@@ -299,6 +301,16 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
               );
             })}
           </div>
+          {state.status !== GameStatus.PLAYING && (
+            <ScoreBreakdownCard
+              gameMode="SEQUENCE"
+              completed={state.status === GameStatus.WON}
+              guessCount={state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0)}
+              timeSeconds={elapsedTime}
+              boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
+              totalBoards={4}
+            />
+          )}
       </div>
 
       {/* Keyboard — hidden when game is complete */}

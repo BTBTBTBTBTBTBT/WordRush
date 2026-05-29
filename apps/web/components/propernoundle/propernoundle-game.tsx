@@ -27,6 +27,7 @@ import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
+import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 
 const MAX_GUESSES = 6;
 const DAILY_STORAGE_KEY = 'wordocious-propernoundle-daily';
@@ -294,6 +295,15 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   // Track whether we've recorded this game to avoid duplicate recordings
   const hasRecordedRef = useRef(false);
 
+  // Total hint actions used this game. ProperNoundle exposes three
+  // distinct hint slots (Wikipedia clue, vowel reveal, consonant
+  // reveal); each counts independently — penalises the score
+  // breakdown and gates the Pure achievement ladder.
+  const hintsUsed =
+    (hints.hintUsed ? 1 : 0) +
+    (hints.vowelUsed ? 1 : 0) +
+    (hints.consonantUsed ? 1 : 0);
+
   // Record game result helper
   const recordResult = useCallback(() => {
     if (!profile || hasRecordedRef.current) return;
@@ -310,7 +320,8 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       timeMs,
       seed,
       gameStatus === 'won' ? 1 : 0,
-      1
+      1,
+      hintsUsed,
     ).then(xp => { if (xp) setXpResult(xp); });
     if (puzzle) {
       recordSoloMatch({
@@ -323,9 +334,10 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
         solutions: [puzzle.answer],
         guesses: guesses.map(g => g.word),
         startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
+        hintsUsed,
       });
     }
-  }, [profile, gameStatus, elapsedTime, mode, guesses, puzzle]);
+  }, [profile, gameStatus, elapsedTime, mode, guesses, puzzle, hintsUsed]);
 
   // Game over effects
   useEffect(() => {
@@ -820,6 +832,15 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
                   </div>
                 </div>
               </div>
+              <ScoreBreakdownCard
+                gameMode="PROPERNOUNDLE"
+                completed={gameStatus === 'won'}
+                guessCount={guesses.length}
+                timeSeconds={elapsedTime}
+                boardsSolved={gameStatus === 'won' ? 1 : 0}
+                totalBoards={1}
+                hintsUsed={hintsUsed}
+              />
             </div>
           </div>
 

@@ -10,6 +10,12 @@ interface ScoreConfig {
   guessWeight: number;
   timeCap: number;
   totalBoards: number;
+  /**
+   * Points deducted per hint the player used. Only set for modes that
+   * expose hint buttons (Six, Seven, ProperNoundle); undefined elsewhere
+   * means hints don't apply and the breakdown UI omits the row.
+   */
+  hintCost?: number;
 }
 
 const MODE_SCORE_CONFIG: Record<string, ScoreConfig> = {
@@ -19,22 +25,50 @@ const MODE_SCORE_CONFIG: Record<string, ScoreConfig> = {
   SEQUENCE:      { maxGuesses: 10, guessWeight: 60,  timeCap: 480,  totalBoards: 4 },
   RESCUE:        { maxGuesses: 6,  guessWeight: 80,  timeCap: 480,  totalBoards: 4 },
   GAUNTLET:      { maxGuesses: 44, guessWeight: 20,  timeCap: 1800, totalBoards: 21 },
-  PROPERNOUNDLE: { maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1 },
-  DUEL_6:        { maxGuesses: 7,  guessWeight: 90,  timeCap: 360,  totalBoards: 1 },
-  DUEL_7:        { maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1 },
+  PROPERNOUNDLE: { maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1, hintCost: 120 },
+  DUEL_6:        { maxGuesses: 7,  guessWeight: 90,  timeCap: 360,  totalBoards: 1, hintCost: 150 },
+  DUEL_7:        { maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1, hintCost: 150 },
 };
 
-export function calculateCompositeScore(
+export interface ScoreBreakdown {
+  basePoints: number;
+  guessBonus: number;
+  timeBonus: number;
+  completionBonus: number;
+  hintPenalty: number;
+  /** Mode supports hints (so the breakdown row is meaningful). */
+  hasHints: boolean;
+  total: number;
+  /** Echoed back from config so the UI can render "(maxGuesses - X)". */
+  maxGuesses: number;
+  timeCap: number;
+  guessWeight: number;
+  hintCost: number;
+}
+
+/**
+ * Compute the full per-component score breakdown so the post-game UI
+ * can render each line item. Keeping this here (not duplicated in the
+ * UI layer) means the leaderboard and the breakdown card can never
+ * drift out of sync.
+ */
+export function computeScoreBreakdown(
   gameMode: string,
   completed: boolean,
   guessCount: number,
   timeSeconds: number,
   boardsSolved: number,
   totalBoards: number,
-): number {
+  hintsUsed: number = 0,
+): ScoreBreakdown {
   const config = MODE_SCORE_CONFIG[gameMode];
-  if (!config) return 0;
-
+  if (!config) {
+    return {
+      basePoints: 0, guessBonus: 0, timeBonus: 0, completionBonus: 0,
+      hintPenalty: 0, hasHints: false, total: 0,
+      maxGuesses: 0, timeCap: 0, guessWeight: 0, hintCost: 0,
+    };
+  }
   const basePoints = completed ? 1000 : 0;
   const guessBonus = completed
     ? Math.max(0, config.maxGuesses - guessCount) * config.guessWeight
@@ -43,8 +77,37 @@ export function calculateCompositeScore(
     ? Math.max(0, config.timeCap - timeSeconds)
     : 0;
   const completionBonus = (boardsSolved / Math.max(1, totalBoards)) * 200;
+  const hasHints = config.hintCost !== undefined;
+  const hintPenalty = hasHints ? hintsUsed * (config.hintCost ?? 0) : 0;
+  // Floor at 0 so a winning game with a heavy hint stack can't dip
+  // negative on the leaderboard — the leaderboard sort still places
+  // it below faster/cleaner wins, but it never reads as a penalty
+  // score the player would interpret as "I would have been better
+  // off losing".
+  const total =
+    Math.round(Math.max(0, basePoints + guessBonus + timeBonus + completionBonus - hintPenalty) * 100) / 100;
+  return {
+    basePoints, guessBonus, timeBonus, completionBonus,
+    hintPenalty, hasHints, total,
+    maxGuesses: config.maxGuesses,
+    timeCap: config.timeCap,
+    guessWeight: config.guessWeight,
+    hintCost: config.hintCost ?? 0,
+  };
+}
 
-  return Math.round((basePoints + guessBonus + timeBonus + completionBonus) * 100) / 100;
+export function calculateCompositeScore(
+  gameMode: string,
+  completed: boolean,
+  guessCount: number,
+  timeSeconds: number,
+  boardsSolved: number,
+  totalBoards: number,
+  hintsUsed: number = 0,
+): number {
+  return computeScoreBreakdown(
+    gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
+  ).total;
 }
 
 export function calculateVsCompositeScore(
@@ -146,10 +209,11 @@ export async function recordDailyResult(
   timeSeconds: number,
   boardsSolved: number,
   totalBoards: number,
+  hintsUsed: number = 0,
 ) {
   const day = getTodayLocal();
   const compositeScore = calculateCompositeScore(
-    gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards,
+    gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
   );
 
   try {
@@ -174,6 +238,7 @@ export async function recordDailyResult(
             boards_solved: boardsSolved,
             total_boards: totalBoards,
             composite_score: compositeScore,
+            hints_used: hintsUsed,
           })
           .eq('id', existing.id);
       }
@@ -191,6 +256,7 @@ export async function recordDailyResult(
           boards_solved: boardsSolved,
           total_boards: totalBoards,
           composite_score: compositeScore,
+          hints_used: hintsUsed,
         });
     }
 

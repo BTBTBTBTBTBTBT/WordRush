@@ -470,6 +470,49 @@ export async function POST(req: NextRequest) {
     await award('flawless_streak', flawlessStreakUsers);
   }
 
+  // ── Pure ladder (hintless wins from `matches`) ─────────────────
+  //
+  // Tier thresholds mirror the in-game checks: 1 / 10 / 50 hintless
+  // wins per mode, plus a 50-win cross-mode capstone. The query is
+  // narrow (solo wins with hints_used = 0 in the three hint-bearing
+  // modes), so this batch stays cheap even on a 100k-match table.
+  const PURE_MODES = ['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE'];
+  const { data: pureWins } = await sb
+    .from('matches')
+    .select('player1_id, game_mode')
+    .is('player2_id', null)
+    .not('winner_id', 'is', null)
+    .eq('hints_used', 0)
+    .in('game_mode', PURE_MODES)
+    .limit(200000) as { data: Array<{ player1_id: string; game_mode: string }> | null };
+
+  if (pureWins) {
+    const perModePerUser = new Map<string, Map<string, number>>(); // mode → uid → count
+    for (const m of PURE_MODES) perModePerUser.set(m, new Map());
+    const acrossPerUser = new Map<string, number>();
+
+    for (const row of pureWins) {
+      const bucket = perModePerUser.get(row.game_mode);
+      if (!bucket) continue;
+      bucket.set(row.player1_id, (bucket.get(row.player1_id) || 0) + 1);
+      acrossPerUser.set(row.player1_id, (acrossPerUser.get(row.player1_id) || 0) + 1);
+    }
+
+    const slug = (m: string) => m === 'DUEL_6' ? 'six' : m === 'DUEL_7' ? 'seven' : 'proper';
+    for (const mode of PURE_MODES) {
+      const bucket = perModePerUser.get(mode)!;
+      const eligible = (threshold: number) =>
+        [...bucket.entries()].filter(([, c]) => c >= threshold).map(([uid]) => uid);
+      await award(`pure_${slug(mode)}_initiate`, eligible(1));
+      await award(`pure_${slug(mode)}_adept`,    eligible(10));
+      await award(`pure_${slug(mode)}_master`,   eligible(50));
+    }
+    await award(
+      'pure_player',
+      [...acrossPerUser.entries()].filter(([, c]) => c >= 50).map(([uid]) => uid),
+    );
+  }
+
   return NextResponse.json({
     success: true,
     totalInserted,
