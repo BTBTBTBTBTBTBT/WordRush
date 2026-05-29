@@ -79,10 +79,9 @@ final class EngineParityTests: XCTestCase {
 
     private static func loadDictionaries() {
         let dict = GameDictionary.shared
-        let bundle = Bundle(for: EngineParityTests.self)
 
         func loadJSON<T: Decodable>(_ filename: String) -> T {
-            guard let url = bundle.url(forResource: filename, withExtension: "json"),
+            guard let url = Bundle.module.url(forResource: filename, withExtension: "json", subdirectory: "Fixtures"),
                   let data = try? Data(contentsOf: url) else {
                 fatalError("Missing fixture: \(filename).json")
             }
@@ -103,8 +102,7 @@ final class EngineParityTests: XCTestCase {
     }
 
     private func loadFixture<T: Decodable>(_ filename: String) -> T {
-        let bundle = Bundle(for: type(of: self))
-        guard let url = bundle.url(forResource: filename, withExtension: "json"),
+        guard let url = Bundle.module.url(forResource: filename, withExtension: "json", subdirectory: "Fixtures"),
               let data = try? Data(contentsOf: url) else {
             fatalError("Missing fixture: \(filename).json")
         }
