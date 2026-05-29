@@ -20,20 +20,11 @@ struct GameScreen: View {
 
             VStack(spacing: 0) {
                 header
-
-                Spacer(minLength: 8)
-
-                BoardView(vm: vm)
-                    .padding(.bottom, 8)
-
-                Spacer(minLength: 8)
-
-                if vm.isFinished {
-                    resultBanner
-                }
-
-                KeyboardView(vm: vm)
-                    .padding(.bottom, 6)
+                Spacer(minLength: 6)
+                BoardLayout(vm: vm)
+                Spacer(minLength: 6)
+                if vm.isFinished { resultBanner }
+                KeyboardView(vm: vm).padding(.bottom, 6)
             }
             .padding(.horizontal, 10)
 
@@ -58,12 +49,21 @@ struct GameScreen: View {
     private var header: some View {
         VStack(spacing: 2) {
             Text(title)
-                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .font(.system(size: 24, weight: .heavy, design: .rounded))
                 .foregroundStyle(Theme.textPrimary)
-            Text("Guess \(min(vm.board.guesses.count + (vm.isFinished ? 0 : 1), vm.maxGuesses)) of \(vm.maxGuesses)")
+            Text(progressLabel)
                 .font(.caption).foregroundStyle(.secondary)
         }
-        .padding(.top, 8)
+        .padding(.top, 6)
+    }
+
+    private var progressLabel: String {
+        if vm.isMultiBoard {
+            let solved = vm.boards.filter { $0.status == .won }.count
+            return "\(solved)/\(vm.boardCount) solved · \(vm.rowsUsed)/\(vm.maxGuesses) guesses"
+        }
+        let n = min(vm.rowsUsed + (vm.isFinished ? 0 : 1), vm.maxGuesses)
+        return "Guess \(n) of \(vm.maxGuesses)"
     }
 
     private var resultBanner: some View {
@@ -71,10 +71,12 @@ struct GameScreen: View {
             Text(vm.status == .won ? "🎉 Solved!" : "Out of guesses")
                 .font(.headline)
             if vm.status == .lost {
-                Text("Answer: \(vm.solution)")
+                let answers = vm.boards.filter { $0.status != .won }.map(\.solution)
+                Text("Answer\(answers.count > 1 ? "s" : ""): \(answers.joined(separator: ", "))")
                     .font(.subheadline).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
 }
