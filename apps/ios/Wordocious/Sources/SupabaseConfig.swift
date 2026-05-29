@@ -6,9 +6,9 @@ import Foundation
 enum SupabaseConfig {
     static let url = URL(string: "https://eniiqqsxpmuyrspvepiw.supabase.co")!
 
-    /// TODO: paste the NEXT_PUBLIC_SUPABASE_ANON_KEY value here (the public
-    /// anon key from the web app's env / Supabase dashboard → Settings → API).
-    static let anonKey = "PASTE_ANON_KEY_HERE"
+    /// Public anon (publishable) key — same key shipped in the web bundle,
+    /// gated by Row Level Security. Safe to embed in the client.
+    static let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVuaWlxcXN4cG11eXJzcHZlcGl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NTYwMjksImV4cCI6MjA4OTUzMjAyOX0.1_KbkFzL1eHm2xcnLmfzal5TCnFNhCYgPgklG6w4vSQ"
 
-    static var isConfigured: Bool { anonKey != "PASTE_ANON_KEY_HERE" && !anonKey.isEmpty }
+    static var isConfigured: Bool { !anonKey.isEmpty }
 }
