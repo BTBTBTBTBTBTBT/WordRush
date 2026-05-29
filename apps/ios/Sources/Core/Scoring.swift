@@ -1,6 +1,6 @@
 import Foundation
 
-func calculateScore(_ result: MatchResult) -> ScoreBreakdown {
+public func calculateScore(_ result: MatchResult) -> ScoreBreakdown {
     var winBonus = 0
     var guessDiff = 0
     var timeDiff = 0

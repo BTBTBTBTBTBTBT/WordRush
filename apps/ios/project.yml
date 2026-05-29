@@ -1,0 +1,34 @@
+name: Wordocious
+options:
+  bundleIdPrefix: com.wordocious
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+packages:
+  WordociousCore:
+    path: .
+
+targets:
+  Wordocious:
+    type: application
+    platform: iOS
+    sources:
+      - path: Wordocious/Sources
+      - path: Wordocious/Resources
+    dependencies:
+      - package: WordociousCore
+        product: WordociousCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wordocious.app
+        PRODUCT_NAME: Wordocious
+        GENERATE_INFOPLIST_FILE: YES
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_CFBundleDisplayName: Wordocious
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"

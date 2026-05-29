@@ -1,6 +1,6 @@
 import Foundation
 
-func generatePrefillWords(seed: String, solutions: [String], allowedWords: [String]) -> [String] {
+public func generatePrefillWords(seed: String, solutions: [String], allowedWords: [String]) -> [String] {
     let solutionSet = Set(solutions.map { $0.uppercased() })
     let fiveLetterWords = allowedWords.filter { $0.count == 5 }
     let pool = fiveLetterWords.isEmpty ? allowedWords : fiveLetterWords
@@ -24,7 +24,7 @@ func generatePrefillWords(seed: String, solutions: [String], allowedWords: [Stri
     return words
 }
 
-func generatePrefillGuesses(words: [String], solution: String) -> [PrefilledGuess] {
+public func generatePrefillGuesses(words: [String], solution: String) -> [PrefilledGuess] {
     let solutionUpper = solution.uppercased()
     return words.map { word in
         PrefilledGuess(

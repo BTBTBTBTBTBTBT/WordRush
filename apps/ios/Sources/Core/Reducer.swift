@@ -1,6 +1,6 @@
 import Foundation
 
-func initializeGame(seed: String, mode: GameMode) -> GameState {
+public func initializeGame(seed: String, mode: GameMode) -> GameState {
     return createInitialState(seed: seed, mode: mode)
 }
 
@@ -36,7 +36,7 @@ private func getStageSolutionSlice(allSolutions: [String], stageIndex: Int) -> [
     return Array(allSolutions[offset..<(offset + gauntletStages[stageIndex].boardCount)])
 }
 
-func createInitialState(seed: String, mode: GameMode) -> GameState {
+public func createInitialState(seed: String, mode: GameMode) -> GameState {
     let now = Date().timeIntervalSince1970 * 1000
 
     switch mode {
@@ -119,7 +119,7 @@ func createInitialState(seed: String, mode: GameMode) -> GameState {
     }
 }
 
-func gameReducer(state: GameState, action: GameAction) -> GameState {
+public func gameReducer(state: GameState, action: GameAction) -> GameState {
     switch action {
 
     case let .submitGuess(guess, boardIndexOpt, applyToAll):

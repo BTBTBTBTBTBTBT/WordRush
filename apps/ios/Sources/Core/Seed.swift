@@ -18,7 +18,7 @@ func simpleHash(_ str: String) -> Int {
     return Int(abs(hash))
 }
 
-func generateSolutionsFromSeed(_ seed: String, count: Int) -> [String] {
+public func generateSolutionsFromSeed(_ seed: String, count: Int) -> [String] {
     let dict = GameDictionary.shared
     let solutionCount = dict.getSolutionCount()
     var solutions: [String] = []
@@ -42,7 +42,7 @@ func generateSolutionsFromSeed(_ seed: String, count: Int) -> [String] {
     return solutions
 }
 
-func generateSolutionsFromSeedForLength(_ seed: String, count: Int, wordLength: Int) -> [String] {
+public func generateSolutionsFromSeedForLength(_ seed: String, count: Int, wordLength: Int) -> [String] {
     let dict = GameDictionary.shared
     let solutionCount = dict.getSolutionCountForLength(wordLength)
     var solutions: [String] = []
@@ -66,19 +66,19 @@ func generateSolutionsFromSeedForLength(_ seed: String, count: Int, wordLength: 
     return solutions
 }
 
-func generateMatchSeed() -> String {
+public func generateMatchSeed() -> String {
     return "\(Int(Date().timeIntervalSince1970 * 1000))-\(UUID().uuidString.prefix(15).lowercased())"
 }
 
-func generateDailySeed(date: String, gameMode: String) -> String {
+public func generateDailySeed(date: String, gameMode: String) -> String {
     return "daily-\(date)-\(gameMode)"
 }
 
-func isDailySeed(_ seed: String) -> Bool {
+public func isDailySeed(_ seed: String) -> Bool {
     return seed.hasPrefix("daily-")
 }
 
-func getDailySeedDate(_ seed: String) -> String? {
+public func getDailySeedDate(_ seed: String) -> String? {
     guard isDailySeed(seed) else { return nil }
     let parts = seed.split(separator: "-")
     guard parts.count >= 4 else { return nil }

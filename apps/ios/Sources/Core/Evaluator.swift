@@ -1,6 +1,6 @@
 import Foundation
 
-func evaluateGuess(solution: String, guess: String) -> GuessResult {
+public func evaluateGuess(solution: String, guess: String) -> GuessResult {
     let solutionUpper = solution.uppercased()
     let guessUpper = guess.uppercased()
 

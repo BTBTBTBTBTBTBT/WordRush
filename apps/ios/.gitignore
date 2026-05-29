@@ -8,3 +8,6 @@ Package.resolved
 *.xcworkspace/xcuserdata/
 DerivedData/
 *.xcuserstate
+
+# XcodeGen-generated project — reproducible from project.yml via `xcodegen generate`
+Wordocious.xcodeproj/
