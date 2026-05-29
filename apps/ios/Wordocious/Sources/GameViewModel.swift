@@ -14,7 +14,9 @@ final class GameViewModel: ObservableObject {
 
     let mode: GameMode
     let wordLength: Int
+    let isDaily: Bool
     private let persistence = GamePersistence.shared
+    private var resultRecorded = false
 
     var boards: [BoardState] { state.boards }
     var boardCount: Int { state.boards.count }
@@ -34,12 +36,15 @@ final class GameViewModel: ObservableObject {
         default: wordLength = 5
         }
 
+        self.isDaily = isDailySeed(seed)
         if let saved = GamePersistence.shared.load(seed: seed, mode: mode) {
             state = saved
         } else {
             state = createInitialState(seed: seed, mode: mode)
         }
         recomputeEvaluations()
+        // A game restored from disk that's already finished shouldn't re-post.
+        resultRecorded = state.status != .playing
     }
 
     // MARK: - Input
@@ -72,8 +77,28 @@ final class GameViewModel: ObservableObject {
             persistence.save(state)
             if state.status == .won { flash("Solved!") }
             else if state.status == .lost { flash(lossMessage) }
+            if isFinished { recordResultIfNeeded() }
         } else {
             flash("Not in word list")
+        }
+    }
+
+    /// Post the finished daily result to Supabase (once). No-ops for
+    /// non-daily games or when signed out (handled in the service).
+    private func recordResultIfNeeded() {
+        guard isDaily, !resultRecorded else { return }
+        resultRecorded = true
+        let elapsedSeconds = max(0, Int((Date().timeIntervalSince1970 * 1000 - state.startTime) / 1000))
+        let solved = state.boards.filter { $0.status == .won }.count
+        let completed = state.status == .won
+        let guesses = rowsUsed
+        let total = boardCount
+        let modeRaw = mode
+        Task {
+            await DailyResultsService.record(
+                gameMode: modeRaw, completed: completed, guessCount: guesses,
+                timeSeconds: elapsedSeconds, boardsSolved: solved, totalBoards: total
+            )
         }
     }
 
