@@ -96,6 +96,20 @@ export function computeScoreBreakdown(
   };
 }
 
+/** Modes that expose hint buttons — the only ones where hints_used is meaningful. */
+export const HINT_BEARING_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE']);
+
+/**
+ * Short hint label for leaderboard/summary rows. Returns null for modes
+ * without hints so callers can omit the segment entirely. A clean win
+ * reads "No hints" to flag the full-credit (no penalty) result.
+ */
+export function formatHintsLabel(gameMode: string, hintsUsed: number): string | null {
+  if (!HINT_BEARING_MODES.has(gameMode)) return null;
+  if (hintsUsed <= 0) return 'No hints';
+  return `${hintsUsed} hint${hintsUsed === 1 ? '' : 's'}`;
+}
+
 export function calculateCompositeScore(
   gameMode: string,
   completed: boolean,
@@ -345,6 +359,7 @@ export interface LeaderboardEntry {
   time_seconds: number;
   boards_solved: number;
   total_boards: number;
+  hints_used: number;
   vs_wins: number;
   vs_games: number;
   completed: boolean;
@@ -370,6 +385,7 @@ export async function fetchDailyLeaderboard(
       time_seconds,
       boards_solved,
       total_boards,
+      hints_used,
       vs_wins,
       vs_games,
       completed,
@@ -393,6 +409,7 @@ export async function fetchDailyLeaderboard(
     time_seconds: row.time_seconds,
     boards_solved: row.boards_solved,
     total_boards: row.total_boards,
+    hints_used: row.hints_used ?? 0,
     vs_wins: row.vs_wins,
     vs_games: row.vs_games,
     completed: row.completed,

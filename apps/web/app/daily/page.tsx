@@ -19,6 +19,7 @@ import {
   getSecondsUntilMidnightUTC,
   getTodayLocal,
   getYesterdayLocal,
+  formatHintsLabel,
   type LeaderboardEntry,
 } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
@@ -302,6 +303,10 @@ export default function DailyPage() {
                         <span>
                           {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
                           {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
+                          {(() => {
+                            const h = formatHintsLabel(selectedMode, entry.hints_used);
+                            return h ? ` · ${h}` : '';
+                          })()}
                         </span>
                         <span
                           className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"

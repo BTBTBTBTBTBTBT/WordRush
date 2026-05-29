@@ -7,7 +7,7 @@ import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from 
 import { Board } from '@/components/game/board';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
-import { getTodayLocal } from '@/lib/daily-service';
+import { getTodayLocal, formatHintsLabel } from '@/lib/daily-service';
 import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
 import type { Guess as ProperNoundleGuess, TileState as PNTileState } from '@/components/propernoundle/types';
@@ -135,6 +135,13 @@ interface SavedProperNoundleState {
   gameStatus: 'playing' | 'won' | 'lost';
   letterStates: Record<string, PNTileState>;
   elapsedTime: number;
+  // Persisted by propernoundle-game.tsx; only the used-flags are read here
+  // (to show the hint count in the completed-today summary).
+  hintState?: {
+    hintUsed?: boolean;
+    vowelUsed?: boolean;
+    consonantUsed?: boolean;
+  };
 }
 
 function loadCompletedProperNoundle(): SavedProperNoundleState | null {
@@ -507,11 +514,19 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     if (pnSaved.puzzleId !== pnPuzzle.id) return null;
 
     const pnWon = pnSaved.gameStatus === 'won';
+    // ProperNoundle has three independent hint actions (clue / vowel /
+    // consonant); count whichever were used so the summary matches the
+    // leaderboard's hint column.
+    const pnHints =
+      (pnSaved.hintState?.hintUsed ? 1 : 0) +
+      (pnSaved.hintState?.vowelUsed ? 1 : 0) +
+      (pnSaved.hintState?.consonantUsed ? 1 : 0);
+    const pnHintLabel = formatHintsLabel('PROPERNOUNDLE', pnHints);
 
     return (
       <CollapsibleCompletedCard
         won={pnWon}
-        summaryLabel={`${pnSaved.guesses.length}/6 · ${formatTime(pnSaved.elapsedTime)}`}
+        summaryLabel={`${pnSaved.guesses.length}/6 · ${formatTime(pnSaved.elapsedTime)}${pnHintLabel ? ` · ${pnHintLabel}` : ''}`}
       >
         {/* Compact ProperNoundle board */}
         <div className="mx-auto" style={{ maxWidth: '240px' }}>
@@ -563,9 +578,14 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const totalGuesses = boards.reduce((sum, b) => sum + b.guesses.length, 0);
 
   const singleMaxGuesses = boards[0]?.maxGuesses ?? 6;
+  // Six/Seven store each hint as a row in board.hintEvaluations, so the
+  // key count is the number of hints the player burned. Surfaced in the
+  // summary for hint-bearing modes so it lines up with the leaderboard.
+  const singleHints = Object.keys(boards[0]?.hintEvaluations ?? {}).length;
+  const singleHintLabel = formatHintsLabel(modeId, singleHints);
   const summaryLabel = isMulti
     ? `${boardsSolved}/${totalBoards} · ${totalGuesses}g · ${formatTime(session.elapsedTime)}`
-    : `${(boards[0]?.guesses.length ?? 0)}/${singleMaxGuesses} · ${formatTime(session.elapsedTime)}`;
+    : `${(boards[0]?.guesses.length ?? 0)}/${singleMaxGuesses} · ${formatTime(session.elapsedTime)}${singleHintLabel ? ` · ${singleHintLabel}` : ''}`;
 
   return (
     <CollapsibleCompletedCard won={won} summaryLabel={summaryLabel}>
