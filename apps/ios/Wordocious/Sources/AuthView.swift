@@ -33,8 +33,8 @@ struct AuthView: View {
                 LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
                 ScrollView {
-                    VStack(spacing: 16) {
-                        VStack(spacing: 4) {
+                    VStack(spacing: 24) {
+                        VStack(spacing: 8) {
                             Wordmark(size: 30)
                             Text("Epic Word Battles").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
                         }.padding(.top, 20)
@@ -54,9 +54,9 @@ struct AuthView: View {
     }
 
     private var card: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {   // web card space-y-4 between header / social / divider / form
             Text(mode == .signin ? "Welcome Back!" : "Join the Fun!")
-                .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
+                .font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
 
             // Apple — required by App Store Guideline 4.8 alongside Google.
             // Official SignInWithAppleButton for HIG compliance.
@@ -83,43 +83,55 @@ struct AuthView: View {
                 Rectangle().fill(Theme.border).frame(height: 1)
             }
 
-            if mode == .signup { labeledField("Username", "person", $username, "Choose a username") }
-            labeledField("Email", "envelope", $email, "your@email.com", keyboard: .emailAddress)
-            labeledSecure("Password", "lock", $password)
+            // Form fields group — web <form className="space-y-3"> (12pt).
+            VStack(spacing: 12) {
+                if mode == .signup { labeledField("Username", "person", $username, "Choose a username") }
+                labeledField("Email", "envelope", $email, "your@email.com", keyboard: .emailAddress)
+                labeledSecure("Password", "lock", $password)
 
-            if let error { Text(error).font(Brand.body(12)).foregroundStyle(Color(hex: 0xDC2626)) }
+                if let error {
+                    Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xFEE2E2)))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xFECACA), lineWidth: 1))
+                }
 
-            Button(action: submit) {
-                HStack { if working { ProgressView().tint(.white) }
-                    Text(working ? "Loading..." : (mode == .signin ? "Sign In" : "Create Account")) }
-                .font(Brand.font(15, .black)).foregroundStyle(.white)
-                .frame(maxWidth: .infinity).padding(.vertical, 13)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.wordmarkGradient))
+                Button(action: submit) {
+                    HStack { if working { ProgressView().tint(.white) }
+                        Text(working ? "Loading..." : (mode == .signin ? "Sign In" : "Create Account")) }
+                    .font(Brand.font(15, .black)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 13)
+                    .background(RoundedRectangle(cornerRadius: 12)
+                        .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4))   // btn-3d
+                }
+                .buttonStyle(.plain)
+                .disabled(working || !SupabaseConfig.isConfigured)
+
+                Button(mode == .signin ? "Don't have an account? Sign up" : "Already have an account? Sign in") {
+                    mode = mode == .signin ? .signup : .signin; error = nil
+                }
+                .font(Brand.body(13)).foregroundStyle(Theme.primary)
             }
-            .buttonStyle(.plain)
-            .disabled(working || !SupabaseConfig.isConfigured)
-
-            Button(mode == .signin ? "Don't have an account? Sign up" : "Already have an account? Sign in") {
-                mode = mode == .signin ? .signup : .signin; error = nil
-            }
-            .font(Brand.body(13)).foregroundStyle(Theme.primary)
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 18).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.border, lineWidth: 1.5))
+        .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+        .shadow(color: Color(hex: 0x7C3AED).opacity(0.08), radius: 12, x: 0, y: 4)
     }
 
     private var footer: some View {
         HStack(spacing: 6) {
             Text("Privacy Policy").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
-            Text("|").foregroundStyle(Theme.textMuted)
+            Text("|").foregroundStyle(Theme.borderLight)
             Text("Terms of Service").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
         }
     }
 
     private func labeledField(_ label: String, _ icon: String, _ text: Binding<String>, _ placeholder: String, keyboard: UIKeyboardType = .default) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Label(label, systemImage: icon).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
             TextField(placeholder, text: text)
                 .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(keyboard)
                 .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
@@ -129,7 +141,7 @@ struct AuthView: View {
 
     private func labeledSecure(_ label: String, _ icon: String, _ text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Label(label, systemImage: icon).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
             SecureField("••••••••", text: text)
                 .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1.5))

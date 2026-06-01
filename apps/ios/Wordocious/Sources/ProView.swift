@@ -58,10 +58,10 @@ struct ProView: View {
 
     private var header: some View {
         VStack(spacing: 6) {
-            Image(systemName: "crown.fill").font(.system(size: 44)).foregroundStyle(gold)
-            Text("Go Pro").font(Brand.title(34)).foregroundStyle(Theme.textPrimary)
+            Image(systemName: "crown.fill").font(.system(size: 54)).foregroundStyle(gold)
+            Text("Go Pro").font(Brand.title(36)).foregroundStyle(Theme.textPrimary)
             Text("Play unlimited & ad-free — all 8 modes, any time")
-                .font(Brand.body(14)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
+                .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
         }
         .padding(.top, 12).padding(.bottom, 24)
     }
@@ -74,7 +74,7 @@ struct ProView: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 8)
             .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), gold], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            Text("You're enjoying all Pro benefits!").font(Brand.body(14)).foregroundStyle(Theme.textMuted)
+            Text("You're enjoying all Pro benefits!").font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
         }
         .padding(28).frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -96,7 +96,7 @@ struct ProView: View {
 
             HStack(spacing: 10) {
                 Rectangle().fill(Theme.border).frame(height: 1)
-                Text("OR TRY IT FIRST").font(Brand.font(10, .heavy)).tracking(0.6).foregroundStyle(Theme.textMuted)
+                Text("OR TRY IT FIRST").font(Brand.font(10, .heavy)).tracking(0.5).foregroundStyle(Theme.textMuted)
                 Rectangle().fill(Theme.border).frame(height: 1)
             }.padding(.top, 6)
             Button { buy(.day) } label: {
@@ -138,7 +138,7 @@ struct ProView: View {
     }
 
     private func sectionHeader(_ t: String) -> some View {
-        Text(t).font(Brand.font(11, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+        Text(t).font(Brand.font(11, .heavy)).tracking(1.1).foregroundStyle(Theme.textMuted)
     }
 
     private func benefitRow(_ b: Benefit) -> some View {
@@ -147,7 +147,7 @@ struct ProView: View {
                 if let asset = b.asset {
                     Image(asset).renderingMode(.template).resizable().scaledToFit().frame(width: 20, height: 20)
                 } else {
-                    Image(systemName: b.symbol).font(.system(size: 18))
+                    Image(systemName: b.symbol).font(.system(size: 20))
                 }
             }.foregroundStyle(gold).frame(width: 24)
             Text(b.text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
@@ -162,18 +162,10 @@ struct ProView: View {
     private func planCard(title: String, price: String, unit: String, note: String,
                           gradient: [Color], best: Bool, loading: Bool, action: @escaping () -> Void, cta: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(title).font(Brand.headline(15)).foregroundStyle(Theme.textPrimary)
-                Spacer()
-                if best {
-                    Text("BEST VALUE").font(Brand.font(10, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 8).padding(.vertical, 2)
-                        .background(Capsule().fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
-                }
-            }
+            Text(title).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
             (Text(price).font(Brand.font(30, .black)) + Text(unit).font(Brand.font(14, .bold)).foregroundColor(Theme.textMuted))
                 .foregroundStyle(Theme.textPrimary)
-            Text(note).font(Brand.body(12)).foregroundStyle(Theme.textMuted).padding(.bottom, 8)
+            Text(note).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).padding(.bottom, 8)
             Button(action: action) {
                 HStack(spacing: 8) {
                     if loading { ProgressView().tint(.white) }
@@ -187,5 +179,13 @@ struct ProView: View {
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(best ? Color(hex: 0xFDE68A) : Theme.border, lineWidth: 1.5))
+        .overlay(alignment: .topTrailing) {
+            if best {
+                Text("BEST VALUE").font(Brand.font(10, .black)).foregroundStyle(.white)
+                    .padding(.horizontal, 10).padding(.vertical, 2)
+                    .background(Capsule().fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
+                    .padding(.trailing, 16).offset(y: -10)   // float over the top border (web: -top-2.5 right-4)
+            }
+        }
     }
 }
