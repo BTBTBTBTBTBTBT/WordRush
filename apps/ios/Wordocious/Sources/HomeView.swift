@@ -5,7 +5,6 @@ struct HomeView: View {
     @EnvironmentObject private var auth: AuthService
     @StateObject private var completions = DailyCompletionsStore()
     @State private var comingSoon: String?
-    @State private var showHelp = false
     @State private var limitModal: HomeMode?     // free user tapped a completed daily
     @State private var solvedMode: HomeMode?      // "View Solved Puzzle"
     @State private var showProSheet = false
@@ -18,20 +17,23 @@ struct HomeView: View {
                 LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 8) {
-                        if completions.allDone { banner }
-                        WordOfTheDayView()
-                        sectionHeader
-                        LazyVGrid(columns: columns, spacing: 8) {
-                            ForEach(homeModes) { mode in
-                                card(mode)
+                VStack(spacing: 0) {
+                    AppHeaderView()
+                    ScrollView {
+                        VStack(spacing: 8) {
+                            if completions.allDone { banner }
+                            WordOfTheDayView()
+                            sectionHeader
+                            LazyVGrid(columns: columns, spacing: 8) {
+                                ForEach(homeModes) { mode in
+                                    card(mode)
+                                }
                             }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                        .padding(.bottom, 16)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                    .padding(.bottom, 16)
                 }
 
                 if let m = limitModal {
@@ -55,64 +57,18 @@ struct HomeView: View {
                     }
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Wordmark(size: 22) }
-                ToolbarItem(placement: .topBarTrailing) { headerPills }
-            }
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .task(id: auth.isAuthenticated) { await completions.load() }
             .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("\(comingSoon ?? "This mode") is coming to the iOS app soon.")
             }
-            .sheet(isPresented: $showHelp) {
-                HelpView().presentationDetents([.large])
-            }
             // Banner lives on the Home root only — applying it here (inside the
             // NavigationStack) keeps it off pushed game screens (GameScreen /
             // ProperNoundle / VS), where it would otherwise cover the keyboard.
             .adBanner()
         }
-    }
-
-    // MARK: - Header pills (help / streak / shield)
-
-    private var headerPills: some View {
-        HStack(spacing: 8) {
-            Button { showHelp = true } label: {
-                Image(systemName: "questionmark.circle")
-                    .font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.textMuted)
-                    .frame(width: 32, height: 32)
-                    .background(Circle().fill(Theme.surfaceAlt))
-                    .overlay(Circle().stroke(Theme.borderAlt, lineWidth: 1.5))
-            }
-            if let p = auth.profile, p.dailyLoginStreak > 0 {
-                pill(icon: .asset("flame"), iconColor: Color(hex: 0xF97316),
-                     text: "\(p.dailyLoginStreak)", textColor: Color(hex: 0x92400E),
-                     bg: LinearGradient(colors: [Color(hex: 0xFFFBEB), Color(hex: 0xFFF7ED)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                     border: Color(hex: 0xFDE68A))
-            }
-            if let p = auth.profile {
-                pill(icon: .asset("shield"), iconColor: Color(hex: 0x8B5CF6),
-                     text: "\(p.streakShields)", textColor: Color(hex: 0x5B21B6),
-                     bg: LinearGradient(colors: [Theme.surfaceHover, Theme.surfaceHover], startPoint: .top, endPoint: .bottom),
-                     border: Color(hex: 0xC4B5FD))
-            }
-        }
-    }
-
-    private func pill(icon: ModeIconKind, iconColor: Color, text: String, textColor: Color,
-                      bg: LinearGradient, border: Color) -> some View {
-        HStack(spacing: 4) {
-            if case .asset(let name) = icon {
-                Image(name).renderingMode(.template).resizable().scaledToFit()
-                    .frame(width: 13, height: 13).foregroundStyle(iconColor)
-            }
-            Text(text).font(Brand.font(13, .heavy)).foregroundStyle(textColor)
-        }
-        .padding(.horizontal, 9).padding(.vertical, 5)
-        .background(Capsule().fill(bg)).overlay(Capsule().stroke(border, lineWidth: 1.5))
     }
 
     // MARK: - Banner

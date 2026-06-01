@@ -11,7 +11,6 @@ struct ProfileTab: View {
     @StateObject private var completions = DailyCompletionsStore()
     @State private var showAuth = false
     @State private var showPro = false
-    @State private var showSettings = false
     @State private var statRows: [UserStatRow] = []
     @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
     @State private var unlockedAchievements: Set<String> = []
@@ -28,19 +27,12 @@ struct ProfileTab: View {
             ZStack {
                 LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-                if let profile = auth.profile { content(profile) } else { signedOut }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            // Solid nav-bar background so the gear sits on a pinned header
-            // instead of floating over the scrolling content.
-            .toolbarBackground(Theme.background, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showSettings = true } label: { Image(systemName: "gearshape.fill").foregroundStyle(Theme.textMuted) }
+                VStack(spacing: 0) {
+                    AppHeaderView()   // shared header (settings now lives here)
+                    if let profile = auth.profile { content(profile) } else { signedOut }
                 }
             }
-            .sheet(isPresented: $showSettings) { SettingsView() }
+            .toolbar(.hidden, for: .navigationBar)
             .task(id: auth.profile?.id) {
                 await completions.load()
                 if let uid = auth.profile?.id {
@@ -397,9 +389,12 @@ struct LeaderboardTab: View {
             ZStack {
                 LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-                if !auth.isAuthenticated { signedOut } else { content }
+                VStack(spacing: 0) {
+                    AppHeaderView()
+                    if !auth.isAuthenticated { signedOut } else { content }
+                }
             }
-            .navigationTitle("").navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .adBanner()
         }
     }
@@ -621,37 +616,44 @@ struct RecordsTab: View {
             ZStack {
                 LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-                if !auth.isAuthenticated {
-                    VStack(spacing: 16) {
-                        placeholder(icon: "crown.fill", title: "Sign in to see records",
-                                    subtitle: "Daily rankings and the all-time hall of records are available to signed-in players.")
-                        Button("Sign in") { showAuth = true }.buttonStyle(.borderedProminent).tint(Theme.primary)
-                    }
-                    .sheet(isPresented: $showAuth) { AuthView() }
-                } else {
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            VStack(spacing: 3) {
-                                Text("RECORDS").font(Brand.font(28, .black))
-                                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
-                                Text("The best of the best across Wordocious")
-                                    .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
-                            }
-                            .padding(.top, 6)
-
-                            HStack(spacing: 8) {
-                                toggleButton("Daily", .daily)
-                                toggleButton("All-Time", .allTime)
-                            }
-
-                            if tab == .daily { DailyRecordsView() } else { AllTimeRecordsView() }
-                        }
-                        .padding(.horizontal, 12).padding(.bottom, 16)
-                    }
+                VStack(spacing: 0) {
+                    AppHeaderView()
+                    content
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .adBanner()
+        }
+    }
+
+    @ViewBuilder private var content: some View {
+        if !auth.isAuthenticated {
+            VStack(spacing: 16) {
+                placeholder(icon: "crown.fill", title: "Sign in to see records",
+                            subtitle: "Daily rankings and the all-time hall of records are available to signed-in players.")
+                Button("Sign in") { showAuth = true }.buttonStyle(.borderedProminent).tint(Theme.primary)
+            }
+            .sheet(isPresented: $showAuth) { AuthView() }
+        } else {
+            ScrollView {
+                VStack(spacing: 16) {
+                    VStack(spacing: 3) {
+                        Text("RECORDS").font(Brand.font(28, .black))
+                            .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                        Text("The best of the best across Wordocious")
+                            .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
+                    }
+                    .padding(.top, 6)
+
+                    HStack(spacing: 8) {
+                        toggleButton("Daily", .daily)
+                        toggleButton("All-Time", .allTime)
+                    }
+
+                    if tab == .daily { DailyRecordsView() } else { AllTimeRecordsView() }
+                }
+                .padding(.horizontal, 12).padding(.bottom, 16)
+            }
         }
     }
 
