@@ -13,11 +13,22 @@ enum MatchStatsService {
     struct DayActivity: Identifiable { let day: Date; let played: Int; let won: Int; var id: Date { day } }
     struct SolvePoint: Identifiable { let index: Int; let date: Date; let seconds: Int; let mode: String; var id: Int { index } }
     struct HourBucket: Identifiable { let hour: Int; let played: Int; let won: Int; var id: Int { hour } }
+    struct TopWord: Identifiable { let word: String; let count: Int; let wins: Int; var id: String { word } }
+    struct ProInsights {
+        var fastestTime: Int?; var fastestDate: String?
+        var fewestGuesses: Int?; var fewestDate: String?
+        var perfectGames = 0
+        var consistency = 0; var consistencySample = 0
+        var recentAvg = 0; var overallAvg = 0; var improving = false; var percentChange = 0
+        var hasData: Bool { fastestTime != nil || fewestGuesses != nil || perfectGames > 0 }
+    }
 
     // MARK: Row decoders
     private struct ScoreRow: Decodable { let player1_score: Int?; let game_mode: String; let winner_id: String? }
     private struct DateWinRow: Decodable { let created_at: String; let winner_id: String?; let game_mode: String }
     private struct TimeRow: Decodable { let player1_time: Double?; let game_mode: String; let created_at: String }
+    private struct GuessesRow: Decodable { let player1_guesses: [String]?; let winner_id: String? }
+    private struct InsightRow: Decodable { let player1_time: Double?; let player1_score: Int?; let created_at: String }
 
     private static func userId() async -> String? {
         try? await AuthService.shared.client.auth.session.user.id.uuidString
@@ -98,5 +109,76 @@ enum MatchStatsService {
             if r.winner_id == uid { won[h, default: 0] += 1 }
         }
         return (0..<24).map { HourBucket(hour: $0, played: played[$0] ?? 0, won: won[$0] ?? 0) }
+    }
+
+    /// Top-5 most-guessed words (+ win counts) — ports fetchTopWordsAllTime.
+    static func topWords(mode: GameMode? = nil, limit: Int = 5) async -> [TopWord] {
+        guard let uid = await userId() else { return [] }
+        var q = AuthService.shared.client.from("matches")
+            .select("player1_guesses,winner_id,game_mode")
+            .eq("player1_id", value: uid)
+        if let mode { q = q.eq("game_mode", value: mode.rawValue) }
+        let rows: [GuessesRow] = (try? await q.order("created_at", ascending: false).limit(1000).execute().value) ?? []
+        var counts = [String: (count: Int, wins: Int)]()
+        for r in rows {
+            guard let guesses = r.player1_guesses else { continue }
+            let won = r.winner_id == uid
+            for w in guesses {
+                let key = w.uppercased()
+                var e = counts[key] ?? (0, 0)
+                e.count += 1; if won { e.wins += 1 }
+                counts[key] = e
+            }
+        }
+        return counts.map { TopWord(word: $0.key, count: $0.value.count, wins: $0.value.wins) }
+            .sorted { $0.count > $1.count }
+            .prefix(limit).map { $0 }
+    }
+
+    /// Pro per-mode insights (personal bests, perfect games, consistency,
+    /// improvement trend) — ports the fetch* helpers in stats-service.ts.
+    static func proInsights(mode: GameMode) async -> ProInsights {
+        guard let uid = await userId() else { return ProInsights() }
+        let rows: [InsightRow] = (try? await AuthService.shared.client.from("matches")
+            .select("player1_time,player1_score,created_at")
+            .eq("player1_id", value: uid)
+            .eq("winner_id", value: uid)
+            .eq("game_mode", value: mode.rawValue)
+            .is("player2_id", value: nil)
+            .gt("player1_time", value: 0)
+            .order("created_at", ascending: false)
+            .limit(200).execute().value) ?? []
+
+        var out = ProInsights()
+        guard !rows.isEmpty else { return out }
+
+        if let fast = rows.min(by: { ($0.player1_time ?? .infinity) < ($1.player1_time ?? .infinity) }),
+           let t = fast.player1_time {
+            out.fastestTime = Int(t.rounded()); out.fastestDate = String(fast.created_at.prefix(10))
+        }
+        let scored = rows.filter { ($0.player1_score ?? 0) > 0 }
+        if let few = scored.min(by: { ($0.player1_score ?? .max) < ($1.player1_score ?? .max) }) {
+            out.fewestGuesses = few.player1_score; out.fewestDate = String(few.created_at.prefix(10))
+        }
+        out.perfectGames = rows.filter { $0.player1_score == 1 }.count
+
+        let times = rows.compactMap { $0.player1_time }
+        let last20 = Array(times.prefix(20))
+        if last20.count >= 3 {
+            let avg = last20.reduce(0, +) / Double(last20.count)
+            let variance = last20.reduce(0) { $0 + ($1 - avg) * ($1 - avg) } / Double(last20.count)
+            let cv = avg > 0 ? sqrt(variance) / avg : 0
+            out.consistency = max(0, Int((100 - cv * 100).rounded()))
+            out.consistencySample = last20.count
+        }
+
+        let last10 = Array(times.prefix(10))
+        if !last10.isEmpty {
+            out.recentAvg = Int((last10.reduce(0, +) / Double(last10.count)).rounded())
+            out.overallAvg = Int((times.reduce(0, +) / Double(times.count)).rounded())
+            out.improving = out.recentAvg < out.overallAvg
+            out.percentChange = out.overallAvg > 0 ? Int((Double(out.overallAvg - out.recentAvg) / Double(out.overallAvg) * 100).rounded()) : 0
+        }
+        return out
     }
 }

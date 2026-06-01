@@ -14,6 +14,9 @@ struct ProfileDashboard: View {
             ActivityCalendarView(mode: mode)
             SolveTimeChart(mode: mode)
             TimeOfDayHeatmap(mode: mode)
+            TopWordsCard(mode: mode)
+            // Pro-only, per-mode insights (web gates these behind Pro).
+            if let mode, AuthService.shared.isProActive { ProInsightsCard(mode: mode) }
         }
     }
 }
@@ -235,4 +238,95 @@ private struct TimeOfDayHeatmap: View {
         let twelve = h % 12 == 0 ? 12 : h % 12
         return "\(twelve)\(am ? "am" : "pm")"
     }
+}
+
+// MARK: - Top words
+
+private struct TopWordsCard: View {
+    let mode: GameMode?
+    @State private var data: [MatchStatsService.TopWord] = []
+
+    var body: some View {
+        ChartCard(title: "TOP WORDS") {
+            if data.isEmpty {
+                EmptyChart()
+            } else {
+                let maxCount = max(1, data.map(\.count).max() ?? 1)
+                VStack(spacing: 8) {
+                    ForEach(Array(data.enumerated()), id: \.element.id) { i, w in
+                        HStack(spacing: 8) {
+                            Text("\(i + 1)").font(Brand.font(11, .black)).foregroundStyle(Theme.textMuted).frame(width: 14)
+                            HStack(spacing: 2) {
+                                ForEach(Array(w.word.prefix(7).enumerated()), id: \.offset) { _, ch in
+                                    Text(String(ch)).font(Brand.font(11, .black)).foregroundStyle(Theme.textPrimary)
+                                        .frame(width: 18, height: 18)
+                                        .background(RoundedRectangle(cornerRadius: 3).fill(Theme.surfaceAlt))
+                                }
+                            }
+                            GeometryReader { geo in
+                                RoundedRectangle(cornerRadius: 3).fill(Theme.primary.opacity(0.25))
+                                    .frame(width: geo.size.width * CGFloat(w.count) / CGFloat(maxCount))
+                                    .frame(maxHeight: .infinity, alignment: .leading)
+                            }.frame(height: 6)
+                            Text("\(w.count)x").font(Brand.font(11, .bold)).foregroundStyle(Theme.textSecondary)
+                            Text("\(w.count > 0 ? w.wins * 100 / w.count : 0)%").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).frame(width: 34, alignment: .trailing)
+                        }
+                    }
+                }
+            }
+        }
+        .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.topWords(mode: mode) }
+    }
+}
+
+// MARK: - Pro insights (per-mode, Pro-gated)
+
+private struct ProInsightsCard: View {
+    let mode: GameMode
+    @State private var s = MatchStatsService.ProInsights()
+    private let gold = Color(hex: 0xD97706)
+
+    var body: some View {
+        ChartCard(title: "PRO INSIGHTS") {
+            if !s.hasData {
+                EmptyChart()
+            } else {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    statCell("Fastest Win", s.fastestTime.map(fmt) ?? "—", "bolt.fill", gold)
+                    statCell("Fewest Guesses", s.fewestGuesses.map { "\($0)" } ?? "—", "target", gold)
+                    statCell("Perfect Games", "\(s.perfectGames)", "star.fill", gold)
+                    statCell("Consistency", s.consistencySample >= 3 ? "\(s.consistency)" : "—", "waveform.path.ecg", gold)
+                }
+                if s.recentAvg > 0 {
+                    HStack(spacing: 6) {
+                        Image(systemName: s.improving ? "arrow.down.right" : "arrow.up.right")
+                            .font(.system(size: 12)).foregroundStyle(s.improving ? Color(hex: 0x16A34A) : Color(hex: 0xEF4444))
+                        Text(s.improving ? "Trending faster" : "Trending slower")
+                            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textSecondary)
+                        Spacer()
+                        Text("\(abs(s.percentChange))% · last 10 avg \(fmt(s.recentAvg))")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    }
+                    .padding(.top, 2)
+                }
+            }
+        }
+        .task(id: mode.rawValue) { s = await MatchStatsService.proInsights(mode: mode) }
+    }
+
+    private func statCell(_ label: String, _ value: String, _ icon: String, _ color: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color).frame(width: 18)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
+                Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
+    }
+
+    private func fmt(_ s: Int) -> String { s < 60 ? "\(s)s" : "\(s/60):\(String(format: "%02d", s%60))" }
 }
