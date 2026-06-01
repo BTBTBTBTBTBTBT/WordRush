@@ -126,6 +126,11 @@ export default function RootLayout({
           strategy="lazyOnload"
         />
         <DailyBoundaryReload />
+        {/* Dismiss the static #app-loader overlay as soon as React hydrates,
+            regardless of auth state. Must live OUTSIDE <AuthGate> — otherwise
+            signed-out users (who get <LoginScreen/> instead of children) never
+            mount it and are stuck on the loading spinner forever. */}
+        <AppLoaderDismiss />
         <AuthProvider>
           <DailyCompletionsProvider>
             <SitePresenceProvider>
@@ -138,7 +143,6 @@ export default function RootLayout({
                     <ProPromptModal />
                     <SharePreviewHost />
                     <PwaProvider />
-                    <AppLoaderDismiss />
                     <Toaster />
                   </StreakShieldProvider>
                 </ThemeProvider>
