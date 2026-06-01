@@ -16,6 +16,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/gauntlet',
     '/propernoundle',
     '/pro',
+    '/how-to-play',
+    '/about',
     '/privacy',
     '/terms',
     '/support',
