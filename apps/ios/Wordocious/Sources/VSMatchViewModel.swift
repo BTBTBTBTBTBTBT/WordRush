@@ -185,6 +185,11 @@ final class VSMatchViewModel: ObservableObject {
             await GameResultsService.record(
                 gameMode: mode, playType: "vs", won: won, guessCount: data.playerGuesses,
                 timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
+            if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
+                await AchievementService.checkAchievements(
+                    userId: uid, gameMode: mode.rawValue, playType: "vs", won: won,
+                    guessCount: data.playerGuesses, timeSeconds: secs, seed: theSeed, hintsUsed: 0)
+            }
         }
     }
 }

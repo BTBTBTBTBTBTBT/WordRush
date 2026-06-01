@@ -84,10 +84,21 @@ final class ProperNoundleVM: ObservableObject {
         guard !recorded else { return }; recorded = true
         let seed = generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: GameMode.propernoundle.rawValue)
         let won = status == .won, secs = elapsed, gc = guesses.count, used = hintsUsed
+        let answer = puzzle.map { ProperNoundle.normalize($0.answer) } ?? ""
+        let guessWords = guesses.map { $0.word }
         Task {
             await GameResultsService.record(gameMode: .propernoundle, won: won, guessCount: gc,
                                             timeSeconds: secs, boardsSolved: won ? 1 : 0, totalBoards: 1,
                                             seed: seed, hintsUsed: used)
+            // Match-history row (powers charts + the pure_proper hintless ladder).
+            await GameResultsService.recordSoloMatch(gameMode: .propernoundle, won: won, score: gc,
+                                                     timeSeconds: secs, seed: seed, solutions: [answer],
+                                                     guesses: guessWords, hintsUsed: used)
+            if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
+                await AchievementService.checkAchievements(
+                    userId: uid, gameMode: GameMode.propernoundle.rawValue, playType: "solo", won: won,
+                    guessCount: gc, timeSeconds: secs, seed: seed, hintsUsed: used)
+            }
         }
     }
 

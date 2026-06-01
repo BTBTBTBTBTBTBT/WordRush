@@ -261,6 +261,12 @@ final class GameViewModel: ObservableObject {
                 gameMode: modeRaw, won: completed, score: guesses, timeSeconds: secs,
                 seed: theSeed, solutions: solutionWords, guesses: guessWords
             )
+            // Unlock achievements (after stats/profile/match are written).
+            if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
+                await AchievementService.checkAchievements(
+                    userId: uid, gameMode: modeRaw.rawValue, playType: "solo", won: completed,
+                    guessCount: guesses, timeSeconds: secs, seed: theSeed, hintsUsed: 0)
+            }
         }
     }
 
