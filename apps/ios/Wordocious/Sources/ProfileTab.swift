@@ -383,8 +383,10 @@ struct LeaderboardTab: View {
     @State private var secondsLeft = secondsUntilLocalMidnight()
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    /// The 9 daily modes, in PROFILE_MODES order.
-    private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
+    /// All 9 daily-recordable modes (incl. ProperNoundle, which has a dbKey but
+    /// no GameMode enum on its HomeMode — its leaderboard keys off the dbKey).
+    /// VS is excluded (no daily leaderboard).
+    private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
 
     var body: some View {
         NavigationStack {
@@ -515,8 +517,10 @@ struct LeaderboardTab: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(pickerModes) { m in
-                    let active = m.mode == mode
-                    Button { mode = m.mode! } label: {
+                    let active = m.dbKey == mode.rawValue
+                    // ProperNoundle has no HomeMode.mode; map via its dbKey
+                    // ("PROPERNOUNDLE") to GameMode.propernoundle.
+                    Button { mode = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? mode } label: {
                         HStack(spacing: 6) {
                             ModeIconView(icon: m.icon, accent: m.accent, box: 22)
                             Text(m.title).font(Brand.font(13, .heavy))
@@ -667,7 +671,7 @@ struct AllTimeRecordsView: View {
     @State private var mode: GameMode = .duel
     @State private var loading = true
 
-    private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
+    private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
     private var myId: String? { auth.profile?.id }
 
     var body: some View {
@@ -693,7 +697,7 @@ struct AllTimeRecordsView: View {
                 // By Game Mode
                 Text("BY GAME MODE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
                 HModePicker(selected: $mode)
-                let m = pickerModes.first { $0.mode == mode }
+                let m = pickerModes.first { $0.dbKey == mode.rawValue }
                 VStack(spacing: 0) {
                     RoundedRectangle(cornerRadius: 2).fill((m?.accent ?? Theme.primary)).frame(height: 3)
                     HStack(spacing: 10) {
@@ -768,7 +772,7 @@ struct DailyRecordsView: View {
     @State private var userRank: (rank: Int, total: Int)?
     @State private var loading = false
 
-    private var accent: Color { homeModes.first { $0.mode == mode }?.accent ?? Theme.primary }
+    private var accent: Color { homeModes.first { $0.dbKey == mode.rawValue }?.accent ?? Theme.primary }
 
     /// Custom inline Solo|VS toggle matching the web (icon + accent active state),
     /// replacing the iOS segmented control.
@@ -793,7 +797,7 @@ struct DailyRecordsView: View {
     }
 
     var body: some View {
-        let m = homeModes.first { $0.mode == mode }
+        let m = homeModes.first { $0.dbKey == mode.rawValue }
         let total = userRank?.total ?? entries.count
         return VStack(spacing: 10) {
             HModePicker(selected: $mode)
@@ -886,13 +890,14 @@ struct DailyRecordsView: View {
 /// Shared horizontal mode picker (9 daily modes).
 struct HModePicker: View {
     @Binding var selected: GameMode
-    private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
+    // All 9 daily-recordable modes incl. ProperNoundle (dbKey, no HomeMode.mode).
+    private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(modes) { m in
-                    let active = m.mode == selected
-                    Button { selected = m.mode! } label: {
+                    let active = m.dbKey == selected.rawValue
+                    Button { selected = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? selected } label: {
                         HStack(spacing: 6) {
                             ModeIconView(icon: m.icon, accent: m.accent, box: 22)
                             Text(m.title).font(Brand.font(13, .heavy)).foregroundStyle(active ? m.accent : Theme.textMuted)
