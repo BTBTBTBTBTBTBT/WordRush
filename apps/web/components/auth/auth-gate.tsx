@@ -3,12 +3,12 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
-import { LoginScreen } from './login-screen';
+import { Landing } from './landing';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
 // Public (no login) so AdSense / search crawlers can index real content —
 // not just the login wall. These are static content pages.
-const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about'];
+const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about', '/faq'];
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -68,9 +68,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Not authenticated — show login screen
+  // Not authenticated — show the public marketing landing (content-rich, with a
+  // "Sign in to play" CTA that reveals the login form). Gives crawlers/AdSense
+  // real content instead of a bare login wall.
   if (!user) {
-    return <LoginScreen />;
+    return <Landing />;
   }
 
   // Authenticated — render app

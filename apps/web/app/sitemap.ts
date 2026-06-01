@@ -18,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/pro',
     '/how-to-play',
     '/about',
+    '/faq',
     '/privacy',
     '/terms',
     '/support',
