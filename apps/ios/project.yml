@@ -11,6 +11,9 @@ packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
     from: 2.0.0
+  SocketIO:
+    url: https://github.com/socketio/socket.io-client-swift
+    from: 16.1.0
 
 targets:
   Wordocious:
@@ -24,6 +27,8 @@ targets:
         product: WordociousCore
       - package: Supabase
         product: Supabase
+      - package: SocketIO
+        product: SocketIO
     info:
       path: Wordocious/Info.plist
       properties:
