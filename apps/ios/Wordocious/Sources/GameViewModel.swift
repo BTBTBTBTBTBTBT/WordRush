@@ -246,11 +246,20 @@ final class GameViewModel: ObservableObject {
         }
 
         let theSeed = state.seed
+        // Match-history row (player2_id = null) so this game feeds the Profile
+        // charts, mirroring the web's recordSoloMatch. board 0's guesses are the
+        // shared guess list; solutions = every board's answer.
+        let guessWords = state.boards.first?.guesses ?? []
+        let solutionWords = state.boards.map(\.solution)
         Task {
             await GameResultsService.record(
                 gameMode: modeRaw, won: completed, guessCount: guesses,
                 timeSeconds: secs, boardsSolved: solved, totalBoards: total,
                 seed: theSeed
+            )
+            await GameResultsService.recordSoloMatch(
+                gameMode: modeRaw, won: completed, score: guesses, timeSeconds: secs,
+                seed: theSeed, solutions: solutionWords, guesses: guessWords
             )
         }
     }

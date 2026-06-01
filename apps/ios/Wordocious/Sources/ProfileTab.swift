@@ -55,6 +55,7 @@ struct ProfileTab: View {
                 globalSummary(p)
                 HModePicker(selected: $selectedMode)
                 modeStats(p)
+                ProfileDashboard(mode: selectedMode)
                 Button { Task { await auth.signOut() } } label: {
                     Text("Sign out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
                 }

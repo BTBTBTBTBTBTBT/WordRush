@@ -31,6 +31,43 @@ enum GameResultsService {
         let wins: Int, losses: Int, total_games: Int
         let best_score: Int, average_time: Int, fastest_time: Int
     }
+
+    /// A solo game as a `matches` row (player2_id = null) — ports
+    /// lib/stats-service.ts recordSoloMatch. This is what powers the Profile
+    /// charts (guess distribution, activity calendar, solve-time, etc.), which
+    /// all query `matches`. Without it, native play wouldn't show up there.
+    private struct SoloMatchInsert: Encodable {
+        let game_mode: String
+        let player1_id: String
+        let winner_id: String?      // nil (omitted) on a loss
+        let player1_score: Int      // guess count — buckets the distribution
+        let player1_time: Int       // seconds
+        let seed: String
+        let solutions: [String]
+        let player1_guesses: [String]
+        let hints_used: Int
+        let started_at: String
+        let completed_at: String
+    }
+
+    /// Insert a solo match-history row for a finished game.
+    static func recordSoloMatch(
+        gameMode: GameMode, won: Bool, score: Int, timeSeconds: Int,
+        seed: String, solutions: [String], guesses: [String], hintsUsed: Int = 0
+    ) async {
+        let client = AuthService.shared.client
+        guard let session = try? await client.auth.session else { return }
+        let userId = session.user.id.uuidString
+        let now = Date()
+        let iso = ISO8601DateFormatter()
+        let row = SoloMatchInsert(
+            game_mode: gameMode.rawValue, player1_id: userId,
+            winner_id: won ? userId : nil, player1_score: score, player1_time: timeSeconds,
+            seed: seed, solutions: solutions, player1_guesses: guesses, hints_used: hintsUsed,
+            started_at: iso.string(from: now.addingTimeInterval(-Double(timeSeconds))),
+            completed_at: iso.string(from: now))
+        try? await client.from("matches").insert(row).execute()
+    }
     private struct StatsInsert: Encodable {
         let user_id: String, game_mode: String, play_type: String
         let wins: Int, losses: Int, total_games: Int
