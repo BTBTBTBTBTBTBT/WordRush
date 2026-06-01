@@ -114,6 +114,29 @@ enum MatchStatsService {
         return (0..<24).map { HourBucket(hour: $0, played: played[$0] ?? 0, won: won[$0] ?? 0) }
     }
 
+    struct SolvedDaily { let guesses: [String]; let solutions: [String]; let won: Bool; let guessCount: Int; let timeSeconds: Int }
+
+    /// Reconstruct a completed daily from its `matches` row (player1_guesses +
+    /// solutions) so "View Solved Puzzle" works cross-device — both web and
+    /// native solo plays write this row, keyed by the deterministic daily seed.
+    static func solvedDaily(mode: GameMode, seed: String) async -> SolvedDaily? {
+        guard let uid = await userId() else { return nil }
+        struct Row: Decodable {
+            let player1_guesses: [String]?; let solutions: [String]?
+            let winner_id: String?; let player1_score: Int?; let player1_time: Double?
+        }
+        let rows: [Row] = (try? await AuthService.shared.client.from("matches")
+            .select("player1_guesses,solutions,winner_id,player1_score,player1_time")
+            .eq("player1_id", value: uid)
+            .eq("game_mode", value: mode.rawValue)
+            .eq("seed", value: seed)
+            .order("created_at", ascending: false)
+            .limit(1).execute().value) ?? []
+        guard let row = rows.first, let g = row.player1_guesses, let s = row.solutions, !g.isEmpty, !s.isEmpty else { return nil }
+        return SolvedDaily(guesses: g, solutions: s, won: row.winner_id == uid,
+                           guessCount: row.player1_score ?? g.count, timeSeconds: Int((row.player1_time ?? 0).rounded()))
+    }
+
     /// Top-5 most-guessed words (+ win counts) — ports fetchTopWordsAllTime.
     static func topWords(mode: GameMode? = nil, limit: Int = 5) async -> [TopWord] {
         guard let uid = await userId() else { return [] }

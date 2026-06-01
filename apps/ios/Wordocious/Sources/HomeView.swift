@@ -47,7 +47,9 @@ struct HomeView: View {
             .fullScreenCover(item: $solvedMode) { m in
                 NavigationStack {
                     if let gm = m.mode {
-                        GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title)
+                        // Reconstruct the solved board from the matches row (works
+                        // cross-device, unlike the local-only GameScreen state).
+                        SolvedPuzzleView(mode: gm, title: m.title)
                     } else if m.id == "propernoundle" {
                         ProperNoundleView()
                     }
