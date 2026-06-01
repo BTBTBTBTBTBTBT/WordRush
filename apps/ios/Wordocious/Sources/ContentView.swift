@@ -17,6 +17,13 @@ struct ContentView: View {
             AuthView(showsCloseButton: false)
         } else {
             RootTabView()
+                // First-run onboarding (ports the web WelcomeModal): shown once
+                // when a new account hasn't onboarded yet.
+                .fullScreenCover(isPresented: Binding(
+                    get: { auth.profile?.hasOnboarded == false },
+                    set: { _ in })) {
+                    WelcomeView()
+                }
         }
     }
 }
