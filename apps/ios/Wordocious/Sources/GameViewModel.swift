@@ -217,7 +217,10 @@ final class GameViewModel: ObservableObject {
         // VSMatchViewModel records the result with play_type 'vs' instead.
         guard !isVersus else { return }
         persistence.saveElapsed(accumulatedMs, seed: state.seed, mode: mode)
-        guard isDaily, !resultRecorded else { return }
+        // Record for daily AND unlimited play ("All stats count"): the service
+        // updates user_stats + profile XP + the matches row regardless, and only
+        // writes the daily_results leaderboard row when the seed is a daily one.
+        guard !resultRecorded else { return }
         resultRecorded = true
         let completed = state.status == .won
         let modeRaw = mode

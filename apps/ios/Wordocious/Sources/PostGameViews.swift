@@ -135,6 +135,36 @@ struct FinishedStatsHeader: View {
     }
 }
 
+/// Your daily-leaderboard standing on the post-game screen — ports
+/// daily-rank-badge.tsx. Hidden until ≥2 players have a result today.
+struct DailyRankBadge: View {
+    let gameMode: GameMode
+    var playType: String = "solo"
+    @State private var rank: (rank: Int, total: Int)?
+
+    var body: some View {
+        Group {
+            if let r = rank, r.total >= 2 {
+                let percentile = Int((1 - Double(r.rank - 1) / Double(r.total)) * 100)
+                let top = max(1, 100 - percentile)
+                let gold = percentile >= 75
+                HStack(spacing: 4) {
+                    Image(systemName: "trophy.fill").font(.system(size: 10))
+                    Text("Top \(top)% · #\(r.rank) of \(r.total)").font(Brand.font(10, .black))
+                }
+                .foregroundStyle(gold ? Color(hex: 0x92400E) : Theme.textMuted)
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .background(Capsule().fill(gold ? Color(hex: 0xFEF3C7) : Theme.surfaceHover))
+                .overlay(Capsule().stroke(gold ? Color(hex: 0xFDE68A) : Theme.border, lineWidth: 1))
+            }
+        }
+        .task(id: gameMode.rawValue) {
+            guard let uid = AuthService.shared.profile?.id else { return }
+            rank = await LeaderboardService.userRank(gameMode: gameMode, userId: uid, playType: playType)
+        }
+    }
+}
+
 /// Post-game composite-score breakdown — ports score-breakdown.tsx.
 struct ScoreBreakdownView: View {
     let gameMode: String

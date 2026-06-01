@@ -39,6 +39,7 @@ struct SolvedPuzzleView: View {
                             boardsSolved: d.won ? d.solutions.count : solvedCount(d),
                             totalBoards: d.solutions.count,
                             onHome: { dismiss() })
+                        DailyRankBadge(gameMode: mode)
                         boards(d)
                         ScoreBreakdownView(gameMode: mode.rawValue, completed: d.won,
                                            guessCount: d.guessCount, timeSeconds: d.timeSeconds,

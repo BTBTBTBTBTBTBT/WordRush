@@ -14,6 +14,8 @@ struct ProfileTab: View {
     @State private var statRows: [UserStatRow] = []
     @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
     @State private var unlockedAchievements: Set<String> = []
+    @State private var medals: [MedalRow] = []
+    @State private var showEditProfile = false
 
     // Mode-picker (per-mode stats) only covers modes backed by a GameMode enum.
     private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
@@ -38,6 +40,7 @@ struct ProfileTab: View {
                 if let uid = auth.profile?.id {
                     statRows = await UserStatsService.fetch(userId: uid)
                     unlockedAchievements = await AchievementService.fetchUnlocked(userId: uid)
+                    medals = await MedalsService.recent(userId: uid)
                 }
             }
             // Banner inside the NavigationStack so the ScrollView insets for it
@@ -62,6 +65,7 @@ struct ProfileTab: View {
                 header(p)
                 todaysDailies
                 globalSummary(p)
+                medalsSection(p)
                 ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(statRows), selected: $selectedMode)
                 if let mode = selectedMode { modeStats(p, mode: mode) }
                 ProfileDashboard(mode: selectedMode)
@@ -252,6 +256,72 @@ struct ProfileTab: View {
         .frame(maxWidth: .infinity).padding(.vertical, 12)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    // MARK: Daily Medals (ports the web profile medals section)
+
+    private func medalsSection(_ p: Profile) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("DAILY MEDALS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    medalCount("crown.fill", p.goldMedals, "Gold", Color(hex: 0xD97706))
+                    medalCount("medal.fill", p.silverMedals, "Silver", Theme.textMuted)
+                    medalCount("medal.fill", p.bronzeMedals, "Bronze", Color(hex: 0xB45309))
+                }
+                if !medals.isEmpty {
+                    VStack(spacing: 6) { ForEach(medals) { m in medalRow(m) } }
+                }
+            }
+            .padding(12).frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        }
+    }
+
+    private func medalCount(_ icon: String, _ count: Int, _ label: String, _ color: Color) -> some View {
+        VStack(spacing: 2) {
+            Image(systemName: icon).font(.system(size: 22)).foregroundStyle(color)
+            Text("\(count)").font(Brand.font(18, .black)).foregroundStyle(color)
+            Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
+    }
+
+    private func medalRow(_ m: MedalRow) -> some View {
+        let icon: String, color: Color, label: String
+        switch m.medalType {
+        case "gold":      (icon, color) = ("crown.fill", Color(hex: 0xD97706))
+        case "silver":    (icon, color) = ("medal.fill", Theme.textMuted)
+        case "bronze":    (icon, color) = ("medal.fill", Color(hex: 0xB45309))
+        case "streak_7":  (icon, color) = ("flame.fill", Color(hex: 0xEA580C))
+        case "streak_30": (icon, color) = ("flame.fill", Color(hex: 0xDC2626))
+        case "streak_100":(icon, color) = ("flame.fill", Color(hex: 0x7C3AED))
+        case "perfect":   (icon, color) = ("star.fill", Color(hex: 0x16A34A))
+        default:          (icon, color) = ("medal.fill", Theme.textMuted)
+        }
+        switch m.medalType {
+        case "streak_7": label = "7-Day Streak"
+        case "streak_30": label = "30-Day Streak"
+        case "streak_100": label = "100-Day Streak"
+        case "perfect": label = "Perfect!"
+        default: label = m.gameMode.flatMap { GameMode(rawValue: $0).map { ModeStyle.title($0) } } ?? (m.gameMode ?? "")
+        }
+        return HStack(spacing: 10) {
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color)
+            Text(label).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+            Spacer()
+            Text(shortMedalDate(m.day)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+        }
+        .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+    }
+
+    private func shortMedalDate(_ day: String) -> String {
+        let inF = DateFormatter(); inF.dateFormat = "yyyy-MM-dd"
+        guard let d = inF.date(from: day) else { return day }
+        let outF = DateFormatter(); outF.dateFormat = "MMM d"
+        return outF.string(from: d)
     }
 
     // MARK: Per-mode stats (8 stats)
