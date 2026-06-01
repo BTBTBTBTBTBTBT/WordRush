@@ -1,0 +1,37 @@
+{
+  "generate": [
+    {
+      "date": "2026-01-15",
+      "mode": "DUEL",
+      "expected": "daily-2026-01-15-DUEL"
+    },
+    {
+      "date": "2026-06-01",
+      "mode": "QUORDLE",
+      "expected": "daily-2026-06-01-QUORDLE"
+    },
+    {
+      "date": "2025-12-31",
+      "mode": "GAUNTLET",
+      "expected": "daily-2025-12-31-GAUNTLET"
+    }
+  ],
+  "isDaily": [
+    {
+      "seed": "daily-2026-01-15-DUEL",
+      "expected": true
+    },
+    {
+      "seed": "match-123-abc",
+      "expected": false
+    },
+    {
+      "seed": "daily-",
+      "expected": true
+    },
+    {
+      "seed": "not-daily",
+      "expected": false
+    }
+  ]
+}

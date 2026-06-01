@@ -1,0 +1,90 @@
+{
+  "identifier" : "B2D7F1A4-0001-4C2A-9E11-WORDOCIOUSPRO",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "1.00",
+      "familyShareable" : false,
+      "internalID" : "1001",
+      "localizations" : [
+        {
+          "description" : "24 hours of Wordocious Pro — unlimited replays & ad-free.",
+          "displayName" : "Day Pass",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.wordocious.app.pro_day",
+      "referenceName" : "Pro Day Pass",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "20001",
+      "localizations" : [
+
+      ],
+      "name" : "Wordocious Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "displayPrice" : "6.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "2001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited replays, all modes, ad-free — billed monthly.",
+              "displayName" : "Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.wordocious.app.pro_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro Monthly",
+          "subscriptionGroupID" : "20001",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "displayPrice" : "59.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "2002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited replays, all modes, ad-free — billed yearly ($4.99/mo).",
+              "displayName" : "Pro Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.wordocious.app.pro_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Yearly",
+          "subscriptionGroupID" : "20001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

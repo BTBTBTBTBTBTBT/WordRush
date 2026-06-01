@@ -1,0 +1,110 @@
+[
+  {
+    "input": {
+      "playerWon": true,
+      "playerGuesses": 3,
+      "opponentGuesses": 5,
+      "playerTime": 30000,
+      "opponentTime": 60000,
+      "playerStatus": "WON",
+      "opponentStatus": "WON"
+    },
+    "output": {
+      "winBonus": 0,
+      "guessDiff": 4,
+      "timeDiff": 6,
+      "dnfPenalty": 0,
+      "total": 10
+    }
+  },
+  {
+    "input": {
+      "playerWon": true,
+      "playerGuesses": 4,
+      "opponentGuesses": 4,
+      "playerTime": 60000,
+      "opponentTime": 30000,
+      "playerStatus": "WON",
+      "opponentStatus": "WON"
+    },
+    "output": {
+      "winBonus": 0,
+      "guessDiff": 0,
+      "timeDiff": -6,
+      "dnfPenalty": 0,
+      "total": -6
+    }
+  },
+  {
+    "input": {
+      "playerWon": true,
+      "playerGuesses": 4,
+      "opponentGuesses": 6,
+      "playerTime": 45000,
+      "opponentTime": 120000,
+      "playerStatus": "WON",
+      "opponentStatus": "LOST"
+    },
+    "output": {
+      "winBonus": 10,
+      "guessDiff": 0,
+      "timeDiff": 0,
+      "dnfPenalty": 10,
+      "total": 20
+    }
+  },
+  {
+    "input": {
+      "playerWon": false,
+      "playerGuesses": 6,
+      "opponentGuesses": 3,
+      "playerTime": 120000,
+      "opponentTime": 30000,
+      "playerStatus": "LOST",
+      "opponentStatus": "WON"
+    },
+    "output": {
+      "winBonus": -10,
+      "guessDiff": 0,
+      "timeDiff": 0,
+      "dnfPenalty": -10,
+      "total": -20
+    }
+  },
+  {
+    "input": {
+      "playerWon": false,
+      "playerGuesses": 2,
+      "opponentGuesses": 4,
+      "playerTime": 15000,
+      "opponentTime": 60000,
+      "playerStatus": "ABANDONED",
+      "opponentStatus": "WON"
+    },
+    "output": {
+      "winBonus": -10,
+      "guessDiff": 0,
+      "timeDiff": 0,
+      "dnfPenalty": -10,
+      "total": -20
+    }
+  },
+  {
+    "input": {
+      "playerWon": false,
+      "playerGuesses": 6,
+      "opponentGuesses": 6,
+      "playerTime": 120000,
+      "opponentTime": 120000,
+      "playerStatus": "LOST",
+      "opponentStatus": "LOST"
+    },
+    "output": {
+      "winBonus": 0,
+      "guessDiff": 0,
+      "timeDiff": 0,
+      "dnfPenalty": -10,
+      "total": -10
+    }
+  }
+]
