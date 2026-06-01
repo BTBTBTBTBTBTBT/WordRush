@@ -26,7 +26,9 @@ final class ProperNoundleVM: ObservableObject {
     @Published private(set) var revealedConsonant: String?
     @Published private(set) var finalTimeSeconds: Int?
 
-    private let startMs = Date().timeIntervalSince1970 * 1000
+    private var startMs = Date().timeIntervalSince1970 * 1000
+    /// Reset the clock so the game-start ad's time isn't counted.
+    func beginTimer() { startMs = Date().timeIntervalSince1970 * 1000 }
     private var recorded = false
     var answerLen: Int { puzzle.map { ProperNoundle.normalize($0.answer).count } ?? 0 }
     var maxGuesses: Int { ProperNoundle.maxGuesses }
@@ -111,6 +113,7 @@ final class ProperNoundleVM: ObservableObject {
 struct ProperNoundleView: View {
     @StateObject private var vm = ProperNoundleVM()
     @Environment(\.dismiss) private var dismiss
+    @State private var adShown = false
 
     var body: some View {
         ZStack {
@@ -136,6 +139,10 @@ struct ProperNoundleView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .animation(.easeInOut(duration: 0.2), value: vm.toast)
+        .onAppear {
+            // Free users watch the game-start ad first; reset the clock after.
+            if !adShown { adShown = true; AdsManager.shared.showGameStartInterstitial { vm.beginTimer() } }
+        }
     }
 
     private var header: some View {

@@ -40,12 +40,12 @@ Swap in your real IDs before release.
 ## Notes / parity with web
 - The web uses AdSense (`AdGate` interstitial + bottom `AdBanner`); native uses
   AdMob — same free-vs-Pro gating, same "ad on game start + bottom banner" model.
-- AdMob interstitials show Google's built-in close-countdown (~5s), which is the
-  native analog of the web's 5s `AdGate` countdown. For a true "watch 30s,
-  skippable" video, switch the interstitial unit to **Rewarded Interstitial**
-  (swap `GADInterstitialAd` → `GADRewardedInterstitialAd` in AdsManager) — note
-  that format adds a mandatory intro/opt-out screen per Google policy.
-- VS, ProperNoundle, and the gauntlet all flow through the same screens; the
-  interstitial currently fires on the standard solo `GameScreen`. Add the same
-  `showGameStartInterstitial` call to `VSGameView`/`ProperNoundleView` onAppear
-  if you want it there too.
+- The game-start ad uses a **Rewarded Interstitial** (`GADRewardedInterstitialAd`)
+  — the full skippable-video format (verified: video plays, "Reward in Ns" →
+  "Reward granted" → close). Real unit ID type to create: **Rewarded
+  Interstitial**. (To use the shorter plain interstitial instead, swap back to
+  `GADInterstitialAd` + unit `.../4411468910`.)
+- It fires on **solo `GameScreen`, `VSGameView` (before matchmaking), and
+  `ProperNoundleView`** — all gated to free users; the game timer starts only
+  after the ad is dismissed. Gauntlet/Six/Seven run through `GameScreen` so
+  they're covered.

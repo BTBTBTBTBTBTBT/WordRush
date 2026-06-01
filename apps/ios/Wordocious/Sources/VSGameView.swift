@@ -6,6 +6,7 @@ import WordociousCore
 struct VSGameView: View {
     @StateObject private var vm: VSMatchViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var adShown = false
 
     let mode: GameMode
 
@@ -39,7 +40,11 @@ struct VSGameView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { vm.start() }
+        .onAppear {
+            // Free users watch the game-start ad before matchmaking begins.
+            if !adShown { adShown = true; AdsManager.shared.showGameStartInterstitial { vm.start() } }
+            else { vm.start() }
+        }
         .onDisappear { vm.leave() }
     }
 

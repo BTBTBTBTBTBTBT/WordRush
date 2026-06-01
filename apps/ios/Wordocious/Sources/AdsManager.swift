@@ -13,7 +13,10 @@ enum AdsConfig {
 
     // Google test unit IDs (always return test ads).
     static let bannerUnitID = "ca-app-pub-3940256099942544/2934735716"
-    static let interstitialUnitID = "ca-app-pub-3940256099942544/4411468910"
+    /// Rewarded interstitial = the full skippable-video format shown on game
+    /// start (Google's test ID). Test ID for a plain interstitial would be
+    /// .../4411468910 if you prefer the shorter format.
+    static let interstitialUnitID = "ca-app-pub-3940256099942544/6978759866"
 
     /// Whether ads should be shown right now (enabled + not Pro).
     @MainActor static var active: Bool { enabled && !AuthService.shared.isProActive }
@@ -24,7 +27,7 @@ enum AdsConfig {
 final class AdsManager: NSObject, ObservableObject {
     static let shared = AdsManager()
 
-    private var interstitial: GADInterstitialAd?
+    private var interstitial: GADRewardedInterstitialAd?
     private var started = false
 
     /// Call once at launch. Starts the SDK and (after a beat) requests ATT.
@@ -42,7 +45,7 @@ final class AdsManager: NSObject, ObservableObject {
 
     private func preloadInterstitial() {
         guard AdsConfig.enabled else { return }
-        GADInterstitialAd.load(withAdUnitID: AdsConfig.interstitialUnitID, request: GADRequest()) { [weak self] ad, _ in
+        GADRewardedInterstitialAd.load(withAdUnitID: AdsConfig.interstitialUnitID, request: GADRequest()) { [weak self] ad, _ in
             self?.interstitial = ad
             ad?.fullScreenContentDelegate = self
         }
@@ -56,7 +59,7 @@ final class AdsManager: NSObject, ObservableObject {
             completion(); return
         }
         onDismiss = completion
-        ad.present(fromRootViewController: vc)
+        ad.present(fromRootViewController: vc, userDidEarnRewardHandler: { /* cosmetic reward; play proceeds either way */ })
     }
 
     private var onDismiss: (() -> Void)?
