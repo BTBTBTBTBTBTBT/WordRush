@@ -34,7 +34,7 @@ struct KeyboardView: View {
 
     private func letterKey(_ letter: String) -> some View {
         let state = vm.keyState(for: letter)
-        let bg = state.map { Theme.tileColor(for: $0) } ?? Theme.keyDefault
+        let bg = state.map { Theme.keyColor(for: $0) } ?? Theme.keyDefault
         let fg: Color = state == nil ? Theme.textPrimary : .white
         return Button {
             vm.type(letter)

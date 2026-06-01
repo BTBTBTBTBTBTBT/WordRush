@@ -27,7 +27,7 @@ struct WordOfTheDayView: View {
     }
 
     private func content(_ info: WordInfo) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack {
                 HStack(spacing: 6) {
                     Image("book-open").renderingMode(.template).resizable().scaledToFit()
@@ -41,7 +41,7 @@ struct WordOfTheDayView: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(info.word.prefix(1).uppercased() + info.word.dropFirst().lowercased())
-                    .font(Brand.font(17, .black)).foregroundStyle(Theme.textPrimary)
+                    .font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
                 if let p = info.phonetic, !p.isEmpty {
                     Text(p).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                 }
@@ -52,9 +52,10 @@ struct WordOfTheDayView: View {
             if let def = info.definition, !def.isEmpty {
                 Text(def).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x4B5563))
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, 12).padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))

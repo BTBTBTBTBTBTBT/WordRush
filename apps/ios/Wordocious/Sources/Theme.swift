@@ -11,6 +11,8 @@ enum Theme {
     static let surface = Color(hex: 0xFFFFFF)            // --color-surface
     static let border = Color(hex: 0xEDE9F6)             // --color-border
     static let borderAlt = Color(hex: 0xE5E7EB)          // --color-border-alt
+    static let borderLight = Color(hex: 0xE0DAF0)        // --color-border-light
+    static let divider = Color(hex: 0xF0F0F0)            // --color-divider
     static let surfaceAlt = Color(hex: 0xF3F4F6)         // --color-surface-alt
     static let surfaceHover = Color(hex: 0xF3F0FF)       // --color-surface-hover
     static let textPrimary = Color(hex: 0x1A1A2E)        // --color-text
@@ -27,8 +29,14 @@ enum Theme {
     static let correct = Color(hex: 0x22C55E)
     static let present = Color(hex: 0xEAB308)
     static let absent = Color(hex: 0x6B7280)
-    static let emptyBorder = Color(hex: 0xD8D2E8)
+    static let emptyBorder = Color(hex: 0xD1D5DB)        // Tailwind gray-300 (web board empty tile)
     static let keyDefault = Color(hex: 0xE8E5F0)
+
+    // Keyboard keys use the darker 600-weight green/yellow + gray-400 (distinct
+    // from the lighter board tiles), matching the web keyboard.tsx palette.
+    static let keyCorrect = Color(hex: 0x16A34A)         // green-600
+    static let keyPresent = Color(hex: 0xCA8A04)         // yellow-600
+    static let keyAbsent = Color(hex: 0x9CA3AF)          // gray-400
 
     static let wordmarkGradient = LinearGradient(
         colors: [wordmarkStart, wordmarkEnd],
@@ -42,6 +50,16 @@ enum Theme {
         case .absent: return absent
         case .hintUsed: return present
         case .empty: return .clear
+        }
+    }
+
+    /// Keyboard-key fill per letter state (darker than board tiles, like web).
+    static func keyColor(for state: TileState) -> Color {
+        switch state {
+        case .correct: return keyCorrect
+        case .present, .hintUsed: return keyPresent
+        case .absent: return keyAbsent
+        case .empty: return keyDefault
         }
     }
 }

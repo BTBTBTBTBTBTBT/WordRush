@@ -43,8 +43,25 @@ struct GameScreen: View {
             }
             .padding(.horizontal, 10)
 
+            // Persistent corner Home button (matches the web GameHomeButton),
+            // visible during play and post-game.
+            Button { dismiss() } label: {
+                Image(systemName: "house.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(ModeStyle.accent(mode))
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(Theme.surface))
+                    .overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
+                    .shadow(color: ModeStyle.accent(mode).opacity(0.2), radius: 0, x: 0, y: 2)
+                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.top, 8).padding(.leading, 8)
+
             if let toast = vm.toast { toastView(toast) }
         }
+        .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         .animation(.easeInOut(duration: 0.2), value: vm.toast)
         .onChange(of: vm.status) { newValue in
@@ -96,11 +113,18 @@ struct GameScreen: View {
     // MARK: Post-game actions (Home / Share / Play Again-ish)
 
     private var resultActions: some View {
-        HStack(spacing: 16) {
-            Button("Home") { dismiss() }
-                .font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
-            Button("Share") { share() }
-                .font(Brand.font(13, .black)).foregroundStyle(Color(hex: 0x3B82F6))
+        VStack(spacing: 4) {
+            Text(vm.status == .won
+                 ? "Solved in \(vm.rowsUsed) guesses  ·  \(timeString)"
+                 : "Out of guesses  ·  \(timeString)")
+                .font(Brand.font(12, .bold))
+                .foregroundStyle(vm.status == .won ? Color(hex: 0x16A34A) : Color(hex: 0xF87171))
+            HStack(spacing: 16) {
+                Button("Home") { dismiss() }
+                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).underline()
+                Button("Share") { share() }
+                    .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
+            }
         }
         .padding(.top, 4)
     }
@@ -134,9 +158,9 @@ struct GameScreen: View {
     }
 
     private func toastView(_ toast: String) -> some View {
-        Text(toast).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-            .padding(.horizontal, 16).padding(.vertical, 10)
-            .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
-            .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
+        Text(toast).font(Brand.font(12, .bold)).foregroundStyle(.white)
+            .padding(.horizontal, 12).padding(.vertical, 4)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.textPrimary))
+            .padding(.top, 90).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
     }
 }

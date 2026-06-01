@@ -10,7 +10,7 @@ struct TileView: View {
     var body: some View {
         let filled = state != .empty
         Text(letter)
-            .font(Brand.font(size * 0.5, .heavy))
+            .font(Brand.font(size * 0.5, .black))
             .foregroundStyle(filled && revealed ? .white : Theme.textPrimary)
             .frame(width: size, height: size)
             .background(
@@ -18,8 +18,10 @@ struct TileView: View {
                     .fill(revealed ? Theme.tileColor(for: state) : Color.white)
             )
             .overlay(
+                // Web: empty/typing tiles use gray-300; revealed absent stays gray-300,
+                // revealed present/correct use the lighter gray-200 — no dark outline.
                 RoundedRectangle(cornerRadius: size * 0.14)
-                    .stroke(letter.isEmpty ? Theme.emptyBorder : Theme.textPrimary.opacity(0.25),
+                    .stroke(!revealed ? Theme.emptyBorder : (state == .absent ? Theme.emptyBorder : Theme.borderAlt),
                             lineWidth: 2)
             )
     }

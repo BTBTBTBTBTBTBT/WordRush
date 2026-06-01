@@ -54,7 +54,7 @@ struct ModeIconView: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: box * 0.27)
-                .fill(accent.opacity(0.12))
+                .fill(accent.opacity(0.08))
                 .frame(width: box, height: box)
             glyph
         }
