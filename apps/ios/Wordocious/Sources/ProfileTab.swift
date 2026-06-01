@@ -15,6 +15,7 @@ struct ProfileTab: View {
     @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
     @State private var unlockedAchievements: Set<String> = []
     @State private var medals: [MedalRow] = []
+    @State private var socialLinks: [String: String] = [:]
     @State private var showEditProfile = false
 
     // Mode-picker (per-mode stats) only covers modes backed by a GameMode enum.
@@ -41,6 +42,7 @@ struct ProfileTab: View {
                     statRows = await UserStatsService.fetch(userId: uid)
                     unlockedAchievements = await AchievementService.fetchUnlocked(userId: uid)
                     medals = await MedalsService.recent(userId: uid)
+                    socialLinks = await ProfileExtras.socialLinks(userId: uid)
                 }
             }
             // Banner inside the NavigationStack so the ScrollView insets for it
@@ -116,6 +118,15 @@ struct ProfileTab: View {
             if let since = memberSince(p) {
                 Text("Member since \(since)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
+            Button { showEditProfile = true } label: {
+                Label("Edit profile", systemImage: "pencil").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
+                    .background(Capsule().fill(Theme.surfaceHover))
+                    .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+            }
+            .padding(.top, 2)
+            .sheet(isPresented: $showEditProfile) { EditProfileView() }
+            socialLinksRow()
             if !auth.isProActive {
                 Button { showPro = true } label: {
                     Text("Go Pro").font(Brand.font(12, .heavy)).foregroundStyle(.white)
@@ -137,6 +148,42 @@ struct ProfileTab: View {
                     .overlay(RoundedRectangle(cornerRadius: 8).stroke(isPro ? Color(hex: 0xFCA5A5) : Color(hex: 0x86EFAC), lineWidth: 1.5))
             }
             .padding(.top, 2)
+        }
+    }
+
+    private let socialOrder = ["twitter", "instagram", "tiktok", "threads", "discord", "website"]
+
+    @ViewBuilder
+    private func socialLinksRow() -> some View {
+        let links = socialLinks.filter { !$0.value.isEmpty }
+        if !links.isEmpty {
+            HStack(spacing: 8) {
+                ForEach(socialOrder.filter { links[$0] != nil }, id: \.self) { key in
+                    if let handle = links[key], let url = socialURL(key, handle) {
+                        Link(destination: url) {
+                            Image(systemName: key == "website" ? "globe" : (key == "discord" ? "message.fill" : "at"))
+                                .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+                                .frame(width: 30, height: 30)
+                                .background(Circle().fill(Theme.surfaceHover))
+                                .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                        }
+                    }
+                }
+            }
+            .padding(.top, 4)
+        }
+    }
+
+    private func socialURL(_ key: String, _ handle: String) -> URL? {
+        let h = handle.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? handle
+        switch key {
+        case "twitter": return URL(string: "https://twitter.com/\(h)")
+        case "instagram": return URL(string: "https://instagram.com/\(h)")
+        case "tiktok": return URL(string: "https://tiktok.com/@\(h)")
+        case "threads": return URL(string: "https://threads.net/@\(h)")
+        case "discord": return URL(string: "https://discord.com/users/\(h)")
+        case "website": return URL(string: handle.hasPrefix("http") ? handle : "https://\(handle)")
+        default: return nil
         }
     }
 

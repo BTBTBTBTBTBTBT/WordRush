@@ -44,7 +44,8 @@ struct Profile: Codable, Identifiable, Equatable {
         case createdAt = "created_at"
     }
 
-    /// Columns to request from the profiles table.
+    /// Columns to request from the profiles table. (social_links is fetched
+    /// separately/optionally so a missing column never breaks profile loading.)
     static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,gold_medals,silver_medals,bronze_medals,created_at"
 }
 

@@ -13,6 +13,21 @@ struct MedalRow: Decodable, Identifiable {
     }
 }
 
+/// Social links live in a `profiles.social_links` JSONB column. Fetched on its
+/// own (not in the main profile select) so that if the column isn't present in
+/// a given environment, profile loading still works — this just returns empty.
+enum ProfileExtras {
+    private struct SocialRow: Decodable {
+        let socialLinks: [String: String]?
+        enum CodingKeys: String, CodingKey { case socialLinks = "social_links" }
+    }
+    static func socialLinks(userId: String) async -> [String: String] {
+        let row: SocialRow? = try? await AuthService.shared.client.from("profiles")
+            .select("social_links").eq("id", value: userId).single().execute().value
+        return row?.socialLinks ?? [:]
+    }
+}
+
 enum MedalsService {
     /// Most-recent medals for a user (powers the Profile "Daily Medals" list).
     static func recent(userId: String, limit: Int = 5) async -> [MedalRow] {
