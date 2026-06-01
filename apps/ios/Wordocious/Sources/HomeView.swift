@@ -69,6 +69,10 @@ struct HomeView: View {
             .sheet(isPresented: $showHelp) {
                 HelpView().presentationDetents([.large])
             }
+            // Banner lives on the Home root only — applying it here (inside the
+            // NavigationStack) keeps it off pushed game screens (GameScreen /
+            // ProperNoundle / VS), where it would otherwise cover the keyboard.
+            .adBanner()
         }
     }
 

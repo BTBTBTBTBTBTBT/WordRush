@@ -16,7 +16,7 @@ struct RootTabView: View {
 
     var body: some View {
         TabView {
-            HomeView().adBanner()
+            HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
             LeaderboardTab().adBanner()
                 .tabItem { Label("Leaderboard", systemImage: "trophy.fill") }
