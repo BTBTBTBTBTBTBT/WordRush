@@ -1,105 +1,221 @@
 import SwiftUI
 import WordociousCore
 
+/// Profile — core match of app/profile/page.tsx: header (avatar, level
+/// tier + XP, member since), Today's Dailies grid, Global Summary Row,
+/// mode picker + per-mode stats. (Deferred to later passes: activity
+/// calendar, guess-distribution / solve-time charts, top words, time-of-day
+/// heatmap, Pro insights, edit modal, social links, notification toggle.)
 struct ProfileTab: View {
     @EnvironmentObject private var auth: AuthService
+    @StateObject private var completions = DailyCompletionsStore()
     @State private var showAuth = false
+    @State private var statRows: [UserStatRow] = []
+    @State private var selectedMode: GameMode = .duel
+
+    private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.background.ignoresSafeArea()
-                content
+                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
+                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
+                if let profile = auth.profile { content(profile) } else { signedOut }
             }
-            .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .task(id: auth.profile?.id) {
+                await completions.load()
+                if let uid = auth.profile?.id { statRows = await UserStatsService.fetch(userId: uid) }
+            }
         }
     }
 
-    @ViewBuilder
-    private var content: some View {
-        if let profile = auth.profile {
-            ScrollView {
-                VStack(spacing: 18) {
-                    avatar(profile)
-                    HStack(spacing: 6) {
-                        Text(profile.username)
-                            .font(Brand.title(22))
-                            .foregroundStyle(Theme.textPrimary)
-                        if auth.isProActive { proBadge }
-                    }
+    private var signedOut: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "person.crop.circle").font(.system(size: 64)).foregroundStyle(Theme.textMuted)
+            Text("Sign in to track your stats").font(Brand.headline()).foregroundStyle(Theme.textPrimary)
+            Button("Sign in") { showAuth = true }.buttonStyle(.borderedProminent).tint(Theme.primary)
+        }
+        .sheet(isPresented: $showAuth) { AuthView() }
+    }
 
-                    statRow(profile)
-                    medalRow(profile)
-
-                    Button {
-                        Task { await auth.signOut() }
-                    } label: {
-                        Text("Sign out")
-                            .font(Brand.body(15))
-                            .frame(maxWidth: .infinity).frame(height: 48)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.textSecondary)
-                    .padding(.top, 8)
-                }
-                .padding()
-            }
-        } else {
+    private func content(_ p: Profile) -> some View {
+        ScrollView {
             VStack(spacing: 16) {
-                Image(systemName: "person.crop.circle")
-                    .font(.system(size: 64)).foregroundStyle(Theme.textMuted)
-                Text("Sign in to track your stats")
-                    .font(Brand.headline())
-                    .foregroundStyle(Theme.textPrimary)
-                Button("Sign in") { showAuth = true }
-                    .buttonStyle(.borderedProminent).tint(Theme.primary)
+                header(p)
+                todaysDailies
+                globalSummary(p)
+                HModePicker(selected: $selectedMode)
+                modeStats(p)
+                Button { Task { await auth.signOut() } } label: {
+                    Text("Sign out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
+                }
+                .buttonStyle(.bordered).tint(Theme.textSecondary)
             }
-            .sheet(isPresented: $showAuth) { AuthView() }
+            .padding(.horizontal, 12).padding(.vertical, 8)
         }
     }
 
-    private func avatar(_ p: Profile) -> some View {
-        Circle()
-            .fill(Theme.wordmarkGradient)
-            .frame(width: 84, height: 84)
-            .overlay(
-                Text(String(p.username.prefix(1)).uppercased())
-                    .font(Brand.title(34)).foregroundStyle(.white)
-            )
-    }
+    // MARK: Header
 
-    private var proBadge: some View {
-        Text("PRO")
-            .font(Brand.caption(11))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().fill(Theme.wordmarkGradient))
-    }
-
-    private func statRow(_ p: Profile) -> some View {
-        HStack(spacing: 12) {
-            statCard("Level", "\(p.level)")
-            statCard("Wins", "\(p.totalWins)")
-            statCard("Streak", "\(p.dailyLoginStreak)")
+    private func header(_ p: Profile) -> some View {
+        let tier = levelTier(p.level)
+        let progress = Double(p.xp % 1000) / 10.0
+        let toNext = 1000 - (p.xp % 1000)
+        return VStack(spacing: 10) {
+            Circle().fill(Theme.wordmarkGradient).frame(width: 96, height: 96)
+                .overlay(Text(String(p.username.prefix(1)).uppercased()).font(Brand.title(38)).foregroundStyle(.white))
+            HStack(spacing: 6) {
+                Text(p.username).font(Brand.title(28)).foregroundStyle(Theme.textPrimary)
+                if auth.isProActive {
+                    Text("PRO").font(Brand.caption(11)).foregroundStyle(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(Theme.wordmarkGradient))
+                }
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "star.fill").font(.system(size: 12))
+                Text("Level \(p.level)").font(Brand.caption(12))
+                Text("·").opacity(0.7)
+                Text(tier.label).font(Brand.caption(12))
+            }
+            .foregroundStyle(tier.color)
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .background(Capsule().fill(tier.bg)).overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
+            VStack(spacing: 2) {
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.border).frame(width: 160, height: 6)
+                    Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: 160 * progress / 100, height: 6)
+                }
+                Text("\(toNext) XP to next").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            }
+            if let since = memberSince(p) {
+                Text("Member since \(since)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            }
         }
     }
 
-    private func medalRow(_ p: Profile) -> some View {
-        HStack(spacing: 12) {
-            statCard("🥇", "\(p.goldMedals)")
-            statCard("🥈", "\(p.silverMedals)")
-            statCard("🥉", "\(p.bronzeMedals)")
+    private func levelTier(_ lvl: Int) -> (label: String, bg: Color, border: Color, color: Color) {
+        if lvl >= 100 { return ("Diamond", Color(hex: 0xEFF6FF), Color(hex: 0xBFDBFE), Color(hex: 0x1D4ED8)) }
+        if lvl >= 51 { return ("Platinum", Color(hex: 0xF5F3FF), Color(hex: 0xC4B5FD), Color(hex: 0x6D28D9)) }
+        if lvl >= 26 { return ("Gold", Color(hex: 0xFEF9EC), Color(hex: 0xFDE68A), Color(hex: 0x92400E)) }
+        if lvl >= 11 { return ("Silver", Color(hex: 0xF3F4F6), Color(hex: 0xD1D5DB), Color(hex: 0x374151)) }
+        return ("Bronze", Color(hex: 0xFEF2E8), Color(hex: 0xFED7AA), Color(hex: 0x9A3412))
+    }
+
+    private func memberSince(_ p: Profile) -> String? {
+        guard let c = p.createdAt, let d = parseTimestamp(c) else { return nil }
+        let f = DateFormatter(); f.dateFormat = "MMM yyyy"; f.locale = Locale(identifier: "en_US")
+        return f.string(from: d)
+    }
+
+    // MARK: Today's Dailies (5 + 4 grid)
+
+    private var todaysDailies: some View {
+        let completed = completions.completedCount
+        let total = DailyCompletionsStore.totalDailyModes
+        let allDone = completions.allDone
+        let flawless = completions.flawless
+        return VStack(spacing: 8) {
+            if !allDone {
+                HStack {
+                    Text("TODAY'S DAILIES").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                    Spacer()
+                    Text("\(completed)/\(total)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                }
+            }
+            VStack(spacing: 8) {
+                if allDone {
+                    Text(flawless ? "🏆 Flawless Victory!" : "✨ Daily Sweep!")
+                        .font(Brand.font(16, .black)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Theme.primary)
+                }
+                HStack(spacing: 12) { ForEach(Array(dailyModes.prefix(5))) { m in dailyBadge(m) } }
+                HStack(spacing: 12) { ForEach(Array(dailyModes.dropFirst(5))) { m in dailyBadge(m) } }
+                if allDone {
+                    Text(flawless ? "All \(total) dailies won today · +600 XP earned" : "All \(total) dailies completed · +200 XP earned")
+                        .font(Brand.font(11, .heavy)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x6D28D9))
+                }
+            }
+            .padding(12).frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 16).fill(allDone ? (flawless ? Color(hex: 0xFEF3C7) : Color(hex: 0xF5F3FF)) : Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(allDone ? (flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xC4B5FD)) : Theme.border, lineWidth: 1.5))
         }
     }
 
-    private func statCard(_ label: String, _ value: String) -> some View {
-        VStack(spacing: 4) {
-            Text(value).font(Brand.title(22)).foregroundStyle(Theme.textPrimary)
-            Text(label).font(Brand.caption(12)).foregroundStyle(Theme.textSecondary)
+    private func dailyBadge(_ m: HomeMode) -> some View {
+        let result = m.dbKey.flatMap { completions.byMode[$0] }
+        let played = result != nil
+        let won = result?.completed == true
+        let bg: Color = !played ? Theme.background : won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)
+        let border: Color = !played ? Theme.border : won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)
+        return VStack(spacing: 3) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 9).fill(bg).frame(width: 38, height: 38)
+                    .overlay(RoundedRectangle(cornerRadius: 9).stroke(border, lineWidth: 1.5))
+                if played {
+                    Text(won ? "W" : "L").font(Brand.font(15, .black)).foregroundStyle(.white)
+                } else {
+                    ModeIconView(icon: m.icon, accent: m.accent, box: 30)
+                }
+            }
+            Text(m.title).font(Brand.font(8, .bold)).foregroundStyle(played ? Theme.textPrimary : Theme.textMuted)
+                .lineLimit(1)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 14)
+        .frame(width: 46)
+    }
+
+    // MARK: Global summary (4 cards)
+
+    private func globalSummary(_ p: Profile) -> some View {
+        let games = p.totalWins + p.totalLosses
+        let winRate = games > 0 ? Int((Double(p.totalWins) / Double(games) * 100).rounded()) : 0
+        return HStack(spacing: 8) {
+            summaryCard("trophy.fill", Color(hex: 0x16A34A), "\(p.totalWins)", "Wins", nil)
+            summaryCard("target", Color(hex: 0x2563EB), "\(winRate)%", "Win Rate", nil)
+            summaryCard("bolt.fill", Theme.primary, "\(p.currentStreak)", "Streak", "Best: \(p.bestStreak)")
+            summaryCard("flame.fill", Color(hex: 0xF97316), "\(p.dailyLoginStreak)", "Daily", "Best: \(p.bestDailyLoginStreak)")
+        }
+    }
+
+    private func summaryCard(_ icon: String, _ color: Color, _ value: String, _ label: String, _ sub: String?) -> some View {
+        VStack(spacing: 2) {
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color)
+            Text(value).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+            Text(label.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
+            if let sub { Text(sub).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted) }
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 12)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    // MARK: Per-mode stats (8 stats)
+
+    private func modeStats(_ p: Profile) -> some View {
+        let s = UserStatsService.aggregate(statRows, mode: selectedMode.rawValue)
+        let winRate = s.totalGames > 0 ? Int((Double(s.wins) / Double(s.totalGames) * 100).rounded()) : 0
+        let cells: [(String, String)] = [
+            ("Wins", "\(s.wins)"), ("Losses", "\(s.losses)"), ("Games", "\(s.totalGames)"), ("Win Rate", "\(winRate)%"),
+            ("Best", s.bestScore > 0 ? "\(s.bestScore)" : "-"), ("Fastest", fmtTime(s.fastestTime)),
+            ("Streak", "\(s.winStreakCurrent)"), ("Best Streak", "\(s.winStreakBest)"),
+        ]
+        return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
+            ForEach(cells, id: \.0) { c in
+                VStack(spacing: 1) {
+                    Text(c.1).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                    Text(c.0.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
+                        .multilineTextAlignment(.center)
+                }
+            }
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    private func fmtTime(_ s: Int) -> String {
+        s <= 0 ? "-" : (s < 60 ? "\(s)s" : (s % 60 > 0 ? "\(s/60)m \(s%60)s" : "\(s/60)m"))
     }
 }
 

@@ -16,7 +16,7 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 | `/gauntlet` | `app/gauntlet/page.tsx` + `gauntlet/` | `GameScreen` (gauntlet) | 🟡 audit transition/results screens |
 | `/propernoundle` | `app/propernoundle/` | — | ⛔ needs proper-noun data + UX |
 | `/daily` (leaderboard) | `app/daily/page.tsx` | `LeaderboardTab` | ✅ audited+matched: full mode picker, your-rank banner, rank icons, current-user highlight, win/loss pill, player count, yesterday toggle. (TODO: CompletedDailyBoard preview, rank-delta badge) |
-| `/records` | `app/records/page.tsx` | `RecordsTab` | 🟡 re-audit (sections, mode tabs, current-user highlight) |
+| `/records` | `app/records/page.tsx` | `RecordsTab` | ✅ audited+matched: RECORDS header, Daily\|All-Time toggle, Hall of Fame + By-Game-Mode picker, StatCell w/ current-user highlight, Daily solo/VS leaderboard. (Signed-in content not yet visually verified — needs a session) |
 | `/profile` `/profile/[id]` | `app/profile/page.tsx` + `profile/` | `ProfileTab` | 🟡 re-audit full profile (stats grid, heatmap, personality, edit) |
 | `/pro` | `app/pro/page.tsx` | — | ⛔ Pro/subscription page + StoreKit (Phase 2) |
 | `/how-to-play` | `app/how-to-play/page.tsx` | Help modal | ✅ Help modal matched; verify standalone /how-to-play page too |
