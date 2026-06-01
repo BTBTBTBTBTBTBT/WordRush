@@ -11,6 +11,7 @@ struct ProfileTab: View {
     @StateObject private var completions = DailyCompletionsStore()
     @State private var showAuth = false
     @State private var showPro = false
+    @State private var showSettings = false
     @State private var statRows: [UserStatRow] = []
     @State private var selectedMode: GameMode = .duel
 
@@ -24,6 +25,12 @@ struct ProfileTab: View {
                 if let profile = auth.profile { content(profile) } else { signedOut }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showSettings = true } label: { Image(systemName: "gearshape.fill").foregroundStyle(Theme.textMuted) }
+                }
+            }
+            .sheet(isPresented: $showSettings) { SettingsView() }
             .task(id: auth.profile?.id) {
                 await completions.load()
                 if let uid = auth.profile?.id { statRows = await UserStatsService.fetch(userId: uid) }
