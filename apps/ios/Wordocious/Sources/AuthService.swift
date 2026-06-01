@@ -122,6 +122,16 @@ final class AuthService: ObservableObject {
         await refreshProfile()
     }
 
+    /// TEST-ONLY: flip the profile's is_pro marker to preview free vs Pro states,
+    /// mirroring the web's "Simulate Pro" / "Disable Pro" dev toggle. Writes the
+    /// same column real purchases set; remove before launch.
+    private struct ProToggle: Encodable { let is_pro: Bool }
+    func setSimulatePro(_ on: Bool) async {
+        guard let userId = try? await client.auth.session.user.id.uuidString else { return }
+        try? await client.from("profiles").update(ProToggle(is_pro: on)).eq("id", value: userId).execute()
+        await refreshProfile()
+    }
+
     // MARK: - Profile
 
     func refreshProfile() async {
