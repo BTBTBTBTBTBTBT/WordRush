@@ -75,10 +75,10 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
           value={b.timeBonus}
         />
       )}
-      {totalBoards > 1 && (
+      {completed && b.completionBonus > 0 && (
         <Row
           label="Completion bonus"
-          detail={`${boardsSolved}/${totalBoards} boards`}
+          detail={totalBoards > 1 ? `${boardsSolved}/${totalBoards} boards` : 'puzzle solved'}
           value={Math.round(b.completionBonus * 100) / 100}
         />
       )}
