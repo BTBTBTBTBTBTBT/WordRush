@@ -114,9 +114,10 @@ struct VSGameView: View {
                 OpponentStrip(opponent: vm.opponent, gradient: gradient)
                     .padding(.horizontal, 10).padding(.top, 6)
 
-                Spacer(minLength: 4)
-                BoardLayout(vm: game)
-                Spacer(minLength: 4)
+                GeometryReader { geo in
+                    BoardLayout(vm: game, availableWidth: geo.size.width, fitHeight: geo.size.height)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 4)
                 KeyboardView(vm: game).padding(.bottom, 6)
             }
             if let t = game.toast { toastView(t) }

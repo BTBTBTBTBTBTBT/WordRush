@@ -14,17 +14,18 @@ struct GameScreen: View {
     }
 
     var body: some View {
+        GeometryReader { root in
         ZStack {
             LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                            startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             VStack(spacing: 0) {
                 header
-                Spacer(minLength: 6)
                 if vm.isFinished {
+                    Spacer(minLength: 6)
                     ScrollView {
                         VStack(spacing: 8) {
-                            BoardLayout(vm: vm)
+                            BoardLayout(vm: vm, availableWidth: root.size.width - 20)
                             resultActions
                             ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
                                                guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
@@ -37,8 +38,11 @@ struct GameScreen: View {
                         .padding(.bottom, 16)
                     }
                 } else {
-                    BoardLayout(vm: vm)
-                    Spacer(minLength: 6)
+                    // Greedy area between header and keyboard: size tiles to fit.
+                    GeometryReader { geo in
+                        BoardLayout(vm: vm, availableWidth: geo.size.width, fitHeight: geo.size.height)
+                    }
+                    .padding(.vertical, 6)
                     if vm.stageCleared { stageClearedBanner } else { KeyboardView(vm: vm).padding(.bottom, 6) }
                 }
             }
@@ -61,6 +65,7 @@ struct GameScreen: View {
             .padding(.top, 8).padding(.leading, 8)
 
             if let toast = vm.toast { toastView(toast) }
+        }
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)

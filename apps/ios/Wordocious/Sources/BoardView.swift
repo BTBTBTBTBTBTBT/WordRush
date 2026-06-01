@@ -85,37 +85,78 @@ struct BoardView: View {
     }
 }
 
-/// Lays boards out: single board full-size; multi-board in a scrollable grid
-/// sized to fit (2 columns for 2/4 boards, 2 columns for 8).
+/// Lays boards out so they always fit on screen above the keyboard. Tiles are
+/// sized to the smaller of the width budget and (when `fitHeight` is given) the
+/// vertical budget, so multi-board modes like Deliverance/OctoWord never get
+/// clipped. Single board = 1 column; 2/4/8 boards = 2 columns.
+///
+/// - `availableWidth`: usable width for the whole grid.
+/// - `fitHeight`: when set (in-play), tiles also shrink to fit this height so
+///   every board stays visible. When nil (post-game inside a ScrollView), tiles
+///   fit by width only and the parent scrolls.
 struct BoardLayout: View {
     @ObservedObject var vm: GameViewModel
+    var availableWidth: CGFloat
+    var fitHeight: CGFloat? = nil
+
+    private let colSpacing: CGFloat = 10
+    private let rowSpacing: CGFloat = 14
+
+    private var cols: Int { vm.boardCount <= 1 ? 1 : 2 }
+    private var boardRows: Int { (vm.boardCount + cols - 1) / cols }
+
+    /// Tallest board (prefilled rows + guess rows) drives the height budget.
+    private var rowsPerBoard: Int {
+        (0..<vm.boardCount).map { i in
+            let b = vm.board(i)
+            return (b.prefilledGuesses?.count ?? 0) + b.maxGuesses
+        }.max() ?? vm.maxGuesses
+    }
+
+    /// Cap so boards don't balloon on wide screens (matches prior sizes).
+    private var maxTile: CGFloat {
+        switch vm.boardCount {
+        case 1: return 58
+        case 2: return 44
+        case 4: return 34
+        default: return 24 // octordle (8)
+        }
+    }
 
     var body: some View {
-        if vm.boardCount == 1 {
-            BoardView(vm: vm, boardIndex: 0, tileSize: tileSize(for: 1))
-        } else {
-            ScrollView {
-                let cols = columns(for: vm.boardCount)
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: cols), spacing: 14) {
+        let tile = fittedTileSize()
+        Group {
+            if vm.boardCount == 1 {
+                BoardView(vm: vm, boardIndex: 0, tileSize: tile)
+            } else {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: colSpacing), count: cols),
+                          spacing: rowSpacing) {
                     ForEach(0..<vm.boardCount, id: \.self) { i in
-                        BoardView(vm: vm, boardIndex: i, tileSize: tileSize(for: vm.boardCount))
+                        BoardView(vm: vm, boardIndex: i, tileSize: tile)
                     }
                 }
-                .padding(.horizontal, 6)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: fitHeight == nil ? nil : .infinity)
     }
 
-    private func columns(for count: Int) -> Int {
-        count <= 1 ? 1 : 2
-    }
+    /// Solve for the largest tile that fits both the width and (optionally) the
+    /// height budget. Within a board, inter-tile spacing is `tileSize * 0.1`
+    /// (see BoardView.spacing).
+    private func fittedTileSize() -> CGFloat {
+        let wl = CGFloat(vm.wordLength)
+        // board width  = wl*t + (wl-1)*0.1*t = t * (wl + (wl-1)*0.1)
+        let wFactor = wl + (wl - 1) * 0.1
+        let usableW = availableWidth - CGFloat(cols - 1) * colSpacing
+        let tileW = usableW / (CGFloat(cols) * wFactor)
 
-    private func tileSize(for count: Int) -> CGFloat {
-        switch count {
-        case 1: return 58
-        case 2: return 40
-        case 4: return 26
-        default: return 18 // octordle (8)
+        guard let h = fitHeight, h.isFinite, h > 0 else {
+            return max(8, min(maxTile, tileW))
         }
+        let rb = CGFloat(rowsPerBoard)
+        let hFactor = rb + (rb - 1) * 0.1
+        let usableH = h - CGFloat(boardRows - 1) * rowSpacing
+        let tileH = usableH / (CGFloat(boardRows) * hFactor)
+        return max(8, min(maxTile, tileW, tileH))
     }
 }
