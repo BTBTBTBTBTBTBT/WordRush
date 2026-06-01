@@ -190,7 +190,23 @@ struct ProperNoundleView: View {
         .padding(.top, 6)
     }
 
-    private var hints: some View {
+    private var hints: some View { NoundleHints(vm: vm) }
+
+    private var result: some View {
+        VStack(spacing: 8) {
+            Text(vm.status == .won ? "🎉 Solved!" : "Out of guesses").font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
+            if let p = vm.puzzle { Text(p.display).font(Brand.title(20)).foregroundStyle(pnAccent) }
+            Button("Home") { dismiss() }.font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted).padding(.top, 2)
+        }
+        .padding(.vertical, 12)
+    }
+}
+
+/// Clue / Vowel / Consonant hint row — shared by the solo screen and the VS
+/// board (web shows hints in both). Buttons disable + grey out once used.
+struct NoundleHints: View {
+    @ObservedObject var vm: ProperNoundleVM
+    var body: some View {
         HStack(spacing: 8) {
             hintButton("Clue", systemImage: "lightbulb", used: vm.clue != nil,
                        text: Color(hex: 0x9333EA), border: Color(hex: 0xD8B4FE), bg: Color(hex: 0xFAF5FF)) { vm.revealClue() }
@@ -212,15 +228,6 @@ struct ProperNoundleView: View {
                 .overlay(Capsule().stroke(used ? Color(hex: 0xE5E7EB) : border, lineWidth: 1.5))
         }
         .buttonStyle(.plain).disabled(used)
-    }
-
-    private var result: some View {
-        VStack(spacing: 8) {
-            Text(vm.status == .won ? "🎉 Solved!" : "Out of guesses").font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
-            if let p = vm.puzzle { Text(p.display).font(Brand.title(20)).foregroundStyle(pnAccent) }
-            Button("Home") { dismiss() }.font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted).padding(.top, 2)
-        }
-        .padding(.vertical, 12)
     }
 }
 
@@ -350,6 +357,7 @@ struct ProperNoundleVSBoard: View {
             }
             NoundleBoard(vm: vm)
             Spacer(minLength: 4)
+            if !vm.isFinished { NoundleHints(vm: vm) }
             NoundleKeyboard(vm: vm)
         }
         .padding(.horizontal, 10).padding(.bottom, 6)

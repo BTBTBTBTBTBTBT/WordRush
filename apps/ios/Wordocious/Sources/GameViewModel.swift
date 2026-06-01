@@ -92,6 +92,9 @@ final class GameViewModel: ObservableObject {
     var onGuessCommitted: ((_ guess: String) -> Void)?
     var onBoardSolved: ((_ boardIndex: Int) -> Void)?
     var onCompleted: ((_ status: GameStatus, _ totalGuesses: Int) -> Void)?
+    /// Gauntlet VS: fires with the index of the stage just cleared so the
+    /// VSMatchViewModel can emit stage_completed (web's onStageCompleted).
+    var onStageCompleted: ((_ stageIndex: Int) -> Void)?
     private var reportedSolvedBoards = Set<Int>()
 
     var boards: [BoardState] { state.boards }
@@ -124,8 +127,10 @@ final class GameViewModel: ObservableObject {
     /// Advance to the next stage (or finish the run on the last stage).
     func nextStage() {
         guard isGauntlet, stageCleared else { return }
+        let clearedStage = state.gauntlet?.currentStage ?? 0
         let elapsedMs = Date().timeIntervalSince1970 * 1000 - state.startTime
         state = gameReducer(state: state, action: .nextStage(elapsedMs: elapsedMs))
+        if isVersus { onStageCompleted?(clearedStage) }
         currentInput = ""
         recomputeEvaluations()
         persistence.save(state)

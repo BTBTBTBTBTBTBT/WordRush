@@ -329,7 +329,11 @@ private struct OpponentStrip: View {
             Image(systemName: "person.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
             Text("Opponent").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textSecondary)
             Spacer()
-            if opponent.totalBoards > 1 {
+            // Gauntlet VS: show how many stages the opponent has cleared.
+            if opponent.stagesCleared > 0 {
+                Label("Stage \(opponent.stagesCleared + 1)", systemImage: "flag.fill")
+                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+            } else if opponent.totalBoards > 1 {
                 Text("\(opponent.boardsSolved)/\(opponent.totalBoards) boards").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
             }
             Text("\(opponent.attempts) guesses").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)

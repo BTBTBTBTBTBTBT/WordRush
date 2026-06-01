@@ -16,6 +16,9 @@ final class VSMatchViewModel: ObservableObject {
         var solved = false
         var boardsSolved = 0
         var totalBoards = 0
+        /// Gauntlet VS: highest stage the opponent has cleared (0-based count of
+        /// completed stages). Updated from opponent_stage_completed events.
+        var stagesCleared = 0
         /// Latest tiles per board index (each board accumulates its guess rows).
         var tiles: [Int: [[TileState]]] = [:]
     }
@@ -102,6 +105,11 @@ final class VSMatchViewModel: ObservableObject {
         service.onMatchFound = { [weak self] in self?.handleMatchFound($0) }
         service.onMatchStart = { [weak self] in self?.beginMatch(seed: $0.seed, startMs: $0.startTime) }
         service.onOpponentProgress = { [weak self] in self?.applyOpponentProgress($0) }
+        service.onOpponentStageCompleted = { [weak self] in
+            // stageIndex is the stage the opponent just cleared (0-based) → that
+            // many + 1 stages are now done.
+            self?.opponent.stagesCleared = max(self?.opponent.stagesCleared ?? 0, $0.stageIndex + 1)
+        }
         service.onMatchEnded = { [weak self] in self?.handleMatchEnded($0) }
         service.onRematchOffered = { [weak self] in self?.rematch = .received }
         service.onRematchDeclined = { [weak self] in self?.rematch = .declined }
@@ -160,6 +168,7 @@ final class VSMatchViewModel: ObservableObject {
         let vm = GameViewModel(seed: seed, mode: mode, isVersus: true)
         vm.onGuessCommitted = { [weak self] guess in self?.service.submitGuess(guess, boardIndex: 0) }
         vm.onBoardSolved = { [weak self] idx in self?.service.boardSolved(boardIndex: idx) }
+        vm.onStageCompleted = { [weak self] stage in self?.service.stageCompleted(stageIndex: stage) }
         vm.onCompleted = { [weak self] status, guesses in
             guard let self else { return }
             let timeMs = Int(max(0, Date().timeIntervalSince1970 * 1000 - self.matchStartMs))
