@@ -30,6 +30,7 @@ final class VSMatchViewModel: ObservableObject {
     @Published var game: GameViewModel?    // built on match_start
     @Published var opponent = OpponentProgress()
     @Published var result: VSMatchEnded?
+    @Published var playerTimeMs: Int = 0
     @Published var rematch: RematchState = .idle
     @Published var message: String?
     @Published var dailyAnswer: String = ""
@@ -143,6 +144,7 @@ final class VSMatchViewModel: ObservableObject {
         vm.onCompleted = { [weak self] status, guesses in
             guard let self else { return }
             let timeMs = Int(max(0, Date().timeIntervalSince1970 * 1000 - self.matchStartMs))
+            self.playerTimeMs = timeMs
             self.service.playerCompleted(status: status == .won ? "won" : "lost",
                                          totalGuesses: guesses, timeMs: timeMs)
             self.screen = .waiting

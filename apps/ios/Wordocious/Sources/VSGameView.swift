@@ -14,8 +14,11 @@ struct VSGameView: View {
         _vm = StateObject(wrappedValue: VSMatchViewModel(mode: mode, isDaily: isDaily, inviteCode: inviteCode))
     }
 
-    private var gradient: [Color] { ModeStyle.gradient(mode) }
-    private var label: String { "VS \(ModeStyle.title(mode))" }
+    private var gradient: [Color] { ModeStyle.titleGradient(mode) }
+    private var vsModeLabel: String {
+        switch mode { case .duel6: return "SIX"; case .duel7: return "SEVEN"; default: return ModeStyle.title(mode) }
+    }
+    private var label: String { "VS \(vsModeLabel)" }
 
     var body: some View {
         ZStack {
@@ -51,7 +54,7 @@ struct VSGameView: View {
 
     private var queueScreen: some View {
         VStack(spacing: 22) {
-            vsTitle(34)
+            vsTitle(36)
             ProgressView().controlSize(.large).tint(Theme.primary)
             VStack(spacing: 6) {
                 CyclingStatus()
@@ -126,13 +129,13 @@ struct VSGameView: View {
 
     private var waitingScreen: some View {
         VStack(spacing: 18) {
-            Text("Waiting for opponent…").font(Brand.font(24, .black))
+            Text("Waiting for opponent…").font(Brand.font(30, .black))
                 .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
             ProgressView().controlSize(.large).tint(Theme.primary)
             if let game = vm.game {
                 statCard(title: "YOUR RESULT", rows: [
                     ("Guesses", "\(game.rowsUsed)"),
-                    ("Result", game.status == .won ? "Solved" : "Did not solve"),
+                    ("Time", formatTime(Double(vm.playerTimeMs))),
                 ])
             }
             statCard(title: "OPPONENT PROGRESS", rows: opponentRows)
@@ -160,12 +163,12 @@ struct VSGameView: View {
         let winner = vm.result?.winner
         let isWin = winner == "player", isDraw = winner == "draw"
         let headline = isWin ? "VICTORY" : isDraw ? "DRAW" : "DEFEAT"
-        let colors: [Color] = isWin ? [Color(hex: 0x22C55E), Color(hex: 0x10B981)]
-            : isDraw ? [Color(hex: 0xF59E0B), Color(hex: 0xF97316)]
-            : [Color(hex: 0xEF4444), Color(hex: 0xF43F5E)]
+        let colors: [Color] = isWin ? [Color(hex: 0x4ADE80), Color(hex: 0x6EE7B7)]
+            : isDraw ? [Color(hex: 0xFACC15), Color(hex: 0xFDBA74)]
+            : [Color(hex: 0xF87171), Color(hex: 0xFDA4AF)]
         return ScrollView {
             VStack(spacing: 22) {
-                Text(headline).font(Brand.font(56, .black))
+                Text(headline).font(Brand.font(60, .black))
                     .foregroundStyle(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
                     .padding(.top, 40)
                 if let r = vm.result {

@@ -2,9 +2,16 @@ import SwiftUI
 import WordociousCore
 
 private let categoryLabels: [String: String] = [
-    "music": "Music", "videogames": "Video Games", "movies": "Movies", "sports": "Sports",
-    "history": "History", "science": "Science", "currentevents": "Current Events", "general": "General",
+    "music": "Music", "videogames": "Video Games", "movies": "Movies & TV", "sports": "Sports",
+    "history": "History", "science": "Science", "currentevents": "Current Events",
 ]
+/// Per-category pill colors (web CATEGORY_COLORS); unknown → #7C3AED fallback.
+private let categoryColors: [String: Color] = [
+    "music": Color(hex: 0xEC4899), "videogames": Color(hex: 0x8B5CF6), "movies": Color(hex: 0xF59E0B),
+    "sports": Color(hex: 0x10B981), "history": Color(hex: 0x6366F1), "science": Color(hex: 0x06B6D4),
+    "currentevents": Color(hex: 0xEF4444),
+]
+private func categoryLabel(_ cat: String?) -> String { cat.map { categoryLabels[$0] ?? $0 } ?? "" }
 private let pnAccent = Color(hex: 0xDC2626)
 
 @MainActor
@@ -58,7 +65,7 @@ final class ProperNoundleVM: ObservableObject {
 
     // Hints
     func revealClue() { guard clue == nil, let p = puzzle else { return }
-        clue = p.hint ?? "Category: \(categoryLabels[p.themeCategory ?? "general"] ?? "General")" }
+        clue = p.hint ?? "Category: \(categoryLabel(p.themeCategory))" }
     func revealVowel() { reveal(vowels: true) }
     func revealConsonant() { reveal(vowels: false) }
     private func reveal(vowels: Bool) {
@@ -122,20 +129,22 @@ struct ProperNoundleView: View {
 
     private var header: some View {
         VStack(spacing: 4) {
-            Text("PROPERNOUNDLE").font(Brand.font(24, .black))
-                .foregroundStyle(LinearGradient(colors: [pnAccent, Color(hex: 0xF87171)], startPoint: .leading, endPoint: .trailing))
+            Text("PROPERNOUNDLE").font(Brand.font(24, .black)).foregroundStyle(pnAccent)
             HStack(spacing: 8) {
                 if let p = vm.puzzle {
-                    Text(categoryLabels[p.themeCategory ?? "general"] ?? "General")
+                    Text(categoryLabel(p.themeCategory))
                         .font(Brand.caption(11)).foregroundStyle(.white)
                         .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Capsule().fill(pnAccent))
+                        .background(Capsule().fill(categoryColors[p.themeCategory ?? ""] ?? Color(hex: 0x7C3AED)))
                 }
-                Text("\(vm.guesses.count)/\(vm.maxGuesses)").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                Text("\(vm.answerLen) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                 if !vm.isFinished {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
-                        Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
-                            .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                        HStack(spacing: 2) {
+                            Image(systemName: "clock").font(.system(size: 9))
+                            Text("\(vm.elapsed / 60):\(String(format: "%02d", vm.elapsed % 60))")
+                        }
+                        .font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                     }
                 }
             }
@@ -149,20 +158,24 @@ struct ProperNoundleView: View {
 
     private var hints: some View {
         HStack(spacing: 8) {
-            hintButton("Clue", systemImage: "lightbulb", used: vm.clue != nil) { vm.revealClue() }
-            hintButton(vm.revealedVowel.map { "Vowel: \($0)" } ?? "Vowel", systemImage: "a.circle", used: vm.revealedVowel != nil) { vm.revealVowel() }
-            hintButton(vm.revealedConsonant.map { "Cons: \($0)" } ?? "Consonant", systemImage: "b.circle", used: vm.revealedConsonant != nil) { vm.revealConsonant() }
+            hintButton("Clue", systemImage: "lightbulb", used: vm.clue != nil,
+                       text: Color(hex: 0x9333EA), border: Color(hex: 0xD8B4FE), bg: Color(hex: 0xFAF5FF)) { vm.revealClue() }
+            hintButton(vm.revealedVowel.map { $0 } ?? "Vowel", systemImage: "eye", used: vm.revealedVowel != nil,
+                       text: Color(hex: 0x2563EB), border: Color(hex: 0x93C5FD), bg: Color(hex: 0xEFF6FF)) { vm.revealVowel() }
+            hintButton(vm.revealedConsonant.map { $0 } ?? "Consonant", systemImage: "number", used: vm.revealedConsonant != nil,
+                       text: Color(hex: 0x16A34A), border: Color(hex: 0x86EFAC), bg: Color(hex: 0xF0FDF4)) { vm.revealConsonant() }
         }
         .padding(.bottom, 4)
     }
 
-    private func hintButton(_ label: String, systemImage: String, used: Bool, action: @escaping () -> Void) -> some View {
+    private func hintButton(_ label: String, systemImage: String, used: Bool,
+                            text: Color, border: Color, bg: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(label, systemImage: systemImage).font(Brand.font(11, .heavy))
-                .foregroundStyle(used ? Theme.textMuted : pnAccent)
+                .foregroundStyle(used ? Color(hex: 0xD1D5DB) : text)
                 .padding(.horizontal, 10).padding(.vertical, 7)
-                .background(Capsule().fill(Theme.surface))
-                .overlay(Capsule().stroke(used ? Theme.border : pnAccent.opacity(0.5), lineWidth: 1.5))
+                .background(Capsule().fill(used ? Color.clear : bg))
+                .overlay(Capsule().stroke(used ? Color(hex: 0xE5E7EB) : border, lineWidth: 1.5))
         }
         .buttonStyle(.plain).disabled(used)
     }
@@ -243,9 +256,9 @@ struct NoundleKeyboard: View {
         VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {
-                    if r == 2 { action("ENTER") { vm.submit(); Haptics.tap() } }
+                    if r == 2 { iconAction("delete.left") { vm.delete(); Haptics.tap() } }
                     ForEach(rows[r], id: \.self) { key in letterKey(key) }
-                    if r == 2 { action("⌫") { vm.delete(); Haptics.tap() } }
+                    if r == 2 { action("ENTER") { vm.submit(); Haptics.tap() } }
                 }
             }
         }.padding(.horizontal, 4)
@@ -253,8 +266,14 @@ struct NoundleKeyboard: View {
 
     private func letterKey(_ l: String) -> some View {
         let st = vm.keyState(l)
+        // Map ProperNoundle's NTile to the engine TileState for the shared key palette.
         let bg: Color = st.map { s in
-            switch s { case .correct: return Theme.correct; case .present: return Theme.present; case .absent: return Theme.absent; default: return Theme.keyDefault }
+            switch s {
+            case .correct: return Theme.keyCorrect
+            case .present, .hintUsed: return Theme.keyPresent
+            case .absent: return Theme.keyAbsent
+            default: return Theme.keyDefault
+            }
         } ?? Theme.keyDefault
         return Button { vm.type(l); Haptics.tap() } label: {
             Text(l).font(Brand.font(18, .bold)).foregroundStyle(st == nil ? Theme.textPrimary : .white)
@@ -266,6 +285,13 @@ struct NoundleKeyboard: View {
     private func action(_ label: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) {
             Text(label).font(Brand.font(14, .bold)).foregroundStyle(Theme.textPrimary)
+                .frame(width: 54, height: 52).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+        }.buttonStyle(.plain)
+    }
+
+    private func iconAction(_ systemName: String, _ act: @escaping () -> Void) -> some View {
+        Button(action: act) {
+            Image(systemName: systemName).font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.textPrimary)
                 .frame(width: 54, height: 52).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }.buttonStyle(.plain)
     }

@@ -24,7 +24,7 @@ struct InfoPage: View {
             Theme.background.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(title).font(Brand.title(26)).foregroundStyle(Theme.textPrimary)
+                    Text(title).font(Brand.title(30)).foregroundStyle(Theme.textPrimary)
                     if let sub = subtitle { Text(sub).font(Brand.body(13)).foregroundStyle(Theme.textMuted) }
                     ForEach(0..<sections.count, id: \.self) { i in sectionView(sections[i]) }
                     if let contact { Text(contact).font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary) }
@@ -37,16 +37,23 @@ struct InfoPage: View {
 
     private func sectionView(_ s: InfoSection) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(s.heading).font(Brand.headline(16)).foregroundStyle(Theme.textPrimary)
-            if let b = s.body { Text(b).font(Brand.body(13)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true) }
+            Text(s.heading).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+            if let b = s.body {
+                Text(b).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary)
+                    .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
+            }
             ForEach(s.bullets, id: \.self) { b in
                 HStack(alignment: .top, spacing: 8) {
-                    Text("•").foregroundStyle(Theme.textMuted)
-                    Text(b).font(Brand.body(13)).foregroundStyle(Theme.textSecondary).fixedSize(horizontal: false, vertical: true)
+                    Text("•").foregroundStyle(Theme.primary)
+                    Text(b).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary)
+                        .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
     private var navTitle: String {

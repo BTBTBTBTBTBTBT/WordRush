@@ -70,7 +70,9 @@ struct ModeIconView: View {
             Image(name).resizable().scaledToFit()
                 .frame(width: box * 0.5, height: box * 0.55)
         case .roman(let text):
-            Text(text).font(Brand.font(box * (text.count > 2 ? 0.34 : 0.42), .black))
+            // Help screen (box 32) uses a fixed 11pt for both IV/VIII like web;
+            // other call sites keep proportional scaling.
+            Text(text).font(Brand.font(box == 32 ? 11 : box * (text.count > 2 ? 0.34 : 0.42), .black))
                 .foregroundStyle(accent)
         case .hand(let name, let number):
             ZStack(alignment: .center) {

@@ -32,11 +32,16 @@ struct SettingsView: View {
                                 ForEach(themes, id: \.value) { t in themeRow(t) }
                             }
                         }
-                        section("PREFERENCES") {
+                        section("SOUND & FEEDBACK") {
                             VStack(spacing: 0) {
-                                toggleRow("Sound Effects", "Tile flips and key taps", $soundOn)
-                                Divider().overlay(Theme.border)
-                                toggleRow("Colorblind Mode", "High-contrast tile colors", $colorblind)
+                                toggleRow("Sound Effects", "Key taps, win/loss jingles", $soundOn)
+                            }
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+                        }
+                        section("ACCESSIBILITY") {
+                            VStack(spacing: 0) {
+                                toggleRow("Colorblind Mode", "High contrast colors", $colorblind)
                                 Divider().overlay(Theme.border)
                                 toggleRow("Reduced Motion", "Minimize animations", $reducedMotion)
                             }
@@ -74,7 +79,7 @@ struct SettingsView: View {
 
     private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+            Text(title).font(Brand.font(11, .heavy)).tracking(1.1).foregroundStyle(Theme.textMuted)
             content()
         }
     }
@@ -84,14 +89,14 @@ struct SettingsView: View {
         return Button { theme = t.value } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(t.label).font(Brand.headline(14)).foregroundStyle(Theme.textPrimary)
-                    Text(t.desc).font(Brand.body(11)).foregroundStyle(Theme.textMuted)
+                    Text(t.label).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+                    Text(t.desc).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 }
                 Spacer()
                 if active { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.primary) }
             }
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.surface))
+            .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.background))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
         }.buttonStyle(.plain)
     }
