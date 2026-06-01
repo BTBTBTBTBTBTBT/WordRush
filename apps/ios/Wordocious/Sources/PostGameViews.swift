@@ -66,6 +66,75 @@ enum ModeStyle {
     }
 }
 
+/// Web-parity finished-game header (ports the completion header in
+/// octordle/quordle/rescue-game.tsx): gradient title, a stat row with the amber
+/// trophy + boards-solved, total guesses, and the blue clock + time, a green
+/// (won) or red (lost) summary line, then Home / Share links. Shared by the
+/// live post-game screen and the reconstructed Solved-Puzzle view.
+struct FinishedStatsHeader: View {
+    let mode: GameMode
+    let won: Bool
+    let guessCount: Int
+    let maxGuesses: Int            // 0 = unknown (hide the "/N")
+    let timeSeconds: Int
+    let boardsSolved: Int
+    let totalBoards: Int
+    var onHome: () -> Void
+    var onShare: (() -> Void)? = nil
+
+    private var timeStr: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
+    private var isMulti: Bool { totalBoards > 1 }
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(ModeStyle.title(mode)).font(Brand.font(28, .black))
+                .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
+
+            HStack(spacing: 12) {
+                if isMulti {
+                    statItem(icon: "trophy.fill", color: Color(hex: 0xD97706), text: "\(boardsSolved)/\(totalBoards)")
+                }
+                Text(maxGuesses > 0 ? "\(guessCount)/\(maxGuesses) guesses" : "\(guessCount) guesses")
+                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                statItem(icon: "clock", color: Color(hex: 0x60A5FA), text: timeStr)
+            }
+
+            Text(summary)
+                .font(Brand.font(12, .bold))
+                .foregroundStyle(won ? Color(hex: 0x16A34A) : Color(hex: 0xF87171))
+                .multilineTextAlignment(.center)
+
+            HStack(spacing: 16) {
+                Button("Home", action: onHome)
+                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).underline()
+                if let onShare {
+                    Button("Share", action: onShare)
+                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
+                }
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    private var summary: String {
+        if won {
+            return isMulti
+                ? "All \(totalBoards) solved in \(guessCount) guesses  ·  \(timeStr)"
+                : "Solved in \(guessCount) guesses  ·  \(timeStr)"
+        }
+        return isMulti
+            ? "\(boardsSolved)/\(totalBoards) solved  ·  \(timeStr)"
+            : "Out of guesses  ·  \(timeStr)"
+    }
+
+    private func statItem(icon: String, color: Color, text: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 11)).foregroundStyle(color)
+            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+        }
+    }
+}
+
 /// Post-game composite-score breakdown — ports score-breakdown.tsx.
 struct ScoreBreakdownView: View {
     let gameMode: String

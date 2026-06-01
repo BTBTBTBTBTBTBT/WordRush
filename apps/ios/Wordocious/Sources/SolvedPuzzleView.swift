@@ -12,12 +12,14 @@ struct SolvedPuzzleView: View {
 
     @State private var data: MatchStatsService.SolvedDaily?
     @State private var loaded = false
+    @State private var maxGuesses = 0
 
     private var tileSize: CGFloat {
         switch data?.solutions.count ?? 1 {
         case 1: return 48
-        case 2...4: return 30
-        default: return 18
+        case 2: return 40
+        case 3...4: return 34
+        default: return 30
         }
     }
 
@@ -30,7 +32,13 @@ struct SolvedPuzzleView: View {
             } else if let d = data {
                 ScrollView {
                     VStack(spacing: 10) {
-                        header(d)
+                        FinishedStatsHeader(
+                            mode: mode, won: d.won,
+                            guessCount: d.guessCount, maxGuesses: maxGuesses,
+                            timeSeconds: d.timeSeconds,
+                            boardsSolved: d.won ? d.solutions.count : solvedCount(d),
+                            totalBoards: d.solutions.count,
+                            onHome: { dismiss() })
                         boards(d)
                         ScoreBreakdownView(gameMode: mode.rawValue, completed: d.won,
                                            guessCount: d.guessCount, timeSeconds: d.timeSeconds,
@@ -60,54 +68,57 @@ struct SolvedPuzzleView: View {
         }
         .navigationBarBackButtonHidden(true)
         .task {
-            data = await MatchStatsService.solvedDaily(mode: mode, seed: DailySeed.today(mode: mode))
+            let seed = DailySeed.today(mode: mode)
+            data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)
+            maxGuesses = createInitialState(seed: seed, mode: mode).boards.map(\.maxGuesses).max() ?? 0
             loaded = true
         }
     }
 
-    private func header(_ d: MatchStatsService.SolvedDaily) -> some View {
-        VStack(spacing: 4) {
-            Text(ModeStyle.title(mode)).font(Brand.font(28, .black))
-                .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
-            Text(d.won ? "Solved in \(d.guessCount) guesses  ·  \(timeString(d.timeSeconds))"
-                       : "Out of guesses  ·  \(timeString(d.timeSeconds))")
-                .font(Brand.font(12, .bold)).foregroundStyle(d.won ? Color(hex: 0x16A34A) : Color(hex: 0xF87171))
-        }
-        .padding(.top, 8)
+    private func solvedCount(_ d: MatchStatsService.SolvedDaily) -> Int {
+        d.solutions.filter { sol in d.guesses.contains { $0.uppercased() == sol.uppercased() } }.count
     }
 
     @ViewBuilder private func boards(_ d: MatchStatsService.SolvedDaily) -> some View {
         if d.solutions.count == 1 {
-            board(solution: d.solutions[0], guesses: d.guesses)
+            board(solution: d.solutions[0], guesses: d.guesses, multi: false)
         } else {
             let cols = Array(repeating: GridItem(.flexible(), spacing: 10), count: 2)
             LazyVGrid(columns: cols, spacing: 14) {
                 ForEach(Array(d.solutions.enumerated()), id: \.offset) { _, sol in
-                    board(solution: sol, guesses: d.guesses)
+                    board(solution: sol, guesses: d.guesses, multi: true)
                 }
             }
         }
     }
 
-    private func board(solution: String, guesses: [String]) -> some View {
+    private func board(solution: String, guesses: [String], multi: Bool) -> some View {
         let solved = guesses.contains { $0.uppercased() == solution.uppercased() }
-        // Show rows up to the solving guess (stop once solved), like the played board.
+        // Filled rows = guesses this board received up to (and including) the one
+        // that solved it; then empty filler to maxGuesses so every board is the
+        // same height (web parity).
         var rows: [GuessResult] = []
         for g in guesses {
             rows.append(evaluateGuess(solution: solution, guess: g))
             if g.uppercased() == solution.uppercased() { break }
         }
+        let width = solution.count
+        let total = max(rows.count, maxGuesses)
         return VStack(spacing: tileSize * 0.1) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+            ForEach(0..<total, id: \.self) { i in
                 HStack(spacing: tileSize * 0.1) {
-                    ForEach(Array(r.tiles.enumerated()), id: \.offset) { _, t in
-                        TileView(letter: t.letter, state: t.state, revealed: true, size: tileSize)
+                    if i < rows.count {
+                        ForEach(rows[i].tiles.indices, id: \.self) { c in
+                            TileView(letter: rows[i].tiles[c].letter, state: rows[i].tiles[c].state, revealed: true, size: tileSize)
+                        }
+                    } else {
+                        ForEach(0..<width, id: \.self) { _ in
+                            TileView(letter: "", state: .empty, revealed: false, size: tileSize)
+                        }
                     }
                 }
             }
         }
-        .opacity(solved ? 0.9 : 1)
+        .modifier(SolvedBoardFrame(won: multi && solved, lost: multi && !solved, active: multi, tileSize: tileSize))
     }
-
-    private func timeString(_ s: Int) -> String { "\(s / 60):\(String(format: "%02d", s % 60))" }
 }

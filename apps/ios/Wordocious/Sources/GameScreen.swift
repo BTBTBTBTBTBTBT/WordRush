@@ -20,13 +20,17 @@ struct GameScreen: View {
                            startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             VStack(spacing: 0) {
-                header
                 if vm.isFinished {
-                    Spacer(minLength: 6)
                     ScrollView {
                         VStack(spacing: 8) {
+                            FinishedStatsHeader(
+                                mode: mode, won: vm.status == .won,
+                                guessCount: vm.rowsUsed, maxGuesses: vm.maxGuesses,
+                                timeSeconds: vm.elapsedSeconds,
+                                boardsSolved: vm.boards.filter { $0.status == .won }.count,
+                                totalBoards: vm.boardCount,
+                                onHome: { dismiss() }, onShare: { share() })
                             BoardLayout(vm: vm, availableWidth: root.size.width - 20)
-                            resultActions
                             ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
                                                guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
                                                boardsSolved: vm.boards.filter { $0.status == .won }.count,
@@ -38,6 +42,7 @@ struct GameScreen: View {
                         .padding(.bottom, 16)
                     }
                 } else {
+                    header
                     // Greedy area between header and keyboard: size tiles to fit.
                     GeometryReader { geo in
                         BoardLayout(vm: vm, availableWidth: geo.size.width, fitHeight: geo.size.height)
@@ -125,24 +130,7 @@ struct GameScreen: View {
         return "\(vm.rowsUsed)/\(vm.maxGuesses) guesses"
     }
 
-    // MARK: Post-game actions (Home / Share / Play Again-ish)
-
-    private var resultActions: some View {
-        VStack(spacing: 4) {
-            Text(vm.status == .won
-                 ? "Solved in \(vm.rowsUsed) guesses  ·  \(timeString)"
-                 : "Out of guesses  ·  \(timeString)")
-                .font(Brand.font(12, .bold))
-                .foregroundStyle(vm.status == .won ? Color(hex: 0x16A34A) : Color(hex: 0xF87171))
-            HStack(spacing: 16) {
-                Button("Home") { dismiss() }
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).underline()
-                Button("Share") { share() }
-                    .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
-            }
-        }
-        .padding(.top, 4)
-    }
+    // MARK: Post-game share
 
     private func share() {
         let kind: ShareCardView.Kind

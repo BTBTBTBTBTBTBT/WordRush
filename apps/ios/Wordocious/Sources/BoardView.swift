@@ -49,7 +49,13 @@ struct BoardView: View {
                 rowView(row)
             }
         }
-        .opacity(board.status == .won ? 0.55 : 1)
+        // Web parity: in multi-board modes a solved board gets a green frame +
+        // ✓ badge the moment it's won; once the game is over, any unsolved board
+        // gets a red frame. Single-board modes show no frame.
+        .modifier(SolvedBoardFrame(won: vm.isMultiBoard && board.status == .won,
+                                   lost: vm.isMultiBoard && vm.isFinished && board.status != .won,
+                                   active: vm.isMultiBoard,
+                                   tileSize: tileSize))
     }
 
     @ViewBuilder
@@ -85,6 +91,37 @@ struct BoardView: View {
     }
 }
 
+/// Web-parity won/lost board treatment: green rounded frame (#4ade80 / bg
+/// #f0fdf4) + green ✓ badge for a solved board, red frame (#f87171 / bg
+/// #fef2f2) for a lost one. `active` reserves the frame padding for every board
+/// so the grid geometry stays stable whether or not a board is solved.
+struct SolvedBoardFrame: ViewModifier {
+    let won: Bool
+    let lost: Bool
+    var active: Bool = true
+    var tileSize: CGFloat = 40
+
+    func body(content: Content) -> some View {
+        let border: Color = won ? Color(hex: 0x4ADE80) : (lost ? Color(hex: 0xF87171) : .clear)
+        let fill: Color = won ? Color(hex: 0xF0FDF4) : (lost ? Color(hex: 0xFEF2F2) : .clear)
+        let badge = max(13, min(20, tileSize * 0.7))
+        return content
+            .padding(active ? 4 : 0)
+            .background(RoundedRectangle(cornerRadius: 8).fill(fill))
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(border, lineWidth: 2))
+            .overlay(alignment: .topTrailing) {
+                if won {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: badge * 0.55, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: badge, height: badge)
+                        .background(Circle().fill(Color(hex: 0x22C55E)))
+                        .offset(x: badge * 0.3, y: -badge * 0.3)
+                }
+            }
+    }
+}
+
 /// Lays boards out so they always fit on screen above the keyboard. Tiles are
 /// sized to the smaller of the width budget and (when `fitHeight` is given) the
 /// vertical budget, so multi-board modes like Deliverance/OctoWord never get
@@ -117,11 +154,14 @@ struct BoardLayout: View {
     private var maxTile: CGFloat {
         switch vm.boardCount {
         case 1: return 58
-        case 2: return 44
-        case 4: return 34
-        default: return 24 // octordle (8)
+        case 2: return 46
+        case 4: return 38
+        default: return 32 // octordle (8)
         }
     }
+
+    /// Per-board frame overhead (SolvedBoardFrame padding 4*2 + border 2*2).
+    private var framePad: CGFloat { vm.boardCount > 1 ? 12 : 0 }
 
     var body: some View {
         let tile = fittedTileSize()
@@ -147,7 +187,7 @@ struct BoardLayout: View {
         let wl = CGFloat(vm.wordLength)
         // board width  = wl*t + (wl-1)*0.1*t = t * (wl + (wl-1)*0.1)
         let wFactor = wl + (wl - 1) * 0.1
-        let usableW = availableWidth - CGFloat(cols - 1) * colSpacing
+        let usableW = availableWidth - CGFloat(cols - 1) * colSpacing - CGFloat(cols) * framePad
         let tileW = usableW / (CGFloat(cols) * wFactor)
 
         guard let h = fitHeight, h.isFinite, h > 0 else {
@@ -155,7 +195,7 @@ struct BoardLayout: View {
         }
         let rb = CGFloat(rowsPerBoard)
         let hFactor = rb + (rb - 1) * 0.1
-        let usableH = h - CGFloat(boardRows - 1) * rowSpacing
+        let usableH = h - CGFloat(boardRows - 1) * rowSpacing - CGFloat(boardRows) * framePad
         let tileH = usableH / (CGFloat(boardRows) * hFactor)
         return max(8, min(maxTile, tileW, tileH))
     }
