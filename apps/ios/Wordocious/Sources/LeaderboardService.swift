@@ -72,34 +72,34 @@ enum LeaderboardService {
     private struct ScoreOnly: Decodable { let composite_score: Double }
 
     /// Current user's rank for today's daily (mirrors getUserDailyRank).
-    static func userRank(gameMode: GameMode, userId: String) async -> (rank: Int, total: Int)? {
+    static func userRank(gameMode: GameMode, userId: String, playType: String = "solo") async -> (rank: Int, total: Int)? {
         let client = AuthService.shared.client
         let day = todayLocal()
         do {
             let mine: [ScoreOnly] = try await client.from("daily_results")
                 .select("composite_score").eq("user_id", value: userId).eq("day", value: day)
-                .eq("game_mode", value: gameMode.rawValue).eq("play_type", value: "solo")
+                .eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)
                 .limit(1).execute().value
             guard let myScore = mine.first?.composite_score else { return nil }
 
             let total = try await client.from("daily_results")
                 .select("user_id", head: true, count: .exact)
-                .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: "solo")
+                .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)
                 .execute().count ?? 0
             let ahead = try await client.from("daily_results")
                 .select("user_id", head: true, count: .exact)
-                .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: "solo")
+                .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)
                 .gt("composite_score", value: myScore)
                 .execute().count ?? 0
             return (ahead + 1, total)
         } catch { return nil }
     }
 
-    static func playerCount(gameMode: GameMode) async -> Int {
+    static func playerCount(gameMode: GameMode, playType: String = "solo") async -> Int {
         let client = AuthService.shared.client
         return (try? await client.from("daily_results")
             .select("user_id", head: true, count: .exact)
-            .eq("day", value: todayLocal()).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: "solo")
+            .eq("day", value: todayLocal()).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)
             .execute().count) ?? 0
     }
 }

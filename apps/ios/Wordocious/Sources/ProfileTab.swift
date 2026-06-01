@@ -286,86 +286,260 @@ struct LeaderboardTab: View {
 let HINT_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE"]
 
 /// All-time "hall of records" from Supabase all_time_records.
+/// Mirrors app/records/page.tsx: RECORDS header + Daily | All-Time toggle.
 struct RecordsTab: View {
     @EnvironmentObject private var auth: AuthService
-    @State private var records: [AllTimeRecord] = []
-    @State private var loading = true
-    @State private var error: String?
+    @State private var tab: RecordsSubTab = .daily   // web default
     @State private var showAuth = false
 
-    private var globalRecords: [AllTimeRecord] {
-        records.filter { $0.gameMode == nil && RecordCatalog.global.contains($0.recordType) }
-    }
-    private var classicRecords: [AllTimeRecord] {
-        records.filter { $0.gameMode == "DUEL" && RecordCatalog.perMode.contains($0.recordType) }
-    }
+    enum RecordsSubTab { case daily, allTime }
 
     var body: some View {
         NavigationStack {
             ZStack {
-                Theme.background.ignoresSafeArea()
+                LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
+                               startPoint: .top, endPoint: .bottom).ignoresSafeArea()
                 if !auth.isAuthenticated {
                     VStack(spacing: 16) {
                         placeholder(icon: "crown.fill", title: "Sign in to see records",
-                                    subtitle: "The all-time hall of records is available to signed-in players.")
-                        Button("Sign in") { showAuth = true }
-                            .buttonStyle(.borderedProminent).tint(Theme.primary)
+                                    subtitle: "Daily rankings and the all-time hall of records are available to signed-in players.")
+                        Button("Sign in") { showAuth = true }.buttonStyle(.borderedProminent).tint(Theme.primary)
                     }
                     .sheet(isPresented: $showAuth) { AuthView() }
-                } else if loading {
-                    ProgressView()
-                } else if let error {
-                    placeholder(icon: "exclamationmark.triangle", title: "Couldn't load", subtitle: error)
                 } else {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 18) {
-                            section("Global Records", types: RecordCatalog.global, from: globalRecords)
-                            section("Classic", types: RecordCatalog.perMode, from: classicRecords)
+                        VStack(spacing: 16) {
+                            VStack(spacing: 3) {
+                                Text("RECORDS").font(Brand.font(28, .black))
+                                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                                Text("The best of the best across Wordocious")
+                                    .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
+                            }
+                            .padding(.top, 6)
+
+                            HStack(spacing: 8) {
+                                toggleButton("Daily", .daily)
+                                toggleButton("All-Time", .allTime)
+                            }
+
+                            if tab == .daily { DailyRecordsView() } else { AllTimeRecordsView() }
                         }
-                        .padding()
+                        .padding(.horizontal, 12).padding(.bottom, 16)
                     }
                 }
             }
-            .navigationTitle("Records")
-            .task(id: auth.isAuthenticated) { if auth.isAuthenticated { await load() } }
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
-    private func section(_ title: String, types: [String], from pool: [AllTimeRecord]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(Brand.title(18)).foregroundStyle(Theme.textPrimary)
-            ForEach(types, id: \.self) { type in
-                recordCard(type, record: pool.first { $0.recordType == type })
+    private func toggleButton(_ label: String, _ value: RecordsSubTab) -> some View {
+        let active = tab == value
+        return Button { tab = value } label: {
+            Text(label).font(Brand.font(13, .heavy))
+                .foregroundStyle(active ? Theme.primary : Theme.textMuted)
+                .frame(maxWidth: .infinity).padding(.vertical, 10)
+                .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// All-Time records — Hall of Fame (global) + By Game Mode (mode picker).
+struct AllTimeRecordsView: View {
+    @EnvironmentObject private var auth: AuthService
+    @State private var records: [AllTimeRecord] = []
+    @State private var mode: GameMode = .duel
+    @State private var loading = true
+
+    private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
+    private var myId: String? { auth.profile?.id }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if loading { ProgressView().frame(maxWidth: .infinity).padding(.vertical, 30) } else {
+                // Hall of Fame
+                Text("HALL OF FAME").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                VStack(spacing: 0) {
+                    RoundedRectangle(cornerRadius: 2).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xFDE68A)], startPoint: .leading, endPoint: .trailing)).frame(height: 3)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        ForEach(RecordCatalog.global, id: \.self) { rt in
+                            RecordStatCell(type: rt, record: globalRecord(rt), accent: Color(hex: 0xD97706), isMe: globalRecord(rt)?.holderId == myId)
+                        }
+                    }
+                    .padding(12).background(Color(hex: 0xFFFBEB))
+                }
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+
+                // By Game Mode
+                Text("BY GAME MODE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                HModePicker(selected: $mode)
+                let m = pickerModes.first { $0.mode == mode }
+                VStack(spacing: 0) {
+                    RoundedRectangle(cornerRadius: 2).fill((m?.accent ?? Theme.primary)).frame(height: 3)
+                    HStack(spacing: 10) {
+                        if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
+                        Text(m?.title ?? mode.rawValue).font(Brand.headline(16)).foregroundStyle(Theme.textPrimary)
+                        Spacer()
+                    }.padding(.horizontal, 12).padding(.top, 10)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                        ForEach(RecordCatalog.perMode, id: \.self) { rt in
+                            RecordStatCell(type: rt, record: modeRecord(rt), accent: m?.accent ?? Theme.primary, isMe: modeRecord(rt)?.holderId == myId)
+                        }
+                    }.padding(12)
+                }
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             }
         }
+        .task { if loading { records = (try? await RecordsService.fetchAll()) ?? []; loading = false } }
     }
 
-    private func recordCard(_ type: String, record: AllTimeRecord?) -> some View {
+    private func globalRecord(_ rt: String) -> AllTimeRecord? {
+        records.first { $0.gameMode == nil && $0.recordType == rt }
+    }
+    private func modeRecord(_ rt: String) -> AllTimeRecord? {
+        records.first { $0.gameMode == mode.rawValue && $0.recordType == rt }
+    }
+}
+
+/// A single record stat — ports StatCell in records/page.tsx.
+struct RecordStatCell: View {
+    let type: String
+    let record: AllTimeRecord?
+    let accent: Color
+    let isMe: Bool
+
+    var body: some View {
         let meta = RecordCatalog.labels[type]
-        return HStack(spacing: 12) {
-            Image(systemName: meta?.symbol ?? "rosette")
-                .font(.title3).foregroundStyle(Theme.primary)
-                .frame(width: 38, height: 38)
-                .background(RoundedRectangle(cornerRadius: 9).fill(Theme.surfaceAlt))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(meta?.label ?? type).font(Brand.headline(15)).foregroundStyle(Theme.textPrimary)
-                Text(record?.holderUsername ?? "No record yet")
-                    .font(Brand.body(13)).foregroundStyle(Theme.textSecondary)
+        let has = record != nil
+        return HStack(alignment: .top, spacing: 8) {
+            Image(systemName: meta?.symbol ?? "rosette").font(.system(size: 14))
+                .foregroundStyle(has ? accent : Theme.textMuted).padding(.top, 2)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(record?.formattedValue ?? "—").font(Brand.font(16, .black))
+                    .foregroundStyle(has ? Theme.textPrimary : Theme.textMuted)
+                Text(meta?.label ?? type).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                if has {
+                    HStack(spacing: 3) {
+                        Text(record?.holderUsername ?? "Unknown").font(Brand.font(10, .heavy)).lineLimit(1)
+                            .foregroundStyle(isMe ? Color(hex: 0xD97706) : accent)
+                        if isMe { Image(systemName: "crown.fill").font(.system(size: 8)).foregroundStyle(Color(hex: 0xD97706)) }
+                    }.padding(.top, 2)
+                }
             }
-            Spacer()
-            Text(record?.formattedValue ?? "—")
-                .font(Brand.title(16)).foregroundStyle(record == nil ? Theme.textMuted : Theme.primary)
+            Spacer(minLength: 0)
         }
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 8).fill(isMe && has ? Color(hex: 0xFFFBEB) : Color.clear))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(isMe && has ? Color(hex: 0xFDE68A) : Color.clear, lineWidth: 1))
+    }
+}
+
+/// Daily records — leaderboard with mode picker + solo/vs toggle.
+struct DailyRecordsView: View {
+    @EnvironmentObject private var auth: AuthService
+    @State private var mode: GameMode = .duel
+    @State private var playType = "solo"
+    @State private var entries: [LeaderboardEntry] = []
+    @State private var userRank: (rank: Int, total: Int)?
+    @State private var loading = false
+
+    var body: some View {
+        VStack(spacing: 10) {
+            HModePicker(selected: $mode)
+            Picker("", selection: $playType) {
+                Text("Solo").tag("solo"); Text("VS").tag("vs")
+            }.pickerStyle(.segmented)
+
+            if let r = userRank {
+                (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
+                 + Text("#\(r.rank)").font(Brand.title(18)).foregroundColor(Color(hex: 0xD97706))
+                 + Text(" of \(r.total)").font(Brand.body(12)).foregroundColor(Theme.textMuted))
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0xFFFBEB)))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+            }
+
+            if loading {
+                ProgressView().padding(.vertical, 30)
+            } else if entries.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.4))
+                    Text("No results yet. Be the first!").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
+                }.frame(maxWidth: .infinity).padding(.vertical, 30)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { idx, e in
+                        dailyRow(idx + 1, e)
+                        if idx < entries.count - 1 { Divider().overlay(Theme.border) }
+                    }
+                }
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            }
+        }
+        .task(id: "\(mode.rawValue)-\(playType)") { await load() }
+    }
+
+    @ViewBuilder private func rankIcon(_ rank: Int) -> some View {
+        switch rank {
+        case 1: Image(systemName: "crown.fill").foregroundStyle(Color(hex: 0xD97706))
+        case 2: Image(systemName: "medal.fill").foregroundStyle(Theme.textMuted)
+        case 3: Image(systemName: "medal.fill").foregroundStyle(Color(hex: 0xB45309))
+        default: Text("\(rank)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted).frame(width: 20)
+        }
+    }
+
+    private func dailyRow(_ rank: Int, _ e: LeaderboardEntry) -> some View {
+        let isMe = e.userId == auth.profile?.id
+        let t = "\(Int(e.timeSeconds) / 60):\(String(format: "%02d", Int(e.timeSeconds) % 60))"
+        return HStack(spacing: 12) {
+            rankIcon(rank).frame(width: 22)
+            (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("\(Int(e.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text("\(e.guessCount) Guesses · \(t)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(isMe ? Color(hex: 0xFFFBEB) : rank <= 3 ? Theme.surfaceAlt : Color.clear)
     }
 
     private func load() async {
-        loading = true; error = nil
-        do { records = try await RecordsService.fetchAll() }
-        catch { self.error = error.localizedDescription }
+        loading = true
+        entries = (try? await LeaderboardService.fetch(gameMode: mode, playType: playType)) ?? []
+        if let uid = auth.profile?.id { userRank = await LeaderboardService.userRank(gameMode: mode, userId: uid, playType: playType) }
         loading = false
+    }
+}
+
+/// Shared horizontal mode picker (9 daily modes).
+struct HModePicker: View {
+    @Binding var selected: GameMode
+    private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(modes) { m in
+                    let active = m.mode == selected
+                    Button { selected = m.mode! } label: {
+                        HStack(spacing: 6) {
+                            ModeIconView(icon: m.icon, accent: m.accent, box: 22)
+                            Text(m.title).font(Brand.font(13, .heavy)).foregroundStyle(active ? m.accent : Theme.textMuted)
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
+                    }.buttonStyle(.plain)
+                }
+            }
+        }
     }
 }
 

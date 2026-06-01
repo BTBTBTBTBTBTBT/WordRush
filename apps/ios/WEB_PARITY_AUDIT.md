@@ -15,7 +15,7 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 | `/quordle` `/octordle` `/sequence` `/rescue` `/six` `/seven` | `app/<mode>/page.tsx` + `<mode>/` | `GameScreen` (multi-board) | 🟡 shared GameScreen covers them; audit each page's title gradient + multi-board share layout |
 | `/gauntlet` | `app/gauntlet/page.tsx` + `gauntlet/` | `GameScreen` (gauntlet) | 🟡 audit transition/results screens |
 | `/propernoundle` | `app/propernoundle/` | — | ⛔ needs proper-noun data + UX |
-| `/daily` (leaderboard) | `app/daily/page.tsx` | `LeaderboardTab` | 🟡 re-audit vs /daily page UX |
+| `/daily` (leaderboard) | `app/daily/page.tsx` | `LeaderboardTab` | ✅ audited+matched: full mode picker, your-rank banner, rank icons, current-user highlight, win/loss pill, player count, yesterday toggle. (TODO: CompletedDailyBoard preview, rank-delta badge) |
 | `/records` | `app/records/page.tsx` | `RecordsTab` | 🟡 re-audit (sections, mode tabs, current-user highlight) |
 | `/profile` `/profile/[id]` | `app/profile/page.tsx` + `profile/` | `ProfileTab` | 🟡 re-audit full profile (stats grid, heatmap, personality, edit) |
 | `/pro` | `app/pro/page.tsx` | — | ⛔ Pro/subscription page + StoreKit (Phase 2) |
