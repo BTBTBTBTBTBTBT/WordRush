@@ -31,7 +31,10 @@ enum MatchStatsService {
     private struct InsightRow: Decodable { let player1_time: Double?; let player1_score: Int?; let created_at: String }
 
     private static func userId() async -> String? {
-        try? await AuthService.shared.client.auth.session.user.id.uuidString
+        // Postgres returns uuids lowercase; session.user.id.uuidString is uppercase.
+        // Lowercase it so client-side winner_id/player1_id string compares match
+        // (server-side .eq on the uuid column is case-insensitive either way).
+        (try? await AuthService.shared.client.auth.session.user.id.uuidString)?.lowercased()
     }
 
     /// Wins bucketed by guess count (1–6) — guess-distribution bar chart.
