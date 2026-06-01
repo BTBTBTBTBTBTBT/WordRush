@@ -43,6 +43,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     localStorage.setItem('wordle-duel-reduced-motion', String(reducedMotion));
+    // Drive the global [data-reduced-motion] kill-switch in globals.css. (The
+    // old --transition-duration var wasn't referenced anywhere, so the toggle
+    // had no effect; keep setting it too in case future styles read it.)
+    document.documentElement.setAttribute('data-reduced-motion', String(reducedMotion));
     if (reducedMotion) {
       document.documentElement.style.setProperty('--transition-duration', '0ms');
     } else {

@@ -80,10 +80,31 @@
   --color-divider: #ecf3e9;
 }
 
-[data-colorblind="true"] {
-  --correct: 200 90% 45%;
-  --present: 30 90% 55%;
-  --absent: 0 0% 40%;
+/* Colorblind mode — high-contrast tile/keyboard palette (orange=correct,
+   blue=present) for red-green color blindness. The board/keyboard use fixed
+   Tailwind green/yellow classes (the --correct/--present vars were never
+   referenced, so the old approach was a no-op); override those classes
+   directly. Matches the native ThemeManager colorblind palette. */
+[data-colorblind="true"] .bg-green-500 { background-color: #f5793a !important; }
+[data-colorblind="true"] .border-green-500 { border-color: #f5793a !important; }
+[data-colorblind="true"] .bg-yellow-500 { background-color: #85c0f9 !important; }
+[data-colorblind="true"] .border-yellow-500 { border-color: #85c0f9 !important; }
+/* Keyboard keys use the darker 600 weights. */
+[data-colorblind="true"] .bg-green-600 { background-color: #e8612a !important; }
+[data-colorblind="true"] .border-green-600 { border-color: #e8612a !important; }
+[data-colorblind="true"] .bg-yellow-600 { background-color: #6aaef0 !important; }
+[data-colorblind="true"] .border-yellow-600 { border-color: #6aaef0 !important; }
+
+/* Reduced motion — the in-app toggle sets [data-reduced-motion]; kill
+   animations/transitions globally (the old --transition-duration var was
+   unused). Mirrors the OS prefers-reduced-motion block below. */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 @layer base {
