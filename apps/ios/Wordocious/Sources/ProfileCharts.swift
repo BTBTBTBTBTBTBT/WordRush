@@ -303,6 +303,31 @@ private struct ProInsightsCard: View {
                     statCell("Fewest Guesses", s.fewestGuesses.map { "\($0)" } ?? "—", "target", gold)
                     statCell("Perfect Games", "\(s.perfectGames)", "star.fill", gold)
                     statCell("Consistency", s.consistencySample >= 3 ? "\(s.consistency)" : "—", "waveform.path.ecg", gold)
+                    if s.currentStreak > 0 { statCell("Win Streak", "\(s.currentStreak)", "flame.fill", gold) }
+                    if s.avgGuesses > 0 { statCell("Avg Guesses", String(format: "%g", s.avgGuesses), "number", gold) }
+                    if s.firstTryRate > 0 { statCell("First Try Rate", "\(s.firstTryRate)%", "1.circle.fill", gold) }
+                    if let h = s.peakHour { statCell("Peak Hour", hourLabel(h), "clock.fill", gold) }
+                    if let w = s.luckyWord { statCell("Lucky Word", w, "sparkles", gold) }
+                }
+                if let nem = s.nemesisWord, s.nemesisLosses >= 2 {
+                    HStack(spacing: 8) {
+                        Image(systemName: "skull.fill").font(.system(size: 13)).foregroundStyle(gold)
+                        Text("Nemesis: ").font(Brand.font(12, .bold)).foregroundColor(Theme.textSecondary)
+                            + Text(nem).font(Brand.font(12, .black)).foregroundColor(gold)
+                        Spacer()
+                        Text("Lost \(s.nemesisLosses)×").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    }
+                    .padding(.top, 2)
+                }
+                if s.vsTotal > 0 {
+                    HStack(spacing: 8) {
+                        Image(systemName: "flag.checkered").font(.system(size: 13)).foregroundStyle(gold)
+                        Text("VS Record").font(Brand.font(12, .bold)).foregroundStyle(Theme.textSecondary)
+                        Spacer()
+                        Text("\(s.vsWins)W · \(s.vsLosses)L · \(s.vsWinRate)%")
+                            .font(Brand.font(11, .black)).foregroundStyle(Theme.textPrimary)
+                    }
+                    .padding(.top, 2)
                 }
                 if s.recentAvg > 0 {
                     HStack(spacing: 6) {
@@ -363,6 +388,13 @@ private struct ProInsightsCard: View {
     }
 
     private func fmt(_ s: Int) -> String { s < 60 ? "\(s)s" : "\(s/60):\(String(format: "%02d", s%60))" }
+
+    /// "1 PM" / "12 AM" — matches the web peakHourLabel format.
+    private func hourLabel(_ h: Int) -> String {
+        let ampm = h >= 12 ? "PM" : "AM"
+        let h12 = h == 0 ? 12 : (h > 12 ? h - 12 : h)
+        return "\(h12) \(ampm)"
+    }
 }
 
 // MARK: - Pro Stats (global "All" view, Pro-gated)

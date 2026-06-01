@@ -20,7 +20,18 @@ enum MatchStatsService {
         var perfectGames = 0
         var consistency = 0; var consistencySample = 0
         var recentAvg = 0; var overallAvg = 0; var improving = false; var percentChange = 0
-        var hasData: Bool { fastestTime != nil || fewestGuesses != nil || perfectGames > 0 }
+        // Word + streak + VS insights (ports fetchWordInsights / fetchModeWinStreak /
+        // fetchHeadToHeadRecord + peakHourLabel from stats-service.ts).
+        var currentStreak = 0; var bestStreak = 0
+        var avgGuesses = 0.0; var firstTryRate = 0
+        var luckyWord: String?; var luckyTime = 0
+        var nemesisWord: String?; var nemesisLosses = 0
+        var peakHour: Int?
+        var vsWins = 0; var vsLosses = 0; var vsTotal = 0; var vsWinRate = 0
+        var hasData: Bool {
+            fastestTime != nil || fewestGuesses != nil || perfectGames > 0
+                || avgGuesses > 0 || currentStreak > 0 || vsTotal > 0
+        }
     }
 
     // MARK: Row decoders
@@ -205,6 +216,112 @@ enum MatchStatsService {
             out.improving = out.recentAvg < out.overallAvg
             out.percentChange = out.overallAvg > 0 ? Int((Double(out.overallAvg - out.recentAvg) / Double(out.overallAvg) * 100).rounded()) : 0
         }
+
+        // Word insights (nemesis / lucky / avg guesses / first-try rate), win
+        // streak, peak hour, and VS head-to-head — fetched alongside in parallel.
+        async let words = wordInsights(uid: uid, mode: mode)
+        async let streak = modeWinStreak(uid: uid, mode: mode)
+        async let peak = peakHour(uid: uid, mode: mode)
+        async let h2h = headToHead(uid: uid, mode: mode)
+        let w = await words, st = await streak, ph = await peak, vs = await h2h
+        out.avgGuesses = w.avgGuesses; out.firstTryRate = w.firstTryRate
+        out.luckyWord = w.luckyWord; out.luckyTime = w.luckyTime
+        out.nemesisWord = w.nemesisWord; out.nemesisLosses = w.nemesisLosses
+        out.currentStreak = st.current; out.bestStreak = st.best
+        out.peakHour = ph
+        out.vsWins = vs.wins; out.vsLosses = vs.losses; out.vsTotal = vs.total; out.vsWinRate = vs.winRate
         return out
+    }
+
+    // MARK: Insight sub-fetchers (ports stats-service.ts helpers)
+
+    /// Nemesis (most-lost solution), lucky word (fastest solve), avg guesses,
+    /// first-try rate — ports fetchWordInsights.
+    private static func wordInsights(uid: String, mode: GameMode)
+        async -> (nemesisWord: String?, nemesisLosses: Int, luckyWord: String?, luckyTime: Int, avgGuesses: Double, firstTryRate: Int) {
+        struct Row: Decodable { let solutions: [String]?; let winner_id: String?; let player1_time: Double?; let player1_score: Int? }
+        let rows: [Row] = (try? await AuthService.shared.client.from("matches")
+            .select("solutions,winner_id,player1_time,player1_score")
+            .eq("player1_id", value: uid)
+            .eq("game_mode", value: mode.rawValue)
+            .not("solutions", operator: .is, value: "null")
+            .order("created_at", ascending: false)
+            .limit(500).execute().value) ?? []
+        var lossMap = [String: Int]()
+        var speedMap = [String: Double]()   // word -> best (lowest) time
+        var totalGuesses = 0, totalWins = 0, firstTryWins = 0
+        for r in rows {
+            guard let sols = r.solutions else { continue }
+            if r.winner_id == uid {
+                totalWins += 1
+                if r.player1_score == 1 { firstTryWins += 1 }
+                totalGuesses += r.player1_score ?? 0
+                let t = r.player1_time ?? 0
+                for word in sols {
+                    let w = word.uppercased()
+                    if let cur = speedMap[w] { if t > 0 && t < cur { speedMap[w] = t } }
+                    else { speedMap[w] = t }
+                }
+            } else {
+                for word in sols { lossMap[word.uppercased(), default: 0] += 1 }
+            }
+        }
+        var nemesisWord: String?; var nemesisLosses = 0
+        for (word, losses) in lossMap where losses > nemesisLosses { nemesisLosses = losses; nemesisWord = word }
+        var luckyWord: String?; var bestTime = Double.infinity
+        for (word, t) in speedMap where t > 0 && t < bestTime { bestTime = t; luckyWord = word }
+        let avg = totalWins > 0 ? (Double(totalGuesses) / Double(totalWins) * 10).rounded() / 10 : 0
+        let ftr = totalWins > 0 ? Int((Double(firstTryWins) / Double(totalWins) * 100).rounded()) : 0
+        return (nemesisWord, nemesisLosses, luckyWord, luckyWord != nil ? Int(bestTime.rounded()) : 0, avg, ftr)
+    }
+
+    /// Current + best win streak over the most-recent 200 games — ports fetchModeWinStreak.
+    private static func modeWinStreak(uid: String, mode: GameMode) async -> (current: Int, best: Int) {
+        struct Row: Decodable { let winner_id: String? }
+        let rows: [Row] = (try? await AuthService.shared.client.from("matches")
+            .select("winner_id")
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
+            .eq("game_mode", value: mode.rawValue)
+            .order("created_at", ascending: false)
+            .limit(200).execute().value) ?? []
+        var current = 0, best = 0, streak = 0, foundFirstLoss = false
+        for r in rows {
+            if r.winner_id == uid {
+                streak += 1; best = max(best, streak)
+                if !foundFirstLoss { current = streak }
+            } else { foundFirstLoss = true; streak = 0 }
+        }
+        return (current, best)
+    }
+
+    /// Hour (0–23) with the best win-rate among hours with ≥3 games — ports peakHourLabel.
+    private static func peakHour(uid: String, mode: GameMode) async -> Int? {
+        let buckets = await timeOfDay(mode: mode)
+        var bestHour: Int?, bestRate = -1.0, bestCount = 0
+        for b in buckets where b.played >= 3 {
+            let rate = Double(b.won) / Double(b.played)
+            if rate > bestRate || (rate == bestRate && b.played > bestCount) {
+                bestRate = rate; bestHour = b.hour; bestCount = b.played
+            }
+        }
+        return bestHour
+    }
+
+    /// VS head-to-head record (player2 not null) — ports fetchHeadToHeadRecord.
+    private static func headToHead(uid: String, mode: GameMode) async -> (wins: Int, losses: Int, total: Int, winRate: Int) {
+        struct Row: Decodable { let winner_id: String? }
+        let rows: [Row] = (try? await AuthService.shared.client.from("matches")
+            .select("winner_id")
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
+            .eq("game_mode", value: mode.rawValue)
+            .not("player2_id", operator: .is, value: "null")
+            .limit(1000).execute().value) ?? []
+        var wins = 0, losses = 0
+        for r in rows {
+            if r.winner_id == uid { wins += 1 }
+            else if r.winner_id != nil { losses += 1 }
+        }
+        let total = wins + losses
+        return (wins, losses, total, total > 0 ? Int((Double(wins) / Double(total) * 100).rounded()) : 0)
     }
 }
