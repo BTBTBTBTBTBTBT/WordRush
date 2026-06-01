@@ -14,9 +14,9 @@ struct VSLobbyView: View {
     @State private var pendingInvite: PendingInvite?
     @State private var creatingInvite: GameMode?
 
-    /// Standard board modes supported by native VS today (Gauntlet + ProperNoundle
-    /// VS have bespoke flows and are a follow-up).
-    private let modes: [GameMode] = [.duel, .duel6, .duel7, .quordle, .octordle, .sequence, .rescue]
+    /// All VS-capable modes (matches the web VS mode list). Gauntlet runs through
+    /// the shared board engine; ProperNoundle uses its own VS flow.
+    private let modes: [GameMode] = [.duel, .duel6, .duel7, .quordle, .octordle, .sequence, .rescue, .gauntlet, .propernoundle]
 
     private var isPro: Bool { auth.isProActive }
 

@@ -195,10 +195,12 @@ struct HomeView: View {
             : DailySeed.today(mode: gameMode)
     }
 
-    /// VS swords overlay: Pro + Unlimited, for the standard board modes native
-    /// VS supports (excludes VS card, Gauntlet, ProperNoundle).
+    /// VS swords overlay: Pro + Unlimited, for every VS-capable mode (all but
+    /// the VS card itself). ProperNoundle has no GameMode on its HomeMode, so
+    /// it's allowed through explicitly.
     private func showsVS(_ mode: HomeMode) -> Bool {
-        auth.isProActive && effectiveMode == .unlimited && mode.mode != nil && mode.id != "gauntlet"
+        auth.isProActive && effectiveMode == .unlimited && mode.id != "vs"
+            && (mode.mode != nil || mode.id == "propernoundle")
     }
 
     private func cardBody(_ mode: HomeMode, locked: Bool) -> some View {

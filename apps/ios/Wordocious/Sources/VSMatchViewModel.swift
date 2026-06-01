@@ -27,7 +27,8 @@ final class VSMatchViewModel: ObservableObject {
     @Published var screen: Screen = .queue
     @Published var queuePosition = 0
     @Published var countdown: Int?         // non-nil → show "Match Found" overlay
-    @Published var game: GameViewModel?    // built on match_start
+    @Published var game: GameViewModel?    // built on match_start (board modes)
+    @Published var proper: ProperNoundleVM?  // built on match_start (ProperNoundle VS)
     @Published var opponent = OpponentProgress()
     @Published var result: VSMatchEnded?
     @Published var playerTimeMs: Int = 0
@@ -137,6 +138,24 @@ final class VSMatchViewModel: ObservableObject {
         rematch = .idle
         resultRecorded = false
         countdown = nil
+
+        // ProperNoundle uses its own engine — drive a ProperNoundleVM instead
+        // of the board GameViewModel, relaying guesses/completion the same way.
+        if mode == .propernoundle {
+            let pvm = ProperNoundleVM(seed: seed, isVersus: true)
+            pvm.onGuessCommitted = { [weak self] guess in self?.service.submitGuess(guess, boardIndex: 0) }
+            pvm.onCompleted = { [weak self] status, guesses in
+                guard let self else { return }
+                let timeMs = Int(max(0, Date().timeIntervalSince1970 * 1000 - self.matchStartMs))
+                self.playerTimeMs = timeMs
+                self.service.playerCompleted(status: status == .won ? "won" : "lost",
+                                             totalGuesses: guesses, timeMs: timeMs)
+                self.screen = .waiting
+            }
+            proper = pvm
+            screen = .match
+            return
+        }
 
         let vm = GameViewModel(seed: seed, mode: mode, isVersus: true)
         vm.onGuessCommitted = { [weak self] guess in self?.service.submitGuess(guess, boardIndex: 0) }

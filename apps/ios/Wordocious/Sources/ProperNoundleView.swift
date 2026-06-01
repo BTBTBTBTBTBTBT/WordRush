@@ -36,7 +36,17 @@ final class ProperNoundleVM: ObservableObject {
     var hintsUsed: Int { [clue, revealedVowel, revealedConsonant].compactMap { $0 }.count }
     var elapsed: Int { finalTimeSeconds ?? max(0, Int((Date().timeIntervalSince1970 * 1000 - startMs) / 1000)) }
 
-    init() { puzzle = ProperNoundle.dailyPuzzle() }
+    // VS hooks (set by VSMatchViewModel when this drives a VS match).
+    let isVersus: Bool
+    var onGuessCommitted: ((String) -> Void)?
+    var onCompleted: ((GameStatus, Int) -> Void)?
+
+    /// Solo → today's daily puzzle. VS → a deterministic puzzle from the match
+    /// seed so both players get the same one.
+    init(seed: String? = nil, isVersus: Bool = false) {
+        self.isVersus = isVersus
+        puzzle = seed.flatMap { ProperNoundle.puzzle(forSeed: $0) } ?? ProperNoundle.dailyPuzzle()
+    }
 
     func type(_ l: String) { guard !isFinished, input.count < answerLen else { return }; input += l.lowercased() }
     func delete() { if !input.isEmpty { input.removeLast() } }
@@ -44,8 +54,10 @@ final class ProperNoundleVM: ObservableObject {
     func submit() {
         guard !isFinished, let p = puzzle else { return }
         guard input.count == answerLen else { flash("Not enough letters"); SoundManager.shared.playInvalid(); return }
-        let tiles = ProperNoundle.evaluate(guess: input, answer: p.answer)
-        guesses.append((input, tiles)); input = ""
+        let word = input
+        let tiles = ProperNoundle.evaluate(guess: word, answer: p.answer)
+        guesses.append((word, tiles)); input = ""
+        onGuessCommitted?(word)
         if ProperNoundle.isWin(tiles) { status = .won; finish() }
         else if guesses.count >= maxGuesses { status = .lost; finish() }
     }
@@ -84,6 +96,9 @@ final class ProperNoundleVM: ObservableObject {
         finalTimeSeconds = elapsed
         if status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
         else { Haptics.error(); SoundManager.shared.playGameOver() }
+        // VS: relay completion to the match; the VS view model records the
+        // vs result, so skip the solo recording below.
+        if isVersus { onCompleted?(status, guesses.count); return }
         guard !recorded else { return }; recorded = true
         let seed = generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: GameMode.propernoundle.rawValue)
         let won = status == .won, secs = elapsed, gc = guesses.count, used = hintsUsed
@@ -313,5 +328,30 @@ struct NoundleKeyboard: View {
             Image(systemName: systemName).font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.textPrimary)
                 .frame(width: 54, height: 52).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }.buttonStyle(.plain)
+    }
+}
+
+/// Compact ProperNoundle board + keyboard for the VS match screen. Drives a
+/// ProperNoundleVM (built by VSMatchViewModel with isVersus = true) that relays
+/// each guess + completion to the live match. Reuses the solo NoundleBoard /
+/// NoundleKeyboard so the play surface matches the solo game.
+struct ProperNoundleVSBoard: View {
+    @ObservedObject var vm: ProperNoundleVM
+    var body: some View {
+        VStack(spacing: 6) {
+            if let p = vm.puzzle {
+                HStack(spacing: 6) {
+                    Text(categoryLabel(p.themeCategory)).font(Brand.caption(11)).foregroundStyle(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(categoryColors[p.themeCategory ?? ""] ?? Color(hex: 0x7C3AED)))
+                    Text("\(vm.answerLen) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                }
+                .padding(.top, 4)
+            }
+            NoundleBoard(vm: vm)
+            Spacer(minLength: 4)
+            NoundleKeyboard(vm: vm)
+        }
+        .padding(.horizontal, 10).padding(.bottom, 6)
     }
 }

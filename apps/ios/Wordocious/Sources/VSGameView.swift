@@ -95,22 +95,17 @@ struct VSGameView: View {
     // MARK: - Match (playing)
 
     @ViewBuilder private var matchScreen: some View {
-        if let game = vm.game {
+        if mode == .propernoundle, let pvm = vm.proper {
             VStack(spacing: 0) {
-                HStack {
-                    Button(action: goHome) {
-                        Image(systemName: "house.fill").font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(ModeStyle.accent(mode))
-                            .frame(width: 34, height: 34)
-                            .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
-                    }
-                    Spacer()
-                    vsTitle(20)
-                    Spacer()
-                    Color.clear.frame(width: 34, height: 34)
-                }
-                .padding(.horizontal, 10).padding(.top, 6)
-
+                matchHeader
+                OpponentStrip(opponent: vm.opponent, gradient: gradient)
+                    .padding(.horizontal, 10).padding(.top, 6)
+                ProperNoundleVSBoard(vm: pvm)   // bespoke ProperNoundle board+keyboard
+            }
+            if let t = pvm.toast { toastView(t) }
+        } else if let game = vm.game {
+            VStack(spacing: 0) {
+                matchHeader
                 OpponentStrip(opponent: vm.opponent, gradient: gradient)
                     .padding(.horizontal, 10).padding(.top, 6)
 
@@ -118,10 +113,34 @@ struct VSGameView: View {
                     BoardLayout(vm: game, availableWidth: geo.size.width, fitHeight: geo.size.height)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
-                KeyboardView(vm: game).padding(.bottom, 6)
+                // Gauntlet: a cleared stage shows Continue (advance the run)
+                // instead of the keyboard, mirroring the solo GameScreen.
+                if game.stageCleared {
+                    Button(game.isLastStage ? "Finish Gauntlet" : "Continue") { Haptics.success(); game.nextStage() }
+                        .buttonStyle(.borderedProminent).tint(Theme.primary).controlSize(.large)
+                        .padding(.bottom, 10)
+                } else {
+                    KeyboardView(vm: game).padding(.bottom, 6)
+                }
             }
             if let t = game.toast { toastView(t) }
         }
+    }
+
+    private var matchHeader: some View {
+        HStack {
+            Button(action: goHome) {
+                Image(systemName: "house.fill").font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(ModeStyle.accent(mode))
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+            }
+            Spacer()
+            vsTitle(20)
+            Spacer()
+            Color.clear.frame(width: 34, height: 34)
+        }
+        .padding(.horizontal, 10).padding(.top, 6)
     }
 
     private func toastView(_ text: String) -> some View {

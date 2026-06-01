@@ -71,6 +71,15 @@ enum ProperNoundle {
         return list[max(0, idx)]
     }
 
+    /// Deterministic puzzle from a VS match seed (stable FNV-1a hash → index)
+    /// so both players in a match get the same puzzle, independent of date.
+    static func puzzle(forSeed seed: String) -> NPuzzle? {
+        guard !all.isEmpty else { return nil }
+        var h: UInt64 = 1469598103934665603
+        for b in seed.utf8 { h = (h ^ UInt64(b)) &* 1099511628211 }
+        return all[Int(h % UInt64(all.count))]
+    }
+
     private static func daysSinceEpoch(_ dateString: String) -> Int {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = TimeZone(identifier: "UTC")
         guard let target = f.date(from: dateString), let e = f.date(from: epoch) else { return 0 }
