@@ -44,6 +44,10 @@ struct ProfileTab: View {
                     unlockedAchievements = await AchievementService.fetchUnlocked(userId: uid)
                 }
             }
+            // Banner inside the NavigationStack so the ScrollView insets for it
+            // (the Sign-out button stays scrollable above the banner) and it
+            // doesn't leak onto pushed detail views.
+            .adBanner()
         }
     }
 
@@ -390,6 +394,7 @@ struct LeaderboardTab: View {
                 if !auth.isAuthenticated { signedOut } else { content }
             }
             .navigationTitle("").navigationBarTitleDisplayMode(.inline)
+            .adBanner()
         }
     }
 
@@ -638,6 +643,7 @@ struct RecordsTab: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .adBanner()
         }
     }
 

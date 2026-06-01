@@ -18,11 +18,11 @@ struct RootTabView: View {
         TabView {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
-            LeaderboardTab().adBanner()
+            LeaderboardTab()
                 .tabItem { Label("Leaderboard", systemImage: "trophy.fill") }
-            ProfileTab().adBanner()
+            ProfileTab()
                 .tabItem { Label("Profile", systemImage: "person.fill") }
-            RecordsTab().adBanner()
+            RecordsTab()
                 .tabItem { Label("Records", systemImage: "crown.fill") }
         }
         .tint(Theme.primary)
