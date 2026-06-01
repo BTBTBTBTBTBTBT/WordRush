@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Flame, HelpCircle } from 'lucide-react';
+import { Flame, HelpCircle, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { ProBadge } from '@/components/ui/pro-badge';
 import { HelpModal } from '@/components/modals/help-modal';
+import { SettingsDialog } from '@/components/settings-dialog';
 import { StatPopover } from '@/components/ui/stat-popover';
 
 function ShieldIcon({ className }: { className?: string }) {
@@ -20,6 +21,7 @@ function ShieldIcon({ className }: { className?: string }) {
 export function AppHeader() {
   const { profile, isProActive } = useAuth();
   const [helpOpen, setHelpOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [streakOpen, setStreakOpen] = useState(false);
   const [shieldOpen, setShieldOpen] = useState(false);
 
@@ -70,6 +72,20 @@ export function AppHeader() {
             aria-label="How to play"
           >
             <HelpCircle className="w-4 h-4" />
+          </button>
+
+          {/* Settings button — always visible (theme, sound, accessibility) */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+            style={{
+              background: 'var(--color-surface-alt)',
+              border: '1.5px solid var(--color-border-alt)',
+              color: 'var(--color-text-muted)',
+            }}
+            aria-label="Settings"
+          >
+            <Settings className="w-4 h-4" />
           </button>
 
           {profile && (
@@ -158,6 +174,7 @@ export function AppHeader() {
       </header>
 
       <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }

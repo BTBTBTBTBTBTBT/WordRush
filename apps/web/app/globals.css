@@ -47,16 +47,37 @@
   --color-loss-text: #f87171;
 }
 
+/* Ocean — blue/teal-tinted light palette. (Previously only set unused tile
+   vars, so the theme had no visible effect; these --color-* overrides make it
+   actually apply. Kept in sync with the native ThemeManager "ocean" palette.) */
 [data-theme="ocean"] {
-  --correct: 200 90% 45%;
-  --present: 45 90% 55%;
-  --absent: 210 15% 30%;
+  --color-bg: #f0f7fb;
+  --color-surface: #ffffff;
+  --color-border: #cfe4ef;
+  --color-border-light: #ddebf3;
+  --color-text: #0f2e3d;
+  --color-text-muted: #6b8a99;
+  --color-text-secondary: #4a6b7a;
+  --color-surface-hover: #e3f0f7;
+  --color-surface-alt: #eaf3f8;
+  --color-border-alt: #d5e5ee;
+  --color-divider: #e8f1f6;
 }
 
+/* Forest — green/earth-tinted light palette (see Ocean note; matches the
+   native ThemeManager "forest" palette). */
 [data-theme="forest"] {
-  --correct: 142 70% 40%;
-  --present: 48 90% 50%;
-  --absent: 30 15% 35%;
+  --color-bg: #f3f8f1;
+  --color-surface: #ffffff;
+  --color-border: #d6e6cf;
+  --color-border-light: #e0ebda;
+  --color-text: #1f3320;
+  --color-text-muted: #7a8c72;
+  --color-text-secondary: #56684f;
+  --color-surface-hover: #e8f2e4;
+  --color-surface-alt: #edf4ea;
+  --color-border-alt: #dbe7d4;
+  --color-divider: #ecf3e9;
 }
 
 [data-colorblind="true"] {
