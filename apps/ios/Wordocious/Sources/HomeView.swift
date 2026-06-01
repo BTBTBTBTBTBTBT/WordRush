@@ -27,8 +27,15 @@ struct HomeView: View {
                     ScrollView {
                         VStack(spacing: 8) {
                             if auth.isProActive { PlayModeToggle(value: $playMode) }
-                            if effectiveMode == .unlimited { UnlimitedHero() }
-                            if completions.allDone && effectiveMode == .daily { banner }
+                            // Always fill the hero slot so toggling Daily⇄Unlimited
+                            // (or completing all dailies) never shifts the grid.
+                            if effectiveMode == .unlimited {
+                                UnlimitedHero()
+                            } else if completions.allDone {
+                                banner          // Daily Sweep / Flawless Victory
+                            } else {
+                                DailyChallengeHero()
+                            }
                             WordOfTheDayView()
                             sectionHeader
                             LazyVGrid(columns: columns, spacing: 8) {
