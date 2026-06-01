@@ -2,14 +2,16 @@ import SwiftUI
 
 /// Settings — mirrors components/settings-dialog.tsx (theme picker + Sound /
 /// Colorblind / Reduced-motion toggles) plus account + info links + version.
-/// Toggles + theme choice persist to UserDefaults. NOTE: applying the
-/// non-default themes (Dark/Ocean/Forest) app-wide is deferred infra — the
-/// choice is saved but only Default is fully styled today.
+/// Toggles persist to UserDefaults. The theme choice is owned by
+/// `ThemeManager` and recolors the whole app live (Default / Dark / Ocean /
+/// Forest), mirroring the web's `[data-theme]` palette switch.
 struct SettingsView: View {
     @ObservedObject var auth = AuthService.shared
+    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.dismiss) private var dismiss
 
-    @AppStorage("pref-theme") private var theme = "default"
+    // Active theme is owned by ThemeManager (publishes app-wide recolor).
+    private var theme: String { themeManager.theme }
     @AppStorage("pref-sound") private var soundOn = true
     @AppStorage("pref-colorblind") private var colorblind = false
     @AppStorage("pref-reduced-motion") private var reducedMotion = false
@@ -86,7 +88,7 @@ struct SettingsView: View {
 
     private func themeRow(_ t: (value: String, label: String, desc: String)) -> some View {
         let active = theme == t.value
-        return Button { theme = t.value } label: {
+        return Button { themeManager.theme = t.value } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(t.label).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
