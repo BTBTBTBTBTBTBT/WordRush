@@ -77,9 +77,9 @@ struct ProfileTab: View {
             HStack(spacing: 6) {
                 Text(p.username).font(Brand.title(28)).foregroundStyle(Theme.textPrimary)
                 if auth.isProActive {
-                    Text("PRO").font(Brand.caption(11)).foregroundStyle(.white)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Capsule().fill(Theme.wordmarkGradient))
+                    Text("PRO").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                 }
             }
             HStack(spacing: 6) {
@@ -104,9 +104,10 @@ struct ProfileTab: View {
             }
             if !auth.isProActive {
                 Button { showPro = true } label: {
-                    Text("Go Pro").font(Brand.font(13, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 18).padding(.vertical, 8)
-                        .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                    Text("Go Pro").font(Brand.font(12, .heavy)).foregroundStyle(.white)
+                        .padding(.horizontal, 16).padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2))
                 }
                 .padding(.top, 2)
                 .sheet(isPresented: $showPro) { ProView() }
@@ -145,8 +146,15 @@ struct ProfileTab: View {
             }
             VStack(spacing: 8) {
                 if allDone {
-                    Text(flawless ? "🏆 Flawless Victory!" : "✨ Daily Sweep!")
-                        .font(Brand.font(16, .black)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Theme.primary)
+                    HStack(spacing: 8) {
+                        Image(systemName: flawless ? "trophy.fill" : "sparkles")
+                            .font(.system(size: flawless ? 18 : 15)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
+                        Text(flawless ? "Flawless Victory!" : "Daily Sweep!")
+                            .font(Brand.font(16, .black))
+                            .foregroundStyle(LinearGradient(colors: flawless ? [Color(hex: 0xD97706), Color(hex: 0xB45309)] : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        Image(systemName: flawless ? "trophy.fill" : "sparkles")
+                            .font(.system(size: flawless ? 18 : 15)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
+                    }
                 }
                 HStack(spacing: 12) { ForEach(Array(dailyModes.prefix(5))) { m in dailyBadge(m) } }
                 HStack(spacing: 12) { ForEach(Array(dailyModes.dropFirst(5))) { m in dailyBadge(m) } }
@@ -156,7 +164,9 @@ struct ProfileTab: View {
                 }
             }
             .padding(12).frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 16).fill(allDone ? (flawless ? Color(hex: 0xFEF3C7) : Color(hex: 0xF5F3FF)) : Theme.surface))
+            .background(RoundedRectangle(cornerRadius: 16).fill(allDone
+                ? AnyShapeStyle(LinearGradient(colors: flawless ? [Color(hex: 0xFEF3C7), Color(hex: 0xFDE68A)] : [Color(hex: 0xF5F3FF), Color(hex: 0xFCE7F3)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                : AnyShapeStyle(Theme.surface)))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(allDone ? (flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xC4B5FD)) : Theme.border, lineWidth: 1.5))
         }
     }
@@ -169,18 +179,19 @@ struct ProfileTab: View {
         let border: Color = !played ? Theme.border : won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)
         return VStack(spacing: 3) {
             ZStack {
-                RoundedRectangle(cornerRadius: 9).fill(bg).frame(width: 38, height: 38)
-                    .overlay(RoundedRectangle(cornerRadius: 9).stroke(border, lineWidth: 1.5))
+                RoundedRectangle(cornerRadius: 12).fill(bg).frame(width: 36, height: 36)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1.5))
                 if played {
-                    Text(won ? "W" : "L").font(Brand.font(15, .black)).foregroundStyle(.white)
+                    Text(won ? "W" : "L").font(Brand.font(14, .black)).foregroundStyle(.white)
                 } else {
-                    ModeIconView(icon: m.icon, accent: m.accent, box: 30)
+                    ModeIconView(icon: m.icon, accent: m.accent, box: 26)
                 }
             }
+            .opacity(played ? 1 : 0.7)
             Text(m.title).font(Brand.font(8, .bold)).foregroundStyle(played ? Theme.textPrimary : Theme.textMuted)
                 .lineLimit(1)
         }
-        .frame(width: 46)
+        .frame(width: 42)
     }
 
     // MARK: Global summary (4 cards)
@@ -198,7 +209,7 @@ struct ProfileTab: View {
 
     private func summaryCard(_ icon: String, _ color: Color, _ value: String, _ label: String, _ sub: String?) -> some View {
         VStack(spacing: 2) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color)
+            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
             Text(value).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
             Text(label.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
             if let sub { Text(sub).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted) }
@@ -250,6 +261,8 @@ struct LeaderboardTab: View {
     @State private var loading = false
     @State private var showYesterday = false
     @State private var showAuth = false
+    @State private var secondsLeft = secondsUntilLocalMidnight()
+    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     /// The 9 daily modes, in PROFILE_MODES order.
     private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
@@ -261,8 +274,27 @@ struct LeaderboardTab: View {
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
                 if !auth.isAuthenticated { signedOut } else { content }
             }
-            .navigationTitle("Leaderboard")
+            .navigationTitle("").navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private var header: some View {
+        VStack(spacing: 4) {
+            Text("DAILY CHALLENGE").font(Brand.font(28, .black)).tracking(-0.5)
+                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar").font(.system(size: 11))
+                    Text(Date().formatted(.dateTime.month(.abbreviated).day()))
+                }
+                HStack(spacing: 4) {
+                    Image(systemName: "clock").font(.system(size: 11))
+                    Text(String(format: "%02d:%02d:%02d", secondsLeft / 3600, (secondsLeft % 3600) / 60, secondsLeft % 60)).monospacedDigit()
+                }
+            }
+            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+        }
+        .frame(maxWidth: .infinity).padding(.bottom, 4)
     }
 
     private var signedOut: some View {
@@ -277,6 +309,7 @@ struct LeaderboardTab: View {
     private var content: some View {
         ScrollView {
             VStack(spacing: 12) {
+                header
                 modePicker
                 if let r = userRank { rankBanner(r) }
 
@@ -288,7 +321,7 @@ struct LeaderboardTab: View {
                 } else if entries.isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
-                        Text("No results yet. Be the first!").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
+                        Text("No results yet. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 40)
                     .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -305,8 +338,10 @@ struct LeaderboardTab: View {
                 }
 
                 if playerCount > 0 {
-                    Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today")
-                        .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.2.fill").font(.system(size: 11))
+                        Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(10, .bold))
+                    }.foregroundStyle(Theme.textMuted)
                 }
 
                 Button { showYesterday.toggle(); if showYesterday { Task { await loadYesterday() } } } label: {
@@ -316,19 +351,43 @@ struct LeaderboardTab: View {
                     }.foregroundStyle(Theme.textMuted)
                 }
                 if showYesterday {
-                    VStack(spacing: 0) {
-                        ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
-                            row(rank: idx + 1, entry: entry)
-                            if idx < yesterday.count - 1 { Divider().overlay(Theme.border) }
+                    if yesterday.isEmpty {
+                        Text("No results from yesterday")
+                            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                            .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
+                            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
+                                yesterdayRow(rank: idx + 1, entry: entry)
+                                if idx < yesterday.count - 1 { Divider().overlay(Theme.border) }
+                            }
                         }
+                        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                     }
-                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
         }
         .task(id: mode) { await load() }
+        .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
+    }
+
+    /// Compact yesterday row — RankIcon, name, small W/L pill, composite score (muted).
+    private func yesterdayRow(rank: Int, entry: LeaderboardEntry) -> some View {
+        HStack(spacing: 12) {
+            rankIcon(rank).frame(width: 22)
+            Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            Spacer()
+            Text(entry.completed ? "W" : "L").font(Brand.font(9, .heavy))
+                .foregroundStyle(entry.completed ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                .padding(.horizontal, 5).padding(.vertical, 1)
+                .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+            Text("\(Int(entry.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
     private var modePicker: some View {
@@ -469,7 +528,7 @@ struct RecordsTab: View {
     private func toggleButton(_ label: String, _ value: RecordsSubTab) -> some View {
         let active = tab == value
         return Button { tab = value } label: {
-            Text(label).font(Brand.font(13, .heavy))
+            Text(label).font(Brand.font(12, .heavy))
                 .foregroundStyle(active ? Theme.primary : Theme.textMuted)
                 .frame(maxWidth: .infinity).padding(.vertical, 10)
                 .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
@@ -501,7 +560,10 @@ struct AllTimeRecordsView: View {
                             RecordStatCell(type: rt, record: globalRecord(rt), accent: Color(hex: 0xD97706), isMe: globalRecord(rt)?.holderId == myId)
                         }
                     }
-                    .padding(12).background(Color(hex: 0xFFFBEB))
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xFFFBEB)))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xFEF3C7), lineWidth: 1))
+                    .padding(12)
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
@@ -521,7 +583,11 @@ struct AllTimeRecordsView: View {
                         ForEach(RecordCatalog.perMode, id: \.self) { rt in
                             RecordStatCell(type: rt, record: modeRecord(rt), accent: m?.accent ?? Theme.primary, isMe: modeRecord(rt)?.holderId == myId)
                         }
-                    }.padding(12)
+                    }
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceAlt))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.borderAlt, lineWidth: 1))
+                    .padding(.horizontal, 12).padding(.bottom, 12)
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
@@ -580,12 +646,34 @@ struct DailyRecordsView: View {
     @State private var userRank: (rank: Int, total: Int)?
     @State private var loading = false
 
+    private var accent: Color { homeModes.first { $0.mode == mode }?.accent ?? Theme.primary }
+
+    /// Custom inline Solo|VS toggle matching the web (icon + accent active state),
+    /// replacing the iOS segmented control.
+    private var soloVsToggle: some View {
+        HStack(spacing: 0) {
+            ForEach(["solo", "vs"], id: \.self) { t in
+                let active = playType == t
+                Button { playType = t } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: t == "solo" ? "person.fill" : "flag.2.crossed.fill").font(.system(size: 12))
+                        Text(t == "solo" ? "Solo" : "VS").font(Brand.font(10, .heavy))
+                    }
+                    .foregroundStyle(active ? accent : Theme.textMuted)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
+                    .background(active ? accent.opacity(0.08) : Theme.surface)
+                }.buttonStyle(.plain)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
     var body: some View {
         VStack(spacing: 10) {
             HModePicker(selected: $mode)
-            Picker("", selection: $playType) {
-                Text("Solo").tag("solo"); Text("VS").tag("vs")
-            }.pickerStyle(.segmented)
+            soloVsToggle
 
             if let r = userRank {
                 (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
