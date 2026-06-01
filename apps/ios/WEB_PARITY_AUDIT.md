@@ -21,8 +21,8 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 | `/pro` | `app/pro/page.tsx` | `ProView` + `StoreManager` | ✅ page matched (header, 8 benefits, monthly/yearly + day pass, ACTIVE PRO state) + **real StoreKit 2 purchases**: live prices, purchasing spinners, Restore Purchases, auto-renew disclosure (Guideline 3.1.2). Verified transaction writes is_pro/pro_expires_at/streak_shields (mirrors web fulfillSubscription). ⚠️ needs App Store Connect products + run-via-scheme to test — see `STOREKIT_SETUP.md` |
 | `/how-to-play` | `app/how-to-play/page.tsx` | Help modal | ✅ Help modal matched; verify standalone /how-to-play page too |
 | `/about` `/privacy` `/terms` `/support` | `app/<x>/page.tsx` | `InfoPage` + `SettingsView` | ✅ Settings (theme picker + toggles, persisted; theming infra deferred) + 4 info pages, reached via gear in Profile. Legal prose summarized to canonical sections (keep in sync w/ web) |
-| `/practice/vs` + all `/<mode>/vs` | `app/<mode>/vs/` + `vs/`, `pvp/` | — | ⛔ VS multiplayer (Phase 3, socket.io) |
-| `/vs/join/[code]` | `app/vs/join/[code]/` | — | ⛔ invite join (Phase 3) |
+| `/practice/vs` + all `/<mode>/vs` | `app/<mode>/vs/` + `vs/`, `pvp/` | `VSLobbyView` → `VSGameView` | 🟡 BUILT (socket.io): protocol (21 events) + state machine (queue→countdown→match→waiting→result→rematch) + live opponent strip + vs-result recording + free/Pro gating. 7 standard board modes; Gauntlet/ProperNoundle VS deferred (bespoke flows). ⚠️ needs verified server URL + 2 players to test — see `VS_SETUP.md` |
+| `/vs/join/[code]` | `app/vs/join/[code]/` | `VSLobbyView` (Join by code) | 🟡 BUILT: InviteService (match_invites, 1:1 w/ invite-service.ts) — create code / join by code, server pairs on code |
 | `/admin/*` | `app/admin/` | — | 🚫 internal admin, not in consumer app |
 
 ## Modals / overlays

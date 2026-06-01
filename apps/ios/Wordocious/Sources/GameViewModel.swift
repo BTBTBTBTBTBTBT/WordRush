@@ -37,7 +37,7 @@ final class GameViewModel: ObservableObject {
     /// Call when the game goes inactive (onDisappear / background).
     func pauseTimer() {
         if let r = resumeAtMs { accumulatedMs += nowMs - r; resumeAtMs = nil }
-        persistence.saveElapsed(accumulatedMs, seed: state.seed, mode: mode)
+        if !isVersus { persistence.saveElapsed(accumulatedMs, seed: state.seed, mode: mode) }
     }
 
     private func freezeTimer() {
@@ -84,6 +84,16 @@ final class GameViewModel: ObservableObject {
     private let persistence = GamePersistence.shared
     private var resultRecorded = false
 
+    // MARK: - VS hooks
+    /// When true this VM drives a live VS match: it skips solo persistence and
+    /// solo daily-result recording, and instead fires the relay callbacks so the
+    /// VSMatchViewModel can emit submit_guess / board_solved / player_completed.
+    let isVersus: Bool
+    var onGuessCommitted: ((_ guess: String) -> Void)?
+    var onBoardSolved: ((_ boardIndex: Int) -> Void)?
+    var onCompleted: ((_ status: GameStatus, _ totalGuesses: Int) -> Void)?
+    private var reportedSolvedBoards = Set<Int>()
+
     var boards: [BoardState] { state.boards }
     var boardCount: Int { state.boards.count }
     var isMultiBoard: Bool { state.boards.count > 1 }
@@ -126,8 +136,9 @@ final class GameViewModel: ObservableObject {
     /// modes share a guess budget; single boards use their own).
     var maxGuesses: Int { state.boards.map(\.maxGuesses).max() ?? 6 }
 
-    init(seed: String, mode: GameMode) {
+    init(seed: String, mode: GameMode, isVersus: Bool = false) {
         self.mode = mode
+        self.isVersus = isVersus
         switch mode {
         case .duel6: wordLength = 6
         case .duel7: wordLength = 7
@@ -135,13 +146,16 @@ final class GameViewModel: ObservableObject {
         }
 
         self.isDaily = isDailySeed(seed)
-        if let saved = GamePersistence.shared.load(seed: seed, mode: mode) {
+        // VS matches are transient (server-supplied seed) — never restore from or
+        // write to solo persistence, which would collide with the solo game of
+        // the same mode/seed.
+        if !isVersus, let saved = GamePersistence.shared.load(seed: seed, mode: mode) {
             state = saved
         } else {
             state = createInitialState(seed: seed, mode: mode)
         }
         recomputeEvaluations()
-        accumulatedMs = GamePersistence.shared.loadElapsed(seed: seed, mode: mode)
+        accumulatedMs = isVersus ? 0 : GamePersistence.shared.loadElapsed(seed: seed, mode: mode)
         // A game restored from disk that's already finished shouldn't re-post.
         resultRecorded = state.status != .playing
     }
@@ -173,10 +187,21 @@ final class GameViewModel: ObservableObject {
         if totalGuesses != beforeGuessCount {
             currentInput = ""
             recomputeEvaluations()
-            persistence.save(state)
+            if !isVersus { persistence.save(state) }
             if state.status == .won { flash("Solved!") }
             else if state.status == .lost { flash(lossMessage) }
-            if isFinished { recordResultIfNeeded() }
+
+            if isVersus {
+                onGuessCommitted?(guess)
+                for (i, b) in state.boards.enumerated() where b.status == .won && !reportedSolvedBoards.contains(i) {
+                    reportedSolvedBoards.insert(i)
+                    onBoardSolved?(i)
+                }
+            }
+            if isFinished {
+                recordResultIfNeeded()
+                if isVersus { onCompleted?(status, rowsUsed) }
+            }
         } else {
             flash("Not in word list")
         }
@@ -188,6 +213,9 @@ final class GameViewModel: ObservableObject {
         freezeTimer()
         let secs = max(0, Int(accumulatedMs / 1000))
         if finalTimeSeconds == nil { finalTimeSeconds = secs }
+        // VS matches don't touch solo persistence or solo daily recording — the
+        // VSMatchViewModel records the result with play_type 'vs' instead.
+        guard !isVersus else { return }
         persistence.saveElapsed(accumulatedMs, seed: state.seed, mode: mode)
         guard isDaily, !resultRecorded else { return }
         resultRecorded = true

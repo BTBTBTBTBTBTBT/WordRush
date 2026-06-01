@@ -133,6 +133,9 @@ struct HomeView: View {
         } else if mode.id == "propernoundle" {
             NavigationLink { ProperNoundleView() } label: { cardBody(mode) }
                 .buttonStyle(.plain)
+        } else if mode.id == "vs" {
+            NavigationLink { VSLobbyView() } label: { cardBody(mode) }
+                .buttonStyle(.plain)
         } else {
             Button { comingSoon = mode.title } label: { cardBody(mode) }
                 .buttonStyle(.plain)
