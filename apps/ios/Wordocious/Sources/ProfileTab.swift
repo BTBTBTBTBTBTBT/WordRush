@@ -31,6 +31,10 @@ struct ProfileTab: View {
                 if let profile = auth.profile { content(profile) } else { signedOut }
             }
             .navigationBarTitleDisplayMode(.inline)
+            // Solid nav-bar background so the gear sits on a pinned header
+            // instead of floating over the scrolling content.
+            .toolbarBackground(Theme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showSettings = true } label: { Image(systemName: "gearshape.fill").foregroundStyle(Theme.textMuted) }
