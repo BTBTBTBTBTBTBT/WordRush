@@ -15,10 +15,11 @@ struct ProfileDashboard: View {
             SolveTimeChart(mode: mode)
             TimeOfDayHeatmap(mode: mode)
             TopWordsCard(mode: mode)
-            // Per-mode Pro insights — always shown (the card renders a locked
-            // "Upgrade to Pro" teaser for free users, the real stats for Pro),
-            // matching the web pro-insights-card.
-            if let mode { ProInsightsCard(mode: mode) }
+            // Per-mode Pro insights (selected mode) / global Pro Stats (All view)
+            // — both always render and self-gate: a locked "Upgrade to Pro"
+            // teaser for free users, real charts/stats for Pro. Mirrors the web
+            // pro-insights-card (per-mode) and pro-stats (All view).
+            if let mode { ProInsightsCard(mode: mode) } else { ProStatsCard() }
         }
     }
 }
@@ -362,4 +363,96 @@ private struct ProInsightsCard: View {
     }
 
     private func fmt(_ s: Int) -> String { s < 60 ? "\(s)s" : "\(s/60):\(String(format: "%02d", s%60))" }
+}
+
+// MARK: - Pro Stats (global "All" view, Pro-gated)
+
+/// Aggregate per-mode bar charts shown on the All view — Win Rate by Mode and
+/// Avg Solve Time by Mode. Ports the web pro-stats.tsx (locked teaser for free
+/// users, the two charts for Pro). Data from user_stats (combined solo+vs, the
+/// native convention).
+private struct ProStatsCard: View {
+    @ObservedObject private var auth = AuthService.shared
+    @State private var bars: [ModeBar] = []
+    @State private var showPro = false
+
+    struct ModeBar: Identifiable { var id: String { label }; let label: String; let winRate: Double; let avgTime: Int }
+
+    // game_mode (dbKey) → short label, mirroring the web MODE_LABELS.
+    private static let order = ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE"]
+    private static let label = ["DUEL": "Classic", "QUORDLE": "Quad", "OCTORDLE": "Octo", "SEQUENCE": "Succ",
+                                "RESCUE": "Deliv", "DUEL_6": "Six", "DUEL_7": "Seven", "GAUNTLET": "Gaunt", "PROPERNOUNDLE": "Proper"]
+
+    var body: some View {
+        ChartCard(title: "PRO STATS") {
+            if !auth.isProActive {
+                locked
+            } else if bars.isEmpty {
+                EmptyChart()
+            } else {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("Win Rate by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                    Chart(bars) { b in
+                        BarMark(x: .value("Mode", b.label), y: .value("Win %", b.winRate))
+                            .foregroundStyle(Color(hex: 0xFACC15)).cornerRadius(3)
+                    }
+                    .chartYScale(domain: 0...100)
+                    .chartYAxis { AxisMarks(values: [0, 50, 100]) { v in
+                        AxisGridLine(); AxisValueLabel { if let i = v.as(Int.self) { Text("\(i)%").font(Brand.font(9, .bold)) } } } }
+                    .frame(height: 150)
+
+                    Text("Avg Solve Time by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                    Chart(bars) { b in
+                        BarMark(x: .value("Mode", b.label), y: .value("Seconds", b.avgTime))
+                            .foregroundStyle(Color(hex: 0xA78BFA)).cornerRadius(3)
+                    }
+                    .chartYAxis { AxisMarks { v in
+                        AxisGridLine(); AxisValueLabel { if let s = v.as(Int.self) { Text(fmt(s)).font(Brand.font(9, .bold)) } } } }
+                    .frame(height: 150)
+                }
+            }
+        }
+        .task(id: auth.isProActive) { if auth.isProActive { await load() } }
+        .sheet(isPresented: $showPro) { ProView() }
+    }
+
+    private func load() async {
+        guard let uid = auth.profile?.id else { return }
+        let rows = await UserStatsService.fetch(userId: uid)
+        bars = Self.order.compactMap { mode in
+            let mRows = rows.filter { $0.gameMode == mode }
+            let games = mRows.reduce(0) { $0 + $1.totalGames }
+            guard games > 0 else { return nil }
+            let wins = mRows.reduce(0) { $0 + $1.wins }
+            // Games-weighted average solve time across this mode's rows.
+            let weighted = mRows.reduce(0) { $0 + $1.averageTime * $1.totalGames }
+            return ModeBar(label: Self.label[mode] ?? mode,
+                           winRate: Double(wins) / Double(games) * 100,
+                           avgTime: weighted / games)
+        }
+    }
+
+    private var locked: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover).frame(height: 160)
+            VStack(spacing: 8) {
+                Image(systemName: "lock.fill").font(.system(size: 28)).foregroundStyle(Color(hex: 0xC4B5FD))
+                Text("Pro Feature").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                Button { showPro = true } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "crown.fill").font(.system(size: 12))
+                        Text("Upgrade to Pro").font(Brand.font(12, .black))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16).padding(.vertical, 9)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(
+                        LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                    .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func fmt(_ s: Int) -> String { s < 60 ? "\(s)s" : "\(s/60)m \(s%60)s" }
 }
