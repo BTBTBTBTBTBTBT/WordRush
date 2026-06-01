@@ -18,13 +18,13 @@ struct KeyboardView: View {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {
                     if r == 2 {
-                        actionKey("ENTER") { vm.submit(); Haptics.tap() }
+                        actionKey("ENTER") { vm.submit(); Haptics.tap(); SoundManager.shared.playKeyTap() }
                     }
                     ForEach(rows[r], id: \.self) { letter in
                         letterKey(letter)
                     }
                     if r == 2 {
-                        actionKey("⌫") { vm.delete(); Haptics.tap() }
+                        actionKey("⌫") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
                     }
                 }
             }
@@ -39,6 +39,7 @@ struct KeyboardView: View {
         return Button {
             vm.type(letter)
             Haptics.tap()
+            SoundManager.shared.playKeyTap()
         } label: {
             Text(letter)
                 .font(Brand.font(18, .bold))

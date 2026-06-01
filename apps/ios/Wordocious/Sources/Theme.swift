@@ -27,18 +27,27 @@ enum Theme {
     static let wordmarkEnd = Color(hex: 0xEC4899)
     static let gold = Color(hex: 0xF59E0B)
 
-    // Tiles (default light theme — Tailwind green-500 / yellow-500 / gray-500)
-    static let correct = Color(hex: 0x22C55E)
-    static let present = Color(hex: 0xEAB308)
+    // Tiles — Tailwind green-500 / yellow-500 / gray-500. Colorblind mode swaps
+    // to the high-contrast palette (orange=correct, blue=present) for red-green
+    // color blindness, matching the web [data-colorblind] overrides.
+    private static var cb: Bool { ThemeManager.shared.colorblind }
+    static var correct: Color { cb ? Color(hex: 0xF5793A) : Color(hex: 0x22C55E) } // orange / green-500
+    static var present: Color { cb ? Color(hex: 0x85C0F9) : Color(hex: 0xEAB308) } // blue / yellow-500
     static let absent = Color(hex: 0x6B7280)
     static let emptyBorder = Color(hex: 0xD1D5DB)        // Tailwind gray-300 (web board empty tile)
     static let keyDefault = Color(hex: 0xE8E5F0)
 
     // Keyboard keys use the darker 600-weight green/yellow + gray-400 (distinct
     // from the lighter board tiles), matching the web keyboard.tsx palette.
-    static let keyCorrect = Color(hex: 0x16A34A)         // green-600
-    static let keyPresent = Color(hex: 0xCA8A04)         // yellow-600
+    // Colorblind swaps to darker orange/blue (the 600-equivalents).
+    static var keyCorrect: Color { cb ? Color(hex: 0xE8612A) : Color(hex: 0x16A34A) } // orange-600 / green-600
+    static var keyPresent: Color { cb ? Color(hex: 0x6AAEF0) : Color(hex: 0xCA8A04) } // blue-600 / yellow-600
     static let keyAbsent = Color(hex: 0x9CA3AF)          // gray-400
+
+    /// Animation honoring the reduced-motion setting (nil = no animation).
+    static func animation(_ a: Animation) -> Animation? {
+        ThemeManager.shared.reducedMotion ? nil : a
+    }
 
     static let wordmarkGradient = LinearGradient(
         colors: [wordmarkStart, wordmarkEnd],

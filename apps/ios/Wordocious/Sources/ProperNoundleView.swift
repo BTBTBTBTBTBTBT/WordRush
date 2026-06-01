@@ -43,7 +43,7 @@ final class ProperNoundleVM: ObservableObject {
 
     func submit() {
         guard !isFinished, let p = puzzle else { return }
-        guard input.count == answerLen else { flash("Not enough letters"); return }
+        guard input.count == answerLen else { flash("Not enough letters"); SoundManager.shared.playInvalid(); return }
         let tiles = ProperNoundle.evaluate(guess: input, answer: p.answer)
         guesses.append((input, tiles)); input = ""
         if ProperNoundle.isWin(tiles) { status = .won; finish() }
@@ -82,7 +82,8 @@ final class ProperNoundleVM: ObservableObject {
 
     private func finish() {
         finalTimeSeconds = elapsed
-        if status == .won { Haptics.success() } else { Haptics.error() }
+        if status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
+        else { Haptics.error(); SoundManager.shared.playGameOver() }
         guard !recorded else { return }; recorded = true
         let seed = generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: GameMode.propernoundle.rawValue)
         let won = status == .won, secs = elapsed, gc = guesses.count, used = hintsUsed
@@ -138,7 +139,7 @@ struct ProperNoundleView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .animation(.easeInOut(duration: 0.2), value: vm.toast)
+        .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onAppear {
             // Free users watch the game-start ad first; reset the clock after.
             if !adShown { adShown = true; AdsManager.shared.showGameStartInterstitial { vm.beginTimer() } }
@@ -274,9 +275,9 @@ struct NoundleKeyboard: View {
         VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {
-                    if r == 2 { iconAction("delete.left") { vm.delete(); Haptics.tap() } }
+                    if r == 2 { iconAction("delete.left") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() } }
                     ForEach(rows[r], id: \.self) { key in letterKey(key) }
-                    if r == 2 { action("ENTER") { vm.submit(); Haptics.tap() } }
+                    if r == 2 { action("ENTER") { vm.submit(); Haptics.tap(); SoundManager.shared.playKeyTap() } }
                 }
             }
         }.padding(.horizontal, 4)
@@ -293,7 +294,7 @@ struct NoundleKeyboard: View {
             default: return Theme.keyDefault
             }
         } ?? Theme.keyDefault
-        return Button { vm.type(l); Haptics.tap() } label: {
+        return Button { vm.type(l); Haptics.tap(); SoundManager.shared.playKeyTap() } label: {
             Text(l).font(Brand.font(18, .bold)).foregroundStyle(st == nil ? Theme.textPrimary : .white)
                 .frame(maxWidth: .infinity).frame(height: 52)
                 .background(RoundedRectangle(cornerRadius: 6).fill(bg))

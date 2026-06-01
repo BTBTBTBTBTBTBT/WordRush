@@ -42,7 +42,7 @@ struct HomeView: View {
                         .transition(.opacity)
                 }
             }
-            .animation(.easeInOut(duration: 0.15), value: limitModal != nil)
+            .animation(Theme.animation(.easeInOut(duration: 0.15)), value: limitModal != nil)
             .sheet(isPresented: $showProSheet) { ProView() }
             .fullScreenCover(item: $solvedMode) { m in
                 NavigationStack {

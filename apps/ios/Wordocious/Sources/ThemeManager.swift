@@ -29,9 +29,23 @@ final class ThemeManager: ObservableObject {
     @Published var theme: String {
         didSet { UserDefaults.standard.set(theme, forKey: "pref-theme") }
     }
+    /// High-contrast tile palette (blue=correct, orange=present) for red-green
+    /// color blindness. Read by `Theme.correct/present/...` at render time, so
+    /// it applies to the next game screen without a root rebuild.
+    @Published var colorblind: Bool {
+        didSet { UserDefaults.standard.set(colorblind, forKey: "pref-colorblind") }
+    }
+    /// When on, animations are skipped (gated at call sites via `Theme.animation`).
+    @Published var reducedMotion: Bool {
+        didSet { UserDefaults.standard.set(reducedMotion, forKey: "pref-reduced-motion") }
+    }
 
     private init() {
-        theme = UserDefaults.standard.string(forKey: "pref-theme") ?? "default"
+        let d = UserDefaults.standard
+        theme = d.string(forKey: "pref-theme") ?? "default"
+        // Toggles default ON only if explicitly set; absent → false.
+        colorblind = d.bool(forKey: "pref-colorblind")
+        reducedMotion = d.bool(forKey: "pref-reduced-motion")
     }
 
     var current: Palette { Self.palettes[theme] ?? Self.palettes["default"]! }

@@ -23,7 +23,7 @@ struct CompletedDailyCard: View {
                     LinearGradient(colors: won ? [Color(hex: 0x22C55E), Color(hex: 0x4ADE80)] : [Color(hex: 0x9CA3AF), Color(hex: 0xD1D5DB)],
                                    startPoint: .leading, endPoint: .trailing).frame(height: 4)
 
-                    Button { withAnimation(.easeInOut(duration: 0.2)) { expanded.toggle() } } label: {
+                    Button { withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { expanded.toggle() } } label: {
                         HStack(spacing: 8) {
                             Text(won ? "✓" : "✗").font(Brand.font(9, .black)).foregroundStyle(won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
                                 .frame(width: 16, height: 16)

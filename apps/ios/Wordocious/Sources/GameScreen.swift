@@ -74,9 +74,10 @@ struct GameScreen: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
-        .animation(.easeInOut(duration: 0.2), value: vm.toast)
+        .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.status) { newValue in
-            if newValue == .won { Haptics.success() } else if newValue == .lost { Haptics.error() }
+            if newValue == .won { Haptics.success(); SoundManager.shared.playSuccess() }
+            else if newValue == .lost { Haptics.error(); SoundManager.shared.playGameOver() }
         }
         .onAppear {
             // Free users: show the game-start interstitial first (mirrors web AdGate),

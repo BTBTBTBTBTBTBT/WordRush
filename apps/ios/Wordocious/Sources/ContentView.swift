@@ -54,7 +54,7 @@ private struct LoadingSkeleton: View {
             }
             .padding(.horizontal, 16).padding(.top, 8)
             .opacity(pulse ? 0.25 : 0.45)
-            .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
+            .animation(Theme.animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)), value: pulse)
 
             Spacer()
         }

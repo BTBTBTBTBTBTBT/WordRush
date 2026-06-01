@@ -174,9 +174,9 @@ final class GameViewModel: ObservableObject {
 
     func submit() {
         guard !isFinished else { return }
-        guard currentInput.count == wordLength else { flash("Not enough letters"); return }
+        guard currentInput.count == wordLength else { flash("Not enough letters"); SoundManager.shared.playInvalid(); return }
         let guess = currentInput.uppercased()
-        guard GameDictionary.shared.isValidWord(guess) else { flash("Not in word list"); return }
+        guard GameDictionary.shared.isValidWord(guess) else { flash("Not in word list"); SoundManager.shared.playInvalid(); return }
 
         let beforeGuessCount = totalGuesses
         let action: GameAction = isMultiBoard
@@ -203,7 +203,7 @@ final class GameViewModel: ObservableObject {
                 if isVersus { onCompleted?(status, rowsUsed) }
             }
         } else {
-            flash("Not in word list")
+            flash("Not in word list"); SoundManager.shared.playInvalid()
         }
     }
 

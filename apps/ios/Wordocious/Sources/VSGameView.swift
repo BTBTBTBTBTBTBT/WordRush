@@ -88,7 +88,7 @@ struct VSGameView: View {
                     .id(vm.countdown)
                     .transition(.scale.combined(with: .opacity))
             }
-            .animation(.easeOut(duration: 0.25), value: vm.countdown)
+            .animation(Theme.animation(.easeOut(duration: 0.25)), value: vm.countdown)
         }
     }
 

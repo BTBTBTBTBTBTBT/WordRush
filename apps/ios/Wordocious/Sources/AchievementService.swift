@@ -313,7 +313,7 @@ struct CollapsibleSection<Content: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Button { withAnimation(.easeInOut(duration: 0.2)) { open.toggle() } } label: {
+            Button { withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { open.toggle() } } label: {
                 HStack(spacing: 8) {
                     Text(title).font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
                     if let badge {

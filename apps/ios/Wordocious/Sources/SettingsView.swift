@@ -12,9 +12,10 @@ struct SettingsView: View {
 
     // Active theme is owned by ThemeManager (publishes app-wide recolor).
     private var theme: String { themeManager.theme }
+    // Sound reads UserDefaults directly in SoundManager; @AppStorage writes it.
     @AppStorage("pref-sound") private var soundOn = true
-    @AppStorage("pref-colorblind") private var colorblind = false
-    @AppStorage("pref-reduced-motion") private var reducedMotion = false
+    // Colorblind + reduced-motion are owned by ThemeManager so changes publish
+    // and apply app-wide (tile palette / animation gating).
 
     private let themes: [(value: String, label: String, desc: String)] = [
         ("default", "Default", "Classic Wordle colors"),
@@ -43,9 +44,9 @@ struct SettingsView: View {
                         }
                         section("ACCESSIBILITY") {
                             VStack(spacing: 0) {
-                                toggleRow("Colorblind Mode", "High contrast colors", $colorblind)
+                                toggleRow("Colorblind Mode", "High contrast colors", $themeManager.colorblind)
                                 Divider().overlay(Theme.border)
-                                toggleRow("Reduced Motion", "Minimize animations", $reducedMotion)
+                                toggleRow("Reduced Motion", "Minimize animations", $themeManager.reducedMotion)
                             }
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
