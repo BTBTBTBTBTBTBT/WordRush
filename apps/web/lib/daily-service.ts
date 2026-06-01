@@ -246,7 +246,7 @@ export async function recordDailyResult(
     if (existing) {
       // Only update if new score is better
       if (compositeScore > existing.composite_score) {
-        await (supabase as any)
+        const { error } = await (supabase as any)
           .from('daily_results')
           .update({
             completed,
@@ -258,9 +258,13 @@ export async function recordDailyResult(
             hints_used: hintsUsed,
           })
           .eq('id', existing.id);
+        // supabase-js does NOT throw on a constraint/column error — it returns
+        // it here. Surface it so a rejected daily write (e.g. a game_mode the
+        // DB CHECK constraint doesn't allow) can never fail silently again.
+        if (error) console.error(`recordDailyResult update rejected for ${gameMode}:`, error);
       }
     } else {
-      await (supabase as any)
+      const { error } = await (supabase as any)
         .from('daily_results')
         .insert({
           user_id: userId,
@@ -275,6 +279,7 @@ export async function recordDailyResult(
           composite_score: compositeScore,
           hints_used: hintsUsed,
         });
+      if (error) console.error(`recordDailyResult insert rejected for ${gameMode}:`, error);
     }
 
     // Check for streak and perfect game medals (fire-and-forget)
