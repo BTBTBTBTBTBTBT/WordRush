@@ -73,7 +73,9 @@ struct ScoreBreakdownView: View {
             row(completed ? "Win bonus" : "Did not finish", completed ? "" : "no win bonus", b.basePoints)
             if completed && b.hasHints { row("Guess bonus", "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
             if completed { row("Time bonus", "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
-            if totalBoards > 1 { row("Completion bonus", "\(boardsSolved)/\(totalBoards) boards", b.completionBonus) }
+            if completed && b.completionBonus > 0 {
+                row("Completion bonus", totalBoards > 1 ? "\(boardsSolved)/\(totalBoards) boards" : "puzzle solved", b.completionBonus)
+            }
             if b.hasHints { row("Hint penalty", "no hints — full credit", -b.hintPenalty, pure: completed) }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
