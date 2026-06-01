@@ -13,15 +13,21 @@ struct AppHeaderView: View {
     @State private var showShield = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            Wordmark(size: 20)
+        HStack(spacing: 6) {
+            // Wordmark scales down (rather than clipping the PRO badge) when the
+            // PRO badge + controls crowd the row.
+            Text("WORDOCIOUS")
+                .font(Brand.wordmark(20)).tracking(0.5)
+                .foregroundStyle(Theme.wordmarkGradient)
+                .lineLimit(1).minimumScaleFactor(0.6)
             if auth.isProActive {
                 Text("PRO").font(Brand.font(9, .black)).tracking(0.5).foregroundStyle(.white)
                     .padding(.horizontal, 6).padding(.vertical, 2)
                     .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)],
                                                               startPoint: .topLeading, endPoint: .bottomTrailing)))
+                    .fixedSize()
             }
-            Spacer(minLength: 8)
+            Spacer(minLength: 6)
 
             circleButton("questionmark") { showHelp = true }
             circleButton("gearshape.fill") { showSettings = true }

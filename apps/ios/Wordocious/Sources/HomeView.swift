@@ -8,6 +8,11 @@ struct HomeView: View {
     @State private var limitModal: HomeMode?     // free user tapped a completed daily
     @State private var solvedMode: HomeMode?      // "View Solved Puzzle"
     @State private var showProSheet = false
+    @AppStorage("pref-play-mode") private var playMode: PlayMode = .daily
+    @State private var showVSLobby = false
+
+    /// Free users are forced to Daily (toggle is Pro-only).
+    private var effectiveMode: PlayMode { auth.isProActive ? playMode : .daily }
 
     private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
 
@@ -21,7 +26,9 @@ struct HomeView: View {
                     AppHeaderView()
                     ScrollView {
                         VStack(spacing: 8) {
-                            if completions.allDone { banner }
+                            if auth.isProActive { PlayModeToggle(value: $playMode) }
+                            if effectiveMode == .unlimited { UnlimitedHero() }
+                            if completions.allDone && effectiveMode == .daily { banner }
                             WordOfTheDayView()
                             sectionHeader
                             LazyVGrid(columns: columns, spacing: 8) {
@@ -46,6 +53,7 @@ struct HomeView: View {
             }
             .animation(Theme.animation(.easeInOut(duration: 0.15)), value: limitModal != nil)
             .sheet(isPresented: $showProSheet) { ProView() }
+            .navigationDestination(isPresented: $showVSLobby) { VSLobbyView() }
             .fullScreenCover(item: $solvedMode) { m in
                 NavigationStack {
                     if let gm = m.mode {
@@ -131,13 +139,33 @@ struct HomeView: View {
 
     @ViewBuilder
     private func card(_ mode: HomeMode) -> some View {
+        // In Unlimited mode the VS swords button overlays each standard mode card
+        // (Pro-only), matching the web. The card itself still navigates to play.
+        ZStack(alignment: .bottomTrailing) {
+            cardLink(mode)
+            if showsVS(mode) {
+                Button { showVSLobby = true } label: {
+                    Image("swords").renderingMode(.template).resizable().scaledToFit()
+                        .frame(width: 15, height: 15).foregroundStyle(mode.accent)
+                        .frame(width: 28, height: 28)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(mode.accent.opacity(0.12)))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(10)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func cardLink(_ mode: HomeMode) -> some View {
         let locked = isLocked(mode)
         if locked {
             Button { limitModal = mode } label: { cardBody(mode, locked: true) }
                 .buttonStyle(.plain)
         } else if let gameMode = mode.mode {
             NavigationLink {
-                GameScreen(seed: DailySeed.today(mode: gameMode), mode: gameMode, title: mode.title)
+                GameScreen(seed: gameSeed(gameMode), mode: gameMode, title: mode.title)
             } label: { cardBody(mode, locked: false) }
             .buttonStyle(.plain)
         } else if mode.id == "propernoundle" {
@@ -150,6 +178,20 @@ struct HomeView: View {
             Button { comingSoon = mode.title } label: { cardBody(mode, locked: false) }
                 .buttonStyle(.plain)
         }
+    }
+
+    /// Daily → today's daily seed; Unlimited → a fresh non-daily seed so each
+    /// play is a new puzzle that isn't gated and doesn't touch the daily.
+    private func gameSeed(_ gameMode: GameMode) -> String {
+        effectiveMode == .unlimited
+            ? "unlimited-\(gameMode.rawValue)-\(Int(Date().timeIntervalSince1970))"
+            : DailySeed.today(mode: gameMode)
+    }
+
+    /// VS swords overlay: Pro + Unlimited, for the standard board modes native
+    /// VS supports (excludes VS card, Gauntlet, ProperNoundle).
+    private func showsVS(_ mode: HomeMode) -> Bool {
+        auth.isProActive && effectiveMode == .unlimited && mode.mode != nil && mode.id != "gauntlet"
     }
 
     private func cardBody(_ mode: HomeMode, locked: Bool) -> some View {
