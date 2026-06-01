@@ -17,6 +17,15 @@ struct AdBannerContainer: View {
     }
 }
 
+extension View {
+    /// Pin the bottom banner inside the content area (above the system tab bar)
+    /// for free users. AdBannerContainer renders nothing for Pro / ads-disabled,
+    /// so the inset collapses to zero in those cases.
+    func adBanner() -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) { AdBannerContainer() }
+    }
+}
+
 private struct AdBannerRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> GADBannerView {
         let banner = GADBannerView(adSize: GADAdSizeBanner)

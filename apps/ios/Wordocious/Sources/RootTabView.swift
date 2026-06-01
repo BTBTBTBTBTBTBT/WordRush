@@ -16,17 +16,15 @@ struct RootTabView: View {
 
     var body: some View {
         TabView {
-            HomeView()
+            HomeView().adBanner()
                 .tabItem { Label("Home", systemImage: "house.fill") }
-            LeaderboardTab()
+            LeaderboardTab().adBanner()
                 .tabItem { Label("Leaderboard", systemImage: "trophy.fill") }
-            ProfileTab()
+            ProfileTab().adBanner()
                 .tabItem { Label("Profile", systemImage: "person.fill") }
-            RecordsTab()
+            RecordsTab().adBanner()
                 .tabItem { Label("Records", systemImage: "crown.fill") }
         }
         .tint(Theme.primary)
-        // Bottom banner for free users (above the tab bar). Hidden for Pro.
-        .safeAreaInset(edge: .bottom) { AdBannerContainer() }
     }
 }
