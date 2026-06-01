@@ -14,6 +14,7 @@ struct ProfileTab: View {
     @State private var showSettings = false
     @State private var statRows: [UserStatRow] = []
     @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
+    @State private var unlockedAchievements: Set<String> = []
 
     private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
 
@@ -33,7 +34,10 @@ struct ProfileTab: View {
             .sheet(isPresented: $showSettings) { SettingsView() }
             .task(id: auth.profile?.id) {
                 await completions.load()
-                if let uid = auth.profile?.id { statRows = await UserStatsService.fetch(userId: uid) }
+                if let uid = auth.profile?.id {
+                    statRows = await UserStatsService.fetch(userId: uid)
+                    unlockedAchievements = await AchievementService.fetchUnlocked(userId: uid)
+                }
             }
         }
     }
@@ -56,6 +60,7 @@ struct ProfileTab: View {
                 ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(statRows), selected: $selectedMode)
                 if let mode = selectedMode { modeStats(p, mode: mode) }
                 ProfileDashboard(mode: selectedMode)
+                achievementsSection
                 Button { Task { await auth.signOut() } } label: {
                     Text("Sign out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
                 }
@@ -188,21 +193,30 @@ struct ProfileTab: View {
         let won = result?.completed == true
         let bg: Color = !played ? Theme.background : won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)
         let border: Color = !played ? Theme.border : won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)
-        return VStack(spacing: 3) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12).fill(bg).frame(width: 36, height: 36)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1.5))
-                if played {
-                    Text(won ? "W" : "L").font(Brand.font(14, .black)).foregroundStyle(.white)
-                } else {
-                    ModeIconView(icon: m.icon, accent: m.accent, box: 26)
-                }
+        // Tappable like the web: played → read-only solved board; not played → play it.
+        return NavigationLink {
+            if let gm = m.mode {
+                if played { SolvedPuzzleView(mode: gm, title: m.title) }
+                else { GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title) }
             }
-            .opacity(played ? 1 : 0.7)
-            Text(m.title).font(Brand.font(8, .bold)).foregroundStyle(played ? Theme.textPrimary : Theme.textMuted)
-                .lineLimit(1)
+        } label: {
+            VStack(spacing: 3) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12).fill(bg).frame(width: 36, height: 36)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(border, lineWidth: 1.5))
+                    if played {
+                        Text(won ? "W" : "L").font(Brand.font(14, .black)).foregroundStyle(.white)
+                    } else {
+                        ModeIconView(icon: m.icon, accent: m.accent, box: 26)
+                    }
+                }
+                .opacity(played ? 1 : 0.7)
+                Text(m.title).font(Brand.font(8, .bold)).foregroundStyle(played ? Theme.textPrimary : Theme.textMuted)
+                    .lineLimit(1)
+            }
+            .frame(width: 42)
         }
-        .frame(width: 42)
+        .buttonStyle(.plain)
     }
 
     // MARK: Global summary (4 cards)
@@ -223,7 +237,8 @@ struct ProfileTab: View {
             Image(systemName: icon).font(.system(size: 16)).foregroundStyle(color)
             Text(value).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
             Text(label.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
-            if let sub { Text(sub).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted) }
+            // Always reserve the sub line so all four cards are the same height.
+            Text(sub ?? " ").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 12)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
@@ -231,6 +246,28 @@ struct ProfileTab: View {
     }
 
     // MARK: Per-mode stats (8 stats)
+
+    // MARK: Achievements (collapsible grid)
+
+    private var achievementsSection: some View {
+        CollapsibleSection(title: "ACHIEVEMENTS", badge: "\(unlockedAchievements.count)/\(AchievementService.all.count)") {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                ForEach(AchievementService.all) { a in
+                    let on = unlockedAchievements.contains(a.key)
+                    VStack(spacing: 2) {
+                        Text(on ? "✓" : "?").font(Brand.font(18, .black)).foregroundStyle(on ? Theme.primary : Theme.textMuted)
+                        Text(a.name).font(Brand.font(10, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        Text(a.description).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                            .multilineTextAlignment(.center).lineLimit(3)
+                    }
+                    .padding(10).frame(maxWidth: .infinity, minHeight: 84, alignment: .top)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(on ? Color(hex: 0xF3F0FF) : Color(hex: 0xFAFAFA)))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(on ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
+                    .opacity(on ? 1 : 0.4)
+                }
+            }
+        }
+    }
 
     private func modeStats(_ p: Profile, mode: GameMode) -> some View {
         let s = UserStatsService.aggregate(statRows, mode: mode.rawValue)
@@ -292,6 +329,7 @@ private struct ProfileModePicker: View {
                     Image(systemName: "chart.bar.fill").font(.system(size: 13)).foregroundStyle(active ? Theme.primary : Theme.textMuted)
                 }
                 Text("All").font(Brand.font(10, .heavy)).foregroundStyle(active ? Theme.primary : Theme.textMuted)
+                Text(" ").font(Brand.font(8, .bold))   // reserve the games-count line so heights match
             }
             .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.surface))
@@ -307,7 +345,7 @@ private struct ProfileModePicker: View {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 28)
                 Text(shortTitles[m.id] ?? m.title).font(Brand.font(10, .heavy))
                     .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
-                if count > 0 { Text("\(count)").font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted) }
+                Text(count > 0 ? "\(count)" : " ").font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
             }
             .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
@@ -379,6 +417,7 @@ struct LeaderboardTab: View {
             VStack(spacing: 12) {
                 header
                 modePicker
+                CompletedDailyCard(mode: mode)
                 if let r = userRank { rankBanner(r) }
 
                 Text("LEADERBOARD").font(Brand.font(10, .black)).tracking(0.8)
