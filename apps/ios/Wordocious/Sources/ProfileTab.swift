@@ -16,7 +16,12 @@ struct ProfileTab: View {
     @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
     @State private var unlockedAchievements: Set<String> = []
 
+    // Mode-picker (per-mode stats) only covers modes backed by a GameMode enum.
     private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
+    // Today's-Dailies grid covers all 9 daily-recordable modes — including
+    // ProperNoundle, which has a dbKey but no GameMode (its own engine). VS is
+    // excluded (no daily row).
+    private let dailyTiles: [HomeMode] = homeModes.filter { $0.dbKey != nil }
 
     var body: some View {
         NavigationStack {
@@ -172,8 +177,8 @@ struct ProfileTab: View {
                             .font(.system(size: flawless ? 18 : 15)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
                     }
                 }
-                HStack(spacing: 12) { ForEach(Array(dailyModes.prefix(5))) { m in dailyBadge(m) } }
-                HStack(spacing: 12) { ForEach(Array(dailyModes.dropFirst(5))) { m in dailyBadge(m) } }
+                HStack(spacing: 12) { ForEach(Array(dailyTiles.prefix(5))) { m in dailyBadge(m) } }
+                HStack(spacing: 12) { ForEach(Array(dailyTiles.dropFirst(5))) { m in dailyBadge(m) } }
                 if allDone {
                     Text(flawless ? "All \(total) dailies won today · +600 XP earned" : "All \(total) dailies completed · +200 XP earned")
                         .font(Brand.font(11, .heavy)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x6D28D9))
@@ -198,6 +203,10 @@ struct ProfileTab: View {
             if let gm = m.mode {
                 if played { SolvedPuzzleView(mode: gm, title: m.title) }
                 else { GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title) }
+            } else if m.id == "propernoundle" {
+                // ProperNoundle has its own engine (no GameMode); the view
+                // restores the completed daily board when already played.
+                ProperNoundleView()
             }
         } label: {
             VStack(spacing: 3) {
