@@ -8,6 +8,9 @@ export const AD_CONFIG = {
   /** AdSense ad-unit / slot ID for the interstitial */
   interstitialSlotId: process.env.NEXT_PUBLIC_AD_INTERSTITIAL_SLOT || '',
 
+  /** AdSense ad-unit / slot ID for the bottom anchor banner */
+  bannerSlotId: process.env.NEXT_PUBLIC_AD_BANNER_SLOT || '',
+
   /** Seconds the countdown runs before "Continue" button appears */
   countdownSeconds: 5,
 

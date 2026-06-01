@@ -16,6 +16,7 @@ import { RotateOverlay } from '@/components/ui/rotate-overlay';
 import { PwaProvider } from '@/components/providers/pwa-provider';
 import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
 import { Toaster } from '@/components/ui/toaster';
+import { AdBanner } from '@/components/ads/ad-banner';
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -144,6 +145,7 @@ export default function RootLayout({
                     <SharePreviewHost />
                     <PwaProvider />
                     <Toaster />
+                    <AdBanner />
                   </StreakShieldProvider>
                 </ThemeProvider>
               </AuthGate>
