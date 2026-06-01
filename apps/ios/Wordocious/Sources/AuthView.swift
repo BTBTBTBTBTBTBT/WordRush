@@ -1,11 +1,15 @@
 import SwiftUI
+import AuthenticationServices
+import CryptoKit
 
-/// Sign-in screen — matches apps/web/components/auth/login-screen.tsx:
-/// WORDOCIOUS wordmark, "Welcome Back!"/"Join the Fun!", Continue with
-/// Google / Facebook, email-password form, toggle, Privacy | Terms footer.
-/// Email/password is functional; Google/Facebook are placeholders until
-/// native OAuth is wired (Supabase has Google enabled; Facebook/Apple are not
-/// configured server-side yet).
+/// Sign-in screen — adapts apps/web/components/auth/login-screen.tsx for iOS:
+/// WORDOCIOUS wordmark, "Welcome Back!"/"Join the Fun!", Continue with Apple /
+/// Google, email-password form, toggle, Privacy | Terms footer.
+/// Native diverges from the web's Google+Facebook on purpose: Apple replaces
+/// Facebook because App Store Guideline 4.8 requires Sign in with Apple when any
+/// third-party social login is offered.
+/// All three paths (Apple, Google, email) are functional; Apple+Google require
+/// their providers configured in Supabase Auth (see WEB_PARITY_AUDIT checklist).
 struct AuthView: View {
     /// When presented as a sheet (e.g. from Profile) we show a Close button.
     /// When used as the app-wide login gate there is nothing to dismiss to.
@@ -19,7 +23,7 @@ struct AuthView: View {
     @State private var username = ""
     @State private var error: String?
     @State private var working = false
-    @State private var oauthSoon = false
+    @State private var appleNonce: String?
 
     enum Mode { case signin, signup }
 
@@ -46,11 +50,6 @@ struct AuthView: View {
                     ToolbarItem(placement: .topBarLeading) { Button("Close") { dismiss() } }
                 }
             }
-            .alert("Coming soon", isPresented: $oauthSoon) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Social sign-in is coming to the iOS app soon. For now, use email & password.")
-            }
         }
     }
 
@@ -59,8 +58,16 @@ struct AuthView: View {
             Text(mode == .signin ? "Welcome Back!" : "Join the Fun!")
                 .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
 
+            // Apple — required by App Store Guideline 4.8 alongside Google.
+            // Official SignInWithAppleButton for HIG compliance.
+            SignInWithAppleButton(.signIn, onRequest: configureAppleRequest, onCompletion: handleAppleResult)
+                .signInWithAppleButtonStyle(.black)
+                .frame(height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .disabled(working || !SupabaseConfig.isConfigured)
+
             // Google
-            Button { oauthSoon = true } label: {
+            Button(action: signInWithGoogle) {
                 HStack(spacing: 12) {
                     Image("google").resizable().scaledToFit().frame(width: 20, height: 20)
                     Text("Continue with Google").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
@@ -68,17 +75,7 @@ struct AuthView: View {
                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                 .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-            }.buttonStyle(.plain)
-
-            // Facebook
-            Button { oauthSoon = true } label: {
-                HStack(spacing: 12) {
-                    Image("facebook").resizable().scaledToFit().frame(width: 20, height: 20)
-                    Text("Continue with Facebook").font(Brand.font(14, .heavy)).foregroundStyle(.white)
-                }
-                .frame(maxWidth: .infinity).padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0x1877F2)))
-            }.buttonStyle(.plain)
+            }.buttonStyle(.plain).disabled(working || !SupabaseConfig.isConfigured)
 
             HStack(spacing: 10) {
                 Rectangle().fill(Theme.border).frame(height: 1)
@@ -154,5 +151,73 @@ struct AuthView: View {
                 self.error = error.localizedDescription; working = false
             }
         }
+    }
+
+    // MARK: - OAuth
+
+    private func signInWithGoogle() {
+        working = true; error = nil
+        Task {
+            do { try await auth.signInWithGoogle(); working = false; dismiss() }
+            catch {
+                if !isUserCancellation(error) { self.error = error.localizedDescription }
+                working = false
+            }
+        }
+    }
+
+    private func configureAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
+        let nonce = Self.randomNonceString()
+        appleNonce = nonce
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = Self.sha256(nonce)   // Apple hashes the nonce; we send raw to Supabase.
+    }
+
+    private func handleAppleResult(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .failure(let err):
+            if !isUserCancellation(err) { error = err.localizedDescription }
+        case .success(let authorization):
+            guard let cred = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let tokenData = cred.identityToken,
+                  let idToken = String(data: tokenData, encoding: .utf8),
+                  let rawNonce = appleNonce else {
+                error = "Apple sign-in failed. Please try again."
+                return
+            }
+            working = true; error = nil
+            Task {
+                do { try await auth.signInWithApple(idToken: idToken, rawNonce: rawNonce); working = false; dismiss() }
+                catch { self.error = error.localizedDescription; working = false }
+            }
+        }
+    }
+
+    /// Apple/ASWebAuthenticationSession surface a "canceled" error when the user
+    /// dismisses the sheet — not worth showing as an error.
+    private func isUserCancellation(_ error: Error) -> Bool {
+        if let e = error as? ASAuthorizationError, e.code == .canceled { return true }
+        let ns = error as NSError
+        return ns.domain == ASWebAuthenticationSessionError.errorDomain
+            && ns.code == ASWebAuthenticationSessionError.canceledLogin.rawValue
+    }
+
+    // MARK: - Nonce (Sign in with Apple)
+
+    private static func randomNonceString(length: Int = 32) -> String {
+        let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        var remaining = length
+        while remaining > 0 {
+            var random: UInt8 = 0
+            let status = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+            if status != errSecSuccess { continue }
+            if random < UInt8(charset.count) { result.append(charset[Int(random)]); remaining -= 1 }
+        }
+        return result
+    }
+
+    private static func sha256(_ input: String) -> String {
+        SHA256.hash(data: Data(input.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 }

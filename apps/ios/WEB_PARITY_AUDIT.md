@@ -37,7 +37,7 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 | Welcome / onboarding | `modals/welcome-modal.tsx` | — | ⛔ |
 | Settings | `settings-dialog.tsx` | — | ⛔ |
 | Share results | `share/` | — | ⛔ |
-| Auth (sign-in) | `auth/` | `AuthView` | ✅ matched login-screen.tsx (wordmark, Welcome/Join, Google+Facebook buttons w/ brand icons, email/password, toggle, Privacy\|Terms). Email/password functional; social OAuth = coming-soon placeholder (native OAuth not wired) |
+| Auth (sign-in) | `auth/` | `AuthView` | ✅ adapted login-screen.tsx (wordmark, Welcome/Join, email/password, toggle, Privacy\|Terms). **Native diverges intentionally: Apple replaces Facebook** (App Store 4.8 requires Sign in with Apple alongside any social login). Apple + Google + email all wired & functional in code. ⚠️ Apple/Google need server config — see `OAUTH_SETUP.md` |
 | Auth gate (app-wide) | `auth/auth-gate.tsx` | `ContentView` + `LoadingSkeleton` | ✅ matched: loading→branded skeleton (header bar + hero + 2×2 cards, pulsing); no session→AuthView (no Close btn); signed-in→RootTabView. Zero unauthenticated gameplay, like web. Verified in sim |
 
 ## Process

@@ -67,6 +67,28 @@ final class AuthService: ObservableObject {
         await handleSignedIn(userId: userId)
     }
 
+    // MARK: - OAuth (Apple / Google)
+
+    /// Native Sign in with Apple — exchanges the Apple identity token (obtained
+    /// via ASAuthorizationController) for a Supabase session. `rawNonce` is the
+    /// un-hashed nonce; the hashed form was sent to Apple in the request.
+    /// Requires the Apple provider configured in Supabase Auth.
+    func signInWithApple(idToken: String, rawNonce: String) async throws {
+        let session = try await client.auth.signInWithIdToken(
+            credentials: .init(provider: .apple, idToken: idToken, nonce: rawNonce))
+        await handleSignedIn(userId: session.user.id.uuidString)
+    }
+
+    /// Google sign-in via Supabase's hosted OAuth flow (ASWebAuthenticationSession).
+    /// Requires the Google provider enabled in Supabase Auth and the redirect URL
+    /// `com.wordocious.app://auth-callback` added to the project's allow-list.
+    func signInWithGoogle() async throws {
+        let session = try await client.auth.signInWithOAuth(
+            provider: .google,
+            redirectTo: URL(string: "com.wordocious.app://auth-callback"))
+        await handleSignedIn(userId: session.user.id.uuidString)
+    }
+
     func signOut() async {
         try? await client.auth.signOut()
         profile = nil
@@ -82,22 +104,35 @@ final class AuthService: ObservableObject {
 
     private func handleSignedIn(userId: String) async {
         isAuthenticated = true
-        do {
-            let row: Profile = try await client.from("profiles")
-                .select(Profile.selectColumns)
-                .eq("id", value: userId)
-                .single()
-                .execute()
-                .value
-            if row.isBanned {
-                await signOut()
-                return
-            }
+        if let row = await fetchProfileRow(userId: userId) {
+            if row.isBanned { await signOut(); return }
             profile = row
-        } catch {
-            // No profile row yet (e.g. OAuth first sign-in) — leave nil; the
-            // sign-up path creates it, OAuth path will create it in Phase 2.
-            profile = nil
+            return
         }
+        // No profile row yet (OAuth first sign-in) — auto-create one, mirroring
+        // apps/web/lib/auth-context.tsx (anonymized username + avatar from the
+        // provider metadata + has_onboarded:false), then re-fetch.
+        await createProfileForOAuth(userId: userId)
+        profile = await fetchProfileRow(userId: userId)
+    }
+
+    private func fetchProfileRow(userId: String) async -> Profile? {
+        try? await client.from("profiles")
+            .select(Profile.selectColumns)
+            .eq("id", value: userId)
+            .single()
+            .execute()
+            .value
+    }
+
+    private func createProfileForOAuth(userId: String) async {
+        let username = "Wordocious\(Int.random(in: 10000...99999))"
+        var row: [String: String] = ["id": userId, "username": username]
+        if let meta = try? await client.auth.session.user.userMetadata {
+            if let avatar = (meta["avatar_url"] ?? meta["picture"])?.stringValue {
+                row["avatar_url"] = avatar
+            }
+        }
+        try? await client.from("profiles").insert(row).execute()
     }
 }
