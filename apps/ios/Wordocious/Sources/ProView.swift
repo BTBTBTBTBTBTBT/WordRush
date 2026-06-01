@@ -1,18 +1,26 @@
 import SwiftUI
+import StoreKit
 
 /// Pro / subscription screen — matches app/pro/page.tsx (header, benefits,
-/// monthly/yearly plans, day pass, active-Pro state). Prices from PRO_PLANS.
-/// Subscribe is a placeholder until StoreKit 2 is wired (Phase 2 IAP); per
-/// Apple rules we never link to external/web checkout.
+/// monthly/yearly plans, day pass, active-Pro state). Real StoreKit 2 purchases
+/// via StoreManager; prices come live from the App Store (App Store Connect /
+/// the local .storekit config). Per Apple rules we never link to web checkout.
 struct ProView: View {
     @ObservedObject var auth = AuthService.shared
+    @ObservedObject var store = StoreManager.shared
     @Environment(\.dismiss) private var dismiss
-    @State private var comingSoon = false
 
     private let gold = Color(hex: 0xD97706)
 
-    // Mirrors PRO_PLANS in lib/payment/types.ts
+    /// Fallback prices (PRO_PLANS in lib/payment/types.ts) shown only if the
+    /// App Store products haven't loaded yet.
     private let monthlyPrice = "6.99", yearlyPrice = "59.99", dayPrice = "1"
+
+    private func displayPrice(_ plan: StoreManager.Plan, fallback: String) -> String {
+        store.product(for: plan)?.displayPrice ?? "$\(fallback)"
+    }
+    private func isPurchasing(_ plan: StoreManager.Plan) -> Bool { store.purchasingId == plan.rawValue }
+    private func buy(_ plan: StoreManager.Plan) { Task { await store.purchase(plan) } }
 
     private struct Benefit { let symbol: String; let asset: String?; let text: String }
     private let benefits: [Benefit] = [
@@ -40,10 +48,10 @@ struct ProView: View {
                 }
             }
             .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Close") { dismiss() } } }
-            .alert("Coming soon", isPresented: $comingSoon) {
+            .alert("Purchase issue", isPresented: Binding(get: { store.lastError != nil }, set: { if !$0 { store.lastError = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text("In-app purchases are coming to the iOS app soon.")
+                Text(store.lastError ?? "")
             }
         }
     }
@@ -79,26 +87,53 @@ struct ProView: View {
             ForEach(0..<benefits.count, id: \.self) { i in benefitRow(benefits[i]) }
 
             sectionHeader("CHOOSE YOUR PLAN").padding(.top, 8)
-            planCard(title: "Monthly", price: "$\(monthlyPrice)", unit: "/mo", note: "Cancel anytime",
-                     gradient: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], best: false, action: { comingSoon = true }, cta: "Subscribe Monthly")
-            planCard(title: "Yearly", price: "$\(yearlyPrice)", unit: "/yr", note: "$4.99/mo billed annually",
-                     gradient: [Color(hex: 0xF59E0B), gold], best: true, action: { comingSoon = true }, cta: "Subscribe Yearly")
+            planCard(title: "Monthly", price: displayPrice(.monthly, fallback: monthlyPrice), unit: "/mo", note: "Cancel anytime",
+                     gradient: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], best: false,
+                     loading: isPurchasing(.monthly), action: { buy(.monthly) }, cta: "Subscribe Monthly")
+            planCard(title: "Yearly", price: displayPrice(.yearly, fallback: yearlyPrice), unit: "/yr", note: "$4.99/mo billed annually",
+                     gradient: [Color(hex: 0xF59E0B), gold], best: true,
+                     loading: isPurchasing(.yearly), action: { buy(.yearly) }, cta: "Subscribe Yearly")
 
             HStack(spacing: 10) {
                 Rectangle().fill(Theme.border).frame(height: 1)
                 Text("OR TRY IT FIRST").font(Brand.font(10, .heavy)).tracking(0.6).foregroundStyle(Theme.textMuted)
                 Rectangle().fill(Theme.border).frame(height: 1)
             }.padding(.top, 6)
-            Button { comingSoon = true } label: {
-                Text("Just today — $\(dayPrice) for 24 hours of Pro →")
-                    .font(Brand.font(14, .black)).foregroundStyle(Theme.primary)
-                    .frame(maxWidth: .infinity).padding(.vertical, 12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-            }
+            Button { buy(.day) } label: {
+                HStack(spacing: 6) {
+                    if isPurchasing(.day) { ProgressView().tint(Theme.primary) }
+                    Text("Just today — \(displayPrice(.day, fallback: dayPrice)) for 24 hours of Pro →")
+                        .font(Brand.font(14, .black)).foregroundStyle(Theme.primary)
+                }
+                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+            }.disabled(store.purchasingId != nil)
             Text("Eight day passes cost more than a month of Pro.")
                 .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 .frame(maxWidth: .infinity).multilineTextAlignment(.center)
+
+            // Restore + required subscription disclosure (App Store Review Guideline 3.1.2).
+            Button { Task { await store.restore() } } label: {
+                Text("Restore Purchases").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+            }.padding(.top, 4)
+
+            subscriptionDisclosure.padding(.top, 2)
+        }
+    }
+
+    private var subscriptionDisclosure: some View {
+        VStack(spacing: 6) {
+            Text("Monthly ($\(monthlyPrice)) and Yearly ($\(yearlyPrice)) are auto-renewing subscriptions. Payment is charged to your Apple Account at confirmation. Subscriptions renew automatically unless cancelled at least 24 hours before the period ends; manage or cancel in Settings → Apple Account. The Day Pass is a one-time 24-hour purchase and does not renew.")
+                .font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 6) {
+                Link("Terms of Service", destination: URL(string: "https://wordocious.com/terms")!)
+                Text("·").foregroundStyle(Theme.textMuted)
+                Link("Privacy Policy", destination: URL(string: "https://wordocious.com/privacy")!)
+            }
+            .font(Brand.font(10, .bold)).tint(Theme.primary)
         }
     }
 
@@ -125,7 +160,7 @@ struct ProView: View {
     }
 
     private func planCard(title: String, price: String, unit: String, note: String,
-                          gradient: [Color], best: Bool, action: @escaping () -> Void, cta: String) -> some View {
+                          gradient: [Color], best: Bool, loading: Bool, action: @escaping () -> Void, cta: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(title).font(Brand.headline(15)).foregroundStyle(Theme.textPrimary)
@@ -140,10 +175,14 @@ struct ProView: View {
                 .foregroundStyle(Theme.textPrimary)
             Text(note).font(Brand.body(12)).foregroundStyle(Theme.textMuted).padding(.bottom, 8)
             Button(action: action) {
-                Text(cta).font(Brand.font(14, .black)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing)))
+                HStack(spacing: 8) {
+                    if loading { ProgressView().tint(.white) }
+                    Text(loading ? "Processing…" : cta).font(Brand.font(14, .black)).foregroundStyle(.white)
+                }
+                .frame(maxWidth: .infinity).padding(.vertical, 12)
+                .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing)))
             }
+            .disabled(store.purchasingId != nil)
         }
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))

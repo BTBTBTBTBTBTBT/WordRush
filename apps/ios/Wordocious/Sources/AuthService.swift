@@ -95,6 +95,33 @@ final class AuthService: ObservableObject {
         isAuthenticated = false
     }
 
+    // MARK: - Pro entitlement (StoreKit fulfillment)
+
+    private struct ProGrant: Encodable { let is_pro: Bool; let pro_expires_at: String; let streak_shields: Int }
+    private struct ProSync: Encodable { let is_pro: Bool; let pro_expires_at: String }
+
+    /// Write Pro entitlement after a verified StoreKit purchase/renewal — mirrors
+    /// apps/web/lib/payment/purchase-service.ts fulfillSubscription (is_pro +
+    /// pro_expires_at, plus +`addShields` streak shields for monthly/yearly).
+    func applyProGrant(expiresAt: Date, addShields: Int) async {
+        guard let userId = try? await client.auth.session.user.id.uuidString else { return }
+        let iso = ISO8601DateFormatter().string(from: expiresAt)
+        let body = ProGrant(is_pro: true, pro_expires_at: iso,
+                            streak_shields: (profile?.streakShields ?? 0) + max(0, addShields))
+        try? await client.from("profiles").update(body).eq("id", value: userId).execute()
+        await refreshProfile()
+    }
+
+    /// Reconcile an active subscription into the profile on launch/restore — no
+    /// shield grant (not a new purchase).
+    func syncProExpiry(expiresAt: Date) async {
+        guard let userId = try? await client.auth.session.user.id.uuidString else { return }
+        let iso = ISO8601DateFormatter().string(from: expiresAt)
+        try? await client.from("profiles").update(ProSync(is_pro: true, pro_expires_at: iso))
+            .eq("id", value: userId).execute()
+        await refreshProfile()
+    }
+
     // MARK: - Profile
 
     func refreshProfile() async {

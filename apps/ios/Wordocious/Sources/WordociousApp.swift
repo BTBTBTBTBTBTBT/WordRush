@@ -8,7 +8,10 @@ struct WordociousApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(auth)
-                .task { await auth.bootstrap() }
+                .task {
+                    await auth.bootstrap()
+                    StoreManager.shared.start()
+                }
         }
     }
 }
