@@ -11,6 +11,7 @@ struct WordociousApp: App {
                 .task {
                     await auth.bootstrap()
                     StoreManager.shared.start()
+                    AdsManager.shared.start()
                 }
         }
     }

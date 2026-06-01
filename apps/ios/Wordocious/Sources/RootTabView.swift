@@ -26,5 +26,7 @@ struct RootTabView: View {
                 .tabItem { Label("Records", systemImage: "crown.fill") }
         }
         .tint(Theme.primary)
+        // Bottom banner for free users (above the tab bar). Hidden for Pro.
+        .safeAreaInset(edge: .bottom) { AdBannerContainer() }
     }
 }

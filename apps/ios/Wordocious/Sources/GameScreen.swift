@@ -5,6 +5,7 @@ struct GameScreen: View {
     @StateObject private var vm: GameViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
+    @State private var adShown = false
     let mode: GameMode
 
     init(seed: String, mode: GameMode, title: String) {
@@ -67,7 +68,16 @@ struct GameScreen: View {
         .onChange(of: vm.status) { newValue in
             if newValue == .won { Haptics.success() } else if newValue == .lost { Haptics.error() }
         }
-        .onAppear { vm.resumeTimer() }
+        .onAppear {
+            // Free users: show the game-start interstitial first (mirrors web AdGate),
+            // then start the timer on dismiss so ad time isn't counted.
+            if !adShown {
+                adShown = true
+                AdsManager.shared.showGameStartInterstitial { vm.resumeTimer() }
+            } else {
+                vm.resumeTimer()
+            }
+        }
         .onDisappear { vm.pauseTimer() }
         .onChange(of: scenePhase) { phase in
             if phase == .active { vm.resumeTimer() } else { vm.pauseTimer() }

@@ -14,6 +14,9 @@ packages:
   SocketIO:
     url: https://github.com/socketio/socket.io-client-swift
     from: 16.1.0
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads
+    from: 11.0.0
 
 targets:
   Wordocious:
@@ -29,6 +32,8 @@ targets:
         product: Supabase
       - package: SocketIO
         product: SocketIO
+      - package: GoogleMobileAds
+        product: GoogleMobileAds
     info:
       path: Wordocious/Info.plist
       properties:
@@ -43,6 +48,13 @@ targets:
           - CFBundleURLName: com.wordocious.app.auth
             CFBundleURLSchemes:
               - com.wordocious.app
+        # AdMob app ID — currently Google's TEST app ID. Replace with the real
+        # ca-app-pub-XXXX~YYYY from the AdMob console before release.
+        GADApplicationIdentifier: ca-app-pub-3940256099942544~1458002511
+        # App Tracking Transparency prompt copy (shown before requesting IDFA).
+        NSUserTrackingUsageDescription: Allow tracking to show you more relevant ads. Wordocious never sells your data.
+        SKAdNetworkItems:
+          - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wordocious.app
