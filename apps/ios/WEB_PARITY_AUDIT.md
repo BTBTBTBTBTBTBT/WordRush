@@ -17,7 +17,7 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 | `/propernoundle` | `app/propernoundle/` | — | ⛔ needs proper-noun data + UX |
 | `/daily` (leaderboard) | `app/daily/page.tsx` | `LeaderboardTab` | ✅ audited+matched: full mode picker, your-rank banner, rank icons, current-user highlight, win/loss pill, player count, yesterday toggle. (TODO: CompletedDailyBoard preview, rank-delta badge) |
 | `/records` | `app/records/page.tsx` | `RecordsTab` | ✅ audited+matched: RECORDS header, Daily\|All-Time toggle, Hall of Fame + By-Game-Mode picker, StatCell w/ current-user highlight, Daily solo/VS leaderboard. (Signed-in content not yet visually verified — needs a session) |
-| `/profile` `/profile/[id]` | `app/profile/page.tsx` + `profile/` | `ProfileTab` | 🟡 re-audit full profile (stats grid, heatmap, personality, edit) |
+| `/profile` `/profile/[id]` | `app/profile/page.tsx` + `profile/` | `ProfileTab` | 🟡 CORE matched (header+level tier+XP, Today's Dailies, GlobalSummaryRow, mode picker + per-mode stats). DEFERRED: activity calendar, guess-distribution + solve-time charts, top words, time-of-day heatmap, Pro stats/insights, edit modal, social links, notification toggle, "All" dashboard |
 | `/pro` | `app/pro/page.tsx` | — | ⛔ Pro/subscription page + StoreKit (Phase 2) |
 | `/how-to-play` | `app/how-to-play/page.tsx` | Help modal | ✅ Help modal matched; verify standalone /how-to-play page too |
 | `/about` `/privacy` `/terms` `/support` | `app/<x>/page.tsx` | — | ⛔ static info pages (link from settings) |

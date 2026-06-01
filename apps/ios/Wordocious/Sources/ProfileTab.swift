@@ -10,6 +10,7 @@ struct ProfileTab: View {
     @EnvironmentObject private var auth: AuthService
     @StateObject private var completions = DailyCompletionsStore()
     @State private var showAuth = false
+    @State private var showPro = false
     @State private var statRows: [UserStatRow] = []
     @State private var selectedMode: GameMode = .duel
 
@@ -92,6 +93,15 @@ struct ProfileTab: View {
             }
             if let since = memberSince(p) {
                 Text("Member since \(since)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            }
+            if !auth.isProActive {
+                Button { showPro = true } label: {
+                    Text("Go Pro").font(Brand.font(13, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 18).padding(.vertical, 8)
+                        .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                }
+                .padding(.top, 2)
+                .sheet(isPresented: $showPro) { ProView() }
             }
         }
     }
