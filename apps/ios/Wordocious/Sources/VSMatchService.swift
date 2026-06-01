@@ -108,7 +108,13 @@ final class VSMatchService {
     }
 
     private static func decode<T: Decodable>(_ type: T.Type, _ data: [Any]) -> T? {
+        // JSONSerialization.data(withJSONObject:) RAISES an NSException (not a
+        // Swift error, so `try?` can't catch it → crash) when `first` isn't a
+        // valid top-level JSON object — e.g. a String/Number/NSNull error
+        // payload. Guard with isValidJSONObject so a malformed/unexpected
+        // socket payload is skipped instead of aborting the app.
         guard let first = data.first,
+              JSONSerialization.isValidJSONObject(first),
               let json = try? JSONSerialization.data(withJSONObject: first) else { return nil }
         return try? JSONDecoder().decode(T.self, from: json)
     }
