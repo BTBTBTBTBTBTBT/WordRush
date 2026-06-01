@@ -38,6 +38,7 @@ Status legend: ✅ matched · 🟡 built but needs re-audit vs web · ⛔ not st
 | Settings | `settings-dialog.tsx` | — | ⛔ |
 | Share results | `share/` | — | ⛔ |
 | Auth (sign-in) | `auth/` | `AuthView` | ✅ matched login-screen.tsx (wordmark, Welcome/Join, Google+Facebook buttons w/ brand icons, email/password, toggle, Privacy\|Terms). Email/password functional; social OAuth = coming-soon placeholder (native OAuth not wired) |
+| Auth gate (app-wide) | `auth/auth-gate.tsx` | `ContentView` + `LoadingSkeleton` | ✅ matched: loading→branded skeleton (header bar + hero + 2×2 cards, pulsing); no session→AuthView (no Close btn); signed-in→RootTabView. Zero unauthenticated gameplay, like web. Verified in sim |
 
 ## Process
 Work top-down through this table; for each, read the web source, replicate, build,

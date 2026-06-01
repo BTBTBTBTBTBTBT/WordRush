@@ -7,6 +7,9 @@ import SwiftUI
 /// native OAuth is wired (Supabase has Google enabled; Facebook/Apple are not
 /// configured server-side yet).
 struct AuthView: View {
+    /// When presented as a sheet (e.g. from Profile) we show a Close button.
+    /// When used as the app-wide login gate there is nothing to dismiss to.
+    var showsCloseButton: Bool = true
     @ObservedObject var auth = AuthService.shared
     @Environment(\.dismiss) private var dismiss
 
@@ -38,7 +41,11 @@ struct AuthView: View {
                     .padding(.horizontal, 24).padding(.bottom, 24)
                 }
             }
-            .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Close") { dismiss() } } }
+            .toolbar {
+                if showsCloseButton {
+                    ToolbarItem(placement: .topBarLeading) { Button("Close") { dismiss() } }
+                }
+            }
             .alert("Coming soon", isPresented: $oauthSoon) {
                 Button("OK", role: .cancel) {}
             } message: {
