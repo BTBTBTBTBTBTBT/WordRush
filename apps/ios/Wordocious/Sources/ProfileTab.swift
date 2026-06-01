@@ -13,7 +13,7 @@ struct ProfileTab: View {
     @State private var showPro = false
     @State private var showSettings = false
     @State private var statRows: [UserStatRow] = []
-    @State private var selectedMode: GameMode = .duel
+    @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
 
     private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
 
@@ -53,8 +53,8 @@ struct ProfileTab: View {
                 header(p)
                 todaysDailies
                 globalSummary(p)
-                HModePicker(selected: $selectedMode)
-                modeStats(p)
+                ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(statRows), selected: $selectedMode)
+                if let mode = selectedMode { modeStats(p, mode: mode) }
                 ProfileDashboard(mode: selectedMode)
                 Button { Task { await auth.signOut() } } label: {
                     Text("Sign out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
@@ -221,8 +221,8 @@ struct ProfileTab: View {
 
     // MARK: Per-mode stats (8 stats)
 
-    private func modeStats(_ p: Profile) -> some View {
-        let s = UserStatsService.aggregate(statRows, mode: selectedMode.rawValue)
+    private func modeStats(_ p: Profile, mode: GameMode) -> some View {
+        let s = UserStatsService.aggregate(statRows, mode: mode.rawValue)
         let winRate = s.totalGames > 0 ? Int((Double(s.wins) / Double(s.totalGames) * 100).rounded()) : 0
         let cells: [(String, String)] = [
             ("Wins", "\(s.wins)"), ("Losses", "\(s.losses)"), ("Games", "\(s.totalGames)"), ("Win Rate", "\(winRate)%"),
@@ -245,6 +245,63 @@ struct ProfileTab: View {
 
     private func fmtTime(_ s: Int) -> String {
         s <= 0 ? "-" : (s < 60 ? "\(s)s" : (s % 60 > 0 ? "\(s/60)m \(s%60)s" : "\(s/60)m"))
+    }
+}
+
+/// Profile mode picker — ports components/profile/mode-picker.tsx: a leading
+/// "All" chip (global view) then a vertical chip per mode (icon tile on top,
+/// short title, games-count badge). nil selection == All.
+private struct ProfileModePicker: View {
+    let modes: [HomeMode]
+    let games: [String: Int]
+    @Binding var selected: GameMode?
+
+    private let shortTitles: [String: String] = [
+        "practice": "Classic", "quordle": "Quad", "octordle": "Octo", "sequence": "Succ",
+        "rescue": "Deliv", "six": "Six", "seven": "Seven", "gauntlet": "Gauntlet", "propernoundle": "Proper",
+    ]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                allChip
+                ForEach(modes) { m in modeChip(m) }
+            }
+            .padding(.horizontal, 1)
+        }
+    }
+
+    private var allChip: some View {
+        let active = selected == nil
+        return Button { selected = nil } label: {
+            VStack(spacing: 4) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8).fill(active ? Theme.primary.opacity(0.08) : Theme.surfaceAlt)
+                        .frame(width: 28, height: 28)
+                    Image(systemName: "chart.bar.fill").font(.system(size: 13)).foregroundStyle(active ? Theme.primary : Theme.textMuted)
+                }
+                Text("All").font(Brand.font(10, .heavy)).foregroundStyle(active ? Theme.primary : Theme.textMuted)
+            }
+            .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
+        }.buttonStyle(.plain)
+    }
+
+    private func modeChip(_ m: HomeMode) -> some View {
+        let active = selected == m.mode
+        let count = m.mode.flatMap { games[$0.rawValue] } ?? 0
+        return Button { selected = active ? nil : m.mode } label: {
+            VStack(spacing: 4) {
+                ModeIconView(icon: m.icon, accent: m.accent, box: 28)
+                Text(shortTitles[m.id] ?? m.title).font(Brand.font(10, .heavy))
+                    .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
+                if count > 0 { Text("\(count)").font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted) }
+            }
+            .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
+        }.buttonStyle(.plain)
     }
 }
 
@@ -667,42 +724,62 @@ struct DailyRecordsView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .fixedSize()
     }
 
     var body: some View {
-        VStack(spacing: 10) {
+        let m = homeModes.first { $0.mode == mode }
+        let total = userRank?.total ?? entries.count
+        return VStack(spacing: 10) {
             HModePicker(selected: $mode)
-            soloVsToggle
 
-            if let r = userRank {
-                (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
-                 + Text("#\(r.rank)").font(Brand.title(18)).foregroundColor(Color(hex: 0xD97706))
-                 + Text(" of \(r.total)").font(Brand.body(12)).foregroundColor(Theme.textMuted))
-                    .frame(maxWidth: .infinity).padding(.vertical, 10)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0xFFFBEB)))
-                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
-            }
+            // Single leaderboard card: accent bar → header (mode + Today + toggle)
+            // → player-count/your-rank row → rows. Mirrors records/page.tsx.
+            VStack(spacing: 0) {
+                LinearGradient(colors: [accent, accent.opacity(0.53)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
 
-            if loading {
-                ProgressView().padding(.vertical, 30)
-            } else if entries.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.4))
-                    Text("No results yet. Be the first!").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
-                }.frame(maxWidth: .infinity).padding(.vertical, 30)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-            } else {
-                VStack(spacing: 0) {
+                HStack(spacing: 10) {
+                    if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                        Text("Today").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    }
+                    Spacer()
+                    soloVsToggle
+                }
+                .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)
+
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.2.fill").font(.system(size: 11))
+                        Text("\(total) player\(total == 1 ? "" : "s") today").font(Brand.font(10, .bold))
+                    }.foregroundStyle(Theme.textMuted)
+                    Spacer()
+                    if let r = userRank {
+                        (Text("Your rank: ").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
+                         + Text("#\(r.rank)").font(Brand.font(12, .black)).foregroundColor(Color(hex: 0xD97706))
+                         + Text(" of \(r.total)").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted))
+                    }
+                }
+                .padding(.horizontal, 14).padding(.bottom, 8)
+
+                Divider().overlay(Theme.border)
+
+                if loading {
+                    ProgressView().padding(.vertical, 30)
+                } else if entries.isEmpty {
+                    Text("No results yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        .frame(maxWidth: .infinity).padding(.vertical, 30)
+                } else {
                     ForEach(Array(entries.enumerated()), id: \.element.id) { idx, e in
                         dailyRow(idx + 1, e)
                         if idx < entries.count - 1 { Divider().overlay(Theme.border) }
                     }
                 }
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             }
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .task(id: "\(mode.rawValue)-\(playType)") { await load() }
     }
