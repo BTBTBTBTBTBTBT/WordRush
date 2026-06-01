@@ -130,6 +130,9 @@ struct HomeView: View {
                 GameScreen(seed: DailySeed.today(mode: gameMode), mode: gameMode, title: mode.title)
             } label: { cardBody(mode) }
             .buttonStyle(.plain)
+        } else if mode.id == "propernoundle" {
+            NavigationLink { ProperNoundleView() } label: { cardBody(mode) }
+                .buttonStyle(.plain)
         } else {
             Button { comingSoon = mode.title } label: { cardBody(mode) }
                 .buttonStyle(.plain)
