@@ -140,6 +140,10 @@ const FAQ_ITEMS = [
     a: "Finish in the top three of a mode's daily leaderboard to earn a gold, silver, or bronze medal, with extra medals for streak milestones and perfect games. Your medal tally is shown on your profile.",
   },
   {
+    q: 'Are there achievements?',
+    a: 'Yes — 70 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile.',
+  },
+  {
     q: "What's a streak?",
     a: 'Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it.',
   },
