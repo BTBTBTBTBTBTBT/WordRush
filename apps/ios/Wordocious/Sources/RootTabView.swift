@@ -8,6 +8,7 @@ import SwiftUI
 /// state alive.
 struct RootTabView: View {
     @State private var tab: Tab = .home
+    @ObservedObject private var chrome = ChromeVisibility.shared
 
     enum Tab: Hashable { case home, leaderboard, profile, records }
 
@@ -21,8 +22,38 @@ struct RootTabView: View {
             RecordsTab().tag(Tab.records).tabItem { Label("Records", systemImage: "crown") }
         }
         .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) { BottomNav(selection: $tab) }
+        // Hide the nav while an immersive screen (a game / solved puzzle) is up
+        // so it's full-screen like the web — it otherwise bleeds onto pushed
+        // views and steals the height the keyboard/boards need.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !chrome.bottomNavHidden { BottomNav(selection: $tab) }
+        }
     }
+}
+
+/// Shared toggle for the app chrome (bottom nav). Immersive full-screen views
+/// call `.hidesBottomNav()`; a counter keeps it correct across overlapping
+/// appear/disappear transitions (push A → push B → pop A still hides on B).
+final class ChromeVisibility: ObservableObject {
+    static let shared = ChromeVisibility()
+    private init() {}
+    @Published private(set) var hideCount = 0
+    var bottomNavHidden: Bool { hideCount > 0 }
+    func enterImmersive() { hideCount += 1 }
+    func exitImmersive() { hideCount = max(0, hideCount - 1) }
+}
+
+private struct ImmersiveChrome: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .onAppear { ChromeVisibility.shared.enterImmersive() }
+            .onDisappear { ChromeVisibility.shared.exitImmersive() }
+    }
+}
+
+extension View {
+    /// Hide the app's bottom nav while this view is on screen (full-screen play).
+    func hidesBottomNav() -> some View { modifier(ImmersiveChrome()) }
 }
 
 /// Custom bottom navigation — 1:1 with the web BottomNav.

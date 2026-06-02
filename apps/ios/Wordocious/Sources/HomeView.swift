@@ -10,6 +10,13 @@ struct HomeView: View {
     @State private var showProSheet = false
     @AppStorage("pref-play-mode") private var playMode: PlayMode = .daily
     @State private var showVSLobby = false
+    @State private var pendingGame: ActiveGame?    // tap-time-resolved Unlimited game
+
+    /// A game whose seed was resolved at tap time (Unlimited play).
+    struct ActiveGame: Identifiable, Equatable {
+        let seed: String; let mode: GameMode; let title: String
+        var id: String { "\(mode.rawValue)-\(seed)" }
+    }
 
     /// Free users are forced to Daily (toggle is Pro-only).
     private var effectiveMode: PlayMode { auth.isProActive ? playMode : .daily }
@@ -61,6 +68,13 @@ struct HomeView: View {
             .animation(Theme.animation(.easeInOut(duration: 0.15)), value: limitModal != nil)
             .sheet(isPresented: $showProSheet) { ProView() }
             .navigationDestination(isPresented: $showVSLobby) { VSLobbyView() }
+            .navigationDestination(isPresented: Binding(
+                get: { pendingGame != nil },
+                set: { if !$0 { pendingGame = nil } })) {
+                if let g = pendingGame {
+                    GameScreen(seed: g.seed, mode: g.mode, title: g.title)
+                }
+            }
             .fullScreenCover(item: $solvedMode) { m in
                 NavigationStack {
                     if let gm = m.mode {
@@ -164,17 +178,42 @@ struct HomeView: View {
         }
     }
 
+    /// A daily this user has already finished (in Daily mode). Revisiting it
+    /// should show the solved review, not silently start a replay.
+    private func isCompletedDaily(_ mode: HomeMode) -> Bool {
+        guard effectiveMode == .daily, mode.id != "vs", let key = mode.dbKey else { return false }
+        return completions.byMode[key] != nil
+    }
+
     @ViewBuilder
     private func cardLink(_ mode: HomeMode) -> some View {
         let locked = isLocked(mode)
         if locked {
+            // Free user, completed daily → upsell + "View Solved Puzzle".
             Button { limitModal = mode } label: { cardBody(mode, locked: true) }
                 .buttonStyle(.plain)
+        } else if isCompletedDaily(mode) {
+            // Pro user revisiting a finished daily → open the solved-puzzle review
+            // (matches the web), instead of replaying the same daily seed.
+            Button { solvedMode = mode } label: { cardBody(mode, locked: false) }
+                .buttonStyle(.plain)
         } else if let gameMode = mode.mode {
-            NavigationLink {
-                GameScreen(seed: gameSeed(gameMode), mode: gameMode, title: mode.title)
-            } label: { cardBody(mode, locked: false) }
-            .buttonStyle(.plain)
+            if effectiveMode == .unlimited {
+                // Unlimited: resolve the seed at TAP time so an in-progress
+                // puzzle resumes (persists until finished) and only a
+                // finished/none case starts a fresh one — matching the web's
+                // non-daily session behavior. (Resolving in the destination
+                // builder would churn the seed on every render.)
+                Button {
+                    pendingGame = ActiveGame(seed: resolvedUnlimitedSeed(gameMode), mode: gameMode, title: mode.title)
+                } label: { cardBody(mode, locked: false) }
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink {
+                    GameScreen(seed: DailySeed.today(mode: gameMode), mode: gameMode, title: mode.title)
+                } label: { cardBody(mode, locked: false) }
+                .buttonStyle(.plain)
+            }
         } else if mode.id == "propernoundle" {
             NavigationLink { ProperNoundleView() } label: { cardBody(mode, locked: false) }
                 .buttonStyle(.plain)
@@ -187,12 +226,19 @@ struct HomeView: View {
         }
     }
 
-    /// Daily → today's daily seed; Unlimited → a fresh non-daily seed so each
-    /// play is a new puzzle that isn't gated and doesn't touch the daily.
-    private func gameSeed(_ gameMode: GameMode) -> String {
-        effectiveMode == .unlimited
-            ? "unlimited-\(gameMode.rawValue)-\(Int(Date().timeIntervalSince1970))"
-            : DailySeed.today(mode: gameMode)
+    /// Unlimited seed for a mode: resume the in-progress non-daily puzzle if one
+    /// exists and isn't finished (web parity — the puzzle persists until solved);
+    /// otherwise mint a fresh seed and remember it as the current one.
+    private func resolvedUnlimitedSeed(_ gameMode: GameMode) -> String {
+        let key = "unlimited-current-\(gameMode.rawValue)"
+        if let saved = UserDefaults.standard.string(forKey: key),
+           let state = GamePersistence.shared.load(seed: saved, mode: gameMode),
+           state.status == .playing {
+            return saved
+        }
+        let fresh = "unlimited-\(gameMode.rawValue)-\(Int(Date().timeIntervalSince1970))"
+        UserDefaults.standard.set(fresh, forKey: key)
+        return fresh
     }
 
     /// VS swords overlay: Pro + Unlimited, for every VS-capable mode (all but

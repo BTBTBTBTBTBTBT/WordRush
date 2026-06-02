@@ -66,6 +66,7 @@ struct SolvedPuzzleView: View {
             .padding(.top, 8).padding(.leading, 8)
         }
         .navigationBarBackButtonHidden(true)
+        .hidesBottomNav()
         .task {
             let seed = DailySeed.today(mode: mode)
             data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)

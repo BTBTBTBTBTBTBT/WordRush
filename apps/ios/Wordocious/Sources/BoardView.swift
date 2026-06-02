@@ -161,7 +161,10 @@ struct BoardLayout: View {
     private let colSpacing: CGFloat = 10
     private let rowSpacing: CGFloat = 14
 
-    private var cols: Int { vm.boardCount <= 1 ? 1 : 2 }
+    // Match the web (multi-board.tsx): single board = 1 col, 2–4 boards = 2
+    // cols, octordle (>4) = 4 cols. Using 2 cols for 8 boards forced 4 rows,
+    // which crushed every tile to fit the height — the web's 4×2 keeps them legible.
+    private var cols: Int { vm.boardCount <= 1 ? 1 : (vm.boardCount > 4 ? 4 : 2) }
     private var boardRows: Int { (vm.boardCount + cols - 1) / cols }
 
     /// Tallest board (prefilled rows + guess rows) drives the height budget.

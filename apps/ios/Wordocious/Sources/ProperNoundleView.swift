@@ -154,6 +154,7 @@ struct ProperNoundleView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .hidesBottomNav()
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onAppear {
             // Free users watch the game-start ad first; reset the clock after.

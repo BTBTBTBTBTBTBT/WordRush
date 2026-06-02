@@ -75,6 +75,7 @@ struct GameScreen: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        .hidesBottomNav()
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.status) { newValue in
             if newValue == .won { Haptics.success(); SoundManager.shared.playSuccess() }
