@@ -144,7 +144,7 @@ export function WelcomeModal() {
                       Daily Puzzles
                     </p>
                     <p className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                      New challenges every day across 7 unique game modes
+                      New challenges every day across 9 unique game modes
                     </p>
                   </div>
                 </div>

@@ -1,5 +1,9 @@
 import { generateShareImage, type ShareImageInput, type ShareMode } from './share-image';
 import { openSharePreview } from '@/components/share/share-preview-modal';
+import { supabase } from './supabase-client';
+import { getTodayLocal } from './daily-service';
+
+const SHARE_BUCKET = 'share-images';
 
 type TileStateString = 'CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY';
 
@@ -84,6 +88,67 @@ async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> 
   }
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// Per-result share URL (so Facebook / X / etc. show the puzzle image)
+// ──────────────────────────────────────────────────────────────────────
+
+/**
+ * Upload the freshly-generated PNG to the public `share-images` bucket and
+ * return a per-result page URL (https://wordocious.com/s/<uid>/<mode>-<date>)
+ * carrying the result stats in its query string. That page (app/s/[...key])
+ * emits Open Graph / Twitter-card tags whose `og:image` IS this exact PNG —
+ * which is the only way social platforms (Facebook, X, LinkedIn, Reddit) can
+ * render the finished puzzle, since they refuse pre-attached image files and
+ * only scrape the shared URL.
+ *
+ * Returns null on any failure (not signed in, upload error) so the caller
+ * falls back to the bare site URL — the directly-attached image still works
+ * for Messages / WhatsApp / Mail regardless.
+ */
+async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promise<string | null> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const date = input.date ?? new Date(getTodayLocal() + 'T00:00:00');
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    // One object per (user, mode, day): re-sharing the same result overwrites
+    // identical bytes rather than accumulating, while the date keeps distinct
+    // days on distinct URLs so social scrapers never serve a stale image.
+    const key = `${user.id}/${input.mode}-${dateStr}`;
+    const path = `${key}.png`;
+
+    const { error } = await supabase.storage
+      .from(SHARE_BUCKET)
+      .upload(path, blob, { upsert: true, contentType: 'image/png' });
+    if (error) return null;
+
+    const isVertical = input.mode === 'OctoWord' || input.mode === 'Gauntlet';
+    const params = new URLSearchParams();
+    params.set('m', input.mode);
+    params.set('won', input.won ? '1' : '0');
+    params.set('g', String(input.guesses));
+    params.set('mg', String(input.maxGuesses));
+    params.set('t', String(input.timeSeconds));
+    params.set('w', '1080');
+    params.set('h', isVertical ? '1350' : '1080');
+    if (input.layout === 'multi') {
+      params.set('bs', String(input.boardsSolved));
+      params.set('tb', String(input.totalBoards));
+    } else if (input.layout === 'gauntlet') {
+      params.set('sc', String(input.stagesCompleted));
+      params.set('ts', String(input.totalStages));
+    }
+    // Distinguishes distinct results on the same URL so a social re-scrape
+    // never serves a cached preview from an earlier attempt that day.
+    params.set('v', `${input.won ? 'w' : 'x'}${input.guesses}-${input.timeSeconds}`);
+
+    return `https://wordocious.com/s/${key}?${params.toString()}`;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Single entry point every game's Share button calls. Generates a PNG from
  * the supplied game-result payload and then walks progressive fallbacks:
@@ -93,18 +158,28 @@ async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> 
  *   3. Preview modal with Save/Copy buttons.
  *   4. Text-only clipboard copy of the caption (mirrors old behavior).
  *
+ * The caption is a per-result page URL (with the PNG uploaded behind it) so
+ * that targets which ignore the attached file — Facebook, X, LinkedIn — still
+ * render the puzzle via Open Graph. Falls back to the bare site URL.
+ *
  * Returns which path succeeded so the caller can flash the right toast.
  */
 export async function shareResult(
   input: ShareImageInput,
 ): Promise<ShareResultOutcome> {
-  const caption = buildShareCaption();
-
   let blob: Blob | null = null;
   try {
     blob = await generateShareImage(input);
   } catch {
     blob = null;
+  }
+
+  // Prefer a per-result URL (puzzle PNG uploaded behind it); fall back to the
+  // bare site URL if the upload can't happen.
+  let caption = buildShareCaption();
+  if (blob) {
+    const url = await uploadAndBuildShareUrl(blob, input);
+    if (url) caption = url;
   }
 
   if (blob) {

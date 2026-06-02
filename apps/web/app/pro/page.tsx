@@ -10,8 +10,8 @@ import { PRO_PLANS } from '@/lib/payment/types';
 
 const benefits = [
   { icon: EyeOff, text: 'Ad-free experience — no interruptions, ever' },
-  { icon: WordleGridIcon, text: 'Unlimited replays of all 8 game modes, any time' },
-  { icon: Swords, text: 'VS mode on every game — challenge friends in all 8 modes' },
+  { icon: WordleGridIcon, text: 'Unlimited replays of all 9 game modes, any time' },
+  { icon: Swords, text: 'VS mode on every game — challenge friends in all 9 modes' },
   { icon: Mail, text: 'Invite friends to private matches by link or username' },
   { icon: Shield, text: '4 streak shields credited each billing period' },
   { icon: Sparkles, text: 'Pro badge on profile & leaderboards' },
