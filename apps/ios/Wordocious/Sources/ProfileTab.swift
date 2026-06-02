@@ -568,9 +568,7 @@ struct LeaderboardTab: View {
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
-                            NavigationLink { PublicProfileView(userId: entry.userId) } label: {
-                                row(rank: idx + 1, entry: entry)
-                            }.buttonStyle(.plain)
+                            row(rank: idx + 1, entry: entry)
                             if idx < entries.count - 1 { Divider().overlay(Theme.border) }
                         }
                     }
@@ -678,8 +676,12 @@ struct LeaderboardTab: View {
         let isMe = entry.userId == auth.profile?.id
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
-            (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            // Only the username links to the public profile — matches the web,
+            // where the leaderboard wraps just the name in <Link href=/profile/[id]>.
+            NavigationLink { PublicProfileView(userId: entry.userId) } label: {
+                (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(Int(entry.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
