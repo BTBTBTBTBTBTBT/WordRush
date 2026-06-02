@@ -13,8 +13,20 @@ struct CompletedDailyCard: View {
     /// Local per-board state (correct for every mode incl. sequence/rescue);
     /// preferred over the flat matches-row reconstruction when this device played it.
     @State private var localBoards: [BoardState]?
+    @State private var gauntlet: GauntletProgress?
+    @State private var elapsedMs = 0
 
     private var boardCount: Int { localBoards?.count ?? data?.solutions.count ?? 1 }
+
+    /// Header summary: gauntlet shows stages/guesses/time, others guesses·time.
+    private func summaryLabel(_ d: MatchStatsService.SolvedDaily) -> String {
+        if let g = gauntlet {
+            let cleared = g.stageResults.filter { $0.status == .won }.count
+            let guesses = g.stageResults.reduce(0) { $0 + $1.guesses }
+            return "\(cleared)/\(g.totalStages) · \(guesses)g · \(timeString(elapsedMs / 1000))"
+        }
+        return "\(d.guessCount) · \(timeString(d.timeSeconds))"
+    }
 
     /// Web-parity responsive tile size so all boards fit on one screen.
     private var tileSize: CGFloat {
@@ -42,7 +54,7 @@ struct CompletedDailyCard: View {
                                 .font(Brand.font(10, .heavy)).tracking(0.6)
                                 .foregroundStyle(won ? Color(hex: 0x22C55E) : Theme.textMuted)
                             Spacer()
-                            Text("\(d.guessCount) · \(timeString(d.timeSeconds))")
+                            Text(summaryLabel(d))
                                 .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                             Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(Theme.textMuted).rotationEffect(.degrees(expanded ? 180 : 0))
@@ -52,17 +64,22 @@ struct CompletedDailyCard: View {
                     }.buttonStyle(.plain)
 
                     if expanded {
-                        VStack(spacing: 8) {
-                            boards(d)
-                            if d.solutions.count == 1 {
-                                Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                        if let g = gauntlet {
+                            GauntletCompletedView(progress: g, totalTimeMs: elapsedMs)
+                                .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
+                        } else {
+                            VStack(spacing: 8) {
+                                boards(d)
+                                if d.solutions.count == 1 {
+                                    Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                                }
+                                HStack(spacing: 20) {
+                                    stat("\(d.guessCount)", "GUESSES")
+                                    stat(timeString(d.timeSeconds), "TIME")
+                                }
                             }
-                            HStack(spacing: 20) {
-                                stat("\(d.guessCount)", "GUESSES")
-                                stat(timeString(d.timeSeconds), "TIME")
-                            }
+                            .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         }
-                        .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                     }
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -75,9 +92,12 @@ struct CompletedDailyCard: View {
             if let state = GamePersistence.shared.load(seed: seed, mode: mode),
                state.status == .won || state.status == .lost {
                 localBoards = state.boards
+                gauntlet = state.gauntlet
             }
             data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)
             maxGuesses = createInitialState(seed: seed, mode: mode).boards.map(\.maxGuesses).max() ?? 6
+            let savedMs = Int(GamePersistence.shared.loadElapsed(seed: seed, mode: mode))
+            elapsedMs = savedMs > 0 ? savedMs : (data?.timeSeconds ?? 0) * 1000
             expanded = false
         }
     }

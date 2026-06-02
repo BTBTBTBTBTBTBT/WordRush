@@ -22,8 +22,12 @@ enum ShareService {
         renderer.scale = 1
         guard let image = renderer.uiImage else { return }
 
-        let url = URL(string: "https://wordocious.com")!
-        let av = UIActivityViewController(activityItems: [image, url], applicationActivities: nil)
+        // Share ONLY the rendered image so it's exactly what the recipient sees
+        // (the web's share is image-first too). Passing a URL/string alongside it
+        // makes iOS data-detect the link and render a dominant wordocious.com
+        // OG/link card that hides the image — so we omit it. The image already
+        // carries the wordocious.com footer for attribution.
+        let av = UIActivityViewController(activityItems: [image], applicationActivities: nil)
 
         guard let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
               let root = scene.keyWindow?.rootViewController else { return }
