@@ -87,6 +87,18 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     return () => { cancelled = true; };
   }, [isDaily, savedSession, profile, seed]);
 
+  // Backfill: when showing results from a LOCAL session (incl. a restored
+  // completed save), push the stage breakdown to the server (idempotent
+  // best-effort). Covers runs finished before the gauntlet_stages column
+  // existed so they become viewable cross-device without replaying.
+  useEffect(() => {
+    if (!showResults || !isDaily || !profile) return;
+    const g = state.gauntlet;
+    if (!g?.stageResults?.length) return;
+    recordGauntletStages(profile.id, seed, { stages: g.stages, stageResults: g.stageResults });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showResults]);
+
   // Persistence hook — snapshots the full reducer state to localStorage on
   // every change, and clears on game-end. This lets the user navigate away
   // and return mid-stage without losing progress.
