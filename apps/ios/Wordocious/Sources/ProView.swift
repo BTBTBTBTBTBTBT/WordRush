@@ -25,8 +25,8 @@ struct ProView: View {
     private struct Benefit { let symbol: String; let asset: String?; let text: String }
     private let benefits: [Benefit] = [
         .init(symbol: "eye.slash.fill", asset: nil, text: "Ad-free experience — no interruptions, ever"),
-        .init(symbol: "square.grid.3x3.fill", asset: "wordle-grid", text: "Unlimited replays of all 8 game modes, any time"),
-        .init(symbol: "", asset: "swords", text: "VS mode on every game — challenge friends in all 8 modes"),
+        .init(symbol: "square.grid.3x3.fill", asset: "wordle-grid", text: "Unlimited replays of all 9 game modes, any time"),
+        .init(symbol: "", asset: "swords", text: "VS mode on every game — challenge friends in all 9 modes"),
         .init(symbol: "envelope.fill", asset: nil, text: "Invite friends to private matches by link or username"),
         .init(symbol: "", asset: "shield", text: "4 streak shields credited each billing period"),
         .init(symbol: "sparkles", asset: nil, text: "Pro badge on profile & leaderboards"),
@@ -60,7 +60,7 @@ struct ProView: View {
         VStack(spacing: 6) {
             Image(systemName: "crown.fill").font(.system(size: 54)).foregroundStyle(gold)
             Text("Go Pro").font(Brand.title(36)).foregroundStyle(Theme.textPrimary)
-            Text("Play unlimited & ad-free — all 8 modes, any time")
+            Text("Play unlimited & ad-free — all 9 modes, any time")
                 .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
         }
         .padding(.top, 12).padding(.bottom, 24)

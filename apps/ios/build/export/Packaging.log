@@ -1,0 +1,258 @@
+2026-06-02 19:54:55 +0000 [MT] Initial pipeline context: <IDEDistributionProcessingPipelineContext: 0xaebcd1b00; archive(resolved)="<IDEArchive: 0xaebc3f790>", distributionTask(resolved)="2", distributionDestination(resolved)="1", distributionMethod(resolved)="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team(resolved)="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	Chain (15, self inclusive):
+	<IDEDistributionProcessingPipelineContext: 0xaebcd1b00; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionProcessingPipelineContext: 0xaebcd1800; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a16f80; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a16d00; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a16a80; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a16800; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a16580; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a16300; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a16080; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a15180; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a14f00; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a14c80; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="<IDEProvisioningBasicTeam: 0xaebd65b40; teamID='Q32F6GRDYG', teamName='(null)'>">
+	<IDEDistributionContext: 0xae9a14a00; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="(null)">
+	<IDEDistributionContext: 0xae9a14280; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="<IDEDistributionMethodiOSAppStoreDistribution: 0xae9a1c0f0>", team="(null)">
+	<IDEDistributionContext: 0x102d56aa0; archive = "<IDEArchive: 0xaebc3f790>", distributionMethod="(null)", team="(null)">
+</IDEDistributionProcessingPipelineContext: 0xaebcd1b00>
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionCreateDestRootStep
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionCopyItemStep
+2026-06-02 19:54:55 +0000 [MT] Running /usr/bin/ditto '-V' '/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app' '/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app'
+2026-06-02 19:54:55 +0000  >>> Copying /Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app 
+2026-06-02 19:54:55 +0000  copying file ./solutions.json ... 
+2026-06-02 19:54:55 +0000  28537 bytes for ./solutions.json
+2026-06-02 19:54:55 +0000  copying file ./Starscream_Starscream.bundle/PrivacyInfo.xcprivacy ... 
+2026-06-02 19:54:55 +0000  397 bytes for ./Starscream_Starscream.bundle/PrivacyInfo.xcprivacy
+2026-06-02 19:54:55 +0000  copying file ./Starscream_Starscream.bundle/Info.plist ... 
+2026-06-02 19:54:55 +0000  686 bytes for ./Starscream_Starscream.bundle/Info.plist
+2026-06-02 19:54:55 +0000  copying file ./propernoundle-puzzles.json ... 
+2026-06-02 19:54:55 +0000  109948 bytes for ./propernoundle-puzzles.json
+2026-06-02 19:54:55 +0000  copying file ./allowed-6.json ... 
+2026-06-02 19:54:55 +0000  209630 bytes for ./allowed-6.json
+2026-06-02 19:54:55 +0000  copying file ./allowed-7.json ... 
+2026-06-02 19:54:55 +0000  308401 bytes for ./allowed-7.json
+2026-06-02 19:54:55 +0000  copying file ./AppIcon60x60@2x.png ... 
+2026-06-02 19:54:55 +0000  7133 bytes for ./AppIcon60x60@2x.png
+2026-06-02 19:54:55 +0000  copying file ./swift-crypto_Crypto.bundle/PrivacyInfo.xcprivacy ... 
+2026-06-02 19:54:55 +0000  398 bytes for ./swift-crypto_Crypto.bundle/PrivacyInfo.xcprivacy
+2026-06-02 19:54:55 +0000  copying file ./swift-crypto_Crypto.bundle/Info.plist ... 
+2026-06-02 19:54:55 +0000  682 bytes for ./swift-crypto_Crypto.bundle/Info.plist
+2026-06-02 19:54:55 +0000  copying file ./Nunito.ttf ... 
+2026-06-02 19:54:55 +0000  276932 bytes for ./Nunito.ttf
+2026-06-02 19:54:55 +0000  copying file ./Wordocious ... 
+2026-06-02 19:54:55 +0000  8507360 bytes for ./Wordocious
+2026-06-02 19:54:55 +0000  copying file ./Assets.car ... 
+2026-06-02 19:54:55 +0000  380856 bytes for ./Assets.car
+2026-06-02 19:54:55 +0000  copying file ./AppIcon76x76@2x~ipad.png ... 
+2026-06-02 19:54:55 +0000  9378 bytes for ./AppIcon76x76@2x~ipad.png
+2026-06-02 19:54:55 +0000  copying file ./solutions-7.json ... 
+2026-06-02 19:54:55 +0000  15745 bytes for ./solutions-7.json
+2026-06-02 19:54:55 +0000  copying file ./allowed.json ... 
+2026-06-02 19:54:55 +0000  103364 bytes for ./allowed.json
+2026-06-02 19:54:55 +0000  copying file ./Frameworks/GoogleMobileAds.framework/GoogleMobileAds ... 
+2026-06-02 19:54:55 +0000  33128 bytes for ./Frameworks/GoogleMobileAds.framework/GoogleMobileAds
+2026-06-02 19:54:55 +0000  copying file ./Frameworks/GoogleMobileAds.framework/PrivacyInfo.xcprivacy ... 
+2026-06-02 19:54:55 +0000  4491 bytes for ./Frameworks/GoogleMobileAds.framework/PrivacyInfo.xcprivacy
+2026-06-02 19:54:55 +0000  copying file ./Frameworks/GoogleMobileAds.framework/Info.plist ... 
+2026-06-02 19:54:55 +0000  1593 bytes for ./Frameworks/GoogleMobileAds.framework/Info.plist
+2026-06-02 19:54:55 +0000  copying file ./Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform ... 
+2026-06-02 19:54:55 +0000  33128 bytes for ./Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform
+2026-06-02 19:54:55 +0000  copying file ./Frameworks/UserMessagingPlatform.framework/PrivacyInfo.xcprivacy ... 
+2026-06-02 19:54:55 +0000  1677 bytes for ./Frameworks/UserMessagingPlatform.framework/PrivacyInfo.xcprivacy
+2026-06-02 19:54:55 +0000  copying file ./Frameworks/UserMessagingPlatform.framework/Info.plist ... 
+2026-06-02 19:54:55 +0000  1499 bytes for ./Frameworks/UserMessagingPlatform.framework/Info.plist
+2026-06-02 19:54:55 +0000  copying file ./Info.plist ... 
+2026-06-02 19:54:55 +0000  1523 bytes for ./Info.plist
+2026-06-02 19:54:55 +0000  copying file ./PkgInfo ... 
+2026-06-02 19:54:55 +0000  8 bytes for ./PkgInfo
+2026-06-02 19:54:55 +0000  copying file ./solutions-6.json ... 
+2026-06-02 19:54:55 +0000  20942 bytes for ./solutions-6.json
+2026-06-02 19:54:55 +0000 [MT] /usr/bin/ditto exited with 0
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionEmbedProfileStep
+2026-06-02 19:54:55 +0000 [MT] Skipping profile for item: <IDEDistributionItem: 0xae996f360; bundleID='com.google.GoogleMobileAds', path='<DVTFilePath:0xaebd68310:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f3c0; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xae996e700:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework/GoogleMobileAds'>', hardenedRuntime='0'>'>
+2026-06-02 19:54:55 +0000 [MT] Skipping profile for item: <IDEDistributionItem: 0xae996f2a0; bundleID='com.google.UserMessagingPlatform', path='<DVTFilePath:0xaebd68380:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f300; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xaebd683f0:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform'>', hardenedRuntime='0'>'>
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionInfoPlistStep
+2026-06-02 19:54:55 +0000 [MT] Skipping Info.plist step because item: <IDEDistributionItem: 0xae996f360; bundleID='com.google.GoogleMobileAds', path='<DVTFilePath:0xaebd68310:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f3c0; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xae996e700:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework/GoogleMobileAds'>', hardenedRuntime='0'>'> is a framework or embedded in a framework.
+2026-06-02 19:54:55 +0000 [MT] Skipping Info.plist step because item: <IDEDistributionItem: 0xae996f2a0; bundleID='com.google.UserMessagingPlatform', path='<DVTFilePath:0xaebd68380:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f300; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xaebd683f0:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform'>', hardenedRuntime='0'>'> is a framework or embedded in a framework.
+2026-06-02 19:54:55 +0000 [MT] Skipping setting DTXcodeBuildDistribution because toolsBuildVersionName was nil.
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionItemRemovalStep
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionAppThinningPlistStep
+2026-06-02 19:54:55 +0000 [MT] Skipping step: IDEDistributionAppThinningPlistStep because it said so
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionSymbolsStep
+2026-06-02 19:54:55 +0000 [MT] Writing /var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Symbols/14463D66-F403-33F9-9FA3-E2453BF1929E.symbols
+2026-06-02 19:54:55 +0000 [MT] Upload Symbols Failed
+2026-06-02 19:54:55 +0000 [MT] Upload Symbols Failed
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionCopyAppleProvidedContentStep
+2026-06-02 19:54:55 +0000 [MT] Running /usr/bin/ditto '-V' '/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Signatures' '/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Signatures'
+2026-06-02 19:54:55 +0000  >>> Copying /Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Signatures 
+2026-06-02 19:54:55 +0000  copying file ./GoogleMobileAds.xcframework-ios.signature ... 
+2026-06-02 19:54:55 +0000  6213 bytes for ./GoogleMobileAds.xcframework-ios.signature
+2026-06-02 19:54:55 +0000  copying file ./UserMessagingPlatform.xcframework-ios.signature ... 
+2026-06-02 19:54:55 +0000  6225 bytes for ./UserMessagingPlatform.xcframework-ios.signature
+2026-06-02 19:54:55 +0000 [MT] /usr/bin/ditto exited with 0
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionAppThinningStep
+2026-06-02 19:54:55 +0000 [MT] Skipping step: IDEDistributionAppThinningStep because it said so
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionArchThinningStep
+2026-06-02 19:54:55 +0000 [MT] Archs to thin for item /Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework are []
+2026-06-02 19:54:55 +0000 [MT] Archs to thin for item /Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework are []
+2026-06-02 19:54:55 +0000 [MT] Archs to thin for item /Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app are []
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionODRStep
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionStripXattrsStep
+2026-06-02 19:54:55 +0000 [MT] Skipping stripping extended attributes because the codesign step will strip them.
+2026-06-02 19:54:55 +0000 [MT] Skipping stripping extended attributes because the codesign step will strip them.
+2026-06-02 19:54:55 +0000 [MT] Skipping stripping extended attributes because the codesign step will strip them.
+2026-06-02 19:54:55 +0000 [MT] Processing step: IDEDistributionCodesignStep
+2026-06-02 19:54:55 +0000 [MT] Entitlements for <IDEDistributionItem: 0xae996f360; bundleID='com.google.GoogleMobileAds', path='<DVTFilePath:0xaebd68310:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f3c0; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xae996e700:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework/GoogleMobileAds'>', hardenedRuntime='0'>'>: {
+}
+2026-06-02 19:54:55 +0000 [MT] Associated App Clip Identifiers Filter: Skipping because "com.apple.developer.associated-appclip-app-identifiers" is not present
+2026-06-02 19:54:55 +0000 [MT] Entitlements for <IDEDistributionItem: 0xae996f360; bundleID='com.google.GoogleMobileAds', path='<DVTFilePath:0xaebd68310:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f3c0; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xae996e700:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework/GoogleMobileAds'>', hardenedRuntime='0'>'> are: {
+}
+2026-06-02 19:54:55 +0000 [MT] Writing entitlements for <IDEDistributionItem: 0xae996f360; bundleID='com.google.GoogleMobileAds', path='<DVTFilePath:0xaebd68310:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f3c0; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xae996e700:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/GoogleMobileAds.framework/GoogleMobileAds'>', hardenedRuntime='0'>'> to: /var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/entitlements~~~28HQSZ
+2026-06-02 19:54:56 +0000 [MT] invoking codesign: <NSConcreteTask: 0xae95873e0; launchPath='/usr/bin/codesign', arguments='(
+    "-f",
+    "-s",
+    E834629E4D8BE4C07579FAAEDDEFA363F437060B,
+    "--entitlements",
+    "/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/entitlements~~~28HQSZ",
+    "--preserve-metadata=identifier,flags,runtime,launch-constraints,library-constraints",
+    "--generate-entitlement-der",
+    "--strip-disallowed-xattrs",
+    "-vvv",
+    "/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework"
+)'>
+2026-06-02 19:54:56 +0000 [MT] codesign output: /var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework: replacing existing signature
+/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework: signed bundle with Mach-O universal (arm64) [com.google.GoogleMobileAds]
+2026-06-02 19:54:56 +0000 [MT] Entitlements for <IDEDistributionItem: 0xae996f2a0; bundleID='com.google.UserMessagingPlatform', path='<DVTFilePath:0xaebd68380:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f300; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xaebd683f0:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform'>', hardenedRuntime='0'>'>: {
+}
+2026-06-02 19:54:56 +0000 [MT] Associated App Clip Identifiers Filter: Skipping because "com.apple.developer.associated-appclip-app-identifiers" is not present
+2026-06-02 19:54:56 +0000 [MT] Entitlements for <IDEDistributionItem: 0xae996f2a0; bundleID='com.google.UserMessagingPlatform', path='<DVTFilePath:0xaebd68380:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f300; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xaebd683f0:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform'>', hardenedRuntime='0'>'> are: {
+}
+2026-06-02 19:54:56 +0000 [MT] Writing entitlements for <IDEDistributionItem: 0xae996f2a0; bundleID='com.google.UserMessagingPlatform', path='<DVTFilePath:0xaebd68380:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f300; isSigned='1', isAdHocSigned='1', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='arm64-apple', executablePath='<DVTFilePath:0xaebd683f0:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app/Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform'>', hardenedRuntime='0'>'> to: /var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/entitlements~~~FVzRMF
+2026-06-02 19:54:56 +0000 [MT] invoking codesign: <NSConcreteTask: 0xae9587520; launchPath='/usr/bin/codesign', arguments='(
+    "-f",
+    "-s",
+    E834629E4D8BE4C07579FAAEDDEFA363F437060B,
+    "--entitlements",
+    "/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/entitlements~~~FVzRMF",
+    "--preserve-metadata=identifier,flags,runtime,launch-constraints,library-constraints",
+    "--generate-entitlement-der",
+    "--strip-disallowed-xattrs",
+    "-vvv",
+    "/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework"
+)'>
+2026-06-02 19:54:56 +0000 [MT] codesign output: /var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework: replacing existing signature
+/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework: signed bundle with Mach-O universal (arm64) [com.google.UserMessagingPlatform]
+2026-06-02 19:54:56 +0000 [MT] Entitlements for <IDEDistributionItem: 0xae996f1e0; bundleID='com.wordocious.app', path='<DVTFilePath:0xae996c540:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f240; isSigned='0', isAdHocSigned='0', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='(null)', executablePath='(null)', hardenedRuntime='0'>'>: {
+    "application-identifier" = "Q32F6GRDYG.com.wordocious.app";
+    "beta-reports-active" = 1;
+    "com.apple.developer.team-identifier" = Q32F6GRDYG;
+    "get-task-allow" = 0;
+}
+2026-06-02 19:54:56 +0000 [MT] Associated App Clip Identifiers Filter: Skipping because "com.apple.developer.associated-appclip-app-identifiers" is not present
+2026-06-02 19:54:56 +0000 [MT] Entitlements for <IDEDistributionItem: 0xae996f1e0; bundleID='com.wordocious.app', path='<DVTFilePath:0xae996c540:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f240; isSigned='0', isAdHocSigned='0', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='(null)', executablePath='(null)', hardenedRuntime='0'>'> are: {
+    "application-identifier" = "Q32F6GRDYG.com.wordocious.app";
+    "beta-reports-active" = 1;
+    "com.apple.developer.team-identifier" = Q32F6GRDYG;
+    "get-task-allow" = 0;
+}
+2026-06-02 19:54:56 +0000 [MT] Writing entitlements for <IDEDistributionItem: 0xae996f1e0; bundleID='com.wordocious.app', path='<DVTFilePath:0xae996c540:'/Users/brianterchin/Desktop/Projects/WordRush/apps/ios/build/Wordocious.xcarchive/Products/Applications/Wordocious.app'>', codeSigningInfo='<_DVTCodeSigningInformation_Path: 0xae996f240; isSigned='0', isAdHocSigned='0', signingCertificate='(null)', entitlements='(null)', teamID='(null)', identifier='(null)', executablePath='(null)', hardenedRuntime='0'>'> to: /var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/entitlements~~~q8AthJ
+2026-06-02 19:54:56 +0000 [MT] invoking codesign: <NSConcreteTask: 0xae9587520; launchPath='/usr/bin/codesign', arguments='(
+    "-f",
+    "-s",
+    E834629E4D8BE4C07579FAAEDDEFA363F437060B,
+    "--entitlements",
+    "/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/entitlements~~~q8AthJ",
+    "--preserve-metadata=identifier,flags,runtime,launch-constraints,library-constraints",
+    "--generate-entitlement-der",
+    "--strip-disallowed-xattrs",
+    "-vvv",
+    "/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app"
+)'>
+2026-06-02 19:54:56 +0000 [MT] codesign output: /var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app: signed app bundle with Mach-O thin (arm64) [com.wordocious.app]
+2026-06-02 19:54:56 +0000 [MT] Processing step: IDEDistributionZipODRItemStep
+2026-06-02 19:54:56 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-06-02 19:54:56 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-06-02 19:54:56 +0000 [MT] Skipping step: IDEDistributionZipODRItemStep because it said so
+2026-06-02 19:54:56 +0000 [MT] Processing step: IDEDistributionCreateIPAStep
+2026-06-02 19:54:56 +0000 [MT] Running /usr/bin/rsync '-8aPhhE' '/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Symbols' '--link-dest' '/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6' '/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root'
+2026-06-02 19:54:56 +0000  Symbols/
+._Symbols
+            163 170%    3.05MB/s   00:00:00 (xfer#1, to-check=0/4)
+2026-06-02 19:54:56 +0000  Symbols/14463D66-F403-33F9-9FA3-E2453BF1929E.symbols
+Symbols/._14463D66-F403-33F9-9FA3-E2453BF1929E.symbols
+            163   0%  310.39KB/s   00:00:00 (xfer#2, to-check=2/4)
+2026-06-02 19:54:56 +0000 [MT] /usr/bin/rsync exited with 0
+2026-06-02 19:54:56 +0000 [MT] Running /usr/bin/ditto '-V' '-c' '-k' '--norsrc' '/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root' '/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Packages/Wordocious.ipa'
+2026-06-02 19:54:56 +0000  >>> Copying /var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root 
+2026-06-02 19:54:56 +0000  copying file ./Signatures/GoogleMobileAds.xcframework-ios.signature ... 
+2026-06-02 19:54:56 +0000  6213 bytes for ./Signatures/GoogleMobileAds.xcframework-ios.signature
+2026-06-02 19:54:56 +0000  copying file ./Signatures/UserMessagingPlatform.xcframework-ios.signature ... 
+2026-06-02 19:54:56 +0000  6225 bytes for ./Signatures/UserMessagingPlatform.xcframework-ios.signature
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/solutions.json ... 
+2026-06-02 19:54:56 +0000  28537 bytes for ./Payload/Wordocious.app/solutions.json
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/_CodeSignature/CodeResources ... 
+2026-06-02 19:54:56 +0000  8035 bytes for ./Payload/Wordocious.app/_CodeSignature/CodeResources
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Starscream_Starscream.bundle/PrivacyInfo.xcprivacy ... 
+2026-06-02 19:54:56 +0000  397 bytes for ./Payload/Wordocious.app/Starscream_Starscream.bundle/PrivacyInfo.xcprivacy
+copying file ./Payload/Wordocious.app/Starscream_Starscream.bundle/Info.plist ... 
+2026-06-02 19:54:56 +0000  686 bytes for ./Payload/Wordocious.app/Starscream_Starscream.bundle/Info.plist
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/propernoundle-puzzles.json ... 
+2026-06-02 19:54:56 +0000  109948 bytes for ./Payload/Wordocious.app/propernoundle-puzzles.json
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/allowed-6.json ... 
+2026-06-02 19:54:56 +0000  209630 bytes for ./Payload/Wordocious.app/allowed-6.json
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/allowed-7.json ... 
+2026-06-02 19:54:56 +0000  308401 bytes for ./Payload/Wordocious.app/allowed-7.json
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/AppIcon60x60@2x.png ... 
+2026-06-02 19:54:56 +0000  7133 bytes for ./Payload/Wordocious.app/AppIcon60x60@2x.png
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/swift-crypto_Crypto.bundle/PrivacyInfo.xcprivacy ... 
+2026-06-02 19:54:56 +0000  398 bytes for ./Payload/Wordocious.app/swift-crypto_Crypto.bundle/PrivacyInfo.xcprivacy
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/swift-crypto_Crypto.bundle/Info.plist ... 
+682 bytes for ./Payload/Wordocious.app/swift-crypto_Crypto.bundle/Info.plist
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Nunito.ttf ... 
+2026-06-02 19:54:56 +0000  276932 bytes for ./Payload/Wordocious.app/Nunito.ttf
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Wordocious ... 
+2026-06-02 19:54:56 +0000  8543200 bytes for ./Payload/Wordocious.app/Wordocious
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Assets.car ... 
+2026-06-02 19:54:56 +0000  380856 bytes for ./Payload/Wordocious.app/Assets.car
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/AppIcon76x76@2x~ipad.png ... 
+2026-06-02 19:54:56 +0000  9378 bytes for ./Payload/Wordocious.app/AppIcon76x76@2x~ipad.png
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/solutions-7.json ... 
+2026-06-02 19:54:56 +0000  15745 bytes for ./Payload/Wordocious.app/solutions-7.json
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/allowed.json ... 
+2026-06-02 19:54:56 +0000  103364 bytes for ./Payload/Wordocious.app/allowed.json
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework/_CodeSignature/CodeResources ... 
+2026-06-02 19:54:56 +0000  2034 bytes for ./Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework/_CodeSignature/CodeResources
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework/GoogleMobileAds ... 
+2026-06-02 19:54:56 +0000  51392 bytes for ./Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework/GoogleMobileAds
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework/PrivacyInfo.xcprivacy ... 
+2026-06-02 19:54:56 +0000  4491 bytes for ./Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework/PrivacyInfo.xcprivacy
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework/Info.plist ... 
+2026-06-02 19:54:56 +0000  1593 bytes for ./Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework/Info.plist
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework/_CodeSignature/CodeResources ... 
+2026-06-02 19:54:56 +0000  2034 bytes for ./Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework/_CodeSignature/CodeResources
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform ... 
+2026-06-02 19:54:56 +0000  51392 bytes for ./Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework/UserMessagingPlatform
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework/PrivacyInfo.xcprivacy ... 
+2026-06-02 19:54:56 +0000  1677 bytes for ./Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework/PrivacyInfo.xcprivacy
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework/Info.plist ... 
+2026-06-02 19:54:56 +0000  1499 bytes for ./Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework/Info.plist
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/embedded.mobileprovision ... 
+2026-06-02 19:54:56 +0000  14532 bytes for ./Payload/Wordocious.app/embedded.mobileprovision
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/Info.plist ... 
+2026-06-02 19:54:56 +0000  1523 bytes for ./Payload/Wordocious.app/Info.plist
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/PkgInfo ... 
+2026-06-02 19:54:56 +0000  8 bytes for ./Payload/Wordocious.app/PkgInfo
+2026-06-02 19:54:56 +0000  copying file ./Payload/Wordocious.app/solutions-6.json ... 
+2026-06-02 19:54:56 +0000  20942 bytes for ./Payload/Wordocious.app/solutions-6.json
+2026-06-02 19:54:56 +0000  copying file ./Symbols/14463D66-F403-33F9-9FA3-E2453BF1929E.symbols ... 
+2026-06-02 19:54:57 +0000  18781836 bytes for ./Symbols/14463D66-F403-33F9-9FA3-E2453BF1929E.symbols
+2026-06-02 19:54:57 +0000 [MT] /usr/bin/ditto exited with 0
+2026-06-02 19:54:57 +0000 [MT] Processing step: IDEDistributionAppStoreInformationStep
+2026-06-02 19:54:57 +0000 [MT] Skipping step: IDEDistributionAppStoreInformationStep because it said so
+2026-06-02 19:54:57 +0000 [MT] Processing step: IDEDistributionGenerateProcessedDistributionItems
+2026-06-02 19:54:57 +0000 [MT] IDEDistributionItem init <DVTFilePath:0xaec107100:'/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app/Frameworks/UserMessagingPlatform.framework'>
+2026-06-02 19:54:57 +0000 [MT] IDEDistributionItem init <DVTFilePath:0xaec107090:'/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app/Frameworks/GoogleMobileAds.framework'>
+2026-06-02 19:54:57 +0000 [MT] IDEDistributionItem init <DVTFilePath:0xae9bb7780:'/var/folders/kk/yfj20tfn23xf20gvsdlkxw3c0000gn/T/XcodeDistPipeline.~~~tgcVL6/Root/Payload/Wordocious.app'>
+2026-06-02 19:54:57 +0000 [MT] Processing step: IDEDistributionCreateManifestStep
+2026-06-02 19:54:57 +0000 [MT] Skipping step: IDEDistributionCreateManifestStep because it said so
