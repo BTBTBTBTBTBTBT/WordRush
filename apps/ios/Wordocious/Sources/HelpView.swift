@@ -139,12 +139,14 @@ struct HelpView: View {
     // MARK: FAQ
 
     private let faqItems: [(String, String)] = [
-        ("How are scores calculated?", "Your score combines a 1,000-point base for solving, a guess bonus for fewer guesses, and a speed bonus for finishing fast. For example, Classic with 4 guesses in 13s = 1,000 + 200 (guess) + 287 (speed) + 200 (completion) = 1,687 pts. Fewer guesses and less time = higher score."),
-        ("How do XP and levels work?", "Win = 100 XP, loss = 25 XP. Bonuses: +50 for win streaks, +50 for daily challenges, and medal XP (gold +100, silver +50, bronze +25). Every 1,000 XP = 1 level."),
-        ("What's a streak?", "Play at least one daily puzzle each day to build your streak. Miss a day and it resets — unless you use a Streak Shield."),
-        ("What are Streak Shields?", "Shields protect your streak if you miss a day. You can earn them through gameplay."),
-        ("What does PRO unlock?", "Unlimited daily plays (free users get one per mode per day) and ad-free gameplay."),
-        ("Do daily puzzles use the same words for everyone?", "Yes! All players get the same puzzle each day so you can compare results."),
+        ("How are scores calculated?", "Solving earns a 1,000-point base, plus a speed bonus (your mode's time cap minus your solve time — faster is better) and a completion bonus of up to 200, scaled by how many boards you solved. Six, Seven, and ProperNoundle also add a guess bonus for solving in fewer guesses. Example: a Classic solve in 27s scores 1,000 + 273 (speed) + 200 (completion) = 1,473. Your daily-leaderboard rank is based on this composite score."),
+        ("Do hints affect my score?", "Yes. In Six, Seven, and ProperNoundle you can reveal a hint, but each one is subtracted from your score — 120 points per hint in ProperNoundle and 150 in Six and Seven. Hints never push a winning score below zero, and modes without hint buttons are unaffected."),
+        ("How do XP and levels work?", "Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Every 1,000 XP = 1 level."),
+        ("How do medals work?", "Finish in the top three of a mode's daily leaderboard to earn a gold, silver, or bronze medal, with extra medals for streak milestones and perfect games. Your medal tally is shown on your profile."),
+        ("What's a streak?", "Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it."),
+        ("What are Streak Shields?", "A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header."),
+        ("What does PRO unlock?", "PRO removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, and VS extras like sending invites and rematches."),
+        ("Do daily puzzles use the same words for everyone?", "Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard."),
     ]
 
     private var faq: some View {

@@ -192,16 +192,17 @@ export default function HowToPlayPage() {
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>Scoring System</h2>
             <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-              Every solved puzzle earns a score calculated from three components:
+              Every solved puzzle earns a composite score &mdash; the number your daily-leaderboard rank is based on:
             </p>
             <ul className="text-xs leading-relaxed space-y-1.5 mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Base score (1,000 points)</strong> &mdash; awarded for solving the puzzle regardless of performance</span></li>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Guess bonus</strong> &mdash; earn extra points for using fewer guesses. Solving in fewer attempts earns a larger bonus</span></li>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Speed bonus</strong> &mdash; finish faster to earn more points. The clock starts when the puzzle loads and stops when you submit the winning guess</span></li>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Completion bonus (200 points)</strong> &mdash; awarded for fully completing the puzzle</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Base score (1,000 points)</strong> &mdash; awarded for solving the puzzle, regardless of performance</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Speed bonus</strong> &mdash; your mode&rsquo;s time cap minus your solve time. The clock starts when the puzzle loads and stops on the winning guess, so finishing faster is worth more (Classic&rsquo;s cap is 5 minutes; longer modes allow more time)</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Completion bonus (up to 200 points)</strong> &mdash; scaled by how many boards you solved, so multi-board modes reward partial progress</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Guess bonus</strong> &mdash; in Six, Seven, and ProperNoundle only, extra points for solving in fewer guesses</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Hint penalty</strong> &mdash; in Six, Seven, and ProperNoundle, each revealed hint is subtracted from your score (120 points each in ProperNoundle, 150 in Six and Seven). A winning score never drops below zero</span></li>
             </ul>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              For example, solving a Classic puzzle in 4 guesses in 13 seconds would earn approximately 1,000 (base) + 200 (guess bonus) + 287 (speed bonus) + 200 (completion) = 1,687 points.
+              For example, solving a Classic puzzle in 27 seconds earns 1,000 (base) + 273 (speed) + 200 (completion) = 1,473 points. The dictionary modes have no guess bonus or hint penalty &mdash; speed and completion are what move your score.
             </p>
           </div>
 

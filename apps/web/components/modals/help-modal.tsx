@@ -125,27 +125,35 @@ const GAME_MODES = [
 const FAQ_ITEMS = [
   {
     q: 'How are scores calculated?',
-    a: 'Your score combines a 1,000-point base for solving, a guess bonus for fewer guesses, and a speed bonus for finishing fast. For example, Classic with 4 guesses in 13s = 1,000 + 200 (guess) + 287 (speed) + 200 (completion) = 1,687 pts. Fewer guesses and less time = higher score.',
+    a: "Solving earns a 1,000-point base, plus a speed bonus (your mode's time cap minus your solve time — faster is better) and a completion bonus of up to 200, scaled by how many boards you solved. Six, Seven, and ProperNoundle also add a guess bonus for solving in fewer guesses. Example: a Classic solve in 27s scores 1,000 + 273 (speed) + 200 (completion) = 1,473. Your daily-leaderboard rank is based on this composite score.",
+  },
+  {
+    q: 'Do hints affect my score?',
+    a: 'Yes. In Six, Seven, and ProperNoundle you can reveal a hint, but each one is subtracted from your score — 120 points per hint in ProperNoundle and 150 in Six and Seven. Hints never push a winning score below zero, and modes without hint buttons are unaffected.',
   },
   {
     q: 'How do XP and levels work?',
-    a: 'Win = 100 XP, loss = 25 XP. Bonuses: +50 for win streaks, +50 for daily challenges, and medal XP (gold +100, silver +50, bronze +25). Every 1,000 XP = 1 level.',
+    a: 'Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Every 1,000 XP = 1 level.',
+  },
+  {
+    q: 'How do medals work?',
+    a: "Finish in the top three of a mode's daily leaderboard to earn a gold, silver, or bronze medal, with extra medals for streak milestones and perfect games. Your medal tally is shown on your profile.",
   },
   {
     q: "What's a streak?",
-    a: 'Play at least one daily puzzle each day to build your streak. Miss a day and it resets — unless you use a Streak Shield.',
+    a: 'Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it.',
   },
   {
     q: 'What are Streak Shields?',
-    a: "Shields protect your streak if you miss a day. You can earn them through gameplay.",
+    a: 'A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header.',
   },
   {
     q: 'What does PRO unlock?',
-    a: 'Unlimited daily plays (free users get one per mode per day) and ad-free gameplay.',
+    a: 'PRO removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, and VS extras like sending invites and rematches.',
   },
   {
     q: 'Do daily puzzles use the same words for everyone?',
-    a: 'Yes! All players get the same puzzle each day so you can compare results.',
+    a: 'Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard.',
   },
 ];
 
