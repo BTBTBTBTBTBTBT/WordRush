@@ -162,6 +162,13 @@ struct SolvedPuzzleView: View {
                         .font(.system(size: 60))
                         .foregroundStyle(localWon ? Color(hex: 0xD97706) : Color(hex: 0xF87171))
                     gauntletTitle
+                    // Home / Share at the top, like the other completed screens.
+                    HStack(spacing: 16) {
+                        Button("Home") { dismiss() }
+                            .font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted).underline()
+                        Button("Share") { share() }
+                            .font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
+                    }
                 }
                 .padding(.top, 4)
 
@@ -177,22 +184,6 @@ struct SolvedPuzzleView: View {
                                    timeSeconds: elapsedMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal)
 
                 GauntletCompletedView(progress: g, totalTimeMs: elapsedMs, showSummary: false, showStageHeader: true)
-
-                HStack(spacing: 12) {
-                    Button { share() } label: {
-                        Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(14, .black))
-                            .frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(Color(hex: 0x2563EB))
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xEFF6FF)))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xBFDBFE), lineWidth: 2))
-                    }.buttonStyle(.plain)
-                    Button { dismiss() } label: {
-                        Label("Home", systemImage: "house").font(Brand.font(14, .black))
-                            .frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(Theme.textSecondary)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 2))
-                    }.buttonStyle(.plain)
-                }
-                .padding(.top, 2)
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
         }

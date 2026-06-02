@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, Share2, Eye, X, ChevronRight } from 'lucide-react';
+import { Trophy, XCircle, Clock, Hash, Eye, X, ChevronRight } from 'lucide-react';
 import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletStageResult, TileState } from '@wordle-duel/core';
-import { Button } from '@/components/ui/button';
 import { recordGauntletGame } from '@/lib/gauntlet-stats';
 import { shareResult } from '@/lib/share-utils';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
@@ -137,6 +136,19 @@ export function GauntletResults({
           >
             {won ? 'GAUNTLET CLEARED!' : 'GAUNTLET FAILED'}
           </h1>
+          {/* Actions at the top (matches the native completed screens). */}
+          <div className="flex items-center justify-center gap-4 pt-1">
+            <button onClick={onHome} className="text-sm font-bold underline hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Home</button>
+            <button onClick={handleShare} className="text-sm font-bold underline text-blue-500 hover:opacity-70">{copied ? 'Copied!' : 'Share'}</button>
+            {showPlayAgain && (
+              <button onClick={onPlayAgain} className="text-sm font-bold underline text-purple-500 hover:opacity-70">Play Again</button>
+            )}
+          </div>
+          {isDaily && (
+            <div className="flex justify-center">
+              <DailyRankBadge gameMode="GAUNTLET" />
+            </div>
+          )}
         </div>
 
         {/* Summary Stats */}
@@ -265,36 +277,6 @@ export function GauntletResults({
           })}
         </div>
 
-        {/* Actions */}
-        <div
-          className="flex gap-3 animate-fade-in-up"
-          style={{ animationDelay: '1.6s' }}
-        >
-          {showPlayAgain && (
-            <Button
-              onClick={onPlayAgain}
-              className="flex-1 bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500 hover:from-yellow-500 hover:via-pink-600 hover:to-purple-600 text-white font-bold py-6"
-            >
-              <RotateCcw className="w-5 h-5 mr-2" />
-              Play Again
-            </Button>
-          )}
-          <Button
-            onClick={handleShare}
-            className="bg-blue-50 border-2 border-blue-200 hover:bg-blue-100 text-blue-600 font-bold py-6"
-          >
-            <Share2 className="w-5 h-5 mr-2" />
-            {copied ? 'Copied!' : 'Share'}
-          </Button>
-          {isDaily && <DailyRankBadge gameMode="GAUNTLET" />}
-          <Button
-            onClick={onHome}
-            className="bg-gray-100 border-2 border-gray-200 hover:bg-gray-200 text-gray-700 font-bold py-6"
-          >
-            <Home className="w-5 h-5 mr-2" />
-            Home
-          </Button>
-        </div>
       </div>
 
       {reviewStage && reviewResult?.boardsSnapshot?.length && (
