@@ -58,13 +58,17 @@ final class AuthService: ObservableObject {
     }
 
     func signUp(email: String, password: String, username: String) async throws {
-        let response = try await client.auth.signUp(email: email, password: password)
-        let userId = response.user.id.uuidString
-        // Create the profile row (RLS: a user may insert their own row).
-        try await client.from("profiles")
-            .insert(["id": userId, "username": username])
-            .execute()
-        await handleSignedIn(userId: userId)
+        // Pass the username as user metadata; the DB trigger handle_new_user()
+        // creates the profiles row (SECURITY DEFINER). We don't insert it here —
+        // with email confirmation on there's no session yet, so a client insert
+        // would fail the profiles RLS policy.
+        let response = try await client.auth.signUp(
+            email: email, password: password, data: ["username": .string(username)])
+        // Only proceed to the signed-in flow if a session exists; otherwise the
+        // user must confirm their email first.
+        if response.session != nil {
+            await handleSignedIn(userId: response.user.id.uuidString)
+        }
     }
 
     // MARK: - OAuth (Apple / Google)

@@ -131,24 +131,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUp = async (email: string, password: string, username: string) => {
     try {
+      // Pass the username as user metadata; the DB trigger handle_new_user()
+      // creates the profiles row (SECURITY DEFINER, bypassing RLS). We do NOT
+      // insert the profile client-side — with email confirmation on there's no
+      // session yet, so the insert would fail the profiles RLS policy.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: { data: { username } },
       });
 
       if (authError) throw authError;
       if (!authData.user) throw new Error('No user returned from signup');
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          username,
-        } as any);
-
-      if (profileError) throw profileError;
-
-      await fetchProfile(authData.user.id, authData.user);
+      // Only fetch the profile if a session was established (email confirmation
+      // off / OAuth). Otherwise the user must confirm their email before login.
+      if (authData.session) {
+        await fetchProfile(authData.user.id, authData.user);
+      }
 
       return { error: null };
     } catch (error) {
