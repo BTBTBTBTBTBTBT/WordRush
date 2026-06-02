@@ -793,10 +793,7 @@ struct AllTimeRecordsView: View {
                             RecordStatCell(type: rt, record: globalRecord(rt), accent: Color(hex: 0xD97706), isMe: globalRecord(rt)?.holderId == myId)
                         }
                     }
-                    .padding(12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xFFFBEB)))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xFEF3C7), lineWidth: 1))
-                    .padding(12)
+                    .padding(16)
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
                 // Clip so the 3pt top accent bar's square corners don't poke
@@ -820,10 +817,7 @@ struct AllTimeRecordsView: View {
                             RecordStatCell(type: rt, record: modeRecord(rt), accent: m?.accent ?? Theme.primary, isMe: modeRecord(rt)?.holderId == myId)
                         }
                     }
-                    .padding(12)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceAlt))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.borderAlt, lineWidth: 1))
-                    .padding(.horizontal, 12).padding(.bottom, 12)
+                    .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
                 // Clip the 3pt top accent bar to the card's rounded corners.
