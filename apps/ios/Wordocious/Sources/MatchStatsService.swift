@@ -127,6 +127,25 @@ enum MatchStatsService {
 
     struct SolvedDaily { let guesses: [String]; let solutions: [String]; let won: Bool; let guessCount: Int; let timeSeconds: Int }
 
+    /// Server-persisted Gauntlet per-stage breakdown (matches.gauntlet_stages),
+    /// so the results screen renders cross-device when there's no local session.
+    struct GauntletStagesData: Decodable {
+        let stages: [GauntletStageConfig]
+        let stageResults: [GauntletStageResult]
+    }
+    static func gauntletStages(seed: String) async -> GauntletStagesData? {
+        guard let uid = await userId() else { return nil }
+        struct Row: Decodable { let gauntlet_stages: GauntletStagesData? }
+        let rows: [Row]? = try? await AuthService.shared.client.from("matches")
+            .select("gauntlet_stages")
+            .eq("player1_id", value: uid)
+            .eq("game_mode", value: "GAUNTLET")
+            .eq("seed", value: seed)
+            .order("created_at", ascending: false)
+            .limit(1).execute().value
+        return rows?.first?.gauntlet_stages ?? nil
+    }
+
     /// Reconstruct a completed daily from its `matches` row (player1_guesses +
     /// solutions) so "View Solved Puzzle" works cross-device — both web and
     /// native solo plays write this row, keyed by the deterministic daily seed.

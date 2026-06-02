@@ -269,6 +269,13 @@ final class GameViewModel: ObservableObject {
                 gameMode: modeRaw, won: completed, score: guesses, timeSeconds: secs,
                 seed: theSeed, solutions: solutionWords, guesses: guessWords
             )
+            // Gauntlet: persist the per-stage breakdown so the results screen
+            // shows full detail (incl. per-stage times) on any device.
+            if isGauntlet, let g = state.gauntlet {
+                await GameResultsService.recordGauntletStages(
+                    seed: theSeed,
+                    payload: .init(stages: g.stages, stageResults: g.stageResults))
+            }
             // Unlock achievements (after stats/profile/match are written).
             if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
                 await AchievementService.checkAchievements(

@@ -98,6 +98,14 @@ struct CompletedDailyCard: View {
             maxGuesses = createInitialState(seed: seed, mode: mode).boards.map(\.maxGuesses).max() ?? 6
             let savedMs = Int(GamePersistence.shared.loadElapsed(seed: seed, mode: mode))
             elapsedMs = savedMs > 0 ? savedMs : (data?.timeSeconds ?? 0) * 1000
+            // Gauntlet played on another device → rebuild stage breakdown from
+            // the server-persisted matches.gauntlet_stages.
+            if mode == .gauntlet, gauntlet == nil, let sg = await MatchStatsService.gauntletStages(seed: seed) {
+                gauntlet = GauntletProgress(
+                    currentStage: sg.stages.count, totalStages: sg.stages.count,
+                    stages: sg.stages, stageResults: sg.stageResults,
+                    stageStartTime: 0, allSolutions: [], blackoutCount: 0)
+            }
             expanded = false
         }
     }

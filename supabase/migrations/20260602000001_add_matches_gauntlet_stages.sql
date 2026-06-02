@@ -1,0 +1,12 @@
+-- Persist the Gauntlet per-stage breakdown (name, status, guesses, per-stage
+-- timeMs, and each stage's final boardsSnapshot) on the matches row so the
+-- Gauntlet results screen renders identically across devices — web AND native,
+-- no matter where the run was played. Without this the stage breakdown lived
+-- only in the playing device's local storage (browser localStorage / native
+-- GamePersistence), so a cross-device revisit had no per-stage data to show.
+--
+-- JSON shape (written by both clients, decoded by both):
+--   { "stages": GauntletStageConfig[], "stageResults": GauntletStageResult[] }
+-- Nullable + best-effort write, so this column being absent never breaks the
+-- match insert; it just disables cross-device stage detail until applied.
+alter table public.matches add column if not exists gauntlet_stages jsonb;

@@ -379,6 +379,31 @@ export async function recordSoloMatch(data: {
 }
 
 /**
+ * Persist the Gauntlet per-stage breakdown onto the matches row so the results
+ * screen renders identically across devices (web ↔ native). Written as a
+ * SEPARATE best-effort update after recordSoloMatch's insert — if the
+ * `gauntlet_stages` column isn't present yet it silently no-ops and the match
+ * row is unaffected (a missing column must never break recording). Stores the
+ * exact shape both clients decode: { stages, stageResults }.
+ */
+export async function recordGauntletStages(
+  userId: string,
+  seed: string,
+  payload: { stages: unknown[]; stageResults: unknown[] },
+): Promise<void> {
+  try {
+    await (supabase as any)
+      .from('matches')
+      .update({ gauntlet_stages: payload })
+      .eq('player1_id', userId)
+      .eq('game_mode', 'GAUNTLET')
+      .eq('seed', seed);
+  } catch {
+    // Column not migrated yet — best effort; cross-device detail turns on once applied.
+  }
+}
+
+/**
  * Fetch recent matches for a user.
  */
 export async function fetchRecentMatches(userId: string, limit: number = 10) {

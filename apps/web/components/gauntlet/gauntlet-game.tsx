@@ -23,7 +23,7 @@ import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
 import { StageTransition } from './stage-transition';
 import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordSoloMatch, recordGauntletStages, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
@@ -199,6 +199,14 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         guesses: state.boards.flatMap(b => b.guesses),
         startedAtIso: new Date(Date.now() - elapsedTime * 1000).toISOString(),
       });
+      // Persist the per-stage breakdown so the results screen renders the same
+      // on any device (best-effort update after the insert lands).
+      if (state.gauntlet) {
+        recordGauntletStages(profile.id, seed, {
+          stages: state.gauntlet.stages,
+          stageResults: state.gauntlet.stageResults,
+        });
+      }
     }
     if (state.status === GameStatus.WON || state.status === GameStatus.LOST) {
       recordModePlayed('gauntlet');

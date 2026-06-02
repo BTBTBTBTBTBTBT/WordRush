@@ -68,6 +68,28 @@ enum GameResultsService {
             completed_at: iso.string(from: now))
         try? await client.from("matches").insert(row).execute()
     }
+
+    /// Gauntlet per-stage breakdown stored on the matches row so the results
+    /// screen renders cross-device (web ↔ native). Written as a SEPARATE
+    /// best-effort update after the insert: if the `gauntlet_stages` column
+    /// isn't present yet, this silently no-ops and the match row is unaffected
+    /// (the social_links lesson — a missing column must never break recording).
+    struct GauntletStagesPayload: Encodable {
+        let stages: [GauntletStageConfig]
+        let stageResults: [GauntletStageResult]
+    }
+    private struct GauntletStagesUpdate: Encodable { let gauntlet_stages: GauntletStagesPayload }
+
+    static func recordGauntletStages(seed: String, payload: GauntletStagesPayload) async {
+        let client = AuthService.shared.client
+        guard let uid = try? await client.auth.session.user.id.uuidString else { return }
+        try? await client.from("matches")
+            .update(GauntletStagesUpdate(gauntlet_stages: payload))
+            .eq("player1_id", value: uid)
+            .eq("game_mode", value: "GAUNTLET")
+            .eq("seed", value: seed)
+            .execute()
+    }
     private struct StatsInsert: Encodable {
         let user_id: String, game_mode: String, play_type: String
         let wins: Int, losses: Int, total_games: Int
