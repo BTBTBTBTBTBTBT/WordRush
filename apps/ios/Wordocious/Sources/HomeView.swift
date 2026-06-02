@@ -14,6 +14,12 @@ struct HomeView: View {
     @State private var showInvite = false
     @State private var livePulse = false
     @StateObject private var livePlayers = LivePlayerCount()
+    @State private var pendingInvites: [InviteService.PendingInvite] = []
+    @State private var inviterNames: [String: String] = [:]
+
+    /// An incoming invite the user accepted → launches the VS match.
+    private struct AcceptedInvite: Identifiable { let mode: GameMode; let code: String; var id: String { code } }
+    @State private var playInvite: AcceptedInvite?
 
     /// A game whose seed was resolved at tap time (Unlimited play).
     struct ActiveGame: Identifiable, Equatable {
@@ -36,6 +42,7 @@ struct HomeView: View {
                     AppHeaderView()
                     ScrollView {
                         VStack(spacing: 8) {
+                            pendingInvitesBanner
                             if auth.isProActive { PlayModeToggle(value: $playMode) }
                             // Always fill the hero slot so toggling Daily⇄Unlimited
                             // (or completing all dailies) never shifts the grid.
@@ -94,7 +101,14 @@ struct HomeView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showInvite) { InviteSheet() }
-            .task(id: auth.isAuthenticated) { await completions.load() }
+            .navigationDestination(isPresented: Binding(
+                get: { playInvite != nil },
+                set: { if !$0 { playInvite = nil } })) {
+                if let inv = playInvite {
+                    VSGameView(mode: inv.mode, inviteCode: inv.code)
+                }
+            }
+            .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites() }
             .onAppear { livePlayers.start() }
             .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
                 Button("OK", role: .cancel) {}
@@ -153,6 +167,57 @@ struct HomeView: View {
             Spacer()
         }
         .padding(.top, 2)
+    }
+
+    // MARK: - Incoming VS invites (ports PendingInvitesBanner)
+
+    private func loadPendingInvites() async {
+        guard let uid = auth.profile?.id else { return }
+        let list = await InviteService.fetchPending(userId: uid)
+        pendingInvites = list
+        var names: [String: String] = [:]
+        for inv in list where names[inv.inviter_id] == nil {
+            if let n = await InviteService.inviterUsername(inv.inviter_id) { names[inv.inviter_id] = n }
+        }
+        inviterNames = names
+    }
+
+    @ViewBuilder private var pendingInvitesBanner: some View {
+        if let top = pendingInvites.first {
+            let name = inviterNames[top.inviter_id] ?? "A friend"
+            let mode = GameMode(rawValue: top.game_mode) ?? .duel
+            HStack(spacing: 12) {
+                Image(systemName: "envelope.fill").font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Color(hex: 0xEC4899)))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("@\(name) invited you to \(ModeStyle.title(mode).capitalized)")
+                        .font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                    if pendingInvites.count > 1 {
+                        Text("+\(pendingInvites.count - 1) more pending").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xA21CAF))
+                    }
+                }
+                Spacer(minLength: 4)
+                Button { playInvite = .init(mode: mode, code: top.invite_code) } label: {
+                    Text("Play").font(Brand.font(12, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0xEC4899)))
+                }.buttonStyle(.plain)
+                Button {
+                    let id = top.id
+                    pendingInvites.removeAll { $0.id == id }
+                    Task { await InviteService.decline(inviteId: id) }
+                } label: {
+                    Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0xA21CAF))
+                        .frame(width: 28, height: 28)
+                        .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(Color(hex: 0xF5D0FE), lineWidth: 1.5))
+                }.buttonStyle(.plain)
+            }
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 14).fill(
+                LinearGradient(colors: [Color(hex: 0xFDF4FF), Color(hex: 0xFCE7F3)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xF5D0FE), lineWidth: 1.5))
+        }
     }
 
     // MARK: - LIVE banner + footer (ports the web home bottom)

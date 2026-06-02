@@ -73,6 +73,42 @@ enum InviteService {
         return nil
     }
 
+    /// A pending invite targeted at the current user (powers the home banner).
+    struct PendingInvite: Decodable, Identifiable {
+        let id: String
+        let inviter_id: String
+        let invite_code: String
+        let game_mode: String
+    }
+
+    /// Invites sent TO this user that are still pending + unexpired — ports
+    /// fetchPendingInvitesForUser.
+    static func fetchPending(userId: String) async -> [PendingInvite] {
+        let now = ISO8601DateFormatter().string(from: Date())
+        return (try? await AuthService.shared.client.from("match_invites")
+            .select("id,inviter_id,invite_code,game_mode")
+            .eq("invitee_id", value: userId)
+            .eq("status", value: "pending")
+            .gt("expires_at", value: now)
+            .order("created_at", ascending: false)
+            .execute().value) ?? []
+    }
+
+    /// The inviter's display name for the banner.
+    static func inviterUsername(_ inviterId: String) async -> String? {
+        struct Row: Decodable { let username: String? }
+        let row: Row? = try? await AuthService.shared.client.from("profiles")
+            .select("username").eq("id", value: inviterId).limit(1).single().execute().value
+        return row?.username
+    }
+
+    /// Decline an invite (dismiss from the banner).
+    static func decline(inviteId: String) async {
+        struct DeclineUpdate: Encodable { let status: String }
+        try? await AuthService.shared.client.from("match_invites")
+            .update(DeclineUpdate(status: "declined")).eq("id", value: inviteId).execute()
+    }
+
     /// Look up the mode for an invite code (so the joiner launches the right mode).
     static func lookupMode(code: String) async -> GameMode? {
         let client = AuthService.shared.client
