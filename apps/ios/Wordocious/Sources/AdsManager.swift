@@ -11,12 +11,11 @@ enum AdsConfig {
     /// Master switch. Real unit IDs + flipping the app ID is all that's needed for prod.
     static let enabled = true
 
-    // Google test unit IDs (always return test ads).
-    static let bannerUnitID = "ca-app-pub-3940256099942544/2934735716"
+    // Real AdMob unit IDs (Wordocious AdMob app, created 2026-06-03).
+    static let bannerUnitID = "ca-app-pub-3015627373086578/4287985559"
     /// Rewarded interstitial = the full skippable-video format shown on game
-    /// start (Google's test ID). Test ID for a plain interstitial would be
-    /// .../4411468910 if you prefer the shorter format.
-    static let interstitialUnitID = "ca-app-pub-3940256099942544/6978759866"
+    /// start ("Wordocious Game Start" unit).
+    static let interstitialUnitID = "ca-app-pub-3015627373086578/6909445311"
 
     /// Whether ads should be shown right now (enabled + not Pro).
     @MainActor static var active: Bool { enabled && !AuthService.shared.isProActive }

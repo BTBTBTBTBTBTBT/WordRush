@@ -48,9 +48,8 @@ targets:
           - CFBundleURLName: com.wordocious.app.auth
             CFBundleURLSchemes:
               - com.wordocious.app
-        # AdMob app ID — currently Google's TEST app ID. Replace with the real
-        # ca-app-pub-XXXX~YYYY from the AdMob console before release.
-        GADApplicationIdentifier: ca-app-pub-3940256099942544~1458002511
+        # AdMob app ID — real Wordocious AdMob app (created 2026-06-03).
+        GADApplicationIdentifier: ca-app-pub-3015627373086578~8393761846
         # App Tracking Transparency prompt copy (shown before requesting IDFA).
         NSUserTrackingUsageDescription: Allow tracking to show you more relevant ads. Wordocious never sells your data.
         SKAdNetworkItems:
@@ -64,7 +63,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Wordocious/Wordocious.entitlements
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1"
+        CURRENT_PROJECT_VERSION: "2"
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
