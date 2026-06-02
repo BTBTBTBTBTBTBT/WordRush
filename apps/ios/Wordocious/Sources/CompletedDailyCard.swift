@@ -9,8 +9,13 @@ struct CompletedDailyCard: View {
     let mode: GameMode
     @State private var data: MatchStatsService.SolvedDaily?
     @State private var expanded = false
+    @State private var maxGuesses = 0
 
-    private var tileSize: CGFloat { (data?.solutions.count ?? 1) == 1 ? 34 : 16 }
+    /// Web-parity responsive tile size so all boards fit on one screen.
+    private var tileSize: CGFloat {
+        CompletedBoardLayout.tileSize(boardCount: data?.solutions.count ?? 1,
+                                      wordLen: data?.solutions.first?.count ?? 5)
+    }
 
     var body: some View {
         Group {
@@ -61,39 +66,56 @@ struct CompletedDailyCard: View {
             }
         }
         .task(id: mode.rawValue) {
-            data = await MatchStatsService.solvedDaily(mode: mode, seed: DailySeed.today(mode: mode))
+            let seed = DailySeed.today(mode: mode)
+            data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)
+            maxGuesses = createInitialState(seed: seed, mode: mode).boards.map(\.maxGuesses).max() ?? 6
             expanded = false
         }
     }
 
     @ViewBuilder private func boards(_ d: MatchStatsService.SolvedDaily) -> some View {
         if d.solutions.count == 1 {
-            boardGrid(solution: d.solutions[0], guesses: d.guesses)
+            boardGrid(solution: d.solutions[0], guesses: d.guesses, multi: false)
         } else {
-            let cols = Array(repeating: GridItem(.flexible(), spacing: 8), count: 2)
-            LazyVGrid(columns: cols, spacing: 10) {
+            let count = d.solutions.count
+            let cols = Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing),
+                             count: CompletedBoardLayout.cols(count))
+            LazyVGrid(columns: cols, spacing: CompletedBoardLayout.gridSpacing) {
                 ForEach(Array(d.solutions.enumerated()), id: \.offset) { _, sol in
-                    boardGrid(solution: sol, guesses: d.guesses)
+                    boardGrid(solution: sol, guesses: d.guesses, multi: true)
                 }
             }
+            .frame(maxWidth: CompletedBoardLayout.maxWidth(count))
         }
     }
 
-    private func boardGrid(solution: String, guesses: [String]) -> some View {
+    private func boardGrid(solution: String, guesses: [String], multi: Bool) -> some View {
+        let solved = guesses.contains { $0.uppercased() == solution.uppercased() }
+        // Filled rows up to (incl.) the solving guess, then empty filler to
+        // maxGuesses so every board is the same height (web parity).
         var rows: [GuessResult] = []
         for g in guesses {
             rows.append(evaluateGuess(solution: solution, guess: g))
             if g.uppercased() == solution.uppercased() { break }
         }
+        let width = solution.count
+        let total = max(rows.count, maxGuesses)
         return VStack(spacing: tileSize * 0.1) {
-            ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
+            ForEach(0..<total, id: \.self) { i in
                 HStack(spacing: tileSize * 0.1) {
-                    ForEach(Array(r.tiles.enumerated()), id: \.offset) { _, t in
-                        TileView(letter: t.letter, state: t.state, revealed: true, size: tileSize)
+                    if i < rows.count {
+                        ForEach(rows[i].tiles.indices, id: \.self) { c in
+                            TileView(letter: rows[i].tiles[c].letter, state: rows[i].tiles[c].state, revealed: true, size: tileSize)
+                        }
+                    } else {
+                        ForEach(0..<width, id: \.self) { _ in
+                            TileView(letter: "", state: .empty, revealed: false, size: tileSize)
+                        }
                     }
                 }
             }
         }
+        .modifier(SolvedBoardFrame(won: multi && solved, lost: multi && !solved, active: multi, tileSize: tileSize))
     }
 
     private func stat(_ value: String, _ label: String) -> some View {

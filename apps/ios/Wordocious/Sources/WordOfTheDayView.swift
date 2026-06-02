@@ -7,6 +7,11 @@ import WordociousCore
 /// words from today's index until one has a definition.
 struct WordOfTheDayView: View {
     @State private var info: WordInfo?
+    @State private var fetchedDay: Int?
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// UTC day index — matches the web's `Math.floor(Date.now()/86400000)`.
+    private var todayIndex: Int { Int(Date().timeIntervalSince1970 / 86400) }
 
     struct WordInfo {
         let word: String
@@ -23,7 +28,16 @@ struct WordOfTheDayView: View {
                 placeholderCard
             }
         }
-        .task { if info == nil { info = await fetch() } }
+        // Re-fetch when the UTC day rolls over (the Home tab stays alive in the
+        // TabView, so a one-shot `if info == nil` would show yesterday's word
+        // forever). Including scenePhase in the id forces a re-check on foreground.
+        .task(id: "\(todayIndex)-\(scenePhase)") {
+            if fetchedDay != todayIndex {
+                let fresh = await fetch()
+                info = fresh
+                fetchedDay = todayIndex
+            }
+        }
     }
 
     private func content(_ info: WordInfo) -> some View {
@@ -70,7 +84,7 @@ struct WordOfTheDayView: View {
 
     private func fetch() async -> WordInfo {
         let solutions = GameDictionary.shared.allSolutions()
-        let daysSinceEpoch = Int(Date().timeIntervalSince1970 / 86400)
+        let daysSinceEpoch = todayIndex
         guard !solutions.isEmpty else { return WordInfo(word: "WORDS") }
 
         for offset in 0..<20 {

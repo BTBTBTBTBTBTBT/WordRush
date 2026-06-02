@@ -122,6 +122,28 @@ struct SolvedBoardFrame: ViewModifier {
     }
 }
 
+/// Web-parity sizing for the compact "completed / solved daily" boards
+/// (ports completed-daily-board.tsx). The web lays solved boards in a
+/// width-capped grid whose tiles shrink so EVERY board is visible on one
+/// screen — `grid-cols-4` + `min(320px)` for >4 boards, `grid-cols-2` + 240px
+/// for 2–4, and 200px for a single board. We solve for the matching tile size
+/// (inter-tile spacing is tileSize*0.1; each multi board adds ~12pt of
+/// SolvedBoardFrame padding+border) so nothing clips or needs scrolling.
+enum CompletedBoardLayout {
+    static func cols(_ n: Int) -> Int { n > 4 ? 4 : (n > 1 ? 2 : 1) }
+    static func maxWidth(_ n: Int) -> CGFloat { n > 4 ? 320 : (n > 1 ? 240 : 200) }
+    static let gridSpacing: CGFloat = 8
+
+    static func tileSize(boardCount: Int, wordLen: Int) -> CGFloat {
+        guard wordLen > 0 else { return 16 }
+        let c = cols(boardCount)
+        let framePad: CGFloat = boardCount > 1 ? 12 : 0
+        let cellW = (maxWidth(boardCount) - CGFloat(c - 1) * gridSpacing) / CGFloat(c) - framePad
+        let denom = CGFloat(wordLen) + CGFloat(wordLen - 1) * 0.1
+        return max(9, cellW / denom)
+    }
+}
+
 /// Lays boards out so they always fit on screen above the keyboard. Tiles are
 /// sized to the smaller of the width budget and (when `fitHeight` is given) the
 /// vertical budget, so multi-board modes like Deliverance/OctoWord never get

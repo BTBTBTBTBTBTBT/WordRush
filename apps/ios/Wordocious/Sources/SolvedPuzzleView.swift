@@ -14,13 +14,11 @@ struct SolvedPuzzleView: View {
     @State private var loaded = false
     @State private var maxGuesses = 0
 
+    /// Web-parity responsive tile size so every board fits on one screen
+    /// (no scrolling) — matches completed-daily-board.tsx.
     private var tileSize: CGFloat {
-        switch data?.solutions.count ?? 1 {
-        case 1: return 48
-        case 2: return 40
-        case 3...4: return 34
-        default: return 30
-        }
+        CompletedBoardLayout.tileSize(boardCount: data?.solutions.count ?? 1,
+                                      wordLen: data?.solutions.first?.count ?? 5)
     }
 
     var body: some View {
@@ -84,12 +82,15 @@ struct SolvedPuzzleView: View {
         if d.solutions.count == 1 {
             board(solution: d.solutions[0], guesses: d.guesses, multi: false)
         } else {
-            let cols = Array(repeating: GridItem(.flexible(), spacing: 10), count: 2)
-            LazyVGrid(columns: cols, spacing: 14) {
+            let count = d.solutions.count
+            let cols = Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing),
+                             count: CompletedBoardLayout.cols(count))
+            LazyVGrid(columns: cols, spacing: CompletedBoardLayout.gridSpacing) {
                 ForEach(Array(d.solutions.enumerated()), id: \.offset) { _, sol in
                     board(solution: sol, guesses: d.guesses, multi: true)
                 }
             }
+            .frame(maxWidth: CompletedBoardLayout.maxWidth(count))
         }
     }
 
