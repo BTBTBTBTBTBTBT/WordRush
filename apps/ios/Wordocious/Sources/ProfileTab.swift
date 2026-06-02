@@ -568,7 +568,9 @@ struct LeaderboardTab: View {
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
-                            row(rank: idx + 1, entry: entry)
+                            NavigationLink { PublicProfileView(userId: entry.userId) } label: {
+                                row(rank: idx + 1, entry: entry)
+                            }.buttonStyle(.plain)
                             if idx < entries.count - 1 { Divider().overlay(Theme.border) }
                         }
                     }
