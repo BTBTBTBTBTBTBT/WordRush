@@ -9,6 +9,11 @@ import WordociousCore
 struct GauntletCompletedView: View {
     let progress: GauntletProgress
     let totalTimeMs: Int
+    /// Inline 3-stat summary row (used by the compact leaderboard card; the
+    /// full results screen shows boxed stat cards instead, so it passes false).
+    var showSummary: Bool = true
+    /// "STAGE BREAKDOWN" header above the rows (full results screen only).
+    var showStageHeader: Bool = false
 
     @State private var expanded: Int?
 
@@ -22,14 +27,19 @@ struct GauntletCompletedView: View {
     private var totalGuesses: Int { progress.stageResults.reduce(0) { $0 + $1.guesses } }
 
     var body: some View {
-        VStack(spacing: 12) {
-            // Summary stats (Stages / Guesses / Time), matching the web header row.
-            HStack(spacing: 20) {
-                summaryStat("\(stagesCleared)/\(progress.totalStages)", "STAGES")
-                summaryStat("\(totalGuesses)", "GUESSES")
-                summaryStat(fmtTime(totalTimeMs), "TIME")
+        VStack(alignment: .leading, spacing: 12) {
+            if showSummary {
+                // Inline summary stats (Stages / Guesses / Time).
+                HStack(spacing: 20) {
+                    summaryStat("\(stagesCleared)/\(progress.totalStages)", "STAGES")
+                    summaryStat("\(totalGuesses)", "GUESSES")
+                    summaryStat(fmtTime(totalTimeMs), "TIME")
+                }
+                .frame(maxWidth: .infinity)
             }
-
+            if showStageHeader {
+                Text("STAGE BREAKDOWN").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+            }
             // One row per stage; tap to expand its boards.
             VStack(spacing: 4) {
                 ForEach(progress.stages, id: \.stageIndex) { stage in

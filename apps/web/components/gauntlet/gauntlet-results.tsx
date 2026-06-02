@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, BarChart3, Zap, Timer, Share2, Eye, X, ChevronRight } from 'lucide-react';
+import { Trophy, XCircle, Clock, Hash, Home, RotateCcw, Share2, Eye, X, ChevronRight } from 'lucide-react';
 import { BoardState, evaluateGuess, GameStatus, GauntletStageConfig, GauntletStageResult, TileState } from '@wordle-duel/core';
 import { Button } from '@/components/ui/button';
-import { GauntletStats, getGauntletStats, recordGauntletGame } from '@/lib/gauntlet-stats';
+import { recordGauntletGame } from '@/lib/gauntlet-stats';
 import { shareResult } from '@/lib/share-utils';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
@@ -95,23 +95,11 @@ export function GauntletResults({
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [won, totalGuesses, totalTimeMs, stages, stageResults, stagesCompleted]);
 
-  const [stats, setStats] = useState<GauntletStats | null>(null);
-
-  // Record this game and load stats on mount
+  // Record this game on mount so the Records menu has the data — the
+  // all-time stats live there now rather than cluttering this results screen.
   useEffect(() => {
-    const updated = recordGauntletGame(won, totalGuesses, totalTimeMs);
-    setStats(updated);
+    recordGauntletGame(won, totalGuesses, totalTimeMs);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const winRate = stats && stats.gamesPlayed > 0
-    ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100)
-    : 0;
-  const avgTime = stats && stats.gamesPlayed > 0
-    ? stats.totalTimeMs / stats.gamesPlayed
-    : null;
-  const avgGuesses = stats && stats.gamesPlayed > 0
-    ? Math.round(stats.totalGuesses / stats.gamesPlayed)
-    : null;
 
   return (
     <div
@@ -269,53 +257,6 @@ export function GauntletResults({
             );
           })}
         </div>
-
-        {/* All-Time Stats */}
-        {stats && stats.gamesPlayed > 0 && (
-          <div
-            className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 animate-fade-in-up"
-            style={{ animationDelay: '1.4s' }}
-          >
-            <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-3">All-Time Stats</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-3 p-2">
-                <BarChart3 className="w-4 h-4 text-purple-400 shrink-0" />
-                <div>
-                  <div className="text-gray-800 font-bold text-lg">{stats.gamesPlayed}</div>
-                  <div className="text-gray-400 text-xs">Games Played</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-2">
-                <Zap className="w-4 h-4 text-amber-600 shrink-0" />
-                <div>
-                  <div className="text-gray-800 font-bold text-lg">{winRate}%</div>
-                  <div className="text-gray-400 text-xs">Win Rate</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-2">
-                <Clock className="w-4 h-4 text-blue-400 shrink-0" />
-                <div>
-                  <div className="text-gray-800 font-bold text-lg">{avgTime ? formatTime(avgTime) : '—'}</div>
-                  <div className="text-gray-400 text-xs">Avg Time</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-2">
-                <Timer className="w-4 h-4 text-green-400 shrink-0" />
-                <div>
-                  <div className="text-gray-800 font-bold text-lg">{stats.bestTimeMs ? formatTime(stats.bestTimeMs) : '—'}</div>
-                  <div className="text-gray-400 text-xs">Best Time</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-2 col-span-2">
-                <Hash className="w-4 h-4 text-orange-400 shrink-0" />
-                <div>
-                  <div className="text-gray-800 font-bold text-lg">{avgGuesses ?? '—'}</div>
-                  <div className="text-gray-400 text-xs">Avg Guesses per Game</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Actions */}
         <div

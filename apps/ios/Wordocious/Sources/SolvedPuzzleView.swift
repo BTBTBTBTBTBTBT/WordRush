@@ -40,23 +40,7 @@ struct SolvedPuzzleView: View {
             if !loaded {
                 ProgressView().controlSize(.large).tint(Theme.primary)
             } else if mode == .gauntlet, let g = gauntlet {
-                ScrollView {
-                    VStack(spacing: 12) {
-                        Text("GAUNTLET").font(Brand.font(28, .black)).foregroundStyle(ModeStyle.accent(.gauntlet))
-                        Text(localWon ? "🏆 Gauntlet Complete!" : "Run ended")
-                            .font(Brand.font(13, .bold))
-                            .foregroundStyle(localWon ? Color(hex: 0x16A34A) : Theme.textMuted)
-                        HStack(spacing: 16) {
-                            Button("Home") { dismiss() }
-                                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).underline()
-                            Button("Share") { share() }
-                                .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
-                        }
-                        DailyRankBadge(gameMode: mode)
-                        GauntletCompletedView(progress: g, totalTimeMs: elapsedMs)
-                    }
-                    .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 16)
-                }
+                gauntletResults(g)
             } else if let d = data {
                 ScrollView {
                     VStack(spacing: 10) {
@@ -88,16 +72,20 @@ struct SolvedPuzzleView: View {
                 }
             }
 
-            // Corner Home button (consistent with GameScreen).
-            Button { dismiss() } label: {
-                Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(ModeStyle.accent(mode))
-                    .frame(width: 44, height: 44)
-                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
-                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+            // Corner Home button (consistent with GameScreen). The Gauntlet
+            // results screen uses its own bottom Home/Share buttons (web parity),
+            // so the corner button is omitted there to avoid a duplicate Home.
+            if mode != .gauntlet {
+                Button { dismiss() } label: {
+                    Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(ModeStyle.accent(mode))
+                        .frame(width: 44, height: 44)
+                        .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
+                        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.top, 8).padding(.leading, 8)
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.top, 8).padding(.leading, 8)
         }
         .navigationBarBackButtonHidden(true)
         .hidesBottomNav()
@@ -144,6 +132,88 @@ struct SolvedPuzzleView: View {
             }
             .frame(maxWidth: CompletedBoardLayout.maxWidth(bs.count))
         }
+    }
+
+    // MARK: - Gauntlet results (ports the web GauntletResults, minus all-time stats)
+
+    @ViewBuilder private func gauntletResults(_ g: GauntletProgress) -> some View {
+        let cleared = g.stageResults.filter { $0.status == .won }.count
+        let totalGuesses = g.stageResults.reduce(0) { $0 + $1.guesses }
+        // Cumulative boards solved across all stages — the same tally the score
+        // is recorded with, so the breakdown's composite matches the leaderboard.
+        let cumBoards = g.stageResults.reduce(0) { acc, r in
+            guard let st = g.stages.first(where: { $0.stageIndex == r.stageIndex }) else { return acc }
+            return acc + (r.status == .won ? st.boardCount : (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0))
+        }
+        let cumTotal = max(1, g.stages.reduce(0) { $0 + $1.boardCount })
+        ScrollView {
+            VStack(spacing: 16) {
+                VStack(spacing: 8) {
+                    Image(systemName: localWon ? "trophy.fill" : "xmark.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(localWon ? Color(hex: 0xD97706) : Color(hex: 0xF87171))
+                    gauntletTitle
+                }
+                .padding(.top, 4)
+
+                HStack(spacing: 12) {
+                    gauntletStatCard("trophy.fill", Color(hex: 0x22C55E), "\(cleared)/\(g.totalStages)", "Stages")
+                    gauntletStatCard("number", Color(hex: 0x60A5FA), "\(totalGuesses)", "Guesses")
+                    gauntletStatCard("clock", Color(hex: 0xFB923C), gauntletFmt(elapsedMs), "Time")
+                }
+
+                DailyRankBadge(gameMode: mode)
+
+                ScoreBreakdownView(gameMode: "GAUNTLET", completed: localWon, guessCount: totalGuesses,
+                                   timeSeconds: elapsedMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal)
+
+                GauntletCompletedView(progress: g, totalTimeMs: elapsedMs, showSummary: false, showStageHeader: true)
+
+                HStack(spacing: 12) {
+                    Button { share() } label: {
+                        Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(14, .black))
+                            .frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(Color(hex: 0x2563EB))
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xEFF6FF)))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xBFDBFE), lineWidth: 2))
+                    }.buttonStyle(.plain)
+                    Button { dismiss() } label: {
+                        Label("Home", systemImage: "house").font(Brand.font(14, .black))
+                            .frame(maxWidth: .infinity).padding(.vertical, 13).foregroundStyle(Theme.textSecondary)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 2))
+                    }.buttonStyle(.plain)
+                }
+                .padding(.top, 2)
+            }
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
+        }
+    }
+
+    @ViewBuilder private var gauntletTitle: some View {
+        let t = Text(localWon ? "GAUNTLET CLEARED!" : "GAUNTLET FAILED")
+            .font(Brand.font(34, .black)).multilineTextAlignment(.center)
+        if localWon {
+            t.foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF472B6), Color(hex: 0xC084FC)],
+                                             startPoint: .leading, endPoint: .trailing))
+        } else {
+            t.foregroundStyle(Color(hex: 0xFCA5A5))
+        }
+    }
+
+    private func gauntletStatCard(_ icon: String, _ iconColor: Color, _ value: String, _ label: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon).font(.system(size: 18)).foregroundStyle(iconColor)
+            Text(value).font(Brand.font(22, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.6)
+            Text(label).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 14)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surfaceHover))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1))
+    }
+
+    private func gauntletFmt(_ ms: Int) -> String {
+        let s = ms / 1000
+        return s < 60 ? "\(s)s" : "\(s / 60)m \(s % 60)s"
     }
 
     /// A board's evaluated rows (prefilled + guesses), padded to its full row
