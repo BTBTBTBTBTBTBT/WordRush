@@ -8,16 +8,32 @@ import SwiftUI
 /// state alive.
 struct RootTabView: View {
     @State private var tab: Tab = .home
+    // Leaderboard's navigation stack lives here so tab gestures can reset it:
+    // re-tapping the active Leaderboard tab pops to root, and leaving the tab
+    // clears it so returning shows the leaderboard (not the profile you left on).
+    @State private var leaderboardPath: [String] = []
     @ObservedObject private var chrome = ChromeVisibility.shared
 
     enum Tab: Hashable { case home, leaderboard, profile, records }
 
     init() { DictionaryLoader.ensureInitialized() }
 
+    /// Tab selection with stack-reset side effects (web-like tab behavior).
+    private var tabSelection: Binding<Tab> {
+        Binding(
+            get: { tab },
+            set: { newTab in
+                // Re-tap the active Leaderboard tab, or leave it, → reset to root.
+                if newTab == .leaderboard && tab == .leaderboard { leaderboardPath = [] }
+                if tab == .leaderboard && newTab != .leaderboard { leaderboardPath = [] }
+                tab = newTab
+            })
+    }
+
     var body: some View {
-        TabView(selection: $tab) {
+        TabView(selection: tabSelection) {
             HomeView().tag(Tab.home).tabItem { Label("Home", systemImage: "house") }
-            LeaderboardTab().tag(Tab.leaderboard).tabItem { Label("Leaderboard", systemImage: "trophy") }
+            LeaderboardTab(path: $leaderboardPath).tag(Tab.leaderboard).tabItem { Label("Leaderboard", systemImage: "trophy") }
             ProfileTab().tag(Tab.profile).tabItem { Label("Profile", systemImage: "person") }
             RecordsTab().tag(Tab.records).tabItem { Label("Records", systemImage: "crown") }
         }
@@ -26,7 +42,7 @@ struct RootTabView: View {
         // so it's full-screen like the web — it otherwise bleeds onto pushed
         // views and steals the height the keyboard/boards need.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if !chrome.bottomNavHidden { BottomNav(selection: $tab) }
+            if !chrome.bottomNavHidden { BottomNav(selection: tabSelection) }
         }
     }
 }

@@ -485,6 +485,8 @@ private struct ProfileModePicker: View {
 /// yesterday toggle, player count).
 struct LeaderboardTab: View {
     @EnvironmentObject private var auth: AuthService
+    /// Owned by RootTabView so tab gestures can pop it to root.
+    @Binding var path: [String]
     @State private var mode: GameMode = .duel
     @State private var entries: [LeaderboardEntry] = []
     @State private var yesterday: [LeaderboardEntry] = []
@@ -502,7 +504,7 @@ struct LeaderboardTab: View {
     private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ZStack {
                 LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                                startPoint: .top, endPoint: .bottom).ignoresSafeArea()
@@ -512,6 +514,7 @@ struct LeaderboardTab: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .adBanner()
         }
     }
@@ -678,7 +681,7 @@ struct LeaderboardTab: View {
             rankIcon(rank).frame(width: 22)
             // Only the username links to the public profile — matches the web,
             // where the leaderboard wraps just the name in <Link href=/profile/[id]>.
-            NavigationLink { PublicProfileView(userId: entry.userId) } label: {
+            NavigationLink(value: entry.userId) {
                 (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                     .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
             }.buttonStyle(.plain)
