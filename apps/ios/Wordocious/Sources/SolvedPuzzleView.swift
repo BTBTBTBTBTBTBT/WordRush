@@ -148,6 +148,13 @@ struct SolvedPuzzleView: View {
     @ViewBuilder private func gauntletResults(_ g: GauntletProgress) -> some View {
         let cleared = g.stageResults.filter { $0.status == .won }.count
         let totalGuesses = g.stageResults.reduce(0) { $0 + $1.guesses }
+        // Total time = sum of the per-stage times (the authoritative per-stage
+        // data, correct cross-device). `elapsedMs` (local loadElapsed / matches
+        // row) can be stale or absent for a run played on another device, which
+        // showed a wrong "6s" up top. Fall back to elapsedMs only if stages have
+        // no recorded times.
+        let stageTimeMs = g.stageResults.reduce(0) { $0 + $1.timeMs }
+        let totalTimeMs = stageTimeMs > 0 ? stageTimeMs : elapsedMs
         // Cumulative boards solved across all stages — the same tally the score
         // is recorded with, so the breakdown's composite matches the leaderboard.
         let cumBoards = g.stageResults.reduce(0) { acc, r in
@@ -175,15 +182,15 @@ struct SolvedPuzzleView: View {
                 HStack(spacing: 12) {
                     gauntletStatCard("trophy.fill", Color(hex: 0x22C55E), "\(cleared)/\(g.totalStages)", "Stages")
                     gauntletStatCard("number", Color(hex: 0x60A5FA), "\(totalGuesses)", "Guesses")
-                    gauntletStatCard("clock", Color(hex: 0xFB923C), gauntletFmt(elapsedMs), "Time")
+                    gauntletStatCard("clock", Color(hex: 0xFB923C), gauntletFmt(totalTimeMs), "Time")
                 }
 
                 DailyRankBadge(gameMode: mode)
 
                 ScoreBreakdownView(gameMode: "GAUNTLET", completed: localWon, guessCount: totalGuesses,
-                                   timeSeconds: elapsedMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal)
+                                   timeSeconds: totalTimeMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal)
 
-                GauntletCompletedView(progress: g, totalTimeMs: elapsedMs, showSummary: false, showStageHeader: true)
+                GauntletCompletedView(progress: g, totalTimeMs: totalTimeMs, showSummary: false, showStageHeader: true)
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
         }

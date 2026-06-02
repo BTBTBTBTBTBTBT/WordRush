@@ -23,7 +23,11 @@ struct CompletedDailyCard: View {
         if let g = gauntlet {
             let cleared = g.stageResults.filter { $0.status == .won }.count
             let guesses = g.stageResults.reduce(0) { $0 + $1.guesses }
-            return "\(cleared)/\(g.totalStages) · \(guesses)g · \(timeString(elapsedMs / 1000))"
+            // Total time = sum of per-stage times (authoritative cross-device);
+            // fall back to elapsedMs only if stages carry no recorded times.
+            let stageMs = g.stageResults.reduce(0) { $0 + $1.timeMs }
+            let secs = (stageMs > 0 ? stageMs : elapsedMs) / 1000
+            return "\(cleared)/\(g.totalStages) · \(guesses)g · \(timeString(secs))"
         }
         return "\(d.guessCount) · \(timeString(d.timeSeconds))"
     }
@@ -65,7 +69,8 @@ struct CompletedDailyCard: View {
 
                     if expanded {
                         if let g = gauntlet {
-                            GauntletCompletedView(progress: g, totalTimeMs: elapsedMs)
+                            let stageMs = g.stageResults.reduce(0) { $0 + $1.timeMs }
+                            GauntletCompletedView(progress: g, totalTimeMs: stageMs > 0 ? stageMs : elapsedMs)
                                 .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         } else {
                             VStack(spacing: 8) {
