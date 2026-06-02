@@ -166,7 +166,7 @@ struct GameScreen: View {
         } else {
             kind = .single(grid: vm.shareGrid())
         }
-        ShareService.share(kind: kind, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
+        ShareService.share(kind: kind, mode: mode, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
                            won: vm.status == .won, guesses: vm.rowsUsed, maxGuesses: vm.maxGuesses,
                            timeSeconds: vm.elapsedSeconds)
     }

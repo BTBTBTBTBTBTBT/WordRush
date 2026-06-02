@@ -253,7 +253,7 @@ struct SolvedPuzzleView: View {
             }
             let cleared = stages.filter { $0.won }.count
             ShareService.share(kind: .gauntlet(stages: stages, stagesCompleted: cleared, totalStages: g.totalStages),
-                               modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
+                               mode: mode, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
                                won: localWon, guesses: g.stageResults.reduce(0) { $0 + $1.guesses },
                                maxGuesses: 0, timeSeconds: elapsedMs / 1000)
             return
@@ -268,7 +268,7 @@ struct SolvedPuzzleView: View {
         } else {
             return
         }
-        ShareService.share(kind: kind, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
+        ShareService.share(kind: kind, mode: mode, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
                            won: d.won, guesses: d.guessCount, maxGuesses: maxGuesses, timeSeconds: d.timeSeconds)
     }
 }
