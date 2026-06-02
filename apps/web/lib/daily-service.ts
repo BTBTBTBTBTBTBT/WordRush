@@ -708,9 +708,15 @@ export async function checkAndUpdateRecord(
   newValue: number,
   higherIsBetter: boolean = true,
 ) {
+  // Fetch ALL rows for this key (NOT maybeSingle): global records
+  // (game_mode/play_type = NULL) historically accumulated duplicates because
+  // a UNIQUE(record_type, game_mode, play_type) constraint treats NULLs as
+  // distinct, so `upsert onConflict` could never match them and inserted a
+  // fresh row every game. This routine is now self-healing: it collapses any
+  // duplicates for the key into a single canonical row on every write.
   const query = (supabase as any)
     .from('all_time_records')
-    .select('id, record_value')
+    .select('id, record_value, holder_id')
     .eq('record_type', recordType);
 
   if (gameMode) query.eq('game_mode', gameMode);
@@ -719,29 +725,48 @@ export async function checkAndUpdateRecord(
   if (playType) query.eq('play_type', playType);
   else query.is('play_type', null);
 
-  const { data: existing } = await query.maybeSingle();
+  // Best existing first (desc for higher-is-better, asc otherwise).
+  const { data: rowsRaw } = await query.order('record_value', { ascending: !higherIsBetter });
+  const rows: Array<{ id: string; record_value: number; holder_id: string }> = rowsRaw || [];
+  const best = rows[0];
 
-  const isBetter = existing
-    ? (higherIsBetter ? newValue > existing.record_value : newValue < existing.record_value)
-    : true;
+  const challengerWins = !best
+    ? true
+    : (higherIsBetter ? newValue > best.record_value : newValue < best.record_value);
 
-  if (isBetter) {
-    await (supabase as any)
-      .from('all_time_records')
-      .upsert({
-        record_type: recordType,
-        game_mode: gameMode,
-        play_type: playType,
-        holder_id: holderId,
-        record_value: newValue,
-        achieved_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'record_type,game_mode,play_type' });
+  const winnerValue = challengerWins ? newValue : best.record_value;
+  const winnerHolder = challengerWins ? holderId : best.holder_id;
+  const nowIso = new Date().toISOString();
 
-    return true; // Record broken!
+  if (rows.length === 0) {
+    // No record yet — insert the first one.
+    await (supabase as any).from('all_time_records').insert({
+      record_type: recordType,
+      game_mode: gameMode,
+      play_type: playType,
+      holder_id: winnerHolder,
+      record_value: winnerValue,
+      achieved_at: nowIso,
+      updated_at: nowIso,
+    });
+  } else {
+    // Keep the best row as canonical (update it), and delete any duplicates.
+    await (supabase as any).from('all_time_records').update({
+      holder_id: winnerHolder,
+      record_value: winnerValue,
+      updated_at: nowIso,
+      ...(challengerWins ? { achieved_at: nowIso } : {}),
+    }).eq('id', best.id);
+
+    if (rows.length > 1) {
+      await (supabase as any)
+        .from('all_time_records')
+        .delete()
+        .in('id', rows.slice(1).map((r) => r.id));
+    }
   }
 
-  return false;
+  return challengerWins; // true == record broken
 }
 
 /**
