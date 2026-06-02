@@ -37,7 +37,7 @@ struct GameScreen: View {
                                                boardsSolved: vm.boards.filter { $0.status == .won }.count,
                                                totalBoards: vm.boardCount)
                             if vm.boardCount == 1 {
-                                DefinitionCard(solution: vm.boards[0].solution)
+                                DefinitionCard(solution: vm.boards[0].solution, showWord: false)
                             }
                         }
                         .padding(.bottom, 16)

@@ -72,7 +72,11 @@ struct SolvedPuzzleView: View {
                         ScoreBreakdownView(gameMode: mode.rawValue, completed: d.won,
                                            guessCount: d.guessCount, timeSeconds: d.timeSeconds,
                                            boardsSolved: d.won ? d.solutions.count : 0, totalBoards: d.solutions.count)
-                        if d.solutions.count == 1 { DefinitionCard(solution: d.solutions[0]) }
+                        // Single-board modes (Classic / Six / Seven): word + definition,
+                        // using the actual displayed board's solution (reliable).
+                        if let only = displayBoards(d).first, displayBoards(d).count == 1 {
+                            DefinitionCard(solution: only.solution)
+                        }
                     }
                     .padding(.horizontal, 12).padding(.bottom, 16)
                 }

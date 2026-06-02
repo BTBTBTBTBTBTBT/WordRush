@@ -217,40 +217,61 @@ struct ScoreBreakdownView: View {
 
 /// Dictionary definition card for single-word post-game — ports
 /// post-game-summary.tsx (uses dictionaryapi.dev).
+/// Solution word + dictionary definition shown on single-board completed
+/// screens (Classic / Six / Seven), ported 1:1 from the web completed-daily
+/// "Solution + Definition" block: the word in bold, then a box with the
+/// phonetic + part-of-speech pill + definition — or "No definition available
+/// for this word." when the dictionary has no entry (so it always populates,
+/// never a blank gap). `showWord` lets the live finished board (which already
+/// spells the word in green tiles) omit the redundant heading.
 struct DefinitionCard: View {
     let solution: String
+    var showWord: Bool = true
     @State private var def: WordOfTheDayView.WordInfo?
     @State private var loaded = false
 
     var body: some View {
-        Group {
-            if loaded, let d = def {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
-                        if let p = d.phonetic, !p.isEmpty {
-                            Text(p).font(Brand.font(12, .semibold)).foregroundStyle(Theme.textMuted)
-                        }
-                        if let pos = d.partOfSpeech, !pos.isEmpty {
-                            Text(pos.uppercased()).font(Brand.font(10, .black)).tracking(0.6)
-                                .foregroundStyle(Color(hex: 0xA78BFA))
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(RoundedRectangle(cornerRadius: 4).fill(Theme.border))
-                        }
-                    }
-                    if let def = d.definition {
-                        Text(def).font(Brand.font(14, .medium)).foregroundStyle(Color(hex: 0x4A4A6A))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .padding(.horizontal, 12).padding(.vertical, 10)
-                .frame(maxWidth: 400, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
+        VStack(spacing: 8) {
+            if showWord {
+                Text(solution.uppercased()).font(Brand.font(18, .black)).tracking(2)
+                    .foregroundStyle(Theme.textPrimary)
+            }
+            if loaded {
+                box.frame(maxWidth: 340)
             }
         }
-        .task {
+        .task(id: solution) {
             def = await WordOfTheDayView.definition(for: solution)
             loaded = true
         }
+    }
+
+    @ViewBuilder private var box: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if let d = def {
+                HStack(spacing: 8) {
+                    if let p = d.phonetic, !p.isEmpty {
+                        Text(p).font(Brand.font(12, .semibold)).foregroundStyle(Theme.textMuted)
+                    }
+                    if let pos = d.partOfSpeech, !pos.isEmpty {
+                        Text(pos.uppercased()).font(Brand.font(10, .black)).tracking(0.6)
+                            .foregroundStyle(Color(hex: 0xA78BFA))
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(RoundedRectangle(cornerRadius: 4).fill(Theme.border))
+                    }
+                }
+                if let def = d.definition {
+                    Text(def).font(Brand.font(14, .medium)).foregroundStyle(Color(hex: 0x4A4A6A))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                Text("No definition available for this word.")
+                    .font(Brand.font(13, .medium)).italic().foregroundStyle(Theme.textMuted)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
     }
 }
