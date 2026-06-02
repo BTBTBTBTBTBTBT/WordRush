@@ -396,10 +396,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
             className="h-[3px]"
             style={{ background: 'linear-gradient(90deg, #f59e0b, var(--color-gold-border))' }}
           />
-          <div
-            className="mx-3 my-3 rounded-xl p-3"
-            style={{ background: 'var(--color-highlight-gold)', border: '1px solid var(--color-gold-border-light)' }}
-          >
+          <div className="px-4 pt-2 pb-4">
             <div className="grid grid-cols-2 gap-3">
               {GLOBAL_RECORD_TYPES.map((rt) => {
                 const record = globalRecords.find((r) => r.record_type === rt);
@@ -464,10 +461,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
               {mode.title}
             </div>
           </div>
-          <div
-            className="mx-3 mb-3 rounded-xl p-3"
-            style={{ background: 'var(--color-surface-alt)', border: '1px solid var(--color-border-alt)' }}
-          >
+          <div className="px-4 pb-4">
             {modeRecords.length === 0 ? (
               <div className="py-5 text-center">
                 <Trophy
