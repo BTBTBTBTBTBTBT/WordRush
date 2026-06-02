@@ -177,6 +177,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       {/* Mode Picker */}
       <div className="mb-3">
         <ModePicker
+          grid
           showAll={false}
           selectedMode={selectedMode}
           onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
@@ -428,6 +429,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
 
         <div className="mb-3">
           <ModePicker
+            grid
             showAll={false}
             selectedMode={selectedMode}
             onSelectMode={(m) => setSelectedMode(m || 'DUEL')}

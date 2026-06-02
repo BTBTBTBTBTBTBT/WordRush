@@ -176,6 +176,7 @@ export default function DailyPage() {
         {/* Mode Picker */}
         <div className="mb-4">
           <ModePicker
+            grid
             showAll={false}
             selectedMode={selectedMode}
             onSelectMode={(m) => setSelectedMode(m || 'DUEL')}

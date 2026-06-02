@@ -799,6 +799,9 @@ struct AllTimeRecordsView: View {
                     .padding(12)
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                // Clip so the 3pt top accent bar's square corners don't poke
+                // past the card's rounded corners.
+                .clipShape(RoundedRectangle(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
 
                 // By Game Mode
@@ -823,6 +826,8 @@ struct AllTimeRecordsView: View {
                     .padding(.horizontal, 12).padding(.bottom, 12)
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                // Clip the 3pt top accent bar to the card's rounded corners.
+                .clipShape(RoundedRectangle(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             }
         }

@@ -32,9 +32,73 @@ interface ModePickerProps {
   onSelectMode: (dbKey: string | null) => void;
   gamesPerMode?: Record<string, number>;
   showAll?: boolean;
+  /** When true, lay the 9 modes out 5-on-top-of-4 on one screen (no horizontal
+   *  scroll) instead of a scrolling row. Used on /daily and /records. */
+  grid?: boolean;
 }
 
-export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll = true }: ModePickerProps) {
+export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll = true, grid = false }: ModePickerProps) {
+  const modeButton = (mode: ModeConfig, fullWidth = false) => {
+    const isActive = selectedMode === mode.dbKey;
+    const games = gamesPerMode?.[mode.dbKey] || 0;
+    const Icon = mode.icon;
+    return (
+      <button
+        key={mode.id}
+        className={`${fullWidth ? 'w-full' : 'flex-shrink-0'} flex flex-col items-center gap-1 transition-all duration-200`}
+        style={{
+          background: isActive ? `${mode.accentColor}15` : 'var(--color-surface)',
+          border: isActive ? `1.5px solid ${mode.accentColor}` : '1.5px solid var(--color-border)',
+          borderRadius: '12px',
+          padding: '8px 12px',
+          minWidth: fullWidth ? undefined : '62px',
+        }}
+        onClick={() => onSelectMode(isActive ? null : mode.dbKey)}
+      >
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ background: `${mode.accentColor}15` }}
+        >
+          {mode.romanNumeral ? (
+            <span className="text-[10px] font-black leading-none" style={{ color: mode.accentColor }}>{mode.romanNumeral}</span>
+          ) : Icon ? (
+            <Icon className="w-3.5 h-3.5" style={{ color: mode.accentColor }} />
+          ) : null}
+        </div>
+        <span
+          className="text-[10px] font-extrabold leading-tight"
+          style={{ color: isActive ? mode.accentColor : 'var(--color-text-muted)' }}
+        >
+          {mode.shortTitle}
+        </span>
+        {games > 0 && (
+          <span className="text-[8px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{games}</span>
+        )}
+      </button>
+    );
+  };
+
+  // 5-on-top-of-4 grid (all 9 modes visible, no scroll) — matches the native
+  // app + Profile dailies. Each cell is exactly 1/5 of the row width so the
+  // bottom 4 sit centered under the top 5.
+  if (grid) {
+    const cellWidth = 'calc((100% - 32px) / 5)'; // 5 cells, 4 × 8px gaps
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex justify-center gap-2">
+          {PROFILE_MODES.slice(0, 5).map((m) => (
+            <div key={m.id} style={{ width: cellWidth }}>{modeButton(m, true)}</div>
+          ))}
+        </div>
+        <div className="flex justify-center gap-2">
+          {PROFILE_MODES.slice(5).map((m) => (
+            <div key={m.id} style={{ width: cellWidth }}>{modeButton(m, true)}</div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1"
@@ -63,45 +127,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
         </button>
       )}
 
-      {PROFILE_MODES.map((mode) => {
-        const isActive = selectedMode === mode.dbKey;
-        const games = gamesPerMode?.[mode.dbKey] || 0;
-        const Icon = mode.icon;
-        return (
-          <button
-            key={mode.id}
-            className="flex-shrink-0 flex flex-col items-center gap-1 transition-all duration-200"
-            style={{
-              background: isActive ? `${mode.accentColor}15` : 'var(--color-surface)',
-              border: isActive ? `1.5px solid ${mode.accentColor}` : '1.5px solid var(--color-border)',
-              borderRadius: '12px',
-              padding: '8px 12px',
-              minWidth: '62px',
-            }}
-            onClick={() => onSelectMode(isActive ? null : mode.dbKey)}
-          >
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: `${mode.accentColor}15` }}
-            >
-              {mode.romanNumeral ? (
-                <span className="text-[10px] font-black leading-none" style={{ color: mode.accentColor }}>{mode.romanNumeral}</span>
-              ) : Icon ? (
-                <Icon className="w-3.5 h-3.5" style={{ color: mode.accentColor }} />
-              ) : null}
-            </div>
-            <span
-              className="text-[10px] font-extrabold leading-tight"
-              style={{ color: isActive ? mode.accentColor : 'var(--color-text-muted)' }}
-            >
-              {mode.shortTitle}
-            </span>
-            {games > 0 && (
-              <span className="text-[8px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{games}</span>
-            )}
-          </button>
-        );
-      })}
+      {PROFILE_MODES.map((mode) => modeButton(mode))}
     </div>
   );
 }
