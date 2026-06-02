@@ -20,6 +20,9 @@ struct HomeView: View {
     /// An incoming invite the user accepted → launches the VS match.
     private struct AcceptedInvite: Identifiable { let mode: GameMode; let code: String; var id: String { code } }
     @State private var playInvite: AcceptedInvite?
+    /// One-time Pro nudge once the daily-login streak hits 7 (ports pro-prompt-modal).
+    /// Local flag instead of the web's profiles.pro_prompt_shown column (no migration).
+    @AppStorage("pro-prompt-shown") private var proPromptShown = false
 
     /// A game whose seed was resolved at tap time (Unlimited play).
     struct ActiveGame: Identifiable, Equatable {
@@ -77,8 +80,16 @@ struct HomeView: View {
                                    onViewSolved: { let mode = m; limitModal = nil; solvedMode = mode })
                         .transition(.opacity)
                 }
+
+                if showProPrompt {
+                    proPromptBanner
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                        .padding(.horizontal, 16).padding(.bottom, 12)
+                }
             }
             .animation(Theme.animation(.easeInOut(duration: 0.15)), value: limitModal != nil)
+            .animation(Theme.animation(.easeInOut(duration: 0.2)), value: showProPrompt)
             .sheet(isPresented: $showProSheet) { ProView() }
             .navigationDestination(isPresented: $showVSLobby) { VSLobbyView() }
             .navigationDestination(isPresented: Binding(
@@ -167,6 +178,37 @@ struct HomeView: View {
             Spacer()
         }
         .padding(.top, 2)
+    }
+
+    // MARK: - Pro prompt (ports pro-prompt-modal)
+
+    private var showProPrompt: Bool {
+        !proPromptShown && !auth.isProActive && (auth.profile?.dailyLoginStreak ?? 0) >= 7
+    }
+
+    private var proPromptBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "crown.fill").font(.system(size: 26)).foregroundStyle(Color(hex: 0xD97706))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("You're on a streak!").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+                Text("Upgrade to Pro for ad-free play, stats, shields, and more.")
+                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(2)
+            }
+            Spacer(minLength: 4)
+            Button { proPromptShown = true; showProSheet = true } label: {
+                Text("Go Pro").font(Brand.font(10, .black)).foregroundStyle(.white)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(
+                        LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+            }.buttonStyle(.plain)
+            Button { proPromptShown = true } label: {
+                Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
+            }.buttonStyle(.plain)
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+        .shadow(color: .black.opacity(0.1), radius: 16, x: 0, y: 8)
     }
 
     // MARK: - Incoming VS invites (ports PendingInvitesBanner)
