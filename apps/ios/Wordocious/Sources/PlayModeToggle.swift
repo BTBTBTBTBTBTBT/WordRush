@@ -3,6 +3,11 @@ import SwiftUI
 /// Daily ⇄ Unlimited play mode (Pro-only). Ports the web PlayMode type.
 enum PlayMode: String { case daily, unlimited }
 
+/// Shared fixed height for the three home hero cards (DailyChallengeHero,
+/// UnlimitedHero, and the Sweep/Flawless banner). Pinning them to one height
+/// guarantees the Daily⇄Unlimited toggle never shifts anything below it.
+let heroHeight: CGFloat = 78
+
 /// Segmented Daily | Unlimited pill — ports components/ui/play-mode-toggle.tsx.
 /// Shown to Pro users only; free users are forced to Daily.
 struct PlayModeToggle: View {
@@ -53,7 +58,7 @@ struct DailyChallengeHero: View {
                 Text("Resets in \(Self.countdown())").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0x6D28D9).opacity(0.9))
             }
         }
-        .padding(.vertical, 10).frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity).frame(height: heroHeight)
         .background(RoundedRectangle(cornerRadius: 14).fill(
             LinearGradient(colors: [Color(hex: 0xEDE9FE), Color(hex: 0xDDD6FE)], startPoint: .topLeading, endPoint: .bottomTrailing)))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xA78BFA), lineWidth: 1.5))
@@ -83,7 +88,7 @@ struct UnlimitedHero: View {
                 Text("on any game for VS").font(Brand.font(10, .bold)).foregroundStyle(Theme.primary)
             }
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 10)
+        .frame(maxWidth: .infinity).frame(height: heroHeight)
         .background(RoundedRectangle(cornerRadius: 14).fill(
             LinearGradient(colors: [Color(hex: 0xFCE7F3), Color(hex: 0xEDE9FE)], startPoint: .topLeading, endPoint: .bottomTrailing)))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))

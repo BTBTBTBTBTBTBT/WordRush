@@ -855,7 +855,12 @@ struct AllTimeRecordsView: View {
         records.first { $0.gameMode == nil && $0.recordType == rt }
     }
     private func modeRecord(_ rt: String) -> AllTimeRecord? {
-        records.first { $0.gameMode == mode.rawValue && $0.recordType == rt }
+        // A mode can have both a solo and a VS record per type; the per-mode
+        // card represents solo play, so prefer the solo row (else fall back to
+        // whatever exists). Without this, e.g. Classic "Most Games Played" could
+        // show the tiny VS count instead of the solo total.
+        let matches = records.filter { $0.gameMode == mode.rawValue && $0.recordType == rt }
+        return matches.first { $0.playType == "solo" } ?? matches.first
     }
 }
 

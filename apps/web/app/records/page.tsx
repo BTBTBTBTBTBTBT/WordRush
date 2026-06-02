@@ -479,7 +479,12 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {PER_MODE_RECORD_TYPES.map((rt) => {
-                  const record = modeRecords.find((r) => r.record_type === rt);
+                  // A mode can have both a solo and a VS record per type; the
+                  // per-mode card represents solo play, so prefer the solo row
+                  // (else fall back to whatever exists). Otherwise e.g. Classic
+                  // "Most Games Played" could show the tiny VS count.
+                  const candidates = modeRecords.filter((r) => r.record_type === rt);
+                  const record = candidates.find((r) => r.play_type === 'solo') ?? candidates[0];
                   return (
                     <StatCell
                       key={rt}

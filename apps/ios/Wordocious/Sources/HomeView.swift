@@ -172,7 +172,9 @@ struct HomeView: View {
                     .foregroundStyle(subtitleC.opacity(0.75))
             }
         }
-        .padding(.vertical, 10).frame(maxWidth: .infinity)
+        // Fixed height so swapping hero ⇄ banner ⇄ unlimited on the Daily/Unlimited
+        // toggle never shifts the cards below (all three heroes share this height).
+        .frame(maxWidth: .infinity).frame(height: heroHeight)
         .background(RoundedRectangle(cornerRadius: 14).fill(
             LinearGradient(colors: bg, startPoint: .topLeading, endPoint: .bottomTrailing)))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderC, lineWidth: 1.5))
