@@ -6,6 +6,7 @@ struct GameScreen: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @State private var adShown = false
+    @State private var showVictory = false
     let mode: GameMode
 
     init(seed: String, mode: GameMode, title: String) {
@@ -71,6 +72,21 @@ struct GameScreen: View {
             .padding(.top, 8).padding(.leading, 8)
 
             if let toast = vm.toast { toastView(toast) }
+
+            // XP toast (after recording) + one-time victory/game-over celebration.
+            if let xp = vm.xpResult {
+                XpToastView(result: xp) { vm.xpResult = nil }
+            }
+            if showVictory {
+                VictoryOverlay(
+                    won: vm.status == .won,
+                    guesses: vm.rowsUsed, maxGuesses: vm.maxGuesses, timeSeconds: vm.elapsedSeconds,
+                    boardsSolved: vm.boards.filter { $0.status == .won }.count, totalBoards: vm.boardCount,
+                    solution: vm.boardCount == 1 ? vm.boards.first?.solution : nil,
+                    solutions: vm.boardCount > 1 ? vm.boards.map(\.solution) : [],
+                    onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
+                .transition(.opacity)
+            }
         }
         }
         .navigationBarBackButtonHidden(true)
@@ -80,6 +96,10 @@ struct GameScreen: View {
         .onChange(of: vm.status) { newValue in
             if newValue == .won { Haptics.success(); SoundManager.shared.playSuccess() }
             else if newValue == .lost { Haptics.error(); SoundManager.shared.playGameOver() }
+            // Celebrate the moment of finishing (Gauntlet has its own results flow).
+            if (newValue == .won || newValue == .lost) && !vm.isGauntlet {
+                withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = true }
+            }
         }
         .onAppear {
             // Free users: show the game-start interstitial first (mirrors web AdGate),

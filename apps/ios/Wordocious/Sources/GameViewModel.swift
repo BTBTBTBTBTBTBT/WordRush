@@ -14,6 +14,8 @@ final class GameViewModel: ObservableObject {
     /// Frozen elapsed seconds at completion (for the header + score). Live
     /// elapsed is computed from startEpochMs while playing.
     @Published private(set) var finalTimeSeconds: Int?
+    /// XP earned this game — set once recording completes; drives the XP toast.
+    @Published var xpResult: GameResultsService.XpResult?
 
     // Active-play timer: accumulates only while the game is foregrounded,
     // pauses on background, persists across relaunch. Mirrors the web
@@ -260,11 +262,12 @@ final class GameViewModel: ObservableObject {
         let guessWords = state.boards.first?.guesses ?? []
         let solutionWords = state.boards.map(\.solution)
         Task {
-            await GameResultsService.record(
+            let xp = await GameResultsService.record(
                 gameMode: modeRaw, won: completed, guessCount: guesses,
                 timeSeconds: secs, boardsSolved: solved, totalBoards: total,
                 seed: theSeed
             )
+            self.xpResult = xp
             await GameResultsService.recordSoloMatch(
                 gameMode: modeRaw, won: completed, score: guesses, timeSeconds: secs,
                 seed: theSeed, solutions: solutionWords, guesses: guessWords

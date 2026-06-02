@@ -127,6 +127,7 @@ enum GameResultsService {
         let streak_shields: Int
     }
 
+    @discardableResult
     static func record(
         gameMode: GameMode,
         playType: String = "solo",
@@ -137,15 +138,15 @@ enum GameResultsService {
         totalBoards: Int,
         seed: String,
         hintsUsed: Int = 0
-    ) async {
+    ) async -> XpResult? {
         let client = AuthService.shared.client
-        guard let session = try? await client.auth.session else { return }
+        guard let session = try? await client.auth.session else { return nil }
         let userId = session.user.id.uuidString
         let mode = gameMode.rawValue
 
         await updateUserStats(client, userId: userId, mode: mode, playType: playType,
                               won: won, guessCount: guessCount, timeSeconds: timeSeconds)
-        await updateProfileProgression(client, userId: userId, won: won, seed: seed)
+        let xp = await updateProfileProgression(client, userId: userId, won: won, seed: seed)
 
         if isDailySeed(seed), playType == "solo" {
             await DailyResultsService.record(
@@ -156,6 +157,7 @@ enum GameResultsService {
         }
         // Refresh the in-memory profile so XP/streak/Pro reflect immediately.
         await AuthService.shared.refreshProfile()
+        return xp
     }
 
     private static func updateUserStats(
@@ -186,14 +188,21 @@ enum GameResultsService {
         } catch { /* best-effort */ }
     }
 
+    /// XP earned by a finished game — drives the post-game XP toast.
+    struct XpResult {
+        let xpGain: Int, streakBonus: Int, dailyBonus: Int
+        let totalXp: Int, newLevel: Int, leveledUp: Bool
+    }
+
+    @discardableResult
     private static func updateProfileProgression(
         _ client: SupabaseClient, userId: String, won: Bool, seed: String
-    ) async {
+    ) async -> XpResult? {
         do {
             let rows: [ProfileRow] = try await client.from("profiles")
                 .select("total_wins,total_losses,current_streak,best_streak,xp,level,last_played_at,daily_login_streak,best_daily_login_streak,streak_shields")
                 .eq("id", value: userId).limit(1).execute().value
-            guard let p = rows.first else { return }
+            guard let p = rows.first else { return nil }
 
             let newWinStreak = won ? p.currentStreak + 1 : 0
             let newBestWinStreak = max(p.bestStreak, newWinStreak)
@@ -231,7 +240,10 @@ enum GameResultsService {
                 streak_shields: p.streakShields + (grantShield ? 1 : 0)
             )
             try await client.from("profiles").update(upd).eq("id", value: userId).execute()
-        } catch { /* best-effort */ }
+            return XpResult(xpGain: xpGain, streakBonus: streakBonus, dailyBonus: dailyBonus,
+                            totalXp: xpGain + streakBonus + dailyBonus,
+                            newLevel: newLevel, leveledUp: newLevel > (p.level ?? 1))
+        } catch { return nil }
     }
 
     // MARK: - Local day helpers (match lib/daily-service.ts toLocalDayString)
