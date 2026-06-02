@@ -37,6 +37,19 @@ enum DailyResultsService {
         let hints_used: Int
     }
 
+    /// Has the (free) user already used today's daily Classic VS? Mirrors the
+    /// web `hasPlayedModeToday('vs')` gate — a daily_results row for DUEL/vs today.
+    static func hasPlayedDailyVS() async -> Bool {
+        let client = AuthService.shared.client
+        guard let uid = try? await client.auth.session.user.id.uuidString else { return false }
+        let count = (try? await client.from("daily_results")
+            .select("id", head: true, count: .exact)
+            .eq("user_id", value: uid).eq("day", value: LeaderboardService.todayLocal())
+            .eq("game_mode", value: "DUEL").eq("play_type", value: "vs")
+            .execute().count) ?? 0
+        return count > 0
+    }
+
     /// Records a finished solo daily game. No-ops if signed out or the mode
     /// has no daily score config. Returns the composite score (or nil).
     @discardableResult

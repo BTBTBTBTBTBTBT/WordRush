@@ -95,6 +95,28 @@ final class AuthService: ObservableObject {
         isAuthenticated = false
     }
 
+    /// Permanently delete the account. The native client only holds the anon
+    /// key (can't delete the auth user), so this calls the web endpoint
+    /// /api/account/delete — which verifies the Bearer token and performs the
+    /// same cascading cleanup (user_stats, matches, daily_results, daily_medals,
+    /// user_achievements, purchases, profile, then the auth user) with the
+    /// service-role key. On success we sign out locally. Returns true on success.
+    func deleteAccount() async -> Bool {
+        guard let token = try? await client.auth.session.accessToken,
+              let url = URL(string: "https://wordocious.com/api/account/delete") else { return false }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        do {
+            let (_, resp) = try await URLSession.shared.data(for: req)
+            guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { return false }
+            await signOut()
+            return true
+        } catch {
+            return false
+        }
+    }
+
     // MARK: - Pro entitlement (StoreKit fulfillment)
 
     private struct ProGrant: Encodable { let is_pro: Bool; let pro_expires_at: String; let streak_shields: Int }

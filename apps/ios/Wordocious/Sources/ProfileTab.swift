@@ -88,8 +88,7 @@ struct ProfileTab: View {
         let progress = Double(p.xp % 1000) / 10.0
         let toNext = 1000 - (p.xp % 1000)
         return VStack(spacing: 10) {
-            Circle().fill(Theme.wordmarkGradient).frame(width: 96, height: 96)
-                .overlay(Text(String(p.username.prefix(1)).uppercased()).font(Brand.title(38)).foregroundStyle(.white))
+            AvatarView(url: p.avatarUrl, username: p.username, size: 96)
             HStack(spacing: 6) {
                 Text(p.username).font(Brand.title(28)).foregroundStyle(Theme.textPrimary)
                 if auth.isProActive {

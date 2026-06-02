@@ -1,8 +1,8 @@
 import SwiftUI
+import PhotosUI
 
-/// Edit username + social links — ports the web profile-edit-modal. (Avatar
-/// photo upload is deferred — native shows the initial avatar.) Handles are
-/// stored without a leading @; the website is stored as-is.
+/// Edit avatar + username + social links — ports the web profile-edit-modal.
+/// Handles are stored without a leading @; the website is stored as-is.
 struct EditProfileView: View {
     @ObservedObject private var auth = AuthService.shared
     @Environment(\.dismiss) private var dismiss
@@ -11,6 +11,8 @@ struct EditProfileView: View {
     @State private var socials: [String: String] = [:]
     @State private var error: String?
     @State private var saving = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var uploadingAvatar = false
 
     private let platforms: [(key: String, label: String, placeholder: String)] = [
         ("twitter", "Twitter / X", "username"), ("instagram", "Instagram", "username"),
@@ -23,6 +25,25 @@ struct EditProfileView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 10) {
+                            ZStack(alignment: .bottomTrailing) {
+                                AvatarView(url: auth.profile?.avatarUrl, username: auth.profile?.username ?? "", size: 84)
+                                    .opacity(uploadingAvatar ? 0.5 : 1)
+                                if uploadingAvatar { ProgressView() }
+                            }
+                            PhotosPicker(selection: $photoItem, matching: .images) {
+                                Text(uploadingAvatar ? "Uploading…" : "Change Photo")
+                                    .font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
+                            }
+                            .disabled(uploadingAvatar)
+                        }
+                        Spacer()
+                    }
+                    .listRowBackground(Color.clear)
+                }
                 Section("Username") {
                     TextField("username", text: $username)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -52,7 +73,25 @@ struct EditProfileView: View {
                 username = auth.profile?.username ?? ""
                 if let uid = auth.profile?.id { socials = await ProfileExtras.socialLinks(userId: uid) }
             }
+            .onChange(of: photoItem) { item in
+                guard let item else { return }
+                uploadingAvatar = true
+                Task { await uploadAvatar(item); uploadingAvatar = false }
+            }
         }
+    }
+
+    private struct AvatarUpdate: Encodable { let avatar_url: String }
+
+    /// Load the picked photo, upload to the avatars bucket, and persist the URL
+    /// to profiles.avatar_url (separate write, like the web — username Save is
+    /// independent), then refresh so it shows everywhere immediately.
+    private func uploadAvatar(_ item: PhotosPickerItem) async {
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let url = await AvatarUploader.upload(data),
+              let uid = auth.profile?.id else { return }
+        try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: url)).eq("id", value: uid).execute()
+        await auth.refreshProfile()
     }
 
     private func validate(_ name: String) -> String? {

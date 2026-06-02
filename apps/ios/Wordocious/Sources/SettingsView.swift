@@ -14,6 +14,11 @@ struct SettingsView: View {
     private var theme: String { themeManager.theme }
     // Sound reads UserDefaults directly in SoundManager; @AppStorage writes it.
     @AppStorage("pref-sound") private var soundOn = true
+    @AppStorage("pref-daily-reminder") private var dailyReminder = false
+    @State private var reminderDenied = false
+    @State private var showDeleteConfirm = false
+    @State private var deleting = false
+    @State private var deleteError = false
     // Colorblind + reduced-motion are owned by ThemeManager so changes publish
     // and apply app-wide (tile palette / animation gating).
 
@@ -38,6 +43,13 @@ struct SettingsView: View {
                         section("SOUND & FEEDBACK") {
                             VStack(spacing: 0) {
                                 toggleRow("Sound Effects", "Key taps, win/loss jingles", $soundOn)
+                            }
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+                        }
+                        section("NOTIFICATIONS") {
+                            VStack(spacing: 0) {
+                                toggleRow("Daily Reminder", "A nudge to play today's puzzles", $dailyReminder)
                             }
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
@@ -68,6 +80,22 @@ struct SettingsView: View {
                             Button { Task { await auth.signOut(); dismiss() } } label: {
                                 Text("Sign out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
                             }.buttonStyle(.bordered).tint(Color(hex: 0xDC2626))
+
+                            // Delete Account — ports the web profile flow (calls
+                            // /api/account/delete). Required by App Store 5.1.1(v).
+                            Button(role: .destructive) { showDeleteConfirm = true } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "trash").font(.system(size: 15))
+                                    Text("Delete Account").font(Brand.font(14, .heavy))
+                                    Spacer()
+                                }
+                                .foregroundStyle(Color(hex: 0xDC2626))
+                                .padding(14)
+                                .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: 0xFECACA), lineWidth: 1.5))
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(deleting)
                         }
                         Text("Wordocious · v1.0.0").font(Brand.font(11, .bold))
                             .foregroundStyle(Theme.textMuted).frame(maxWidth: .infinity)
@@ -77,6 +105,39 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+            .onChange(of: dailyReminder) { on in
+                if on {
+                    Task {
+                        let granted = await NotificationService.requestAndSchedule()
+                        if !granted { dailyReminder = false; reminderDenied = true }
+                    }
+                } else {
+                    NotificationService.cancel()
+                }
+            }
+            .alert("Notifications are off", isPresented: $reminderDenied) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Enable notifications for Wordocious in iOS Settings to get a daily reminder.")
+            }
+            .alert("Delete your account?", isPresented: $showDeleteConfirm) {
+                Button("Cancel", role: .cancel) {}
+                Button(deleting ? "Deleting…" : "Delete Forever", role: .destructive) {
+                    deleting = true
+                    Task {
+                        let ok = await auth.deleteAccount()
+                        deleting = false
+                        if ok { dismiss() } else { deleteError = true }
+                    }
+                }.disabled(deleting)
+            } message: {
+                Text("This will permanently delete your profile, stats, streak, medals, achievements, and all game data. This action cannot be undone.")
+            }
+            .alert("Couldn't delete account", isPresented: $deleteError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Please try again or contact support@wordocious.com.")
+            }
         }
     }
 

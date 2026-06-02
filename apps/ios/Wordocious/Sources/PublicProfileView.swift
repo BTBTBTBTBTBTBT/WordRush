@@ -92,8 +92,7 @@ struct PublicProfileView: View {
                 }.buttonStyle(.plain)
                 Spacer()
             }
-            Circle().fill(Theme.wordmarkGradient).frame(width: 96, height: 96)
-                .overlay(Text(String(p.username.prefix(1)).uppercased()).font(Brand.title(38)).foregroundStyle(.white))
+            AvatarView(url: p.avatarUrl, username: p.username, size: 96)
             Text(p.username).font(Brand.title(30))
                 .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
             HStack(spacing: 6) {
