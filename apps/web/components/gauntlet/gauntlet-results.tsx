@@ -18,6 +18,10 @@ interface GauntletResultsProps {
   onHome: () => void;
   showPlayAgain?: boolean;
   isDaily?: boolean;
+  /** Whether to record this run into local gauntlet-stats on mount. False when
+   *  showing a cross-device revisit (the run wasn't played on this device, so
+   *  re-recording would inflate the local games-played count). */
+  recordOnMount?: boolean;
 }
 
 function formatTime(ms: number): string {
@@ -36,6 +40,7 @@ export function GauntletResults({
   onHome,
   showPlayAgain = true,
   isDaily,
+  recordOnMount = true,
 }: GauntletResultsProps) {
   const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
   const stagesCompleted = stageResults.filter(r => r.status === GameStatus.WON).length;
@@ -97,8 +102,10 @@ export function GauntletResults({
 
   // Record this game on mount so the Records menu has the data — the
   // all-time stats live there now rather than cluttering this results screen.
+  // Skipped on a cross-device revisit (recordOnMount=false) so we don't
+  // re-count a run that wasn't played on this device.
   useEffect(() => {
-    recordGauntletGame(won, totalGuesses, totalTimeMs);
+    if (recordOnMount) recordGauntletGame(won, totalGuesses, totalTimeMs);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

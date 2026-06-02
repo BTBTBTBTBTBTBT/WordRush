@@ -1,7 +1,7 @@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from './supabase-client';
 import { handleSupabaseError } from './supabase-error-handler';
-import { isDailySeed } from '@wordle-duel/core';
+import { isDailySeed, type GauntletStageConfig, type GauntletStageResult } from '@wordle-duel/core';
 import {
   recordDailyResult,
   recordDailyVsResult,
@@ -401,6 +401,45 @@ export async function recordGauntletStages(
   } catch {
     // Column not migrated yet — best effort; cross-device detail turns on once applied.
   }
+}
+
+export interface GauntletStagesResult {
+  stages: GauntletStageConfig[];
+  stageResults: GauntletStageResult[];
+  won: boolean;
+  totalTimeMs: number;
+}
+
+/**
+ * Read the server-persisted Gauntlet per-stage breakdown for a user + seed, so
+ * the results screen renders cross-device (a run played on another device). Pairs
+ * with recordGauntletStages. Returns null if the column isn't migrated, the row
+ * has no breakdown, or nothing is found.
+ */
+export async function fetchGauntletStages(userId: string, seed: string): Promise<GauntletStagesResult | null> {
+  try {
+    const { data } = await (supabase as any)
+      .from('matches')
+      .select('gauntlet_stages, player1_time, winner_id')
+      .eq('player1_id', userId)
+      .eq('game_mode', 'GAUNTLET')
+      .eq('seed', seed)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const gs = data?.gauntlet_stages;
+    if (gs?.stages && gs?.stageResults) {
+      return {
+        stages: gs.stages,
+        stageResults: gs.stageResults,
+        won: !!data.winner_id,
+        totalTimeMs: (data.player1_time ?? 0) * 1000,
+      };
+    }
+  } catch {
+    // Column not migrated / no row — cross-device detail simply stays unavailable.
+  }
+  return null;
 }
 
 /**

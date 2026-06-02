@@ -1,13 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { evaluateGuess, TileState, GameStatus, BoardState } from '@wordle-duel/core';
+import { evaluateGuess, TileState, GameStatus, BoardState, generateDailySeed } from '@wordle-duel/core';
 import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { getTodayLocal, formatHintsLabel } from '@/lib/daily-service';
+import { useAuth } from '@/lib/auth-context';
+import { fetchGauntletStages } from '@/lib/stats-service';
 import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
 import type { Guess as ProperNoundleGuess, TileState as PNTileState } from '@/components/propernoundle/types';
@@ -488,26 +490,42 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     (MULTI_BOARD_MODES.has(modeId) || isProperNoundle || isGauntlet) ? null : solution
   );
 
+  // Gauntlet played on another device has no local session — pull the per-stage
+  // breakdown from the server (matches.gauntlet_stages) so the card still renders.
+  const { profile } = useAuth();
+  const [serverGauntlet, setServerGauntlet] = useState<
+    { stages: GauntletStageConfig[]; stageResults: GauntletStageResult[]; won: boolean; totalTimeMs: number } | null
+  >(null);
+  useEffect(() => {
+    if (!isGauntlet || session || !profile) return;
+    let cancelled = false;
+    fetchGauntletStages(profile.id, generateDailySeed(getTodayLocal(), 'GAUNTLET'))
+      .then(r => { if (!cancelled && r) setServerGauntlet(r); });
+    return () => { cancelled = true; };
+  }, [isGauntlet, session, profile]);
+
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;
     return `${Math.floor(s / 60)}m ${s % 60}s`;
   };
 
-  // Gauntlet path
+  // Gauntlet path — prefer the local session; otherwise use the server-persisted
+  // stage breakdown (cross-device). Returns null only when neither is available.
   if (isGauntlet) {
-    if (!session) return null;
-    const gauntlet = session.state.gauntlet;
-    if (!gauntlet) return null;
-
-    const stageResults = gauntlet.stageResults;
+    const localGauntlet = session?.state.gauntlet ?? null;
+    const stages = localGauntlet?.stages ?? serverGauntlet?.stages ?? null;
+    const stageResults = localGauntlet?.stageResults ?? serverGauntlet?.stageResults ?? null;
+    if (!stages || !stageResults) return null;
+    const won = session ? session.state.status === 'WON' : (serverGauntlet?.won ?? false);
+    const totalTimeMs = session ? session.elapsedTime * 1000 : (serverGauntlet?.totalTimeMs ?? 0);
     return (
       <GauntletCompletedCard
-        won={session.state.status === 'WON'}
-        stages={gauntlet.stages}
+        won={won}
+        stages={stages}
         stageResults={stageResults}
         stagesCleared={stageResults.filter(r => r.status === GameStatus.WON).length}
         totalGuesses={stageResults.reduce((sum, r) => sum + r.guesses, 0)}
-        totalTimeMs={session.elapsedTime * 1000}
+        totalTimeMs={totalTimeMs}
       />
     );
   }

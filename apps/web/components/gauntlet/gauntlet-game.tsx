@@ -23,7 +23,7 @@ import { GauntletProgress, GauntletStageHeader } from './gauntlet-progress';
 import { StageTransition } from './stage-transition';
 import { GauntletResults } from './gauntlet-results';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordSoloMatch, recordGauntletStages, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordSoloMatch, recordGauntletStages, fetchGauntletStages, type GauntletStagesResult, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
@@ -64,6 +64,10 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // definitely don't want to re-record the game stats.
   const [showResults, setShowResults] = useState(() => savedSession?.isCompleted ?? false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
+  // Cross-device: a daily Gauntlet completed on another device has no local
+  // session. We fetch the server-persisted stage breakdown so revisiting here
+  // shows the full results screen instead of a fresh game.
+  const [serverResults, setServerResults] = useState<GauntletStagesResult | null>(null);
   // Flag so the game-over effect below doesn't refire victory/loss animations
   // or double-record stats when a completed save is loaded on mount. Reset in
   // handlePlayAgain so a fresh run behaves normally.
@@ -73,6 +77,15 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
     state.status === GameStatus.PLAYING && !showTransition,
     savedSession?.elapsedTime ?? 0,
   );
+
+  // No local session for today's daily → try the server's per-stage breakdown
+  // so a cross-device revisit shows the results screen (see serverResults render).
+  useEffect(() => {
+    if (!isDaily || savedSession || !profile) return;
+    let cancelled = false;
+    fetchGauntletStages(profile.id, seed).then(r => { if (!cancelled && r) setServerResults(r); });
+    return () => { cancelled = true; };
+  }, [isDaily, savedSession, profile, seed]);
 
   // Persistence hook — snapshots the full reducer state to localStorage on
   // every change, and clears on game-end. This lets the user navigate away
@@ -346,6 +359,30 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   ) : null;
 
   // Show results screen
+  // Cross-device revisit: this daily Gauntlet was played on another device, so
+  // there's no local session — render the results from the server-persisted
+  // stage breakdown instead of starting a fresh game. recordOnMount=false so we
+  // don't re-count a run that wasn't played here.
+  if (serverResults && !showResults) {
+    return (
+      <>
+        {xpToast}
+        <GauntletResults
+          won={serverResults.won}
+          stages={serverResults.stages}
+          stageResults={serverResults.stageResults}
+          totalTimeMs={serverResults.totalTimeMs}
+          onPlayAgain={handlePlayAgain}
+          onHome={handleHome}
+          showPlayAgain={false}
+          isDaily={isDaily}
+          recordOnMount={false}
+        />
+        <BottomNav />
+      </>
+    );
+  }
+
   if (showResults) {
     return (
       <>
