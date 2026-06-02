@@ -550,7 +550,7 @@ struct LeaderboardTab: View {
         ScrollView {
             VStack(spacing: 12) {
                 header
-                modePicker
+                HModePicker(selected: $mode)
                 CompletedDailyCard(mode: mode)
                 if let r = userRank { rankBanner(r) }
 
@@ -631,28 +631,6 @@ struct LeaderboardTab: View {
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
-    private var modePicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(pickerModes) { m in
-                    let active = m.dbKey == mode.rawValue
-                    // ProperNoundle has no HomeMode.mode; map via its dbKey
-                    // ("PROPERNOUNDLE") to GameMode.propernoundle.
-                    Button { mode = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? mode } label: {
-                        HStack(spacing: 6) {
-                            ModeIconView(icon: m.icon, accent: m.accent, box: 22)
-                            Text(m.title).font(Brand.font(13, .heavy))
-                                .foregroundStyle(active ? m.accent : Theme.textMuted)
-                        }
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
 
     private func rankBanner(_ r: (rank: Int, total: Int)) -> some View {
         (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
@@ -1021,28 +999,45 @@ struct DailyRecordsView: View {
     }
 }
 
-/// Shared horizontal mode picker (9 daily modes).
+/// Shared mode picker — all 9 daily modes laid out 5-on-top-of-4 on one screen
+/// (no horizontal scroll), matching the Profile "Today's Dailies" arrangement.
+/// Selecting a mode highlights it in the mode's accent color.
 struct HModePicker: View {
     @Binding var selected: GameMode
     // All 9 daily-recordable modes incl. ProperNoundle (dbKey, no HomeMode.mode).
     private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
+    private let spacing: CGFloat = 8
+
+    // Short labels so each cell fits 5-across without truncating.
+    private let shortTitles: [String: String] = [
+        "practice": "Classic", "quordle": "Quad", "octordle": "Octo", "sequence": "Succ",
+        "rescue": "Deliv", "six": "Six", "seven": "Seven", "gauntlet": "Gauntlet", "propernoundle": "Proper",
+    ]
+
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(modes) { m in
-                    let active = m.dbKey == selected.rawValue
-                    Button { selected = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? selected } label: {
-                        HStack(spacing: 6) {
-                            ModeIconView(icon: m.icon, accent: m.accent, box: 22)
-                            Text(m.title).font(Brand.font(13, .heavy)).foregroundStyle(active ? m.accent : Theme.textMuted)
-                        }
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
-                    }.buttonStyle(.plain)
-                }
+        GeometryReader { geo in
+            let w = (geo.size.width - spacing * 4) / 5
+            VStack(spacing: spacing) {
+                HStack(spacing: spacing) { ForEach(Array(modes.prefix(5))) { cell($0, w) } }
+                HStack(spacing: spacing) { ForEach(Array(modes.dropFirst(5))) { cell($0, w) } }
             }
+            .frame(maxWidth: .infinity)
         }
+        .frame(height: 112)
+    }
+
+    private func cell(_ m: HomeMode, _ w: CGFloat) -> some View {
+        let active = m.dbKey == selected.rawValue
+        return Button { selected = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? selected } label: {
+            VStack(spacing: 4) {
+                ModeIconView(icon: m.icon, accent: m.accent, box: 26)
+                Text(shortTitles[m.id] ?? m.title).font(Brand.font(9, .heavy))
+                    .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
+            }
+            .frame(width: w, height: 52)
+            .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
+        }.buttonStyle(.plain)
     }
 }
 
