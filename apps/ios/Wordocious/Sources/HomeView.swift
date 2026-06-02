@@ -11,6 +11,9 @@ struct HomeView: View {
     @AppStorage("pref-play-mode") private var playMode: PlayMode = .daily
     @State private var showVSLobby = false
     @State private var pendingGame: ActiveGame?    // tap-time-resolved Unlimited game
+    @State private var showInvite = false
+    @State private var livePulse = false
+    @StateObject private var livePlayers = LivePlayerCount()
 
     /// A game whose seed was resolved at tap time (Unlimited play).
     struct ActiveGame: Identifiable, Equatable {
@@ -50,6 +53,9 @@ struct HomeView: View {
                                     card(mode)
                                 }
                             }
+                            liveBar
+                            signOutButton
+                            footerLinks
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 4)
@@ -87,7 +93,9 @@ struct HomeView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showInvite) { InviteSheet() }
             .task(id: auth.isAuthenticated) { await completions.load() }
+            .onAppear { livePlayers.start() }
             .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -145,6 +153,70 @@ struct HomeView: View {
             Spacer()
         }
         .padding(.top, 2)
+    }
+
+    // MARK: - LIVE banner + footer (ports the web home bottom)
+
+    /// Real-time connected-player count + (Pro-only) Invite button.
+    private var liveBar: some View {
+        HStack {
+            HStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Circle().fill(Color(hex: 0x22C55E)).frame(width: 8, height: 8)
+                        .opacity(livePulse ? 0.35 : 1)
+                        .animation(Theme.animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)), value: livePulse)
+                    Text("LIVE").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
+                }
+                Text(liveCountLabel).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+            }
+            Spacer()
+            if auth.isProActive {
+                Button { showInvite = true } label: {
+                    Text("Invite").font(Brand.font(10, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(
+                            LinearGradient(colors: [Color(hex: 0xEC4899), Color(hex: 0xDB2777)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                        .shadow(color: Color(hex: 0x9F1239), radius: 0, x: 0, y: 2)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+        .padding(.top, 4)
+        .onAppear { livePulse = true }
+    }
+
+    private var liveCountLabel: String {
+        guard let n = livePlayers.count else { return "Players online" }
+        return "\(n) \(n == 1 ? "player" : "players") online"
+    }
+
+    private var signOutButton: some View {
+        Button { Task { await auth.signOut() } } label: {
+            Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 2)
+    }
+
+    /// About · How to Play · Privacy · Terms — same destinations as Settings, so
+    /// the content is the single source of truth and stays aligned with the web.
+    private var footerLinks: some View {
+        HStack(spacing: 12) {
+            NavigationLink { InfoPage(.about) } label: { footerLink("About") }
+            NavigationLink { HelpView() } label: { footerLink("How to Play") }
+            NavigationLink { InfoPage(.privacy) } label: { footerLink("Privacy") }
+            NavigationLink { InfoPage(.terms) } label: { footerLink("Terms") }
+        }
+        .padding(.top, 2)
+    }
+
+    private func footerLink(_ t: String) -> some View {
+        Text(t).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
     }
 
     // MARK: - Mode card

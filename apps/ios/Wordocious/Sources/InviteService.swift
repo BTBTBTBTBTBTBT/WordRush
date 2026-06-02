@@ -15,9 +15,45 @@ enum InviteService {
     private struct InviteInsert: Encodable {
         let inviter_id: String; let invite_code: String; let game_mode: String
     }
+    private struct InviteInsertTargeted: Encodable {
+        let inviter_id: String; let invitee_id: String?; let invite_code: String; let game_mode: String
+    }
     private struct InviteRow: Decodable { let game_mode: String }
+    private struct ProfileIdRow: Decodable { let id: String }
     private struct AcceptUpdate: Encodable {
         let status: String; let accepted_at: String; let match_id: String?
+    }
+
+    /// Result of the home Invite modal — a shareable code or a user-facing error.
+    struct InviteResult { let code: String?; let error: String? }
+
+    /// Create an invite, optionally targeted at a username (ports the web
+    /// createInvite). A username is resolved to a profile id stored in
+    /// `invitee_id` so that user sees it in their pending-invites badge; an
+    /// empty username makes a public-link invite anyone can redeem.
+    static func createInvite(gameMode: GameMode, inviteeUsername: String?) async -> InviteResult {
+        let client = AuthService.shared.client
+        guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else {
+            return InviteResult(code: nil, error: "You're not signed in")
+        }
+        var inviteeId: String?
+        if let uname = inviteeUsername, !uname.isEmpty {
+            let row: ProfileIdRow? = try? await client.from("profiles")
+                .select("id").ilike("username", pattern: uname).limit(1).single().execute().value
+            guard let row else { return InviteResult(code: nil, error: "User not found") }
+            if row.id.lowercased() == uid { return InviteResult(code: nil, error: "You can't invite yourself") }
+            inviteeId = row.id
+        }
+        for _ in 0..<3 {
+            let code = generateCode()
+            do {
+                try await client.from("match_invites")
+                    .insert(InviteInsertTargeted(inviter_id: uid, invitee_id: inviteeId, invite_code: code, game_mode: gameMode.rawValue))
+                    .execute()
+                return InviteResult(code: code, error: nil)
+            } catch { continue }
+        }
+        return InviteResult(code: nil, error: "Could not generate a unique code")
     }
 
     /// Create an invite for a mode; returns the shareable code (nil on failure).
