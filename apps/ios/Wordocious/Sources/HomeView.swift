@@ -23,6 +23,8 @@ struct HomeView: View {
     /// One-time Pro nudge once the daily-login streak hits 7 (ports pro-prompt-modal).
     /// Local flag instead of the web's profiles.pro_prompt_shown column (no migration).
     @AppStorage("pro-prompt-shown") private var proPromptShown = false
+    @State private var showShieldModal = false
+    @State private var shieldChecked = false
 
     /// A game whose seed was resolved at tap time (Unlimited play).
     struct ActiveGame: Identifiable, Equatable {
@@ -87,6 +89,15 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         .padding(.horizontal, 16).padding(.bottom, 12)
                 }
+
+                if showShieldModal, let p = auth.profile {
+                    StreakShieldModal(
+                        streak: p.dailyLoginStreak, shields: p.streakShields,
+                        onUseShield: { await ShieldService.useShield(); closeShield() },
+                        onDecline: { await ShieldService.declineStreak(); closeShield() },
+                        onClose: { closeShield() })
+                    .transition(.opacity)
+                }
             }
             .animation(Theme.animation(.easeInOut(duration: 0.15)), value: limitModal != nil)
             .animation(Theme.animation(.easeInOut(duration: 0.2)), value: showProPrompt)
@@ -119,7 +130,7 @@ struct HomeView: View {
                     VSGameView(mode: inv.mode, inviteCode: inv.code)
                 }
             }
-            .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites() }
+            .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites(); checkStreakAtRisk() }
             .onAppear { livePlayers.start() }
             .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
                 Button("OK", role: .cancel) {}
@@ -209,6 +220,20 @@ struct HomeView: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
         .shadow(color: .black.opacity(0.1), radius: 16, x: 0, y: 8)
+    }
+
+    // MARK: - Streak shield (ports StreakShieldProvider)
+
+    private func checkStreakAtRisk() {
+        guard !shieldChecked, let p = auth.profile else { return }
+        shieldChecked = true
+        if p.dailyLoginStreak > 0 && ShieldService.isStreakAtRisk(lastPlayedAt: p.lastPlayedAt) {
+            withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { showShieldModal = true }
+        }
+    }
+
+    private func closeShield() {
+        withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { showShieldModal = false }
     }
 
     // MARK: - Incoming VS invites (ports PendingInvitesBanner)

@@ -82,4 +82,10 @@ enum Haptics {
         UINotificationFeedbackGenerator().notificationOccurred(.error)
         #endif
     }
+
+    static func warning() {
+        #if canImport(UIKit)
+        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        #endif
+    }
 }
