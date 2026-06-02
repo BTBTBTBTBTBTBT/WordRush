@@ -237,7 +237,7 @@ struct DefinitionCard: View {
                     .foregroundStyle(Theme.textPrimary)
             }
             if loaded {
-                box.frame(maxWidth: 340)
+                box   // full width — matches the Score Breakdown card
             }
         }
         .task(id: solution) {
