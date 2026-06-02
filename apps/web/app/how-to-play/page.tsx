@@ -217,6 +217,8 @@ export default function HowToPlayPage() {
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Loss:</strong> 25 XP (you still earn XP for trying)</span></li>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Win streak bonus:</strong> +50 XP</span></li>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Daily challenge bonus:</strong> +50 XP</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Daily Sweep:</strong> +200 XP for playing all 9 of the day&rsquo;s puzzles</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Flawless Victory:</strong> +400 XP more for winning every one (600 XP total with the Sweep)</span></li>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span><strong>Medal XP:</strong> Gold +100, Silver +50, Bronze +25</span></li>
             </ul>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>

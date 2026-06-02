@@ -133,7 +133,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How do XP and levels work?',
-    a: 'Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Every 1,000 XP = 1 level.',
+    a: "Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Play all 9 of the day's puzzles for a Daily Sweep (+200 XP), and win every one for a Flawless Victory (+400 XP more — 600 total). Every 1,000 XP = 1 level.",
   },
   {
     q: 'How do medals work?',
