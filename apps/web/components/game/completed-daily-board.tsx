@@ -209,7 +209,7 @@ function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluation
   won: boolean;
 }) {
   return (
-    <div className={`relative p-0.5 rounded-lg border-2 ${
+    <div className={`relative min-w-0 p-0.5 rounded-lg border-2 ${
       won ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'
     }`}>
       {won && (
@@ -217,7 +217,11 @@ function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluation
           ✓
         </div>
       )}
-      <div className="grid gap-[1px]" style={{ gridTemplateRows: `repeat(${maxGuesses}, 1fr)` }}>
+      {/* min-w-0 / min-h-0 at every grid level: grid items default to
+          min-width:auto, which lets the aspectRatio tiles size from height and
+          overflow their column on some layout passes — the cause of the
+          intermittent "boards blow up and clip on re-render" bug. */}
+      <div className="grid gap-[1px] min-w-0" style={{ gridTemplateRows: `repeat(${maxGuesses}, minmax(0, auto))` }}>
         {Array.from({ length: maxGuesses }).map((_, rowIndex) => {
           const guess = guesses[rowIndex] || '';
           const isPast = rowIndex < guesses.length;
@@ -229,14 +233,14 @@ function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluation
             : Array(wordLen).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className="grid gap-[1px]" style={{ gridTemplateColumns: `repeat(${wordLen}, 1fr)` }}>
+            <div key={rowIndex} className="grid gap-[1px] min-w-0" style={{ gridTemplateColumns: `repeat(${wordLen}, minmax(0, 1fr))` }}>
               {Array.from({ length: wordLen }).map((_, li) => {
                 const letter = guess[li] || '';
                 const tileState = isPast ? tiles[li] : TileState.EMPTY;
                 return (
                   <div
                     key={li}
-                    className={`flex items-center justify-center border rounded text-[7px] font-bold leading-none ${
+                    className={`flex items-center justify-center border rounded text-[7px] font-bold leading-none min-w-0 min-h-0 ${
                       tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'
                     } ${getTileColor(tileState)}`}
                     style={{ aspectRatio: '1' }}
