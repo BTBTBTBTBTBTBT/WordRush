@@ -10,11 +10,16 @@ struct CompletedDailyCard: View {
     @State private var data: MatchStatsService.SolvedDaily?
     @State private var expanded = false
     @State private var maxGuesses = 0
+    /// Local per-board state (correct for every mode incl. sequence/rescue);
+    /// preferred over the flat matches-row reconstruction when this device played it.
+    @State private var localBoards: [BoardState]?
+
+    private var boardCount: Int { localBoards?.count ?? data?.solutions.count ?? 1 }
 
     /// Web-parity responsive tile size so all boards fit on one screen.
     private var tileSize: CGFloat {
-        CompletedBoardLayout.tileSize(boardCount: data?.solutions.count ?? 1,
-                                      wordLen: data?.solutions.first?.count ?? 5)
+        CompletedBoardLayout.tileSize(boardCount: boardCount,
+                                      wordLen: localBoards?.first?.solution.count ?? data?.solutions.first?.count ?? 5)
     }
 
     var body: some View {
@@ -67,6 +72,10 @@ struct CompletedDailyCard: View {
         }
         .task(id: mode.rawValue) {
             let seed = DailySeed.today(mode: mode)
+            if let state = GamePersistence.shared.load(seed: seed, mode: mode),
+               state.status == .won || state.status == .lost {
+                localBoards = state.boards
+            }
             data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)
             maxGuesses = createInitialState(seed: seed, mode: mode).boards.map(\.maxGuesses).max() ?? 6
             expanded = false
@@ -74,48 +83,21 @@ struct CompletedDailyCard: View {
     }
 
     @ViewBuilder private func boards(_ d: MatchStatsService.SolvedDaily) -> some View {
-        if d.solutions.count == 1 {
-            boardGrid(solution: d.solutions[0], guesses: d.guesses, multi: false)
+        let bs = localBoards ?? CompletedBoardReconstruct.boards(mode: mode, solutions: d.solutions,
+                                                                 guesses: d.guesses, maxGuesses: maxGuesses)
+        let rowCount = bs.map(\.maxGuesses).max() ?? 6
+        if bs.count == 1 {
+            CompletedMiniBoardView(board: bs[0], tileSize: tileSize, rowCount: rowCount, framed: false)
         } else {
-            let count = d.solutions.count
             let cols = Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing),
-                             count: CompletedBoardLayout.cols(count))
+                             count: CompletedBoardLayout.cols(bs.count))
             LazyVGrid(columns: cols, spacing: CompletedBoardLayout.gridSpacing) {
-                ForEach(Array(d.solutions.enumerated()), id: \.offset) { _, sol in
-                    boardGrid(solution: sol, guesses: d.guesses, multi: true)
+                ForEach(bs.indices, id: \.self) { i in
+                    CompletedMiniBoardView(board: bs[i], tileSize: tileSize, rowCount: rowCount, framed: true)
                 }
             }
-            .frame(maxWidth: CompletedBoardLayout.maxWidth(count))
+            .frame(maxWidth: CompletedBoardLayout.maxWidth(bs.count))
         }
-    }
-
-    private func boardGrid(solution: String, guesses: [String], multi: Bool) -> some View {
-        let solved = guesses.contains { $0.uppercased() == solution.uppercased() }
-        // Filled rows up to (incl.) the solving guess, then empty filler to
-        // maxGuesses so every board is the same height (web parity).
-        var rows: [GuessResult] = []
-        for g in guesses {
-            rows.append(evaluateGuess(solution: solution, guess: g))
-            if g.uppercased() == solution.uppercased() { break }
-        }
-        let width = solution.count
-        let total = max(rows.count, maxGuesses)
-        return VStack(spacing: tileSize * 0.1) {
-            ForEach(0..<total, id: \.self) { i in
-                HStack(spacing: tileSize * 0.1) {
-                    if i < rows.count {
-                        ForEach(rows[i].tiles.indices, id: \.self) { c in
-                            TileView(letter: rows[i].tiles[c].letter, state: rows[i].tiles[c].state, revealed: true, size: tileSize)
-                        }
-                    } else {
-                        ForEach(0..<width, id: \.self) { _ in
-                            TileView(letter: "", state: .empty, revealed: false, size: tileSize)
-                        }
-                    }
-                }
-            }
-        }
-        .modifier(SolvedBoardFrame(won: multi && solved, lost: multi && !solved, active: multi, tileSize: tileSize))
     }
 
     private func stat(_ value: String, _ label: String) -> some View {

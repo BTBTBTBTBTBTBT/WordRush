@@ -144,6 +144,76 @@ enum CompletedBoardLayout {
     }
 }
 
+/// Rebuilds per-board `BoardState`s from a flat matches-row guess list when no
+/// local session exists (cross-device). Mode-aware: Succession (SEQUENCE) plays
+/// boards one at a time, so its flat list is split sequentially — advance to the
+/// next board when a guess matches the current solution. Every other multi mode
+/// (Quordle/Octordle/Rescue) applies the shared guesses to all boards at once.
+enum CompletedBoardReconstruct {
+    static func boards(mode: GameMode, solutions: [String], guesses: [String], maxGuesses: Int) -> [BoardState] {
+        let cap = maxGuesses > 0 ? maxGuesses : 6
+        if mode == .sequence {
+            var idx = 0
+            return solutions.map { sol in
+                var g: [String] = []
+                var solved = false
+                while idx < guesses.count {
+                    let guess = guesses[idx]; idx += 1
+                    g.append(guess)
+                    if guess.uppercased() == sol.uppercased() { solved = true; break }
+                }
+                return BoardState(solution: sol, guesses: g, maxGuesses: cap, status: solved ? .won : .lost)
+            }
+        }
+        // Shared-guess modes: each board gets the guesses up to (incl.) its solve.
+        return solutions.map { sol in
+            var g: [String] = []
+            var solved = false
+            for guess in guesses {
+                g.append(guess)
+                if guess.uppercased() == sol.uppercased() { solved = true; break }
+            }
+            return BoardState(solution: sol, guesses: g, maxGuesses: cap, status: solved ? .won : .lost)
+        }
+    }
+}
+
+/// Read-only completed mini board rendered from a single saved `BoardState`
+/// (ports the web CompletedMiniBoard). Renders each board's OWN guesses — so
+/// sequence/rescue boards, whose per-board guess streams differ, are correct —
+/// padded to `rowCount` for a uniform grid height, framed by win/loss.
+struct CompletedMiniBoardView: View {
+    let board: BoardState
+    let tileSize: CGFloat
+    let rowCount: Int
+    var framed: Bool = true
+
+    var body: some View {
+        let width = board.solution.count
+        VStack(spacing: tileSize * 0.1) {
+            ForEach(0..<rowCount, id: \.self) { r in
+                HStack(spacing: tileSize * 0.1) {
+                    if r < board.guesses.count {
+                        let g = board.guesses[r]
+                        // Hint rows (Six/Seven) carry a stored evaluation keyed by word.
+                        let tiles = (board.hintEvaluations?[g] ?? evaluateGuess(solution: board.solution, guess: g)).tiles
+                        ForEach(tiles.indices, id: \.self) { c in
+                            TileView(letter: tiles[c].letter, state: tiles[c].state, revealed: true, size: tileSize)
+                        }
+                    } else {
+                        ForEach(0..<width, id: \.self) { _ in
+                            TileView(letter: "", state: .empty, revealed: false, size: tileSize)
+                        }
+                    }
+                }
+            }
+        }
+        .modifier(SolvedBoardFrame(won: framed && board.status == .won,
+                                   lost: framed && board.status != .won,
+                                   active: framed, tileSize: tileSize))
+    }
+}
+
 /// Lays boards out so they always fit on screen above the keyboard. Tiles are
 /// sized to the smaller of the width budget and (when `fitHeight` is given) the
 /// vertical budget, so multi-board modes like Deliverance/OctoWord never get
