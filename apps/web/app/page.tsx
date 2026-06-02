@@ -18,7 +18,7 @@ import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { useCountdown } from '@/hooks/use-countdown';
 import { getSecondsUntilMidnightUTC, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
-import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits } from '@/lib/play-limit-service';
+import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 interface WordDefinition {
   word: string;
@@ -327,6 +327,9 @@ export default function HomePage() {
   // cleared storage can't bypass the daily mode caps. Fires whenever the
   // signed-in user changes.
   useEffect(() => {
+    // Scope the play-limit cache to the signed-in user (or anon on sign-out)
+    // so a prior account's daily completions can't leak into this one.
+    setActivePlayUser(user?.id ?? null);
     if (user) syncPlayLimits(user.id);
   }, [user]);
 

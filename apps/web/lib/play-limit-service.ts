@@ -22,6 +22,37 @@ import { supabase } from './supabase-client';
 
 const STORAGE_KEY_PREFIX = 'wordocious-plays';
 const VS_STORAGE_KEY = 'wordocious-vs-plays';
+const ACTIVE_UID_KEY = 'wordocious-active-uid';
+
+// The play-limit cache MUST be scoped per signed-in user. Two different
+// accounts on the same browser/device each get their own daily caps — a
+// shared, date-only key let a prior user's completions leak into a freshly
+// signed-in account (every mode showed "Play again in …" for a brand-new
+// user). We keep the active user id in a module variable (hydrated from
+// localStorage so the very first synchronous render after a reload reads the
+// correct key) and fold it into every storage key.
+let activeUserId: string | null = null;
+if (typeof window !== 'undefined') {
+  try { activeUserId = localStorage.getItem(ACTIVE_UID_KEY); } catch {}
+}
+
+/**
+ * Point the play-limit cache at a specific user (or `null` for signed-out /
+ * anonymous). Call on sign-in and sign-out so each account reads/writes its
+ * own daily caps. Persisted so the next page load starts on the right key.
+ */
+export function setActivePlayUser(userId: string | null): void {
+  activeUserId = userId;
+  if (typeof window === 'undefined') return;
+  try {
+    if (userId) localStorage.setItem(ACTIVE_UID_KEY, userId);
+    else localStorage.removeItem(ACTIVE_UID_KEY);
+  } catch {}
+}
+
+function uidPart(): string {
+  return activeUserId || 'anon';
+}
 
 function getTodayLocal(): string {
   const now = new Date();
@@ -32,11 +63,11 @@ function getTodayLocal(): string {
 }
 
 function getStorageKey(): string {
-  return `${STORAGE_KEY_PREFIX}-${getTodayLocal()}`;
+  return `${STORAGE_KEY_PREFIX}-${uidPart()}-${getTodayLocal()}`;
 }
 
 function getVsStorageKey(): string {
-  return `${VS_STORAGE_KEY}-${getTodayLocal()}`;
+  return `${VS_STORAGE_KEY}-${uidPart()}-${getTodayLocal()}`;
 }
 
 /** Get map of which modes have been played today */
@@ -64,6 +95,8 @@ function setDailyPlays(plays: Record<string, boolean>) {
  */
 export async function syncPlayLimits(userId: string): Promise<void> {
   if (typeof window === 'undefined') return;
+  // Make sure the cache is scoped to this user before we read/write it.
+  setActivePlayUser(userId);
   const today = getTodayLocal();
   try {
     const { data } = await (supabase as any)
@@ -192,12 +225,18 @@ export function formatCountdown(totalSeconds: number): string {
 export function cleanupOldPlayData(): void {
   if (typeof window === 'undefined') return;
   const today = getTodayLocal();
+  // Legacy un-scoped keys (date only, no user id) from before the per-user
+  // fix. These caused cross-account leakage, so purge them outright.
+  const legacyMode = new RegExp(`^${STORAGE_KEY_PREFIX}-\\d{4}-\\d{2}-\\d{2}$`);
+  const legacyVs = new RegExp(`^${VS_STORAGE_KEY}-\\d{4}-\\d{2}-\\d{2}$`);
   const keysToRemove: string[] = [];
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && (key.startsWith(STORAGE_KEY_PREFIX) || key.startsWith(VS_STORAGE_KEY))) {
-      if (!key.endsWith(today)) {
+    if (!key) continue;
+    if (key.startsWith(STORAGE_KEY_PREFIX) || key.startsWith(VS_STORAGE_KEY)) {
+      // Always drop legacy un-scoped keys, and any dated key not for today.
+      if (legacyMode.test(key) || legacyVs.test(key) || !key.endsWith(today)) {
         keysToRemove.push(key);
       }
     }
