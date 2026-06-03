@@ -1,5 +1,7 @@
 import Foundation
 import Supabase
+import AuthenticationServices
+import UIKit
 
 /// Owns the Supabase client + auth session + the signed-in profile.
 /// Mirrors apps/web/lib/auth-context.tsx (session, profile, isProActive).
@@ -83,13 +85,23 @@ final class AuthService: ObservableObject {
         await handleSignedIn(userId: session.user.id.uuidString)
     }
 
-    /// Google sign-in via Supabase's hosted OAuth flow (ASWebAuthenticationSession).
+    /// Google sign-in via Supabase's hosted OAuth (PKCE) flow, driven by an
+    /// EXPLICIT ASWebAuthenticationSession rather than the all-in-one
+    /// `signInWithOAuth(...)` convenience — the convenience launcher returned an
+    /// empty auth code on iOS ("both auth code and code verifier should be
+    /// non-empty"). Doing it explicitly makes the PKCE round-trip deterministic:
+    ///  1. `getOAuthSignInURL` builds the provider URL AND persists the PKCE
+    ///     code_verifier in the client's auth storage.
+    ///  2. our ASWebAuthenticationSession (with a real presentation anchor)
+    ///     captures the `com.wordocious.app://auth-callback?code=…` redirect.
+    ///  3. `session(from:)` reads that code + the stored verifier and exchanges.
     /// Requires the Google provider enabled in Supabase Auth and the redirect URL
-    /// `com.wordocious.app://auth-callback` added to the project's allow-list.
+    /// `com.wordocious.app://auth-callback` in the project's allow-list.
     func signInWithGoogle() async throws {
-        let session = try await client.auth.signInWithOAuth(
-            provider: .google,
-            redirectTo: URL(string: "com.wordocious.app://auth-callback"))
+        let redirect = URL(string: "com.wordocious.app://auth-callback")!
+        let authURL = try client.auth.getOAuthSignInURL(provider: .google, redirectTo: redirect)
+        let callbackURL = try await WebAuthSession().start(url: authURL, callbackScheme: "com.wordocious.app")
+        let session = try await client.auth.session(from: callbackURL)
         await handleSignedIn(userId: session.user.id.uuidString)
     }
 
@@ -197,5 +209,45 @@ final class AuthService: ObservableObject {
             }
         }
         try? await client.from("profiles").insert(row).execute()
+    }
+}
+
+/// Thin wrapper around ASWebAuthenticationSession for the explicit Google OAuth
+/// flow. Presents the provider URL, captures the custom-scheme callback, and
+/// returns it. Holds the session for its lifetime and supplies the key-window
+/// presentation anchor required on iOS.
+@MainActor
+final class WebAuthSession: NSObject, ASWebAuthenticationPresentationContextProviding {
+    private var session: ASWebAuthenticationSession?
+
+    func start(url: URL, callbackScheme: String) async throws -> URL {
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<URL, Error>) in
+            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: callbackScheme) { callbackURL, error in
+                if let error {
+                    cont.resume(throwing: error)
+                } else if let callbackURL {
+                    cont.resume(returning: callbackURL)
+                } else {
+                    cont.resume(throwing: URLError(.badServerResponse))
+                }
+            }
+            session.presentationContextProvider = self
+            // Use the system browser's shared session so users already signed
+            // into Google get SSO; iOS shows the standard "…wants to use
+            // google.com to Sign In" consent first.
+            session.prefersEphemeralWebBrowserSession = false
+            self.session = session
+            if !session.start() {
+                cont.resume(throwing: URLError(.cannotConnectToHost))
+            }
+        }
+    }
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)
+            ?? ASPresentationAnchor()
     }
 }
