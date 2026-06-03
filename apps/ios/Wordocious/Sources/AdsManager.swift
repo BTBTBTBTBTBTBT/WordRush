@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import GoogleMobileAds
 import AppTrackingTransparency
+import UserMessagingPlatform
 
 /// AdMob configuration. Defaults to Google's TEST ad unit IDs so test ads render
 /// in the simulator without an AdMob account. Replace with the real unit IDs
@@ -33,13 +34,34 @@ final class AdsManager: NSObject, ObservableObject {
     func start() {
         guard AdsConfig.enabled, !started else { return }
         started = true
-        GADMobileAds.sharedInstance().start(completionHandler: nil)
-        // Request tracking authorization shortly after launch (Apple requires the
-        // app to be active). Ads still serve (non-personalized) if denied.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            ATTrackingManager.requestTrackingAuthorization { _ in }
+        // GDPR / Google UMP consent FIRST (required to serve ads in the EEA/UK).
+        // Order per Google: gather consent → (Apple) ATT → init Mobile Ads SDK.
+        let params = UMPRequestParameters()
+        params.tagForUnderAgeOfConsent = false
+        UMPConsentInformation.sharedInstance.requestConsentInfoUpdate(with: params) { _ in
+            Task { @MainActor in self.presentConsentFormThenStart() }
         }
-        preloadInterstitial()
+    }
+
+    /// Show the consent form if the user's region requires one, then continue.
+    private func presentConsentFormThenStart() {
+        guard let vc = Self.rootViewController() else { afterConsent(); return }
+        UMPConsentForm.loadAndPresentIfRequired(from: vc) { _ in
+            Task { @MainActor in self.afterConsent() }
+        }
+    }
+
+    /// After consent is resolved: request ATT, then (if we may request ads)
+    /// initialize the Mobile Ads SDK and preload the interstitial.
+    private func afterConsent() {
+        let proceed: @MainActor () -> Void = { [weak self] in
+            guard UMPConsentInformation.sharedInstance.canRequestAds else { return }
+            GADMobileAds.sharedInstance().start(completionHandler: nil)
+            self?.preloadInterstitial()
+        }
+        ATTrackingManager.requestTrackingAuthorization { _ in
+            Task { @MainActor in proceed() }
+        }
     }
 
     private func preloadInterstitial() {
