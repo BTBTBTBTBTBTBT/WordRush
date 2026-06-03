@@ -13,6 +13,8 @@ enum PublicProfileService {
         let player1_id: String
         let player2_id: String?
         let winner_id: String?
+        let player1_score: Int?
+        let player2_score: Int?
         let player1_time: Double?
         let player2_time: Double?
         let created_at: String
@@ -21,6 +23,10 @@ enum PublicProfileService {
         func isWinner(_ uid: String) -> Bool { winner_id == uid }
         func playerTime(_ uid: String) -> Int {
             Int((player1_id == uid ? player1_time : player2_time) ?? 0)
+        }
+        /// This player's guess count (score column = guesses; turns for multi-board).
+        func guesses(_ uid: String) -> Int {
+            (player1_id == uid ? player1_score : player2_score) ?? 0
         }
         var date: Date? { parseTimestamp(created_at) }
     }
@@ -59,7 +65,7 @@ enum PublicProfileService {
     /// Last 10 matches (solo or VS) involving this player, newest first.
     static func recentMatches(id: String) async -> [RecentMatch] {
         (try? await AuthService.shared.client.from("matches")
-            .select("id, game_mode, player1_id, player2_id, winner_id, player1_time, player2_time, created_at")
+            .select("id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at")
             .or("player1_id.eq.\(id),player2_id.eq.\(id)")
             .order("created_at", ascending: false).limit(10)
             .execute().value) ?? []

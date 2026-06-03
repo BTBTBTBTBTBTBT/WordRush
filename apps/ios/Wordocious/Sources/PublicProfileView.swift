@@ -265,42 +265,63 @@ struct PublicProfileView: View {
     }
 }
 
-/// One row in a "Recent Matches" list — shared by the public profile and the
-/// signed-in user's own profile tab so both render identically. Shows mode,
-/// Solo/VS, win/loss, the player's time, and the date.
+/// One row in a "Recent Matches" list — ports the web profile row exactly:
+/// a mode-accent-tinted icon box (the mode's own glyph), proper-case title +
+/// a Solo/VS pill, an "N guesses · time" line, and "Win/Loss" + "Mon D · h:mm a".
+/// Shared by the public profile and the signed-in user's own profile tab.
 struct RecentMatchRow: View {
     let match: PublicProfileService.RecentMatch
     let profileId: String
+
+    private var mode: HomeMode? { homeModes.first { $0.dbKey == match.game_mode } }
+
     var body: some View {
         let won = match.isWinner(profileId)
-        let modeTitle = GameMode(rawValue: match.game_mode).map { ModeStyle.title($0) } ?? match.game_mode
-        let pt = match.playerTime(profileId)
+        let guesses = match.guesses(profileId)
+        let secs = match.playerTime(profileId)
         return HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10).fill(won ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)).frame(width: 38, height: 38)
-                Image(systemName: won ? "checkmark" : "xmark").font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+            // Mode icon in its accent-tinted box (matches web gameModeIcons).
+            if let m = mode {
+                ModeIconView(icon: m.icon, accent: m.accent, box: 36)
+            } else {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10).fill(Color(hex: 0xD97706).opacity(0.1)).frame(width: 36, height: 36)
+                    Image(systemName: "bolt.fill").font(.system(size: 15)).foregroundStyle(Color(hex: 0xD97706))
+                }
             }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(modeTitle).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                Text(match.isSolo ? "Solo" : "VS Match").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(mode?.title ?? match.game_mode)
+                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                    Text(match.isSolo ? "Solo" : "VS")
+                        .font(Brand.font(9, .heavy))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(RoundedRectangle(cornerRadius: 5)
+                            .fill(match.isSolo ? Color(hex: 0xF0FDF4) : Color(hex: 0xEDE9F6)))
+                        .foregroundStyle(match.isSolo ? Color(hex: 0x16A34A) : Color(hex: 0x7C3AED))
+                }
+                Text("\(guesses) \(guesses == 1 ? "guess" : "guesses") · \(secs > 0 ? durationStr(secs) : "—")")
+                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
             Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
+            VStack(alignment: .trailing, spacing: 2) {
                 Text(won ? "Win" : "Loss").font(Brand.font(12, .heavy))
                     .foregroundStyle(won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
-                Text(pt > 0 ? "\(pt)s" : "-").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-            }
-            if let d = match.date {
-                Text(shortDate(d)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                if let d = match.date {
+                    Text(dateTimeStr(d)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                }
             }
         }
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
     }
 
-    private func shortDate(_ d: Date) -> String {
-        let f = DateFormatter(); f.dateFormat = "MMM d"; return f.string(from: d)
+    private func durationStr(_ s: Int) -> String {
+        s < 60 ? "\(s)s" : "\(s / 60)m \(s % 60)s"
+    }
+
+    private func dateTimeStr(_ d: Date) -> String {
+        let f = DateFormatter(); f.dateFormat = "MMM d · h:mm a"; return f.string(from: d)
     }
 }
