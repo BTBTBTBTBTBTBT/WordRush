@@ -73,7 +73,6 @@ final class VSMatchService {
     func stageCompleted(stageIndex: Int) { socket?.emit(VSEvent.stageCompleted, ["stageIndex": stageIndex]) }
     func abandonMatch() { socket?.emit(VSEvent.abandonMatch) }
     func offerRematch() { socket?.emit(VSEvent.offerRematch) }
-    func acceptRematch() { socket?.emit(VSEvent.acceptRematch) }
     func declineRematch() { socket?.emit(VSEvent.declineRematch) }
 
     // MARK: Handler registration

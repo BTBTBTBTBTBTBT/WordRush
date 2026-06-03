@@ -38,6 +38,9 @@ final class VSMatchViewModel: ObservableObject {
     @Published var rematch: RematchState = .idle
     @Published var message: String?
     @Published var dailyAnswer: String = ""
+    /// XP/level-up earned for this match — surfaces the same post-game toast the
+    /// solo flow shows (web shows XpToast on the VS result screen too).
+    @Published var xpResult: GameResultsService.XpResult?
 
     private let service = VSMatchService()
     private var seed = ""
@@ -95,7 +98,11 @@ final class VSMatchViewModel: ObservableObject {
         rematch = .offered
         service.offerRematch()
     }
-    func acceptRematch() { service.acceptRematch() }
+    /// Accepting an incoming offer is the SAME wire action as initiating one:
+    /// the server starts the rematch once BOTH players have emitted
+    /// `offer_rematch` (it has no `accept_rematch` handler). Mirrors the web,
+    /// whose Accept button also routes through offerRematch().
+    func acceptRematch() { offerRematch() }
     func declineRematch() { rematch = .declined; service.declineRematch() }
 
     // MARK: - Socket handlers
@@ -210,7 +217,7 @@ final class VSMatchViewModel: ObservableObject {
         let total = game?.boardCount ?? 1
         let theSeed = seed
         Task {
-            await GameResultsService.record(
+            xpResult = await GameResultsService.record(
                 gameMode: mode, playType: "vs", won: won, guessCount: data.playerGuesses,
                 timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
             if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {

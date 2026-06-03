@@ -37,6 +37,11 @@ struct VSGameView: View {
             }
 
             if vm.countdown != nil { countdownOverlay }
+
+            // Post-match XP/level-up toast (parity with solo + web VS result).
+            if let xp = vm.xpResult, vm.screen == .result {
+                XpToastView(result: xp) { vm.xpResult = nil }
+            }
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)

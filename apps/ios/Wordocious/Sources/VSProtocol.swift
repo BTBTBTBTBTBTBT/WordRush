@@ -13,8 +13,10 @@ enum VSEvent {
     static let playerCompleted = "player_completed"
     static let stageCompleted = "stage_completed"
     static let abandonMatch = "abandon_match"
+    // Rematch: the server starts the rematch once BOTH players emit
+    // `offer_rematch` (there is no `accept_rematch` handler) — so "accept"
+    // re-emits offer_rematch rather than a distinct event.
     static let offerRematch = "offer_rematch"
-    static let acceptRematch = "accept_rematch"
     static let declineRematch = "decline_rematch"
 
     // Server → client event names

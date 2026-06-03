@@ -50,6 +50,67 @@ enum DailyResultsService {
         return count > 0
     }
 
+    private struct VsRow: Decodable {
+        let id: String; let vsWins: Int; let vsLosses: Int; let vsGames: Int
+        enum CodingKeys: String, CodingKey {
+            case id; case vsWins = "vs_wins"; case vsLosses = "vs_losses"; case vsGames = "vs_games"
+        }
+    }
+    private struct VsInsert: Encodable {
+        let user_id: String; let day: String; let game_mode: String; let play_type: String
+        let completed: Bool; let vs_wins: Int; let vs_losses: Int; let vs_games: Int; let composite_score: Double
+    }
+    private struct VsUpdate: Encodable {
+        let vs_wins: Int; let vs_losses: Int; let vs_games: Int; let composite_score: Double; let completed: Bool
+    }
+
+    /// Mirrors lib/daily-service.ts calculateVsCompositeScore — needs ≥3 games to
+    /// qualify; rewards win count, win rate, and volume.
+    static func vsCompositeScore(wins: Int, losses: Int, games: Int) -> Double {
+        if games < 3 { return 0 }
+        let winRate = Double(wins) / Double(max(1, games))
+        return (((Double(wins) * 100) + (winRate * 50) + (Double(games) * 5)) * 100).rounded() / 100
+    }
+
+    /// Records a finished daily Classic VS result into `daily_results`
+    /// (play_type='vs'), mirroring lib/daily-service.ts recordDailyVsResult():
+    /// upserts vs_wins/vs_losses/vs_games + a VS composite score so the player
+    /// appears on the VS daily leaderboard and the 3-wins-a-day achievement can
+    /// fire. Keyed by user+day+mode+play_type='vs'. Requires an auth session.
+    static func recordVs(gameMode: GameMode, won: Bool) async {
+        let client = AuthService.shared.client
+        guard let session = try? await client.auth.session else { return }
+        let userId = session.user.id.uuidString
+        let day = LeaderboardService.todayLocal()
+        do {
+            let existing: [VsRow] = try await client.from("daily_results")
+                .select("id, vs_wins, vs_losses, vs_games")
+                .eq("user_id", value: userId)
+                .eq("day", value: day)
+                .eq("game_mode", value: gameMode.rawValue)
+                .eq("play_type", value: "vs")
+                .limit(1)
+                .execute().value
+
+            if let row = existing.first {
+                let w = row.vsWins + (won ? 1 : 0)
+                let l = row.vsLosses + (won ? 0 : 1)
+                let g = row.vsGames + 1
+                let update = VsUpdate(vs_wins: w, vs_losses: l, vs_games: g,
+                                      composite_score: vsCompositeScore(wins: w, losses: l, games: g),
+                                      completed: true)
+                try await client.from("daily_results").update(update).eq("id", value: row.id).execute()
+            } else {
+                let w = won ? 1 : 0
+                let l = won ? 0 : 1
+                let insert = VsInsert(user_id: userId, day: day, game_mode: gameMode.rawValue,
+                                      play_type: "vs", completed: true, vs_wins: w, vs_losses: l,
+                                      vs_games: 1, composite_score: vsCompositeScore(wins: w, losses: l, games: 1))
+                try await client.from("daily_results").insert(insert).execute()
+            }
+        } catch {}
+    }
+
     /// Records a finished solo daily game. No-ops if signed out or the mode
     /// has no daily score config. Returns the composite score (or nil).
     @discardableResult
