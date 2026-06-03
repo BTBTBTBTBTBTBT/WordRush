@@ -1,4 +1,5 @@
 import SwiftUI
+import GoogleSignIn
 
 @main
 struct WordociousApp: App {
@@ -33,6 +34,9 @@ struct WordociousApp: App {
                 .onChange(of: auth.profile?.id) { id in
                     if id != nil { PresenceService.shared.start() } else { PresenceService.shared.stop() }
                 }
+                // Complete the Google sign-in callback if iOS routes back via
+                // the reversed-client-ID URL scheme (e.g. the Google app path).
+                .onOpenURL { url in _ = GIDSignIn.sharedInstance.handle(url) }
         }
     }
 }

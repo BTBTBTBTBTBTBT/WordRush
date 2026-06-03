@@ -17,6 +17,9 @@ packages:
   GoogleMobileAds:
     url: https://github.com/googleads/swift-package-manager-google-mobile-ads
     from: 11.0.0
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 7.1.0
 
 targets:
   Wordocious:
@@ -34,6 +37,8 @@ targets:
         product: SocketIO
       - package: GoogleMobileAds
         product: GoogleMobileAds
+      - package: GoogleSignIn
+        product: GoogleSignIn
     info:
       path: Wordocious/Info.plist
       properties:
@@ -48,6 +53,10 @@ targets:
           - CFBundleURLName: com.wordocious.app.auth
             CFBundleURLSchemes:
               - com.wordocious.app
+          # Google Sign-In callback — the reversed iOS OAuth client ID.
+          - CFBundleURLName: com.wordocious.app.google
+            CFBundleURLSchemes:
+              - com.googleusercontent.apps.193086095286-4ftdf92g8cnsur8kd7odqq0jueqq5oog
         # AdMob app ID — real Wordocious AdMob app (created 2026-06-03).
         GADApplicationIdentifier: ca-app-pub-3015627373086578~8393761846
         # App Tracking Transparency prompt copy (shown before requesting IDFA).
