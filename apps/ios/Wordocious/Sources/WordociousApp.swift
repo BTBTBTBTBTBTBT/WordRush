@@ -4,6 +4,7 @@ import SwiftUI
 struct WordociousApp: App {
     @StateObject private var auth = AuthService.shared
     @StateObject private var themeManager = ThemeManager.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -20,6 +21,17 @@ struct WordociousApp: App {
                     await auth.bootstrap()
                     StoreManager.shared.start()
                     AdsManager.shared.start()
+                    PresenceService.shared.start()
+                }
+                // Keep the always-on presence socket alive only while
+                // foregrounded + signed in, so the LIVE count reflects real
+                // active players (mirrors the web SitePresenceProvider).
+                .onChange(of: scenePhase) { phase in
+                    if phase == .active { PresenceService.shared.start() }
+                    else if phase == .background { PresenceService.shared.stop() }
+                }
+                .onChange(of: auth.profile?.id) { id in
+                    if id != nil { PresenceService.shared.start() } else { PresenceService.shared.stop() }
                 }
         }
     }
