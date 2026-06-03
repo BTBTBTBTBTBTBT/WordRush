@@ -407,6 +407,28 @@ final class GameViewModel: ObservableObject {
         return rank(b) > rank(a) ? b : a
     }
 
+    /// Use the per-board quadrant keyboard for simultaneous multi-board modes
+    /// (QuadWord / OctoWord / Deliverance) — but NOT Sequence, which is played
+    /// one active board at a time (web: only quordle/octordle/rescue pass
+    /// boardLetterStates; sequence uses the active board's single states).
+    var useQuadrantKeyboard: Bool { mode != .sequence && boardCount > 1 }
+
+    /// Per-board keyboard letter states for the quadrant keyboard. Mirrors web
+    /// computePerBoardLetterStates: a non-playing (solved/lost) board returns an
+    /// empty dict so its sub-cell renders blank.
+    func boardKeyStates() -> [[String: TileState]] {
+        state.boards.enumerated().map { i, board in
+            guard board.status == .playing else { return [:] }
+            var d: [String: TileState] = [:]
+            for eval in (evaluations[safe: i] ?? []) {
+                for tile in eval.tiles where !tile.letter.isEmpty {
+                    d[tile.letter] = Self.merge(d[tile.letter], tile.state)
+                }
+            }
+            return d
+        }
+    }
+
     private var lossMessage: String {
         let unsolved = state.boards.filter { $0.status != .won }.map(\.solution)
         return unsolved.count == 1 ? unsolved[0] : "\(unsolved.count) left unsolved"
