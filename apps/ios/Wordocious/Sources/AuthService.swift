@@ -167,6 +167,11 @@ final class AuthService: ObservableObject {
             throw NSError(domain: "WordociousAuth", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Couldn't present Google sign-in."])
         }
+        // GoogleSignIn 7.x issues its own nonce in the id_token and doesn't
+        // expose it, so we can't echo it to Supabase — the Supabase Google
+        // provider must have "Skip nonce checks" enabled (its sanctioned iOS
+        // setting). Upgrading to GoogleSignIn 8.x would let us pass an explicit
+        // nonce and turn that back off.
         let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter)
         guard let idToken = result.user.idToken?.tokenString else {
             throw NSError(domain: "WordociousAuth", code: -2,
