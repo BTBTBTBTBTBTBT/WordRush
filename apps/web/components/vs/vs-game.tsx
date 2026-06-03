@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { SocketIOMatchService } from '@/lib/adapters/match-service';
 import { usePresenceId } from '@/lib/presence-id';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
@@ -283,6 +283,27 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         const won = data.winner === 'player';
         recordGameResult(profile.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seed)
           .then(xp => { if (xp) setXpResult(xp); });
+        // Persist a match-history row so this VS battle shows in Recent Matches.
+        // Exactly one client writes it (server flags player1 via recordMatch),
+        // so there's a single shared row visible to both players.
+        if (data.recordMatch && data.opponentId) {
+          recordMatch({
+            gameMode: mode,
+            player1Id: profile.id,
+            player2Id: data.opponentId,
+            winnerId: data.winner === 'player' ? profile.id
+              : data.winner === 'opponent' ? data.opponentId : undefined,
+            player1Score: data.playerGuesses,
+            player2Score: data.opponentGuesses,
+            player1Time: Math.round(data.playerTime / 1000),
+            player2Time: Math.round(data.opponentTime / 1000),
+            seed,
+            solutions: [],
+            player1Guesses: [],
+            startedAt: new Date(Date.now() - data.playerTime).toISOString(),
+            completedAt: new Date().toISOString(),
+          });
+        }
       }
       // Freemium daily VS: lock the home-page VS tile for the rest of
       // the day. This replaces the old 2-per-day VS counter — the

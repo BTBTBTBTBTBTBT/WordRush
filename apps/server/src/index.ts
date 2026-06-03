@@ -4,7 +4,7 @@ import { initDictionary, generateMatchSeed, generateSolutionsFromSeed, isValidWo
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { MatchmakingQueue } from './matchmaking';
-import { Match, Player, ClientToServerEvents, ServerToClientEvents } from './types';
+import { Match, Player, QueueEntry, ClientToServerEvents, ServerToClientEvents } from './types';
 
 const allowedWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/allowed.json'), 'utf-8'));
 const solutionWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions.json'), 'utf-8'));
@@ -592,6 +592,13 @@ function endMatch(matchId: string): void {
   const p1ScoreDisplay = match.player1State.guesses + (player1Time / 1000 / TIME_WEIGHT_DISPLAY);
   const p2ScoreDisplay = match.player2State.guesses + (player2Time / 1000 / TIME_WEIGHT_DISPLAY);
 
+  // Resolve each player's Supabase user id from their handshake presenceId
+  // (`u:<userId>`), so the client can write a VS match-history row. player1 is
+  // the designated single writer (only when it has a real user id), which keeps
+  // exactly one row per match without giving the public server DB access.
+  const p1UserId = userIdFromSocket(match.player1.socketId);
+  const p2UserId = userIdFromSocket(match.player2.socketId);
+
   io.to(match.player1.socketId).emit('match_ended', {
     winner: winner === 'opponent' ? 'opponent' : winner === 'player' ? 'player' : winner,
     playerGuesses: match.player1State.guesses,
@@ -600,6 +607,8 @@ function endMatch(matchId: string): void {
     opponentTime: player2Time,
     playerScore: Math.round(p1ScoreDisplay * 100) / 100,
     opponentScore: Math.round(p2ScoreDisplay * 100) / 100,
+    opponentId: p2UserId,
+    recordMatch: p1UserId !== null,
   });
 
   io.to(match.player2.socketId).emit('match_ended', {
@@ -610,7 +619,16 @@ function endMatch(matchId: string): void {
     opponentTime: player1Time,
     playerScore: Math.round(p2ScoreDisplay * 100) / 100,
     opponentScore: Math.round(p1ScoreDisplay * 100) / 100,
+    opponentId: p1UserId,
+    recordMatch: false,
   });
+}
+
+/** Extract the Supabase user id from a connected socket's presenceId (`u:<id>`), or null. */
+function userIdFromSocket(socketId: string): string | null {
+  const sock = io.sockets.sockets.get(socketId);
+  const pid = (sock?.data as { presenceId?: string } | undefined)?.presenceId;
+  return pid && pid.startsWith('u:') ? pid.slice(2) : null;
 }
 
 const PORT = process.env.PORT || 3001;

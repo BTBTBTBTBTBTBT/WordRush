@@ -86,6 +86,12 @@ struct VSMatchEnded: Codable {
     let opponentTime: Double
     let playerScore: Double
     let opponentScore: Double
+    /// Opponent's Supabase user id (nil if anonymous) — lets this client write a
+    /// VS match-history row so the battle shows in Recent Matches.
+    let opponentId: String?
+    /// True only for the designated single writer (player1) so exactly one row
+    /// is created per match. Optional for backward-compat with older servers.
+    let recordMatch: Bool?
 }
 
 struct VSRematchStart: Codable {

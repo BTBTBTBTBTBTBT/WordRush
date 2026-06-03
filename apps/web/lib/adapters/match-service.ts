@@ -18,7 +18,7 @@ export interface IMatchService {
   onMatchStart(callback: (data: { seed: string; startTime: number; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void): void;
   onGuessResult(callback: (data: { boardIndex: number; isValid: boolean; isCorrect: boolean; reason?: string }) => void): void;
   onOpponentProgress(callback: (data: { attempts: number; solved: boolean; boardsSolved: number; totalBoards: number; latestGuess?: { boardIndex: number; tiles: string[] } }) => void): void;
-  onMatchEnded(callback: (data: { winner: 'player' | 'opponent' | 'draw' | null; playerGuesses: number; opponentGuesses: number; playerTime: number; opponentTime: number; playerScore: number; opponentScore: number }) => void): void;
+  onMatchEnded(callback: (data: { winner: 'player' | 'opponent' | 'draw' | null; playerGuesses: number; opponentGuesses: number; playerTime: number; opponentTime: number; playerScore: number; opponentScore: number; opponentId: string | null; recordMatch: boolean }) => void): void;
   onOpponentStageCompleted(callback: (data: { stageIndex: number }) => void): void;
   onRematchOffered(callback: () => void): void;
   onRematchDeclined(callback: () => void): void;
@@ -105,7 +105,7 @@ export class SocketIOMatchService implements IMatchService {
     this.socket?.on('opponent_progress', callback);
   }
 
-  onMatchEnded(callback: (data: { winner: 'player' | 'opponent' | 'draw' | null; playerGuesses: number; opponentGuesses: number; playerTime: number; opponentTime: number; playerScore: number; opponentScore: number }) => void): void {
+  onMatchEnded(callback: (data: { winner: 'player' | 'opponent' | 'draw' | null; playerGuesses: number; opponentGuesses: number; playerTime: number; opponentTime: number; playerScore: number; opponentScore: number; opponentId: string | null; recordMatch: boolean }) => void): void {
     this.socket?.on('match_ended', callback);
   }
 

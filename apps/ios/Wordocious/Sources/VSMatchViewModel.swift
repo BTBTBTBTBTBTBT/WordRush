@@ -216,10 +216,19 @@ final class VSMatchViewModel: ObservableObject {
         let solved = game?.boardsSolvedCount ?? (won ? 1 : 0)
         let total = game?.boardCount ?? 1
         let theSeed = seed
+        let opponentSecs = Int((data.opponentTime / 1000).rounded())
         Task {
             xpResult = await GameResultsService.record(
                 gameMode: mode, playType: "vs", won: won, guessCount: data.playerGuesses,
                 timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
+            // Match-history row so this VS battle shows in Recent Matches. Only the
+            // server-designated writer (recordMatch) inserts, so there's one shared row.
+            if data.recordMatch == true, let opp = data.opponentId {
+                await GameResultsService.recordVsMatch(
+                    gameMode: mode, opponentId: opp, won: won, isDraw: data.winner == "draw",
+                    playerGuesses: data.playerGuesses, opponentGuesses: data.opponentGuesses,
+                    playerTimeSec: secs, opponentTimeSec: opponentSecs, seed: theSeed)
+            }
             if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
                 await AchievementService.checkAchievements(
                     userId: uid, gameMode: mode.rawValue, playType: "vs", won: won,

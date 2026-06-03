@@ -69,6 +69,51 @@ enum GameResultsService {
         try? await client.from("matches").insert(row).execute()
     }
 
+    /// A VS match as a `matches` row (player2_id set) so the battle appears in
+    /// Recent Matches — ports lib/stats-service.ts recordMatch. Called by ONLY
+    /// the designated writer (server sets match_ended.recordMatch on player1),
+    /// so exactly one shared row exists per match. We don't have the opponent's
+    /// guess words client-side (the server only relays counts), so
+    /// player2_guesses stays null — Recent Matches doesn't render it.
+    private struct VsMatchInsert: Encodable {
+        let game_mode: String
+        let player1_id: String
+        let player2_id: String
+        let winner_id: String?       // nil on a draw
+        let player1_score: Int       // my guess count
+        let player2_score: Int       // opponent guess count
+        let player1_time: Int        // seconds
+        let player2_time: Int
+        let seed: String
+        let solutions: [String]
+        let player1_guesses: [String]
+        let started_at: String
+        let completed_at: String
+    }
+
+    /// Insert the VS match-history row. `won`/`isDraw` derive winner_id; on a
+    /// loss the opponent is the winner.
+    static func recordVsMatch(
+        gameMode: GameMode, opponentId: String, won: Bool, isDraw: Bool,
+        playerGuesses: Int, opponentGuesses: Int, playerTimeSec: Int, opponentTimeSec: Int,
+        seed: String
+    ) async {
+        let client = AuthService.shared.client
+        guard let session = try? await client.auth.session else { return }
+        let userId = session.user.id.uuidString
+        let now = Date()
+        let iso = ISO8601DateFormatter()
+        let winnerId: String? = isDraw ? nil : (won ? userId : opponentId)
+        let row = VsMatchInsert(
+            game_mode: gameMode.rawValue, player1_id: userId, player2_id: opponentId,
+            winner_id: winnerId, player1_score: playerGuesses, player2_score: opponentGuesses,
+            player1_time: playerTimeSec, player2_time: opponentTimeSec,
+            seed: seed, solutions: [], player1_guesses: [],
+            started_at: iso.string(from: now.addingTimeInterval(-Double(playerTimeSec))),
+            completed_at: iso.string(from: now))
+        try? await client.from("matches").insert(row).execute()
+    }
+
     /// Gauntlet per-stage breakdown stored on the matches row so the results
     /// screen renders cross-device (web ↔ native). Written as a SEPARATE
     /// best-effort update after the insert: if the `gauntlet_stages` column

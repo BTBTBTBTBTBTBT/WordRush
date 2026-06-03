@@ -91,6 +91,18 @@ export interface ServerToClientEvents {
     opponentTime: number;
     playerScore: number;
     opponentScore: number;
+    /**
+     * Opponent's Supabase user id (from their handshake presenceId `u:<id>`),
+     * or null if anonymous. Lets the client write a match-history row so VS
+     * shows up in Recent Matches.
+     */
+    opponentId: string | null;
+    /**
+     * True for exactly ONE of the two players (player1, when identifiable) —
+     * the designated client that should INSERT the single shared matches row.
+     * Avoids duplicate rows without a server-side DB write.
+     */
+    recordMatch: boolean;
   }) => void;
   opponent_stage_completed: (data: { stageIndex: number }) => void;
   rematch_offered: () => void;
