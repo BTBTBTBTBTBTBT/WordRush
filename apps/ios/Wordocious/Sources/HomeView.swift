@@ -12,7 +12,6 @@ struct HomeView: View {
     @State private var showVSLobby = false
     @State private var pendingGame: ActiveGame?    // tap-time-resolved Unlimited game
     @State private var showInvite = false
-    @State private var livePulse = false
     @StateObject private var livePlayers = LivePlayerCount()
     @State private var pendingInvites: [InviteService.PendingInvite] = []
     @State private var inviterNames: [String: String] = [:]
@@ -296,9 +295,7 @@ struct HomeView: View {
         HStack {
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
-                    Circle().fill(Color(hex: 0x22C55E)).frame(width: 8, height: 8)
-                        .opacity(livePulse ? 0.35 : 1)
-                        .animation(Theme.animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)), value: livePulse)
+                    LivePulseDot()
                     Text("LIVE").font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary)
                 }
                 Text(liveCountLabel).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
@@ -319,7 +316,6 @@ struct HomeView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
         .padding(.top, 4)
-        .onAppear { livePulse = true }
     }
 
     private var liveCountLabel: String {
@@ -555,5 +551,20 @@ struct ModeLimitModal: View {
     private func countdown() -> String {
         let s = secondsUntilLocalMidnight()
         return String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
+    }
+}
+
+/// LIVE pulse dot — self-contained so the live-count poll re-rendering the
+/// banner can't disturb/displace its animation. Pulses opacity in place
+/// (layout-neutral); respects Reduce Motion.
+private struct LivePulseDot: View {
+    @State private var dim = false
+    var body: some View {
+        Circle().fill(Color(hex: 0x22C55E)).frame(width: 8, height: 8)
+            .opacity(dim ? 0.35 : 1)
+            .onAppear {
+                guard !ThemeManager.shared.reducedMotion else { return }
+                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { dim = true }
+            }
     }
 }
