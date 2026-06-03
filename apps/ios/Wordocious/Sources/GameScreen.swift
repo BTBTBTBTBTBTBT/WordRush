@@ -51,7 +51,9 @@ struct GameScreen: View {
                     }
                     .padding(.vertical, 6)
                     if vm.hasHints && vm.status == .playing { classicHintButtons }
-                    if vm.stageCleared { stageClearedBanner } else { KeyboardView(vm: vm).padding(.bottom, 6) }
+                    // Stage-cleared shows the full-screen StageTransition overlay
+                    // (below); the keyboard just hides while it's up.
+                    if !vm.stageCleared { KeyboardView(vm: vm).padding(.bottom, 6) }
                 }
             }
             .padding(.horizontal, 10)
@@ -94,6 +96,13 @@ struct GameScreen: View {
                     solution: vm.boardCount == 1 ? vm.boards.first?.solution : nil,
                     solutions: vm.boardCount > 1 ? vm.boards.map(\.solution) : [],
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
+                .transition(.opacity)
+            }
+            // Gauntlet stage-transition overlay (auto-advances after 2.5s, or tap).
+            if vm.stageCleared {
+                StageTransitionOverlay(completedName: vm.gauntletStageName,
+                                       next: vm.gauntletNextStageInfo,
+                                       onAdvance: { vm.nextStage() })
                 .transition(.opacity)
             }
         }
@@ -314,6 +323,51 @@ struct GameScreen: View {
             .padding(.horizontal, 12).padding(.vertical, 4)
             .background(RoundedRectangle(cornerRadius: 8).fill(Theme.textPrimary))
             .padding(.top, 90).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
+    }
+}
+
+/// Gauntlet stage-transition overlay — 1:1 with web stage-transition.tsx.
+/// Auto-advances to the next stage after 2.5s (or on tap).
+private struct StageTransitionOverlay: View {
+    let completedName: String
+    let next: (name: String, boards: Int, guesses: Int, sequential: Bool, prefill: Bool)?
+    let onAdvance: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.8).ignoresSafeArea()
+            VStack(spacing: 26) {
+                ZStack {
+                    Circle().fill(Color(hex: 0x22C55E).opacity(0.3)).frame(width: 80, height: 80)
+                        .overlay(Circle().stroke(Color(hex: 0x4ADE80), lineWidth: 4))
+                    Image(systemName: "checkmark").font(.system(size: 34, weight: .bold)).foregroundStyle(Color(hex: 0x86EFAC))
+                }
+                VStack(spacing: 4) {
+                    Text("STAGE COMPLETE").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(Color(hex: 0x4ADE80))
+                    Text(completedName).font(Brand.font(18, .bold)).foregroundStyle(.white.opacity(0.6))
+                }
+                if let n = next {
+                    VStack(spacing: 6) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "bolt.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xFACC15))
+                            Text("NEXT UP").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xFACC15))
+                            Image(systemName: "bolt.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xFACC15))
+                        }
+                        Text(n.name).font(Brand.font(30, .black))
+                            .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF472B6), Color(hex: 0xC084FC)],
+                                                            startPoint: .leading, endPoint: .trailing))
+                        Text("\(n.boards) board\(n.boards > 1 ? "s" : "") · \(n.guesses) guesses\(n.sequential ? " · sequential" : "")\(n.prefill ? " · pre-filled clues" : "")")
+                            .font(Brand.caption(12)).foregroundStyle(.white.opacity(0.4))
+                    }
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { onAdvance() }
+        .task {
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            onAdvance()
+        }
     }
 }
 

@@ -95,10 +95,37 @@ struct GauntletCompletedView: View {
             .disabled(!hasBoards)
 
             if isExpanded, let boards = result.boardsSnapshot, !boards.isEmpty {
-                stageBoards(boards, maxGuesses: stage.maxGuesses)
-                    .padding(.top, 6).padding(.bottom, 2)
+                VStack(spacing: 6) {
+                    solutionsReveal(boards)
+                    stageBoards(boards, maxGuesses: stage.maxGuesses)
+                }
+                .padding(.top, 6).padding(.bottom, 2)
             }
         }
+    }
+
+    /// Answer pills for the stage — reveals the word(s) (green if that board
+    /// was solved, red if missed), matching web StageReviewModal so a losing
+    /// player sees what they missed.
+    private func solutionsReveal(_ boards: [BoardState]) -> some View {
+        let cols = boards.count == 1 ? 1 : (boards.count <= 4 ? 2 : 4)
+        return VStack(spacing: 4) {
+            Text(boards.count == 1 ? "ANSWER" : "ANSWERS")
+                .font(Brand.font(9, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: cols), spacing: 4) {
+                ForEach(boards.indices, id: \.self) { i in
+                    let bWon = boards[i].status == .won
+                    Text(boards[i].solution.uppercased())
+                        .font(Brand.font(11, .black))
+                        .foregroundStyle(bWon ? greenBadge : redBadge)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(bWon ? greenBadgeBg : redBadgeBg))
+                }
+            }
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color(hex: 0xF9FAFB)))
     }
 
     /// The stage's boards (1 col / 2 cols / 4 cols by count, web-matching),

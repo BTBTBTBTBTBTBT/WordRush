@@ -153,6 +153,12 @@ final class GameViewModel: ObservableObject {
         return g.currentStage >= g.totalStages - 1
     }
 
+    /// Next stage's stats for the stage-transition overlay (nil on the last stage).
+    var gauntletNextStageInfo: (name: String, boards: Int, guesses: Int, sequential: Bool, prefill: Bool)? {
+        guard let g = state.gauntlet, let next = g.stages[safe: g.currentStage + 1] else { return nil }
+        return (next.name, next.boardCount, next.maxGuesses, next.sequential, next.hasPrefill)
+    }
+
     /// Advance to the next stage (or finish the run on the last stage).
     func nextStage() {
         guard isGauntlet, stageCleared else { return }
