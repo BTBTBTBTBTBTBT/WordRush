@@ -81,7 +81,9 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
 
   const isWon = board.status === 'WON';
   const isLost = board.status === 'LOST';
-  const lastSubmittedRow = isWon && board.guesses.length > 0 ? board.guesses.length - 1 : -1;
+  // Flip the most recently submitted row on EVERY guess (parity with Succession /
+  // Gauntlet / single-board), not only the winning row.
+  const lastSubmittedRow = board.guesses.length > 0 ? board.guesses.length - 1 : -1;
 
   // In expanded mode, show larger text
   const textSize = isExpanded ? 'text-base sm:text-lg' : 'text-[10px] sm:text-xs';

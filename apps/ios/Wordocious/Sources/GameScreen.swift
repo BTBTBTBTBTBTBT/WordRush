@@ -7,11 +7,25 @@ struct GameScreen: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var adShown = false
     @State private var showVictory = false
+    // Holds the in-play board on screen after a win/loss until the final row has
+    // finished flipping, then the finished screen + victory overlay spring in.
+    @State private var revealComplete = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let mode: GameMode
 
     init(seed: String, mode: GameMode, title: String) {
         _vm = StateObject(wrappedValue: GameViewModel(seed: seed, mode: mode))
         self.mode = mode
+    }
+
+    /// Time for the final row's flip to play out (flip duration + per-column
+    /// stagger), matching BoardView's mini/full timing — used to delay the
+    /// finished screen so the winning word animates first.
+    private var revealDuration: Double {
+        let mini = vm.isMultiBoard
+        let dur = mini ? 0.3 : 0.5
+        let stagger = mini ? 0.08 : 0.15
+        return dur + Double(max(0, vm.wordLength - 1)) * stagger
     }
 
     var body: some View {
@@ -21,7 +35,9 @@ struct GameScreen: View {
                            startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             VStack(spacing: 0) {
-                if vm.isFinished {
+                // Gauntlet keeps its own (immediate) finish flow; other modes hold
+                // the in-play board until the winning row's flip completes.
+                if vm.isFinished && (revealComplete || vm.isGauntlet) {
                     ScrollView {
                         VStack(spacing: 8) {
                             FinishedStatsHeader(
@@ -95,8 +111,8 @@ struct GameScreen: View {
                     boardsSolved: vm.boards.filter { $0.status == .won }.count, totalBoards: vm.boardCount,
                     solution: vm.boardCount == 1 ? vm.boards.first?.solution : nil,
                     solutions: vm.boardCount > 1 ? vm.boards.map(\.solution) : [],
-                    onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
-                .transition(.opacity)
+                    onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = false; revealComplete = true } })
+                .transition(.scale(scale: 0.92).combined(with: .opacity))
             }
             // Gauntlet stage-transition overlay (auto-advances after 2.5s, or tap).
             if vm.stageCleared {
@@ -115,11 +131,25 @@ struct GameScreen: View {
             if newValue == .won { Haptics.success(); SoundManager.shared.playSuccess() }
             else if newValue == .lost { Haptics.error(); SoundManager.shared.playGameOver() }
             // Celebrate the moment of finishing (Gauntlet has its own results flow).
+            // Wait out the final row's flip, then spring in the finished screen +
+            // victory overlay so the winning word animates first.
             if (newValue == .won || newValue == .lost) && !vm.isGauntlet {
-                withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = true }
+                let delay = reduceMotion ? 0 : revealDuration + 0.2
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    // Show the victory card + confetti over the (dimmed) finished
+                    // board first. The heavier finished/stats layout is built only
+                    // after the user taps to continue, so it never competes with
+                    // the confetti for frames.
+                    withAnimation(Theme.animation(.spring(response: 0.5, dampingFraction: 0.82))) {
+                        showVictory = true
+                    }
+                }
             }
         }
         .onAppear {
+            // A game resumed already-finished (status won't change) jumps straight
+            // to the finished screen — no victory replay.
+            if vm.isFinished { revealComplete = true }
             // Free users: show the game-start interstitial first (mirrors web AdGate),
             // then start the timer on dismiss so ad time isn't counted.
             if !adShown {
@@ -216,6 +246,7 @@ struct GameScreen: View {
         let fg = completed ? Color(hex: 0x16A34A) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9CA3AF)
         ZStack {
             Circle().fill(bg).overlay(Circle().stroke(border, lineWidth: 2)).frame(width: 20, height: 20)
+                .modifier(StageGlow(active: active))
             if completed {
                 Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(fg)
             } else if active {
@@ -223,6 +254,24 @@ struct GameScreen: View {
             } else {
                 Text("\(i + 1)").font(.system(size: 10, weight: .bold)).foregroundStyle(fg)
             }
+        }
+    }
+
+    /// Pulsing purple halo on the active gauntlet stage node — mirrors web's
+    /// `gauntlet-glow` (box-shadow 3px ↔ 8px+14px, #A855F7, 2.5s ease-in-out loop).
+    private struct StageGlow: ViewModifier {
+        let active: Bool
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @State private var on = false
+        private let glow = Color(hex: 0xA855F7)
+        func body(content: Content) -> some View {
+            content
+                .shadow(color: active ? glow.opacity(on ? 0.6 : 0.3) : .clear, radius: active ? (on ? 7 : 3) : 0)
+                .shadow(color: active && on ? glow.opacity(0.25) : .clear, radius: active && on ? 12 : 0)
+                .onAppear {
+                    guard !reduceMotion else { return }
+                    withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) { on = true }
+                }
         }
     }
 

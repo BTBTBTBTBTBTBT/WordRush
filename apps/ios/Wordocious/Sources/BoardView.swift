@@ -12,6 +12,46 @@ struct ShakeEffect: GeometryEffect {
     }
 }
 
+/// Web-parity tile flip on reveal: `rotateX` 0°→90°→0° — the tile rotates to
+/// edge-on at the midpoint and back, with its final color applied throughout
+/// (mirrors the `tile-flip` keyframe; no face swap). Progress 0→1 maps to the
+/// 0→90→0 triangle so a single eased tween produces the flip.
+private struct TileFlip: ViewModifier, Animatable {
+    var progress: Double
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+    func body(content: Content) -> some View {
+        let angle = (progress < 0.5 ? progress : 1 - progress) * 2 * 90
+        // perspective 0 = orthographic squash (no 3D tilt) — matches the web,
+        // where rotateX has no ancestor perspective, so the tile flattens fluidly.
+        return content.rotation3DEffect(.degrees(angle), axis: (1, 0, 0), perspective: 0)
+    }
+}
+
+/// A just-committed tile that flips open on reveal. Reuses `TileView` for the
+/// face so styling stays pixel-identical. 0.5s / 150ms stagger on a full board,
+/// 0.3s / 80ms on mini (multi-board) — matching web's tile-flip / tile-flip-mini.
+struct FlipRevealTile: View {
+    let letter: String
+    let state: TileState
+    var size: CGFloat = 58
+    var delay: Double = 0
+    var duration: Double = 0.5
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var progress: Double = 0
+
+    var body: some View {
+        TileView(letter: letter, state: state, revealed: true, size: size)
+            .modifier(TileFlip(progress: progress))
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: duration).delay(delay)) { progress = 1 }
+            }
+    }
+}
+
 struct TileView: View {
     let letter: String
     let state: TileState
@@ -43,6 +83,10 @@ struct BoardView: View {
     let boardIndex: Int
     var tileSize: CGFloat = 58
 
+    /// Guess count observed at first appear — rows present then (resume/restore)
+    /// never flip; only rows committed live during this session do (web parity).
+    @State private var seenGuessCount: Int = -1
+
     private var board: BoardState { vm.board(boardIndex) }
     private var prefilled: [PrefilledGuess] { board.prefilledGuesses ?? [] }
     private var spacing: CGFloat { tileSize * 0.1 }
@@ -68,6 +112,7 @@ struct BoardView: View {
         // Sequence: dim locked (future) boards + highlight the active one.
         .opacity(seqLocked ? 0.6 : 1)
         .overlay(activeSeqBorder)
+        .onAppear { if seenGuessCount < 0 { seenGuessCount = board.guesses.count } }
     }
 
     // MARK: Sequence (Succession) per-board state
@@ -88,7 +133,10 @@ struct BoardView: View {
         let isCurrent = row == board.guesses.count && board.status == .playing && !vm.isFinished
 
         if committed, let eval = vm.evaluation(board: boardIndex, row: row) {
-            if seqShowColors { revealedRow(eval) } else { maskedRow(eval.tiles.count) }
+            // Flip only the row just committed live this session (not on resume,
+            // not older rows) — matches web animating just the latest guess.
+            let fresh = seenGuessCount >= 0 && row == board.guesses.count - 1 && board.guesses.count > seenGuessCount
+            if seqShowColors { revealedRow(eval, animate: fresh) } else { maskedRow(eval.tiles.count) }
         } else if isCurrent && seqActive {
             let letters = Array(vm.currentInput)
             // Live invalid indicator (web parity): full-length word that isn't in
@@ -122,10 +170,20 @@ struct BoardView: View {
         }
     }
 
-    private func revealedRow(_ eval: GuessResult) -> some View {
-        HStack(spacing: spacing) {
+    private func revealedRow(_ eval: GuessResult, animate: Bool = false) -> some View {
+        // Multi-board uses the faster "mini" flip (0.3s / 80ms) like web; single
+        // board uses the full flip (0.5s / 150ms).
+        let mini = vm.isMultiBoard
+        let stagger = mini ? 0.08 : 0.15
+        let dur = mini ? 0.3 : 0.5
+        return HStack(spacing: spacing) {
             ForEach(eval.tiles.indices, id: \.self) { col in
-                TileView(letter: eval.tiles[col].letter, state: eval.tiles[col].state, revealed: true, size: tileSize)
+                if animate {
+                    FlipRevealTile(letter: eval.tiles[col].letter, state: eval.tiles[col].state,
+                                   size: tileSize, delay: Double(col) * stagger, duration: dur)
+                } else {
+                    TileView(letter: eval.tiles[col].letter, state: eval.tiles[col].state, revealed: true, size: tileSize)
+                }
             }
         }
     }

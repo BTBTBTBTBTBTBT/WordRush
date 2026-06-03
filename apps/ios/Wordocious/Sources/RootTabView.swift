@@ -48,22 +48,27 @@ struct RootTabView: View {
 }
 
 /// Shared toggle for the app chrome (bottom nav). Immersive full-screen views
-/// call `.hidesBottomNav()`; a counter keeps it correct across overlapping
-/// appear/disappear transitions (push A → push B → pop A still hides on B).
+/// call `.hidesBottomNav()`. Tracks the set of currently-present immersive
+/// screens by a per-screen ID rather than a counter: each screen's contribution
+/// is isolated, so a stray `exit` from one view can't un-hide the nav while
+/// another (e.g. a pushed game) is still up — the counter version drifted to 0
+/// on unpaired appear/disappear (fullScreenCover dismiss, cancelled swipe-back),
+/// which let the nav bleed back onto live game screens.
 final class ChromeVisibility: ObservableObject {
     static let shared = ChromeVisibility()
     private init() {}
-    @Published private(set) var hideCount = 0
-    var bottomNavHidden: Bool { hideCount > 0 }
-    func enterImmersive() { hideCount += 1 }
-    func exitImmersive() { hideCount = max(0, hideCount - 1) }
+    @Published private var activeIDs: Set<UUID> = []
+    var bottomNavHidden: Bool { !activeIDs.isEmpty }
+    func enter(_ id: UUID) { activeIDs.insert(id) }
+    func exit(_ id: UUID) { activeIDs.remove(id) }
 }
 
 private struct ImmersiveChrome: ViewModifier {
+    @State private var id = UUID()
     func body(content: Content) -> some View {
         content
-            .onAppear { ChromeVisibility.shared.enterImmersive() }
-            .onDisappear { ChromeVisibility.shared.exitImmersive() }
+            .onAppear { ChromeVisibility.shared.enter(id) }
+            .onDisappear { ChromeVisibility.shared.exit(id) }
     }
 }
 

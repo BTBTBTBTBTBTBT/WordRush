@@ -103,10 +103,11 @@ struct HomeView: View {
             .animation(Theme.animation(.easeInOut(duration: 0.2)), value: showProPrompt)
             .sheet(isPresented: $showProSheet) { ProView() }
             .navigationDestination(isPresented: $showVSLobby) { VSLobbyView() }
-            .navigationDestination(isPresented: Binding(
-                get: { pendingGame != nil },
-                set: { if !$0 { pendingGame = nil } })) {
-                if let g = pendingGame {
+            // Games present full-screen OVER the tab bar (like the web's
+            // full-screen game route) so the bottom nav is never behind them —
+            // not on the board and not on the results/victory screen.
+            .fullScreenCover(item: $pendingGame) { g in
+                NavigationStack {
                     GameScreen(seed: g.seed, mode: g.mode, title: g.title)
                 }
             }
@@ -415,8 +416,8 @@ struct HomeView: View {
                 } label: { cardBody(mode, locked: false) }
                 .buttonStyle(.plain)
             } else {
-                NavigationLink {
-                    GameScreen(seed: DailySeed.today(mode: gameMode), mode: gameMode, title: mode.title)
+                Button {
+                    pendingGame = ActiveGame(seed: DailySeed.today(mode: gameMode), mode: gameMode, title: mode.title)
                 } label: { cardBody(mode, locked: false) }
                 .buttonStyle(.plain)
             }

@@ -56,7 +56,7 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
             key={rowIndex}
             guess={guess}
             evaluation={evaluations[rowIndex]}
-            animate={rowIndex === guesses.length - 1 && evaluations[rowIndex]?.isCorrect === true}
+            animate={rowIndex === guesses.length - 1 && !!evaluations[rowIndex]}
             wordLength={wordLength}
           />
         ))}
