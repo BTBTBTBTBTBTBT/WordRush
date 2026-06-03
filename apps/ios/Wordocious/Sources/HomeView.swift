@@ -76,6 +76,7 @@ struct HomeView: View {
 
                 if let m = limitModal {
                     ModeLimitModal(mode: m,
+                                   showViewSolved: m.id != "vs",   // VS has no solo solved-puzzle to review
                                    onClose: { limitModal = nil },
                                    onUpgrade: { limitModal = nil; showProSheet = true },
                                    onViewSolved: { let mode = m; limitModal = nil; solvedMode = mode })
@@ -353,10 +354,13 @@ struct HomeView: View {
 
     /// Freemium lock: a free user who has already played today's daily for this
     /// mode can't replay it (Pro unlocks unlimited replays). Mirrors the web's
-    /// `isLocked = !isPro && (isDailyDone || hasPlayedModeToday)`. VS has its own
-    /// daily-VS gating in the lobby, so it's never locked here.
+    /// `isLocked = !isPro && (isDailyDone || hasPlayedModeToday)`. The VS card
+    /// greys out the same way once today's free daily VS is used (web parity) —
+    /// gated by the local VSPlayLimit, the same gate the lobby uses.
     private func isLocked(_ mode: HomeMode) -> Bool {
-        guard !auth.isProActive, mode.id != "vs", let key = mode.dbKey else { return false }
+        guard !auth.isProActive else { return false }
+        if mode.id == "vs" { return VSPlayLimit.hasPlayedToday() }
+        guard let key = mode.dbKey else { return false }
         return completions.byMode[key] != nil
     }
 
@@ -501,6 +505,7 @@ struct HomeView: View {
 /// Upgrade to Pro (amber btn-3d), and View Solved Puzzle.
 struct ModeLimitModal: View {
     let mode: HomeMode
+    var showViewSolved: Bool = true
     let onClose: () -> Void
     let onUpgrade: () -> Void
     let onViewSolved: () -> Void
@@ -513,7 +518,7 @@ struct ModeLimitModal: View {
                     .padding(.bottom, 12)
                 Text("\(mode.title) — Played Today").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.center).padding(.bottom, 4)
-                Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across all 8 modes.")
+                Text("You've used your free play of \(mode.title) for today. Upgrade to Pro for unlimited replays and ad-free gameplay across all 9 modes.")
                     .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     .multilineTextAlignment(.center).padding(.bottom, 16)
 
