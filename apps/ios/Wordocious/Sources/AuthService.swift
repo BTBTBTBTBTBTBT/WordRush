@@ -2,6 +2,62 @@ import Foundation
 import Supabase
 import UIKit
 import GoogleSignIn
+import Security
+
+/// Supabase auth-session storage that prefers the Keychain (secure, used on
+/// real devices) but transparently falls back to UserDefaults when a Keychain
+/// write is rejected — e.g. on the iOS Simulator, where an unsigned build has
+/// no `application-identifier` entitlement and the Keychain returns
+/// errSecMissingEntitlement (-34018). Without this, signing in on the simulator
+/// fails with "keychain error" the moment Supabase tries to persist the session.
+/// On device the Keychain path always succeeds, so behavior there is unchanged.
+struct ResilientAuthStorage: AuthLocalStorage {
+    private let service = "com.wordocious.app.supabase.auth"
+    private func defaultsKey(_ key: String) -> String { "sb-auth-\(key)" }
+
+    func store(key: String, value: Data) throws {
+        let base: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+        ]
+        SecItemDelete(base as CFDictionary)
+        var add = base
+        add[kSecValueData as String] = value
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        if SecItemAdd(add as CFDictionary, nil) == errSecSuccess {
+            UserDefaults.standard.removeObject(forKey: defaultsKey(key))
+        } else {
+            // Keychain unavailable (unsigned simulator) → fall back.
+            UserDefaults.standard.set(value, forKey: defaultsKey(key))
+        }
+    }
+
+    func retrieve(key: String) throws -> Data? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne,
+        ]
+        var out: AnyObject?
+        if SecItemCopyMatching(query as CFDictionary, &out) == errSecSuccess, let data = out as? Data {
+            return data
+        }
+        return UserDefaults.standard.data(forKey: defaultsKey(key))
+    }
+
+    func remove(key: String) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: key,
+        ]
+        SecItemDelete(query as CFDictionary)
+        UserDefaults.standard.removeObject(forKey: defaultsKey(key))
+    }
+}
 
 /// Google OAuth client IDs (spellstrike Google Cloud project). The iOS client
 /// drives the native GoogleSignIn SDK; the web client is passed as
@@ -29,7 +85,8 @@ final class AuthService: ObservableObject {
     private init() {
         client = SupabaseClient(
             supabaseURL: SupabaseConfig.url,
-            supabaseKey: SupabaseConfig.isConfigured ? SupabaseConfig.anonKey : "anon-key-not-set"
+            supabaseKey: SupabaseConfig.isConfigured ? SupabaseConfig.anonKey : "anon-key-not-set",
+            options: .init(auth: .init(storage: ResilientAuthStorage()))
         )
     }
 
