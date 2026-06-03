@@ -9,6 +9,7 @@ struct Profile: Codable, Identifiable, Equatable {
     var isPro: Bool
     var proExpiresAt: String?
     var isBanned: Bool
+    var isAdmin: Bool?
     var hasOnboarded: Bool
     var level: Int
     var xp: Int
@@ -31,6 +32,7 @@ struct Profile: Codable, Identifiable, Equatable {
         case isPro = "is_pro"
         case proExpiresAt = "pro_expires_at"
         case isBanned = "is_banned"
+        case isAdmin = "is_admin"
         case hasOnboarded = "has_onboarded"
         case totalWins = "total_wins"
         case totalLosses = "total_losses"
@@ -48,7 +50,7 @@ struct Profile: Codable, Identifiable, Equatable {
 
     /// Columns to request from the profiles table. (social_links is fetched
     /// separately/optionally so a missing column never breaks profile loading.)
-    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,gold_medals,silver_medals,bronze_medals,created_at"
+    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,gold_medals,silver_medals,bronze_medals,created_at"
 }
 
 /// Expiry-aware Pro check — 1:1 with apps/web/lib/pro.ts isProActive().

@@ -136,17 +136,21 @@ struct ProfileTab: View {
                 .padding(.top, 2)
                 .sheet(isPresented: $showPro) { ProView() }
             }
-            // TEST-ONLY: Simulate Pro toggle (mirrors the web dev toggle) — flips
-            // is_pro so free-vs-Pro gating can be exercised. Remove before launch.
-            let isPro = auth.isProActive
-            Button { Task { await auth.setSimulatePro(!isPro) } } label: {
-                Text(isPro ? "Disable Pro" : "Simulate Pro").font(Brand.font(12, .heavy))
-                    .foregroundStyle(isPro ? Color(hex: 0xDC2626) : Color(hex: 0x16A34A))
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(isPro ? Color(hex: 0xFEF2F2) : Color(hex: 0xF0FDF4)))
-                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(isPro ? Color(hex: 0xFCA5A5) : Color(hex: 0x86EFAC), lineWidth: 1.5))
+            // DEV-ONLY: Simulate Pro toggle — flips is_pro so free-vs-Pro gating
+            // can be exercised in testing. Gated on profiles.is_admin so it
+            // renders ONLY for the developer's account (never for App Review or
+            // real users; mirrors the web gate).
+            if auth.profile?.isAdmin == true {
+                let isPro = auth.isProActive
+                Button { Task { await auth.setSimulatePro(!isPro) } } label: {
+                    Text(isPro ? "Disable Pro" : "Simulate Pro").font(Brand.font(12, .heavy))
+                        .foregroundStyle(isPro ? Color(hex: 0xDC2626) : Color(hex: 0x16A34A))
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(isPro ? Color(hex: 0xFEF2F2) : Color(hex: 0xF0FDF4)))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(isPro ? Color(hex: 0xFCA5A5) : Color(hex: 0x86EFAC), lineWidth: 1.5))
+                }
+                .padding(.top, 2)
             }
-            .padding(.top, 2)
         }
     }
 
