@@ -111,7 +111,8 @@ struct VSGameView: View {
         } else if let game = vm.game {
             VStack(spacing: 0) {
                 matchHeader
-                OpponentStrip(opponent: vm.opponent, gradient: gradient)
+                OpponentStrip(opponent: vm.opponent, gradient: gradient,
+                              maxGuesses: game.maxGuesses, wordLength: game.wordLength)
                     .padding(.horizontal, 10).padding(.top, 6)
 
                 GeometryReader { geo in
@@ -328,26 +329,78 @@ struct VSGameView: View {
 private struct OpponentStrip: View {
     let opponent: VSMatchViewModel.OpponentProgress
     let gradient: [Color]
+    var maxGuesses: Int = 6
+    var wordLength: Int = 5
+
+    private var hasTiles: Bool { opponent.tiles.values.contains { !$0.isEmpty } }
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "person.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
-            Text("Opponent").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textSecondary)
-            Spacer()
-            // Gauntlet VS: show how many stages the opponent has cleared.
-            if opponent.stagesCleared > 0 {
-                Label("Stage \(opponent.stagesCleared + 1)", systemImage: "flag.fill")
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
-            } else if opponent.totalBoards > 1 {
-                Text("\(opponent.boardsSolved)/\(opponent.totalBoards) boards").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+        VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: "person.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
+                Text("Opponent").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textSecondary)
+                Spacer()
+                // Gauntlet VS: show how many stages the opponent has cleared.
+                if opponent.stagesCleared > 0 {
+                    Label("Stage \(opponent.stagesCleared + 1)", systemImage: "flag.fill")
+                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                } else if opponent.totalBoards > 1 {
+                    Text("\(opponent.boardsSolved)/\(opponent.totalBoards) boards").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                }
+                Text("\(opponent.attempts) guesses").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                if opponent.solved {
+                    Image(systemName: "checkmark.seal.fill").font(.system(size: 13)).foregroundStyle(Color(hex: 0x22C55E))
+                }
             }
-            Text("\(opponent.attempts) guesses").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
-            if opponent.solved {
-                Image(systemName: "checkmark.seal.fill").font(.system(size: 13)).foregroundStyle(Color(hex: 0x22C55E))
+            // Live opponent tile preview (colors only, no letters) — ports the
+            // web OpponentMiniBoard / OpponentMultiMiniBoard.
+            if hasTiles {
+                let boards = opponent.totalBoards > 1 ? Array(0..<opponent.totalBoards) : [0]
+                let cell: CGFloat = opponent.totalBoards > 4 ? 5 : 8
+                HStack(spacing: 6) {
+                    ForEach(boards, id: \.self) { i in
+                        OpponentMiniBoard(tiles: opponent.tiles[i] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: cell)
+                    }
+                }
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+    }
+}
+
+/// Compact grid of the opponent's guess tiles (colors only — no letters), one
+/// per board. Ports apps/web/components/vs/opponent-mini-board.tsx.
+private struct OpponentMiniBoard: View {
+    let tiles: [[TileState]]
+    let maxGuesses: Int
+    let wordLength: Int
+    var cell: CGFloat = 8
+
+    var body: some View {
+        VStack(spacing: 1) {
+            ForEach(0..<max(maxGuesses, 1), id: \.self) { r in
+                HStack(spacing: 1) {
+                    ForEach(0..<max(wordLength, 1), id: \.self) { c in
+                        let st: TileState? = (r < tiles.count && c < tiles[r].count) ? tiles[r][c] : nil
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(color(st))
+                            .frame(width: cell, height: cell)
+                            .overlay(st == nil || st == .empty
+                                     ? RoundedRectangle(cornerRadius: 2).stroke(Color(hex: 0xD1D5DB), lineWidth: 1) : nil)
+                    }
+                }
+            }
+        }
+    }
+
+    private func color(_ s: TileState?) -> Color {
+        switch s {
+        case .correct: return Color(hex: 0x22C55E)
+        case .present: return Color(hex: 0xEAB308)
+        case .absent:  return Theme.textMuted
+        default:       return .clear
+        }
     }
 }
 
