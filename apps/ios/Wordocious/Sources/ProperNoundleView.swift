@@ -22,6 +22,7 @@ final class ProperNoundleVM: ObservableObject {
     @Published private(set) var status: GameStatus = .playing
     @Published var toast: String?
     @Published private(set) var clue: String?
+    @Published private(set) var loadingClue = false
     @Published private(set) var revealedVowel: String?
     @Published private(set) var revealedConsonant: String?
     @Published private(set) var finalTimeSeconds: Int?
@@ -78,8 +79,18 @@ final class ProperNoundleVM: ObservableObject {
     }
 
     // Hints
-    func revealClue() { guard clue == nil, let p = puzzle else { return }
-        clue = p.hint ?? "Category: \(categoryLabel(p.themeCategory))" }
+    /// Clue hint — fetches the Wikipedia summary (first 2 sentences, name
+    /// redacted), exactly like the web. Falls back to the puzzle's static hint
+    /// (or category) on any network/parse failure.
+    func revealClue() {
+        guard clue == nil, !loadingClue, let p = puzzle else { return }
+        loadingClue = true
+        Task {
+            let fetched = await WikipediaHint.fetch(displayName: p.display, wikiTitle: p.wikiTitle)
+            self.clue = fetched ?? p.hint ?? "Category: \(categoryLabel(p.themeCategory))"
+            self.loadingClue = false
+        }
+    }
     func revealVowel() { reveal(vowels: true) }
     func revealConsonant() { reveal(vowels: false) }
 
@@ -220,7 +231,7 @@ struct NoundleHints: View {
     @ObservedObject var vm: ProperNoundleVM
     var body: some View {
         HStack(spacing: 8) {
-            hintButton("Clue", systemImage: "lightbulb", used: vm.clue != nil,
+            hintButton("Clue", systemImage: vm.loadingClue ? "hourglass" : "lightbulb", used: vm.clue != nil || vm.loadingClue,
                        text: Color(hex: 0x9333EA), border: Color(hex: 0xD8B4FE), bg: Color(hex: 0xFAF5FF)) { vm.revealClue() }
             hintButton(vm.revealedVowel.map { $0 } ?? "Vowel", systemImage: "eye", used: vm.revealedVowel != nil,
                        text: Color(hex: 0x2563EB), border: Color(hex: 0x93C5FD), bg: Color(hex: 0xEFF6FF)) { vm.revealVowel() }
