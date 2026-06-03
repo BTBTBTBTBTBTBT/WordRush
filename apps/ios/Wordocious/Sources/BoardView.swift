@@ -1,29 +1,38 @@
 import SwiftUI
 import WordociousCore
 
+/// Horizontal shake for a rejected guess — mirrors web's `animate-shake`
+/// (±4px, a few oscillations over ~0.4s). Driven by an incrementing counter.
+struct ShakeEffect: GeometryEffect {
+    var amount: CGFloat = 4
+    var shakes: CGFloat = 3
+    var animatableData: CGFloat
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        ProjectionTransform(CGAffineTransform(translationX: amount * sin(animatableData * .pi * shakes * 2), y: 0))
+    }
+}
+
 struct TileView: View {
     let letter: String
     let state: TileState
     let revealed: Bool
     var size: CGFloat = 58
+    /// Live "not a valid / already-guessed word" indicator on the typing row —
+    /// red tile (web: border-red-400 / bg-red-50 / text-red-500), shown before Enter.
+    var isInvalid: Bool = false
 
     var body: some View {
         let filled = state != .empty
+        let fg: Color = isInvalid ? Color(hex: 0xEF4444) : (filled && revealed ? .white : Theme.textPrimary)
+        let bg: Color = isInvalid ? Color(hex: 0xFEF2F2) : (revealed ? Theme.tileColor(for: state) : Color.white)
+        let border: Color = isInvalid ? Color(hex: 0xF87171)
+            : (!revealed ? Theme.emptyBorder : (state == .absent ? Theme.emptyBorder : Theme.borderAlt))
         Text(letter)
             .font(Brand.font(size * 0.5, .black))
-            .foregroundStyle(filled && revealed ? .white : Theme.textPrimary)
+            .foregroundStyle(fg)
             .frame(width: size, height: size)
-            .background(
-                RoundedRectangle(cornerRadius: size * 0.14)
-                    .fill(revealed ? Theme.tileColor(for: state) : Color.white)
-            )
-            .overlay(
-                // Web: empty/typing tiles use gray-300; revealed absent stays gray-300,
-                // revealed present/correct use the lighter gray-200 — no dark outline.
-                RoundedRectangle(cornerRadius: size * 0.14)
-                    .stroke(!revealed ? Theme.emptyBorder : (state == .absent ? Theme.emptyBorder : Theme.borderAlt),
-                            lineWidth: 2)
-            )
+            .background(RoundedRectangle(cornerRadius: size * 0.14).fill(bg))
+            .overlay(RoundedRectangle(cornerRadius: size * 0.14).stroke(border, lineWidth: 2))
     }
 }
 
@@ -82,12 +91,19 @@ struct BoardView: View {
             if seqShowColors { revealedRow(eval) } else { maskedRow(eval.tiles.count) }
         } else if isCurrent && seqActive {
             let letters = Array(vm.currentInput)
+            // Live invalid indicator (web parity): full-length word that isn't in
+            // the dictionary OR was already guessed on this board → red row.
+            let entry = vm.currentInput.uppercased()
+            let invalid = letters.count == vm.wordLength
+                && (!GameDictionary.shared.isValidWord(entry) || board.guesses.contains(entry))
             HStack(spacing: spacing) {
                 ForEach(0..<vm.wordLength, id: \.self) { col in
                     let ch = col < letters.count ? String(letters[col]) : ""
-                    TileView(letter: ch, state: .empty, revealed: false, size: tileSize)
+                    TileView(letter: ch, state: .empty, revealed: false, size: tileSize, isInvalid: invalid && !ch.isEmpty)
                 }
             }
+            .modifier(ShakeEffect(animatableData: CGFloat(vm.shakeCount)))
+            .animation(Theme.animation(.linear(duration: 0.4)), value: vm.shakeCount)
         } else {
             HStack(spacing: spacing) {
                 ForEach(0..<vm.wordLength, id: \.self) { _ in

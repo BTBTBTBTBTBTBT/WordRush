@@ -8,6 +8,8 @@ import WordociousCore
 final class GameViewModel: ObservableObject {
     @Published private(set) var state: GameState
     @Published var currentInput: String = ""
+    /// Bumped on each rejected guess to drive the row shake (web's animate-shake).
+    @Published var shakeCount: Int = 0
     @Published var toast: String?
     /// Per-board evaluations: evaluations[boardIndex][rowIndex].
     @Published private(set) var evaluations: [[GuessResult]] = []
@@ -274,9 +276,15 @@ final class GameViewModel: ObservableObject {
 
     func submit() {
         guard !isFinished else { return }
-        guard currentInput.count == wordLength else { flash("Not enough letters"); SoundManager.shared.playInvalid(); return }
+        guard currentInput.count == wordLength else { rejectGuess("Not enough letters"); return }
         let guess = currentInput.uppercased()
-        guard GameDictionary.shared.isValidWord(guess) else { flash("Not in word list"); SoundManager.shared.playInvalid(); return }
+        guard GameDictionary.shared.isValidWord(guess) else { rejectGuess("Not in word list"); return }
+        // Already guessed on this board — web blocks this with "Already guessed"
+        // (for multi-board, board 0's history mirrors the shared applyToAll guesses).
+        let checkIdx = isSequence ? sequenceActiveIndex : 0
+        if checkIdx >= 0, checkIdx < state.boards.count, state.boards[checkIdx].guesses.contains(guess) {
+            rejectGuess("Already guessed"); return
+        }
 
         let beforeGuessCount = totalGuesses
         let action: GameAction = isMultiBoard
@@ -303,8 +311,15 @@ final class GameViewModel: ObservableObject {
                 if isVersus { onCompleted?(status, rowsUsed) }
             }
         } else {
-            flash("Not in word list"); SoundManager.shared.playInvalid()
+            rejectGuess("Not in word list")
         }
+    }
+
+    /// Reject an invalid/duplicate guess: toast + sound + a row shake (web parity).
+    private func rejectGuess(_ message: String) {
+        flash(message)
+        SoundManager.shared.playInvalid()
+        shakeCount += 1
     }
 
     /// Post the finished daily result to Supabase (once). No-ops for
