@@ -82,6 +82,11 @@ struct CompletedDailyCard: View {
                                     stat("\(d.guessCount)", "GUESSES")
                                     stat(timeString(d.timeSeconds), "TIME")
                                 }
+                                // Full score breakdown (same card as post-game) below the stats.
+                                ScoreBreakdownView(gameMode: mode.rawValue, completed: won,
+                                                   guessCount: d.guessCount, timeSeconds: d.timeSeconds,
+                                                   boardsSolved: won ? boardCount : 0, totalBoards: boardCount,
+                                                   hintsUsed: d.hintsUsed)
                             }
                             .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         }

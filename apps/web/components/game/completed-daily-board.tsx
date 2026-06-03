@@ -5,6 +5,7 @@ import { ChevronDown } from 'lucide-react';
 import { evaluateGuess, TileState, GameStatus, BoardState, generateDailySeed } from '@wordle-duel/core';
 import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
+import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { getTodayLocal, formatHintsLabel } from '@/lib/daily-service';
@@ -585,6 +586,15 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             </div>
           </div>
         </div>
+        <ScoreBreakdownCard
+          gameMode="PROPERNOUNDLE"
+          completed={pnWon}
+          guessCount={pnSaved.guesses.length}
+          timeSeconds={pnSaved.elapsedTime}
+          boardsSolved={pnWon ? 1 : 0}
+          totalBoards={1}
+          hintsUsed={pnHints}
+        />
       </CollapsibleCompletedCard>
     );
   }
@@ -740,6 +750,16 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           </div>
         </>
       )}
+      {/* Full score breakdown (same card as post-game) below the stats. */}
+      <ScoreBreakdownCard
+        gameMode={modeId}
+        completed={won}
+        guessCount={isMulti ? totalGuesses : (boards[0]?.guesses.length ?? 0)}
+        timeSeconds={session.elapsedTime}
+        boardsSolved={boardsSolved}
+        totalBoards={totalBoards}
+        hintsUsed={singleHints}
+      />
     </CollapsibleCompletedCard>
   );
 }

@@ -125,7 +125,7 @@ enum MatchStatsService {
         return (0..<24).map { HourBucket(hour: $0, played: played[$0] ?? 0, won: won[$0] ?? 0) }
     }
 
-    struct SolvedDaily { let guesses: [String]; let solutions: [String]; let won: Bool; let guessCount: Int; let timeSeconds: Int }
+    struct SolvedDaily { let guesses: [String]; let solutions: [String]; let won: Bool; let guessCount: Int; let timeSeconds: Int; let hintsUsed: Int }
 
     /// Server-persisted Gauntlet per-stage breakdown (matches.gauntlet_stages),
     /// so the results screen renders cross-device when there's no local session.
@@ -154,9 +154,10 @@ enum MatchStatsService {
         struct Row: Decodable {
             let player1_guesses: [String]?; let solutions: [String]?
             let winner_id: String?; let player1_score: Int?; let player1_time: Double?
+            let hints_used: Int?
         }
         let rows: [Row] = (try? await AuthService.shared.client.from("matches")
-            .select("player1_guesses,solutions,winner_id,player1_score,player1_time")
+            .select("player1_guesses,solutions,winner_id,player1_score,player1_time,hints_used")
             .eq("player1_id", value: uid)
             .eq("game_mode", value: mode.rawValue)
             .eq("seed", value: seed)
@@ -164,7 +165,8 @@ enum MatchStatsService {
             .limit(1).execute().value) ?? []
         guard let row = rows.first, let g = row.player1_guesses, let s = row.solutions, !g.isEmpty, !s.isEmpty else { return nil }
         return SolvedDaily(guesses: g, solutions: s, won: row.winner_id == uid,
-                           guessCount: row.player1_score ?? g.count, timeSeconds: Int((row.player1_time ?? 0).rounded()))
+                           guessCount: row.player1_score ?? g.count, timeSeconds: Int((row.player1_time ?? 0).rounded()),
+                           hintsUsed: row.hints_used ?? 0)
     }
 
     /// Top-5 most-guessed words (+ win counts) — ports fetchTopWordsAllTime.
