@@ -114,6 +114,22 @@ final class ProperNoundleVM: ObservableObject {
         if vowels { revealedVowel = String(pick) } else { revealedConsonant = String(pick) }
     }
 
+    /// Share grid (rows of tile states), padded to maxGuesses — for the share card.
+    func shareGrid() -> [[TileState]] {
+        let map: (NTile) -> TileState = {
+            switch $0 {
+            case .correct: return .correct
+            case .present: return .present
+            case .absent: return .absent
+            case .hintUsed: return .hintUsed
+            case .empty: return .empty
+            }
+        }
+        var rows = guesses.map { $0.tiles.map(map) }
+        while rows.count < maxGuesses { rows.append(Array(repeating: .empty, count: answerLen)) }
+        return rows
+    }
+
     private func finish() {
         finalTimeSeconds = elapsed
         if status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
@@ -152,19 +168,22 @@ struct ProperNoundleView: View {
     @StateObject private var vm = ProperNoundleVM()
     @Environment(\.dismiss) private var dismiss
     @State private var adShown = false
+    @State private var showVictory = false
 
     var body: some View {
         ZStack {
             LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             if vm.puzzle == nil {
                 Text("No puzzle available").foregroundStyle(Theme.textMuted)
+            } else if vm.isFinished {
+                ScrollView { VStack(spacing: 8) { header; NoundleBoard(vm: vm); result }.padding(.horizontal, 10) }
             } else {
                 VStack(spacing: 8) {
                     header
                     Spacer(minLength: 4)
                     NoundleBoard(vm: vm)
                     Spacer(minLength: 4)
-                    if vm.isFinished { result } else { hints; NoundleKeyboard(vm: vm).padding(.bottom, 6) }
+                    hints; NoundleKeyboard(vm: vm).padding(.bottom, 6)
                 }
                 .padding(.horizontal, 10)
             }
@@ -174,10 +193,21 @@ struct ProperNoundleView: View {
                     .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
             }
+            if showVictory, let p = vm.puzzle {
+                VictoryOverlay(
+                    won: vm.status == .won, guesses: vm.guesses.count, maxGuesses: vm.maxGuesses,
+                    timeSeconds: vm.finalTimeSeconds ?? vm.elapsed, boardsSolved: vm.status == .won ? 1 : 0,
+                    totalBoards: 1, solution: p.display, solutions: [],
+                    onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
+                .transition(.opacity)
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .hidesBottomNav()
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
+        .onChange(of: vm.status) { s in
+            if s == .won || s == .lost { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = true } }
+        }
         .onAppear {
             // Free users watch the game-start ad first; reset the clock after.
             if !adShown { adShown = true; AdsManager.shared.showGameStartInterstitial { vm.beginTimer() } }
@@ -216,12 +246,30 @@ struct ProperNoundleView: View {
     private var hints: some View { NoundleHints(vm: vm) }
 
     private var result: some View {
-        VStack(spacing: 8) {
-            Text(vm.status == .won ? "🎉 Solved!" : "Out of guesses").font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
+        let secs = vm.finalTimeSeconds ?? vm.elapsed
+        return VStack(spacing: 10) {
+            Text(vm.status == .won ? "🎉 Solved in \(vm.guesses.count) \(vm.guesses.count == 1 ? "guess" : "guesses")!" : "Out of guesses")
+                .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
             if let p = vm.puzzle { Text(p.display).font(Brand.title(20)).foregroundStyle(pnAccent) }
-            Button("Home") { dismiss() }.font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted).padding(.top, 2)
+            // Home / Share row (web parity).
+            HStack(spacing: 18) {
+                Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
+                Button { shareResult() } label: { Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(13, .black)) }
+            }
+            .foregroundStyle(pnAccent).padding(.top, 2)
+            DailyRankBadge(gameMode: .propernoundle)
+            ScoreBreakdownView(gameMode: GameMode.propernoundle.rawValue, completed: vm.status == .won,
+                               guessCount: vm.guesses.count, timeSeconds: secs,
+                               boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed)
         }
         .padding(.vertical, 12)
+    }
+
+    private func shareResult() {
+        ShareService.share(kind: .single(grid: vm.shareGrid()), mode: .propernoundle,
+                           modeLabel: "ProperNoundle", accent: pnAccent, won: vm.status == .won,
+                           guesses: vm.guesses.count, maxGuesses: vm.maxGuesses,
+                           timeSeconds: vm.finalTimeSeconds ?? vm.elapsed)
     }
 }
 
