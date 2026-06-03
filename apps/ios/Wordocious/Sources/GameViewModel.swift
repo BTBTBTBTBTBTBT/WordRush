@@ -17,6 +17,14 @@ final class GameViewModel: ObservableObject {
     /// XP earned this game — set once recording completes; drives the XP toast.
     @Published var xpResult: GameResultsService.XpResult?
 
+    // MARK: Classic hints (Six / Seven) — mirrors web useClassicHints.
+    // Each hint reveals a random un-guessed vowel/consonant as a board row
+    // (revealed letter = correct, rest = hint-used) and consumes a guess.
+    @Published private(set) var vowelUsed = false
+    @Published private(set) var consonantUsed = false
+    @Published private(set) var vowelRevealed: String?      // revealed letter, or "—" if none left
+    @Published private(set) var consonantRevealed: String?
+
     // Active-play timer: accumulates only while the game is foregrounded,
     // pauses on background, persists across relaunch. Mirrors the web
     // useActivePlayTimer so a backgrounded game doesn't inflate the clock.
@@ -157,6 +165,65 @@ final class GameViewModel: ObservableObject {
     /// modes share a guess budget; single boards use their own).
     var maxGuesses: Int { state.boards.map(\.maxGuesses).max() ?? 6 }
 
+    // MARK: - Classic hints (Six / Seven)
+
+    /// Single-board modes that expose vowel/consonant hints (web HINT_BEARING_MODES).
+    var hasHints: Bool { mode == .duel6 || mode == .duel7 }
+    /// Hints consumed — each adds a row stored in `hintEvaluations`, so this
+    /// persists with the board and drives the scoring penalty automatically.
+    var hintsUsed: Int { state.boards.first?.hintEvaluations?.count ?? 0 }
+
+    func revealVowel() { revealHint(vowels: true) }
+    func revealConsonant() { revealHint(vowels: false) }
+
+    private func revealHint(vowels: Bool) {
+        guard hasHints, !isFinished, let board = state.boards.first else { return }
+        if vowels ? vowelUsed : consonantUsed { return }
+        let vset = Set("AEIOU")
+        let solution = board.solution.uppercased()
+        let guessed = Set(board.guesses.joined().uppercased())   // letters already typed
+        let candidates = Array(Set(solution.filter { c in
+            c >= "A" && c <= "Z" && (vowels ? vset.contains(c) : !vset.contains(c)) && !guessed.contains(c)
+        }))
+        guard let pick = candidates.randomElement() else {
+            // None of that letter-type left to reveal — mark used, add no row (web parity).
+            if vowels { vowelUsed = true; vowelRevealed = "—" } else { consonantUsed = true; consonantRevealed = "—" }
+            persistHintUI()
+            return
+        }
+        // Reveal the letter at every position it occurs; blanks elsewhere.
+        let chars = Array(solution)
+        let tiles = chars.map { TileResult(letter: $0 == pick ? String($0) : "",
+                                           state: $0 == pick ? .correct : .hintUsed) }
+        let hintWord = String(chars.map { $0 == pick ? $0 : " " })
+        let eval = GuessResult(tiles: tiles, isCorrect: false)
+        state = gameReducer(state: state, action: .submitHint(hintWord: hintWord, hintEvaluation: eval, boardIndex: 0))
+        if vowels { vowelUsed = true; vowelRevealed = String(pick) } else { consonantUsed = true; consonantRevealed = String(pick) }
+        recomputeEvaluations()
+        if !isVersus { persistence.save(state); persistHintUI() }
+        if state.status == .lost { flash(lossMessage) }
+        if isFinished { recordResultIfNeeded() }
+    }
+
+    /// Persist hint button state (used flags + revealed letters) keyed by
+    /// seed+mode — mirrors the web `wordocious-hints-{mode}-{seed}` localStorage.
+    private var hintUIKey: String { "wordocious-hints-\(mode.rawValue)-\(state.seed)" }
+    private func persistHintUI() {
+        UserDefaults.standard.set([
+            "vowelUsed": vowelUsed ? "1" : "0",
+            "consonantUsed": consonantUsed ? "1" : "0",
+            "vowelRevealed": vowelRevealed ?? "",
+            "consonantRevealed": consonantRevealed ?? "",
+        ], forKey: hintUIKey)
+    }
+    private func restoreHintUI() {
+        guard hasHints, let d = UserDefaults.standard.dictionary(forKey: hintUIKey) as? [String: String] else { return }
+        vowelUsed = d["vowelUsed"] == "1"
+        consonantUsed = d["consonantUsed"] == "1"
+        vowelRevealed = (d["vowelRevealed"]?.isEmpty == false) ? d["vowelRevealed"] : nil
+        consonantRevealed = (d["consonantRevealed"]?.isEmpty == false) ? d["consonantRevealed"] : nil
+    }
+
     init(seed: String, mode: GameMode, isVersus: Bool = false) {
         self.mode = mode
         self.isVersus = isVersus
@@ -176,6 +243,7 @@ final class GameViewModel: ObservableObject {
             state = createInitialState(seed: seed, mode: mode)
         }
         recomputeEvaluations()
+        restoreHintUI()
         accumulatedMs = isVersus ? 0 : GamePersistence.shared.loadElapsed(seed: seed, mode: mode)
         // A game restored from disk that's already finished shouldn't re-post.
         resultRecorded = state.status != .playing
@@ -275,16 +343,17 @@ final class GameViewModel: ObservableObject {
         // shared guess list; solutions = every board's answer.
         let guessWords = state.boards.first?.guesses ?? []
         let solutionWords = state.boards.map(\.solution)
+        let hintsCount = hintsUsed   // Six/Seven hint penalty (0 for non-hint modes)
         Task {
             let xp = await GameResultsService.record(
                 gameMode: modeRaw, won: completed, guessCount: guesses,
                 timeSeconds: secs, boardsSolved: solved, totalBoards: total,
-                seed: theSeed
+                seed: theSeed, hintsUsed: hintsCount
             )
             self.xpResult = xp
             await GameResultsService.recordSoloMatch(
                 gameMode: modeRaw, won: completed, score: guesses, timeSeconds: secs,
-                seed: theSeed, solutions: solutionWords, guesses: guessWords
+                seed: theSeed, solutions: solutionWords, guesses: guessWords, hintsUsed: hintsCount
             )
             // Gauntlet: persist the per-stage breakdown so the results screen
             // shows full detail (incl. per-stage times) on any device.
@@ -297,7 +366,7 @@ final class GameViewModel: ObservableObject {
             if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
                 await AchievementService.checkAchievements(
                     userId: uid, gameMode: modeRaw.rawValue, playType: "solo", won: completed,
-                    guessCount: guesses, timeSeconds: secs, seed: theSeed, hintsUsed: 0)
+                    guessCount: guesses, timeSeconds: secs, seed: theSeed, hintsUsed: hintsCount)
             }
         }
     }
@@ -347,7 +416,12 @@ final class GameViewModel: ObservableObject {
 
     private func recomputeEvaluations() {
         evaluations = state.boards.map { board in
-            board.guesses.map { evaluateGuess(solution: board.solution, guess: $0) }
+            board.guesses.enumerated().map { i, g in
+                // Hint rows carry a stored evaluation (keyed by row index); their
+                // blank/spaced word must not be re-evaluated like a real guess.
+                if let he = board.hintEvaluations?[String(i)] { return he }
+                return evaluateGuess(solution: board.solution, guess: g)
+            }
         }
     }
 

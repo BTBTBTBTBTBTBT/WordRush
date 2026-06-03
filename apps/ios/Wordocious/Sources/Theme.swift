@@ -59,7 +59,7 @@ enum Theme {
         case .correct: return correct
         case .present: return present
         case .absent: return absent
-        case .hintUsed: return present
+        case .hintUsed: return Color(hex: 0xD1D5DB) // web HINT_USED = gray (not the present color)
         case .empty: return .clear
         }
     }

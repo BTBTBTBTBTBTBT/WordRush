@@ -195,8 +195,8 @@ struct CompletedMiniBoardView: View {
                 HStack(spacing: tileSize * 0.1) {
                     if r < board.guesses.count {
                         let g = board.guesses[r]
-                        // Hint rows (Six/Seven) carry a stored evaluation keyed by word.
-                        let tiles = (board.hintEvaluations?[g] ?? evaluateGuess(solution: board.solution, guess: g)).tiles
+                        // Hint rows (Six/Seven) carry a stored evaluation keyed by row index.
+                        let tiles = (board.hintEvaluations?[String(r)] ?? evaluateGuess(solution: board.solution, guess: g)).tiles
                         ForEach(tiles.indices, id: \.self) { c in
                             TileView(letter: tiles[c].letter, state: tiles[c].state, revealed: true, size: tileSize)
                         }

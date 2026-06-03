@@ -173,10 +173,12 @@ struct ScoreBreakdownView: View {
     let timeSeconds: Int
     let boardsSolved: Int
     let totalBoards: Int
+    var hintsUsed: Int = 0
 
     var body: some View {
         let b = DailyScoring.breakdown(gameMode: gameMode, completed: completed, guessCount: guessCount,
-                                       timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards)
+                                       timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+                                       hintsUsed: hintsUsed)
         let guessesLeft = max(0, b.maxGuesses - guessCount)
         let timeUnder = max(0, b.timeCap - timeSeconds)
         return VStack(spacing: 2) {
@@ -192,7 +194,10 @@ struct ScoreBreakdownView: View {
             if completed && b.completionBonus > 0 {
                 row("Completion bonus", totalBoards > 1 ? "\(boardsSolved)/\(totalBoards) boards" : "puzzle solved", b.completionBonus)
             }
-            if b.hasHints { row("Hint penalty", "no hints — full credit", -b.hintPenalty, pure: completed) }
+            if b.hasHints {
+                let detail = hintsUsed > 0 ? "\(hintsUsed) hint\(hintsUsed == 1 ? "" : "s") × \(Int(b.hintPenalty) / max(1, hintsUsed))" : "no hints — full credit"
+                row("Hint penalty", detail, -b.hintPenalty, pure: completed && hintsUsed == 0)
+            }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .frame(maxWidth: 400)

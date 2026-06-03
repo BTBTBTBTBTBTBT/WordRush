@@ -82,14 +82,25 @@ final class ProperNoundleVM: ObservableObject {
         clue = p.hint ?? "Category: \(categoryLabel(p.themeCategory))" }
     func revealVowel() { reveal(vowels: true) }
     func revealConsonant() { reveal(vowels: false) }
+
+    /// Mirrors web useHints.revealVowel/revealConsonant: pick a RANDOM unique
+    /// vowel/consonant from the answer and reveal it as a board ROW (revealed
+    /// letter = correct, the rest = hint-used). A no-op label change before was
+    /// why "nothing happened" — now it actually reveals on the board.
     private func reveal(vowels: Bool) {
-        guard let p = puzzle else { return }
-        let set = Set("aeiou")
-        let chars = Array(ProperNoundle.normalize(p.answer))
-        let candidates = chars.filter { vowels ? set.contains($0) : !set.contains($0) }
-        guard let pick = candidates.first.map({ String($0).uppercased() }) else { return }
-        if vowels, revealedVowel == nil { revealedVowel = pick }
-        if !vowels, revealedConsonant == nil { revealedConsonant = pick }
+        guard let p = puzzle, !isFinished else { return }
+        if vowels ? (revealedVowel != nil) : (revealedConsonant != nil) { return }
+        let vset = Set("AEIOU")
+        let chars = Array(ProperNoundle.normalize(p.answer).uppercased())
+        let pool = Set(chars.filter { c in c >= "A" && c <= "Z" && (vowels ? vset.contains(c) : !vset.contains(c)) })
+        guard let pick = pool.randomElement() else {
+            if vowels { revealedVowel = "None" } else { revealedConsonant = "None" }
+            return
+        }
+        let tiles: [NTile] = chars.map { $0 == pick ? .correct : .hintUsed }
+        let word = String(chars.map { $0 == pick ? $0 : " " }).lowercased()
+        guesses.append((word: word, tiles: tiles))
+        if vowels { revealedVowel = String(pick) } else { revealedConsonant = String(pick) }
     }
 
     private func finish() {
@@ -277,7 +288,7 @@ struct NoundleBoard: View {
             case .correct: return Theme.correct
             case .present: return Theme.present
             case .absent: return Theme.absent
-            case .hintUsed: return Theme.present
+            case .hintUsed: return Color(hex: 0xD1D5DB) // web HINT_USED = gray
             case .empty: return .white
             }
         }()

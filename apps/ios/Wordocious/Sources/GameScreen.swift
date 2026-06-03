@@ -36,7 +36,7 @@ struct GameScreen: View {
                             ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
                                                guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
                                                boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                                               totalBoards: vm.boardCount)
+                                               totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed)
                             if vm.boardCount == 1 {
                                 DefinitionCard(solution: vm.boards[0].solution, showWord: false)
                             }
@@ -50,6 +50,7 @@ struct GameScreen: View {
                         BoardLayout(vm: vm, availableWidth: geo.size.width, fitHeight: geo.size.height)
                     }
                     .padding(.vertical, 6)
+                    if vm.hasHints && vm.status == .playing { classicHintButtons }
                     if vm.stageCleared { stageClearedBanner } else { KeyboardView(vm: vm).padding(.bottom, 6) }
                 }
             }
@@ -245,6 +246,37 @@ struct GameScreen: View {
             return "\(solved)/\(vm.boardCount) solved"
         }
         return "\(vm.rowsUsed)/\(vm.maxGuesses) guesses"
+    }
+
+    // MARK: Classic hints (Six / Seven) — vowel + consonant reveal buttons
+
+    /// Six = cyan, Seven = lime (web mode accents).
+    private var hintAccent: Color { mode == .duel7 ? Color(hex: 0x84CC16) : Color(hex: 0x06B6D4) }
+
+    private var classicHintButtons: some View {
+        HStack(spacing: 12) {
+            hintPill(
+                label: vm.vowelUsed ? (vm.vowelRevealed == "—" ? "No vowels left" : "Vowel: \(vm.vowelRevealed ?? "")") : "💡 Vowel",
+                used: vm.vowelUsed) { Haptics.success(); vm.revealVowel() }
+            hintPill(
+                label: vm.consonantUsed ? (vm.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(vm.consonantRevealed ?? "")") : "💡 Consonant",
+                used: vm.consonantUsed) { Haptics.success(); vm.revealConsonant() }
+        }
+        .padding(.horizontal, 16).padding(.bottom, 4)
+    }
+
+    private func hintPill(label: String, used: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(Brand.font(13, .heavy))
+                .foregroundStyle(used ? Theme.textMuted : hintAccent)
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background(RoundedRectangle(cornerRadius: 10).fill(used ? Color(hex: 0xF3F4F6) : hintAccent.opacity(0.08)))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(used ? Theme.border : hintAccent, lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+        .disabled(used)
     }
 
     // MARK: Post-game share
