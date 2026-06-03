@@ -43,6 +43,10 @@ targets:
       path: Wordocious/Info.plist
       properties:
         CFBundleDisplayName: Wordocious
+        # Exempt encryption only (HTTPS/TLS via the OS + CryptoKit) — declare it
+        # so App Store Connect stops prompting the export-compliance dialog on
+        # every upload. Matches the "None of the algorithms above" answer.
+        ITSAppUsesNonExemptEncryption: false
         # Pull the bundle version/short-version from the build settings
         # (CURRENT_PROJECT_VERSION / MARKETING_VERSION) so a bumped build number
         # actually reaches the binary — xcodegen otherwise hardcodes "1".
