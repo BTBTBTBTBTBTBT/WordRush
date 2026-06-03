@@ -467,7 +467,7 @@ struct HomeView: View {
                 .frame(height: 4)
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
-                    ModeIconView(icon: mode.icon, accent: mode.accent, box: 40)
+                    ModeIconView(icon: mode.icon, accent: mode.accent, box: 32)
                     Spacer()
                     if let done { winBadge(won: done.completed) }
                 }
