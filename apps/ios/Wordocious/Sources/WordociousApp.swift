@@ -16,6 +16,7 @@ struct WordociousApp: App {
                 .preferredColorScheme(themeManager.colorScheme)
                 .id(themeManager.theme)
                 .task {
+                    GamePersistence.shared.cleanupStaleDailyGames()
                     await auth.bootstrap()
                     StoreManager.shared.start()
                     AdsManager.shared.start()

@@ -437,9 +437,12 @@ struct HomeView: View {
     /// otherwise mint a fresh seed and remember it as the current one.
     private func resolvedUnlimitedSeed(_ gameMode: GameMode) -> String {
         let key = "unlimited-current-\(gameMode.rawValue)"
+        // Resume an in-progress unlimited game only if it's <24h old (web purges
+        // practice saves after 24h); otherwise start fresh.
         if let saved = UserDefaults.standard.string(forKey: key),
            let state = GamePersistence.shared.load(seed: saved, mode: gameMode),
-           state.status == .playing {
+           state.status == .playing,
+           (Date().timeIntervalSince1970 * 1000 - state.startTime) < 24 * 3600 * 1000 {
             return saved
         }
         let fresh = "unlimited-\(gameMode.rawValue)-\(Int(Date().timeIntervalSince1970))"
