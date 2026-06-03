@@ -66,7 +66,14 @@ final class StoreManager: ObservableObject {
         purchasingId = plan.rawValue
         defer { purchasingId = nil }
         do {
-            let result = try await product.purchase()
+            // Tag the purchase with the Supabase user UUID so the server-side
+            // App Store Server Notifications webhook can map the transaction to
+            // this user (appAccountToken surfaces in the signed transaction).
+            var options: Set<Product.PurchaseOption> = []
+            if let session = try? await AuthService.shared.client.auth.session {
+                options.insert(.appAccountToken(session.user.id))
+            }
+            let result = try await product.purchase(options: options)
             switch result {
             case .success(let verification):
                 await handle(verification: verification, isNewPurchase: true)
