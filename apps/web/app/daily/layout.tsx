@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Daily Challenge — Wordocious',
-  description: 'Play all 8 daily word puzzles. Same words for everyone — compare your results.',
+  description: 'Play all 9 daily word puzzles. Same words for everyone — compare your results.',
   openGraph: {
     title: 'Daily Challenge — Wordocious',
-    description: 'Play all 8 daily word puzzles. Same words for everyone — compare your results.',
+    description: 'Play all 9 daily word puzzles. Same words for everyone — compare your results.',
   },
 };
 

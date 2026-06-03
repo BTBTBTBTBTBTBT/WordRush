@@ -58,7 +58,7 @@ export default function ProPage() {
           <Crown className="w-14 h-14 mx-auto mb-3" style={{ color: '#d97706' }} />
           <h1 className="text-4xl font-black mb-1" style={{ color: 'var(--color-text)' }}>Go Pro</h1>
           <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            Play unlimited & ad-free — all 8 modes, any time
+            Play unlimited & ad-free — all 9 modes, any time
           </p>
         </div>
 

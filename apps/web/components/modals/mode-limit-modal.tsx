@@ -60,7 +60,7 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLi
               {modeName} — Played Today
             </h2>
             <p className="text-xs font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
-              You've used your free play of {modeName} for today. Upgrade to Pro for unlimited replays and ad-free gameplay across all 8 modes.
+              You've used your free play of {modeName} for today. Upgrade to Pro for unlimited replays and ad-free gameplay across all 9 modes.
             </p>
 
             <div
