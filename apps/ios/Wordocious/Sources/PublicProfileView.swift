@@ -252,7 +252,7 @@ struct PublicProfileView: View {
                 Text("No matches played yet.").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
                     .frame(maxWidth: .infinity).padding(.vertical, 24)
             } else {
-                VStack(spacing: 8) { ForEach(matches) { m in matchRow(m, profileId: p.id) } }
+                VStack(spacing: 8) { ForEach(matches) { m in RecentMatchRow(match: m, profileId: p.id) } }
             }
         }
         .padding(16)
@@ -260,10 +260,21 @@ struct PublicProfileView: View {
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
-    private func matchRow(_ m: PublicProfileService.RecentMatch, profileId: String) -> some View {
-        let won = m.isWinner(profileId)
-        let modeTitle = GameMode(rawValue: m.game_mode).map { ModeStyle.title($0) } ?? m.game_mode
-        let pt = m.playerTime(profileId)
+    private func fmtTime(_ s: Int) -> String {
+        s < 60 ? "\(s)s" : (s % 60 > 0 ? "\(s/60)m \(s%60)s" : "\(s/60)m")
+    }
+}
+
+/// One row in a "Recent Matches" list — shared by the public profile and the
+/// signed-in user's own profile tab so both render identically. Shows mode,
+/// Solo/VS, win/loss, the player's time, and the date.
+struct RecentMatchRow: View {
+    let match: PublicProfileService.RecentMatch
+    let profileId: String
+    var body: some View {
+        let won = match.isWinner(profileId)
+        let modeTitle = GameMode(rawValue: match.game_mode).map { ModeStyle.title($0) } ?? match.game_mode
+        let pt = match.playerTime(profileId)
         return HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10).fill(won ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)).frame(width: 38, height: 38)
@@ -272,7 +283,7 @@ struct PublicProfileView: View {
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text(modeTitle).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                Text(m.isSolo ? "Solo" : "VS Match").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text(match.isSolo ? "Solo" : "VS Match").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
@@ -280,7 +291,7 @@ struct PublicProfileView: View {
                     .foregroundStyle(won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
                 Text(pt > 0 ? "\(pt)s" : "-").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
-            if let d = m.date {
+            if let d = match.date {
                 Text(shortDate(d)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
         }
@@ -291,9 +302,5 @@ struct PublicProfileView: View {
 
     private func shortDate(_ d: Date) -> String {
         let f = DateFormatter(); f.dateFormat = "MMM d"; return f.string(from: d)
-    }
-
-    private func fmtTime(_ s: Int) -> String {
-        s < 60 ? "\(s)s" : (s % 60 > 0 ? "\(s/60)m \(s%60)s" : "\(s/60)m")
     }
 }

@@ -16,6 +16,7 @@ struct ProfileTab: View {
     @State private var unlockedAchievements: Set<String> = []
     @State private var medals: [MedalRow] = []
     @State private var socialLinks: [String: String] = [:]
+    @State private var recentMatches: [PublicProfileService.RecentMatch] = []
     @State private var showEditProfile = false
 
     // Mode-picker (per-mode stats) only covers modes backed by a GameMode enum.
@@ -43,6 +44,7 @@ struct ProfileTab: View {
                     unlockedAchievements = await AchievementService.fetchUnlocked(userId: uid)
                     medals = await MedalsService.recent(userId: uid)
                     socialLinks = await ProfileExtras.socialLinks(userId: uid)
+                    recentMatches = await PublicProfileService.recentMatches(id: uid)
                 }
             }
             // Banner inside the NavigationStack so the ScrollView insets for it
@@ -71,6 +73,7 @@ struct ProfileTab: View {
                 ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(statRows), selected: $selectedMode)
                 if let mode = selectedMode { modeStats(p, mode: mode) }
                 ProfileDashboard(mode: selectedMode)
+                recentMatchesSection(p)
                 achievementsSection
                 Button { Task { await auth.signOut() } } label: {
                     Text("Sign out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
@@ -309,6 +312,21 @@ struct ProfileTab: View {
     }
 
     // MARK: Daily Medals (ports the web profile medals section)
+
+    /// The signed-in user's own recent matches (solo + VS), mirroring the web
+    /// profile's Recent Matches list and the public-profile view. Shows up to 5;
+    /// VS rows (player2 set) render as "VS Match". Shares RecentMatchRow with the
+    /// public profile so both are pixel-identical.
+    @ViewBuilder private func recentMatchesSection(_ p: Profile) -> some View {
+        if !recentMatches.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("RECENT MATCHES").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                VStack(spacing: 8) {
+                    ForEach(recentMatches.prefix(5)) { m in RecentMatchRow(match: m, profileId: p.id) }
+                }
+            }
+        }
+    }
 
     private func medalsSection(_ p: Profile) -> some View {
         VStack(alignment: .leading, spacing: 8) {
