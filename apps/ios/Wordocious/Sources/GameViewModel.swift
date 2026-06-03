@@ -121,6 +121,20 @@ final class GameViewModel: ObservableObject {
         return "Stage \(g.currentStage + 1)/\(g.totalStages) · \(name)"
     }
 
+    // MARK: Gauntlet header (mirrors web GauntletProgress + GauntletStageHeader)
+
+    /// Number of stages in the run (for the progress stepper).
+    var gauntletStageCount: Int { state.gauntlet?.totalStages ?? state.gauntlet?.stages.count ?? 0 }
+    /// Index of the active stage.
+    var gauntletCurrentIndex: Int { state.gauntlet?.currentStage ?? 0 }
+    /// Indices of finished stages (rendered as green checks in the stepper).
+    var gauntletCompletedIndices: Set<Int> { Set((state.gauntlet?.stageResults ?? []).map { $0.stageIndex }) }
+    /// Display name of the active stage (the colored title, e.g. "The Opening").
+    var gauntletStageName: String {
+        guard let g = state.gauntlet else { return "" }
+        return g.stages[safe: g.currentStage]?.name ?? "Stage \(g.currentStage + 1)"
+    }
+
     var isLastStage: Bool {
         guard let g = state.gauntlet else { return false }
         return g.currentStage >= g.totalStages - 1

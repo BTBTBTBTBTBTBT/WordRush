@@ -71,6 +71,14 @@ struct GameScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.top, 8).padding(.leading, 8)
 
+            // Sound toggle (top-right) — mirrors the web SoundToggle on the
+            // Gauntlet screen. Reads/writes the same `pref-sound` SoundManager key.
+            if vm.isGauntlet {
+                GauntletSoundToggle(accent: ModeStyle.accent(mode))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(.top, 8).padding(.trailing, 8)
+            }
+
             if let toast = vm.toast { toastView(toast) }
 
             // XP toast (after recording) + one-time victory/game-over celebration.
@@ -119,7 +127,12 @@ struct GameScreen: View {
 
     // MARK: Header
 
+    @ViewBuilder
     private var header: some View {
+        if vm.isGauntlet { gauntletHeader } else { standardHeader }
+    }
+
+    private var standardHeader: some View {
         VStack(spacing: 4) {
             Text(ModeStyle.title(mode))
                 .font(Brand.font(28, .black))
@@ -137,6 +150,87 @@ struct GameScreen: View {
             }
         }
         .padding(.top, 6)
+    }
+
+    // MARK: Gauntlet header — 1:1 with web GauntletProgress + GauntletStageHeader
+    // (stage stepper · colored stage-name title · boards/guesses/time subtitle).
+
+    private var gauntletHeader: some View {
+        VStack(spacing: 3) {
+            gauntletStepper
+            Text(vm.gauntletStageName)
+                .font(Brand.font(18, .black))
+                .foregroundStyle(LinearGradient(colors: Self.gauntletStageGradient(vm.gauntletStageName),
+                                                startPoint: .leading, endPoint: .trailing))
+            if !vm.stageCleared {
+                HStack(spacing: 12) {
+                    if vm.boardCount > 1 {
+                        let solved = vm.boards.filter { $0.status == .won }.count
+                        HStack(spacing: 3) {
+                            Image(systemName: "trophy.fill").font(.system(size: 10)).foregroundStyle(Color(hex: 0xD97706))
+                            Text("\(solved)/\(vm.boardCount)").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                        }
+                    }
+                    Text("\(vm.rowsUsed)/\(vm.maxGuesses) guesses").font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        HStack(spacing: 3) {
+                            Image(systemName: "clock").font(.system(size: 10)).foregroundStyle(Color(hex: 0x60A5FA))
+                            Text(timeString).font(Brand.caption(11)).foregroundStyle(Theme.textMuted)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private var gauntletStepper: some View {
+        HStack(spacing: 0) {
+            ForEach(0..<vm.gauntletStageCount, id: \.self) { i in
+                if i > 0 {
+                    Rectangle().fill(gauntletConnectorColor(i))
+                        .frame(width: 16, height: 2).padding(.horizontal, 2)
+                }
+                gauntletStageNode(i)
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    @ViewBuilder
+    private func gauntletStageNode(_ i: Int) -> some View {
+        let completed = vm.gauntletCompletedIndices.contains(i)
+        let active = i == vm.gauntletCurrentIndex
+        let bg = completed ? Color(hex: 0xDCFCE7) : active ? Color(hex: 0xF3E8FF) : Color(hex: 0xF9FAFB)
+        let border = completed ? Color(hex: 0x4ADE80) : active ? Color(hex: 0xC084FC) : Color(hex: 0xE5E7EB)
+        let fg = completed ? Color(hex: 0x16A34A) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9CA3AF)
+        ZStack {
+            Circle().fill(bg).overlay(Circle().stroke(border, lineWidth: 2)).frame(width: 20, height: 20)
+            if completed {
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(fg)
+            } else if active {
+                Image(systemName: "play.fill").font(.system(size: 8)).foregroundStyle(fg).offset(x: 1)
+            } else {
+                Text("\(i + 1)").font(.system(size: 10, weight: .bold)).foregroundStyle(fg)
+            }
+        }
+    }
+
+    private func gauntletConnectorColor(_ i: Int) -> Color {
+        if vm.gauntletCompletedIndices.contains(i) { return Color(hex: 0x4ADE80) }
+        if i == vm.gauntletCurrentIndex { return Color(hex: 0xD8B4FE) }
+        return Color(hex: 0xE5E7EB)
+    }
+
+    /// Per-stage title gradient — mirrors web STAGE_GRADIENTS.
+    static func gauntletStageGradient(_ name: String) -> [Color] {
+        switch name {
+        case "QuadWord":    return [Color(hex: 0xFACC15), Color(hex: 0xF472B6), Color(hex: 0xC084FC)]
+        case "Succession":  return [Color(hex: 0xFACC15), Color(hex: 0xFB923C), Color(hex: 0xF87171)]
+        case "Deliverance": return [Color(hex: 0x818CF8), Color(hex: 0xC084FC), Color(hex: 0xE879F9)]
+        case "OctoWord":    return [Color(hex: 0x22D3EE), Color(hex: 0xC084FC), Color(hex: 0xF472B6)]
+        default:            return [Color(hex: 0xC084FC), Color(hex: 0xF472B6)] // The Opening / fallback
+        }
     }
 
     private var timeString: String {
@@ -188,5 +282,26 @@ struct GameScreen: View {
             .padding(.horizontal, 12).padding(.vertical, 4)
             .background(RoundedRectangle(cornerRadius: 8).fill(Theme.textPrimary))
             .padding(.top, 90).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
+    }
+}
+
+/// Corner sound toggle (mirrors the web SoundToggle). Persists to the same
+/// `pref-sound` UserDefaults key SoundManager reads, so muting here also
+/// silences win/loss jingles.
+private struct GauntletSoundToggle: View {
+    let accent: Color
+    @AppStorage("pref-sound") private var soundOn = true
+    var body: some View {
+        Button { soundOn.toggle() } label: {
+            Image(systemName: soundOn ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(accent)
+                .frame(width: 44, height: 44)
+                .background(Circle().fill(Theme.surface))
+                .overlay(Circle().stroke(accent, lineWidth: 2))
+                .shadow(color: accent.opacity(0.2), radius: 0, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
     }
 }
