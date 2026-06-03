@@ -102,6 +102,12 @@ enum DailyResultsService {
                 )
                 try await client.from("daily_results").insert(insert).execute()
             }
+            // Award streak-milestone + perfect-game medals (web recordDailyResult parity).
+            await MedalService.awardStreakMedals(client, userId: userId, day: day)
+            await MedalService.awardPerfectMedal(client, userId: userId, gameMode: gameMode.rawValue,
+                                                 day: day, guessCount: guessCount,
+                                                 boardsSolved: boardsSolved, totalBoards: totalBoards,
+                                                 completed: completed)
             return composite
         } catch {
             return nil

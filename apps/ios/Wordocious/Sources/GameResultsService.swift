@@ -148,16 +148,27 @@ enum GameResultsService {
                               won: won, guessCount: guessCount, timeSeconds: timeSeconds)
         let xp = await updateProfileProgression(client, userId: userId, won: won, seed: seed)
 
+        var result = xp
         if isDailySeed(seed), playType == "solo" {
             await DailyResultsService.record(
                 gameMode: gameMode, completed: won, guessCount: guessCount,
                 timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
                 hintsUsed: hintsUsed
             )
+            // Daily Sweep / Flawless bonus once all 9 dailies are in (web parity).
+            // Fold the bonus into the XpResult so the post-game toast shows it.
+            let bonus = await MedalService.awardDailyBonusesIfComplete(client, userId: userId)
+            if bonus > 0, let x = result {
+                let newTotal = x.totalXp + bonus
+                result = XpResult(xpGain: x.xpGain, streakBonus: x.streakBonus,
+                                  dailyBonus: x.dailyBonus + bonus, totalXp: newTotal,
+                                  newLevel: newTotal / 1000 + 1,
+                                  leveledUp: x.leveledUp || (newTotal / 1000 + 1) > x.newLevel)
+            }
         }
         // Refresh the in-memory profile so XP/streak/Pro reflect immediately.
         await AuthService.shared.refreshProfile()
-        return xp
+        return result
     }
 
     private static func updateUserStats(
