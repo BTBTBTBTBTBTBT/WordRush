@@ -10,6 +10,7 @@ import { useWordDefinition } from '@/hooks/use-word-definition';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { getTodayLocal, formatHintsLabel } from '@/lib/daily-service';
 import { useAuth } from '@/lib/auth-context';
+import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { fetchGauntletStages } from '@/lib/stats-service';
 import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
 import { normalizeString } from '@/components/propernoundle/game-logic';
@@ -204,15 +205,23 @@ const evaluateGuessTiles = (guess: string, solution: string): TileState[] => {
 };
 
 // ── Compact mini board for multi-board completed view ──
-function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluations }: {
+// Uses a FIXED tile size (px) rather than aspect-ratio + auto rows. The latter
+// let empty rows collapse to ~0 height on some layout passes, so boards with
+// fewer guesses rendered shorter than their neighbours (the "wonky"/uneven
+// grid). A definite tile size makes every board the same height = crisp grid,
+// mirroring the native CompletedMiniBoardView.
+function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluations, tileSize = 16 }: {
   solution: string;
   guesses: string[];
   maxGuesses: number;
   hintEvaluations?: Record<number, import('@wordle-duel/core').GuessResult>;
   won: boolean;
+  tileSize?: number;
 }) {
+  const wordLen = solution.length;
+  const fontSize = Math.max(6, Math.round(tileSize * 0.5));
   return (
-    <div className={`relative min-w-0 p-0.5 rounded-lg border-2 ${
+    <div className={`relative p-0.5 rounded-lg border-2 ${
       won ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'
     }`}>
       {won && (
@@ -220,40 +229,37 @@ function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluation
           ✓
         </div>
       )}
-      {/* min-w-0 / min-h-0 at every grid level: grid items default to
-          min-width:auto, which lets the aspectRatio tiles size from height and
-          overflow their column on some layout passes — the cause of the
-          intermittent "boards blow up and clip on re-render" bug. */}
-      <div className="grid gap-[1px] min-w-0" style={{ gridTemplateRows: `repeat(${maxGuesses}, minmax(0, auto))` }}>
-        {Array.from({ length: maxGuesses }).map((_, rowIndex) => {
+      <div
+        className="grid gap-[1px]"
+        style={{
+          gridTemplateColumns: `repeat(${wordLen}, ${tileSize}px)`,
+          gridTemplateRows: `repeat(${maxGuesses}, ${tileSize}px)`,
+        }}
+      >
+        {Array.from({ length: maxGuesses }).flatMap((_, rowIndex) => {
           const guess = guesses[rowIndex] || '';
           const isPast = rowIndex < guesses.length;
-          const wordLen = solution.length;
           const tiles = isPast
             ? (hintEvaluations?.[rowIndex]
                 ? hintEvaluations[rowIndex].tiles.map(t => t.state)
                 : evaluateGuessTiles(guess, solution))
             : Array(wordLen).fill(TileState.EMPTY);
 
-          return (
-            <div key={rowIndex} className="grid gap-[1px] min-w-0" style={{ gridTemplateColumns: `repeat(${wordLen}, minmax(0, 1fr))` }}>
-              {Array.from({ length: wordLen }).map((_, li) => {
-                const letter = guess[li] || '';
-                const tileState = isPast ? tiles[li] : TileState.EMPTY;
-                return (
-                  <div
-                    key={li}
-                    className={`flex items-center justify-center border rounded text-[7px] font-bold leading-none min-w-0 min-h-0 ${
-                      tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'
-                    } ${getTileColor(tileState)}`}
-                    style={{ aspectRatio: '1' }}
-                  >
-                    {letter.toUpperCase()}
-                  </div>
-                );
-              })}
-            </div>
-          );
+          return Array.from({ length: wordLen }).map((_, li) => {
+            const letter = guess[li] || '';
+            const tileState = isPast ? tiles[li] : TileState.EMPTY;
+            return (
+              <div
+                key={`${rowIndex}-${li}`}
+                className={`flex items-center justify-center border rounded font-bold leading-none ${
+                  tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'
+                } ${getTileColor(tileState)}`}
+                style={{ width: tileSize, height: tileSize, fontSize }}
+              >
+                {letter.toUpperCase()}
+              </div>
+            );
+          });
         })}
       </div>
     </div>
@@ -442,12 +448,12 @@ function GauntletCompletedCard({
 
 function GauntletStageMiniBoards({ boards, maxGuesses }: { boards: BoardState[]; maxGuesses: number }) {
   const n = boards.length;
-  const gridCols = n === 1 ? 'grid-cols-1' : n <= 4 ? 'grid-cols-2' : 'grid-cols-4';
-  // Single-board stages need a max-width so the mini board doesn't
-  // stretch to full width and render enormous tiles.
-  const maxW = n === 1 ? '140px' : n <= 4 ? '240px' : undefined;
+  // Fixed tile size keeps every board the same height (crisp, uniform) and
+  // scales down as the board count grows so the row still fits.
+  const tileSize = n === 1 ? 22 : n <= 4 ? 16 : 11;
+  const maxW = n === 1 ? '160px' : n <= 4 ? '240px' : '320px';
   return (
-    <div className={`mx-auto grid ${gridCols} gap-1`} style={maxW ? { maxWidth: maxW } : undefined}>
+    <div className="mx-auto flex flex-wrap justify-center gap-1.5 pt-2" style={{ maxWidth: maxW }}>
       {boards.map((board, i) => (
         <CompletedMiniBoard
           key={i}
@@ -455,6 +461,7 @@ function GauntletStageMiniBoards({ boards, maxGuesses }: { boards: BoardState[];
           guesses={board.guesses}
           maxGuesses={maxGuesses}
           won={board.status === GameStatus.WON}
+          tileSize={tileSize}
         />
       ))}
     </div>
@@ -494,6 +501,12 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   // Gauntlet played on another device has no local session — pull the per-stage
   // breakdown from the server (matches.gauntlet_stages) so the card still renders.
   const { profile } = useAuth();
+  // The recorded daily_results row (same source the leaderboard renders from).
+  // Using its time/guess values keeps this card EXACTLY in sync with the
+  // leaderboard row — the local session timer can drift ~1s from what was
+  // recorded, which otherwise made the time + score disagree.
+  const { todayDailies } = useDailyCompletions();
+  const recorded = todayDailies.get(modeId);
   const [serverGauntlet, setServerGauntlet] = useState<
     { stages: GauntletStageConfig[]; stageResults: GauntletStageResult[]; won: boolean; totalTimeMs: number } | null
   >(null);
@@ -545,11 +558,14 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
       (pnSaved.hintState?.vowelUsed ? 1 : 0) +
       (pnSaved.hintState?.consonantUsed ? 1 : 0);
     const pnHintLabel = formatHintsLabel('PROPERNOUNDLE', pnHints);
+    // Match the leaderboard row (recorded daily_results), not the local timer.
+    const pnTime = recorded?.timeSeconds ?? pnSaved.elapsedTime;
+    const pnGuesses = recorded?.guesses ?? pnSaved.guesses.length;
 
     return (
       <CollapsibleCompletedCard
         won={pnWon}
-        summaryLabel={`${pnSaved.guesses.length}/6 · ${formatTime(pnSaved.elapsedTime)}${pnHintLabel ? ` · ${pnHintLabel}` : ''}`}
+        summaryLabel={`${pnGuesses}/6 · ${formatTime(pnTime)}${pnHintLabel ? ` · ${pnHintLabel}` : ''}`}
       >
         {/* Compact ProperNoundle board */}
         <div className="mx-auto" style={{ maxWidth: '240px' }}>
@@ -571,7 +587,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         <div className="flex justify-center gap-5 mt-3">
           <div className="text-center">
             <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-              {pnSaved.guesses.length}/6
+              {pnGuesses}/6
             </div>
             <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
               Guesses
@@ -579,7 +595,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           </div>
           <div className="text-center">
             <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-              {formatTime(pnSaved.elapsedTime)}
+              {formatTime(pnTime)}
             </div>
             <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
               Time
@@ -589,8 +605,8 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         <ScoreBreakdownCard
           gameMode="PROPERNOUNDLE"
           completed={pnWon}
-          guessCount={pnSaved.guesses.length}
-          timeSeconds={pnSaved.elapsedTime}
+          guessCount={pnGuesses}
+          timeSeconds={pnTime}
           boardsSolved={pnWon ? 1 : 0}
           totalBoards={1}
           hintsUsed={pnHints}
@@ -609,6 +625,13 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const totalBoards = boards.length;
   const totalGuesses = boards.reduce((sum, b) => sum + b.guesses.length, 0);
 
+  // Prefer the recorded daily_results values (exactly what the leaderboard row
+  // shows) over the local session — the live timer can drift ~1s from what was
+  // recorded, and multi-board guess_count is the turn count, not the per-board
+  // sum. Falls back to local session until the recorded row loads.
+  const displayTime = recorded?.timeSeconds ?? session.elapsedTime;
+  const displayGuesses = recorded?.guesses ?? (isMulti ? totalGuesses : (boards[0]?.guesses.length ?? 0));
+
   const singleMaxGuesses = boards[0]?.maxGuesses ?? 6;
   // Six/Seven store each hint as a row in board.hintEvaluations, so the
   // key count is the number of hints the player burned. Surfaced in the
@@ -616,8 +639,8 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const singleHints = Object.keys(boards[0]?.hintEvaluations ?? {}).length;
   const singleHintLabel = formatHintsLabel(modeId, singleHints);
   const summaryLabel = isMulti
-    ? `${boardsSolved}/${totalBoards} · ${totalGuesses}g · ${formatTime(session.elapsedTime)}`
-    : `${(boards[0]?.guesses.length ?? 0)}/${singleMaxGuesses} · ${formatTime(session.elapsedTime)}${singleHintLabel ? ` · ${singleHintLabel}` : ''}`;
+    ? `${boardsSolved}/${totalBoards} · ${displayGuesses}g · ${formatTime(displayTime)}`
+    : `${displayGuesses}/${singleMaxGuesses} · ${formatTime(displayTime)}${singleHintLabel ? ` · ${singleHintLabel}` : ''}`;
 
   return (
     <CollapsibleCompletedCard won={won} summaryLabel={summaryLabel}>
@@ -625,7 +648,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         /* ── Multi-board compact grid ── */
         <>
           <div
-            className={`mx-auto grid gap-2 ${totalBoards > 4 ? 'grid-cols-4' : 'grid-cols-2'}`}
+            className="mx-auto flex flex-wrap justify-center gap-2 pt-2"
             style={{ maxWidth: totalBoards > 4 ? 'min(320px, 100%)' : '240px' }}
           >
             {boards.map((board, i) => (
@@ -635,6 +658,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
                 guesses={board.guesses}
                 maxGuesses={board.maxGuesses}
                 won={board.status === GameStatus.WON}
+                tileSize={totalBoards > 4 ? 12 : 20}
               />
             ))}
           </div>
@@ -651,7 +675,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             </div>
             <div className="text-center">
               <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {totalGuesses}
+                {displayGuesses}
               </div>
               <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 Guesses
@@ -659,7 +683,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             </div>
             <div className="text-center">
               <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {formatTime(session.elapsedTime)}
+                {formatTime(displayTime)}
               </div>
               <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 Time
@@ -733,7 +757,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           <div className="flex justify-center gap-5 mt-3">
             <div className="text-center">
               <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {(boards[0]?.guesses.length ?? 0)}/{singleMaxGuesses}
+                {displayGuesses}/{singleMaxGuesses}
               </div>
               <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 Guesses
@@ -741,7 +765,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
             </div>
             <div className="text-center">
               <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-                {formatTime(session.elapsedTime)}
+                {formatTime(displayTime)}
               </div>
               <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 Time
@@ -754,8 +778,8 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
       <ScoreBreakdownCard
         gameMode={modeId}
         completed={won}
-        guessCount={isMulti ? totalGuesses : (boards[0]?.guesses.length ?? 0)}
-        timeSeconds={session.elapsedTime}
+        guessCount={displayGuesses}
+        timeSeconds={displayTime}
         boardsSolved={boardsSolved}
         totalBoards={totalBoards}
         hintsUsed={singleHints}
