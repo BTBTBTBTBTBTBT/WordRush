@@ -107,7 +107,7 @@ Wordocious is a daily word-puzzle game (Wordle's lineage, expanded) with ~9 dist
 
 Wordle proved a single daily 5-letter puzzle could become a habit. Wordocious takes that loop and multiplies it: multiple board counts (1/2/4/8), letter lengths (5/6/7), a roguelike Gauntlet that chains modes into one run, and synchronous multiplayer where two players race the same seed. Daily seeds mean everyone plays the same puzzle each day — the shared-water-cooler effect that made Wordle viral — while the mode variety and VS ladder give committed players somewhere to go after the daily.
 
-Monetization is a single **Pro** subscription that unlocks the extras (unlimited replays, streak shields, etc.) without gating the core daily — the daily stays free to protect the habit loop.
+Monetization is two-pronged: a **Pro** subscription (unlimited replays, streak shields, **ad-free**, etc.) and **ads** (AdMob on iOS / AdSense on web) shown to free users. Neither gates the core daily — it stays free to protect the habit loop. See §5.
 
 ---
 
@@ -164,7 +164,11 @@ The web app and the native iOS app are **separate clients that share one backend
 
 ## 5. Monetization
 
-**Single Pro subscription**, three plans (defined in `lib/payment/types.ts` `PRO_PLANS`):
+Two channels: **(A) Pro subscription** (removes ads + unlocks extras) and **(B) ads** shown to free users. The core daily stays free either way.
+
+### A. Pro subscription
+
+**Three plans** (defined in `lib/payment/types.ts` `PRO_PLANS`):
 - `pro_day` — $1.00 / 24 hours (day pass; stacks on existing expiry, no streak-shield grant)
 - `pro_monthly` — $6.99 / month
 - `pro_yearly` — $59.99 / year (~$4.99/mo)
@@ -178,6 +182,14 @@ The web app and the native iOS app are **separate clients that share one backend
 - **Web** → Stripe (planned; the `DemoProvider` placeholder is in the same factory).
 
 Apple takes 15–30% of iOS subscription revenue.
+
+### B. Ads (free users only)
+
+Free users see ads; **Pro removes them entirely** (every ad surface is gated on `isProActive`). Two formats on both clients: a **bottom banner** and a **game-start interstitial** (rewarded-video on native).
+
+- **iOS — AdMob** (`GoogleMobileAds` SDK, `AdsManager`/`AdBannerView`). **Approved by Google 2026-06-03.** Real units under publisher **`pub-3015627373086578`**: App ID `…~8393761846`, banner `…/4287985559`, rewarded-interstitial `…/6909445311`. Launch flow on first play: **Google UMP consent** (GDPR, EEA/UK) → **ATT** prompt → SDK init → ads serve (gated on `canRequestAds`). `app-ads.txt` (`google.com, pub-3015627373086578, DIRECT, f08c47fec0942fa0`) is live at wordocious.com — AdMob verifies it via the App Store listing once the app is public.
+- **Web — AdSense** (`pub-3015627373086578`, same publisher). Interstitial-on-game-start (`AdGate`) + bottom `AdBanner`; `ads.txt` present. Activation is config (`NEXT_PUBLIC_ADS_ENABLED` + slot IDs) + site approval.
+- **Still to do (business, not code):** AdMob **payment profile / banking** to receive payouts. AdMob takes a revenue share (publisher keeps ~68% on content ads).
 
 ---
 
