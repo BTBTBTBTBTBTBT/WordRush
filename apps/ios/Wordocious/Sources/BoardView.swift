@@ -56,6 +56,21 @@ struct BoardView: View {
                                    lost: vm.isMultiBoard && vm.isFinished && board.status != .won,
                                    active: vm.isMultiBoard,
                                    tileSize: tileSize))
+        // Sequence: dim locked (future) boards + highlight the active one.
+        .opacity(seqLocked ? 0.6 : 1)
+        .overlay(activeSeqBorder)
+    }
+
+    // MARK: Sequence (Succession) per-board state
+    private var seqActive: Bool { !vm.isSequence || boardIndex == vm.sequenceActiveIndex }
+    private var seqDone: Bool { board.status == .won || board.status == .lost }
+    private var seqLocked: Bool { vm.isSequence && !seqActive && !seqDone }
+    private var seqShowColors: Bool { !vm.isSequence || seqActive || seqDone }
+
+    @ViewBuilder private var activeSeqBorder: some View {
+        if vm.isSequence && seqActive && !seqDone {
+            RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0xFACC15), lineWidth: 2)
+        }
     }
 
     @ViewBuilder
@@ -64,8 +79,8 @@ struct BoardView: View {
         let isCurrent = row == board.guesses.count && board.status == .playing && !vm.isFinished
 
         if committed, let eval = vm.evaluation(board: boardIndex, row: row) {
-            revealedRow(eval)
-        } else if isCurrent {
+            if seqShowColors { revealedRow(eval) } else { maskedRow(eval.tiles.count) }
+        } else if isCurrent && seqActive {
             let letters = Array(vm.currentInput)
             HStack(spacing: spacing) {
                 ForEach(0..<vm.wordLength, id: \.self) { col in
@@ -78,6 +93,15 @@ struct BoardView: View {
                 ForEach(0..<vm.wordLength, id: \.self) { _ in
                     TileView(letter: "", state: .empty, revealed: false, size: tileSize)
                 }
+            }
+        }
+    }
+
+    /// Locked Sequence board: previous guesses shown as masked bullets (web '•').
+    private func maskedRow(_ count: Int) -> some View {
+        HStack(spacing: spacing) {
+            ForEach(0..<count, id: \.self) { _ in
+                TileView(letter: "•", state: .empty, revealed: false, size: tileSize)
             }
         }
     }

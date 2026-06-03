@@ -110,6 +110,11 @@ final class GameViewModel: ObservableObject {
     var boards: [BoardState] { state.boards }
     var boardCount: Int { state.boards.count }
     var isMultiBoard: Bool { state.boards.count > 1 }
+    /// Sequence (Succession) is played one board at a time: the first still-
+    /// playing board is "active" (shows colors + takes input); later playing
+    /// boards are locked (dimmed, letters masked). Web parity: sequence-game.tsx.
+    var isSequence: Bool { mode == .sequence }
+    var sequenceActiveIndex: Int { state.boards.firstIndex { $0.status == .playing } ?? -1 }
     var status: GameStatus { state.status }
     var isFinished: Bool { status != .playing }
 
@@ -388,10 +393,19 @@ final class GameViewModel: ObservableObject {
 
     /// Best-known state per letter across every board, for keyboard coloring.
     func keyState(for letter: String) -> TileState? {
+        let L = letter.uppercased()
+        // Sequence colors the keyboard from the ACTIVE board only (web parity).
+        if isSequence {
+            let idx = sequenceActiveIndex
+            guard idx >= 0, let evals = evaluations[safe: idx] else { return nil }
+            var best: TileState?
+            for eval in evals { for tile in eval.tiles where tile.letter == L { best = Self.merge(best, tile.state) } }
+            return best
+        }
         var best: TileState?
         for boardEvals in evaluations {
             for eval in boardEvals {
-                for tile in eval.tiles where tile.letter == letter.uppercased() {
+                for tile in eval.tiles where tile.letter == L {
                     best = Self.merge(best, tile.state)
                 }
             }
