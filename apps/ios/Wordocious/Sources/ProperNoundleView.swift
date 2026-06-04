@@ -201,6 +201,17 @@ struct ProperNoundleView: View {
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
                 .transition(.opacity)
             }
+            // Corner Home button — matches the web GameHomeButton (red accent) and
+            // every other game's screen, in play and on the completed screen.
+            Button { dismiss() } label: {
+                Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(ModeStyle.accent(.propernoundle))
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(.propernoundle), lineWidth: 2))
+                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.top, 8).padding(.leading, 8)
         }
         .navigationBarTitleDisplayMode(.inline)
         .hidesBottomNav()

@@ -290,6 +290,35 @@ enum CompletedBoardReconstruct {
     }
 }
 
+/// Deterministically rebuilds a completed Gauntlet's per-stage breakdown by
+/// replaying the recorded flat guess list through the engine. Used on re-entry
+/// when there's no local session AND no server-persisted `gauntlet_stages` — the
+/// `.nextStage` reducer records each cleared stage's snapshot, so a pure replay
+/// reproduces the full run. Lets the proper stage-by-stage results screen show
+/// cross-device instead of a meaningless generic board grid.
+enum GauntletReconstruct {
+    static func reconstruct(seed: String, guesses: [String]) -> (progress: GauntletProgress, won: Bool)? {
+        var state = createInitialState(seed: seed, mode: .gauntlet)
+        guard state.gauntlet != nil else { return nil }
+        var idx = 0, safety = 0
+        while idx < guesses.count, state.status == .playing, safety < 1000 {
+            safety += 1
+            let multi = state.boards.count > 1
+            state = gameReducer(state: state, action: .submitGuess(
+                guess: guesses[idx].uppercased(), boardIndex: multi ? nil : 0, applyToAll: multi))
+            idx += 1
+            // Stage cleared but run not finished → advance (records the won
+            // stage's result + boards snapshot, then sets up the next stage).
+            if state.status == .playing, state.gauntlet != nil,
+               state.boards.allSatisfy({ $0.status == .won }) {
+                state = gameReducer(state: state, action: .nextStage(elapsedMs: nil))
+            }
+        }
+        guard let g = state.gauntlet, !g.stageResults.isEmpty else { return nil }
+        return (g, state.status == .won)
+    }
+}
+
 /// Read-only completed mini board rendered from a single saved `BoardState`
 /// (ports the web CompletedMiniBoard). Renders each board's OWN guesses — so
 /// sequence/rescue boards, whose per-board guess streams differ, are correct —

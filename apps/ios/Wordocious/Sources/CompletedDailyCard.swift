@@ -70,9 +70,23 @@ struct CompletedDailyCard: View {
                     if expanded {
                         if mode == .gauntlet, let g = gauntlet {
                             let stageMs = g.stageResults.reduce(0) { $0 + $1.timeMs }
-                            GauntletCompletedView(progress: g, totalTimeMs: stageMs > 0 ? stageMs : elapsedMs)
-                                .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
-                        } else {
+                            let totalMs = stageMs > 0 ? stageMs : elapsedMs
+                            let totalGuesses = g.stageResults.reduce(0) { $0 + $1.guesses }
+                            // Cumulative boards solved across stages — same tally the
+                            // score is recorded with (matches the post-game breakdown).
+                            let cumBoards = g.stageResults.reduce(0) { acc, r in
+                                guard let st = g.stages.first(where: { $0.stageIndex == r.stageIndex }) else { return acc }
+                                return acc + (r.status == .won ? st.boardCount : (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0))
+                            }
+                            let cumTotal = max(1, g.stages.reduce(0) { $0 + $1.boardCount })
+                            VStack(spacing: 8) {
+                                GauntletCompletedView(progress: g, totalTimeMs: totalMs)
+                                // Score breakdown underneath, matching every other completed screen.
+                                ScoreBreakdownView(gameMode: "GAUNTLET", completed: won, guessCount: totalGuesses,
+                                                   timeSeconds: totalMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal)
+                            }
+                            .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
+                        } else if mode != .gauntlet {
                             VStack(spacing: 8) {
                                 boards(d)
                                 if d.solutions.count == 1 {
@@ -120,6 +134,13 @@ struct CompletedDailyCard: View {
                     currentStage: sg.stages.count, totalStages: sg.stages.count,
                     stages: sg.stages, stageResults: sg.stageResults,
                     stageStartTime: 0, allSolutions: [], blackoutCount: 0)
+            }
+            // Last resort: replay the recorded guesses to rebuild the stage
+            // breakdown (cross-device), so the gauntlet card never falls back to
+            // the generic board grid.
+            if mode == .gauntlet, gauntlet == nil, let d = data, !d.guesses.isEmpty,
+               let r = GauntletReconstruct.reconstruct(seed: seed, guesses: d.guesses) {
+                gauntlet = r.progress
             }
             expanded = false
         }

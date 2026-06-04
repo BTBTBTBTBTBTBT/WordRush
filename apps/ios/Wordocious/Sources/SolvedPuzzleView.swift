@@ -41,7 +41,7 @@ struct SolvedPuzzleView: View {
                 ProgressView().controlSize(.large).tint(Theme.primary)
             } else if mode == .gauntlet, let g = gauntlet {
                 gauntletResults(g)
-            } else if let d = data {
+            } else if let d = data, mode != .gauntlet {
                 ScrollView {
                     VStack(spacing: 10) {
                         FinishedStatsHeader(
@@ -72,20 +72,18 @@ struct SolvedPuzzleView: View {
                 }
             }
 
-            // Corner Home button (consistent with GameScreen). The Gauntlet
-            // results screen uses its own bottom Home/Share buttons (web parity),
-            // so the corner button is omitted there to avoid a duplicate Home.
-            if mode != .gauntlet {
-                Button { dismiss() } label: {
-                    Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(ModeStyle.accent(mode))
-                        .frame(width: 44, height: 44)
-                        .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
-                        .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
-                }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 8).padding(.leading, 8)
+            // Corner Home button on every completed screen — including Gauntlet —
+            // matching the web GameHomeButton (gauntlet-game.tsx also renders it
+            // alongside its top Home/Share links).
+            Button { dismiss() } label: {
+                Image(systemName: "house.fill").font(.system(size: 20)).foregroundStyle(ModeStyle.accent(mode))
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
+                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
             }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.top, 8).padding(.leading, 8)
         }
         .navigationBarBackButtonHidden(true)
         .hidesBottomNav()
@@ -110,6 +108,14 @@ struct SolvedPuzzleView: View {
                     stages: sg.stages, stageResults: sg.stageResults,
                     stageStartTime: 0, allSolutions: [], blackoutCount: 0)
                 localWon = (data?.won ?? false)
+            }
+            // Last resort (no local session, no server stage data): rebuild the
+            // stage breakdown by replaying the recorded guesses through the engine
+            // so the proper results screen shows — never the generic board grid.
+            if mode == .gauntlet, gauntlet == nil, let d = data, !d.guesses.isEmpty,
+               let r = GauntletReconstruct.reconstruct(seed: seed, guesses: d.guesses) {
+                gauntlet = r.progress
+                localWon = r.won
             }
             loaded = true
         }
