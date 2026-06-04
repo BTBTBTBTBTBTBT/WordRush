@@ -35,9 +35,14 @@ struct GameScreen: View {
                            startPoint: .top, endPoint: .bottom).ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Gauntlet keeps its own (immediate) finish flow; other modes hold
-                // the in-play board until the winning row's flip completes.
-                if vm.isFinished && (revealComplete || vm.isGauntlet) {
+                // Gauntlet finishes (win OR loss) show the dedicated animated
+                // results screen — same component as the re-entry review.
+                if vm.isFinished && vm.isGauntlet, let g = vm.state.gauntlet {
+                    GauntletResultsView(progress: g, won: vm.status == .won, mode: mode, isDaily: vm.isDaily,
+                                        elapsedMsFallback: vm.elapsedSeconds * 1000,
+                                        onHome: { dismiss() }, onShare: { share() })
+                // Other modes hold the in-play board until the winning row's flip completes.
+                } else if vm.isFinished && revealComplete {
                     ScrollView {
                         VStack(spacing: 8) {
                             FinishedStatsHeader(

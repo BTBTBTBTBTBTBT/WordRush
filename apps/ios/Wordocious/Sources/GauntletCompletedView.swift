@@ -160,3 +160,109 @@ struct GauntletCompletedView: View {
         return "\(s / 60)m \(s % 60)s"
     }
 }
+
+/// Staggered "fade + rise" entrance for the gauntlet results sections (web's
+/// animate-fade-in-scale / animate-fade-in-up).
+private struct RiseIn: ViewModifier {
+    let appeared: Bool
+    let delay: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    func body(content: Content) -> some View {
+        content
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 14)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.4).delay(delay), value: appeared)
+    }
+}
+
+/// Full Gauntlet results screen — 1:1 with the web `GauntletResults`, including
+/// the animated entrance (icon springs in, title/stats/score/stages fade up,
+/// staggered). Shared by the in-game finish (GameScreen) and the re-entry review
+/// (SolvedPuzzleView) so a win OR loss always shows the same animated screen.
+struct GauntletResultsView: View {
+    let progress: GauntletProgress
+    let won: Bool
+    var mode: GameMode = .gauntlet
+    var isDaily: Bool = true
+    var elapsedMsFallback: Int = 0
+    var onHome: () -> Void
+    var onShare: () -> Void
+
+    @State private var appeared = false
+
+    private var cleared: Int { progress.stageResults.filter { $0.status == .won }.count }
+    private var totalGuesses: Int { progress.stageResults.reduce(0) { $0 + $1.guesses } }
+    private var totalTimeMs: Int {
+        let s = progress.stageResults.reduce(0) { $0 + $1.timeMs }
+        return s > 0 ? s : elapsedMsFallback
+    }
+    private var cumBoards: Int {
+        progress.stageResults.reduce(0) { acc, r in
+            guard let st = progress.stages.first(where: { $0.stageIndex == r.stageIndex }) else { return acc }
+            return acc + (r.status == .won ? st.boardCount : (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0))
+        }
+    }
+    private var cumTotal: Int { max(1, progress.stages.reduce(0) { $0 + $1.boardCount }) }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                VStack(spacing: 8) {
+                    Image(systemName: won ? "trophy.fill" : "xmark.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundStyle(won ? Color(hex: 0xD97706) : Color(hex: 0xF87171))
+                        .scaleEffect(appeared ? 1 : 0.6).opacity(appeared ? 1 : 0)
+                        .animation(Theme.animation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.05)), value: appeared)
+                    title.modifier(RiseIn(appeared: appeared, delay: 0.15))
+                    HStack(spacing: 16) {
+                        Button("Home", action: onHome).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted).underline()
+                        Button("Share", action: onShare).font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
+                    }
+                    .modifier(RiseIn(appeared: appeared, delay: 0.25))
+                    if isDaily { DailyRankBadge(gameMode: mode).modifier(RiseIn(appeared: appeared, delay: 0.3)) }
+                }
+                .padding(.top, 4)
+
+                HStack(spacing: 12) {
+                    statCard("trophy.fill", Color(hex: 0x22C55E), "\(cleared)/\(progress.totalStages)", "Stages")
+                    statCard("number", Color(hex: 0x60A5FA), "\(totalGuesses)", "Guesses")
+                    statCard("clock", Color(hex: 0xFB923C), fmt(totalTimeMs), "Time")
+                }
+                .modifier(RiseIn(appeared: appeared, delay: 0.4))
+
+                ScoreBreakdownView(gameMode: "GAUNTLET", completed: won, guessCount: totalGuesses,
+                                   timeSeconds: totalTimeMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal)
+                    .modifier(RiseIn(appeared: appeared, delay: 0.5))
+
+                GauntletCompletedView(progress: progress, totalTimeMs: totalTimeMs, showSummary: false, showStageHeader: true)
+                    .modifier(RiseIn(appeared: appeared, delay: 0.6))
+            }
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
+        }
+        .onAppear { appeared = true }
+    }
+
+    @ViewBuilder private var title: some View {
+        let t = Text(won ? "GAUNTLET CLEARED!" : "GAUNTLET FAILED")
+            .font(Brand.font(34, .black)).multilineTextAlignment(.center)
+        if won {
+            t.foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF472B6), Color(hex: 0xC084FC)],
+                                             startPoint: .leading, endPoint: .trailing))
+        } else {
+            t.foregroundStyle(Color(hex: 0xFCA5A5))
+        }
+    }
+
+    private func statCard(_ icon: String, _ color: Color, _ value: String, _ label: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon).font(.system(size: 18)).foregroundStyle(color)
+            Text(value).font(Brand.font(22, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.6)
+            Text(label).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 14)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surfaceHover))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1))
+    }
+
+    private func fmt(_ ms: Int) -> String { let s = ms / 1000; return s < 60 ? "\(s)s" : "\(s / 60)m \(s % 60)s" }
+}
