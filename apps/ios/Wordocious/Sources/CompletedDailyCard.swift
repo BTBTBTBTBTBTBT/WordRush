@@ -20,7 +20,7 @@ struct CompletedDailyCard: View {
 
     /// Header summary: gauntlet shows stages/guesses/time, others guesses·time.
     private func summaryLabel(_ d: MatchStatsService.SolvedDaily) -> String {
-        if let g = gauntlet {
+        if mode == .gauntlet, let g = gauntlet {
             let cleared = g.stageResults.filter { $0.status == .won }.count
             let guesses = g.stageResults.reduce(0) { $0 + $1.guesses }
             // Total time = sum of per-stage times (authoritative cross-device);
@@ -68,7 +68,7 @@ struct CompletedDailyCard: View {
                     }.buttonStyle(.plain)
 
                     if expanded {
-                        if let g = gauntlet {
+                        if mode == .gauntlet, let g = gauntlet {
                             let stageMs = g.stageResults.reduce(0) { $0 + $1.timeMs }
                             GauntletCompletedView(progress: g, totalTimeMs: stageMs > 0 ? stageMs : elapsedMs)
                                 .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
@@ -98,6 +98,11 @@ struct CompletedDailyCard: View {
             }
         }
         .task(id: mode.rawValue) {
+            // Reset per-mode state up front — otherwise a previously-viewed mode's
+            // data (notably the Gauntlet stage breakdown) leaks into this mode when
+            // its own local save isn't reloaded, rendering e.g. Gauntlet's stages
+            // under Classic.
+            localBoards = nil; gauntlet = nil; data = nil
             let seed = DailySeed.today(mode: mode)
             if let state = GamePersistence.shared.load(seed: seed, mode: mode),
                state.status == .won || state.status == .lost {
