@@ -14,3 +14,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "wordocious-android"
 include(":core")
+include(":app")

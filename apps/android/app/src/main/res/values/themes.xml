@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose owns all UI; this base theme just provides a no-action-bar
+         window with the brand background so there's no flash before setContent.
+         Surfaces/text are driven by the Compose theme (ported from globals.css). -->
+    <style name="Theme.Wordocious" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/brand_bg</item>
+        <item name="android:statusBarColor">@color/brand_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>
