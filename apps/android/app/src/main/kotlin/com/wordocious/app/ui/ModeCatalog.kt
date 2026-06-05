@@ -25,6 +25,32 @@ data class ModeCard(
     val lucide: String? = null,  // web lucide icon name (for the exact-icon pass)
 )
 
+/** In-game uppercase mode title (matches iOS ModeStyle titles). */
+fun modeTitle(mode: GameMode): String = when (mode) {
+    GameMode.DUEL -> "CLASSIC"
+    GameMode.DUEL_6 -> "CLASSIC SIX"
+    GameMode.DUEL_7 -> "CLASSIC SEVEN"
+    GameMode.QUORDLE -> "QUADWORD"
+    GameMode.OCTORDLE -> "OCTOWORD"
+    GameMode.SEQUENCE -> "SUCCESSION"
+    GameMode.RESCUE -> "DELIVERANCE"
+    GameMode.GAUNTLET -> "GAUNTLET"
+    GameMode.PROPERNOUNDLE -> "PROPERNOUNDLE"
+    else -> mode.name
+}
+
+/** Mode accent color (from MODE_CARDS). */
+fun modeAccent(mode: GameMode): Color =
+    MODE_CARDS.firstOrNull { it.engineMode == mode }?.accent ?: Color(0xFF7C3AED)
+
+/** Mode-title gradient stops — matches iOS ModeStyle.gradient. */
+fun modeTitleGradient(mode: GameMode): List<Color> = when (mode) {
+    GameMode.DUEL -> listOf(Color(0xFFA78BFA), Color(0xFFEC4899))
+    GameMode.DUEL_6 -> listOf(Color(0xFF06B6D4), Color(0xFF22D3EE))
+    GameMode.DUEL_7 -> listOf(Color(0xFF84CC16), Color(0xFFA3E635))
+    else -> modeAccent(mode).let { listOf(it, it.copy(alpha = 0.65f)) }
+}
+
 val MODE_CARDS: List<ModeCard> = listOf(
     ModeCard("practice", "Classic", "1 word, 6 tries", Color(0xFF7C3AED), GameMode.DUEL, lucide = "WordleGrid"),
     ModeCard("vs", "VS Battle", "Real-time PvP", Color(0xFF0D9488), null, lucide = "Swords"),

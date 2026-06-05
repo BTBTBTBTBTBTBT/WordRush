@@ -1,6 +1,7 @@
 package com.wordocious.app.ui.game
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -12,12 +13,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -85,38 +92,47 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
         return
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(WTheme.bg).padding(horizontal = 4.dp),
+    val accent = com.wordocious.app.ui.modeAccent(mode)
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    listOf(WTheme.bg, WTheme.surfaceHover), // #F8F7FF → #F3F0FF
+                ),
+            ),
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp, horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "‹", color = WTheme.primary, fontSize = 24.sp, fontWeight = FontWeight.Black,
-                modifier = Modifier.clickableNoRipple(onBack).padding(end = 8.dp),
-            )
-            Text(title, color = WTheme.text, fontSize = 16.sp, fontWeight = FontWeight.Black)
-            Spacer(Modifier.weight(1f))
-            if (mode == GameMode.GAUNTLET) {
-                val stageNum = (state.gauntlet?.currentStage ?: 0) + 1
-                val totalStages = state.gauntlet?.totalStages ?: 5
-                Text(
-                    "Stage $stageNum/$totalStages  ",
-                    color = WTheme.textMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                )
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
+            // Centered gradient mode title + progress + live clock (spec Part 2 Headers)
+            val board0 = state.boards[0]
+            val progressLabel = if (mode == GameMode.GAUNTLET) {
+                val sn = (state.gauntlet?.currentStage ?: 0) + 1
+                "Stage $sn / ${state.gauntlet?.totalStages ?: 5}"
+            } else {
+                "Guess ${board0.guesses.size + 1} / ${board0.maxGuesses}"
             }
-            // Live timer (web shows elapsed time in the game header)
-            Text(
-                fmtClock(elapsed),
-                color = WTheme.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(end = 4.dp),
-            )
-        }
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    com.wordocious.app.ui.modeTitle(mode),
+                    fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
+                    style = androidx.compose.ui.text.TextStyle(
+                        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            com.wordocious.app.ui.modeTitleGradient(mode),
+                        ),
+                    ),
+                )
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(progressLabel, color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("·", color = WTheme.textMuted, fontSize = 12.sp)
+                    Text(fmtClock(elapsed), color = WTheme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                }
+            }
 
-        // Board area — fills between header and keyboard
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            // Board area — fills between header and keyboard
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             if (multiBoard) {
                 MultiBoardLayout(
                     boards = state.boards,
@@ -136,14 +152,41 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
 
         Spacer(Modifier.height(6.dp))
 
-        KeyboardView(
-            letterStates = letterStates,
-            onKey = { vm.typeLetter(it) },
-            onDelete = { vm.deleteLetter() },
-            onEnter = { vm.submit(applyToAll = isApplyToAll) },
-        )
+            KeyboardView(
+                letterStates = letterStates,
+                onKey = { vm.typeLetter(it) },
+                onDelete = { vm.deleteLetter() },
+                onEnter = { vm.submit(applyToAll = isApplyToAll) },
+            )
 
-        Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
+        }
+
+        // Corner Home button (top-left) — spec Part 2 Nav: 44dp circle, surface
+        // fill, 2dp accent stroke, house icon, shadow. Visible in play + post-game.
+        CornerHomeButton(accent = accent, onClick = onBack, modifier = Modifier.padding(8.dp))
+    }
+}
+
+@Composable
+private fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val circle = androidx.compose.foundation.shape.CircleShape
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .shadow(4.dp, circle, clip = false)
+            .clip(circle)
+            .background(WTheme.surface)
+            .border(2.dp, accent, circle)
+            .clickableNoRipple(onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            androidx.compose.material.icons.Icons.Filled.Home,
+            contentDescription = "Home",
+            tint = accent,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 
