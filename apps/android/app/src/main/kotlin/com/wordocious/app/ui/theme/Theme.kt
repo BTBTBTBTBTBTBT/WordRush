@@ -90,6 +90,13 @@ fun WordociousTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = WordociousColorScheme,
         typography = WordociousTypography,
-        content = content,
-    )
+    ) {
+        // Make EVERY Text() default to Nunito (brand font) unless it overrides
+        // fontFamily itself — none of our Texts do, so the whole app uses Nunito.
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.material3.LocalTextStyle provides
+                androidx.compose.material3.LocalTextStyle.current.copy(fontFamily = Nunito),
+            content = content,
+        )
+    }
 }
