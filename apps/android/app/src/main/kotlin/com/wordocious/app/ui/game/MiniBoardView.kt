@@ -95,6 +95,7 @@ fun MiniBoardView(
                             state = tile.state,
                             fontSize = fontSize,
                             cornerRadius = 3.dp,
+                            square = isExpanded,  // fill (non-square) in the grid; square when zoomed
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -127,6 +128,7 @@ fun MiniBoardView(
                             flipDelay = flipDelay,
                             fontSize = fontSize,
                             cornerRadius = 3.dp,
+                            square = isExpanded,  // fill (non-square) in the grid; square when zoomed
                             modifier = Modifier.weight(1f),
                         )
                     }

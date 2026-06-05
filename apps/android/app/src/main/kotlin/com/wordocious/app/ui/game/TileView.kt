@@ -42,6 +42,9 @@ fun TileView(
     isInvalid: Boolean = false,
     cornerRadius: Dp = 4.dp,
     fontSize: Float = 20f,
+    // square=true forces a 1:1 tile (single-board). false = fill the cell
+    // (multi-board in-play, non-square per spec — prevents overlap).
+    square: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     // Orthographic scaleY squash: start at 0 → 1 after flipDelay ms (web: 80ms stagger/tile)
@@ -77,7 +80,7 @@ fun TileView(
 
     Box(
         modifier = modifier
-            .aspectRatio(1f)
+            .then(if (square) Modifier.aspectRatio(1f) else Modifier.fillMaxSize())
             .graphicsLayer { scaleY = if (flipDelay != null) scale else 1f }
             .clip(RoundedCornerShape(cornerRadius))
             .background(bgColor)
