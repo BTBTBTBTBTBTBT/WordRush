@@ -269,17 +269,26 @@ private fun FooterLinks() {
 }
 
 @Composable
-private fun rememberMidnightCountdown() = produceState(initialValue = secondsUntilMidnightUtc()) {
+private fun rememberMidnightCountdown() = produceState(initialValue = secondsUntilLocalMidnight()) {
     while (true) {
-        value = secondsUntilMidnightUtc()
+        value = secondsUntilLocalMidnight()
         delay(1000)
     }
 }
 
-private fun secondsUntilMidnightUtc(): Long {
-    val msInDay = 86_400_000L
-    val now = System.currentTimeMillis()
-    return (msInDay - (now % msInDay)) / 1000L
+/**
+ * Seconds until the next LOCAL midnight — the daily resets at local midnight
+ * (matches the local-date puzzle/leaderboard grouping), not UTC.
+ */
+private fun secondsUntilLocalMidnight(): Long {
+    val cal = java.util.Calendar.getInstance().apply {
+        add(java.util.Calendar.DAY_OF_YEAR, 1)
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }
+    return ((cal.timeInMillis - System.currentTimeMillis()) / 1000L).coerceAtLeast(0)
 }
 
 private fun formatCountdown(secs: Long): String {
