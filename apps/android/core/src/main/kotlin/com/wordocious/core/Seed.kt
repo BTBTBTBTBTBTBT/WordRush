@@ -36,6 +36,52 @@ fun getDailySeedDate(seed: String): String? {
     return "${parts[1]}-${parts[2]}-${parts[3]}"
 }
 
-// NOTE: generateSolutionsFromSeed / generateSolutionsFromSeedForLength /
-// generateMatchSeed are added once the dictionary is ported (next step) — they
-// depend on the solution word lists.
+/**
+ * Deterministic per-seed solution picker (mirrors Swift `generateSolutionsFromSeed`).
+ * For each index, hash `"{seed}-{i}"` → `% solutionCount`; on a collision with an
+ * already-used index, re-hash `"{seed}-{i}-{attempt}"` (max `solutionCount` tries).
+ * `simpleHash` returns a non-negative Int, so `% solutionCount` is non-negative.
+ * Requires [GameDictionary] to be initialized ([DictionaryLoader.ensureLoaded]).
+ */
+fun generateSolutionsFromSeed(seed: String, count: Int): List<String> {
+    val solutionCount = GameDictionary.getSolutionCount()
+    val solutions = ArrayList<String>(count)
+    val used = HashSet<Int>()
+    for (i in 0 until count) {
+        val seedWithIndex = "$seed-$i"
+        var hash = simpleHash(seedWithIndex)
+        var attempts = 0
+        while ((hash % solutionCount) in used && attempts < solutionCount) {
+            hash = simpleHash("$seedWithIndex-$attempts")
+            attempts++
+        }
+        val index = hash % solutionCount
+        used.add(index)
+        solutions.add(GameDictionary.getSolutionWord(index))
+    }
+    return solutions
+}
+
+/** Length-specific variant (Six/Seven) — uses that length's solution pool. */
+fun generateSolutionsFromSeedForLength(seed: String, count: Int, wordLength: Int): List<String> {
+    val solutionCount = GameDictionary.getSolutionCountForLength(wordLength)
+    val solutions = ArrayList<String>(count)
+    val used = HashSet<Int>()
+    for (i in 0 until count) {
+        val seedWithIndex = "$seed-$i"
+        var hash = simpleHash(seedWithIndex)
+        var attempts = 0
+        while ((hash % solutionCount) in used && attempts < solutionCount) {
+            hash = simpleHash("$seedWithIndex-$attempts")
+            attempts++
+        }
+        val index = hash % solutionCount
+        used.add(index)
+        solutions.add(GameDictionary.getSolutionWordForLength(wordLength, index))
+    }
+    return solutions
+}
+
+/** Random ad-hoc match seed (NOT daily): `"{epochMs}-{15-char-random}"`. */
+fun generateMatchSeed(): String =
+    "${System.currentTimeMillis()}-${java.util.UUID.randomUUID().toString().take(15).lowercase()}"
