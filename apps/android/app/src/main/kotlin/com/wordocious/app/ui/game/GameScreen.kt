@@ -76,7 +76,15 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
 
     val multiBoard = state.boards.size > 1
     val isSequential = mode == GameMode.SEQUENCE
-    val letterStates = computeCombinedLetterStates(state.boards)
+    // Quadrant keyboard for parallel multi-board modes (Quad/Octo/Deliverance); NOT Sequence.
+    val useQuadrant = multiBoard && !isSequential
+    val letterStates = if (isSequential) {
+        // Sequence: keyboard colors from the ACTIVE board only (spec hot-spot #8).
+        computeCombinedLetterStates(listOf(state.boards[state.currentBoardIndex]))
+    } else {
+        computeCombinedLetterStates(state.boards)
+    }
+    val perBoardStates = if (useQuadrant) computePerBoardLetterStates(state.boards) else null
     val isApplyToAll = multiBoard && !isSequential
     val isFinished = state.status != GameStatus.PLAYING
 
@@ -157,6 +165,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
                 onKey = { vm.typeLetter(it) },
                 onDelete = { vm.deleteLetter() },
                 onEnter = { vm.submit(applyToAll = isApplyToAll) },
+                perBoardStates = perBoardStates,
             )
 
             Spacer(Modifier.height(8.dp))

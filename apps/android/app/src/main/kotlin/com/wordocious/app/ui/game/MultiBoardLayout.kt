@@ -165,3 +165,27 @@ private fun bestLetterState(a: TileState, b: TileState): TileState {
     val priority = mapOf(TileState.CORRECT to 3, TileState.PRESENT to 2, TileState.ABSENT to 1, TileState.EMPTY to 0, TileState.HINT_USED to 2)
     return if ((priority[b] ?: 0) > (priority[a] ?: 0)) b else a
 }
+
+/**
+ * Per-board keyboard letter states for the QUADRANT keyboard (Quad/Octo/Deliverance).
+ * Mirrors web `computePerBoardLetterStates`: solved/lost boards return EMPTY maps
+ * so their quadrant sub-cell goes dark.
+ */
+fun computePerBoardLetterStates(boards: List<BoardState>): List<Map<String, TileState>> =
+    boards.map { board ->
+        if (board.status != GameStatus.PLAYING) return@map emptyMap()
+        val states = mutableMapOf<String, TileState>()
+        board.prefilledGuesses?.forEach { pf ->
+            pf.evaluation.tiles.forEach { t ->
+                val k = t.letter.uppercase()
+                states[k] = bestLetterState(states[k] ?: TileState.EMPTY, t.state)
+            }
+        }
+        board.guesses.forEach { g ->
+            evaluateGuess(board.solution, g).tiles.forEach { t ->
+                val k = t.letter.uppercase()
+                states[k] = bestLetterState(states[k] ?: TileState.EMPTY, t.state)
+            }
+        }
+        states
+    }
