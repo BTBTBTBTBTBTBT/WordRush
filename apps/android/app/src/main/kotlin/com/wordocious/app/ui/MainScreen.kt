@@ -66,8 +66,11 @@ fun MainScreen() {
     // Help / Info overlay (Help from header; About/Privacy/Terms/Support from Settings)
     infoRoute?.let { route ->
         androidx.activity.compose.BackHandler { infoRoute = null }
-        if (route == "help") HelpScreen(onDone = { infoRoute = null })
-        else InfoScreen(kind = route, onDone = { infoRoute = null })
+        when (route) {
+            "help" -> HelpScreen(onDone = { infoRoute = null })
+            "pro" -> ProScreen(onDone = { infoRoute = null })
+            else -> InfoScreen(kind = route, onDone = { infoRoute = null })
+        }
         return
     }
 
@@ -116,7 +119,7 @@ fun MainScreen() {
                 when (selectedTab) {
                     0 -> HomeScreen(onSelectMode = { activeGame = it })
                     1 -> LeaderboardScreen()
-                    2 -> ProfileScreen()
+                    2 -> ProfileScreen(onGoPro = { infoRoute = "pro" })
                     3 -> RecordsScreen()
                 }
             }

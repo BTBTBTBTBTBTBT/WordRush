@@ -66,7 +66,7 @@ import kotlinx.coroutines.launch
 private val DAILY_MODES = listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE")
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(onGoPro: () -> Unit = {}) {
     val profile by AuthService.profile.collectAsState()
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf<List<ProfileService.UserStat>>(emptyList()) }
@@ -93,7 +93,7 @@ fun ProfileScreen() {
         item { Spacer(Modifier.height(8.dp)) }
 
         // ── A. Header ─────────────────────────────────────────────
-        item { ProfileHeader(profile) }
+        item { ProfileHeader(profile, onGoPro) }
 
         // ── B. Today's Dailies ────────────────────────────────────
         item { TodaysDailies(todayDailies) }
@@ -191,7 +191,7 @@ private fun memberSince(createdAt: String?): String? {
 }
 
 @Composable
-private fun ProfileHeader(profile: com.wordocious.app.data.Profile?) {
+private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: () -> Unit = {}) {
     val level = profile?.level ?: 1
     val xp = profile?.xp ?: 0
     val tier = levelTier(level)
@@ -254,6 +254,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?) {
             Box(
                 Modifier.clip(RoundedCornerShape(8.dp))
                     .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                    .clickableNoRipple(onGoPro)
                     .padding(horizontal = 16.dp, vertical = 6.dp),
             ) { Text("Go Pro", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) }
         }
