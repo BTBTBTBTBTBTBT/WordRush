@@ -95,9 +95,8 @@ object DailyResultsService {
     }
 
     /**
-     * Composite score formula matching web lib/daily-service.ts
-     * `computeScoreBreakdown`. Results must match exactly for cross-platform
-     * leaderboard correctness.
+     * Composite score — delegates to [DailyScoring], the single source of truth
+     * shared with the post-game ScoreBreakdown card (1:1 with web/iOS).
      */
     fun computeCompositeScore(
         gameMode: String,
@@ -107,43 +106,5 @@ object DailyResultsService {
         boardsSolved: Int,
         totalBoards: Int,
         hintsUsed: Int,
-    ): Double {
-        if (!completed) return 0.0
-        val timeCap = when (gameMode) {
-            "DUEL", "TOURNAMENT" -> 300
-            "DUEL_6" -> 420
-            "DUEL_7" -> 540
-            "QUORDLE" -> 600
-            "OCTORDLE" -> 900
-            "SEQUENCE" -> 600
-            "RESCUE" -> 480
-            "GAUNTLET" -> 1800
-            "PROPERNOUNDLE" -> 360
-            else -> 300
-        }
-        val maxGuesses = when (gameMode) {
-            "DUEL", "TOURNAMENT", "RESCUE", "PROPERNOUNDLE" -> 6
-            "DUEL_6" -> 7
-            "DUEL_7" -> 8
-            "QUORDLE", "SEQUENCE" -> 9
-            "OCTORDLE" -> 13
-            "GAUNTLET" -> 6
-            else -> 6
-        }
-        val hasHints = gameMode in setOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE")
-        val hintCost = when (gameMode) {
-            "DUEL_6", "DUEL_7" -> 150
-            "PROPERNOUNDLE" -> 120
-            else -> 0
-        }
-        val base = 1000.0
-        val timeUnder = max(0, timeCap - elapsedSeconds)
-        val timeBonus = (timeUnder / 5.0).toLong().toDouble()
-        val guessesLeft = max(0, maxGuesses - guessCount)
-        val guessBonus = if (hasHints) guessesLeft * 50.0 else 0.0
-        val completionBonus = if (totalBoards > 1) (boardsSolved.toDouble() / totalBoards) * 200 else 0.0
-        val hintPenalty = hintsUsed * hintCost.toDouble()
-        val total = base + timeBonus + guessBonus + completionBonus - hintPenalty
-        return round(total * 100) / 100.0
-    }
+    ): Double = DailyScoring.compositeScore(gameMode, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
 }

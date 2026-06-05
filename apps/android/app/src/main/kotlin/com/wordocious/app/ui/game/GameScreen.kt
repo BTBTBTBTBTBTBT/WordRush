@@ -291,6 +291,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
             mode = mode,
             seed = seed,
             elapsedSeconds = elapsed,
+            hintsUsed = vm.hintsUsed,
             onBack = onBack,
         )
         return

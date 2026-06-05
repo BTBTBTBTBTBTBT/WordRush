@@ -2,8 +2,6 @@ package com.wordocious.app.ui.game
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.runtime.LaunchedEffect
-import com.wordocious.app.data.DailyResultsService
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,45 +10,59 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.DailyResultsService
+import com.wordocious.app.data.DailyScoring
+import com.wordocious.app.data.LeaderboardService
+import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.modeAccent
+import com.wordocious.app.ui.modeTitle
+import com.wordocious.app.ui.modeTitleGradient
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
 import kotlin.math.abs
+import kotlin.math.max
 
 /**
- * Post-game screen — ported from the web post-game-summary.tsx + score-breakdown.tsx.
- * Source of truth: the web. Shown immediately when game status transitions to WON/LOST.
- *
- * Layout (matching web):
- *   - Gradient header with mode title + WON/LOST status
- *   - Solution reveal (WON: "You solved it!", LOST: "The answer was…")
- *   - Score breakdown card (base + guess/time bonuses)
- *   - Home button + Share button
- *   - (Definition panel pending the networking layer)
+ * Post-game screen — ported 1:1 from iOS SolvedPuzzleView + PostGameViews.swift
+ * (which mirror the web octordle/quordle/rescue-game completion headers).
+ * Order: FinishedStatsHeader → DailyRankBadge → board reveal → ScoreBreakdown →
+ * DefinitionCard (single-board), with a corner Home button. NO colored banner.
  */
 @Composable
 fun PostGameScreen(
@@ -58,6 +70,7 @@ fun PostGameScreen(
     mode: GameMode,
     seed: String,
     elapsedSeconds: Int = 0,
+    hintsUsed: Int = 0,
     onBack: () -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -68,305 +81,267 @@ fun PostGameScreen(
     val guessCount = board.guesses.size
     val boardsSolved = state.boards.count { it.status == GameStatus.WON }
     val totalBoards = state.boards.size
+    val multiBoard = totalBoards > 1
 
-    // Record the result to Supabase once (fire-and-forget; silently fails if not signed in)
+    // Record the result once (fire-and-forget; silently fails if signed out).
     LaunchedEffect(state.status) {
         DailyResultsService.recordDailyResult(
-            mode = mode,
-            completed = won,
-            guessCount = guessCount,
-            elapsedSeconds = elapsedSeconds,
-            boardsSolved = boardsSolved,
-            totalBoards = totalBoards,
+            mode = mode, completed = won, guessCount = guessCount,
+            elapsedSeconds = elapsedSeconds, boardsSolved = boardsSolved,
+            totalBoards = totalBoards, hintsUsed = hintsUsed,
         )
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(WTheme.bg),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // ── Gradient header ──────────────────────────────────────
-        val headerGradient = if (won)
-            Brush.linearGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A)))
-        else
-            Brush.linearGradient(listOf(Color(0xFFEF4444), Color(0xFFDC2626)))
+    val accent = modeAccent(mode)
+    val share = {
+        val text = com.wordocious.app.data.ShareHelper.buildShareText(state, mode, elapsedSeconds)
+        com.wordocious.app.data.ShareHelper.share(context, text)
+    }
 
-        Box(
-            modifier = Modifier.fillMaxWidth()
-                .background(headerGradient)
-                .padding(vertical = 20.dp, horizontal = 16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    if (won) "🎉 Solved!" else "Better luck tomorrow",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    modeSubtitle(mode, state),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White.copy(alpha = 0.85f),
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-
+    Box(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp).padding(top = 56.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // ── Solution card ─────────────────────────────────────
-            Column(
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    if (won) "You solved it!" else "The answer was",
-                    fontSize = 11.sp, fontWeight = FontWeight.Bold,
-                    color = WTheme.textMuted, letterSpacing = 0.5.sp,
-                )
-                Text(
-                    solution,
-                    fontSize = 28.sp, fontWeight = FontWeight.Black,
-                    color = if (won) WTheme.winText else WTheme.lossText,
-                )
-                if (mode != GameMode.DUEL && mode != GameMode.DUEL_6 && mode != GameMode.DUEL_7) {
-                    Text(
-                        "$boardsSolved / $totalBoards boards solved",
-                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    )
-                }
-            }
-
-            // ── Score breakdown ───────────────────────────────────
-            ScoreBreakdownCard(
-                guessCount = guessCount,
-                elapsedSeconds = elapsedSeconds,
-                won = won,
-                mode = mode,
-                boardsSolved = boardsSolved,
-                totalBoards = totalBoards,
+            FinishedStatsHeader(
+                mode = mode, won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
+                timeSeconds = elapsedSeconds, boardsSolved = boardsSolved, totalBoards = totalBoards,
+                onHome = onBack, onShare = share,
             )
 
-            // ── Stats row ─────────────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                StatChip("Guesses", "$guessCount / ${board.maxGuesses}", Modifier.weight(1f))
-                StatChip("Time", fmtTimeStat(elapsedSeconds), Modifier.weight(1f))
-                if (totalBoards > 1) StatChip("Boards", "$boardsSolved / $totalBoards", Modifier.weight(1f))
-            }
+            DailyRankBadge(mode)
 
-            // ── Action buttons ────────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            // Board reveal (the actual finished board with colors).
+            Box(
+                modifier = Modifier.fillMaxWidth().heightIn(max = if (multiBoard) 320.dp else 360.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Button(
-                    onClick = onBack,
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = WTheme.surfaceAlt),
-                ) {
-                    Icon(Icons.Filled.Home, null, tint = WTheme.text)
-                    Text(" Home", color = WTheme.text, fontWeight = FontWeight.Bold)
-                }
-                Button(
-                    onClick = {
-                        val text = com.wordocious.app.data.ShareHelper.buildShareText(state, mode, elapsedSeconds)
-                        com.wordocious.app.data.ShareHelper.share(context, text)
-                    },
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (won) WTheme.winText else WTheme.lossText,
-                    ),
-                ) {
-                    Icon(Icons.Filled.Share, null, tint = Color.White)
-                    Text(" Share", color = Color.White, fontWeight = FontWeight.Bold)
+                if (multiBoard) {
+                    MultiBoardLayout(
+                        boards = state.boards, currentGuess = "",
+                        currentBoardIndex = state.currentBoardIndex,
+                        isSequential = mode == GameMode.SEQUENCE,
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp),
+                    )
+                } else {
+                    SingleBoard(board = board, currentGuess = "", modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp))
                 }
             }
 
-            // Word definition (fetched from dictionaryapi.dev, like the web).
-            // Hidden for ProperNoundle (proper nouns have no dictionary entry).
-            if (mode != GameMode.PROPERNOUNDLE) {
+            ScoreBreakdownCard(
+                mode = mode, won = won, guessCount = guessCount, elapsedSeconds = elapsedSeconds,
+                boardsSolved = if (won) boardsSolved else 0, totalBoards = totalBoards, hintsUsed = hintsUsed,
+            )
+
+            // Single-board modes: word definition (with "No definition" fallback).
+            if (!multiBoard && mode != GameMode.PROPERNOUNDLE) {
                 DefinitionCard(solution)
             }
         }
-    }
-}
 
-@Composable
-private fun DefinitionCard(word: String) {
-    val state = androidx.compose.runtime.produceState<com.wordocious.app.data.DefinitionService.WordDefinition?>(
-        initialValue = null, key1 = word,
-    ) {
-        value = com.wordocious.app.data.DefinitionService.fetch(word)
-    }
-    val def = state.value ?: return  // no definition / still loading → render nothing (web parity)
-
-    Column(
-        modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
-            .padding(12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (def.phonetic.isNotBlank()) Text(def.phonetic, fontSize = 12.sp, color = WTheme.textMuted)
-            if (def.partOfSpeech.isNotBlank()) {
-                Text(
-                    def.partOfSpeech,
-                    fontSize = 10.sp, fontWeight = FontWeight.Black,
-                    color = WTheme.wordmarkStart,
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp))
-                        .background(WTheme.surfaceAlt).padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-            }
+        // Corner Home button (top-left) — accent circle, matches the in-game one.
+        Box(
+            modifier = Modifier.padding(8.dp).size(44.dp)
+                .shadow(4.dp, CircleShape, clip = false).clip(CircleShape)
+                .background(WTheme.surface).border(2.dp, accent, CircleShape)
+                .clickableNoRipple(onBack),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Home, "Home", tint = accent, modifier = Modifier.size(20.dp))
         }
-        Spacer(Modifier.height(4.dp))
-        Text(def.definition, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary)
+    }
+}
+
+/** m:ss clock string. */
+private fun clock(s: Int): String = "%d:%02d".format(s / 60, s % 60)
+
+/**
+ * Finished-game header (ports iOS FinishedStatsHeader): gradient mode title,
+ * stat row (trophy+boards / guesses / clock+time), green/red summary line,
+ * underlined Home / Share text links.
+ */
+@Composable
+private fun FinishedStatsHeader(
+    mode: GameMode, won: Boolean, guessCount: Int, maxGuesses: Int,
+    timeSeconds: Int, boardsSolved: Int, totalBoards: Int,
+    onHome: () -> Unit, onShare: () -> Unit,
+) {
+    val isMulti = totalBoards > 1
+    val timeStr = clock(timeSeconds)
+    val summary = when {
+        won && isMulti -> "All $totalBoards solved in $guessCount guesses  ·  $timeStr"
+        won -> "Solved in $guessCount guesses  ·  $timeStr"
+        isMulti -> "$boardsSolved/$totalBoards solved  ·  $timeStr"
+        else -> "Out of guesses  ·  $timeStr"
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            modeTitle(mode), fontSize = 28.sp, fontWeight = FontWeight.Black,
+            style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode))),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (isMulti) StatItem(Icons.Filled.EmojiEvents, Color(0xFFD97706), "$boardsSolved/$totalBoards")
+            Text(
+                if (maxGuesses > 0) "$guessCount/$maxGuesses guesses" else "$guessCount guesses",
+                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            )
+            StatItem(Icons.Filled.Schedule, Color(0xFF60A5FA), timeStr)
+        }
+        Text(
+            summary, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+            color = if (won) Color(0xFF16A34A) else Color(0xFFF87171), textAlign = TextAlign.Center,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                "Home", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onHome),
+            )
+            Text(
+                "Share", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6),
+                textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onShare),
+            )
+        }
     }
 }
 
 @Composable
-private fun StatChip(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(WTheme.surface)
-            .border(1.dp, WTheme.border, RoundedCornerShape(10.dp))
-            .padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+private fun StatItem(icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(12.dp))
+        Text(text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
 }
 
 /**
- * Score breakdown card — ported from web score-breakdown.tsx. Uses the SAME
- * formula as DailyResultsService.computeCompositeScore so the displayed total
- * equals the score recorded to the leaderboard (web parity).
+ * Daily-leaderboard standing capsule (ports iOS DailyRankBadge). Hidden until
+ * ≥2 players have a result today. Gold styling at ≥75th percentile.
+ */
+@Composable
+private fun DailyRankBadge(mode: GameMode) {
+    val userId = AuthService.profile.value?.id
+    val rank by produceState<Pair<Int, Int>?>(initialValue = null, key1 = mode, key2 = userId) {
+        value = if (userId != null) LeaderboardService.userRankAndTotal(userId, mode.name) else null
+    }
+    val r = rank ?: return
+    val (position, total) = r
+    if (total < 2) return
+    val percentile = ((1 - (position - 1).toDouble() / total) * 100).toInt()
+    val top = max(1, 100 - percentile)
+    val gold = percentile >= 75
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (gold) Color(0xFFFEF3C7) else WTheme.surfaceHover)
+            .border(1.dp, if (gold) Color(0xFFFDE68A) else WTheme.border, RoundedCornerShape(50))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(Icons.Filled.EmojiEvents, null, tint = if (gold) Color(0xFF92400E) else WTheme.textMuted, modifier = Modifier.size(10.dp))
+        Text(
+            "Top $top% · #$position of $total", fontSize = 10.sp, fontWeight = FontWeight.Black,
+            color = if (gold) Color(0xFF92400E) else WTheme.textMuted,
+        )
+    }
+}
+
+/**
+ * Composite-score breakdown (ports iOS ScoreBreakdownView). Uses the SHARED
+ * [DailyScoring.breakdown] so the displayed total always equals the recorded
+ * leaderboard score.
  */
 @Composable
 private fun ScoreBreakdownCard(
-    guessCount: Int,
-    elapsedSeconds: Int,
-    won: Boolean,
-    mode: GameMode,
-    boardsSolved: Int,
-    totalBoards: Int,
+    mode: GameMode, won: Boolean, guessCount: Int, elapsedSeconds: Int,
+    boardsSolved: Int, totalBoards: Int, hintsUsed: Int,
 ) {
-    val timeCap = when (mode) {
-        GameMode.DUEL, GameMode.TOURNAMENT -> 300
-        GameMode.DUEL_6 -> 420
-        GameMode.DUEL_7 -> 540
-        GameMode.QUORDLE -> 600
-        GameMode.OCTORDLE -> 900
-        GameMode.SEQUENCE -> 600
-        GameMode.RESCUE -> 480
-        GameMode.GAUNTLET -> 1800
-        GameMode.PROPERNOUNDLE -> 360
-        else -> 300
-    }
-    val maxGuesses = when (mode) {
-        GameMode.DUEL, GameMode.RESCUE, GameMode.PROPERNOUNDLE, GameMode.TOURNAMENT -> 6
-        GameMode.DUEL_6 -> 7
-        GameMode.DUEL_7 -> 8
-        GameMode.QUORDLE, GameMode.SEQUENCE -> 9
-        GameMode.OCTORDLE -> 13
-        GameMode.GAUNTLET -> 6
-        else -> 6
-    }
-    val hasHints = mode == GameMode.DUEL_6 || mode == GameMode.DUEL_7 || mode == GameMode.PROPERNOUNDLE
-
-    val basePoints = if (won) 1000 else 0
-    val timeUnder = if (won) maxOf(0, timeCap - elapsedSeconds) else 0
-    val timeBonus = timeUnder / 5  // matches floor(timeUnder/5)
-    val guessesLeft = if (won) maxOf(0, maxGuesses - guessCount) else 0
-    val guessBonus = if (won && hasHints) guessesLeft * 50 else 0
-    val completionBonus = if (totalBoards > 1) ((boardsSolved.toFloat() / totalBoards) * 200).toInt() else 0
-    val total = basePoints + timeBonus + guessBonus + completionBonus
+    val b = DailyScoring.breakdown(mode.name, won, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
+    val guessesLeft = max(0, b.maxGuesses - guessCount)
+    val timeUnder = max(0, b.timeCap - elapsedSeconds)
 
     Column(
-        modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+            .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "SCORE BREAKDOWN",
-                fontSize = 10.sp, fontWeight = FontWeight.Black,
-                color = WTheme.textMuted, letterSpacing = 1.sp,
-            )
-            Text(
-                "$total pts",
-                fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text,
-            )
+        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("SCORE BREAKDOWN", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
+            Text("${b.total.toInt()} pts", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         }
-        Spacer(Modifier.height(6.dp))
-        ScoreRow("Win bonus", if (won) "" else "did not finish", basePoints)
-        if (won && timeBonus > 0) ScoreRow("Time bonus", "${fmtTimeStat(timeUnder)} under cap", timeBonus)
-        if (won && guessBonus > 0) ScoreRow("Guess bonus", "$guessesLeft unused × 50", guessBonus)
-        if (totalBoards > 1) ScoreRow(
-            "Completion", "$boardsSolved/$totalBoards boards",
-            completionBonus,
+        ScoreRow(if (won) "Win bonus" else "Did not finish", if (won) "" else "no win bonus", b.basePoints)
+        if (won && b.hasHints) ScoreRow("Guess bonus", "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
+        if (won) ScoreRow("Time bonus", "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
+        if (won && b.completionBonus > 0) ScoreRow(
+            "Completion bonus", if (totalBoards > 1) "$boardsSolved/$totalBoards boards" else "puzzle solved", b.completionBonus,
         )
+        if (b.hasHints) {
+            val detail = if (hintsUsed > 0) "$hintsUsed hint${if (hintsUsed == 1) "" else "s"} × ${b.hintCost}" else "no hints — full credit"
+            ScoreRow("Hint penalty", detail, -b.hintPenalty, pure = won && hintsUsed == 0)
+        }
     }
 }
 
-private fun fmtTimeStat(secs: Int): String =
-    if (secs <= 0) "0s" else if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"
-
 @Composable
-private fun ScoreRow(label: String, detail: String, value: Int) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-            if (detail.isNotEmpty()) Text(detail, fontSize = 10.sp, color = WTheme.textMuted)
+private fun ScoreRow(label: String, detail: String, value: Double, pure: Boolean = false) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f, fill = false)) {
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (pure) Color(0xFF16A34A) else WTheme.text)
+            if (detail.isNotEmpty()) Text(detail, fontSize = 10.sp, color = WTheme.textMuted, maxLines = 1)
         }
         val sign = if (value > 0) "+" else if (value < 0) "−" else ""
         Text(
-            "$sign${abs(value)}",
-            fontSize = 12.sp, fontWeight = FontWeight.Black,
-            color = if (value > 0) WTheme.text else if (value < 0) WTheme.lossText else WTheme.textMuted,
+            "$sign${abs(value).toInt()}", fontSize = 12.sp, fontWeight = FontWeight.Black,
+            color = if (value > 0) WTheme.text else if (value < 0) Color(0xFFDC2626) else WTheme.textMuted,
         )
     }
 }
 
-private fun modeSubtitle(mode: GameMode, state: GameState): String {
-    val boards = state.boards
-    return when (mode) {
-        GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7, GameMode.PROPERNOUNDLE, GameMode.TOURNAMENT ->
-            "in ${boards[0].guesses.size} ${if (boards[0].guesses.size == 1) "guess" else "guesses"}"
-        GameMode.QUORDLE -> "${boards.count { it.status == GameStatus.WON }}/4 boards"
-        GameMode.OCTORDLE -> "${boards.count { it.status == GameStatus.WON }}/8 boards"
-        GameMode.SEQUENCE -> "Succession · ${boards.count { it.status == GameStatus.WON }}/4 boards"
-        GameMode.RESCUE -> "Deliverance · ${boards.count { it.status == GameStatus.WON }}/4 boards"
-        GameMode.GAUNTLET -> "${(state.gauntlet?.currentStage ?: 0) + 1} / ${state.gauntlet?.totalStages ?: 5} stages"
-        else -> ""
+private fun fmtSecs(s: Int): String = if (s <= 0) "0s" else if (s >= 60) "${s / 60}m ${s % 60}s" else "${s}s"
+
+/**
+ * Dictionary definition card (ports iOS DefinitionCard). Always populates once
+ * loaded — shows "No definition available for this word." rather than a blank
+ * gap when the dictionary has no entry.
+ */
+@Composable
+private fun DefinitionCard(word: String) {
+    var loaded by remember(word) { mutableStateOf(false) }
+    val def by produceState<com.wordocious.app.data.DefinitionService.WordDefinition?>(initialValue = null, key1 = word) {
+        value = com.wordocious.app.data.DefinitionService.fetch(word)
+        loaded = true
+    }
+    if (!loaded) return
+
+    Column(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+            .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        val d = def
+        if (d != null) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (d.phonetic.isNotBlank()) Text(d.phonetic, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted)
+                if (d.partOfSpeech.isNotBlank()) {
+                    Text(
+                        d.partOfSpeech.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp,
+                        color = Color(0xFFA78BFA),
+                        modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(WTheme.border).padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+            }
+            if (d.definition.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Text(d.definition, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF4A4A6A))
+            }
+        } else {
+            Text(
+                "No definition available for this word.",
+                fontSize = 13.sp, fontWeight = FontWeight.Medium, fontStyle = FontStyle.Italic, color = WTheme.textMuted,
+            )
+        }
     }
 }
