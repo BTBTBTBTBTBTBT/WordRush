@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,6 +71,116 @@ private class GameVMFactory(val seed: String, val mode: GameMode) : ViewModelPro
 
 /** Format elapsed seconds as M:SS for the game header. */
 private fun fmtClock(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
+
+/**
+ * Hint pills (spec Part 2 Hints UI) — Six/Seven/ProperNoundle. Two pills
+ * (Vowel/Consonant) between board and keyboard. Unused = accent text + accent@8%
+ * bg + 1.5dp accent border; used = muted + #F3F4F6 + disabled. Label shows
+ * "💡 Vowel" → "Vowel: X" or "No vowels left".
+ */
+@Composable
+private fun HintPills(
+    accent: Color,
+    vowelUsed: Boolean, vowelRevealed: String?,
+    consonantUsed: Boolean, consonantRevealed: String?,
+    onVowel: () -> Unit, onConsonant: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        HintPill(
+            accent = accent, used = vowelUsed,
+            label = if (!vowelUsed) "💡 Vowel"
+            else if (vowelRevealed == "—") "No vowels left" else "Vowel: $vowelRevealed",
+            onClick = onVowel, modifier = Modifier.weight(1f),
+        )
+        HintPill(
+            accent = accent, used = consonantUsed,
+            label = if (!consonantUsed) "💡 Consonant"
+            else if (consonantRevealed == "—") "No consonants left" else "Consonant: $consonantRevealed",
+            onClick = onConsonant, modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+/**
+ * ProperNoundle hints (spec line 166) — 3 capsule pills Clue/Vowel/Consonant.
+ * Clue #9333EA/#D8B4FE/#FAF5FF (lightbulb→hourglass), Vowel #2563EB/#93C5FD/#EFF6FF
+ * (eye), Consonant #16A34A/#86EFAC/#F0FDF4 (number). Used = grey + disabled.
+ */
+@Composable
+private fun ProperNoundleHints(
+    clueUsed: Boolean, loadingClue: Boolean,
+    vowelRevealed: String?, consonantRevealed: String?,
+    onClue: () -> Unit, onVowel: () -> Unit, onConsonant: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        NoundlePill(
+            label = "Clue",
+            icon = if (loadingClue) Icons.Filled.HourglassEmpty else Icons.Filled.Lightbulb,
+            used = clueUsed, text = Color(0xFF9333EA), border = Color(0xFFD8B4FE), bg = Color(0xFFFAF5FF),
+            onClick = onClue, modifier = Modifier.weight(1f),
+        )
+        NoundlePill(
+            label = vowelRevealed ?: "Vowel",
+            icon = Icons.Filled.Visibility,
+            used = vowelRevealed != null, text = Color(0xFF2563EB), border = Color(0xFF93C5FD), bg = Color(0xFFEFF6FF),
+            onClick = onVowel, modifier = Modifier.weight(1f),
+        )
+        NoundlePill(
+            label = consonantRevealed ?: "Consonant",
+            icon = Icons.Filled.Tag,
+            used = consonantRevealed != null, text = Color(0xFF16A34A), border = Color(0xFF86EFAC), bg = Color(0xFFF0FDF4),
+            onClick = onConsonant, modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun NoundlePill(
+    label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, used: Boolean,
+    text: Color, border: Color, bg: Color, onClick: () -> Unit, modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+            .background(if (used) Color.Transparent else bg)
+            .border(1.5.dp, if (used) Color(0xFFE5E7EB) else border, androidx.compose.foundation.shape.RoundedCornerShape(50))
+            .then(if (used) Modifier else Modifier.clickableNoRipple(onClick))
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(icon, null, tint = if (used) Color(0xFFD1D5DB) else text, modifier = Modifier.size(14.dp))
+        Text(
+            label, color = if (used) Color(0xFFD1D5DB) else text,
+            fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun HintPill(accent: Color, used: Boolean, label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+            .background(if (used) Color(0xFFF3F4F6) else accent.copy(alpha = 0.08f))
+            .border(1.5.dp, if (used) WTheme.border else accent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+            .then(if (used) Modifier else Modifier.clickableNoRipple(onClick))
+            .padding(vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            color = if (used) WTheme.textMuted else accent,
+            fontSize = 13.sp, fontWeight = FontWeight.Black,
+        )
+    }
+}
 
 /**
  * Gauntlet 5-node stepper (spec line 102): done = green ✓, active = purple
@@ -207,6 +321,19 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
                     Text("·", color = WTheme.textMuted, fontSize = 12.sp)
                     Text(fmtClock(elapsed), color = WTheme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Black)
                 }
+                // ProperNoundle Clue text (italic, centered) once revealed (spec).
+                if (mode == GameMode.PROPERNOUNDLE) {
+                    val clueText by vm.clue.collectAsState()
+                    clueText?.let {
+                        Text(
+                            it, color = WTheme.textSecondary, fontSize = 12.sp,
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp),
+                        )
+                    }
+                }
             }
 
             // Board area — fills between header and keyboard
@@ -228,7 +355,32 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
             }
         }
 
-        Spacer(Modifier.height(6.dp))
+            // Hint pills — ProperNoundle = Clue/Vowel/Consonant capsules;
+            // Six/Seven = Vowel/Consonant accent pills.
+            if (vm.hasHints) {
+                val vUsed by vm.vowelUsed.collectAsState()
+                val cUsed by vm.consonantUsed.collectAsState()
+                val vRev by vm.vowelRevealed.collectAsState()
+                val cRev by vm.consonantRevealed.collectAsState()
+                if (mode == GameMode.PROPERNOUNDLE) {
+                    val clueText by vm.clue.collectAsState()
+                    val loadingClue by vm.loadingClue.collectAsState()
+                    ProperNoundleHints(
+                        clueUsed = clueText != null || loadingClue, loadingClue = loadingClue,
+                        vowelRevealed = vRev, consonantRevealed = cRev,
+                        onClue = { vm.revealClue() }, onVowel = { vm.revealVowel() }, onConsonant = { vm.revealConsonant() },
+                    )
+                } else {
+                    HintPills(
+                        accent = accent,
+                        vowelUsed = vUsed, vowelRevealed = vRev,
+                        consonantUsed = cUsed, consonantRevealed = cRev,
+                        onVowel = { vm.revealVowel() }, onConsonant = { vm.revealConsonant() },
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
 
             KeyboardView(
                 letterStates = letterStates,

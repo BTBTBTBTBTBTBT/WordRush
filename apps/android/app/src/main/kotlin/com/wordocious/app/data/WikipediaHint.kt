@@ -1,0 +1,76 @@
+package com.wordocious.app.data
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+
+/**
+ * ProperNoundle "Clue" hint — 1:1 port of iOS WikipediaHint.swift /
+ * web components/propernoundle/wikipedia.ts. Fetches the Wikipedia REST summary
+ * for the puzzle's title, returns the first two sentences with the answer name
+ * redacted. Returns null on any failure (caller falls back to the static hint).
+ */
+object WikipediaHint {
+    private const val API = "https://en.wikipedia.org/api/rest_v1/page/summary"
+    private val json = Json { ignoreUnknownKeys = true }
+
+    private val abbreviations = listOf(
+        "No", "Nos", "Mr", "Mrs", "Ms", "Dr", "Prof", "Sr", "Jr", "St", "Mt", "Ft",
+        "Inc", "Ltd", "Co", "Corp", "Bros", "etc", "vs", "cf", "al", "e.g", "i.e",
+        "Jan", "Feb", "Mar", "Apr", "Jun", "Jul", "Aug", "Sep", "Sept", "Oct", "Nov", "Dec",
+        "Mon", "Tue", "Tues", "Wed", "Thu", "Thur", "Thurs", "Fri", "Sat", "Sun",
+    )
+
+    suspend fun fetch(displayName: String, wikiTitle: String?): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val raw = (if (!wikiTitle.isNullOrEmpty()) wikiTitle else displayName)
+                .replace(Regex("\\s+"), "_")
+            // encodeURIComponent-equivalent: keep unreserved + !~*'()
+            val title = URLEncoder.encode(raw, "UTF-8")
+                .replace("+", "%20").replace("%21", "!").replace("%7E", "~")
+                .replace("%2A", "*").replace("%27", "'").replace("%28", "(").replace("%29", ")")
+            val conn = (URL("$API/$title").openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                setRequestProperty("Accept", "application/json")
+                connectTimeout = 5000; readTimeout = 5000
+            }
+            if (conn.responseCode !in 200..299) return@runCatching null
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            val extract = json.parseToJsonElement(body).jsonObject["extract"]?.jsonPrimitive?.content
+            if (extract.isNullOrEmpty()) null else sanitize(extract, displayName)
+        }.getOrNull()
+    }
+
+    private fun sanitize(extract: String, displayName: String): String {
+        // Protect multi-letter capitalized abbreviations (U.S., U.K.).
+        var s = protectDots(extract, "\\b([A-Z])\\.\\s?([A-Z])\\.(\\s?[A-Z]\\.)?", RegexOption.UNIX_LINES)
+        // Protect common single-word abbreviations (case-insensitive).
+        for (abbr in abbreviations) {
+            s = protectDots(s, "\\b${Regex.escape(abbr)}\\.", RegexOption.IGNORE_CASE)
+        }
+        // First 2 sentences.
+        var sentences = Regex("[^.!?]+[.!?]+").findAll(s).map { it.value }.toList()
+        if (sentences.isEmpty()) sentences = listOf(s)
+        var hint = sentences.take(2).joinToString(" ").trim()
+        hint = hint.replace("###", ".")
+        // Redact full name, then each word > 2 chars.
+        val parts = displayName.split(Regex("\\s+")).filter { it.length > 2 }
+        for (pattern in listOf(displayName) + parts) {
+            hint = Regex(Regex.escape(pattern), RegexOption.IGNORE_CASE).replace(hint, "______")
+        }
+        hint = Regex("(______\\s*)+").replace(hint, "______")
+        hint = Regex("______(\\w)").replace(hint, "______ $1")
+        return hint
+    }
+
+    /** Replace every "." with "###" inside each match of [pattern]. */
+    private fun protectDots(s: String, pattern: String, vararg opts: RegexOption): String {
+        val re = Regex(pattern, opts.toSet())
+        return re.replace(s) { m -> m.value.replace(".", "###") }
+    }
+}

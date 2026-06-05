@@ -45,7 +45,14 @@ fun createInitialState(seed: String, mode: GameMode): GameState {
         GameMode.OCTORDLE -> simple(8, 13)
         GameMode.SEQUENCE -> simple(4, 10)
         GameMode.TOURNAMENT -> simple(5, 6)
-        GameMode.PROPERNOUNDLE -> simple(1, 6)
+        GameMode.PROPERNOUNDLE -> {
+            // Separate engine: the board solution is a real puzzle's normalized
+            // answer (variable length), not a generated 5-letter word.
+            val date = getDailySeedDate(seed)
+            val puzzle = if (date != null) ProperNoundle.dailyPuzzle(date) else ProperNoundle.puzzleForSeed(seed)
+            val answer = (puzzle?.answer ?: "wordocious").uppercase()
+            GameState(mode, seed, now, listOf(createBoardState(answer, ProperNoundle.MAX_GUESSES)), 0, GameStatus.PLAYING)
+        }
         GameMode.DUEL_6 -> simpleLen(1, 7, 6)
         GameMode.DUEL_7 -> simpleLen(1, 8, 7)
         GameMode.RESCUE -> {
@@ -98,7 +105,9 @@ fun gameReducer(state: GameState, action: GameAction): GameState = when (action)
 }
 
 private fun reduceSubmitGuess(state: GameState, a: GameAction.SubmitGuess): GameState {
-    if (!GameDictionary.isValidWord(a.guess)) return state
+    // ProperNoundle guesses are names — not validated against the word dictionary
+    // (only length-gated below). All other modes require a valid dictionary word.
+    if (state.mode != GameMode.PROPERNOUNDLE && !GameDictionary.isValidWord(a.guess)) return state
 
     val newBoards: List<BoardState>
     if (a.applyToAll) {
