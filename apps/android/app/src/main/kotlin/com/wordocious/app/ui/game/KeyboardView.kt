@@ -5,10 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,12 +26,13 @@ import com.wordocious.core.TileState
 private val ROWS = listOf("QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM")
 
 /**
- * On-screen keyboard — matches the web `keyboard.tsx`.
- * - QWERTY / ASDFGHJKL / ZXCVBNM rows
- * - Delete (⌫) on the left of the last row; Enter (↵) on the right
- * - Keys coloured by the best known letter state (combined across all playing boards)
- * - web key palette: keyCorrect = green-600, keyPresent = yellow-600, keyAbsent = gray-400,
- *   keyDefault = #e8e5f0 (light purple-tinted)
+ * On-screen keyboard — audit-then-match of the web `keyboard.tsx`.
+ * - 3 QWERTY rows; ⌫ left of bottom row, ↵ right
+ * - Keys are responsive: each letter key gets equal width (weight 1f),
+ *   wide keys get weight 1.5f — exactly like the web's flex-equal layout.
+ * - Key height is 48dp (matches the web's h-14 ≈ 56px / ~42dp native).
+ * - Letter-state colouring: CORRECT=green-600, PRESENT=yellow-600,
+ *   ABSENT=gray-400, EMPTY=keyDefault (#e8e5f0).
  */
 @Composable
 fun KeyboardView(
@@ -47,43 +48,52 @@ fun KeyboardView(
     ) {
         ROWS.forEachIndexed { rowIdx, row ->
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (rowIdx == 2) KeyButton("⌫", wide = true) { onDelete() }
-
+                if (rowIdx == 2) WideKey("⌫") { onDelete() }
                 row.forEach { ch ->
                     val state = letterStates[ch.toString()] ?: TileState.EMPTY
-                    KeyButton(ch.toString(), keyBg = WTheme.keyColor(state)) { onKey(ch) }
+                    LetterKey(ch.toString(), WTheme.keyColor(state)) { onKey(ch) }
                 }
-
-                if (rowIdx == 2) KeyButton("↵", wide = true) { onEnter() }
+                if (rowIdx == 2) WideKey("↵") { onEnter() }
             }
         }
     }
 }
 
 @Composable
-private fun KeyButton(
-    label: String,
-    wide: Boolean = false,
-    keyBg: Color = WTheme.keyDefault,
-    onClick: () -> Unit,
-) {
+private fun RowScope.LetterKey(label: String, bg: Color, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .width(if (wide) 46.dp else 30.dp)
-            .height(44.dp)
+            .weight(1f)
+            .height(48.dp)
             .clip(RoundedCornerShape(5.dp))
-            .background(keyBg)
+            .background(bg)
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            color = if (keyBg == WTheme.keyDefault) WTheme.text else Color.White,
+            color = if (bg == WTheme.keyDefault) WTheme.text else Color.White,
             fontWeight = FontWeight.Bold,
-            fontSize = if (wide) 13.sp else 14.sp,
+            fontSize = 14.sp,
         )
+    }
+}
+
+@Composable
+private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .weight(1.5f)
+            .height(48.dp)
+            .clip(RoundedCornerShape(5.dp))
+            .background(WTheme.keyDefault)
+            .clickableNoRipple(onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = WTheme.text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }
