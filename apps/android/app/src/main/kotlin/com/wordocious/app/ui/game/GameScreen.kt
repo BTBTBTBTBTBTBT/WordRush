@@ -21,6 +21,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -129,7 +132,25 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
     val isApplyToAll = multiBoard && !isSequential
     val isFinished = state.status != GameStatus.PLAYING
 
-    // Show post-game overlay once all tiles have revealed
+    // Two-phase finish (spec hot-spot #4): a game that finishes LIVE this session
+    // shows the VictoryOverlay first, then taps through to the stats screen.
+    // A game already finished on entry (resumed) skips straight to stats.
+    val wasFinishedOnEntry = remember { state.status != GameStatus.PLAYING }
+    var dismissedVictory by remember { mutableStateOf(false) }
+    val showVictory = isFinished && !wasFinishedOnEntry && !dismissedVictory
+
+    if (showVictory) {
+        // Gauntlet uses its own results screen, not VictoryOverlay (spec #5).
+        if (mode != GameMode.GAUNTLET) {
+            VictoryOverlay(
+                state = state, mode = mode, elapsedSeconds = elapsed,
+                onContinue = { dismissedVictory = true },
+            )
+            return
+        }
+    }
+
+    // Show the stats / post-game screen
     if (isFinished) {
         PostGameScreen(
             state = state,
