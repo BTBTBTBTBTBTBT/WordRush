@@ -174,6 +174,7 @@ private fun ModeCardView(
 
     Box(
         modifier = modifier
+            .cardShadow(14.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(cardBg)
             .border(1.5.dp, cardBorder, RoundedCornerShape(14.dp))

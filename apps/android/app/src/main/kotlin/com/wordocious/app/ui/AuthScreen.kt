@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -132,35 +133,28 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                 )
             }
 
-            // Submit button
-            Button(
-                onClick = {
-                    error = null
-                    if (email.isBlank() || password.isBlank()) {
-                        error = "Email and password are required"
-                        return@Button
-                    }
-                    if (!isSignIn && username.isBlank()) {
-                        error = "Username is required"
-                        return@Button
-                    }
-                    working = true
-                    scope.launch {
-                        val err = if (isSignIn) {
-                            AuthService.signInWithEmail(email.trim(), password)
-                        } else {
-                            AuthService.signUpWithEmail(email.trim(), password, username.trim())
-                        }
-                        working = false
-                        if (err != null) {
-                            error = err
-                        } else {
-                            onAuthenticated()
+            // Submit button (btn-3d: purple face + dark-purple shadow, like web CTA)
+            val submit = {
+                error = null
+                when {
+                    email.isBlank() || password.isBlank() -> error = "Email and password are required"
+                    !isSignIn && username.isBlank() -> error = "Username is required"
+                    else -> {
+                        working = true
+                        scope.launch {
+                            val err = if (isSignIn) AuthService.signInWithEmail(email.trim(), password)
+                            else AuthService.signUpWithEmail(email.trim(), password, username.trim())
+                            working = false
+                            if (err != null) error = err else onAuthenticated()
                         }
                     }
-                },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = WTheme.primary),
+                }
+            }
+            Button3D(
+                onClick = { if (!working) submit() },
+                face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),
+                shadow = Color(0xFF4C1D95),
+                modifier = Modifier.fillMaxWidth(),
                 enabled = !working,
             ) {
                 if (working) {
@@ -168,9 +162,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                 } else {
                     Text(
                         if (isSignIn) "Sign In" else "Create Account",
-                        color = Color.White,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 15.sp,
+                        color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp,
                     )
                 }
             }
