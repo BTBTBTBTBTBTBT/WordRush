@@ -12,17 +12,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.wordocious.app.ui.GameSmokeScreen
 import com.wordocious.app.ui.HomeScreen
 import com.wordocious.app.ui.ModeCard
+import com.wordocious.app.ui.game.GameScreen
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.app.ui.theme.WordociousTheme
+import com.wordocious.core.generateDailySeed
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /**
- * App entry + minimal in-app navigation (Home ↔ Game). A real nav graph
- * (and the 4-tab shell — Home/Leaderboard/Profile/Records) lands with the
- * audit-then-match pass; this keeps the tree shallow while the screens are
- * built out. Web is the source of truth for every screen.
+ * App entry + minimal Home ↔ Game navigation. The 4-tab shell
+ * (Home/Leaderboard/Profile/Records) and NavHost land in the next UI phase.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,16 +40,28 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** UTC date string "YYYY-MM-DD" — matches the web `getDailyDate()` */
+private fun todayUtcDate(): String {
+    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }
+    return sdf.format(Date())
+}
+
 @Composable
 private fun AppNav() {
-    var active by remember { mutableStateOf<ModeCard?>(null) }
-    val card = active
+    var activeCard by remember { mutableStateOf<ModeCard?>(null) }
+    val card = activeCard
 
     if (card?.engineMode != null) {
-        BackHandler { active = null }
-        GameSmokeScreen(mode = card.engineMode, title = card.title, onBack = { active = null })
+        BackHandler { activeCard = null }
+        val seed = generateDailySeed(todayUtcDate(), card.engineMode.name)
+        GameScreen(
+            mode = card.engineMode,
+            title = card.title,
+            seed = seed,
+            onBack = { activeCard = null },
+        )
     } else {
-        // null engineMode (VS) currently has no single-player screen → stay on Home.
-        HomeScreen(onSelectMode = { active = it })
+        // VS Battle (null engineMode) → stay on Home for now.
+        HomeScreen(onSelectMode = { activeCard = it })
     }
 }
