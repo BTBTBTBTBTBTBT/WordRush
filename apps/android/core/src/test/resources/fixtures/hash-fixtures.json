@@ -1,0 +1,66 @@
+[
+  {
+    "input": "",
+    "output": 0
+  },
+  {
+    "input": "a",
+    "output": 97
+  },
+  {
+    "input": "hello",
+    "output": 99162322
+  },
+  {
+    "input": "test-seed-123",
+    "output": 76766287
+  },
+  {
+    "input": "daily-2026-01-15-DUEL",
+    "output": 172914388
+  },
+  {
+    "input": "test-0",
+    "output": 877171275
+  },
+  {
+    "input": "test-1",
+    "output": 877171274
+  },
+  {
+    "input": "test-2",
+    "output": 877171273
+  },
+  {
+    "input": "some-seed-42-prefill-0-0",
+    "output": 347276768
+  },
+  {
+    "input": "gauntlet-seed-blackout-1",
+    "output": 1094718076
+  },
+  {
+    "input": "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "output": 218640813
+  },
+  {
+    "input": "0",
+    "output": 48
+  },
+  {
+    "input": "00000",
+    "output": 45806640
+  },
+  {
+    "input": "zzzzzzzzzzzzzzz",
+    "output": 1646132666
+  },
+  {
+    "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "output": 323643840
+  },
+  {
+    "input": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+    "output": 1690976960
+  }
+]
