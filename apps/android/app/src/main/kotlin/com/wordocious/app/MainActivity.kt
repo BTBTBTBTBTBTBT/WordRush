@@ -52,13 +52,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** UTC date string matching the web's `getDailyDate()` → "YYYY-MM-DD". */
-fun todayUtcDate(): String {
-    val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
-        timeZone = TimeZone.getTimeZone("UTC")
-    }
-    return sdf.format(Date())
+/**
+ * Device-LOCAL date string "YYYY-MM-DD" — matches web `getTodayLocal()` and iOS
+ * `LeaderboardService.todayLocal()`. The daily puzzle, recording day, and
+ * leaderboard grouping ALL key off local midnight (NOT UTC) for cross-platform
+ * parity — two players in the same timezone share the same puzzle + leaderboard.
+ */
+fun todayLocalDate(): String =
+    SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getDefault() }.format(Date())
+
+/** Yesterday's local date — for "Yesterday's Winners" (web `getYesterdayLocal()`). */
+fun yesterdayLocalDate(): String {
+    val cal = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }
+    return SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getDefault() }.format(cal.time)
 }
 
 /** Daily seed for a given mode — matches `generateDailySeed(date, modeName)` in Kotlin core. */
-fun todayUtcSeed(modeName: String): String = generateDailySeed(todayUtcDate(), modeName)
+fun todayLocalSeed(modeName: String): String = generateDailySeed(todayLocalDate(), modeName)

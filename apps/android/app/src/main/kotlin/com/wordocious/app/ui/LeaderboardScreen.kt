@@ -20,6 +20,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -42,7 +46,7 @@ import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.LeaderboardService
 import com.wordocious.app.ui.theme.WTheme
 
-private val MODE_OPTIONS = listOf(
+internal val MODE_OPTIONS = listOf(
     "DUEL" to "Classic", "QUORDLE" to "QuadWord", "OCTORDLE" to "OctoWord",
     "SEQUENCE" to "Succession", "RESCUE" to "Deliverance",
     "DUEL_6" to "Six", "DUEL_7" to "Seven",
@@ -60,6 +64,8 @@ private val MODE_OPTIONS = listOf(
 fun LeaderboardScreen() {
     var selectedMode by remember { mutableStateOf("DUEL") }
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
+    var yesterday by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
+    var showYesterday by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
@@ -69,9 +75,15 @@ fun LeaderboardScreen() {
         entries = LeaderboardService.fetchDailyLeaderboard(selectedMode)
         loading = false
     }
+    LaunchedEffect(selectedMode, showYesterday) {
+        yesterday = if (showYesterday) LeaderboardService.fetchYesterdayWinners(selectedMode) else emptyList()
+    }
+
+    val modeLabel = MODE_OPTIONS.firstOrNull { it.first == selectedMode }?.second ?: selectedMode
+    val userIdx = if (userId != null) entries.indexOfFirst { it.userId == userId } else -1
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
-        // (Shared AppHeader is above.) Page title per spec: DAILY CHALLENGE + countdown.
+        // (Shared AppHeader is above.) Page title: DAILY CHALLENGE + countdown.
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -86,39 +98,144 @@ fun LeaderboardScreen() {
         // Mode picker
         ModePickerRow(selectedMode) { selectedMode = it }
 
-        // User rank
-        val userIdx = if (userId != null) entries.indexOfFirst { it.userId == userId } else -1
-        if (userIdx >= 0) {
-            UserRankCard(rank = userIdx + 1, total = entries.size, entry = entries[userIdx])
-        }
-
-        if (loading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = WTheme.primary)
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+            // Mode info card — icon box + "{n} players today"
+            item {
+                ModeInfoCard(modeLabel = modeLabel, players = entries.size)
+                Spacer(Modifier.height(12.dp))
             }
-        } else if (entries.isEmpty()) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No results today yet. Be the first!", color = WTheme.textMuted, fontWeight = FontWeight.Bold)
-            }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+            // User rank — "You're ranked #N of M"
+            if (userIdx >= 0) {
                 item {
-                    Text(
-                        "TODAY'S LEADERBOARD",
-                        fontSize = 10.sp, fontWeight = FontWeight.Black,
-                        color = WTheme.textMuted, letterSpacing = 1.sp,
-                        modifier = Modifier.padding(vertical = 8.dp),
+                    UserRankCard(rank = userIdx + 1, total = entries.size)
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+            // Leaderboard label
+            item {
+                Text(
+                    "LEADERBOARD", fontSize = 10.sp, fontWeight = FontWeight.Black,
+                    color = WTheme.textMuted, letterSpacing = 1.sp,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+            // Leaderboard body
+            if (loading) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = WTheme.primary)
+                    }
+                }
+            } else if (entries.isEmpty()) {
+                item {
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
+                        Spacer(Modifier.height(8.dp))
+                        Text("No results yet. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            } else {
+                item {
+                    // Card wrapper with dividers between rows (web: rounded surface card).
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                    ) {
+                        entries.forEachIndexed { index, entry ->
+                            LeaderboardRow(
+                                rank = index + 1, entry = entry, mode = selectedMode,
+                                isCurrentUser = entry.userId == userId,
+                            )
+                            if (index < entries.size - 1) Divider()
+                        }
+                    }
+                }
+            }
+            // Yesterday's Winners (collapsible)
+            item {
+                Spacer(Modifier.height(16.dp))
+                Row(
+                    Modifier.fillMaxWidth().clickableNoRipple { showYesterday = !showYesterday }.padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Yesterday's Winners", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        if (showYesterday) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp),
                     )
                 }
-                itemsIndexed(entries) { index, entry ->
-                    LeaderboardRow(
-                        rank = index + 1,
-                        entry = entry,
-                        isCurrentUser = entry.userId == userId,
-                    )
-                    Spacer(Modifier.height(4.dp))
+                if (showYesterday) {
+                    Column(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                    ) {
+                        if (yesterday.isEmpty()) {
+                            Text(
+                                "No results from yesterday", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                color = WTheme.textMuted, modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                        } else {
+                            yesterday.forEachIndexed { i, e ->
+                                YesterdayRow(rank = i + 1, entry = e)
+                                if (i < yesterday.size - 1) Divider()
+                            }
+                        }
+                    }
                 }
-                item { Spacer(Modifier.height(16.dp)) }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun Divider() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+}
+
+/** Rank icon — Crown (#1 gold), Medal (#2 muted / #3 bronze), else "#N". Web parity. */
+@Composable
+private fun RankIcon(rank: Int) {
+    when (rank) {
+        1 -> Icon(
+            androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown),
+            null, tint = Color(0xFFD97706), modifier = Modifier.size(20.dp),
+        )
+        2 -> Icon(Icons.Filled.MilitaryTech, null, tint = WTheme.textMuted, modifier = Modifier.size(20.dp))
+        3 -> Icon(Icons.Filled.MilitaryTech, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
+        else -> Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+            Text("#$rank", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+        }
+    }
+}
+
+@Composable
+private fun ModeInfoCard(modeLabel: String, players: Int) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(WTheme.primary.copy(alpha = 0.10f)),
+            contentAlignment = Alignment.Center,
+        ) { Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.primary, modifier = Modifier.size(16.dp)) }
+        Column {
+            Text(modeLabel, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                Text(
+                    "$players player${if (players != 1) "s" else ""} today",
+                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                )
             }
         }
     }
@@ -168,93 +285,99 @@ internal fun ModePickerRow(selected: String, onSelect: (String) -> Unit) {
 }
 
 @Composable
-private fun UserRankCard(rank: Int, total: Int, entry: LeaderboardService.LeaderboardEntry) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFFFFBEB))
-            .border(1.5.dp, Color(0xFFFDE68A), RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+private fun UserRankCard(rank: Int, total: Int) {
+    Box(
+        modifier = Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFFFFFBEB), WTheme.surface)))
+            .border(1.5.dp, Color(0xFFFDE68A), RoundedCornerShape(16.dp))
+            .padding(12.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.gold, modifier = Modifier.size(16.dp))
-        Text("Your rank: #$rank of $total", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        Spacer(Modifier.weight(1f))
-        Text("${entry.compositeScore.toInt()} pts", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.primary)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("You're ranked ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text("#$rank", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+            Text(" of $total", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
+    }
+}
+
+/** Win/Loss pill (full word "Win"/"Loss"). */
+@Composable
+private fun WinLossPill(completed: Boolean, abbrev: Boolean = false) {
+    Box(
+        Modifier.clip(RoundedCornerShape(4.dp))
+            .background(if (completed) WTheme.winBg else WTheme.lossBg)
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text(
+            if (abbrev) (if (completed) "W" else "L") else (if (completed) "Win" else "Loss"),
+            fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
+            color = if (completed) WTheme.winText else WTheme.lossText,
+        )
     }
 }
 
 @Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, isCurrentUser: Boolean) {
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean) {
     val bg = when {
-        isCurrentUser -> Color(0xFFFFFBEB)
-        rank <= 3 -> Color(0xFFF5F3FF)
-        else -> WTheme.surface
+        isCurrentUser -> Color(0xFFFFFBEB)   // highlight-gold
+        rank <= 3 -> WTheme.surfaceAlt
+        else -> Color.Transparent
     }
-    val border = when {
-        isCurrentUser -> Color(0xFFFDE68A)
-        rank <= 3 -> Color(0xFFE9D5FF)
-        else -> WTheme.border
-    }
-
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(bg)
-            .border(1.dp, border, RoundedCornerShape(10.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Rank badge
-        Box(
-            modifier = Modifier.size(28.dp).clip(CircleShape)
-                .background(rankBadgeBg(rank)),
-            contentAlignment = Alignment.Center,
-        ) {
+        RankIcon(rank)
+        // Username (+ " (you)" gold suffix)
+        Row(Modifier.weight(1f)) {
             Text(
-                rankLabel(rank),
-                fontSize = if (rank <= 3) 14.sp else 11.sp,
-                fontWeight = FontWeight.Black,
-                color = if (rank <= 3) Color.White else WTheme.textSecondary,
+                entry.username ?: "Player",
+                fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
+            if (isCurrentUser) Text(" (you)", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD97706))
         }
-        // Username
-        Text(
-            entry.username ?: "Player",
-            fontSize = 13.sp, fontWeight = FontWeight.Black,
-            color = WTheme.text, modifier = Modifier.weight(1f),
-        )
-        // Stats
-        Text(
-            "${entry.guessCount}g · ${fmtTime(entry.timeSeconds)}",
-            fontSize = 10.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold,
-        )
-        // Score
-        Text(
-            "${entry.compositeScore.toInt()}",
-            fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
-        )
-        // W/L badge
-        Box(
-            Modifier.size(20.dp).clip(RoundedCornerShape(4.dp))
-                .background(if (entry.completed) WTheme.winText else WTheme.lossText),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(if (entry.completed) "W" else "L", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White)
+        // Right column: score over detail line
+        Column(horizontalAlignment = Alignment.End) {
+            Text("${entry.compositeScore.toInt()}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(rowDetail(entry, mode), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                WinLossPill(entry.completed)
+            }
         }
     }
 }
 
-private fun rankLabel(r: Int) = when (r) {
-    1 -> "🥇"; 2 -> "🥈"; 3 -> "🥉"; else -> "#$r"
+@Composable
+private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        RankIcon(rank)
+        Text(entry.username ?: "Player", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f), maxLines = 1)
+        WinLossPill(entry.completed, abbrev = true)
+        Text("${entry.compositeScore.toInt()}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+    }
 }
-private fun rankBadgeBg(r: Int) = when (r) {
-    1 -> Color(0xFFD97706); 2 -> Color(0xFF9CA3AF); 3 -> Color(0xFF92400E)
-    else -> WTheme.surfaceAlt
+
+/** Row detail: "{guesses} Guesses · m s [· bs/tb] [· hint label]". Mirrors web. */
+private fun rowDetail(entry: LeaderboardService.LeaderboardEntry, mode: String): String {
+    val sb = StringBuilder("${entry.guessCount} Guesses · ${fmtTime(entry.timeSeconds)}")
+    if (entry.totalBoards > 1) sb.append(" · ${entry.boardsSolved}/${entry.totalBoards}")
+    formatHintsLabel(mode, entry.hintsUsed)?.let { sb.append(" · $it") }
+    return sb.toString()
 }
-private fun fmtTime(s: Int) = if (s <= 0) "—" else if (s < 60) "${s}s" else "${s / 60}m${s % 60}s"
+
+private val HINT_BEARING = setOf("DUEL_6", "DUEL_7", "PROPERNOUNDLE")
+private fun formatHintsLabel(mode: String, hints: Int): String? {
+    if (mode !in HINT_BEARING) return null
+    if (hints <= 0) return "No hints"
+    return "$hints hint${if (hints == 1) "" else "s"}"
+}
+
+private fun fmtTime(s: Int): String =
+    if (s < 60) "${s}s" else (s % 60).let { sec -> if (sec > 0) "${s / 60}m ${sec}s" else "${s / 60}m" }

@@ -50,7 +50,7 @@ fun MainScreen() {
     // Game screen shown fullscreen (no bottom nav — matches web behavior)
     val card = activeGame
     if (card?.engineMode != null) {
-        val seed = com.wordocious.app.todayUtcSeed(card.engineMode.name)
+        val seed = com.wordocious.app.todayLocalSeed(card.engineMode.name)
         androidx.activity.compose.BackHandler { activeGame = null }
         GameScreen(
             mode = card.engineMode,

@@ -1,6 +1,6 @@
 package com.wordocious.app.data
 
-import com.wordocious.app.todayUtcDate
+import com.wordocious.app.todayLocalDate
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.SerialName
@@ -30,7 +30,7 @@ object DailyCompletionsService {
                 .select(Columns.raw("game_mode,completed,guess_count,time_seconds")) {
                     filter {
                         eq("user_id", userId)
-                        eq("day", todayUtcDate())
+                        eq("day", todayLocalDate())
                         eq("play_type", "solo")
                     }
                 }

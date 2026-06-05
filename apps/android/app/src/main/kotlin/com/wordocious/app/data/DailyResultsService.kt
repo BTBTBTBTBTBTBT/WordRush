@@ -1,6 +1,6 @@
 package com.wordocious.app.data
 
-import com.wordocious.app.todayUtcDate
+import com.wordocious.app.todayLocalDate
 import com.wordocious.core.GameMode
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
@@ -56,7 +56,7 @@ object DailyResultsService {
         hintsUsed: Int = 0,
     ) {
         val userId = AuthService.userId ?: return
-        val day = todayUtcDate()
+        val day = todayLocalDate()
         val gameModeStr = mode.name
         val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
 
