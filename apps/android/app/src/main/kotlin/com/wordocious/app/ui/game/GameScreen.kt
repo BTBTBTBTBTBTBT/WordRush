@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Icon
@@ -63,6 +64,46 @@ private class GameVMFactory(val seed: String, val mode: GameMode) : ViewModelPro
 
 /** Format elapsed seconds as M:SS for the game header. */
 private fun fmtClock(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
+
+/**
+ * Gauntlet 5-node stepper (spec line 102): done = green ✓, active = purple
+ * (glow), future = number; connectors between nodes (green up to active).
+ */
+@Composable
+private fun GauntletStepper(current: Int, total: Int) {
+    val green = Color(0xFF22C55E)
+    val purple = Color(0xFFA855F7)
+    val gray = Color(0xFFD1D5DB)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        for (i in 0 until total) {
+            val done = i < current
+            val active = i == current
+            val nodeColor = when { done -> green; active -> purple; else -> WTheme.surfaceAlt }
+            Box(
+                modifier = Modifier
+                    .size(if (active) 26.dp else 22.dp)
+                    .then(if (active) Modifier.shadow(8.dp, androidx.compose.foundation.shape.CircleShape, clip = false, spotColor = purple) else Modifier)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(nodeColor)
+                    .border(if (done || active) 0.dp else 1.5.dp, gray, androidx.compose.foundation.shape.CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (done) "✓" else "${i + 1}",
+                    color = if (done || active) Color.White else WTheme.textMuted,
+                    fontSize = if (active) 13.sp else 11.sp,
+                    fontWeight = FontWeight.Black,
+                )
+            }
+            if (i < total - 1) {
+                Box(
+                    Modifier.width(14.dp).height(2.dp)
+                        .background(if (i < current) green else gray),
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) {
@@ -122,6 +163,14 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
                 modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // Gauntlet gets a 5-node stepper above the stage name (spec line 102).
+                if (mode == GameMode.GAUNTLET) {
+                    GauntletStepper(
+                        current = state.gauntlet?.currentStage ?: 0,
+                        total = state.gauntlet?.totalStages ?: 5,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
                 Text(
                     com.wordocious.app.ui.modeTitle(mode),
                     fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
