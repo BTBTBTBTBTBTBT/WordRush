@@ -2,6 +2,7 @@ plugins {
     id("com.android.application") version "8.5.2"
     kotlin("android") version "2.0.20"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
+    kotlin("plugin.serialization") version "2.0.20"
 }
 
 android {
@@ -39,6 +40,17 @@ android {
 
 dependencies {
     implementation(project(":core"))
+
+    // Supabase Kotlin client (same project as iOS — eniiqqsxpmuyrspvepiw)
+    val supabaseBom = platform("io.github.jan-tennert.supabase:bom:3.0.2")
+    implementation(supabaseBom)
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:auth-kt")
+    implementation("io.github.jan-tennert.supabase:storage-kt")
+    implementation("io.ktor:ktor-client-android:3.0.2")  // HTTP engine for Supabase on Android
+
+    // kotlinx-serialization for the :app data models
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(composeBom)

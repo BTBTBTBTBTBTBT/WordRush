@@ -2,6 +2,8 @@ package com.wordocious.app.ui.game
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.runtime.LaunchedEffect
+import com.wordocious.app.data.DailyResultsService
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,10 +63,21 @@ fun PostGameScreen(
     val board = state.boards[0]
     val solution = board.solution.uppercase()
 
-    // Elapsed time — not tracked yet in the VM; use 0 until timer lands
     val guessCount = board.guesses.size
     val boardsSolved = state.boards.count { it.status == GameStatus.WON }
     val totalBoards = state.boards.size
+
+    // Record the result to Supabase once (fire-and-forget; silently fails if not signed in)
+    LaunchedEffect(state.status) {
+        DailyResultsService.recordDailyResult(
+            mode = mode,
+            completed = won,
+            guessCount = guessCount,
+            elapsedSeconds = 0, // timer not yet tracked; wired with GameViewModel timer pass
+            boardsSolved = boardsSolved,
+            totalBoards = totalBoards,
+        )
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().background(WTheme.bg),
