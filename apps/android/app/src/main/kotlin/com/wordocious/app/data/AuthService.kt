@@ -23,14 +23,15 @@ import kotlinx.serialization.Serializable
 data class Profile(
     val id: String,
     val username: String? = null,
-    val email: String? = null,
-    @SerialName("display_name") val displayName: String? = null,
     @SerialName("avatar_url") val avatarUrl: String? = null,
     @SerialName("is_pro") val isPro: Boolean = false,
     @SerialName("pro_expires_at") val proExpiresAt: String? = null,
     val level: Int = 1,
     val xp: Int = 0,
-    val streak: Int = 0,
+    @SerialName("current_streak") val currentStreak: Int = 0,
+    @SerialName("best_streak") val bestStreak: Int = 0,
+    @SerialName("total_wins") val totalWins: Int = 0,
+    @SerialName("total_losses") val totalLosses: Int = 0,
 )
 
 /**
@@ -139,8 +140,10 @@ object AuthService {
     /** Load profile row from `profiles` table. */
     suspend fun loadProfile(userId: String) {
         try {
+            // select * (like the web) so missing/extra columns never break decoding;
+            // Profile fields are all defaulted so absent columns fall back gracefully.
             val result = client.postgrest["profiles"]
-                .select(Columns.raw("id,username,email,display_name,avatar_url,is_pro,pro_expires_at,level,xp,streak")) {
+                .select {
                     filter { eq("id", userId) }
                     limit(1)
                 }

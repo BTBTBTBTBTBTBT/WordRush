@@ -11,9 +11,13 @@ object LeaderboardService {
     private val client get() = SupabaseConfig.client
 
     @Serializable
+    data class ProfileRef(val username: String? = null)
+
+    @Serializable
     data class LeaderboardEntry(
         @SerialName("user_id") val userId: String,
-        val username: String? = null,
+        // PostgREST embeds the joined profile as a nested object: profiles(username)
+        val profiles: ProfileRef? = null,
         @SerialName("composite_score") val compositeScore: Double,
         @SerialName("guess_count") val guessCount: Int = 0,
         @SerialName("time_seconds") val timeSeconds: Int = 0,
@@ -21,16 +25,22 @@ object LeaderboardService {
         @SerialName("total_boards") val totalBoards: Int = 1,
         @SerialName("hints_used") val hintsUsed: Int = 0,
         val completed: Boolean = false,
-    )
+    ) {
+        /** Flattened username from the embedded profile, for the UI. */
+        val username: String? get() = profiles?.username
+    }
 
     @Serializable
     data class AllTimeRecord(
         @SerialName("record_type") val recordType: String,
         @SerialName("holder_id") val holderId: String? = null,
-        @SerialName("holder_username") val holderUsername: String? = null,
+        // PostgREST embeds the holder's profile: profiles!inner(username)
+        val profiles: ProfileRef? = null,
         @SerialName("record_value") val recordValue: Double = 0.0,
         @SerialName("game_mode") val gameMode: String? = null,
-    )
+    ) {
+        val holderUsername: String? get() = profiles?.username
+    }
 
     suspend fun fetchDailyLeaderboard(
         gameMode: String,
@@ -61,7 +71,7 @@ object LeaderboardService {
 
     suspend fun fetchAllTimeRecords(): List<AllTimeRecord> = runCatching {
         client.postgrest["all_time_records"]
-            .select()
+            .select(Columns.raw("record_type,record_value,game_mode,holder_id,profiles!inner(username)"))
             .decodeList<AllTimeRecord>()
     }.getOrElse { emptyList() }
 }

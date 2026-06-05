@@ -205,8 +205,10 @@ private fun ModeCardView(
             Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             // Completed daily shows guesses · time; else the mode description (web parity).
             Text(
-                if (isDone) "${completion!!.guessCount} guesses · ${fmtShort(completion.timeSeconds)}"
-                else card.desc,
+                if (isDone) {
+                    val g = completion!!.guessCount
+                    "$g ${if (g == 1) "guess" else "guesses"} · ${fmtShort(completion.timeSeconds)}"
+                } else card.desc,
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             )
         }

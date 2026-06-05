@@ -92,7 +92,7 @@ fun ProfileScreen() {
                     Icon(Icons.Filled.Person, null, tint = WTheme.primary, modifier = Modifier.size(36.dp))
                 }
                 Text(
-                    profile?.username ?: profile?.displayName ?: "Player",
+                    profile?.username ?: "Player",
                     fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text,
                 )
                 if (profile?.isPro == true) {
@@ -126,11 +126,11 @@ fun ProfileScreen() {
             }
         }
 
-        // ── Stats summary ─────────────────────────────────────────
+        // ── Stats summary (from profiles: total_wins/total_losses/current_streak) ──
         item {
-            val totalWins = stats.sumOf { it.wins }
-            val totalLosses = stats.sumOf { it.losses }
-            val streak = profile?.streak ?: 0
+            val totalWins = profile?.totalWins ?: 0
+            val totalLosses = profile?.totalLosses ?: 0
+            val streak = profile?.currentStreak ?: 0
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
