@@ -43,13 +43,13 @@ fun KeyboardView(
 ) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp), // spec row spacing 7
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ROWS.forEachIndexed { rowIdx, row ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp), // spec key spacing 5
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (rowIdx == 2) WideKey("⌫") { onDelete() }
@@ -63,13 +63,15 @@ fun KeyboardView(
     }
 }
 
+// Spec Part 2 Keyboard: letter key 52 tall, rounded6, Nunito Bold 18;
+// action keys keyDefault #E8E5F0, Bold 14.
 @Composable
 private fun RowScope.LetterKey(label: String, bg: Color, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .weight(1f)
-            .height(48.dp)
-            .clip(RoundedCornerShape(5.dp))
+            .height(52.dp)
+            .clip(RoundedCornerShape(6.dp))
             .background(bg)
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
@@ -78,7 +80,7 @@ private fun RowScope.LetterKey(label: String, bg: Color, onClick: () -> Unit) {
             label,
             color = if (bg == WTheme.keyDefault) WTheme.text else Color.White,
             fontWeight = FontWeight.Bold,
-            fontSize = 14.sp,
+            fontSize = 18.sp,
         )
     }
 }
@@ -88,8 +90,8 @@ private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .weight(1.5f)
-            .height(48.dp)
-            .clip(RoundedCornerShape(5.dp))
+            .height(52.dp)
+            .clip(RoundedCornerShape(6.dp))
             .background(WTheme.keyDefault)
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
