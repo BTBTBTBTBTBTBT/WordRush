@@ -102,10 +102,15 @@ object WTheme {
         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
 
+    // Accessibility flags (read in-game; set from Settings, persisted via SettingsPref).
+    // Colorblind swaps correct→orange / present→blue on tiles AND keyboard (web parity).
+    var colorblind by mutableStateOf(false)
+    var reducedMotion by mutableStateOf(false)
+
     /** Board-tile fill per letter state. EMPTY = transparent (border only). */
     fun tileColor(state: TileState): Color = when (state) {
-        TileState.CORRECT -> correct
-        TileState.PRESENT -> present
+        TileState.CORRECT -> if (colorblind) Color(0xFFF5793A) else correct
+        TileState.PRESENT -> if (colorblind) Color(0xFF85C0F9) else present
         TileState.ABSENT -> absent
         TileState.HINT_USED -> hintUsed
         TileState.EMPTY -> Color.Transparent
@@ -113,8 +118,8 @@ object WTheme {
 
     /** Keyboard-key fill per letter state (darker than board tiles). */
     fun keyColor(state: TileState): Color = when (state) {
-        TileState.CORRECT -> keyCorrect
-        TileState.PRESENT, TileState.HINT_USED -> keyPresent
+        TileState.CORRECT -> if (colorblind) Color(0xFFE8612A) else keyCorrect
+        TileState.PRESENT, TileState.HINT_USED -> if (colorblind) Color(0xFF6AAEF0) else keyPresent
         TileState.ABSENT -> keyAbsent
         TileState.EMPTY -> keyDefault
     }

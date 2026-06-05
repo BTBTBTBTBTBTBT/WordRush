@@ -17,6 +17,8 @@ object ThemePref {
 
     fun load() {
         WTheme.palette = Palettes.byKey(current())
+        WTheme.colorblind = SettingsPref.get(SettingsPref.COLORBLIND, false)
+        WTheme.reducedMotion = SettingsPref.get(SettingsPref.REDUCED_MOTION, false)
     }
 
     fun set(key: String) {

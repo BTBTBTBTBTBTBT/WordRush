@@ -48,6 +48,9 @@ fun MiniBoardView(
     // active = current board → yellow border.
     locked: Boolean = false,
     active: Boolean = false,
+    // Rejected-guess feedback on the current input row (red tiles + shake).
+    isInvalid: Boolean = false,
+    shakeKey: Int = 0,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
@@ -120,7 +123,8 @@ fun MiniBoardView(
                 val isLastSubmitted = isPastGuess && rowIdx == lastSubmittedRow
 
                 Row(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                        .then(if (isCurrentRow) Modifier.shakeOnReject(shakeKey) else Modifier),
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     for (col in 0 until wordLen) {
@@ -136,6 +140,7 @@ fun MiniBoardView(
                             letter = letter,
                             state = state,
                             flipDelay = flipDelay,
+                            isInvalid = isInvalid && isCurrentRow && letter.isNotEmpty(),
                             fontSize = fontSize,
                             cornerRadius = 3.dp,
                             square = isExpanded,  // fill (non-square) in the grid; square when zoomed

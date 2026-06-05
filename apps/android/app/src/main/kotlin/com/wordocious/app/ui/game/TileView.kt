@@ -47,33 +47,37 @@ fun TileView(
     square: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    // Orthographic scaleY squash: start at 0 → 1 after flipDelay ms (web: 80ms stagger/tile)
-    var flipped by remember(flipDelay) { mutableStateOf(flipDelay == null) }
+    // Orthographic scaleY squash: start at 0 → 1 after flipDelay ms (web: 80ms stagger/tile).
+    // Under Reduced Motion we snap (no squash) — spec accessibility gating.
+    val animateFlip = flipDelay != null && !WTheme.reducedMotion
+    var flipped by remember(flipDelay) { mutableStateOf(!animateFlip) }
     LaunchedEffect(flipDelay) {
-        if (flipDelay != null) {
-            delay(flipDelay.toLong())
+        if (animateFlip) {
+            delay(flipDelay!!.toLong())
             flipped = true
         }
     }
     val scale by animateFloatAsState(
         targetValue = if (flipped) 1f else 0f,
-        animationSpec = tween(durationMillis = if (flipDelay != null) 160 else 0),
+        animationSpec = tween(durationMillis = if (animateFlip) 160 else 0),
         label = "tileFlip",
     )
 
     val filled = state != TileState.EMPTY
+    // Spec: invalid = bg #FEF2F2 / border #F87171 / text #EF4444. Empty = WHITE fill
+    // + #D1D5DB border (not transparent — was showing the gradient through the tile).
     val bgColor = when {
-        isInvalid -> Color(0xFFFEE2E2)
+        isInvalid -> Color(0xFFFEF2F2)
         filled -> WTheme.tileColor(state)
-        else -> Color.Transparent
+        else -> Color.White
     }
     val borderColor = when {
-        isInvalid -> Color(0xFFDC2626)
+        isInvalid -> Color(0xFFF87171)
         filled -> bgColor
         else -> WTheme.emptyBorder
     }
     val textColor = when {
-        isInvalid -> Color(0xFFDC2626)
+        isInvalid -> Color(0xFFEF4444)
         filled -> Color.White
         else -> WTheme.text
     }
@@ -84,7 +88,7 @@ fun TileView(
             .graphicsLayer { scaleY = if (flipDelay != null) scale else 1f }
             .clip(RoundedCornerShape(cornerRadius))
             .background(bgColor)
-            .then(if (!filled && !isInvalid) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier),
+            .then(if (!filled) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Text(

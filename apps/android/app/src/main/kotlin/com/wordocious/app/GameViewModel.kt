@@ -70,25 +70,40 @@ class GameViewModel(private val seed: String, private val mode: GameMode) : View
     fun elapsedSeconds(): Int =
         ((System.currentTimeMillis() - _state.value.startTime) / 1000).toInt().coerceAtLeast(0)
 
+    // Rejection feedback: a full-length guess that's invalid / already-guessed
+    // turns the current row red and shakes it (bumping shakeKey). 1:1 with iOS.
+    private val _invalidWord = MutableStateFlow(false)
+    val invalidWord: StateFlow<Boolean> = _invalidWord.asStateFlow()
+    private val _shakeKey = MutableStateFlow(0)
+    val shakeKey: StateFlow<Int> = _shakeKey.asStateFlow()
+
     fun typeLetter(c: Char) {
         if (isFinished) return
         if (_input.value.length >= wordLength) return
         if (!c.isLetter()) return
+        _invalidWord.value = false
         _input.value = _input.value + c.uppercaseChar()
     }
 
     fun deleteLetter() {
-        if (_input.value.isNotEmpty()) _input.value = _input.value.dropLast(1)
+        if (_input.value.isNotEmpty()) {
+            _invalidWord.value = false
+            _input.value = _input.value.dropLast(1)
+        }
     }
 
     /** Submit the typed input. Returns false if rejected (length/validity/no-op). */
     fun submit(applyToAll: Boolean = false): Boolean {
         if (isFinished) return false
         val guess = _input.value
-        if (guess.length != wordLength) return false
+        if (guess.length != wordLength) { reject(); return false }
+        // Reject already-guessed words on the active board (UI rule; reducer doesn't dedupe).
+        val activeBoard = _state.value.boards[_state.value.currentBoardIndex]
+        if (activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }) { reject(); return false }
         val before = _state.value
         val after = gameReducer(before, GameAction.SubmitGuess(guess, applyToAll = applyToAll))
-        if (after === before || after == before) return false  // dictionary-rejected or no-op
+        if (after === before || after == before) { reject(); return false } // dictionary-rejected
+        _invalidWord.value = false
         _state.value = after
         _input.value = ""
         persist()
@@ -98,6 +113,12 @@ class GameViewModel(private val seed: String, private val mode: GameMode) : View
             GamePersistence.saveElapsed(seed, mode, finishElapsed) // persist for re-entry
         }
         return true
+    }
+
+    /** Flag the current full-length guess invalid + trigger a shake. */
+    private fun reject() {
+        if (_input.value.length == wordLength) _invalidWord.value = true
+        _shakeKey.value = _shakeKey.value + 1
     }
 
     fun dispatch(action: GameAction) {

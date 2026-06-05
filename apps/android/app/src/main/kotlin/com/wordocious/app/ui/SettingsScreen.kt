@@ -126,11 +126,11 @@ fun SettingsScreen(onDone: () -> Unit) {
             Section("ACCESSIBILITY") {
                 Card {
                     ToggleRow("Colorblind Mode", "High contrast colors", colorblind) {
-                        colorblind = it; SettingsPref.set(SettingsPref.COLORBLIND, it)
+                        colorblind = it; SettingsPref.set(SettingsPref.COLORBLIND, it); WTheme.colorblind = it
                     }
                     Divider()
                     ToggleRow("Reduced Motion", "Minimize animations", reducedMotion) {
-                        reducedMotion = it; SettingsPref.set(SettingsPref.REDUCED_MOTION, it)
+                        reducedMotion = it; SettingsPref.set(SettingsPref.REDUCED_MOTION, it); WTheme.reducedMotion = it
                     }
                 }
             }

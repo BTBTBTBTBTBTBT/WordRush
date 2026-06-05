@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -71,6 +72,25 @@ private class GameVMFactory(val seed: String, val mode: GameMode) : ViewModelPro
 
 /** Format elapsed seconds as M:SS for the game header. */
 private fun fmtClock(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
+
+/**
+ * Horizontal shake for a rejected guess (spec: ±4px `4*sin(d*π*6)` linear 0.4s).
+ * Re-fires whenever [shakeKey] changes. No-op under Reduced Motion.
+ */
+@Composable
+internal fun Modifier.shakeOnReject(shakeKey: Int): Modifier {
+    if (WTheme.reducedMotion) return this
+    val anim = remember { androidx.compose.animation.core.Animatable(0f) }
+    val amplitudePx = with(androidx.compose.ui.platform.LocalDensity.current) { 4.dp.toPx() }
+    androidx.compose.runtime.LaunchedEffect(shakeKey) {
+        if (shakeKey == 0) return@LaunchedEffect
+        anim.snapTo(0f)
+        anim.animateTo(1f, androidx.compose.animation.core.tween(400, easing = androidx.compose.animation.core.LinearEasing))
+    }
+    return this.graphicsLayer {
+        translationX = amplitudePx * kotlin.math.sin(anim.value * Math.PI.toFloat() * 6f)
+    }
+}
 
 /**
  * Hint pills (spec Part 2 Hints UI) — Six/Seven/ProperNoundle. Two pills
@@ -338,18 +358,24 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
 
             // Board area — fills between header and keyboard
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            val invalid by vm.invalidWord.collectAsState()
+            val shakeKey by vm.shakeKey.collectAsState()
             if (multiBoard) {
                 MultiBoardLayout(
                     boards = state.boards,
                     currentGuess = input,
                     currentBoardIndex = state.currentBoardIndex,
                     isSequential = isSequential,
+                    isInvalid = invalid,
+                    shakeKey = shakeKey,
                     modifier = Modifier.fillMaxSize().padding(4.dp),
                 )
             } else {
                 SingleBoard(
                     board = state.boards[0],
                     currentGuess = input,
+                    isInvalid = invalid,
+                    shakeKey = shakeKey,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -427,7 +453,13 @@ private fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modif
  * fits width AND height, then centres it. Font size scales with tile size.
  */
 @Composable
-internal fun SingleBoard(board: BoardState, currentGuess: String, modifier: Modifier = Modifier) {
+internal fun SingleBoard(
+    board: BoardState,
+    currentGuess: String,
+    isInvalid: Boolean = false,
+    shakeKey: Int = 0,
+    modifier: Modifier = Modifier,
+) {
     val wordLen = board.solution.length
     val rows = board.maxGuesses
     val lastSubmittedRow = if (board.guesses.isNotEmpty()) board.guesses.size - 1 else -1
@@ -477,16 +509,18 @@ internal fun SingleBoard(board: BoardState, currentGuess: String, modifier: Modi
                     }
                 }
             }
-            // Current input row
+            // Current input row — turns red + shakes on a rejected guess.
             if (board.guesses.size < board.maxGuesses && board.status == GameStatus.PLAYING) {
                 Row(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier = Modifier.weight(1f).fillMaxWidth().shakeOnReject(shakeKey),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     for (col in 0 until wordLen) {
+                        val letter = currentGuess.getOrNull(col)?.toString() ?: ""
                         TileView(
-                            letter = currentGuess.getOrNull(col)?.toString() ?: "",
+                            letter = letter,
                             state = TileState.EMPTY,
+                            isInvalid = isInvalid && letter.isNotEmpty(),
                             fontSize = tileFontSp,
                             modifier = Modifier.weight(1f),
                         )

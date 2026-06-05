@@ -46,6 +46,8 @@ fun MultiBoardLayout(
     currentGuess: String,
     currentBoardIndex: Int,
     isSequential: Boolean,
+    isInvalid: Boolean = false,
+    shakeKey: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val isOctordle = boards.size > 4
@@ -75,11 +77,12 @@ fun MultiBoardLayout(
                         // NOT hidden — spec hot-spot #8). The active board is highlighted.
                         val isLocked = isSequential && boardIdx > currentBoardIndex
                         val isActive = isSequential && boardIdx == currentBoardIndex && board.status == GameStatus.PLAYING
-                        val liveGuess = when {
-                            isSequential && boardIdx == currentBoardIndex && board.status == GameStatus.PLAYING -> currentGuess
-                            !isSequential && board.status == GameStatus.PLAYING -> currentGuess
-                            else -> ""
+                        val receivesGuess = when {
+                            isSequential && boardIdx == currentBoardIndex && board.status == GameStatus.PLAYING -> true
+                            !isSequential && board.status == GameStatus.PLAYING -> true
+                            else -> false
                         }
+                        val liveGuess = if (receivesGuess) currentGuess else ""
 
                         Box(
                             modifier = Modifier
@@ -98,6 +101,8 @@ fun MultiBoardLayout(
                                 currentGuess = liveGuess,
                                 locked = isLocked,
                                 active = isActive,
+                                isInvalid = isInvalid && receivesGuess,
+                                shakeKey = if (receivesGuess) shakeKey else 0,
                                 modifier = Modifier.fillMaxSize(),
                                 onClick = if (isOctordle && !isInvisible && !isLocked) {
                                     { expandedIndex = boardIdx }
