@@ -149,13 +149,15 @@ Every item below must match the iOS app exactly (which matches the web). Build o
 
 ---
 
-## 8. Open decisions (need your call before Phase 0)
+## 8. Decisions (locked 2026-06-05)
 
-1. **RevenueCat vs. hand-rolled Play webhook** for billing/entitlement (unify both stores, or keep bespoke per-store like iOS).
-2. **`supabase-kt` in the KMP module** (share data layer) vs. Android-only data code.
-3. **Apple sign-in on Android** — include (via web OAuth) for full parity, or Google+email only.
-4. **Co-dev / contractor** for the Android client, or solo focused stretch.
-5. **Eventually fold iOS onto the KMP engine** (retire the Swift port) — now, later, or never.
+1. **Billing/entitlement → lean RevenueCat** (unify App Store + Play behind one entitlement source of truth). Reconsider only if we want to avoid reworking the iOS StoreKit path. *Decide for real at Phase 6, before building either store's billing twice.*
+2. **KMP scope → engine only.** Shared engine includes the parity-critical **scoring/composite-score** logic (so values are identical everywhere). The Supabase **data-access plumbing lives in the Android app** (not `commonMain`) for now — promote to shared only if/when iOS folds onto KMP. `supabase-kt` used Android-side.
+3. **Apple sign-in on Android → yes, for account continuity** (so Apple-account users from iOS aren't locked out), added as a **later auth phase** (Google + email first). No Play requirement; purely continuity.
+4. **Build approach → SOLO**, learning as we go. Division of labor with the assistant: **assistant drives the KMP module + Gradle + iOS-framework export + fixture wiring** (the setup-heavy, drift-critical plumbing); **owner drives the Compose UI** (maps directly onto existing SwiftUI experience — Compose ≈ SwiftUI). Bus-factor remains the open risk to revisit if/when there's a real user base.
+5. **Both native apps on KMP — YES, the north star** (one engine ⇒ parity by construction, drift eliminated). **Sequenced safely:** build the KMP engine now **and design it iOS-consumable from day 1** (exports a native iOS framework) → Android consumes it and ships → **post-Android-launch, fold iOS onto the same KMP engine**, re-validate against the identical fixtures, and **retire the Swift port**. Never swap the live iOS engine mid-build. End state: one KMP engine (iOS+Android) + TS engine (web), all pinned to the same JSON fixtures.
+
+**Net gating item to start Phase 0:** none remain — solo is confirmed, KMP-engine-first is confirmed. Begin Phase 0 (project + KMP module scaffold, iOS-consumable, fixtures wired) when ready.
 
 ---
 
