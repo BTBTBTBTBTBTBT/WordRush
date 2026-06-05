@@ -54,7 +54,7 @@ private val THEMES = listOf(
 )
 
 @Composable
-fun SettingsScreen(onDone: () -> Unit) {
+fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     val scope = rememberCoroutineScope()
     var theme by remember { mutableStateOf(ThemePref.current()) }
     var sound by remember { mutableStateOf(SettingsPref.get(SettingsPref.SOUND, true)) }
@@ -138,10 +138,10 @@ fun SettingsScreen(onDone: () -> Unit) {
             // ABOUT
             Section("ABOUT") {
                 Card {
-                    LinkRow("About Wordocious"); Divider()
-                    LinkRow("Help & Support"); Divider()
-                    LinkRow("Privacy Policy"); Divider()
-                    LinkRow("Terms of Service")
+                    LinkRow("About Wordocious") { onOpenInfo("about") }; Divider()
+                    LinkRow("Help & Support") { onOpenInfo("support") }; Divider()
+                    LinkRow("Privacy Policy") { onOpenInfo("privacy") }; Divider()
+                    LinkRow("Terms of Service") { onOpenInfo("terms") }
                 }
             }
 
@@ -204,9 +204,9 @@ private fun ToggleRow(title: String, sub: String, checked: Boolean, onChange: (B
 }
 
 @Composable
-private fun LinkRow(title: String) {
+private fun LinkRow(title: String, onClick: () -> Unit = {}) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        modifier = Modifier.fillMaxWidth().clickableNoRipple(onClick).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
