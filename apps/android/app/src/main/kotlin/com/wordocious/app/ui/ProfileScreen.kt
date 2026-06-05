@@ -235,6 +235,7 @@ fun ProfileScreen() {
     }
 }
 
+
 @Composable
 private fun StatPill(label: String, value: String, modifier: Modifier = Modifier) {
     Column(

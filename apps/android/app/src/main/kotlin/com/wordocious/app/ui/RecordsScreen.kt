@@ -51,21 +51,12 @@ fun RecordsScreen() {
     val tabs = listOf("Daily", "All-Time")
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "WORDOCIOUS", fontSize = 20.sp, fontWeight = FontWeight.Black,
-                style = TextStyle(brush = WTheme.wordmarkGradient),
-            )
-        }
-
+        // (Shared AppHeader is above.) Page title per spec: RECORDS gradient.
         Text(
             "RECORDS",
-            fontSize = 22.sp, fontWeight = FontWeight.Black, color = WTheme.text,
-            modifier = Modifier.padding(horizontal = 16.dp),
+            fontSize = 28.sp, fontWeight = FontWeight.Black,
+            style = TextStyle(brush = WTheme.wordmarkGradient),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
         Text(
             "Daily rankings & all-time hall of fame",

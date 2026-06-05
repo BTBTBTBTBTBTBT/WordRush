@@ -31,6 +31,7 @@ import java.util.TimeZone
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.wordocious.app.data.ThemePref.load()
         AuthService.initialize()
         setContent {
             WordociousTheme {

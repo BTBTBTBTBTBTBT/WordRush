@@ -32,6 +32,9 @@ data class Profile(
     @SerialName("best_streak") val bestStreak: Int = 0,
     @SerialName("total_wins") val totalWins: Int = 0,
     @SerialName("total_losses") val totalLosses: Int = 0,
+    @SerialName("daily_login_streak") val dailyLoginStreak: Int = 0,
+    @SerialName("best_daily_login_streak") val bestDailyLoginStreak: Int = 0,
+    @SerialName("streak_shields") val streakShields: Int = 0,
 )
 
 /**

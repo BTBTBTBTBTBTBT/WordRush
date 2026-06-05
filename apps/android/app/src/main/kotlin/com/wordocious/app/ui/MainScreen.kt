@@ -45,6 +45,7 @@ private val TABS = listOf(
 fun MainScreen() {
     var selectedTab by remember { mutableIntStateOf(0) }
     var activeGame by remember { mutableStateOf<ModeCard?>(null) }
+    var showSettings by remember { mutableStateOf(false) }
 
     // Game screen shown fullscreen (no bottom nav — matches web behavior)
     val card = activeGame
@@ -57,6 +58,13 @@ fun MainScreen() {
             seed = seed,
             onBack = { activeGame = null },
         )
+        return
+    }
+
+    // Settings overlay (opened from the shared header gear, on any tab)
+    if (showSettings) {
+        androidx.activity.compose.BackHandler { showSettings = false }
+        SettingsScreen(onDone = { showSettings = false })
         return
     }
 
@@ -91,12 +99,16 @@ fun MainScreen() {
             }
         },
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            when (selectedTab) {
-                0 -> HomeScreen(onSelectMode = { activeGame = it })
-                1 -> LeaderboardScreen()
-                2 -> ProfileScreen()
-                3 -> RecordsScreen()
+        androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield)
+            AppHeader(onSettings = { showSettings = true })
+            Box(modifier = Modifier.weight(1f).fillMaxSize()) {
+                when (selectedTab) {
+                    0 -> HomeScreen(onSelectMode = { activeGame = it })
+                    1 -> LeaderboardScreen()
+                    2 -> ProfileScreen()
+                    3 -> RecordsScreen()
+                }
             }
         }
     }

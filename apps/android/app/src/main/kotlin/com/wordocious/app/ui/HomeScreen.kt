@@ -61,19 +61,7 @@ fun HomeScreen(onSelectMode: (ModeCard) -> Unit) {
     }
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
-        // Header (web AppHeader) — wordmark; profile/streak chips are data-driven, deferred.
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "WORDOCIOUS",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                style = TextStyle(brush = WTheme.wordmarkGradient),
-            )
-        }
-
+        // (Shared AppHeader is rendered by MainScreen above all tabs.)
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),

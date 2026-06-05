@@ -71,16 +71,15 @@ fun LeaderboardScreen() {
     }
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        // (Shared AppHeader is above.) Page title per spec: DAILY CHALLENGE + countdown.
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                "WORDOCIOUS", fontSize = 20.sp, fontWeight = FontWeight.Black,
+                "DAILY CHALLENGE", fontSize = 28.sp, fontWeight = FontWeight.Black,
                 style = TextStyle(brush = WTheme.wordmarkGradient),
             )
-            Spacer(Modifier.weight(1f))
             DailyCountdownChip()
         }
 
