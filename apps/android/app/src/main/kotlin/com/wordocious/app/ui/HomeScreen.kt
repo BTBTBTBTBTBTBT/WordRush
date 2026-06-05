@@ -121,14 +121,14 @@ private fun DailyHero() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(Icons.Filled.Star, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
+            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
             Text(
                 "Daily Challenge",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5)))),
             )
-            Icon(Icons.Filled.Star, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
+            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
         }
         Text("9 puzzles · Leaderboards & medals", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9))
         Text("Resets in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9))
@@ -151,7 +151,7 @@ private fun WordOfTheDayCard() {
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(Icons.Filled.MenuBook, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_book_open), null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
             Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
         }
         val display = word?.let { it.first().uppercase() + it.drop(1).lowercase() } ?: "…"
@@ -196,8 +196,13 @@ private fun ModeCardView(
                 when {
                     card.glyph != null -> Text(card.glyph, fontSize = 11.sp, fontWeight = FontWeight.Black, color = card.accent)
                     else -> {
-                        val icon = modeIcon(card.lucide)
-                        if (icon != null) Icon(icon, null, tint = card.accent, modifier = Modifier.size(16.dp))
+                        val res = modeIconRes(card.lucide)
+                        if (res != null) Icon(
+                            painter = androidx.compose.ui.res.painterResource(res),
+                            contentDescription = null,
+                            tint = card.accent,
+                            modifier = Modifier.size(16.dp),
+                        )
                     }
                 }
             }
@@ -234,13 +239,14 @@ private fun ModeCardView(
 private fun fmtShort(secs: Int): String =
     if (secs <= 0) "—" else if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"
 
-private fun modeIcon(lucide: String?): ImageVector? = when (lucide) {
-    "WordleGrid" -> Icons.Filled.GridView
-    "Swords" -> Icons.Filled.Bolt              // material has no swords; exact icon in icon pass
-    "TrendingUp" -> Icons.AutoMirrored.Filled.TrendingUp
-    "Shield" -> Icons.Filled.Shield
-    "Skull" -> Icons.Filled.LocalFireDepartment // approx; exact icon in icon pass
-    "Crown" -> Icons.Filled.WorkspacePremium
+/** Exact lucide / custom icon drawable per mode (matches web MODE_CARDS icons). */
+private fun modeIconRes(lucide: String?): Int? = when (lucide) {
+    "WordleGrid" -> com.wordocious.app.R.drawable.ic_wordle_grid
+    "Swords" -> com.wordocious.app.R.drawable.ic_swords
+    "TrendingUp" -> com.wordocious.app.R.drawable.ic_trending_up
+    "Shield" -> com.wordocious.app.R.drawable.ic_shield
+    "Skull" -> com.wordocious.app.R.drawable.ic_skull
+    "Crown" -> com.wordocious.app.R.drawable.ic_crown
     else -> null
 }
 
