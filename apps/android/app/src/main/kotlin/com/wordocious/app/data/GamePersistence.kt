@@ -34,4 +34,17 @@ object GamePersistence {
     fun clear(seed: String, mode: GameMode) {
         prefs.edit().remove(key(seed, mode)).apply()
     }
+
+    // Elapsed-at-finish: frozen when the game ends so a re-opened finished game
+    // shows the recorded time (not a value that keeps growing from startTime).
+    private fun elapsedKey(seed: String, mode: GameMode) = "elapsed-${mode.name}-$seed"
+
+    fun saveElapsed(seed: String, mode: GameMode, seconds: Int) {
+        prefs.edit().putInt(elapsedKey(seed, mode), seconds).apply()
+    }
+
+    fun loadElapsed(seed: String, mode: GameMode): Int? {
+        val k = elapsedKey(seed, mode)
+        return if (prefs.contains(k)) prefs.getInt(k, 0) else null
+    }
 }

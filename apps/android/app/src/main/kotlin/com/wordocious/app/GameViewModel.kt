@@ -37,8 +37,17 @@ class GameViewModel(private val seed: String, private val mode: GameMode) : View
     private val _input = MutableStateFlow("")
     val currentInput: StateFlow<String> = _input.asStateFlow()
 
-    /** Live elapsed seconds since the game's startTime (wall-clock; persists across resume). */
-    private val _elapsed = MutableStateFlow(elapsedSeconds())
+    /**
+     * Live elapsed seconds. For an in-progress game this is wall-clock from
+     * startTime. For an ALREADY-finished game (resumed from persistence) we use
+     * the frozen elapsed-at-finish so the displayed time/score stays correct
+     * instead of growing from the original startTime.
+     */
+    private val _elapsed = MutableStateFlow(
+        if (_state.value.status != GameStatus.PLAYING)
+            GamePersistence.loadElapsed(seed, mode) ?: elapsedSeconds()
+        else elapsedSeconds()
+    )
     val elapsed: StateFlow<Int> = _elapsed.asStateFlow()
 
     init {
@@ -83,7 +92,11 @@ class GameViewModel(private val seed: String, private val mode: GameMode) : View
         _state.value = after
         _input.value = ""
         persist()
-        if (after.status != GameStatus.PLAYING) _elapsed.value = elapsedSeconds() // freeze at finish
+        if (after.status != GameStatus.PLAYING) {
+            val finishElapsed = elapsedSeconds()
+            _elapsed.value = finishElapsed                       // freeze the displayed timer
+            GamePersistence.saveElapsed(seed, mode, finishElapsed) // persist for re-entry
+        }
         return true
     }
 

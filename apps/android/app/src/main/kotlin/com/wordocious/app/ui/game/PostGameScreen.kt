@@ -60,6 +60,7 @@ fun PostGameScreen(
     elapsedSeconds: Int = 0,
     onBack: () -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val won = state.status == GameStatus.WON
     val board = state.boards[0]
     val solution = board.solution.uppercase()
@@ -184,7 +185,10 @@ fun PostGameScreen(
                     Text(" Home", color = WTheme.text, fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = { /* Share — wired with Android share sheet in next pass */ },
+                    onClick = {
+                        val text = com.wordocious.app.data.ShareHelper.buildShareText(state, mode, elapsedSeconds)
+                        com.wordocious.app.data.ShareHelper.share(context, text)
+                    },
                     modifier = Modifier.weight(1f).height(48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (won) WTheme.winText else WTheme.lossText,
@@ -195,21 +199,45 @@ fun PostGameScreen(
                 }
             }
 
-            // Definition placeholder — wired with networking layer
-            Box(
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
-                    .padding(12.dp),
-            ) {
+            // Word definition (fetched from dictionaryapi.dev, like the web).
+            // Hidden for ProperNoundle (proper nouns have no dictionary entry).
+            if (mode != GameMode.PROPERNOUNDLE) {
+                DefinitionCard(solution)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DefinitionCard(word: String) {
+    val state = androidx.compose.runtime.produceState<com.wordocious.app.data.DefinitionService.WordDefinition?>(
+        initialValue = null, key1 = word,
+    ) {
+        value = com.wordocious.app.data.DefinitionService.fetch(word)
+    }
+    val def = state.value ?: return  // no definition / still loading → render nothing (web parity)
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+            .padding(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (def.phonetic.isNotBlank()) Text(def.phonetic, fontSize = 12.sp, color = WTheme.textMuted)
+            if (def.partOfSpeech.isNotBlank()) {
                 Text(
-                    "Definition for ${solution} loads with the networking layer.",
-                    fontSize = 12.sp, color = WTheme.textMuted,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    def.partOfSpeech,
+                    fontSize = 10.sp, fontWeight = FontWeight.Black,
+                    color = WTheme.wordmarkStart,
+                    modifier = Modifier.clip(RoundedCornerShape(4.dp))
+                        .background(WTheme.surfaceAlt).padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
         }
+        Spacer(Modifier.height(4.dp))
+        Text(def.definition, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary)
     }
 }
 
