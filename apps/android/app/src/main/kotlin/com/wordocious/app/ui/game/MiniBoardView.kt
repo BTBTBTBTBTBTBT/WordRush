@@ -44,6 +44,10 @@ fun MiniBoardView(
     board: BoardState,
     currentGuess: String = "",
     isExpanded: Boolean = false,
+    // Sequence (hot-spot #8): locked = future board → committed rows masked as •;
+    // active = current board → yellow border.
+    locked: Boolean = false,
+    active: Boolean = false,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
 ) {
@@ -52,6 +56,7 @@ fun MiniBoardView(
     val isPlaying = board.status == GameStatus.PLAYING
 
     val borderColor = when {
+        active -> Color(0xFFFACC15)  // active board yellow border (spec)
         isWon -> Color(0xFF4ADE80)   // green-400
         isLost -> Color(0xFFF87171)  // red-400
         else -> Color(0xFFE5E7EB)    // gray-200
@@ -119,9 +124,14 @@ fun MiniBoardView(
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     for (col in 0 until wordLen) {
-                        val letter = guess.getOrNull(col)?.toString() ?: ""
-                        val state = eval?.tiles?.getOrNull(col)?.state ?: TileState.EMPTY
-                        val flipDelay = if (isLastSubmitted) col * 80 else null
+                        // Locked (future Sequence board): mask committed letters as • with no color.
+                        val masked = locked && isPastGuess
+                        val letter = when {
+                            masked -> "•"
+                            else -> guess.getOrNull(col)?.toString() ?: ""
+                        }
+                        val state = if (masked) TileState.EMPTY else (eval?.tiles?.getOrNull(col)?.state ?: TileState.EMPTY)
+                        val flipDelay = if (isLastSubmitted && !locked) col * 80 else null
                         TileView(
                             letter = letter,
                             state = state,

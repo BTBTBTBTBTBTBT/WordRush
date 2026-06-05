@@ -71,9 +71,10 @@ fun MultiBoardLayout(
                         }
                         val board = boards[boardIdx]
                         val isInvisible = expandedIndex == boardIdx
-                        // Succession: boards after currentBoardIndex are locked (hidden)
+                        // Succession: boards after the active index are LOCKED (dimmed + masked,
+                        // NOT hidden — spec hot-spot #8). The active board is highlighted.
                         val isLocked = isSequential && boardIdx > currentBoardIndex
-                        // Only the active board (or any playing board for parallel modes) gets the live guess
+                        val isActive = isSequential && boardIdx == currentBoardIndex && board.status == GameStatus.PLAYING
                         val liveGuess = when {
                             isSequential && boardIdx == currentBoardIndex && board.status == GameStatus.PLAYING -> currentGuess
                             !isSequential && board.status == GameStatus.PLAYING -> currentGuess
@@ -84,11 +85,19 @@ fun MultiBoardLayout(
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(3.dp)
-                                .then(if (isInvisible || isLocked) Modifier.alpha(0f) else Modifier),
+                                .then(
+                                    when {
+                                        isInvisible -> Modifier.alpha(0f)
+                                        isLocked -> Modifier.alpha(0.6f) // dim locked boards
+                                        else -> Modifier
+                                    },
+                                ),
                         ) {
                             MiniBoardView(
                                 board = board,
                                 currentGuess = liveGuess,
+                                locked = isLocked,
+                                active = isActive,
                                 modifier = Modifier.fillMaxSize(),
                                 onClick = if (isOctordle && !isInvisible && !isLocked) {
                                     { expandedIndex = boardIdx }
