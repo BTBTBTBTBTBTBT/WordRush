@@ -1,6 +1,8 @@
-# Wordocious — Native Android Build Plan (Kotlin + Compose + KMP)
+# Wordocious — Native Android Build Plan (Kotlin + Jetpack Compose)
 
 *Created 2026-06-05. Companion to `WORDOCIOUS_BIBLE.md` and `project_native_ios_build`. This is the authoritative plan for the third client: a fully-native Android app at **complete UX/UI parity with the iOS SwiftUI app**, sharing all backend state, and built by reusing every lesson from the iOS build so we don't re-pay for the same troubleshooting.*
+
+> **Build-to spec:** the exhaustive, file-referenced functional/UX/data parity spec — every mode, screen, animation, completed-state, socket event, and Supabase column — lives in **`WORDOCIOUS_ANDROID_PARITY_SPEC.md`** (produced by a 6-agent audit of the iOS app, 2026-06-05). Build each surface against that spec; this document is the *plan/sequencing/decisions*, that one is the *checklist*.
 
 ---
 
@@ -9,30 +11,28 @@
 1. **Pixel-and-behavior parity with the iOS native app.** The iOS app is the source of truth (it itself mirrors wordocious.com). Every color, font, icon, mode card, menu item, animation, screen, and copy string must be identical. AUDIT-THEN-MATCH applies to every surface — read the iOS implementation first, replicate it, never approximate.
 2. **All stats sync across web ⇄ iOS ⇄ Android.** Same Supabase tables, same daily seeds, same socket server. A daily played on Android shows on the web/iOS leaderboard and counts toward the same streak/XP/medals. VS works cross-platform.
 3. **Native feel** — Jetpack Compose, native gestures/animations, Play Billing, AdMob, Google sign-in.
-4. **One engine, not three.** Use **Kotlin Multiplatform (KMP)** so the engine is a single shared module — validated against the *same JSON fixtures* the Swift port uses — instead of a hand-port that drifts.
+4. **Parity by fixtures, not by sharing code.** Hand-port the engine to Kotlin the same proven way we did Swift, and gate it behind the **same JSON fixtures**. Parity is guaranteed by the fixtures whether the engine is shared or copied — and since the engine is mature/stable, a third copy is a light, mechanical sync, not a drift trap. **KMP is explicitly deferred** (see §1) — it pays its cost up front on a solo learner for a benefit that's small for a stable engine.
 
 ---
 
 ## 1. Architecture
 
 ```
-packages/core (TS)  ──┐                         (existing — web source of truth)
-apps/ios/Sources/Core (Swift port) ─┐           (existing — validated vs fixtures)
-shared-engine (KMP, Kotlin) ────────┴──> Android app (Compose UI)   ← NEW
-                                          (optionally consumed by iOS later)
-Supabase (auth, profiles, user_stats, daily_results, matches, gauntlet_stages)  ← shared by all 3
-Railway socket.io server  (server.wordocious.com)                               ← shared by all 3
+packages/core (TS)            ← web source of truth
+apps/ios/Sources/Core (Swift) ← iOS engine (hand-port, validated vs fixtures)
+apps/android …/core (Kotlin)  ← NEW: Android engine (hand-port, validated vs the SAME fixtures)
+                                 └──> Android app (native Jetpack Compose UI)
+Supabase (auth, profiles, user_stats, daily_results, matches, gauntlet_stages) ← shared by all 3
+Railway socket.io server (server.wordocious.com)                               ← shared by all 3
 ```
 
-**KMP shared module (`commonMain`, Kotlin):** the engine only —
-`types · evaluator · seed · dictionary · scoring · reducer · prefill · gauntlet config`.
-Pure logic, no UI, no platform deps. This is the one piece that *must* be bit-identical across platforms; KMP makes it a single source for Android (and a future iOS swap-in).
+**Engine — hand-ported Kotlin, fixture-validated.** Port `types · evaluator · seed · dictionary · scoring · reducer · prefill · gauntlet config` from TS to Kotlin exactly as we did for Swift, and gate it behind the **same JSON fixtures**. Parity is enforced by the fixtures, not by code-sharing. The engine is mature, so keeping a third copy in sync is a light, mechanical task (re-run fixtures on any change).
 
-**Android app (`androidMain` + app module, Compose):** all UI, navigation, persistence, billing, ads, auth, socket client, notifications. Mirrors the iOS app structure 1:1.
+**Android app (Compose):** all UI, navigation, persistence, billing, ads, auth, socket client, notifications — native, mirrors the iOS app structure 1:1.
 
-**Explicitly NOT doing now:** Compose Multiplatform / replacing SwiftUI. iOS stays as-is. KMP is scoped to the engine; the Android UI is native Compose. (Consuming the KMP engine from iOS to retire the Swift port is a *future, optional* cleanup — do not disrupt the shipping iOS app.)
+**KMP is deferred (not chosen).** Kotlin Multiplatform would *share* the engine instead of copying it — but it pays its real cost (multiplatform Gradle + iOS-framework export) **up front**, on a solo dev learning the stack, while its benefit (less sync effort) is **small** for a stable engine and only fully lands after a *future* iOS migration. It's a clean refactor to do **later** — once both apps are stable, or if the engine ever starts changing often — with zero risk to the live iOS app. (Decisive insight: fixtures give parity; KMP only saves sync effort.)
 
-**Data layer option:** `supabase-kt` (Supabase's official Kotlin Multiplatform SDK) can live in the KMP module too, so the data-access code is shared. Recommended — it removes a class of "the Android query doesn't match iOS" bugs.
+**Data layer:** Supabase access via `supabase-kt` lives in the **Android app**. The parity-critical part — the scoring/composite-score *values* — is in the engine port and fixture-checked; the Supabase plumbing is thin and store-specific.
 
 ---
 
@@ -41,15 +41,15 @@ Pure logic, no UI, no platform deps. This is the one piece that *must* be bit-id
 | Concern | Mechanism | Android work |
 |---|---|---|
 | Auth / identity | Supabase auth (email, Google, Apple) | Google sign-in via Credential Manager → `signInWithIdToken`; email; (Apple via web OAuth, optional). Same Supabase project. |
-| Daily puzzles identical | Deterministic seed from date+mode in the engine | KMP engine reproduces the exact seed → same words. **Validate against fixtures.** |
+| Daily puzzles identical | Deterministic seed from date+mode in the engine | Kotlin engine port reproduces the exact seed → same words. **Validate against fixtures.** |
 | Per-mode stats | `user_stats` (solo + vs, seconds) | Read/write the same rows. |
-| Daily leaderboard | `daily_results` | Same composite-score logic (in KMP). |
-| Profile/XP/streak/medals/shields | `profiles` | Same award logic (in KMP/shared). |
+| Daily leaderboard | `daily_results` | Same composite-score logic (in the engine port, fixture-checked). |
+| Profile/XP/streak/medals/shields | `profiles` | Same award logic (in the engine port / shared logic, fixture-checked). |
 | Match history / VS | `matches` (+ `gauntlet_stages`) | Same client-writes design; designated-writer rule already on the server. |
 | Realtime VS + presence | socket.io @ `server.wordocious.com` | Kotlin socket.io client; same event protocol. |
 | Pro entitlement | `profiles.is_pro` / `pro_expires_at` | **Server-side only** (see §4) — never client-writable. |
 
-> The backend is already multi-client. The risk isn't the schema — it's the **engine/scoring/seed logic drifting**. KMP + shared fixtures is the mitigation.
+> The backend is already multi-client. The risk isn't the schema — it's the **engine/scoring/seed logic drifting**. The **shared JSON fixtures** are the mitigation (every engine copy must pass them).
 
 ---
 
@@ -124,8 +124,8 @@ Every item below must match the iOS app exactly (which matches the web). Build o
 
 | Phase | Scope | Exit criteria |
 |---|---|---|
-| **0 — Setup** | Android Studio project, Gradle KMP module, Play Console app, **Play App Signing** + upload keystore, AdMob Android app, Google OAuth Android client, Supabase wired, `server.wordocious.com`. | Empty app installs + signs; Supabase session round-trips. |
-| **1 — KMP engine** | Port engine to Kotlin `commonMain`; wire the **existing JSON fixtures** into a Kotlin test suite. | All fixtures pass — seeds/evals/scoring identical to TS/Swift. |
+| **0 — Setup** | Android Studio project + Kotlin engine module, Play Console app, **Play App Signing** + upload keystore, AdMob Android app, Google OAuth Android client, Supabase wired, `server.wordocious.com`. | Empty app installs + signs; Supabase session round-trips. |
+| **1 — Engine port** | Hand-port the engine to Kotlin; wire the **existing JSON fixtures** into a Kotlin test suite. | All fixtures pass — seeds/evals/scoring identical to TS/Swift. |
 | **2 — Core game** | Compose Tile/Board/Keyboard; Classic daily end-to-end; local persistence. | Play + win/lose Classic; resumes; flip/shake correct. |
 | **3 — All modes + animations** | Six/Seven, Quad/Octo (+fill +zoom), Succession, Deliverance, Gauntlet (+results), ProperNoundle; victory/confetti; post-game + score breakdown + share. | Every mode at iOS parity, side-by-side. |
 | **4 — Auth + data sync** | Google/email login gate; read/write `daily_results`/`user_stats`/`profiles`; medals/XP/streak. | A daily on Android appears on web/iOS leaderboard; stats match. |
@@ -140,7 +140,7 @@ Every item below must match the iOS app exactly (which matches the web). Build o
 
 ## 7. Risks & mitigations
 
-- **Engine drift (TS/Swift/Kotlin).** → KMP single engine + shared fixtures; consider eventually retiring the Swift port by consuming KMP from iOS.
+- **Engine drift (TS/Swift/Kotlin — three copies).** → Shared JSON fixtures gate every copy (proven on Swift); the engine is mature so syncs are rare + mechanical. Optional future KMP consolidation can collapse the two native copies into one.
 - **WebView-vs-native expectation creep.** → We chose native specifically for UX; budget accordingly (this is months, not weeks).
 - **Solo-dev load / bus factor** (partner flagged). → This roughly doubles native maintenance. Decision point: a focused solo stretch vs. an Android co-dev/contractor (also de-risks bus factor).
 - **Billing parity across two stores.** → Evaluate RevenueCat to unify iOS+Android purchases/entitlement.
@@ -152,12 +152,12 @@ Every item below must match the iOS app exactly (which matches the web). Build o
 ## 8. Decisions (locked 2026-06-05)
 
 1. **Billing/entitlement → lean RevenueCat** (unify App Store + Play behind one entitlement source of truth). Reconsider only if we want to avoid reworking the iOS StoreKit path. *Decide for real at Phase 6, before building either store's billing twice.*
-2. **KMP scope → engine only.** Shared engine includes the parity-critical **scoring/composite-score** logic (so values are identical everywhere). The Supabase **data-access plumbing lives in the Android app** (not `commonMain`) for now — promote to shared only if/when iOS folds onto KMP. `supabase-kt` used Android-side.
+2. **Engine → hand-port to Kotlin, validate vs the same fixtures (NOT KMP).** Parity is guaranteed by the fixtures, not by sharing code; a third copy is a light sync given a stable engine, and it avoids the multiplatform-Gradle complexity tax on a solo learner. The parity-critical **scoring/composite-score** logic lives in the engine port. Supabase data-access lives in the Android app (`supabase-kt`). *(Revised from an earlier "both apps on KMP" lean after the ShowLoud-Claude critique — the decisive realization: fixtures give parity, KMP only saves sync effort, which is small for a stable engine.)*
 3. **Apple sign-in on Android → yes, for account continuity** (so Apple-account users from iOS aren't locked out), added as a **later auth phase** (Google + email first). No Play requirement; purely continuity.
-4. **Build approach → SOLO**, learning as we go. Division of labor with the assistant: **assistant drives the KMP module + Gradle + iOS-framework export + fixture wiring** (the setup-heavy, drift-critical plumbing); **owner drives the Compose UI** (maps directly onto existing SwiftUI experience — Compose ≈ SwiftUI). Bus-factor remains the open risk to revisit if/when there's a real user base.
-5. **Both native apps on KMP — YES, the north star** (one engine ⇒ parity by construction, drift eliminated). **Sequenced safely:** build the KMP engine now **and design it iOS-consumable from day 1** (exports a native iOS framework) → Android consumes it and ships → **post-Android-launch, fold iOS onto the same KMP engine**, re-validate against the identical fixtures, and **retire the Swift port**. Never swap the live iOS engine mid-build. End state: one KMP engine (iOS+Android) + TS engine (web), all pinned to the same JSON fixtures.
+4. **Build approach → SOLO**, learning as we go. Division of labor with the assistant: **assistant drives the Kotlin engine port + Gradle/project setup + fixture wiring** (the setup-heavy, drift-critical plumbing); **owner drives the Compose UI** (maps directly onto existing SwiftUI experience — Compose ≈ SwiftUI). Bus-factor remains the open risk to revisit if/when there's a real user base.
+5. **KMP consolidation → optional, later (not now).** Near-term reality: three fixture-validated engine copies (TS web, Swift iOS, Kotlin Android) — parity enforced by the shared fixtures. If the engine ever starts churning, or once both apps are stable, KMP can collapse the two native copies into one (and retire the Swift port) — done in a calm window, never by destabilizing the live iOS app.
 
-**Net gating item to start Phase 0:** none remain — solo is confirmed, KMP-engine-first is confirmed. Begin Phase 0 (project + KMP module scaffold, iOS-consumable, fixtures wired) when ready.
+**Net gating item to start Phase 0:** none remain. Begin Phase 0 (Android project + Kotlin engine-port scaffold, fixtures wired) when ready.
 
 ---
 
