@@ -35,6 +35,10 @@ data class Profile(
     @SerialName("daily_login_streak") val dailyLoginStreak: Int = 0,
     @SerialName("best_daily_login_streak") val bestDailyLoginStreak: Int = 0,
     @SerialName("streak_shields") val streakShields: Int = 0,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("gold_medals") val goldMedals: Int = 0,
+    @SerialName("silver_medals") val silverMedals: Int = 0,
+    @SerialName("bronze_medals") val bronzeMedals: Int = 0,
 )
 
 /**
