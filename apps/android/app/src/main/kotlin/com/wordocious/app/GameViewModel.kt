@@ -1,6 +1,8 @@
 package com.wordocious.app
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.wordocious.app.data.GamePersistence
 import com.wordocious.core.DictionaryLoader
 import com.wordocious.core.GameAction
 import com.wordocious.core.GameMode
@@ -8,28 +10,46 @@ import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
 import com.wordocious.core.createInitialState
 import com.wordocious.core.gameReducer
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
- * Thin UI-state holder over the pure `:core` engine — the Kotlin analogue of the
- * iOS `GameViewModel`. All game rules live in [gameReducer]; this only tracks the
- * in-progress typed input and forwards immutable state transitions to Compose.
+ * UI-state holder over the pure `:core` engine — the Kotlin analogue of the iOS
+ * `GameViewModel`. Adds:
+ *   - a live elapsed-time ticker (for the header + scoring),
+ *   - local persistence (resume daily/in-progress games after backgrounding).
  *
- * This is the foundation the audit-then-match Compose screens build on. Mirrors
- * the iOS shape: `state` (StateFlow) + `currentInput` + type/delete/submit.
+ * All game rules live in [gameReducer]; this only tracks typed input + time and
+ * forwards immutable state transitions to Compose.
  */
-class GameViewModel(seed: String, mode: GameMode) : ViewModel() {
+class GameViewModel(private val seed: String, private val mode: GameMode) : ViewModel() {
 
     private val _state = MutableStateFlow(run {
         DictionaryLoader.ensureLoaded()
-        createInitialState(seed, mode)
+        // Resume a saved game for this seed+mode, else start fresh.
+        GamePersistence.load(seed, mode) ?: createInitialState(seed, mode)
     })
     val state: StateFlow<GameState> = _state.asStateFlow()
 
     private val _input = MutableStateFlow("")
     val currentInput: StateFlow<String> = _input.asStateFlow()
+
+    /** Live elapsed seconds since the game's startTime (wall-clock; persists across resume). */
+    private val _elapsed = MutableStateFlow(elapsedSeconds())
+    val elapsed: StateFlow<Int> = _elapsed.asStateFlow()
+
+    init {
+        // Tick the elapsed timer once per second while the game is in progress.
+        viewModelScope.launch {
+            while (true) {
+                if (!isFinished) _elapsed.value = elapsedSeconds()
+                delay(1000)
+            }
+        }
+    }
 
     /** Active board's solution length — guess/input length must match it. */
     val wordLength: Int
@@ -37,6 +57,9 @@ class GameViewModel(seed: String, mode: GameMode) : ViewModel() {
 
     val isFinished: Boolean
         get() = _state.value.status != GameStatus.PLAYING
+
+    fun elapsedSeconds(): Int =
+        ((System.currentTimeMillis() - _state.value.startTime) / 1000).toInt().coerceAtLeast(0)
 
     fun typeLetter(c: Char) {
         if (isFinished) return
@@ -59,10 +82,15 @@ class GameViewModel(seed: String, mode: GameMode) : ViewModel() {
         if (after === before || after == before) return false  // dictionary-rejected or no-op
         _state.value = after
         _input.value = ""
+        persist()
+        if (after.status != GameStatus.PLAYING) _elapsed.value = elapsedSeconds() // freeze at finish
         return true
     }
 
     fun dispatch(action: GameAction) {
         _state.value = gameReducer(_state.value, action)
+        persist()
     }
+
+    private fun persist() = GamePersistence.save(seed, mode, _state.value)
 }

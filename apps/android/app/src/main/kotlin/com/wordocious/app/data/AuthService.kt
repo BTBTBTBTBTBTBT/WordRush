@@ -97,20 +97,31 @@ object AuthService {
         }
     }
 
-    /** Email + password sign up. Returns null on success, error message on failure. */
+    /**
+     * Email + password sign up. Returns null on success (auto-signed-in), or a
+     * message. When the project requires email confirmation, sign-up succeeds but
+     * no session is created until the user clicks the email link — we surface that
+     * as a confirmation prompt rather than a failure (matches the web flow).
+     */
     suspend fun signUpWithEmail(email: String, password: String, username: String): String? {
         return try {
-            client.auth.signUpWith(Email) {
+            val result = client.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
                 data = kotlinx.serialization.json.buildJsonObject {
                     put("username", kotlinx.serialization.json.JsonPrimitive(username))
                 }
             }
-            val user = client.auth.currentUserOrNull() ?: return "Registration failed"
-            loadProfile(user.id)
-            _isAuthenticated.value = true
-            null
+            val user = client.auth.currentUserOrNull()
+            when {
+                user != null -> {
+                    loadProfile(user.id)
+                    _isAuthenticated.value = true
+                    null
+                }
+                result != null -> "Check your email to confirm your account, then sign in."
+                else -> "Registration failed"
+            }
         } catch (e: Exception) {
             e.message?.take(120) ?: "Sign up failed"
         }

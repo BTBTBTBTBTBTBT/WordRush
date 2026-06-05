@@ -57,6 +57,7 @@ fun PostGameScreen(
     state: GameState,
     mode: GameMode,
     seed: String,
+    elapsedSeconds: Int = 0,
     onBack: () -> Unit,
 ) {
     val won = state.status == GameStatus.WON
@@ -73,7 +74,7 @@ fun PostGameScreen(
             mode = mode,
             completed = won,
             guessCount = guessCount,
-            elapsedSeconds = 0, // timer not yet tracked; wired with GameViewModel timer pass
+            elapsedSeconds = elapsedSeconds,
             boardsSolved = boardsSolved,
             totalBoards = totalBoards,
         )
@@ -152,6 +153,7 @@ fun PostGameScreen(
             // ── Score breakdown ───────────────────────────────────
             ScoreBreakdownCard(
                 guessCount = guessCount,
+                elapsedSeconds = elapsedSeconds,
                 won = won,
                 mode = mode,
                 boardsSolved = boardsSolved,
@@ -164,6 +166,7 @@ fun PostGameScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 StatChip("Guesses", "$guessCount / ${board.maxGuesses}", Modifier.weight(1f))
+                StatChip("Time", fmtTimeStat(elapsedSeconds), Modifier.weight(1f))
                 if (totalBoards > 1) StatChip("Boards", "$boardsSolved / $totalBoards", Modifier.weight(1f))
             }
 
@@ -226,33 +229,49 @@ private fun StatChip(label: String, value: String, modifier: Modifier = Modifier
 }
 
 /**
- * Score breakdown card — ported from web score-breakdown.tsx.
- * Simplified formula matching the web's `computeScoreBreakdown`:
- * base 1000 (win) or 0, + time bonus (deferred), + completion bonus for multi-board.
+ * Score breakdown card — ported from web score-breakdown.tsx. Uses the SAME
+ * formula as DailyResultsService.computeCompositeScore so the displayed total
+ * equals the score recorded to the leaderboard (web parity).
  */
 @Composable
 private fun ScoreBreakdownCard(
     guessCount: Int,
+    elapsedSeconds: Int,
     won: Boolean,
     mode: GameMode,
     boardsSolved: Int,
     totalBoards: Int,
 ) {
+    val timeCap = when (mode) {
+        GameMode.DUEL, GameMode.TOURNAMENT -> 300
+        GameMode.DUEL_6 -> 420
+        GameMode.DUEL_7 -> 540
+        GameMode.QUORDLE -> 600
+        GameMode.OCTORDLE -> 900
+        GameMode.SEQUENCE -> 600
+        GameMode.RESCUE -> 480
+        GameMode.GAUNTLET -> 1800
+        GameMode.PROPERNOUNDLE -> 360
+        else -> 300
+    }
     val maxGuesses = when (mode) {
-        GameMode.DUEL, GameMode.RESCUE, GameMode.PROPERNOUNDLE -> 6
+        GameMode.DUEL, GameMode.RESCUE, GameMode.PROPERNOUNDLE, GameMode.TOURNAMENT -> 6
         GameMode.DUEL_6 -> 7
         GameMode.DUEL_7 -> 8
         GameMode.QUORDLE, GameMode.SEQUENCE -> 9
         GameMode.OCTORDLE -> 13
         GameMode.GAUNTLET -> 6
-        GameMode.TOURNAMENT -> 6
         else -> 6
     }
+    val hasHints = mode == GameMode.DUEL_6 || mode == GameMode.DUEL_7 || mode == GameMode.PROPERNOUNDLE
+
     val basePoints = if (won) 1000 else 0
+    val timeUnder = if (won) maxOf(0, timeCap - elapsedSeconds) else 0
+    val timeBonus = timeUnder / 5  // matches floor(timeUnder/5)
     val guessesLeft = if (won) maxOf(0, maxGuesses - guessCount) else 0
-    val guessBonus = guessesLeft * 50
-    val completionBonus = if (totalBoards > 1) (boardsSolved.toFloat() / totalBoards) * 200 else 0f
-    val total = basePoints + guessBonus + completionBonus.toInt()
+    val guessBonus = if (won && hasHints) guessesLeft * 50 else 0
+    val completionBonus = if (totalBoards > 1) ((boardsSolved.toFloat() / totalBoards) * 200).toInt() else 0
+    val total = basePoints + timeBonus + guessBonus + completionBonus
 
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -278,13 +297,17 @@ private fun ScoreBreakdownCard(
         }
         Spacer(Modifier.height(6.dp))
         ScoreRow("Win bonus", if (won) "" else "did not finish", basePoints)
+        if (won && timeBonus > 0) ScoreRow("Time bonus", "${fmtTimeStat(timeUnder)} under cap", timeBonus)
         if (won && guessBonus > 0) ScoreRow("Guess bonus", "$guessesLeft unused × 50", guessBonus)
         if (totalBoards > 1) ScoreRow(
             "Completion", "$boardsSolved/$totalBoards boards",
-            completionBonus.toInt(),
+            completionBonus,
         )
     }
 }
+
+private fun fmtTimeStat(secs: Int): String =
+    if (secs <= 0) "0s" else if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"
 
 @Composable
 private fun ScoreRow(label: String, detail: String, value: Int) {

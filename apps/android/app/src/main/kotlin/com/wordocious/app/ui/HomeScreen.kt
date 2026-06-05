@@ -53,6 +53,13 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun HomeScreen(onSelectMode: (ModeCard) -> Unit) {
+    // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
+    val completions by androidx.compose.runtime.produceState(
+        initialValue = emptyMap<String, com.wordocious.app.data.DailyCompletionsService.Completion>()
+    ) {
+        value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
+    }
+
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         // Header (web AppHeader) — wordmark; profile/streak chips are data-driven, deferred.
         Row(
@@ -88,7 +95,8 @@ fun HomeScreen(onSelectMode: (ModeCard) -> Unit) {
             MODE_CARDS.chunked(2).forEach { rowCards ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     rowCards.forEach { card ->
-                        ModeCardView(card, Modifier.weight(1f)) { onSelectMode(card) }
+                        val completion = card.engineMode?.let { completions[it.name] }
+                        ModeCardView(card, completion, Modifier.weight(1f)) { onSelectMode(card) }
                     }
                     if (rowCards.size == 1) Spacer(Modifier.weight(1f))
                 }
@@ -153,12 +161,22 @@ private fun WordOfTheDayCard() {
 }
 
 @Composable
-private fun ModeCardView(card: ModeCard, modifier: Modifier, onClick: () -> Unit) {
+private fun ModeCardView(
+    card: ModeCard,
+    completion: com.wordocious.app.data.DailyCompletionsService.Completion?,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    val isDone = completion != null
+    // Completed daily: soft tint in the mode's accent + accent border (web parity).
+    val cardBg = if (isDone) card.accent.copy(alpha = 0.06f) else WTheme.surface
+    val cardBorder = if (isDone) card.accent.copy(alpha = 0.4f) else WTheme.border
+
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
+            .background(cardBg)
+            .border(1.5.dp, cardBorder, RoundedCornerShape(14.dp))
             .clickableNoRipple(onClick),
     ) {
         // Top accent bar (web h-1 gradient accent → accent88)
@@ -185,10 +203,34 @@ private fun ModeCardView(card: ModeCard, modifier: Modifier, onClick: () -> Unit
             }
             Spacer(Modifier.height(6.dp))
             Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text(card.desc, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            // Completed daily shows guesses · time; else the mode description (web parity).
+            Text(
+                if (isDone) "${completion!!.guessCount} guesses · ${fmtShort(completion.timeSeconds)}"
+                else card.desc,
+                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            )
+        }
+
+        // W/L pill top-right when today's daily is on the books (web parity).
+        if (isDone) {
+            Box(
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                    .size(20.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (completion!!.completed) Color(0xFF16A34A) else Color(0xFFDC2626)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (completion.completed) "W" else "L",
+                    fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
+                )
+            }
         }
     }
 }
+
+private fun fmtShort(secs: Int): String =
+    if (secs <= 0) "—" else if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"
 
 private fun modeIcon(lucide: String?): ImageVector? = when (lucide) {
     "WordleGrid" -> Icons.Filled.GridView

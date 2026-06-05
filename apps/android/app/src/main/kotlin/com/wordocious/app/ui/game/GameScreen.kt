@@ -54,6 +54,9 @@ private class GameVMFactory(val seed: String, val mode: GameMode) : ViewModelPro
     override fun <T : ViewModel> create(modelClass: Class<T>): T = GameViewModel(seed, mode) as T
 }
 
+/** Format elapsed seconds as M:SS for the game header. */
+private fun fmtClock(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
+
 @Composable
 fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) {
     val vm: GameViewModel = viewModel(
@@ -62,6 +65,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
     )
     val state by vm.state.collectAsState()
     val input by vm.currentInput.collectAsState()
+    val elapsed by vm.elapsed.collectAsState()
 
     val multiBoard = state.boards.size > 1
     val isSequential = mode == GameMode.SEQUENCE
@@ -75,6 +79,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
             state = state,
             mode = mode,
             seed = seed,
+            elapsedSeconds = elapsed,
             onBack = onBack,
         )
         return
@@ -93,16 +98,21 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
                 modifier = Modifier.clickableNoRipple(onBack).padding(end = 8.dp),
             )
             Text(title, color = WTheme.text, fontSize = 16.sp, fontWeight = FontWeight.Black)
+            Spacer(Modifier.weight(1f))
             if (mode == GameMode.GAUNTLET) {
                 val stageNum = (state.gauntlet?.currentStage ?: 0) + 1
                 val totalStages = state.gauntlet?.totalStages ?: 5
-                val stageName = state.gauntlet?.stages?.getOrNull(state.gauntlet!!.currentStage)?.name ?: ""
-                Spacer(Modifier.weight(1f))
                 Text(
-                    "Stage $stageNum/$totalStages · $stageName",
+                    "Stage $stageNum/$totalStages  ",
                     color = WTheme.textMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                 )
             }
+            // Live timer (web shows elapsed time in the game header)
+            Text(
+                fmtClock(elapsed),
+                color = WTheme.textSecondary, fontSize = 13.sp, fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(end = 4.dp),
+            )
         }
 
         // Board area — fills between header and keyboard
