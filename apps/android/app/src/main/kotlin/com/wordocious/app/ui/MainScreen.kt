@@ -26,9 +26,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.game.GameScreen
-import com.wordocious.app.ui.placeholder.LeaderboardScreen
-import com.wordocious.app.ui.placeholder.ProfileScreen
-import com.wordocious.app.ui.placeholder.RecordsScreen
 import com.wordocious.app.ui.theme.WTheme
 
 /**
