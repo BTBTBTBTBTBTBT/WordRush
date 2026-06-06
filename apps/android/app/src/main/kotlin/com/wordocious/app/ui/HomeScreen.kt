@@ -131,6 +131,10 @@ private fun WordOfTheDayCard() {
         val daysSinceEpoch = (System.currentTimeMillis() / 86_400_000L).toInt()
         value = if (sols.isNotEmpty()) sols[daysSinceEpoch % sols.size] else null
     }
+    // Definition from dictionaryapi.dev (same source as the post-game card).
+    val def by produceState<com.wordocious.app.data.DefinitionService.WordDefinition?>(initialValue = null, key1 = word) {
+        value = word?.let { com.wordocious.app.data.DefinitionService.fetch(it) }
+    }
     Column(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
@@ -142,9 +146,19 @@ private fun WordOfTheDayCard() {
             Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_book_open), null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
             Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
         }
-        val display = word?.let { it.first().uppercase() + it.drop(1).lowercase() } ?: "…"
-        Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        // (Definition needs the dictionary API — wired with the networking layer.)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val display = word?.let { it.first().uppercase() + it.drop(1).lowercase() } ?: "…"
+            Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            def?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
+                Text(
+                    it.partOfSpeech.lowercase(), fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.wordmarkStart,
+                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(WTheme.surfaceAlt).padding(horizontal = 6.dp, vertical = 2.dp),
+                )
+            }
+        }
+        def?.takeIf { it.definition.isNotBlank() }?.let {
+            Text(it.definition, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary, maxLines = 2, modifier = Modifier.padding(top = 2.dp))
+        }
     }
 }
 
