@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Star
@@ -73,6 +75,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}) {
     var recentMatches by remember { mutableStateOf<List<ProfileService.RecentMatch>>(emptyList()) }
     var medals by remember { mutableStateOf<List<ProfileService.UserMedal>>(emptyList()) }
     var todayDailies by remember { mutableStateOf<Map<String, DailyCompletionsService.Completion>>(emptyMap()) }
+    var unlockedAchievements by remember { mutableStateOf<Set<String>>(emptySet()) }
     var loading by remember { mutableStateOf(true) }
 
     val userId = profile?.id
@@ -82,6 +85,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}) {
             recentMatches = ProfileService.fetchRecentMatches(userId)
             medals = ProfileService.fetchUserMedals(userId, limit = 100)
             todayDailies = DailyCompletionsService.fetchTodayCompletions()
+            unlockedAchievements = com.wordocious.app.data.AchievementService.fetchUnlocked(userId)
         }
         loading = false
     }
@@ -112,6 +116,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}) {
 
         // ── D. Daily Medals ───────────────────────────────────────
         item { DailyMedals(profile, medals) }
+
+        // ── Achievements (collapsible 72-item grid) ───────────────
+        item { AchievementsSection(unlockedAchievements) }
 
         // ── E. Stats by mode ──────────────────────────────────────
         if (loading) {
@@ -396,6 +403,53 @@ private fun MedalCard(crown: Boolean, count: Int, label: String, color: Color, m
 @Composable
 private fun SectionLabel(text: String) {
     Text(text, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+}
+
+// ── Achievements ──────────────────────────────────────────────────────────────
+@Composable
+private fun AchievementsSection(unlocked: Set<String>) {
+    val all = com.wordocious.app.data.AchievementService.all
+    var open by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().clickableNoRipple { open = !open }.padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("ACHIEVEMENTS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
+            Text(
+                "${unlocked.size}/${all.size}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceAlt).padding(horizontal = 6.dp, vertical = 2.dp),
+            )
+            Spacer(Modifier.weight(1f))
+            Icon(
+                if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp),
+            )
+        }
+        if (open) {
+            Spacer(Modifier.height(8.dp))
+            all.chunked(3).forEach { row ->
+                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { a ->
+                        val on = unlocked.contains(a.key)
+                        Column(
+                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                                .background(if (on) Color(0xFFF3F0FF) else Color(0xFFFAFAFA))
+                                .border(1.5.dp, if (on) Color(0xFFC4B5FD) else WTheme.border, RoundedCornerShape(12.dp))
+                                .padding(10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Text(if (on) "✓" else "?", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (on) WTheme.primary else WTheme.textMuted)
+                            Text(a.name, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Text(a.description, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 3, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        }
+                    }
+                    // pad incomplete final row so cells keep equal width
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+    }
 }
 
 private fun modeLabel(mode: String) = when (mode) {
