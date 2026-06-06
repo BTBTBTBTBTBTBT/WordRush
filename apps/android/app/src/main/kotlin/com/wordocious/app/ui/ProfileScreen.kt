@@ -69,7 +69,7 @@ import kotlinx.coroutines.launch
 private val DAILY_MODES = listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE")
 
 @Composable
-fun ProfileScreen(onGoPro: () -> Unit = {}) {
+fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}) {
     val profile by AuthService.profile.collectAsState()
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf<List<ProfileService.UserStat>>(emptyList()) }
@@ -102,7 +102,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}) {
         item { Spacer(Modifier.height(8.dp)) }
 
         // ── A. Header ─────────────────────────────────────────────
-        item { ProfileHeader(profile, onGoPro) }
+        item { ProfileHeader(profile, onGoPro, onEditProfile) }
 
         // ── B. Today's Dailies ────────────────────────────────────
         item { TodaysDailies(todayDailies) }
@@ -211,7 +211,7 @@ private fun memberSince(createdAt: String?): String? {
 }
 
 @Composable
-private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: () -> Unit = {}) {
+private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}) {
     val level = profile?.level ?: 1
     val xp = profile?.xp ?: 0
     val tier = levelTier(level)
@@ -279,6 +279,13 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
         memberSince(profile?.createdAt)?.let {
             Text("Member since $it", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
+
+        // Edit Profile
+        Text(
+            "Edit Profile", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
+            modifier = Modifier.clip(RoundedCornerShape(8.dp)).border(1.5.dp, WTheme.border, RoundedCornerShape(8.dp))
+                .clickableNoRipple(onEditProfile).padding(horizontal = 14.dp, vertical = 6.dp),
+        )
 
         // Go Pro (only for non-Pro)
         if (profile?.isPro != true) {

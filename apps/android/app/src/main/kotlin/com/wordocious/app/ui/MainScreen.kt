@@ -69,6 +69,7 @@ fun MainScreen() {
         when (route) {
             "help" -> HelpScreen(onDone = { infoRoute = null })
             "pro" -> ProScreen(onDone = { infoRoute = null })
+            "edit" -> EditProfileScreen(onDone = { infoRoute = null })
             else -> InfoScreen(kind = route, onDone = { infoRoute = null })
         }
         return
@@ -119,7 +120,7 @@ fun MainScreen() {
                 when (selectedTab) {
                     0 -> HomeScreen(onSelectMode = { activeGame = it })
                     1 -> LeaderboardScreen()
-                    2 -> ProfileScreen(onGoPro = { infoRoute = "pro" })
+                    2 -> ProfileScreen(onGoPro = { infoRoute = "pro" }, onEditProfile = { infoRoute = "edit" })
                     3 -> RecordsScreen()
                 }
             }
