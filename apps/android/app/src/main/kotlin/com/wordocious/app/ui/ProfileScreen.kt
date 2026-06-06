@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -76,6 +77,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}) {
     var medals by remember { mutableStateOf<List<ProfileService.UserMedal>>(emptyList()) }
     var todayDailies by remember { mutableStateOf<Map<String, DailyCompletionsService.Completion>>(emptyMap()) }
     var unlockedAchievements by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var guessDist by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.GuessBucket>>(emptyList()) }
+    var activity7 by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DayActivity>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
 
     val userId = profile?.id
@@ -86,6 +89,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}) {
             medals = ProfileService.fetchUserMedals(userId, limit = 100)
             todayDailies = DailyCompletionsService.fetchTodayCompletions()
             unlockedAchievements = com.wordocious.app.data.AchievementService.fetchUnlocked(userId)
+            guessDist = com.wordocious.app.data.MatchStatsService.guessDistribution(userId)
+            activity7 = com.wordocious.app.data.MatchStatsService.activity(userId, days = 7)
         }
         loading = false
     }
@@ -112,6 +117,14 @@ fun ProfileScreen(onGoPro: () -> Unit = {}) {
                 dailyStreak = profile?.dailyLoginStreak ?: 0,
                 bestDailyStreak = profile?.bestDailyLoginStreak ?: 0,
             )
+        }
+
+        // ── Dashboard: Guess Distribution + Last 7 Days ───────────
+        if (guessDist.any { it.count > 0 }) {
+            item { GuessDistributionCard(guessDist) }
+        }
+        if (activity7.isNotEmpty()) {
+            item { ActivityCard(activity7) }
         }
 
         // ── D. Daily Medals ───────────────────────────────────────
@@ -414,6 +427,66 @@ private fun MedalCard(crown: Boolean, count: Int, label: String, color: Color, m
 @Composable
 private fun SectionLabel(text: String) {
     Text(text, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+}
+
+// ── Dashboard charts ──────────────────────────────────────────────────────────
+/** Guess-distribution horizontal bars (1..6), bar width ∝ count. */
+@Composable
+private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchStatsService.GuessBucket>) {
+    val max = (buckets.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel("GUESS DISTRIBUTION")
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            buckets.forEach { b ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("${b.guesses}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(12.dp))
+                    Box(Modifier.weight(1f).height(20.dp), contentAlignment = Alignment.CenterStart) {
+                        val frac = (b.count.toFloat() / max).coerceIn(0f, 1f)
+                        Box(
+                            Modifier.fillMaxWidth(frac.coerceAtLeast(if (b.count > 0) 0.06f else 0f)).height(20.dp)
+                                .clip(RoundedCornerShape(4.dp)).background(WTheme.correct),
+                            contentAlignment = Alignment.CenterEnd,
+                        ) {
+                            if (b.count > 0) Text("${b.count}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White, modifier = Modifier.padding(end = 6.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Last-7-days activity bars (height ∝ games played; won portion in green). */
+@Composable
+private fun ActivityCard(activity: List<com.wordocious.app.data.MatchStatsService.DayActivity>) {
+    val max = (activity.maxOfOrNull { it.played } ?: 1).coerceAtLeast(1)
+    val total = activity.sumOf { it.played }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            SectionLabel("LAST 7 DAYS")
+            Text("$total ${if (total == 1) "game" else "games"}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+        }
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp).height(80.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom,
+        ) {
+            activity.forEach { d ->
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                    val frac = (d.played.toFloat() / max).coerceIn(0.04f, 1f)
+                    Box(
+                        Modifier.fillMaxWidth(0.7f).fillMaxHeight(frac).clip(RoundedCornerShape(3.dp))
+                            .background(if (d.won > 0) WTheme.correct else WTheme.absent.copy(alpha = 0.4f)),
+                    )
+                    Text(d.day.takeLast(2), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+        }
+    }
 }
 
 // ── Achievements ──────────────────────────────────────────────────────────────
