@@ -211,12 +211,23 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Avatar (initial in gradient circle — image loading is a follow-up).
+        // Avatar — real image (avatar_url) via Coil, else the initial in a gradient circle.
+        val avatarUrl = profile?.avatarUrl?.takeIf { it.isNotBlank() }
         Box(
             Modifier.size(96.dp).clip(CircleShape)
                 .background(Brush.linearGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd))),
             contentAlignment = Alignment.Center,
-        ) { Text(initial, fontSize = 40.sp, fontWeight = FontWeight.Black, color = Color.White) }
+        ) {
+            if (avatarUrl != null) {
+                coil.compose.AsyncImage(
+                    model = avatarUrl, contentDescription = "Avatar",
+                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                )
+            } else {
+                Text(initial, fontSize = 40.sp, fontWeight = FontWeight.Black, color = Color.White)
+            }
+        }
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black, color = WTheme.text)
