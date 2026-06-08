@@ -17,6 +17,7 @@ object ProfileService {
         @SerialName("total_games") val totalGames: Int = 0,
         @SerialName("best_score") val bestScore: Double? = null,
         @SerialName("fastest_time") val fastestTime: Int? = null,
+        @SerialName("average_time") val averageTime: Int = 0,
     )
 
     @Serializable

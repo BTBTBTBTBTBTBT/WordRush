@@ -2,6 +2,7 @@ package com.wordocious.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,6 +80,12 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}) {
     var unlockedAchievements by remember { mutableStateOf<Set<String>>(emptySet()) }
     var guessDist by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.GuessBucket>>(emptyList()) }
     var activity7 by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DayActivity>>(emptyList()) }
+    var solveTimes by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.SolvePoint>>(emptyList()) }
+    var timeOfDay by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.HourBucket>>(emptyList()) }
+    var topWords by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.TopWord>>(emptyList()) }
+    var proInsights by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.ProInsights()) }
+    // Per-mode dashboard filter — null == "All" (global view). Mirrors iOS ProfileModePicker.
+    var selectedMode by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
 
     val userId = profile?.id
@@ -89,10 +96,21 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}) {
             medals = ProfileService.fetchUserMedals(userId, limit = 100)
             todayDailies = DailyCompletionsService.fetchTodayCompletions()
             unlockedAchievements = com.wordocious.app.data.AchievementService.fetchUnlocked(userId)
-            guessDist = com.wordocious.app.data.MatchStatsService.guessDistribution(userId)
-            activity7 = com.wordocious.app.data.MatchStatsService.activity(userId, days = 7)
         }
         loading = false
+    }
+    // Mode-scoped chart data — reloads whenever the picker changes.
+    val isProActive = AuthService.isProActive
+    LaunchedEffect(userId, selectedMode, isProActive) {
+        val uid = userId ?: return@LaunchedEffect
+        val m = selectedMode
+        guessDist = com.wordocious.app.data.MatchStatsService.guessDistribution(uid, m)
+        activity7 = com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = m)
+        solveTimes = com.wordocious.app.data.MatchStatsService.solveTimes(uid, m)
+        timeOfDay = com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m)
+        topWords = com.wordocious.app.data.MatchStatsService.topWords(uid, m)
+        proInsights = if (m != null && isProActive) com.wordocious.app.data.MatchStatsService.proInsights(uid, m)
+        else com.wordocious.app.data.MatchStatsService.ProInsights()
     }
 
     LazyColumn(
@@ -119,12 +137,31 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}) {
             )
         }
 
-        // ── Dashboard: Guess Distribution + Last 7 Days ───────────
+        // ── Dashboard: per-mode picker + charts ────────────────────
+        item {
+            val gamesPerMode = stats.groupBy { it.gameMode }.mapValues { (_, rows) -> rows.sumOf { it.totalGames } }
+            ProfileModePicker(selected = selectedMode, gamesPerMode = gamesPerMode, onSelect = { selectedMode = it })
+        }
         if (guessDist.any { it.count > 0 }) {
             item { GuessDistributionCard(guessDist) }
         }
         if (activity7.isNotEmpty()) {
             item { ActivityCard(activity7) }
+        }
+        if (solveTimes.size >= 2) {
+            item { SolveTimeCard(solveTimes) }
+        }
+        if (timeOfDay.any { it.played > 0 }) {
+            item { WhenYouPlayCard(timeOfDay) }
+        }
+        if (topWords.isNotEmpty()) {
+            item { TopWordsCard(topWords) }
+        }
+        // Per-mode Pro Insights (selected mode) / global Pro Stats (All view) —
+        // both self-gate: locked teaser for free users, real data for Pro.
+        item {
+            if (selectedMode != null) ProInsightsCard(proInsights, isProActive, onGoPro)
+            else ProStatsCard(stats, isProActive, onGoPro)
         }
 
         // ── D. Daily Medals ───────────────────────────────────────
@@ -542,6 +579,311 @@ private fun AchievementsSection(unlocked: Set<String>) {
         }
     }
 }
+
+// ── Per-mode picker ─────────────────────────────────────────────────────────────
+/** Horizontal "All" + per-mode chip row driving the dashboard filter (iOS ProfileModePicker). */
+@Composable
+private fun ProfileModePicker(selected: String?, gamesPerMode: Map<String, Int>, onSelect: (String?) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ModeChip(label = "All", glyph = "★", accent = WTheme.primary, count = 0, active = selected == null) { onSelect(null) }
+        DAILY_MODES.forEach { m ->
+            val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
+            ModeChip(
+                label = modeLabel(m), glyph = MODE_GLYPH[m] ?: modeLabel(m).take(1),
+                accent = accent, count = gamesPerMode[m] ?: 0, active = selected == m,
+            ) { onSelect(if (selected == m) null else m) }
+        }
+    }
+}
+
+@Composable
+private fun ModeChip(label: String, glyph: String, accent: Color, count: Int, active: Boolean, onClick: () -> Unit) {
+    Column(
+        Modifier.width(64.dp).clip(RoundedCornerShape(12.dp))
+            .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
+            .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
+            .clickableNoRipple(onClick).padding(horizontal = 8.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(if (active) accent.copy(alpha = 0.12f) else WTheme.surfaceAlt), Alignment.Center) {
+            Text(glyph, fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (active) accent else WTheme.textMuted)
+        }
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (active) accent else WTheme.textMuted, maxLines = 1)
+        Text(if (count > 0) "$count" else " ", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+    }
+}
+
+// ── Solve-time line chart ────────────────────────────────────────────────────────
+@Composable
+private fun SolveTimeCard(points: List<com.wordocious.app.data.MatchStatsService.SolvePoint>) {
+    val secs = points.map { it.seconds }
+    val avg = if (secs.isEmpty()) 0 else secs.sum() / secs.size
+    val maxV = (secs.maxOrNull() ?: 1).coerceAtLeast(1)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel("SOLVE TIME — LAST ${points.size} WINS")
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(120.dp)) {
+                if (points.size < 2) return@Canvas
+                val w = size.width; val h = size.height
+                fun x(i: Int) = w * i / (points.size - 1)
+                fun y(v: Int) = h - (h * v / maxV)
+                // average rule line (dashed)
+                val ay = y(avg)
+                drawLine(
+                    WTheme.textMuted.copy(alpha = 0.5f), androidx.compose.ui.geometry.Offset(0f, ay),
+                    androidx.compose.ui.geometry.Offset(w, ay), strokeWidth = 1.5f,
+                    pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(8f, 6f)),
+                )
+                // area fill
+                val areaPath = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(0f, h)
+                    points.forEachIndexed { i, p -> lineTo(x(i), y(p.seconds)) }
+                    lineTo(w, h); close()
+                }
+                drawPath(areaPath, brush = Brush.verticalGradient(listOf(WTheme.primary.copy(alpha = 0.25f), Color.Transparent)))
+                // line
+                val linePath = androidx.compose.ui.graphics.Path().apply {
+                    points.forEachIndexed { i, p -> if (i == 0) moveTo(x(i), y(p.seconds)) else lineTo(x(i), y(p.seconds)) }
+                }
+                drawPath(linePath, WTheme.primary, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f))
+                points.forEachIndexed { i, p -> drawCircle(WTheme.primary, radius = 4f, center = androidx.compose.ui.geometry.Offset(x(i), y(p.seconds))) }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TimeStat("Fastest", secs.minOrNull() ?: 0, WTheme.correct)
+                TimeStat("Average", avg, WTheme.text)
+                TimeStat("Slowest", secs.maxOrNull() ?: 0, Color(0xFFEF4444))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimeStat(label: String, seconds: Int, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+        Text(fmtTime(seconds), fontSize = 13.sp, fontWeight = FontWeight.Black, color = color)
+    }
+}
+
+// ── When you play (time-of-day) ──────────────────────────────────────────────────
+@Composable
+private fun WhenYouPlayCard(hours: List<com.wordocious.app.data.MatchStatsService.HourBucket>) {
+    val maxPlayed = (hours.maxOfOrNull { it.played } ?: 1).coerceAtLeast(1)
+    val peak = hours.maxByOrNull { it.played }?.takeIf { it.played > 0 }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel("WHEN YOU PLAY")
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(Modifier.fillMaxWidth().height(40.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Bottom) {
+                hours.forEach { h ->
+                    val alpha = if (h.played == 0) 0.08f else 0.2f + (h.played.toFloat() / maxPlayed) * 0.8f
+                    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(WTheme.primary.copy(alpha = alpha)))
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                listOf("12a", "6a", "12p", "6p", "12a").forEach {
+                    Text(it, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+            }
+            if (peak != null) {
+                Text("Peak: ${hourLabelLower(peak.hour)} · ${peak.played} games", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            }
+        }
+    }
+}
+
+// ── Top words ────────────────────────────────────────────────────────────────────
+@Composable
+private fun TopWordsCard(words: List<com.wordocious.app.data.MatchStatsService.TopWord>) {
+    val maxCount = (words.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel("TOP WORDS")
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            words.forEachIndexed { i, w ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("${i + 1}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.width(14.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        w.word.take(7).forEach { ch ->
+                            Box(Modifier.size(18.dp).clip(RoundedCornerShape(3.dp)).background(WTheme.surfaceAlt), Alignment.Center) {
+                                Text(ch.toString(), fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                            }
+                        }
+                    }
+                    Box(Modifier.weight(1f).height(6.dp), contentAlignment = Alignment.CenterStart) {
+                        Box(Modifier.fillMaxWidth((w.count.toFloat() / maxCount).coerceIn(0.04f, 1f)).height(6.dp).clip(RoundedCornerShape(3.dp)).background(WTheme.primary.copy(alpha = 0.25f)))
+                    }
+                    Text("${w.count}x", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
+                    Text("${if (w.count > 0) w.wins * 100 / w.count else 0}%", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.width(34.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+                }
+            }
+        }
+    }
+}
+
+// ── Pro Insights (per-mode, Pro-gated) ─────────────────────────────────────────────
+@Composable
+private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsights, isPro: Boolean, onGoPro: () -> Unit) {
+    val gold = Color(0xFFD97706)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel("PRO INSIGHTS")
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (!isPro) {
+                ProLockedTeaser("Deep Insights", onGoPro)
+            } else if (!s.hasData) {
+                Text("No games yet — play to build your stats.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 24.dp))
+            } else {
+                val cells = buildList {
+                    s.fastestTime?.let { add(Triple("Fastest Win", fmtTime(it), Icons.Filled.Bolt)) }
+                    s.fewestGuesses?.let { add(Triple("Fewest Guesses", "$it", Icons.Filled.TrackChanges)) }
+                    add(Triple("Perfect Games", "${s.perfectGames}", Icons.Filled.Star))
+                    if (s.consistencySample >= 3) add(Triple("Consistency", "${s.consistency}", Icons.Filled.TrackChanges))
+                    if (s.currentStreak > 0) add(Triple("Win Streak", "${s.currentStreak}", Icons.Filled.LocalFireDepartment))
+                    if (s.avgGuesses > 0) add(Triple("Avg Guesses", fmtG(s.avgGuesses), Icons.Filled.TrackChanges))
+                    if (s.firstTryRate > 0) add(Triple("First Try Rate", "${s.firstTryRate}%", Icons.Filled.Star))
+                    s.peakHour?.let { add(Triple("Peak Hour", hourLabelUpper(it), Icons.Filled.Bolt)) }
+                    s.luckyWord?.let { add(Triple("Lucky Word", it, Icons.Filled.Star)) }
+                }
+                cells.chunked(2).forEach { row ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        row.forEach { (label, value, icon) -> ProStatCell(label, value, icon, gold, Modifier.weight(1f)) }
+                        if (row.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
+                if (s.nemesisWord != null && s.nemesisLosses >= 2) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_skull), null, tint = gold, modifier = Modifier.size(15.dp))
+                        Text("Nemesis: ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
+                        Text(s.nemesisWord, fontSize = 12.sp, fontWeight = FontWeight.Black, color = gold)
+                        Spacer(Modifier.weight(1f))
+                        Text("Lost ${s.nemesisLosses}×", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    }
+                }
+                if (s.vsTotal > 0) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Filled.EmojiEvents, null, tint = gold, modifier = Modifier.size(15.dp))
+                        Text("VS Record", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
+                        Spacer(Modifier.weight(1f))
+                        Text("${s.vsWins}W · ${s.vsLosses}L · ${s.vsWinRate}%", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    }
+                }
+                if (s.recentAvg > 0) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(if (s.improving) "↓" else "↑", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (s.improving) WTheme.correct else Color(0xFFEF4444))
+                        Text(if (s.improving) "Trending faster" else "Trending slower", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)
+                        Spacer(Modifier.weight(1f))
+                        Text("${kotlin.math.abs(s.percentChange)}% · last 10 avg ${fmtTime(s.recentAvg)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProStatCell(label: String, value: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
+    Row(
+        modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
+            Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+        }
+    }
+}
+
+// ── Pro Stats (global "All" view, Pro-gated) ───────────────────────────────────────
+@Composable
+private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, onGoPro: () -> Unit) {
+    data class Bar(val label: String, val winRate: Int, val avgTime: Int)
+    val order = listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE")
+    val shortLabel = mapOf("DUEL" to "Classic", "QUORDLE" to "Quad", "OCTORDLE" to "Octo", "SEQUENCE" to "Succ",
+        "RESCUE" to "Deliv", "DUEL_6" to "Six", "DUEL_7" to "Seven", "GAUNTLET" to "Gaunt", "PROPERNOUNDLE" to "Proper")
+    val bars = order.mapNotNull { m ->
+        val rows = stats.filter { it.gameMode == m }
+        val games = rows.sumOf { it.totalGames }
+        if (games == 0) return@mapNotNull null
+        val wins = rows.sumOf { it.wins }
+        val weighted = rows.sumOf { it.averageTime * it.totalGames }
+        Bar(shortLabel[m] ?: m, wins * 100 / games, weighted / games)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel("PRO STATS")
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            if (!isPro) {
+                ProLockedTeaser("Pro Feature", onGoPro)
+            } else if (bars.isEmpty()) {
+                Text("No games yet — play to build your stats.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 24.dp))
+            } else {
+                Text("Win Rate by Mode", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                bars.forEach { b -> ProBarRow(b.label, "${b.winRate}%", b.winRate.toFloat() / 100f, Color(0xFFFACC15)) }
+                Text("Avg Solve Time by Mode", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                val maxT = (bars.maxOfOrNull { it.avgTime } ?: 1).coerceAtLeast(1)
+                bars.forEach { b -> ProBarRow(b.label, fmtTime(b.avgTime), b.avgTime.toFloat() / maxT, Color(0xFFA78BFA)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProBarRow(label: String, value: String, frac: Float, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(54.dp))
+        Box(Modifier.weight(1f).height(16.dp), contentAlignment = Alignment.CenterStart) {
+            Box(Modifier.fillMaxWidth(frac.coerceIn(0.02f, 1f)).height(16.dp).clip(RoundedCornerShape(3.dp)).background(color))
+        }
+        Text(value, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.width(48.dp), textAlign = androidx.compose.ui.text.style.TextAlign.End)
+    }
+}
+
+/** Frosted locked teaser — lock glyph + label + Upgrade-to-Pro button (iOS locked overlay). */
+@Composable
+private fun ProLockedTeaser(label: String, onGoPro: () -> Unit) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("🔒", fontSize = 26.sp)
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        Row(
+            Modifier.clip(RoundedCornerShape(10.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                .clickableNoRipple(onGoPro).padding(horizontal = 16.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color.White, modifier = Modifier.size(13.dp))
+            Text("Upgrade to Pro", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+        }
+    }
+}
+
+/** "1m 23s" / "45s" — matches iOS fmt(seconds). */
+private fun fmtTime(s: Int): String = if (s < 60) "${s}s" else "${s / 60}:${(s % 60).toString().padStart(2, '0')}"
+private fun fmtG(v: Double): String = if (v == v.toInt().toDouble()) "${v.toInt()}" else "$v"
+/** "1am" / "12pm" lower (WhenYouPlay peak). */
+private fun hourLabelLower(h: Int): String { val am = h < 12; val t = if (h % 12 == 0) 12 else h % 12; return "$t${if (am) "am" else "pm"}" }
+/** "1 PM" / "12 AM" upper (Pro Insights peak hour). */
+private fun hourLabelUpper(h: Int): String { val ampm = if (h >= 12) "PM" else "AM"; val h12 = if (h == 0) 12 else if (h > 12) h - 12 else h; return "$h12 $ampm" }
 
 private fun modeLabel(mode: String) = when (mode) {
     "DUEL" -> "Classic"; "QUORDLE" -> "QuadWord"; "OCTORDLE" -> "OctoWord"
