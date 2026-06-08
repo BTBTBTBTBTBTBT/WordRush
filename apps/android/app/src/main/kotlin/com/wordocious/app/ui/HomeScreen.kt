@@ -18,7 +18,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
@@ -84,8 +86,11 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Pro-only Daily/Unlimited toggle; Unlimited swaps the daily hero.
+            // Daily hero shows Daily Sweep! / Flawless Victory! once all 9 are done.
+            val dailyDone = completions.size
+            val dailyWins = completions.values.count { it.completed }
             if (isPro) PlayModeToggle(playMode) { playMode = it }
-            if (unlimitedMode) UnlimitedHero() else DailyHero()
+            if (unlimitedMode) UnlimitedHero() else DailyHero(dailyDone, dailyWins)
             WordOfTheDayCard()
 
             Text(
@@ -132,29 +137,58 @@ fun HomeScreen(
     }
 }
 
+/** Shared fixed height for ALL home heroes (Daily / Sweep / Flawless / Unlimited)
+ *  so toggling Daily<->Unlimited never shifts the game-cards grid (web parity). */
+internal val HERO_HEIGHT = 78.dp
+
 @Composable
-private fun DailyHero() {
+private fun DailyHero(completed: Int, wins: Int) {
     val secs by rememberMidnightCountdown()
+    val total = 9
+    val allDone = completed >= total
+    val flawless = allDone && wins >= total
+    // Sweep/Flawless variants replace the daily challenge once all 9 are done (web parity).
+    val grad = when {
+        flawless -> listOf(Color(0xFFFEF3C7), Color(0xFFFDE68A))
+        allDone -> listOf(Color(0xFFF5F3FF), Color(0xFFFCE7F3))
+        else -> listOf(Color(0xFFEDE9FE), Color(0xFFDDD6FE))
+    }
+    val border = when { flawless -> Color(0xFFF59E0B); allDone -> Color(0xFFC4B5FD); else -> Color(0xFFA78BFA) }
     Column(
-        modifier = Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFFEDE9FE), Color(0xFFDDD6FE))))
-            .border(1.5.dp, Color(0xFFA78BFA), RoundedCornerShape(14.dp))
-            .padding(vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth().height(HERO_HEIGHT)
+            .clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(grad))
+            .border(1.5.dp, border, RoundedCornerShape(14.dp)),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
+        if (allDone) {
+            val titleGrad = if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309)) else listOf(Color(0xFFA78BFA), Color(0xFFEC4899))
+            val subColor = if (flawless) Color(0xFFB45309) else Color(0xFF6D28D9)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (flawless) {
+                    Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
+                    Text("Flawless Victory!", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(titleGrad)))
+                    Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
+                } else {
+                    Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(16.dp))
+                    Text("Daily Sweep!", fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(titleGrad)))
+                    Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFFEC4899), modifier = Modifier.size(16.dp))
+                }
+            }
             Text(
-                "Daily Challenge",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Black,
-                style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5)))),
+                if (flawless) "All $total dailies won today · +600 XP earned" else "All $total dailies completed · +200 XP earned",
+                fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = subColor, modifier = Modifier.padding(top = 2.dp),
             )
-            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
+            Text("Next puzzles in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subColor.copy(alpha = 0.75f), modifier = Modifier.padding(top = 2.dp))
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
+                Text("Daily Challenge", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5)))))
+                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
+            }
+            Text("9 puzzles · Leaderboards & medals", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
+            Text("Resets in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
         }
-        Text("9 puzzles · Leaderboards & medals", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9))
-        Text("Resets in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9))
     }
 }
 

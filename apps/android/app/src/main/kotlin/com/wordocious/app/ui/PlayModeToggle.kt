@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,14 +60,16 @@ private fun TogglePill(label: String, icon: androidx.compose.ui.graphics.vector.
     }
 }
 
-/** Static hero shown under the toggle in Unlimited mode (web UnlimitedHero). */
+/** Static hero shown under the toggle in Unlimited mode (web UnlimitedHero).
+ *  Fixed HERO_HEIGHT == DailyHero so toggling never shifts the cards below. */
 @Composable
 fun UnlimitedHero() {
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+        Modifier.fillMaxWidth().height(HERO_HEIGHT).clip(RoundedCornerShape(14.dp))
             .background(Brush.linearGradient(listOf(Color(0xFFFCE7F3), Color(0xFFEDE9FE))))
-            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(14.dp)).padding(vertical = 10.dp),
+            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(14.dp)),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Filled.AllInclusive, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
