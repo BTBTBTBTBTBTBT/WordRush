@@ -1,0 +1,232 @@
+package com.wordocious.app.data
+
+import com.wordocious.core.GameMode
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import java.time.Instant
+import kotlin.math.max
+import kotlin.math.roundToInt
+
+/**
+ * Records a finished game's full progression — the Android port of iOS
+ * GameResultsService (which ports the core of web lib/stats-service.ts
+ * recordGameResult): a `matches` history row (powers the Profile charts),
+ * the `user_stats` aggregate (wins/losses/games/best/avg/fastest), and the
+ * `profiles` XP + level + win-streak + daily-login-streak (+ 7-day shield grant).
+ *
+ * The daily_results leaderboard row stays in DailyResultsService (called by
+ * PostGameScreen, idempotent best-score) so this service never double-writes it.
+ * The daily Sweep/Flawless bonus is server-cron + iOS-only for now (Android has
+ * no MedalService) — noted as deferred, the live XP flow is unaffected.
+ *
+ * Call EXACTLY ONCE per live finish (gated in GameScreen on
+ * isFinished && !wasFinishedOnEntry) — `matches` inserts and the wins/xp deltas
+ * are NOT idempotent.
+ */
+object GameResultsService {
+    private val client get() = SupabaseConfig.client
+
+    /** A daily seed is `daily-<date>-<mode>` (core generateDailySeed). */
+    private fun isDailySeed(seed: String) = seed.startsWith("daily-")
+
+    // ── XP result (drives the post-game toast) ───────────────────────────────────
+    data class XpResult(
+        val xpGain: Int,
+        val streakBonus: Int,
+        val dailyBonus: Int,
+        val totalXp: Int,
+        val newLevel: Int,
+        val leveledUp: Boolean,
+    )
+
+    // ── matches insert (solo: player2_id = null) ─────────────────────────────────
+    @Serializable
+    private data class SoloMatchInsert(
+        @SerialName("game_mode") val gameMode: String,
+        @SerialName("player1_id") val player1Id: String,
+        @SerialName("winner_id") val winnerId: String?,    // null on a loss
+        @SerialName("player1_score") val player1Score: Int, // guess count → distribution bucket
+        @SerialName("player1_time") val player1Time: Int,    // seconds
+        val seed: String,
+        val solutions: List<String>,
+        @SerialName("player1_guesses") val player1Guesses: List<String>,
+        @SerialName("hints_used") val hintsUsed: Int,
+        @SerialName("started_at") val startedAt: String,
+        @SerialName("completed_at") val completedAt: String,
+    )
+
+    /** Insert a solo match-history row so this game feeds the Profile charts. */
+    private suspend fun recordSoloMatch(
+        gameMode: GameMode, won: Boolean, score: Int, timeSeconds: Int,
+        seed: String, solutions: List<String>, guesses: List<String>, hintsUsed: Int,
+    ) {
+        val uid = AuthService.userId ?: return
+        val now = Instant.now()
+        runCatching {
+            client.postgrest["matches"].insert(
+                SoloMatchInsert(
+                    gameMode = gameMode.name, player1Id = uid,
+                    winnerId = if (won) uid else null, player1Score = score, player1Time = timeSeconds,
+                    seed = seed, solutions = solutions, player1Guesses = guesses, hintsUsed = hintsUsed,
+                    startedAt = now.minusSeconds(timeSeconds.toLong()).toString(),
+                    completedAt = now.toString(),
+                )
+            )
+        }
+    }
+
+    // ── user_stats aggregate ──────────────────────────────────────────────────────
+    @Serializable
+    private data class StatsRow(
+        val id: String,
+        val wins: Int = 0,
+        val losses: Int = 0,
+        @SerialName("total_games") val totalGames: Int = 0,
+        @SerialName("best_score") val bestScore: Int = 0,
+        @SerialName("average_time") val averageTime: Int = 0,
+        @SerialName("fastest_time") val fastestTime: Int = 0,
+    )
+
+    @Serializable
+    private data class StatsInsert(
+        @SerialName("user_id") val userId: String,
+        @SerialName("game_mode") val gameMode: String,
+        @SerialName("play_type") val playType: String,
+        val wins: Int, val losses: Int,
+        @SerialName("total_games") val totalGames: Int,
+        @SerialName("best_score") val bestScore: Int,
+        @SerialName("average_time") val averageTime: Int,
+        @SerialName("fastest_time") val fastestTime: Int,
+    )
+
+    private suspend fun updateUserStats(
+        userId: String, mode: String, playType: String, won: Boolean, guessCount: Int, timeSeconds: Int,
+    ) {
+        runCatching {
+            val rows = client.postgrest["user_stats"]
+                .select(Columns.raw("id, wins, losses, total_games, best_score, average_time, fastest_time")) {
+                    filter { eq("user_id", userId); eq("game_mode", mode); eq("play_type", playType) }
+                    limit(1)
+                }
+                .decodeList<StatsRow>()
+            val s = rows.firstOrNull()
+            if (s != null) {
+                val newTotal = s.totalGames + 1
+                val newAvg = if (s.averageTime > 0)
+                    ((s.averageTime.toDouble() * s.totalGames + timeSeconds) / newTotal).roundToInt() else timeSeconds
+                val newBest = if (guessCount > 0 && (s.bestScore == 0 || guessCount < s.bestScore)) guessCount else s.bestScore
+                val newFastest = if (timeSeconds > 0 && (s.fastestTime == 0 || timeSeconds < s.fastestTime)) timeSeconds else s.fastestTime
+                client.postgrest["user_stats"].update({
+                    set("wins", s.wins + if (won) 1 else 0)
+                    set("losses", s.losses + if (won) 0 else 1)
+                    set("total_games", newTotal)
+                    set("best_score", newBest)
+                    set("average_time", newAvg)
+                    set("fastest_time", newFastest)
+                }) { filter { eq("id", s.id) } }
+            } else {
+                client.postgrest["user_stats"].insert(
+                    StatsInsert(
+                        userId = userId, gameMode = mode, playType = playType,
+                        wins = if (won) 1 else 0, losses = if (won) 0 else 1, totalGames = 1,
+                        bestScore = guessCount, averageTime = timeSeconds, fastestTime = timeSeconds,
+                    )
+                )
+            }
+        }
+    }
+
+    // ── profile progression (XP / level / streaks / shield) ───────────────────────
+    @Serializable
+    private data class ProgressRow(
+        @SerialName("total_wins") val totalWins: Int = 0,
+        @SerialName("total_losses") val totalLosses: Int = 0,
+        @SerialName("current_streak") val currentStreak: Int = 0,
+        @SerialName("best_streak") val bestStreak: Int = 0,
+        val xp: Int = 0,
+        val level: Int = 1,
+        @SerialName("last_played_at") val lastPlayedAt: String? = null,
+        @SerialName("daily_login_streak") val dailyLoginStreak: Int = 0,
+        @SerialName("best_daily_login_streak") val bestDailyLoginStreak: Int = 0,
+        @SerialName("streak_shields") val streakShields: Int = 0,
+    )
+
+    private suspend fun updateProfileProgression(userId: String, won: Boolean, seed: String): XpResult? =
+        runCatching {
+            val p = client.postgrest["profiles"]
+                .select(Columns.raw("total_wins,total_losses,current_streak,best_streak,xp,level,last_played_at,daily_login_streak,best_daily_login_streak,streak_shields")) {
+                    filter { eq("id", userId) }; limit(1)
+                }
+                .decodeList<ProgressRow>().firstOrNull() ?: return@runCatching null
+
+            val newWinStreak = if (won) p.currentStreak + 1 else 0
+            val newBestWinStreak = max(p.bestStreak, newWinStreak)
+
+            val xpGain = if (won) 100 else 25
+            val streakBonus = if (won && newWinStreak > 1) 50 else 0
+            val dailyBonus = if (isDailySeed(seed)) 50 else 0
+            val newXp = p.xp + xpGain + streakBonus + dailyBonus
+            val newLevel = newXp / 1000 + 1
+
+            // Daily-login streak (player-local days).
+            val today = com.wordocious.app.todayLocalDate()
+            val yesterday = com.wordocious.app.yesterdayLocalDate()
+            var newDailyStreak = p.dailyLoginStreak
+            var grantShield = false
+            val lastDay = p.lastPlayedAt?.let { runCatching { Instant.parse(if (it.endsWith("Z") || it.contains('+')) it else it + "Z").atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString() }.getOrNull() }
+            when {
+                lastDay == null -> newDailyStreak = 1
+                lastDay == today -> { /* same day, no change */ }
+                lastDay == yesterday -> { newDailyStreak += 1; if (newDailyStreak % 7 == 0) grantShield = true }
+                else -> newDailyStreak = 1
+            }
+            val newBestDaily = max(p.bestDailyLoginStreak, newDailyStreak)
+
+            client.postgrest["profiles"].update({
+                set("total_wins", p.totalWins + if (won) 1 else 0)
+                set("total_losses", p.totalLosses + if (won) 0 else 1)
+                set("current_streak", newWinStreak)
+                set("best_streak", newBestWinStreak)
+                set("xp", newXp)
+                set("level", newLevel)
+                set("last_played_at", Instant.now().toString())
+                set("daily_login_streak", newDailyStreak)
+                set("best_daily_login_streak", newBestDaily)
+                set("streak_shields", p.streakShields + if (grantShield) 1 else 0)
+            }) { filter { eq("id", userId) } }
+
+            XpResult(
+                xpGain = xpGain, streakBonus = streakBonus, dailyBonus = dailyBonus,
+                totalXp = xpGain + streakBonus + dailyBonus,
+                newLevel = newLevel, leveledUp = newLevel > p.level,
+            )
+        }.getOrNull()
+
+    /**
+     * Record a finished solo game: user_stats + matches + profile progression.
+     * Returns the [XpResult] that drives the post-game XP toast (null on failure).
+     */
+    suspend fun record(
+        gameMode: GameMode,
+        won: Boolean,
+        guessCount: Int,
+        timeSeconds: Int,
+        boardsSolved: Int,
+        totalBoards: Int,
+        seed: String,
+        solutions: List<String>,
+        guesses: List<String>,
+        hintsUsed: Int = 0,
+        playType: String = "solo",
+    ): XpResult? {
+        val userId = AuthService.userId ?: return null
+        updateUserStats(userId, gameMode.name, playType, won, guessCount, timeSeconds)
+        recordSoloMatch(gameMode, won, guessCount, timeSeconds, seed, solutions, guesses, hintsUsed)
+        val xp = updateProfileProgression(userId, won, seed)
+        // Refresh in-memory profile so XP/streak/level reflect immediately on Profile/Home.
+        AuthService.refreshProfile()
+        return xp
+    }
+}

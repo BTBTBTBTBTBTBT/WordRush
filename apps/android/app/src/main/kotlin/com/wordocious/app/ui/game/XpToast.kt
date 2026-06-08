@@ -1,0 +1,88 @@
+package com.wordocious.app.ui.game
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.wordocious.app.data.GameResultsService
+import kotlinx.coroutines.delay
+
+/**
+ * Post-game XP toast — ports the web effects/xp-toast.tsx and iOS XpToastView:
+ * a purple gradient pill at the top with a star, "+N XP", bonus chips
+ * (streak / daily), and a level-up line. Slides in from the top, auto-dismisses
+ * after 3s. Non-interactive (sits above the victory/post-game content).
+ */
+@Composable
+fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+        delay(3000)
+        visible = false
+        delay(320)
+        onDismiss()
+    }
+
+    Box(Modifier.fillMaxSize().padding(top = 12.dp), contentAlignment = Alignment.TopCenter) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(tween(360)) { -it } + fadeIn(tween(360)),
+            exit = slideOutVertically(tween(300)) { -it } + fadeOut(tween(300)),
+        ) {
+            Row(
+                Modifier
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Star, null, tint = Color(0xFFFDE047), modifier = Modifier.size(18.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("+${result.totalXp} XP", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    if (result.streakBonus > 0 || result.dailyBonus > 0) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (result.streakBonus > 0)
+                                Text("+${result.streakBonus} streak", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDDD6FE))
+                            if (result.dailyBonus > 0)
+                                Text("+${result.dailyBonus} daily", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDDD6FE))
+                        }
+                    }
+                    if (result.leveledUp) {
+                        Text("Level up! Lv.${result.newLevel}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFFDE047))
+                    }
+                }
+            }
+        }
+    }
+}

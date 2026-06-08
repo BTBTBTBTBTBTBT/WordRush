@@ -23,10 +23,12 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -273,27 +275,56 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
     var dismissedVictory by remember { mutableStateOf(false) }
     val showVictory = isFinished && !wasFinishedOnEntry && !dismissedVictory
 
+    // XP pipeline (#88): record matches/user_stats/profile progression EXACTLY
+    // once on a live finish, and surface the earned XP in a top toast. Resumed
+    // games (finished on entry) are skipped — their deltas were never owed here.
+    var recorded by rememberSaveable { mutableStateOf(false) }
+    var xpResult by remember { mutableStateOf<com.wordocious.app.data.GameResultsService.XpResult?>(null) }
+    LaunchedEffect(isFinished) {
+        if (isFinished && !wasFinishedOnEntry && !recorded) {
+            recorded = true
+            xpResult = com.wordocious.app.data.GameResultsService.record(
+                gameMode = mode,
+                won = state.status == GameStatus.WON,
+                guessCount = state.boards.first().guesses.size,
+                timeSeconds = elapsed,
+                boardsSolved = state.boards.count { it.status == GameStatus.WON },
+                totalBoards = state.boards.size,
+                seed = seed,
+                solutions = state.boards.map { it.solution },
+                guesses = state.boards.first().guesses,
+                hintsUsed = vm.hintsUsed,
+            )
+        }
+    }
+
     if (showVictory) {
         // Gauntlet uses its own results screen, not VictoryOverlay (spec #5).
         if (mode != GameMode.GAUNTLET) {
-            VictoryOverlay(
-                state = state, mode = mode, elapsedSeconds = elapsed,
-                onContinue = { dismissedVictory = true },
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                VictoryOverlay(
+                    state = state, mode = mode, elapsedSeconds = elapsed,
+                    onContinue = { dismissedVictory = true },
+                )
+                xpResult?.let { XpToast(it) { xpResult = null } }
+            }
             return
         }
     }
 
     // Show the stats / post-game screen
     if (isFinished) {
-        PostGameScreen(
-            state = state,
-            mode = mode,
-            seed = seed,
-            elapsedSeconds = elapsed,
-            hintsUsed = vm.hintsUsed,
-            onBack = onBack,
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            PostGameScreen(
+                state = state,
+                mode = mode,
+                seed = seed,
+                elapsedSeconds = elapsed,
+                hintsUsed = vm.hintsUsed,
+                onBack = onBack,
+            )
+            xpResult?.let { XpToast(it) { xpResult = null } }
+        }
         return
     }
 

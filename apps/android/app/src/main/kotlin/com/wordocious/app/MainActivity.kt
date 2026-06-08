@@ -44,7 +44,16 @@ class MainActivity : ComponentActivity() {
                             CircularProgressIndicator(color = WTheme.primary)
                         }
                         !isAuthenticated -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
-                        else -> MainScreen()
+                        else -> {
+                            val profile by AuthService.profile.collectAsState()
+                            Box(Modifier.fillMaxSize()) {
+                                MainScreen()
+                                // First-run onboarding cover (web WelcomeModal / iOS WelcomeView).
+                                if (profile?.hasOnboarded == false) {
+                                    com.wordocious.app.ui.WelcomeScreen()
+                                }
+                            }
+                        }
                     }
                 }
             }

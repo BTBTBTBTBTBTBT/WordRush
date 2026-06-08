@@ -39,6 +39,7 @@ data class Profile(
     @SerialName("gold_medals") val goldMedals: Int = 0,
     @SerialName("silver_medals") val silverMedals: Int = 0,
     @SerialName("bronze_medals") val bronzeMedals: Int = 0,
+    @SerialName("has_onboarded") val hasOnboarded: Boolean = true,
 )
 
 /**
