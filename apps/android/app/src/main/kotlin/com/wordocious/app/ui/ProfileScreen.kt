@@ -333,6 +333,26 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
                     .padding(horizontal = 16.dp, vertical = 6.dp),
             ) { Text("Go Pro", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color.White) }
         }
+
+        // DEV-ONLY (web parity): is_admin-gated Simulate Pro / Disable Pro — flips
+        // is_pro so the dev can test Pro-only UI. Renders only for the developer's
+        // account (is_admin), never for App Review or real users.
+        if (profile?.isAdmin == true) {
+            val pro = profile.isPro
+            Box(
+                Modifier.clip(RoundedCornerShape(8.dp))
+                    .background(if (pro) Color(0xFFFEF2F2) else Color(0xFFF0FDF4))
+                    .border(1.5.dp, if (pro) Color(0xFFFCA5A5) else Color(0xFF86EFAC), RoundedCornerShape(8.dp))
+                    .clickableNoRipple { com.wordocious.app.data.AuthService.setProDev(!pro) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    if (pro) "Disable Pro" else "Simulate Pro",
+                    fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                    color = if (pro) Color(0xFFDC2626) else Color(0xFF16A34A),
+                )
+            }
+        }
     }
 }
 

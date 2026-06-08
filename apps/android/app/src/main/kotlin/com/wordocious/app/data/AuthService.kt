@@ -40,6 +40,7 @@ data class Profile(
     @SerialName("silver_medals") val silverMedals: Int = 0,
     @SerialName("bronze_medals") val bronzeMedals: Int = 0,
     @SerialName("has_onboarded") val hasOnboarded: Boolean = true,
+    @SerialName("is_admin") val isAdmin: Boolean = false,
 )
 
 /**
@@ -166,5 +167,20 @@ object AuthService {
     fun refreshProfile() {
         val uid = userId ?: return
         scope.launch { loadProfile(uid) }
+    }
+
+    /**
+     * DEV-ONLY (is_admin-gated in the UI): flip `is_pro` for the "Simulate Pro"
+     * toggle — 1:1 with the web profile-page button. Writes the column directly
+     * (client-writable until the lock-pro migration) then refreshes the profile.
+     */
+    fun setProDev(value: Boolean) {
+        val uid = userId ?: return
+        scope.launch {
+            runCatching {
+                client.postgrest["profiles"].update({ set("is_pro", value) }) { filter { eq("id", uid) } }
+            }
+            loadProfile(uid)
+        }
     }
 }
