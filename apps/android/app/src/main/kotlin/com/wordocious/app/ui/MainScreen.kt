@@ -45,6 +45,9 @@ private val TABS = listOf(
 fun MainScreen() {
     var selectedTab by remember { mutableIntStateOf(0) }
     var activeGame by remember { mutableStateOf<ModeCard?>(null) }
+    // Explicit seed for the active game — non-null only for Pro Unlimited (a fresh
+    // non-daily seed); null falls back to today's daily seed.
+    var activeSeed by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
     // Help / About / Privacy / Terms / Support overlay route (null = none).
     var infoRoute by remember { mutableStateOf<String?>(null) }
@@ -75,13 +78,13 @@ fun MainScreen() {
     // Game screen shown fullscreen (no bottom nav — matches web behavior)
     val card = activeGame
     if (card?.engineMode != null) {
-        val seed = com.wordocious.app.todayLocalSeed(card.engineMode.name)
-        androidx.activity.compose.BackHandler { activeGame = null }
+        val seed = activeSeed ?: com.wordocious.app.todayLocalSeed(card.engineMode.name)
+        androidx.activity.compose.BackHandler { activeGame = null; activeSeed = null }
         GameScreen(
             mode = card.engineMode,
             title = card.title,
             seed = seed,
-            onBack = { activeGame = null },
+            onBack = { activeGame = null; activeSeed = null },
         )
         return
     }
@@ -142,8 +145,16 @@ fun MainScreen() {
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 when (selectedTab) {
                     0 -> HomeScreen(
-                        onSelectMode = { if (it.id == "vs") vsLobby = true else activeGame = it },
+                        onSelectMode = { card, unlimited ->
+                            if (card.id == "vs") vsLobby = true
+                            else {
+                                activeGame = card
+                                activeSeed = if (unlimited && card.engineMode != null)
+                                    "unlimited-${card.engineMode.name}-${System.nanoTime()}" else null
+                            }
+                        },
                         onGoPro = { infoRoute = "pro" },
+                        onVs = { card -> card.engineMode?.let { vsActive = it to false } },
                     )
                     1 -> LeaderboardScreen()
                     2 -> ProfileScreen(onGoPro = { infoRoute = "pro" }, onEditProfile = { infoRoute = "edit" })

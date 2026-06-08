@@ -83,13 +83,17 @@ fun PostGameScreen(
     val totalBoards = state.boards.size
     val multiBoard = totalBoards > 1
 
-    // Record the result once (fire-and-forget; silently fails if signed out).
+    // Record the daily result once — ONLY for daily seeds. Pro "Unlimited" games
+    // use a non-daily seed and must not overwrite the daily leaderboard row (the
+    // XP/matches/stats pipeline in GameScreen still records them — "all stats count").
     LaunchedEffect(state.status) {
-        DailyResultsService.recordDailyResult(
-            mode = mode, completed = won, guessCount = guessCount,
-            elapsedSeconds = elapsedSeconds, boardsSolved = boardsSolved,
-            totalBoards = totalBoards, hintsUsed = hintsUsed,
-        )
+        if (seed.startsWith("daily-")) {
+            DailyResultsService.recordDailyResult(
+                mode = mode, completed = won, guessCount = guessCount,
+                elapsedSeconds = elapsedSeconds, boardsSolved = boardsSolved,
+                totalBoards = totalBoards, hintsUsed = hintsUsed,
+            )
+        }
     }
 
     val accent = modeAccent(mode)

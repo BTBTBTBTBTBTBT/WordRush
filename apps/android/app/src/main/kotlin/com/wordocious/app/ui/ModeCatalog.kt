@@ -1,6 +1,15 @@
 package com.wordocious.app.ui
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import com.wordocious.core.GameMode
 
 /**
@@ -63,3 +72,37 @@ val MODE_CARDS: List<ModeCard> = listOf(
     ModeCard("gauntlet", "Gauntlet", "5 escalating stages", Color(0xFFD97706), GameMode.GAUNTLET, lucide = "Skull"),
     ModeCard("propernoundle", "ProperNoundle", "Guess famous names", Color(0xFFDC2626), GameMode.PROPERNOUNDLE, lucide = "Crown"),
 )
+
+/** The MODE_CARDS entry for a `:core` GameMode (icon/accent/glyph source of truth). */
+fun modeCardFor(mode: GameMode): ModeCard? = MODE_CARDS.firstOrNull { it.engineMode == mode }
+
+/** Exact lucide/custom icon drawable per mode (matches the web MODE_CARDS icons). */
+fun modeIconRes(lucide: String?): Int? = when (lucide) {
+    "WordleGrid" -> com.wordocious.app.R.drawable.ic_wordle_grid
+    "Swords" -> com.wordocious.app.R.drawable.ic_swords
+    "TrendingUp" -> com.wordocious.app.R.drawable.ic_trending_up
+    "Shield" -> com.wordocious.app.R.drawable.ic_shield
+    "Skull" -> com.wordocious.app.R.drawable.ic_skull
+    "Crown" -> com.wordocious.app.R.drawable.ic_crown
+    else -> null
+}
+
+/**
+ * A mode's glyph/icon EXACTLY as the web/home card renders it — a roman
+ * numeral/number (IV/VIII/6/7) or the lucide drawable. Use everywhere a mode is
+ * shown (home cards, leaderboard grid, profile picker) so icons stay consistent
+ * with the web. Caller supplies the tint + sizes.
+ */
+@Composable
+fun ModeGlyph(card: ModeCard, tint: Color, glyphSize: TextUnit, iconSize: Dp) {
+    when {
+        card.glyph != null -> Text(card.glyph, fontSize = glyphSize, fontWeight = FontWeight.Black, color = tint)
+        else -> modeIconRes(card.lucide)?.let { Icon(painterResource(it), null, tint = tint, modifier = Modifier.size(iconSize)) }
+    }
+}
+
+/** Convenience overload for callers that only have a `:core` GameMode. */
+@Composable
+fun ModeGlyph(mode: GameMode, tint: Color, glyphSize: TextUnit, iconSize: Dp) {
+    modeCardFor(mode)?.let { ModeGlyph(it, tint, glyphSize, iconSize) }
+}

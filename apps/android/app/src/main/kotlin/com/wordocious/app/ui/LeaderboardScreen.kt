@@ -307,9 +307,9 @@ internal fun ModePickerRow(selected: String, onSelect: (String) -> Unit) {
 
 @Composable
 private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(id)) }.getOrDefault(WTheme.primary)
+    val mode = runCatching { com.wordocious.core.GameMode.valueOf(id) }.getOrNull()
+    val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
     val short = LB_SHORT[id] ?: id
-    val glyph = LB_GLYPH[id] ?: short.take(1)
     Column(
         modifier.clip(RoundedCornerShape(12.dp))
             .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
@@ -318,7 +318,8 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
-            Text(glyph, fontSize = 10.sp, fontWeight = FontWeight.Black, color = accent)
+            // Web-faithful mode icon (WordleGrid/IV/VIII/TrendingUp/Shield/6/7/Skull/Crown).
+            mode?.let { ModeGlyph(it, accent, glyphSize = 10.sp, iconSize = 14.dp) }
         }
         Text(short, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1)
     }

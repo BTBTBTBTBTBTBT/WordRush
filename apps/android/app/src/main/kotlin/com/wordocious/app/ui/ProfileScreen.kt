@@ -401,7 +401,7 @@ private fun DailyBadge(modeId: String, completion: DailyCompletionsService.Compl
             contentAlignment = Alignment.Center,
         ) {
             if (played) Text(if (won) "W" else "L", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
-            else Text(MODE_GLYPH[modeId] ?: modeLabel(modeId).take(1), fontSize = 11.sp, fontWeight = FontWeight.Black, color = accent)
+            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, accent, glyphSize = 11.sp, iconSize = 14.dp) }
         }
         Text(modeLabel(modeId), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (played) WTheme.text else WTheme.textMuted, maxLines = 1)
     }
@@ -588,11 +588,11 @@ private fun ProfileModePicker(selected: String?, gamesPerMode: Map<String, Int>,
         Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ModeChip(label = "All", glyph = "★", accent = WTheme.primary, count = 0, active = selected == null) { onSelect(null) }
+        ModeChip(label = "All", modeId = null, accent = WTheme.primary, count = 0, active = selected == null) { onSelect(null) }
         DAILY_MODES.forEach { m ->
             val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
             ModeChip(
-                label = modeLabel(m), glyph = MODE_GLYPH[m] ?: modeLabel(m).take(1),
+                label = modeLabel(m), modeId = m,
                 accent = accent, count = gamesPerMode[m] ?: 0, active = selected == m,
             ) { onSelect(if (selected == m) null else m) }
         }
@@ -600,7 +600,8 @@ private fun ProfileModePicker(selected: String?, gamesPerMode: Map<String, Int>,
 }
 
 @Composable
-private fun ModeChip(label: String, glyph: String, accent: Color, count: Int, active: Boolean, onClick: () -> Unit) {
+private fun ModeChip(label: String, modeId: String?, accent: Color, count: Int, active: Boolean, onClick: () -> Unit) {
+    val iconTint = if (active) accent else WTheme.textMuted
     Column(
         Modifier.width(64.dp).clip(RoundedCornerShape(12.dp))
             .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
@@ -609,7 +610,9 @@ private fun ModeChip(label: String, glyph: String, accent: Color, count: Int, ac
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(if (active) accent.copy(alpha = 0.12f) else WTheme.surfaceAlt), Alignment.Center) {
-            Text(glyph, fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (active) accent else WTheme.textMuted)
+            // "All" → star; per-mode → web-faithful icon (ModeGlyph).
+            if (modeId == null) Text("★", fontSize = 12.sp, fontWeight = FontWeight.Black, color = iconTint)
+            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, iconTint, glyphSize = 12.sp, iconSize = 14.dp) }
         }
         Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (active) accent else WTheme.textMuted, maxLines = 1)
         Text(if (count > 0) "$count" else " ", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)

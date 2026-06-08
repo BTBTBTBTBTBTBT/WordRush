@@ -56,7 +56,11 @@ import kotlinx.coroutines.delay
  * layer lands (later phase). Layout, colors, copy and the mode grid are 1:1.
  */
 @Composable
-fun HomeScreen(onSelectMode: (ModeCard) -> Unit, onGoPro: () -> Unit = {}) {
+fun HomeScreen(
+    onSelectMode: (ModeCard, Boolean) -> Unit,
+    onGoPro: () -> Unit = {},
+    onVs: (ModeCard) -> Unit = {},
+) {
     // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
     val completions by androidx.compose.runtime.produceState(
         initialValue = emptyMap<String, com.wordocious.app.data.DailyCompletionsService.Completion>()
@@ -65,9 +69,11 @@ fun HomeScreen(onSelectMode: (ModeCard) -> Unit, onGoPro: () -> Unit = {}) {
     }
     // Pro/Unlimited dimension (web parity): free users get one daily play per
     // mode; once played, the card LOCKS (dimmed + tap → ModeLimitModal). Pro
-    // users replay unlimited. VS card (engineMode null) is never daily-locked.
+    // users get a Daily/Unlimited toggle and replay unlimited (fresh seeds).
     val isPro = com.wordocious.app.data.AuthService.isProActive
     var limitModal by remember { mutableStateOf<ModeCard?>(null) }
+    var playMode by remember { mutableStateOf(PlayMode.DAILY) }
+    val unlimitedMode = isPro && playMode == PlayMode.UNLIMITED
 
     Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
@@ -77,7 +83,9 @@ fun HomeScreen(onSelectMode: (ModeCard) -> Unit, onGoPro: () -> Unit = {}) {
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            DailyHero()
+            // Pro-only Daily/Unlimited toggle; Unlimited swaps the daily hero.
+            if (isPro) PlayModeToggle(playMode) { playMode = it }
+            if (unlimitedMode) UnlimitedHero() else DailyHero()
             WordOfTheDayCard()
 
             Text(
@@ -95,8 +103,11 @@ fun HomeScreen(onSelectMode: (ModeCard) -> Unit, onGoPro: () -> Unit = {}) {
                     rowCards.forEach { card ->
                         val completion = card.engineMode?.let { completions[it.name] }
                         val isLocked = !isPro && completion != null
-                        ModeCardView(card, completion, isLocked, Modifier.weight(1f)) {
-                            if (isLocked) limitModal = card else onSelectMode(card)
+                        // VS swords overlay: Pro + Unlimited, on non-VS cards (web parity).
+                        val showVs = unlimitedMode && card.id != "vs"
+                        val unlimited = unlimitedMode && card.engineMode != null
+                        ModeCardView(card, completion, isLocked, showVs, Modifier.weight(1f), onVs = { onVs(card) }) {
+                            if (isLocked) limitModal = card else onSelectMode(card, unlimited)
                         }
                     }
                     if (rowCards.size == 1) Spacer(Modifier.weight(1f))
@@ -115,7 +126,7 @@ fun HomeScreen(onSelectMode: (ModeCard) -> Unit, onGoPro: () -> Unit = {}) {
                 modeName = card.title,
                 onClose = { limitModal = null },
                 onGoPro = onGoPro,
-                onViewPuzzle = { onSelectMode(card) },
+                onViewPuzzle = { onSelectMode(card, false) },
             )
         }
     }
@@ -192,7 +203,9 @@ private fun ModeCardView(
     card: ModeCard,
     completion: com.wordocious.app.data.DailyCompletionsService.Completion?,
     isLocked: Boolean,
+    showVs: Boolean,
     modifier: Modifier,
+    onVs: () -> Unit,
     onClick: () -> Unit,
 ) {
     val isDone = completion != null
@@ -224,18 +237,7 @@ private fun ModeCardView(
                     .background(card.accent.copy(alpha = 0.08f)),
                 contentAlignment = Alignment.Center,
             ) {
-                when {
-                    card.glyph != null -> Text(card.glyph, fontSize = 11.sp, fontWeight = FontWeight.Black, color = card.accent)
-                    else -> {
-                        val res = modeIconRes(card.lucide)
-                        if (res != null) Icon(
-                            painter = androidx.compose.ui.res.painterResource(res),
-                            contentDescription = null,
-                            tint = card.accent,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                }
+                ModeGlyph(card, card.accent, glyphSize = 11.sp, iconSize = 16.dp)
             }
             Spacer(Modifier.height(6.dp))
             Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -264,22 +266,27 @@ private fun ModeCardView(
                 )
             }
         }
+
+        // VS swords button (Pro + Unlimited) — quick-match this mode (web parity).
+        if (showVs) {
+            Box(
+                modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp).size(26.dp)
+                    .clip(RoundedCornerShape(8.dp)).background(Color(0xFF0D9488).copy(alpha = 0.12f))
+                    .border(1.dp, Color(0xFF0D9488).copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                    .clickableNoRipple(onVs),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords),
+                    contentDescription = "VS", tint = Color(0xFF0D9488), modifier = Modifier.size(14.dp),
+                )
+            }
+        }
     }
 }
 
 private fun fmtShort(secs: Int): String =
     if (secs <= 0) "—" else if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"
-
-/** Exact lucide / custom icon drawable per mode (matches web MODE_CARDS icons). */
-private fun modeIconRes(lucide: String?): Int? = when (lucide) {
-    "WordleGrid" -> com.wordocious.app.R.drawable.ic_wordle_grid
-    "Swords" -> com.wordocious.app.R.drawable.ic_swords
-    "TrendingUp" -> com.wordocious.app.R.drawable.ic_trending_up
-    "Shield" -> com.wordocious.app.R.drawable.ic_shield
-    "Skull" -> com.wordocious.app.R.drawable.ic_skull
-    "Crown" -> com.wordocious.app.R.drawable.ic_crown
-    else -> null
-}
 
 @Composable
 private fun LiveBanner() {
