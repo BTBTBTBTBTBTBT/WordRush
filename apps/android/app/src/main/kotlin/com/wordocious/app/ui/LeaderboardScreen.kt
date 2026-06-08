@@ -105,6 +105,11 @@ fun LeaderboardScreen() {
                 ModeInfoCard(modeLabel = modeLabel, players = entries.size)
                 Spacer(Modifier.height(12.dp))
             }
+            // Completed-daily dropdown (your board for this mode), web parity:
+            // collapsible "Completed/Attempted Today" card above the user rank.
+            item(key = "completed-$selectedMode") {
+                com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode)
+            }
             // User rank — "You're ranked #N of M"
             if (userIdx >= 0) {
                 item {
@@ -271,27 +276,51 @@ private fun secondsUntilMidnight(): Long {
     return (ms - (System.currentTimeMillis() % ms)) / 1000L
 }
 
+private val LB_SHORT = mapOf(
+    "DUEL" to "Classic", "QUORDLE" to "Quad", "OCTORDLE" to "Octo", "SEQUENCE" to "Succ.",
+    "RESCUE" to "Deliv.", "DUEL_6" to "Six", "DUEL_7" to "Seven", "GAUNTLET" to "Gauntlet", "PROPERNOUNDLE" to "Proper",
+)
+private val LB_GLYPH = mapOf("QUORDLE" to "IV", "OCTORDLE" to "VIII", "DUEL_6" to "6", "DUEL_7" to "7")
+
+/**
+ * 5-over-4 stacked mode grid (all 9 modes visible, no horizontal scroll) — ports
+ * the web `<ModePicker grid>` used on /daily + /records and the Profile dailies
+ * layout, so you don't have to scroll to find a game.
+ */
 @Composable
 internal fun ModePickerRow(selected: String, onSelect: (String) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)
-            .horizontalScroll(androidx.compose.foundation.rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        MODE_OPTIONS.forEach { (id, name) ->
-            val isSelected = id == selected
-            Text(
-                name,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(if (isSelected) WTheme.primary else WTheme.surfaceAlt)
-                    .clickableNoRipple { onSelect(id) }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Black,
-                color = if (isSelected) Color.White else WTheme.textSecondary,
-            )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MODE_OPTIONS.take(5).forEach { (id, _) -> ModeCell(id, selected == id, Modifier.weight(1f)) { onSelect(id) } }
         }
+        // Bottom 4 centered under the top 5 (each cell = 1/5 width, web parity).
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(Modifier.weight(0.5f))
+            MODE_OPTIONS.drop(5).forEach { (id, _) -> ModeCell(id, selected == id, Modifier.weight(1f)) { onSelect(id) } }
+            Spacer(Modifier.weight(0.5f))
+        }
+    }
+}
+
+@Composable
+private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(id)) }.getOrDefault(WTheme.primary)
+    val short = LB_SHORT[id] ?: id
+    val glyph = LB_GLYPH[id] ?: short.take(1)
+    Column(
+        modifier.clip(RoundedCornerShape(12.dp))
+            .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
+            .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
+            .clickableNoRipple(onClick).padding(horizontal = 4.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
+            Text(glyph, fontSize = 10.sp, fontWeight = FontWeight.Black, color = accent)
+        }
+        Text(short, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1)
     }
 }
 

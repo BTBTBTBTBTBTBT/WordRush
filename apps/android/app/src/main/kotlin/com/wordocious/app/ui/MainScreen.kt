@@ -141,7 +141,10 @@ fun MainScreen() {
             AppHeader(onSettings = { showSettings = true }, onHelp = { infoRoute = "help" })
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 when (selectedTab) {
-                    0 -> HomeScreen(onSelectMode = { if (it.id == "vs") vsLobby = true else activeGame = it })
+                    0 -> HomeScreen(
+                        onSelectMode = { if (it.id == "vs") vsLobby = true else activeGame = it },
+                        onGoPro = { infoRoute = "pro" },
+                    )
                     1 -> LeaderboardScreen()
                     2 -> ProfileScreen(onGoPro = { infoRoute = "pro" }, onEditProfile = { infoRoute = "edit" })
                     3 -> RecordsScreen()

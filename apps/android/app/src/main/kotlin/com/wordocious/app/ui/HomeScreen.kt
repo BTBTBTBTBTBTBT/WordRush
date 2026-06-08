@@ -29,9 +29,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -52,14 +56,20 @@ import kotlinx.coroutines.delay
  * layer lands (later phase). Layout, colors, copy and the mode grid are 1:1.
  */
 @Composable
-fun HomeScreen(onSelectMode: (ModeCard) -> Unit) {
+fun HomeScreen(onSelectMode: (ModeCard) -> Unit, onGoPro: () -> Unit = {}) {
     // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
     val completions by androidx.compose.runtime.produceState(
         initialValue = emptyMap<String, com.wordocious.app.data.DailyCompletionsService.Completion>()
     ) {
         value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
     }
+    // Pro/Unlimited dimension (web parity): free users get one daily play per
+    // mode; once played, the card LOCKS (dimmed + tap → ModeLimitModal). Pro
+    // users replay unlimited. VS card (engineMode null) is never daily-locked.
+    val isPro = com.wordocious.app.data.AuthService.isProActive
+    var limitModal by remember { mutableStateOf<ModeCard?>(null) }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         // (Shared AppHeader is rendered by MainScreen above all tabs.)
         Column(
@@ -84,7 +94,10 @@ fun HomeScreen(onSelectMode: (ModeCard) -> Unit) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     rowCards.forEach { card ->
                         val completion = card.engineMode?.let { completions[it.name] }
-                        ModeCardView(card, completion, Modifier.weight(1f)) { onSelectMode(card) }
+                        val isLocked = !isPro && completion != null
+                        ModeCardView(card, completion, isLocked, Modifier.weight(1f)) {
+                            if (isLocked) limitModal = card else onSelectMode(card)
+                        }
                     }
                     if (rowCards.size == 1) Spacer(Modifier.weight(1f))
                 }
@@ -93,6 +106,17 @@ fun HomeScreen(onSelectMode: (ModeCard) -> Unit) {
             LiveBanner()
             FooterLinks()
             Spacer(Modifier.height(16.dp))
+        }
+    }
+        // Free-user daily-limit modal (web ModeLimitModal). "View Solved Puzzle"
+        // opens the finished daily (GameScreen resumes → post-game screen).
+        limitModal?.let { card ->
+            ModeLimitModal(
+                modeName = card.title,
+                onClose = { limitModal = null },
+                onGoPro = onGoPro,
+                onViewPuzzle = { onSelectMode(card) },
+            )
         }
     }
 }
@@ -167,13 +191,15 @@ private fun WordOfTheDayCard() {
 private fun ModeCardView(
     card: ModeCard,
     completion: com.wordocious.app.data.DailyCompletionsService.Completion?,
+    isLocked: Boolean,
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
     val isDone = completion != null
     // Completed daily: soft tint in the mode's accent + accent border (web parity).
+    // Locked (free user, played today): dimmed 60% + gray border.
     val cardBg = if (isDone) card.accent.copy(alpha = 0.06f) else WTheme.surface
-    val cardBorder = if (isDone) card.accent.copy(alpha = 0.4f) else WTheme.border
+    val cardBorder = if (isLocked) Color(0xFFD1D5DB) else if (isDone) card.accent.copy(alpha = 0.4f) else WTheme.border
 
     Box(
         modifier = modifier
@@ -181,6 +207,7 @@ private fun ModeCardView(
             .clip(RoundedCornerShape(14.dp))
             .background(cardBg)
             .border(1.5.dp, cardBorder, RoundedCornerShape(14.dp))
+            .then(if (isLocked) Modifier.alpha(0.6f) else Modifier)
             .clickableNoRipple(onClick),
     ) {
         // Top accent bar (web h-1 gradient accent → accent88)

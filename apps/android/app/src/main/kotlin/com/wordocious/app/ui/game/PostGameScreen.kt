@@ -254,7 +254,7 @@ private fun DailyRankBadge(mode: GameMode) {
  * leaderboard score.
  */
 @Composable
-private fun ScoreBreakdownCard(
+internal fun ScoreBreakdownCard(
     mode: GameMode, won: Boolean, guessCount: Int, elapsedSeconds: Int,
     boardsSolved: Int, totalBoards: Int, hintsUsed: Int,
 ) {
