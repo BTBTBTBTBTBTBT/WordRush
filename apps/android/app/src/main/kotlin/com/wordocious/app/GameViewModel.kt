@@ -25,14 +25,32 @@ import kotlinx.coroutines.launch
  * All game rules live in [gameReducer]; this only tracks typed input + time and
  * forwards immutable state transitions to Compose.
  */
-class GameViewModel(private val seed: String, private val mode: GameMode) : ViewModel() {
+class GameViewModel(
+    private val seed: String,
+    private val mode: GameMode,
+    /** VS mode: relay guesses/solves/completion to the socket; skip local persistence. */
+    private val isVersus: Boolean = false,
+) : ViewModel() {
+
+    // ── VS relay callbacks (null in solo; set by VSMatchViewModel) ────────────────
+    var onGuessCommitted: ((String) -> Unit)? = null
+    var onBoardSolved: ((Int) -> Unit)? = null
+    var onStageCompleted: ((Int) -> Unit)? = null
+    var onCompleted: ((GameStatus, Int) -> Unit)? = null
 
     private val _state = MutableStateFlow(run {
         DictionaryLoader.ensureLoaded()
-        // Resume a saved game for this seed+mode, else start fresh.
-        GamePersistence.load(seed, mode) ?: createInitialState(seed, mode)
+        // VS games are ephemeral (fresh per match) — never resume from persistence.
+        if (isVersus) createInitialState(seed, mode)
+        else GamePersistence.load(seed, mode) ?: createInitialState(seed, mode)
     })
     val state: StateFlow<GameState> = _state.asStateFlow()
+
+    // VS-facing helpers (mirror iOS GameViewModel surface used by VSMatchViewModel).
+    val boardCount: Int get() = _state.value.boards.size
+    val boardsSolvedCount: Int get() = _state.value.boards.count { it.status == GameStatus.WON }
+    val maxGuesses: Int get() = _state.value.boards[_state.value.currentBoardIndex].maxGuesses
+    val rowsUsed: Int get() = _state.value.boards.firstOrNull()?.guesses?.size ?: 0
 
     private val _input = MutableStateFlow("")
     val currentInput: StateFlow<String> = _input.asStateFlow()
@@ -50,9 +68,11 @@ class GameViewModel(private val seed: String, private val mode: GameMode) : View
     )
     val elapsed: StateFlow<Int> = _elapsed.asStateFlow()
 
+    private var timerJob: kotlinx.coroutines.Job? = null
+
     init {
         // Tick the elapsed timer once per second while the game is in progress.
-        viewModelScope.launch {
+        timerJob = viewModelScope.launch {
             while (true) {
                 if (!isFinished) _elapsed.value = elapsedSeconds()
                 delay(1000)
@@ -107,13 +127,26 @@ class GameViewModel(private val seed: String, private val mode: GameMode) : View
         _state.value = after
         _input.value = ""
         persist()
+        // VS relay: report the guess, any newly-solved boards, and completion.
+        if (isVersus) {
+            onGuessCommitted?.invoke(guess.uppercase())
+            after.boards.forEachIndexed { i, b ->
+                if (b.status == GameStatus.WON && before.boards.getOrNull(i)?.status != GameStatus.WON) {
+                    onBoardSolved?.invoke(i)
+                }
+            }
+        }
         if (after.status != GameStatus.PLAYING) {
             val finishElapsed = elapsedSeconds()
             _elapsed.value = finishElapsed                       // freeze the displayed timer
-            GamePersistence.saveElapsed(seed, mode, finishElapsed) // persist for re-entry
+            if (!isVersus) GamePersistence.saveElapsed(seed, mode, finishElapsed) // persist for re-entry
+            if (isVersus) onCompleted?.invoke(after.status, after.boards.firstOrNull()?.guesses?.size ?: 0)
         }
         return true
     }
+
+    /** Stop the elapsed-timer coroutine — call when a directly-instantiated VS VM is released. */
+    fun stopTimer() { timerJob?.cancel() }
 
     /** Flag the current full-length guess invalid + trigger a shake. */
     private fun reject() {
@@ -126,7 +159,7 @@ class GameViewModel(private val seed: String, private val mode: GameMode) : View
         persist()
     }
 
-    private fun persist() = GamePersistence.save(seed, mode, _state.value)
+    private fun persist() { if (!isVersus) GamePersistence.save(seed, mode, _state.value) }
 
     // ── Hints (Six / Seven / ProperNoundle) ──────────────────────────────────
     // Each hint reveals a random un-guessed vowel/consonant at all its positions

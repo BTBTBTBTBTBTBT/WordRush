@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -249,10 +250,20 @@ private fun DailyCountdownChip() {
         while (true) { value = secondsUntilMidnight(); kotlinx.coroutines.delay(1000) }
     }
     val h = secs / 3600; val m = (secs % 3600) / 60; val s = secs % 60
-    Text(
-        "Resets %02d:%02d:%02d".format(h, m, s),
-        fontSize = 11.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold,
-    )
+    // Web parity (daily/page.tsx): Clock icon + time, no "Resets" label.
+    androidx.compose.foundation.layout.Row(
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+    ) {
+        androidx.compose.material3.Icon(
+            Icons.Filled.Schedule, null,
+            tint = WTheme.textMuted, modifier = Modifier.size(12.dp),
+        )
+        Text(
+            "%02d:%02d:%02d".format(h, m, s),
+            fontSize = 11.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold,
+        )
+    }
 }
 
 private fun secondsUntilMidnight(): Long {
@@ -326,7 +337,7 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         else -> Color.Transparent
     }
     Row(
-        modifier = Modifier.fillMaxWidth().background(bg).padding(horizontal = 14.dp, vertical = 10.dp),
+        modifier = Modifier.fillMaxWidth().background(bg).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -354,7 +365,7 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
 @Composable
 private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         RankIcon(rank)

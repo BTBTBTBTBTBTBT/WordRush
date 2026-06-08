@@ -68,7 +68,7 @@ fun RecordsScreen() {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
         Text(
-            "Daily rankings & all-time hall of fame",
+            "The best of the best across Wordocious",
             fontSize = 12.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
         )

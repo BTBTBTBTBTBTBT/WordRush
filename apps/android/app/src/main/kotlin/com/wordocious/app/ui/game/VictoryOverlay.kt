@@ -99,7 +99,7 @@ fun VictoryOverlay(
                     Text(
                         "VICTORY!",
                         fontSize = 36.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))),
+                        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))),
                     )
                 } else {
                     Text("GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black, color = Color(0xFFF87171))

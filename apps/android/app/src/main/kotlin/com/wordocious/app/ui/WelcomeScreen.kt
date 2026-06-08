@@ -84,11 +84,11 @@ fun WelcomeScreen() {
                 // Three pillars
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Pillar(painterRes = com.wordocious.app.R.drawable.ic_star, tint = Color(0xFF7C3AED), bg = Color(0xFFF3F0FF),
-                        title = "Daily Puzzles", sub = "New challenges every day across the game modes")
+                        title = "Daily Puzzles", sub = "New challenges every day across 9 unique game modes")
                     Pillar(painterRes = com.wordocious.app.R.drawable.ic_swords, tint = Color(0xFFEC4899), bg = Color(0xFFFDF2F8),
                         title = "Compete Head-to-Head", sub = "Challenge friends or get matched with random opponents")
                     Pillar(icon = Icons.Filled.EmojiEvents, tint = Color(0xFFD97706), bg = Color(0xFFFFFBEB),
-                        title = "Leaderboards & Medals", sub = "Climb the daily rankings and earn podium medals")
+                        title = "Climb the Leaderboards", sub = "Earn medals, build streaks, and track your stats")
                 }
                 Spacer(Modifier.height(18.dp))
 

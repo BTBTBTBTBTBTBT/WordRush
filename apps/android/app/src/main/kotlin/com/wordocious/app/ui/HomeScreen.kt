@@ -150,14 +150,15 @@ private fun WordOfTheDayCard() {
             val display = word?.let { it.first().uppercase() + it.drop(1).lowercase() } ?: "…"
             Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             def?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
+                // Web parity (page.tsx): plain italic purple text, no background pill.
                 Text(
-                    it.partOfSpeech.lowercase(), fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.wordmarkStart,
-                    modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(WTheme.surfaceAlt).padding(horizontal = 6.dp, vertical = 2.dp),
+                    it.partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color(0xFF7C3AED),
                 )
             }
         }
         def?.takeIf { it.definition.isNotBlank() }?.let {
-            Text(it.definition, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary, maxLines = 2, modifier = Modifier.padding(top = 2.dp))
+            Text(it.definition, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), maxLines = 2, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }

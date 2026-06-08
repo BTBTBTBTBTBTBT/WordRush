@@ -52,6 +52,10 @@ dependencies {
     // kotlinx-serialization for the :app data models
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
+    // Socket.IO client for realtime VS (same server.wordocious.com socket.io
+    // server the web + iOS connect to). Pulls org.json + OkHttp transitively.
+    implementation("io.socket:socket.io-client:2.1.0")
+
     val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)

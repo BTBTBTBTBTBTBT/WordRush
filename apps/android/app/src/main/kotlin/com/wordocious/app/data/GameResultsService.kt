@@ -204,6 +204,51 @@ object GameResultsService {
             )
         }.getOrNull()
 
+    // ── VS match-history row (player2_id set) ──────────────────────────────────────
+    @Serializable
+    private data class VsMatchInsert(
+        @SerialName("game_mode") val gameMode: String,
+        @SerialName("player1_id") val player1Id: String,
+        @SerialName("player2_id") val player2Id: String,
+        @SerialName("winner_id") val winnerId: String?,    // null on a draw
+        @SerialName("player1_score") val player1Score: Int,
+        @SerialName("player2_score") val player2Score: Int,
+        @SerialName("player1_time") val player1Time: Int,
+        @SerialName("player2_time") val player2Time: Int,
+        val seed: String,
+        val solutions: List<String>,
+        @SerialName("player1_guesses") val player1Guesses: List<String>,
+        @SerialName("started_at") val startedAt: String,
+        @SerialName("completed_at") val completedAt: String,
+    )
+
+    /**
+     * Insert the VS match-history row so the battle shows in Recent Matches —
+     * ports iOS recordVsMatch. Called by ONLY the server-designated writer
+     * (recordMatch=player1) so exactly one shared row exists per match. We don't
+     * have the opponent's guess words client-side, so player2_guesses stays null.
+     */
+    suspend fun recordVsMatch(
+        gameMode: GameMode, opponentId: String, won: Boolean, isDraw: Boolean,
+        playerGuesses: Int, opponentGuesses: Int, playerTimeSec: Int, opponentTimeSec: Int, seed: String,
+    ) {
+        val uid = AuthService.userId ?: return
+        val winnerId: String? = if (isDraw) null else if (won) uid else opponentId
+        val now = Instant.now()
+        runCatching {
+            client.postgrest["matches"].insert(
+                VsMatchInsert(
+                    gameMode = gameMode.name, player1Id = uid, player2Id = opponentId,
+                    winnerId = winnerId, player1Score = playerGuesses, player2Score = opponentGuesses,
+                    player1Time = playerTimeSec, player2Time = opponentTimeSec,
+                    seed = seed, solutions = emptyList(), player1Guesses = emptyList(),
+                    startedAt = now.minusSeconds(playerTimeSec.toLong()).toString(),
+                    completedAt = now.toString(),
+                )
+            )
+        }
+    }
+
     /**
      * Record a finished solo game: user_stats + matches + profile progression.
      * Returns the [XpResult] that drives the post-game XP toast (null on failure).

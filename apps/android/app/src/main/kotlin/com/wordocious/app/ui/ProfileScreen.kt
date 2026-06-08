@@ -423,7 +423,7 @@ private fun GlobalSummaryRow(totalWins: Int, totalLosses: Int, currentStreak: In
 @Composable
 private fun SummaryCard(icon: ImageVector, label: String, value: String, sub: String?, color: Color, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.surface).border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(vertical = 8.dp),
+        modifier = modifier.clip(RoundedCornerShape(14.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)).padding(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
@@ -445,7 +445,7 @@ private fun DailyMedals(profile: com.wordocious.app.data.Profile?, medals: List<
     SectionLabel("DAILY MEDALS")
     Spacer(Modifier.height(8.dp))
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MedalCard(crown = true, count = gold, label = "Gold", color = Color(0xFFD97706), modifier = Modifier.weight(1f))
@@ -482,7 +482,7 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
         SectionLabel("GUESS DISTRIBUTION")
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             buckets.forEach { b ->
@@ -516,7 +516,7 @@ private fun ActivityCard(activity: List<com.wordocious.app.data.MatchStatsServic
         }
         Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp).height(80.dp),
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp).height(80.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom,
         ) {
             activity.forEach { d ->
@@ -626,7 +626,7 @@ private fun SolveTimeCard(points: List<com.wordocious.app.data.MatchStatsService
         SectionLabel("SOLVE TIME — LAST ${points.size} WINS")
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(120.dp)) {
@@ -681,7 +681,7 @@ private fun WhenYouPlayCard(hours: List<com.wordocious.app.data.MatchStatsServic
         SectionLabel("WHEN YOU PLAY")
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(Modifier.fillMaxWidth().height(40.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Bottom) {
@@ -710,7 +710,7 @@ private fun TopWordsCard(words: List<com.wordocious.app.data.MatchStatsService.T
         SectionLabel("TOP WORDS")
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             words.forEachIndexed { i, w ->
@@ -742,7 +742,7 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
         SectionLabel("PRO INSIGHTS")
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (!isPro) {
@@ -830,7 +830,7 @@ private fun ProStatsCard(stats: List<ProfileService.UserStat>, isPro: Boolean, o
         SectionLabel("PRO STATS")
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (!isPro) {

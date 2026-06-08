@@ -48,6 +48,29 @@ fun MainScreen() {
     var showSettings by remember { mutableStateOf(false) }
     // Help / About / Privacy / Terms / Support overlay route (null = none).
     var infoRoute by remember { mutableStateOf<String?>(null) }
+    // VS flow: lobby (true) → active match (mode, isDaily).
+    var vsLobby by remember { mutableStateOf(false) }
+    var vsActive by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, Boolean>?>(null) }
+
+    // VS match (fullscreen, no bottom nav)
+    vsActive?.let { (vsMode, vsDaily) ->
+        androidx.activity.compose.BackHandler { vsActive = null }
+        com.wordocious.app.ui.vs.VSGameScreen(
+            mode = vsMode, isDaily = vsDaily,
+            onHome = { vsActive = null; vsLobby = false },
+            onGoPro = { vsActive = null; infoRoute = "pro" },
+        )
+        return
+    }
+    if (vsLobby) {
+        androidx.activity.compose.BackHandler { vsLobby = false }
+        com.wordocious.app.ui.vs.VSLobbyScreen(
+            onPlay = { m, daily -> vsActive = m to daily },
+            onGoPro = { vsLobby = false; infoRoute = "pro" },
+            onClose = { vsLobby = false },
+        )
+        return
+    }
 
     // Game screen shown fullscreen (no bottom nav — matches web behavior)
     val card = activeGame
@@ -118,7 +141,7 @@ fun MainScreen() {
             AppHeader(onSettings = { showSettings = true }, onHelp = { infoRoute = "help" })
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 when (selectedTab) {
-                    0 -> HomeScreen(onSelectMode = { activeGame = it })
+                    0 -> HomeScreen(onSelectMode = { if (it.id == "vs") vsLobby = true else activeGame = it })
                     1 -> LeaderboardScreen()
                     2 -> ProfileScreen(onGoPro = { infoRoute = "pro" }, onEditProfile = { infoRoute = "edit" })
                     3 -> RecordsScreen()
