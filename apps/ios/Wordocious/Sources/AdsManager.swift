@@ -30,37 +30,70 @@ final class AdsManager: NSObject, ObservableObject {
     private var interstitial: GADRewardedInterstitialAd?
     private var started = false
 
-    /// Call once at launch. Starts the SDK and (after a beat) requests ATT.
+    /// Call once the app is foreground-active. Resolves Google UMP consent, then
+    /// reliably presents the Apple ATT prompt, then initializes the Mobile Ads SDK.
+    ///
+    /// IMPORTANT (App Review 5.1.2i): the ATT prompt only displays when the app is
+    /// `.active`. Requesting it during cold-launch `.task` (app still `.inactive`)
+    /// makes iOS silently return `.denied` WITHOUT showing the prompt — which is
+    /// why the reviewer never saw it. We now drive this from the first `.active`
+    /// scene phase, and a watchdog guarantees ATT is requested even if the UMP
+    /// network round-trip stalls or never calls back.
     func start() {
         guard AdsConfig.enabled, !started else { return }
         started = true
-        // GDPR / Google UMP consent FIRST (required to serve ads in the EEA/UK).
-        // Order per Google: gather consent → (Apple) ATT → init Mobile Ads SDK.
+        // Gather GDPR / Google UMP consent first (required to serve ads in EEA/UK).
+        // Order per Google: consent → (Apple) ATT → init Mobile Ads SDK.
         let params = UMPRequestParameters()
         params.tagForUnderAgeOfConsent = false
-        UMPConsentInformation.sharedInstance.requestConsentInfoUpdate(with: params) { _ in
-            Task { @MainActor in self.presentConsentFormThenStart() }
+        UMPConsentInformation.sharedInstance.requestConsentInfoUpdate(with: params) { [weak self] _ in
+            Task { @MainActor in self?.presentConsentFormThenStart() }
+        }
+        // Watchdog: if the UMP callback never fires (offline / unreachable during
+        // review), still present ATT so we never silently skip the prompt.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+            self?.requestATTOnce()
         }
     }
 
     /// Show the consent form if the user's region requires one, then continue.
     private func presentConsentFormThenStart() {
         guard let vc = Self.rootViewController() else { afterConsent(); return }
-        UMPConsentForm.loadAndPresentIfRequired(from: vc) { _ in
-            Task { @MainActor in self.afterConsent() }
+        UMPConsentForm.loadAndPresentIfRequired(from: vc) { [weak self] _ in
+            Task { @MainActor in self?.afterConsent() }
         }
     }
 
     /// After consent is resolved: request ATT, then (if we may request ads)
     /// initialize the Mobile Ads SDK and preload the interstitial.
     private func afterConsent() {
-        let proceed: @MainActor () -> Void = { [weak self] in
+        requestATTOnce { [weak self] in
             guard UMPConsentInformation.sharedInstance.canRequestAds else { return }
             GADMobileAds.sharedInstance().start(completionHandler: nil)
             self?.preloadInterstitial()
         }
+    }
+
+    private var attRequested = false
+
+    /// Presents the system ATT prompt exactly once. No-ops if already requested or
+    /// already determined. Guarantees the app is `.active` first (the prompt is
+    /// silently suppressed otherwise), retrying shortly if not yet active.
+    func requestATTOnce(then completion: (@MainActor () -> Void)? = nil) {
+        guard !attRequested else { completion?(); return }
+        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
+            attRequested = true; completion?(); return
+        }
+        guard UIApplication.shared.applicationState == .active else {
+            // Not active yet — try again shortly so the prompt actually shows.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                self?.requestATTOnce(then: completion)
+            }
+            return
+        }
+        attRequested = true
         ATTrackingManager.requestTrackingAuthorization { _ in
-            Task { @MainActor in proceed() }
+            Task { @MainActor in completion?() }
         }
     }
 
