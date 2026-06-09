@@ -75,6 +75,9 @@ class VSMatchViewModel(
     private var started = false
 
     val isPro: Boolean get() = AuthService.isProActive
+    /** Live elapsed seconds for the in-match header clock (web vs-classic parity). */
+    val matchElapsedSeconds: Int get() =
+        if (matchStartMs > 0) (((System.currentTimeMillis() - matchStartMs) / 1000).toInt()).coerceAtLeast(0) else 0
     private val dailyVsActive: Boolean get() = isDaily && !isPro && mode == GameMode.DUEL
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────────

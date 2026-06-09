@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,9 +85,9 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
             VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.message, ::goHome)
             VSScreen.MATCH -> MatchScreen(vm, label, gradient, ::goHome)
             VSScreen.WAITING -> WaitingScreen(vm, gradient, ::goHome)
-            VSScreen.RESULT -> ResultScreen(vm, gradient, ::goHome)
+            VSScreen.RESULT -> ResultScreen(vm, gradient, ::goHome, onGoPro)
             VSScreen.OPPONENT_LEFT -> OpponentLeft(::goHome)
-            VSScreen.ALREADY_PLAYED_DAILY -> AlreadyPlayedDaily(vm.dailyAnswer, gradient, ::goHome)
+            VSScreen.ALREADY_PLAYED_DAILY -> AlreadyPlayedDaily(vm.dailyAnswer, gradient, ::goHome, onGoPro)
         }
 
         vm.countdown?.let { CountdownOverlay(it, gradient) }
@@ -144,7 +146,18 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
                 Text("⌂", fontSize = 18.sp, color = WTheme.primary, fontWeight = FontWeight.Black)
             }
             Spacer(Modifier.weight(1f))
-            VsTitle(label, gradient, 20)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                VsTitle(label, gradient, 20)
+                // Live guesses + elapsed clock (web vs-classic top stat row).
+                var tick by remember { mutableStateOf(0) }
+                LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); tick++ } }
+                @Suppress("UNUSED_EXPRESSION") tick
+                val secs = vm.matchElapsedSeconds
+                Text(
+                    "${game.rowsUsed}/${game.maxGuesses} guesses · ${secs / 60}:${"%02d".format(secs % 60)}",
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                )
+            }
             Spacer(Modifier.weight(1f))
             Spacer(Modifier.size(34.dp))
         }
@@ -192,7 +205,9 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
 }
 
 @Composable
-private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: () -> Unit) {
+private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: () -> Unit, onGoPro: () -> Unit) {
+    // Web parity: non-Pro Rematch opens the VsLimitModal Pro upsell.
+    var showRematchUpsell by remember { mutableStateOf(false) }
     val winner = vm.result?.winner
     val isWin = winner == "player"; val isDraw = winner == "draw"
     val headline = if (isWin) "VICTORY" else if (isDraw) "DRAW" else "DEFEAT"
@@ -232,11 +247,14 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                     RematchState.DECLINED -> Pill("No Rematch", Modifier.weight(1f)) {}
                     RematchState.OFFERED -> GradientPill("Waiting…", gradient, Modifier.weight(1f)) {}
                     RematchState.RECEIVED -> {}
-                    RematchState.IDLE -> GradientPill("Rematch", gradient, Modifier.weight(1f)) { vm.offerRematch() }
+                    RematchState.IDLE -> GradientPill("Rematch", gradient, Modifier.weight(1f)) { if (vm.isPro) vm.offerRematch() else showRematchUpsell = true }
                 }
             }
         }
         item { Spacer(Modifier.height(24.dp)) }
+    }
+    if (showRematchUpsell) {
+        VSLimitUpsellModal(onGoPro = onGoPro, onClose = { showRematchUpsell = false })
     }
 }
 
@@ -259,7 +277,7 @@ private fun NotConfigured(label: String, gradient: List<Color>, onHome: () -> Un
 }
 
 @Composable
-private fun AlreadyPlayedDaily(answer: String, gradient: List<Color>, onHome: () -> Unit) {
+private fun AlreadyPlayedDaily(answer: String, gradient: List<Color>, onHome: () -> Unit, onGoPro: () -> Unit) {
     Column(Modifier.padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("TODAY'S VS PUZZLE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.textMuted)
@@ -274,8 +292,88 @@ private fun AlreadyPlayedDaily(answer: String, gradient: List<Color>, onHome: ()
                 }
             }
         }
+        // Live "next daily VS" countdown (web parity — getSecondsUntilMidnight pill).
+        var cdTick by remember { mutableStateOf(0) }
+        LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); cdTick++ } }
+        @Suppress("UNUSED_EXPRESSION") cdTick
+        val s = vsSecondsUntilLocalMidnight()
+        Text(
+            "Next daily VS in ${"%02d:%02d:%02d".format(s / 3600, (s % 3600) / 60, s % 60)}",
+            fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
+            modifier = Modifier.clip(RoundedCornerShape(50))
+                .background(WTheme.primary.copy(alpha = 0.12f))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+        )
         Text("Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary, textAlign = TextAlign.Center)
+        // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
+        Box(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                .clickableNoRipple(onGoPro).padding(vertical = 13.dp),
+            Alignment.Center,
+        ) {
+            Text("Upgrade to Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+        }
         Pill("Home") { onHome() }
+    }
+}
+
+/** Seconds until the next LOCAL midnight (daily VS resets locally). */
+private fun vsSecondsUntilLocalMidnight(): Long {
+    val cal = java.util.Calendar.getInstance()
+    val now = cal.timeInMillis
+    cal.add(java.util.Calendar.DAY_OF_YEAR, 1)
+    cal.set(java.util.Calendar.HOUR_OF_DAY, 0); cal.set(java.util.Calendar.MINUTE, 0)
+    cal.set(java.util.Calendar.SECOND, 0); cal.set(java.util.Calendar.MILLISECOND, 0)
+    return ((cal.timeInMillis - now) / 1000).coerceAtLeast(0)
+}
+
+/** VS Pro-upsell modal — ports web vs-limit-modal.tsx (shown on non-Pro Rematch). */
+@Composable
+private fun VSLimitUpsellModal(onGoPro: () -> Unit, onClose: () -> Unit) {
+    Box(
+        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).clickableNoRipple(onClose),
+        Alignment.Center,
+    ) {
+        Column(
+            Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(20.dp))
+                .background(WTheme.surface).clickableNoRipple { }
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Icon(
+                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
+                tint = WTheme.textMuted, modifier = Modifier.size(44.dp),
+            )
+            Text("Daily VS Used", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(
+                "You've played your free daily VS match for today. Upgrade to Pro for unlimited ad-free battles and rematches, or come back tomorrow.",
+                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
+            )
+            var tick by remember { mutableStateOf(0) }
+            LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); tick++ } }
+            @Suppress("UNUSED_EXPRESSION") tick
+            val s = vsSecondsUntilLocalMidnight()
+            Text(
+                "Resets in ${"%02d:%02d:%02d".format(s / 3600, (s % 3600) / 60, s % 60)}",
+                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+            )
+            Box(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                    .clickableNoRipple { onClose(); onGoPro() }.padding(vertical = 12.dp),
+                Alignment.Center,
+            ) {
+                Text("Go Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+            }
+            Text(
+                "Maybe later", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                modifier = Modifier.clickableNoRipple(onClose),
+            )
+        }
     }
 }
 
