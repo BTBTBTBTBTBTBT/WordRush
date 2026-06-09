@@ -95,11 +95,14 @@ enum LeaderboardService {
         } catch { return nil }
     }
 
-    static func playerCount(gameMode: GameMode, playType: String = "solo") async -> Int {
+    /// Distinct players who attempted this mode today, ALL play types (solo + VS) —
+    /// matches web getDailyPlayerCount (no play_type filter), which intentionally
+    /// differs from the solo-only leaderboard "of N" total.
+    static func playerCount(gameMode: GameMode) async -> Int {
         let client = AuthService.shared.client
         return (try? await client.from("daily_results")
             .select("user_id", head: true, count: .exact)
-            .eq("day", value: todayLocal()).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)
+            .eq("day", value: todayLocal()).eq("game_mode", value: gameMode.rawValue)
             .execute().count) ?? 0
     }
 }

@@ -701,7 +701,8 @@ struct LeaderboardTab: View {
     }
 
     private func detail(_ e: LeaderboardEntry) -> String {
-        let t = "\(Int(e.timeSeconds) / 60):\(String(format: "%02d", Int(e.timeSeconds) % 60))"
+        // Web parity: time as "Ns" / "Nm Ns" (formatTime in app/daily/page.tsx), not M:SS.
+        let t = formatShortTime(Int(e.timeSeconds))
         var s = "\(e.guessCount) Guesses · \(t)"
         if e.totalBoards > 1 { s += " · \(e.boardsSolved)/\(e.totalBoards)" }
         if HINT_MODES.contains(mode.rawValue), let h = e.hintsUsed { s += h > 0 ? " · \(h) hint\(h == 1 ? "" : "s")" : " · No hints" }
@@ -997,7 +998,10 @@ struct DailyRecordsView: View {
 
     private func dailyRow(_ rank: Int, _ e: LeaderboardEntry) -> some View {
         let isMe = e.userId == auth.profile?.id
-        let t = "\(Int(e.timeSeconds) / 60):\(String(format: "%02d", Int(e.timeSeconds) % 60))"
+        // Web parity: "Ns"/"Nm Ns" time + multi-board fraction + a Win/Loss pill.
+        let t = formatShortTime(Int(e.timeSeconds))
+        var line = "\(e.guessCount) Guesses · \(t)"
+        if e.totalBoards > 1 { line += " · \(e.boardsSolved)/\(e.totalBoards)" }
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
             (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
@@ -1005,7 +1009,13 @@ struct DailyRecordsView: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
                 Text("\(Int(e.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                Text("\(e.guessCount) Guesses · \(t)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                HStack(spacing: 5) {
+                    Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    Text(e.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
+                        .foregroundStyle(e.completed ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(e.completed ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+                }
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)

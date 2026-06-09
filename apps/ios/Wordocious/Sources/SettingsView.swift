@@ -49,7 +49,7 @@ struct SettingsView: View {
                         }
                         section("NOTIFICATIONS") {
                             VStack(spacing: 0) {
-                                toggleRow("Daily Reminder", "A nudge to play today's puzzles", $dailyReminder)
+                                toggleRow("Daily Reminders", "A nudge to play today's puzzles", $dailyReminder)
                             }
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
@@ -78,7 +78,7 @@ struct SettingsView: View {
                         }
                         if auth.isAuthenticated {
                             Button { Task { await auth.signOut(); dismiss() } } label: {
-                                Text("Sign out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
+                                Text("Sign Out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
                             }.buttonStyle(.bordered).tint(Color(hex: 0xDC2626))
 
                             // Delete Account — ports the web profile flow (calls

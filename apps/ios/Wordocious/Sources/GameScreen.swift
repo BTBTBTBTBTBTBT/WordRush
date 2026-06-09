@@ -305,8 +305,10 @@ struct GameScreen: View {
     private var progressLabel: String {
         if let g = vm.gauntletStageLabel { return g }
         if vm.isMultiBoard {
+            // Web parity (quordle-game.tsx): show both boards-solved AND the shared
+            // guess count, not just the solved fraction.
             let solved = vm.boards.filter { $0.status == .won }.count
-            return "\(solved)/\(vm.boardCount) solved"
+            return "\(solved)/\(vm.boardCount) solved · \(vm.rowsUsed)/\(vm.maxGuesses) guesses"
         }
         return "\(vm.rowsUsed)/\(vm.maxGuesses) guesses"
     }
