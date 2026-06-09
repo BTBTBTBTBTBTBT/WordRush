@@ -41,8 +41,11 @@ private struct ChartCard<Content: View>: View {
 }
 
 private struct EmptyChart: View {
+    /// Web parity: the two charts the web keeps visible when empty have
+    /// chart-specific copy (guess-distribution.tsx / solve-time-chart.tsx).
+    var copy = "No games yet — play to build your stats."
     var body: some View {
-        Text("No games yet — play to build your stats.")
+        Text(copy)
             .font(Brand.body(12)).foregroundStyle(Theme.textMuted)
             .frame(maxWidth: .infinity, minHeight: 80)
     }
@@ -62,7 +65,7 @@ private struct GuessDistributionChart: View {
     var body: some View {
         ChartCard(title: "GUESS DISTRIBUTION") {
             if totalWins == 0 {
-                EmptyChart()
+                EmptyChart(copy: "Win a game to see your guess distribution")
             } else {
                 Chart(data) { b in
                     BarMark(x: .value("Guesses", "\(b.guesses)"), y: .value("Wins", b.count))
@@ -87,10 +90,11 @@ private struct ActivityCalendarView: View {
     @State private var data: [MatchStatsService.DayActivity] = []
 
     var body: some View {
-        ChartCard(title: "ACTIVITY (LAST 90 DAYS)") {
-            if data.isEmpty {
-                EmptyChart()
-            } else {
+        // Web parity: DailyCalendar returns null when there are no games —
+        // the card is hidden entirely, not shown with placeholder copy.
+        Group {
+            if data.contains(where: { $0.played > 0 }) {
+                ChartCard(title: "ACTIVITY (LAST 90 DAYS)") {
                 let weeks = makeWeeks()
                 let maxPlayed = max(1, data.map(\.played).max() ?? 1)
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -110,6 +114,7 @@ private struct ActivityCalendarView: View {
                 let totalGames = data.reduce(0) { $0 + $1.played }
                 Text("\(totalDays) day\(totalDays == 1 ? "" : "s") played · \(totalGames) games")
                     .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                }
             }
         }
         .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.activityCalendar(mode: mode) }
@@ -162,7 +167,7 @@ private struct SolveTimeChart: View {
     var body: some View {
         ChartCard(title: "SOLVE TIME — LAST \(data.count) WINS") {
             if data.count < 2 {
-                EmptyChart()
+                EmptyChart(copy: "Win more games to see your solve time trend")
             } else {
                 Chart {
                     ForEach(data) { p in
@@ -209,27 +214,28 @@ private struct TimeOfDayHeatmap: View {
     @State private var data: [MatchStatsService.HourBucket] = []
 
     var body: some View {
-        ChartCard(title: "WHEN YOU PLAY") {
-            let maxPlayed = max(1, data.map(\.played).max() ?? 1)
-            if data.allSatisfy({ $0.played == 0 }) {
-                EmptyChart()
-            } else {
-                HStack(alignment: .bottom, spacing: 2) {
-                    ForEach(data) { h in
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Theme.primary.opacity(h.played == 0 ? 0.08 : 0.2 + (Double(h.played) / Double(maxPlayed)) * 0.8))
-                            .frame(height: 40)
+        // Web parity: time-of-day-heatmap.tsx returns null when empty — hide.
+        Group {
+            if data.contains(where: { $0.played > 0 }) {
+                ChartCard(title: "WHEN YOU PLAY") {
+                    let maxPlayed = max(1, data.map(\.played).max() ?? 1)
+                    HStack(alignment: .bottom, spacing: 2) {
+                        ForEach(data) { h in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Theme.primary.opacity(h.played == 0 ? 0.08 : 0.2 + (Double(h.played) / Double(maxPlayed)) * 0.8))
+                                .frame(height: 40)
+                        }
                     }
-                }
-                HStack(spacing: 0) {
-                    ForEach(Array(["12a", "6a", "12p", "6p", "12a"].enumerated()), id: \.offset) { i, l in
-                        Text(l).font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
-                        if i < 4 { Spacer() }
+                    HStack(spacing: 0) {
+                        ForEach(Array(["12a", "6a", "12p", "6p", "12a"].enumerated()), id: \.offset) { i, l in
+                            Text(l).font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
+                            if i < 4 { Spacer() }
+                        }
                     }
-                }
-                if let peak = data.max(by: { $0.played < $1.played }), peak.played > 0 {
-                    Text("Peak: \(hourLabel(peak.hour)) · \(peak.played) games")
-                        .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                    if let peak = data.max(by: { $0.played < $1.played }), peak.played > 0 {
+                        Text("Peak: \(hourLabel(peak.hour)) · \(peak.played) games")
+                            .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                    }
                 }
             }
         }
@@ -250,10 +256,10 @@ private struct TopWordsCard: View {
     @State private var data: [MatchStatsService.TopWord] = []
 
     var body: some View {
-        ChartCard(title: "TOP WORDS") {
-            if data.isEmpty {
-                EmptyChart()
-            } else {
+        // Web parity: top-words-card.tsx returns null when empty — hide.
+        Group {
+            if !data.isEmpty {
+                ChartCard(title: "TOP WORDS") {
                 let maxCount = max(1, data.map(\.count).max() ?? 1)
                 VStack(spacing: 8) {
                     ForEach(Array(data.enumerated()), id: \.element.id) { i, w in
@@ -276,6 +282,7 @@ private struct TopWordsCard: View {
                         }
                     }
                 }
+                }
             }
         }
         .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.topWords(mode: mode) }
@@ -292,11 +299,13 @@ private struct ProInsightsCard: View {
     private let gold = Color(hex: 0xD97706)
 
     var body: some View {
-        ChartCard(title: "PRO INSIGHTS") {
+        // Web parity: the insights section renders nothing when a Pro user has
+        // no data — only the free-user locked teaser always shows.
+        Group {
+            if !auth.isProActive || s.hasData {
+                ChartCard(title: "PRO INSIGHTS") {
             if !auth.isProActive {
                 locked
-            } else if !s.hasData {
-                EmptyChart()
             } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     statCell("Fastest Win", s.fastestTime.map(fmt) ?? "—", "bolt.fill", gold)
@@ -340,6 +349,8 @@ private struct ProInsightsCard: View {
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     .padding(.top, 2)
+                }
+            }
                 }
             }
         }
@@ -416,11 +427,13 @@ private struct ProStatsCard: View {
                                 "RESCUE": "Deliv", "DUEL_6": "Six", "DUEL_7": "Seven", "GAUNTLET": "Gaunt", "PROPERNOUNDLE": "Proper"]
 
     var body: some View {
-        ChartCard(title: "PRO STATS") {
+        // Web parity: pro-stats.tsx returns null for a Pro user with no data —
+        // only the free-user locked teaser always shows.
+        Group {
+            if !auth.isProActive || !bars.isEmpty {
+                ChartCard(title: "PRO STATS") {
             if !auth.isProActive {
                 locked
-            } else if bars.isEmpty {
-                EmptyChart()
             } else {
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Win Rate by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
@@ -441,6 +454,8 @@ private struct ProStatsCard: View {
                     .chartYAxis { AxisMarks { v in
                         AxisGridLine(); AxisValueLabel { if let s = v.as(Int.self) { Text(fmt(s)).font(Brand.font(9, .bold)) } } } }
                     .frame(height: 150)
+                }
+            }
                 }
             }
         }

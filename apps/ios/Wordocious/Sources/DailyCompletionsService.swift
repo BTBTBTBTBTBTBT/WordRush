@@ -2,7 +2,10 @@ import Foundation
 import Supabase
 
 /// One mode's daily result for today (for the completed-card state).
-struct DailyCompletion: Decodable {
+/// Codable so the store can cache today's completions on-device (web parity:
+/// daily-completions-context.tsx seeds first render from sessionStorage so
+/// completed badges never flash in after a fetch).
+struct DailyCompletion: Codable {
     let gameMode: String
     let completed: Bool
     let guessCount: Int
@@ -17,6 +20,8 @@ struct DailyCompletion: Decodable {
 
 /// Loads the signed-in player's own daily_results for today, keyed by mode.
 /// Powers the home grid's completed states + the Flawless/Sweep banner.
+/// Seeds the first render from an on-device cache (keyed by local day) so
+/// cold launches don't flash unbadged cards while the network fetch runs.
 @MainActor
 final class DailyCompletionsStore: ObservableObject {
     @Published private(set) var byMode: [String: DailyCompletion] = [:]
@@ -24,16 +29,22 @@ final class DailyCompletionsStore: ObservableObject {
     /// The 9 daily modes (VS excluded — no daily row).
     static let totalDailyModes = 9
 
+    private static let cacheKey = "daily-completions-cache"
+
     var completedCount: Int { byMode.count }
     var wonCount: Int { byMode.values.filter { $0.completed }.count }
     var allDone: Bool { completedCount >= Self.totalDailyModes }
     var flawless: Bool { allDone && wonCount >= Self.totalDailyModes }
 
+    init() {
+        byMode = Self.readCache() ?? [:]
+    }
+
     func load() async {
         let client = AuthService.shared.client
         guard (try? await client.auth.session) != nil,
               let userId = try? await client.auth.session.user.id.uuidString else {
-            byMode = [:]; return
+            byMode = [:]; Self.writeCache(nil); return
         }
         do {
             let rows: [DailyCompletion] = try await client.from("daily_results")
@@ -43,8 +54,27 @@ final class DailyCompletionsStore: ObservableObject {
                 .eq("play_type", value: "solo")
                 .execute().value
             byMode = Dictionary(rows.map { ($0.gameMode, $0) }, uniquingKeysWith: { a, _ in a })
+            Self.writeCache(byMode)
         } catch {
-            byMode = [:]
+            // Keep the cached state on a transient failure instead of blanking.
+        }
+    }
+
+    // MARK: Day-keyed cache (the iOS analogue of the web's sessionStorage seed)
+
+    private struct Cache: Codable { let day: String; let byMode: [String: DailyCompletion] }
+
+    private static func readCache() -> [String: DailyCompletion]? {
+        guard let data = UserDefaults.standard.data(forKey: cacheKey),
+              let cache = try? JSONDecoder().decode(Cache.self, from: data),
+              cache.day == LeaderboardService.todayLocal() else { return nil }
+        return cache.byMode
+    }
+
+    private static func writeCache(_ byMode: [String: DailyCompletion]?) {
+        guard let byMode else { UserDefaults.standard.removeObject(forKey: cacheKey); return }
+        if let data = try? JSONEncoder().encode(Cache(day: LeaderboardService.todayLocal(), byMode: byMode)) {
+            UserDefaults.standard.set(data, forKey: cacheKey)
         }
     }
 }

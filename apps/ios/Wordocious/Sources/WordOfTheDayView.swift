@@ -76,10 +76,17 @@ struct WordOfTheDayView: View {
     }
 
     private var placeholderCard: some View {
-        RoundedRectangle(cornerRadius: 14).fill(Theme.surface)
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
-            .frame(height: 78)
-            .overlay(ProgressView())
+        // Web parity: structural animate-pulse skeleton (label bar, word bar,
+        // definition bar) instead of a centered spinner.
+        VStack(alignment: .leading, spacing: 8) {
+            SkeletonBlock(height: 10, width: 110, cornerRadius: 5)
+            SkeletonBlock(height: 16, width: 70, cornerRadius: 6)
+            SkeletonBlock(height: 10, cornerRadius: 5)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
     }
 
     private func fetch() async -> WordInfo {

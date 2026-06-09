@@ -26,7 +26,7 @@ struct PublicProfileView: View {
             LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
                            startPoint: .top, endPoint: .bottom).ignoresSafeArea()
             if loading {
-                ProgressView().tint(Theme.primary)
+                PulsingLoadingText()   // web parity: pulsing "Loading..." text
             } else if notFound || profile == nil {
                 notFoundView
             } else if let p = profile {
@@ -363,5 +363,19 @@ struct RecentMatchRow: View {
 
     private func dateTimeStr(_ d: Date) -> String {
         let f = DateFormatter(); f.dateFormat = "MMM d · h:mm a"; return f.string(from: d)
+    }
+}
+
+
+/// Pulsing "Loading..." text — web parity with /profile/[id]'s animate-pulse label.
+private struct PulsingLoadingText: View {
+    @State private var pulse = false
+    var body: some View {
+        Text("Loading...").font(Brand.body(14)).foregroundStyle(Theme.textMuted)
+            .opacity(pulse ? 0.4 : 1)
+            .onAppear {
+                guard !Theme.reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true }
+            }
     }
 }
