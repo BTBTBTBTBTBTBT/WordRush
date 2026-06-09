@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Visibility
@@ -341,17 +343,6 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
             // Centered gradient mode title + progress + live clock (spec Part 2 Headers)
             val board0 = state.boards[0]
-            val progressLabel = if (mode == GameMode.GAUNTLET) {
-                val sn = (state.gauntlet?.currentStage ?: 0) + 1
-                "Stage $sn / ${state.gauntlet?.totalStages ?: 5}"
-            } else if (state.boards.size > 1) {
-                // Web parity (quordle-game header): boards solved AND the shared
-                // guess count, not just the guess counter.
-                val solved = state.boards.count { it.status == GameStatus.WON }
-                "$solved/${state.boards.size} solved · ${board0.guesses.size}/${board0.maxGuesses} guesses"
-            } else {
-                "Guess ${board0.guesses.size + 1} / ${board0.maxGuesses}"
-            }
             Column(
                 modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -366,7 +357,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
                 }
                 Text(
                     com.wordocious.app.ui.modeTitle(mode),
-                    fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
+                    // Web headers are text-3xl (30px) font-black.
+                    fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
                     style = androidx.compose.ui.text.TextStyle(
                         brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
                             com.wordocious.app.ui.modeTitleGradient(mode),
@@ -374,18 +366,46 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
                     ),
                 )
                 Spacer(Modifier.height(2.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Web header stat row: gap-3 spans (no "·" separators) — Trophy
+                // (amber) solved count on multi modes, "{used}/{max} guesses",
+                // Clock (blue) time. Gauntlet keeps its stage label.
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     // Daily ProperNoundle puzzle number (web "#{getDailyPuzzleNumber()}").
                     if (mode == GameMode.PROPERNOUNDLE && seed.startsWith("daily-")) {
                         Text(
                             "#${com.wordocious.core.ProperNoundle.dailyPuzzleNumber(com.wordocious.app.todayLocalDate())}",
                             color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         )
-                        Text("·", color = WTheme.textMuted, fontSize = 12.sp)
                     }
-                    Text(progressLabel, color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    Text("·", color = WTheme.textMuted, fontSize = 12.sp)
-                    Text(fmtClock(elapsed), color = WTheme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                    if (mode == GameMode.GAUNTLET) {
+                        val sn = (state.gauntlet?.currentStage ?: 0) + 1
+                        Text(
+                            "Stage $sn / ${state.gauntlet?.totalStages ?: 5}",
+                            color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        )
+                    } else if (state.boards.size > 1) {
+                        val solved = state.boards.count { it.status == GameStatus.WON }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                androidx.compose.material.icons.Icons.Filled.EmojiEvents, null,
+                                tint = Color(0xFFD97706), modifier = Modifier.size(12.dp),
+                            )
+                            Spacer(Modifier.width(3.dp))
+                            Text("$solved/${state.boards.size}", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Text(
+                        "${board0.guesses.size}/${board0.maxGuesses} guesses",
+                        color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            androidx.compose.material.icons.Icons.Filled.Schedule, null,
+                            tint = Color(0xFF60A5FA), modifier = Modifier.size(12.dp),
+                        )
+                        Spacer(Modifier.width(3.dp))
+                        Text(fmtClock(elapsed), color = WTheme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                    }
                 }
                 // ProperNoundle Clue text (italic, centered) once revealed (spec).
                 if (mode == GameMode.PROPERNOUNDLE) {
@@ -468,6 +488,21 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
         // Corner Home button (top-left) — spec Part 2 Nav: 44dp circle, surface
         // fill, 2dp accent stroke, house icon, shadow. Visible in play + post-game.
         CornerHomeButton(accent = accent, onClick = onBack, modifier = Modifier.padding(8.dp))
+
+        // Rejection toast — web: absolute @ top 90px, dark pill, white 12px bold
+        // ("Not enough letters" / "Not in word list" / "Already guessed").
+        val rejectMsg by vm.rejectMessage.collectAsState()
+        rejectMsg?.let {
+            Box(Modifier.fillMaxWidth().padding(top = 90.dp), contentAlignment = Alignment.TopCenter) {
+                Text(
+                    it, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                        .background(Color(0xFF1A1A2E))
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+            }
+        }
     }
 }
 
@@ -549,7 +584,9 @@ internal fun SingleBoard(
                             letter = tile.letter,
                             state = tile.state,
                             flipDelay = if (isLastSubmitted) col * 150 else null,
+                            flipDuration = 500, // web tile-flip 0.5s (full board)
                             fontSize = tileFontSp,
+                            cornerRadius = 0.dp, // web single-board tiles are sharp-cornered
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -568,6 +605,7 @@ internal fun SingleBoard(
                             state = TileState.EMPTY,
                             isInvalid = isInvalid && letter.isNotEmpty(),
                             fontSize = tileFontSp,
+                            cornerRadius = 0.dp,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -581,7 +619,7 @@ internal fun SingleBoard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     repeat(wordLen) {
-                        TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontSp, modifier = Modifier.weight(1f))
+                        TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontSp, cornerRadius = 0.dp, modifier = Modifier.weight(1f))
                     }
                 }
             }

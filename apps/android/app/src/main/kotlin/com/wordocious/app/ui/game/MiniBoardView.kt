@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -67,6 +70,7 @@ fun MiniBoardView(
     val bgColor = when {
         isWon -> Color(0xFFF0FDF4)   // green-50
         isLost -> Color(0xFFFEF2F2)  // red-50
+        locked -> Color(0xFFF9FAFB)  // web locked board: bg-gray-50
         else -> Color.White
     }
 
@@ -102,8 +106,9 @@ fun MiniBoardView(
                             letter = tile.letter,
                             state = tile.state,
                             fontSize = fontSize,
-                            cornerRadius = 3.dp,
+                            cornerRadius = 4.dp, // web mini `rounded` = 4px
                             square = isExpanded,  // fill (non-square) in the grid; square when zoomed
+                            mini = true,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -128,7 +133,8 @@ fun MiniBoardView(
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     for (col in 0 until wordLen) {
-                        // Locked (future Sequence board): mask committed letters as • with no color.
+                        // Locked (future Sequence board): mask committed letters as •
+                        // on gray-100/gray-300 tiles (web sequence-game masked rows).
                         val masked = locked && isPastGuess
                         val letter = when {
                             masked -> "•"
@@ -142,13 +148,24 @@ fun MiniBoardView(
                             flipDelay = flipDelay,
                             isInvalid = isInvalid && isCurrentRow && letter.isNotEmpty(),
                             fontSize = fontSize,
-                            cornerRadius = 3.dp,
+                            cornerRadius = 4.dp, // web mini `rounded` = 4px
                             square = isExpanded,  // fill (non-square) in the grid; square when zoomed
+                            masked = masked,
+                            mini = true,
                             modifier = Modifier.weight(1f),
                         )
                     }
                 }
             }
+        }
+
+        // Locked: centered Lock icon overlay (web: w-8 h-8 text-gray-300, z-10).
+        if (locked) {
+            Icon(
+                Icons.Filled.Lock, contentDescription = null,
+                tint = Color(0xFFD1D5DB),
+                modifier = Modifier.align(Alignment.Center).size(32.dp),
+            )
         }
 
         // Won: green ✓ badge top-right (web: absolute -top-1.5 -right-1.5)

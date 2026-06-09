@@ -11,13 +11,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,6 +53,8 @@ fun KeyboardView(
     // Quadrant mode (Quad/Octo/Deliverance): per-board states drive sub-cell colors.
     perBoardStates: List<Map<String, TileState>>? = null,
 ) {
+    // Web parity (keyboard.tsx): light haptic on letters, medium on ENTER, none on BACK.
+    val haptics = LocalHapticFeedback.current
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         verticalArrangement = Arrangement.spacedBy(7.dp), // spec row spacing 7
@@ -56,16 +66,23 @@ fun KeyboardView(
                 horizontalArrangement = Arrangement.spacedBy(5.dp), // spec key spacing 5
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (rowIdx == 2) WideKey("⌫") { onDelete() }
+                if (rowIdx == 2) WideKey("BACK") { onDelete() }
                 row.forEach { ch ->
+                    val tap = {
+                        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onKey(ch)
+                    }
                     if (perBoardStates != null) {
-                        QuadrantKey(ch.toString(), perBoardStates) { onKey(ch) }
+                        QuadrantKey(ch.toString(), perBoardStates, tap)
                     } else {
                         val state = letterStates[ch.toString()] ?: TileState.EMPTY
-                        LetterKey(ch.toString(), WTheme.keyColor(state)) { onKey(ch) }
+                        LetterKey(ch.toString(), WTheme.keyColor(state), tap)
                     }
                 }
-                if (rowIdx == 2) WideKey("↵") { onEnter() }
+                if (rowIdx == 2) WideKey("ENTER") {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onEnter()
+                }
             }
         }
     }
@@ -119,6 +136,8 @@ private fun RowScope.QuadrantKey(
             color = if (hasAny) Color.White else Color(0xFF374151),
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
+            // Web: text-shadow on the overlaid letter so it reads over sub-cells.
+            style = if (hasAny) TextStyle(shadow = Shadow(Color(0x80000000), blurRadius = 3f)) else TextStyle.Default,
         )
     }
 }
@@ -132,28 +151,32 @@ private fun quadColor(state: TileState): Color = when (state) {
     TileState.EMPTY -> Color(0xFFE8E5F0)
 }
 
-// Spec Part 2 Keyboard: letter key 52 tall, rounded6, Nunito Bold 18;
-// action keys keyDefault #E8E5F0, Bold 14.
+// Spec Part 2 Keyboard: letter key 52 tall, rounded6, Nunito font-black 18;
+// unstated keys get a 1.5px border (web: `1.5px solid var(--color-border)`);
+// colored (stated) keys are borderless — exactly like keyboard.tsx.
 @Composable
 private fun RowScope.LetterKey(label: String, bg: Color, onClick: () -> Unit) {
+    val unstated = bg == WTheme.keyDefault
     Box(
         modifier = Modifier
             .weight(1f)
             .height(52.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
+            .then(if (unstated) Modifier.border(1.5.dp, WTheme.borderAlt, RoundedCornerShape(6.dp)) else Modifier)
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            color = if (bg == WTheme.keyDefault) WTheme.text else Color.White,
-            fontWeight = FontWeight.Bold,
+            color = if (unstated) WTheme.text else Color.White,
+            fontWeight = FontWeight.Black,
             fontSize = 18.sp,
         )
     }
 }
 
+// Action keys — web: BACK = lucide Delete (backspace) icon, ENTER = text, font-black.
 @Composable
 private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
     Box(
@@ -162,9 +185,14 @@ private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
             .height(52.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(WTheme.keyDefault)
+            .border(1.5.dp, WTheme.borderAlt, RoundedCornerShape(6.dp))
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = WTheme.text, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        if (label == "BACK") {
+            Icon(Icons.AutoMirrored.Outlined.Backspace, contentDescription = "Backspace", tint = WTheme.text, modifier = Modifier.size(20.dp))
+        } else {
+            Text(label, color = WTheme.text, fontWeight = FontWeight.Black, fontSize = 13.sp)
+        }
     }
 }

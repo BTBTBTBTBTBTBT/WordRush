@@ -90,40 +90,50 @@ class GameViewModel(
     fun elapsedSeconds(): Int =
         ((System.currentTimeMillis() - _state.value.startTime) / 1000).toInt().coerceAtLeast(0)
 
-    // Rejection feedback: a full-length guess that's invalid / already-guessed
-    // turns the current row red and shakes it (bumping shakeKey). 1:1 with iOS.
+    // Rejection feedback — web parity (practice-game handleKey): the row turns
+    // red + shakes, a message toast appears ("Not enough letters" / "Not in word
+    // list" / "Already guessed"), input is ignored for 600ms then CLEARED, and
+    // the message auto-dismisses at 1500ms.
     private val _invalidWord = MutableStateFlow(false)
     val invalidWord: StateFlow<Boolean> = _invalidWord.asStateFlow()
     private val _shakeKey = MutableStateFlow(0)
     val shakeKey: StateFlow<Int> = _shakeKey.asStateFlow()
+    private val _rejectMessage = MutableStateFlow<String?>(null)
+    val rejectMessage: StateFlow<String?> = _rejectMessage.asStateFlow()
+    private var rejecting = false
+    private var rejectJob: kotlinx.coroutines.Job? = null
 
     fun typeLetter(c: Char) {
-        if (isFinished) return
+        if (isFinished || rejecting) return
         if (_input.value.length >= wordLength) return
         if (!c.isLetter()) return
         _invalidWord.value = false
+        _rejectMessage.value = null
         _input.value = _input.value + c.uppercaseChar()
     }
 
     fun deleteLetter() {
+        if (rejecting) return
         if (_input.value.isNotEmpty()) {
             _invalidWord.value = false
+            _rejectMessage.value = null
             _input.value = _input.value.dropLast(1)
         }
     }
 
     /** Submit the typed input. Returns false if rejected (length/validity/no-op). */
     fun submit(applyToAll: Boolean = false): Boolean {
-        if (isFinished) return false
+        if (isFinished || rejecting) return false
         val guess = _input.value
-        if (guess.length != wordLength) { reject(); return false }
+        if (guess.length != wordLength) { reject("Not enough letters"); return false }
         // Reject already-guessed words on the active board (UI rule; reducer doesn't dedupe).
         val activeBoard = _state.value.boards[_state.value.currentBoardIndex]
-        if (activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }) { reject(); return false }
+        if (activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }) { reject("Already guessed"); return false }
         val before = _state.value
         val after = gameReducer(before, GameAction.SubmitGuess(guess, applyToAll = applyToAll))
-        if (after === before || after == before) { reject(); return false } // dictionary-rejected
+        if (after === before || after == before) { reject("Not in word list"); return false } // dictionary-rejected
         _invalidWord.value = false
+        _rejectMessage.value = null
         _state.value = after
         _input.value = ""
         persist()
@@ -148,10 +158,24 @@ class GameViewModel(
     /** Stop the elapsed-timer coroutine — call when a directly-instantiated VS VM is released. */
     fun stopTimer() { timerJob?.cancel() }
 
-    /** Flag the current full-length guess invalid + trigger a shake. */
-    private fun reject() {
+    /**
+     * Flag the rejected guess: red row (full-length only) + shake + toast.
+     * Web timing: keys ignored + input cleared at 600ms, toast gone at 1500ms.
+     */
+    private fun reject(message: String) {
         if (_input.value.length == wordLength) _invalidWord.value = true
         _shakeKey.value = _shakeKey.value + 1
+        _rejectMessage.value = message
+        rejecting = true
+        rejectJob?.cancel()
+        rejectJob = viewModelScope.launch {
+            delay(600)
+            _input.value = ""
+            _invalidWord.value = false
+            rejecting = false
+            delay(900)
+            _rejectMessage.value = null
+        }
     }
 
     fun dispatch(action: GameAction) {

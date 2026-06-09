@@ -1,6 +1,8 @@
 package com.wordocious.app.ui.game
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,60 +41,74 @@ fun TileView(
     letter: String,
     state: TileState,
     flipDelay: Int? = null,   // ms; null = no animation
+    flipDuration: Int = 300,  // web: tile-flip 500ms full board, tile-flip-mini 300ms
     isInvalid: Boolean = false,
     cornerRadius: Dp = 4.dp,
     fontSize: Float = 20f,
     // square=true forces a 1:1 tile (single-board). false = fill the cell
     // (multi-board in-play, non-square per spec — prevents overlap).
     square: Boolean = true,
+    // Sequence locked-board mask: gray-100 tile, gray-300 border, "•" letter.
+    masked: Boolean = false,
+    // Mini (multi-board) tile — web's colorblind palette differs: cyan-600/orange-500
+    // (multi-board.tsx getTileColor) vs the single-board CSS-override palette.
+    mini: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    // Orthographic scaleY squash: start at 0 → 1 after flipDelay ms (web: 80ms stagger/tile).
-    // Under Reduced Motion we snap (no squash) — spec accessibility gating.
+    // Web tile-flip: rotateX 0→90→0 over the full duration, fill-mode `both` —
+    // the tile sits flat (final color) before its stagger delay, then flips.
+    // Under Reduced Motion we snap (no flip) — spec accessibility gating.
     val animateFlip = flipDelay != null && !WTheme.reducedMotion
-    var flipped by remember(flipDelay) { mutableStateOf(!animateFlip) }
+    val rotation = remember(flipDelay) { Animatable(0f) }
     LaunchedEffect(flipDelay) {
         if (animateFlip) {
             delay(flipDelay!!.toLong())
-            flipped = true
+            rotation.animateTo(90f, tween(flipDuration / 2, easing = EaseIn))
+            rotation.animateTo(0f, tween(flipDuration / 2, easing = EaseOut))
         }
     }
-    val scale by animateFloatAsState(
-        targetValue = if (flipped) 1f else 0f,
-        animationSpec = tween(durationMillis = if (animateFlip) 160 else 0),
-        label = "tileFlip",
-    )
 
     val filled = state != TileState.EMPTY
     // Spec: invalid = bg #FEF2F2 / border #F87171 / text #EF4444. Empty = WHITE fill
     // + #D1D5DB border (not transparent — was showing the gradient through the tile).
     val bgColor = when {
         isInvalid -> Color(0xFFFEF2F2)
+        masked -> Color(0xFFF3F4F6)
+        filled && mini && WTheme.colorblind && state == TileState.CORRECT -> Color(0xFF0891B2)
+        filled && mini && WTheme.colorblind && state == TileState.PRESENT -> Color(0xFFF97316)
         filled -> WTheme.tileColor(state)
         else -> Color.White
     }
     val borderColor = when {
         isInvalid -> Color(0xFFF87171)
+        masked -> Color(0xFFD1D5DB)
         // Web HINT_USED: faint ghost tile — border gray-200 (#E5E7EB).
         state == TileState.HINT_USED -> Color(0xFFE5E7EB)
+        // Web ABSENT keeps the gray-300 border (board.tsx TILE.border).
+        state == TileState.ABSENT -> Color(0xFFD1D5DB)
         filled -> bgColor
         else -> WTheme.emptyBorder
     }
     val textColor = when {
         isInvalid -> Color(0xFFEF4444)
+        masked -> WTheme.text
         // Web HINT_USED letter = gray-300, not white-on-gray.
         state == TileState.HINT_USED -> Color(0xFFD1D5DB)
         filled -> Color.White
         else -> WTheme.text
     }
+    val showBorder = !filled || state == TileState.HINT_USED || state == TileState.ABSENT || masked
 
     Box(
         modifier = modifier
             .then(if (square) Modifier.aspectRatio(1f) else Modifier.fillMaxSize())
-            .graphicsLayer { scaleY = if (flipDelay != null) scale else 1f }
+            .graphicsLayer {
+                rotationX = rotation.value
+                cameraDistance = 12f * density
+            }
             .clip(RoundedCornerShape(cornerRadius))
             .background(bgColor)
-            .then(if (!filled || state == TileState.HINT_USED) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier),
+            .then(if (showBorder) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Text(

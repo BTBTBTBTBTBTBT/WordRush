@@ -114,16 +114,24 @@ fun MultiBoardLayout(
             }
         }
 
-        // OctoWord expanded overlay (web: fixed rect at center, dim backdrop).
-        // Uses scale+offset to morph from the source board slot to the full view.
+        // OctoWord expanded overlay (web: fixed rect at center, dim backdrop,
+        // animate-fade-in-scale). Web caps: w = min(0.9·availW, 384px),
+        // h = min(0.95·availH, w·2.2).
         if (expandedIndex != null) {
-            val targetW = (containerW * 0.88f)
-            val targetH = (containerH * 0.92f)
+            val targetW = minOf(containerW * 0.9f, 384.dp)
+            val targetH = minOf(containerH * 0.95f, targetW * 2.2f)
+            var appeared by remember(expandedIndex) { mutableStateOf(false) }
+            androidx.compose.runtime.LaunchedEffect(expandedIndex) { appeared = true }
+            val zoomT by animateFloatAsState(
+                targetValue = if (appeared) 1f else 0f,
+                animationSpec = tween(if (com.wordocious.app.ui.theme.WTheme.reducedMotion) 0 else 200),
+                label = "octoZoom",
+            )
 
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.6f))
+                    .background(Color.Black.copy(alpha = 0.6f * zoomT))
                     .clickableNoRipple { expandedIndex = null },
             )
 
@@ -134,6 +142,11 @@ fun MultiBoardLayout(
                         x = (containerW - targetW) / 2,
                         y = (containerH - targetH) / 2,
                     )
+                    .graphicsLayer {
+                        alpha = zoomT
+                        scaleX = 0.95f + 0.05f * zoomT
+                        scaleY = 0.95f + 0.05f * zoomT
+                    }
                     .background(Color.White, RoundedCornerShape(12.dp))
                     .clickableNoRipple { expandedIndex = null }
                     .padding(6.dp),
@@ -150,15 +163,14 @@ fun MultiBoardLayout(
 }
 
 /**
- * Compute combined keyboard letter states from all playing boards —
- * matches the web `computeActiveLetterStates`. Best state wins:
- * CORRECT > PRESENT > ABSENT > EMPTY.
+ * Compute combined keyboard letter states from all PLAYING boards —
+ * matches the web `computeActiveLetterStates` (multi-board.tsx skips
+ * non-PLAYING boards). Best state wins: CORRECT > PRESENT > ABSENT > EMPTY.
  */
 fun computeCombinedLetterStates(boards: List<BoardState>): Map<String, TileState> {
     val states = mutableMapOf<String, TileState>()
     for (board in boards) {
-        // Include letter evidence from ALL boards (playing and solved), like the web does:
-        // solved boards' tile colors still appear on the keyboard.
+        if (board.status != GameStatus.PLAYING) continue
         val boardGuesses = buildList {
             board.prefilledGuesses?.forEach { addAll(it.evaluation.tiles.map { t -> t.letter to t.state }) }
             board.guesses.forEach { guess ->
