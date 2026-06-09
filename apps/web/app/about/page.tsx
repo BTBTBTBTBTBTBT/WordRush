@@ -103,7 +103,7 @@ export default function AboutPage() {
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>Daily Challenges &amp; Streaks</h2>
             <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-              Every game mode features a daily puzzle that resets at midnight UTC. All players around the world receive the same puzzle each day, making it easy to compare results with friends, family, or the global community.
+              Every game mode features a daily puzzle that resets at midnight in your local time. All players receive the same daily puzzle each day, making it easy to compare results with friends, family, or the global community.
             </p>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               Play at least one daily puzzle each day to build your streak. Streaks reward consistency &mdash; the longer your streak, the more bonus XP you earn. If life gets in the way, Streak Shields can protect your streak from a missed day.
