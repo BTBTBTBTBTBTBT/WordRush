@@ -443,9 +443,24 @@ private struct DailyVsAlreadyPlayed: View {
                     }
                 }
             }
+            // Live "next daily VS" countdown (web parity — getSecondsUntilMidnight pill).
+            TimelineView(.periodic(from: Date(), by: 1)) { _ in
+                let s = secondsUntilLocalMidnight()
+                Text("Next daily VS in \(cd(s))")
+                    .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(Capsule().fill(Theme.primary.opacity(0.12)))
+            }
             Text("Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.")
                 .font(Brand.font(12, .bold)).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 16)
+            // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
+            NavigationLink { ProView() } label: {
+                Label("Upgrade to Pro", systemImage: "crown.fill").font(Brand.font(14, .black)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 13)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(
+                        LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+            }.buttonStyle(.plain)
             Button(action: onHome) {
                 Label("Home", systemImage: "house.fill").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)
@@ -453,5 +468,9 @@ private struct DailyVsAlreadyPlayed: View {
             }.buttonStyle(.plain)
         }
         .padding(.horizontal, 24).frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func cd(_ s: Int) -> String {
+        String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
     }
 }

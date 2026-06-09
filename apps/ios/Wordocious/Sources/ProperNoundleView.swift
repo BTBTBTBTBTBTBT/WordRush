@@ -26,6 +26,13 @@ final class ProperNoundleVM: ObservableObject {
     @Published private(set) var revealedVowel: String?
     @Published private(set) var revealedConsonant: String?
     @Published private(set) var finalTimeSeconds: Int?
+    @Published private(set) var wikiImageURL: String?
+
+    /// Fetch the answer's Wikipedia photo for the result screen (web parity).
+    func loadWikiImage() async {
+        guard wikiImageURL == nil, let p = puzzle else { return }
+        wikiImageURL = await WikipediaHint.fetchImageURL(displayName: p.display, wikiTitle: p.wikiTitle)
+    }
 
     private var startMs = Date().timeIntervalSince1970 * 1000
     /// Reset the clock so the game-start ad's time isn't counted.
@@ -261,6 +268,13 @@ struct ProperNoundleView: View {
         return VStack(spacing: 10) {
             Text(vm.status == .won ? "🎉 Solved in \(vm.guesses.count) \(vm.guesses.count == 1 ? "guess" : "guesses")!" : "Out of guesses")
                 .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
+            // Wikipedia photo of the answer (web parity — result thumbnail).
+            if let urlStr = vm.wikiImageURL, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { img in img.resizable().aspectRatio(contentMode: .fill) }
+                    placeholder: { Color(hex: 0xE5E7EB) }
+                    .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.status == .won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626), lineWidth: 2))
+            }
             if let p = vm.puzzle { Text(p.display).font(Brand.title(20)).foregroundStyle(pnAccent) }
             // Home / Share row (web parity).
             HStack(spacing: 18) {
@@ -274,6 +288,7 @@ struct ProperNoundleView: View {
                                boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed)
         }
         .padding(.vertical, 12)
+        .task { await vm.loadWikiImage() }
     }
 
     private func shareResult() {

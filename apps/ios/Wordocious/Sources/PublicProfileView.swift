@@ -13,6 +13,7 @@ struct PublicProfileView: View {
     @State private var stats: [PublicProfileService.StatRow] = []
     @State private var matches: [PublicProfileService.RecentMatch] = []
     @State private var topWords: [MatchStatsService.TopWord] = []
+    @State private var socials: [String: String] = [:]
     @State private var loading = true
     @State private var notFound = false
     @State private var tab = "solo"                 // "solo" | "vs"
@@ -50,6 +51,7 @@ struct PublicProfileView: View {
         profile = p
         stats = await st
         matches = await mt
+        socials = await ProfileExtras.socialLinks(userId: userId)
         // Default the mode picker to the player's first mode for this tab.
         if let firstMode = stats.first(where: { $0.playType == tab })?.gameMode,
            let gm = GameMode(rawValue: firstMode) { selectedMode = gm }
@@ -109,6 +111,43 @@ struct PublicProfileView: View {
                 }
                 Text("\(toNext) XP to next level").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
+            socialLinksRow()
+        }
+    }
+
+    // Public-profile social links — web parity (SocialLinksDisplay on /profile/[id]).
+    private let socialOrder = ["twitter", "instagram", "tiktok", "threads", "discord", "website"]
+
+    @ViewBuilder
+    private func socialLinksRow() -> some View {
+        let links = socials.filter { !$0.value.isEmpty }
+        if !links.isEmpty {
+            HStack(spacing: 8) {
+                ForEach(socialOrder.filter { links[$0] != nil }, id: \.self) { key in
+                    if let handle = links[key], let url = socialURL(key, handle) {
+                        Link(destination: url) {
+                            Image(systemName: key == "website" ? "globe" : (key == "discord" ? "message.fill" : "at"))
+                                .font(.system(size: 13)).foregroundStyle(Theme.textSecondary)
+                                .frame(width: 30, height: 30)
+                                .background(Circle().fill(Theme.surfaceHover))
+                                .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                        }
+                    }
+                }
+            }.padding(.top, 2)
+        }
+    }
+
+    private func socialURL(_ key: String, _ handle: String) -> URL? {
+        let h = handle.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? handle
+        switch key {
+        case "twitter": return URL(string: "https://twitter.com/\(h)")
+        case "instagram": return URL(string: "https://instagram.com/\(h)")
+        case "tiktok": return URL(string: "https://tiktok.com/@\(h)")
+        case "threads": return URL(string: "https://threads.net/@\(h)")
+        case "discord": return URL(string: "https://discord.com/users/\(h)")
+        case "website": return URL(string: handle.hasPrefix("http") ? handle : "https://\(handle)")
+        default: return nil
         }
     }
 

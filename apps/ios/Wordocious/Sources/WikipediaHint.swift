@@ -34,6 +34,27 @@ enum WikipediaHint {
         }
     }
 
+    /// The answer's Wikipedia photo (for the post-game result thumbnail) — reads
+    /// `thumbnail`/`originalimage` from the same REST summary. nil on any failure.
+    static func fetchImageURL(displayName: String, wikiTitle: String?) async -> String? {
+        let raw = (wikiTitle?.isEmpty == false ? wikiTitle! : displayName)
+            .replacingOccurrences(of: "\\s+", with: "_", options: .regularExpression)
+        guard let title = raw.addingPercentEncoding(withAllowedCharacters: allowed),
+              let url = URL(string: "\(api)/\(title)") else { return nil }
+        var req = URLRequest(url: url)
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode),
+                  let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+            let thumb = (obj["thumbnail"] as? [String: Any])?["source"] as? String
+            let original = (obj["originalimage"] as? [String: Any])?["source"] as? String
+            return thumb ?? original
+        } catch {
+            return nil
+        }
+    }
+
     // Common single-word abbreviations whose internal period must NOT trigger a
     // sentence split (e.g. "No. 1", "Dr. X", "Inc."). Same list as the web.
     private static let abbreviations = [
