@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 
 import { Crown, Lock, X } from 'lucide-react';
 import Link from 'next/link';
-import { getSecondsUntilMidnightUTC, formatCountdown } from '@/lib/play-limit-service';
+import { getSecondsUntilMidnightLocal, formatCountdown } from '@/lib/play-limit-service';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
 
 interface ModeLimitModalProps {
@@ -21,7 +21,7 @@ export function ModeLimitModal({ open, onClose, modeName, onViewPuzzle }: ModeLi
 
   useEffect(() => {
     if (!open) return;
-    const update = () => setCountdown(formatCountdown(getSecondsUntilMidnightUTC()));
+    const update = () => setCountdown(formatCountdown(getSecondsUntilMidnightLocal()));
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);

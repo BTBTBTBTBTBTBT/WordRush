@@ -205,8 +205,10 @@ export function hasReachedVsLimit(): boolean {
   return getVsMatchesToday() >= 2;
 }
 
-/** Get seconds until the user's local midnight */
-export function getSecondsUntilMidnightUTC(): number {
+/** Get seconds until the user's local midnight. (Renamed from the misleading
+ *  getSecondsUntilMidnightUTC — it always computed LOCAL midnight, matching
+ *  the local-day play-limit keys.) */
+export function getSecondsUntilMidnightLocal(): number {
   const now = new Date();
   const midnight = new Date(now);
   midnight.setHours(24, 0, 0, 0);

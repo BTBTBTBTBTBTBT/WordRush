@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, X as XIcon } from 'lucide-react';
 import { fetchPendingInvitesForUser, lookupInviterUsername, markInviteDeclined, type MatchInvite } from '@/lib/invite-service';
+import { PROFILE_MODES } from '@/components/profile/mode-picker';
 
 interface Props {
   userId: string | undefined;
@@ -58,7 +59,7 @@ export function PendingInvitesBanner({ userId }: Props) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
-          @{name} invited you to {top.game_mode}
+          @{name} invited you to {PROFILE_MODES.find((m) => m.dbKey === top.game_mode)?.title ?? top.game_mode}
         </p>
         {invites.length > 1 && (
           <p className="text-[10px] font-bold" style={{ color: '#a21caf' }}>

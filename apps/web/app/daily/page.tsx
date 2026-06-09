@@ -16,7 +16,7 @@ import {
   fetchDailyLeaderboard,
   getUserDailyRank,
   getDailyPlayerCount,
-  getSecondsUntilMidnightUTC,
+  getSecondsUntilMidnightLocal,
   getTodayLocal,
   getYesterdayLocal,
   formatHintsLabel,
@@ -35,11 +35,11 @@ function formatTime(seconds: number): string {
 }
 
 function CountdownTimer() {
-  const [secondsLeft, setSecondsLeft] = useState(getSecondsUntilMidnightUTC());
+  const [secondsLeft, setSecondsLeft] = useState(getSecondsUntilMidnightLocal());
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSecondsLeft(getSecondsUntilMidnightUTC());
+      setSecondsLeft(getSecondsUntilMidnightLocal());
     }, 1000);
     return () => clearInterval(interval);
   }, []);

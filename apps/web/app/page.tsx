@@ -16,9 +16,9 @@ import { PendingInvitesBanner } from '@/components/invites/pending-invites-banne
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { useCountdown } from '@/hooks/use-countdown';
-import { getSecondsUntilMidnightUTC, type DailyCompletion } from '@/lib/daily-service';
+import { getSecondsUntilMidnightLocal, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
-import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightUTC as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
+import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 interface WordDefinition {
   word: string;
@@ -129,7 +129,7 @@ function WordOfTheDay() {
 }
 
 function DailyCountdown() {
-  const secs = useCountdown(getSecondsUntilMidnightUTC);
+  const secs = useCountdown(getSecondsUntilMidnightLocal);
   if (secs === null) {
     return <span style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold">Resets in --:--:--</span>;
   }
@@ -149,7 +149,7 @@ function DailyCountdown() {
  * "Next puzzles in <timer>" and the styling is owned by the parent.
  */
 function DailyCountdownText() {
-  const secs = useCountdown(getSecondsUntilMidnightUTC);
+  const secs = useCountdown(getSecondsUntilMidnightLocal);
   if (secs === null) return <span>--:--:--</span>;
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);

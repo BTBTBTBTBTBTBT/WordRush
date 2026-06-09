@@ -15,7 +15,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import {
   hasPlayedModeToday,
   recordModePlayed,
-  getSecondsUntilMidnightUTC,
+  getSecondsUntilMidnightLocal,
   formatCountdown,
 } from '@/lib/play-limit-service';
 import { VsLimitModal } from '@/components/modals/vs-limit-modal';
@@ -737,7 +737,7 @@ function DailyVsAlreadyPlayed({
   const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
-    const update = () => setCountdown(formatCountdown(getSecondsUntilMidnightUTC()));
+    const update = () => setCountdown(formatCountdown(getSecondsUntilMidnightLocal()));
     update();
     const interval = setInterval(update, 1000);
     return () => clearInterval(interval);

@@ -863,9 +863,6 @@ export function getSecondsUntilMidnightLocal(): number {
   return Math.floor((midnight.getTime() - now.getTime()) / 1000);
 }
 
-// Backwards-compatible alias.
-export const getSecondsUntilMidnightUTC = getSecondsUntilMidnightLocal;
-
 export interface DailyCompletion {
   won: boolean;
   guesses: number;
