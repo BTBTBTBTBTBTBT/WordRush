@@ -12,3 +12,6 @@ DerivedData/
 # XcodeGen-generated artifacts — reproducible from project.yml via `xcodegen generate`
 Wordocious.xcodeproj/
 Wordocious/Info.plist
+
+# Xcode archive/export output (do not commit)
+build/
