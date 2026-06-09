@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WordociousCore
 
 /// Design tokens pulled 1:1 from the web app (apps/web/app/globals.css +
@@ -20,6 +21,17 @@ enum Theme {
     static var textPrimary: Color { ThemeManager.shared.current.textPrimary }                     // --color-text
     static var textMuted: Color { ThemeManager.shared.current.textMuted }                         // --color-text-muted
     static var textSecondary: Color { ThemeManager.shared.current.textSecondary }                 // --color-text-secondary
+
+    // Win/Loss pill + gold-highlight tokens — themed like the web's
+    // --color-win-bg/loss-bg/win-text/loss-text/highlight-gold/gold-border(-light)
+    // (dark theme swaps them to deep variants; ocean/forest keep the light values).
+    static var winBG: Color { ThemeManager.shared.current.winBG }
+    static var lossBG: Color { ThemeManager.shared.current.lossBG }
+    static var winText: Color { ThemeManager.shared.current.winText }
+    static var lossText: Color { ThemeManager.shared.current.lossText }
+    static var highlightGold: Color { ThemeManager.shared.current.highlightGold }
+    static var goldBorder: Color { ThemeManager.shared.current.goldBorder }
+    static var goldBorderLight: Color { ThemeManager.shared.current.goldBorderLight }
 
     // Brand
     static let primary = Color(hex: 0x7C3AED)            // purple (hsl 263 70% 50%)
@@ -44,9 +56,16 @@ enum Theme {
     static var keyPresent: Color { cb ? Color(hex: 0x6AAEF0) : Color(hex: 0xCA8A04) } // blue-600 / yellow-600
     static let keyAbsent = Color(hex: 0x9CA3AF)          // gray-400
 
+    /// Single reduced-motion source of truth: the in-app toggle OR the OS
+    /// setting. Web kills every animation under BOTH [data-reduced-motion] and
+    /// prefers-reduced-motion — every animation gates through this.
+    static var reduceMotion: Bool {
+        ThemeManager.shared.reducedMotion || UIAccessibility.isReduceMotionEnabled
+    }
+
     /// Animation honoring the reduced-motion setting (nil = no animation).
     static func animation(_ a: Animation) -> Animation? {
-        ThemeManager.shared.reducedMotion ? nil : a
+        reduceMotion ? nil : a
     }
 
     static let wordmarkGradient = LinearGradient(
@@ -59,7 +78,7 @@ enum Theme {
         case .correct: return correct
         case .present: return present
         case .absent: return absent
-        case .hintUsed: return Color(hex: 0xD1D5DB) // web HINT_USED = gray (not the present color)
+        case .hintUsed: return Color(hex: 0xF3F4F6) // web HINT_USED tile = bg-gray-100 (faint, with gray-300 letter)
         case .empty: return .clear
         }
     }

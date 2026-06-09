@@ -42,8 +42,8 @@ struct RankDeltaBadge: View {
                     Text(improved ? "+\(delta)" : "\(delta)").font(Brand.font(9, .black))
                 }
                 .padding(.horizontal, 6).padding(.vertical, 2)
-                .foregroundStyle(improved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
-                .background(Capsule().fill(improved ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+                .foregroundStyle(improved ? Theme.winText : Theme.lossText)
+                .background(Capsule().fill(improved ? Theme.winBG : Theme.lossBG))
                 .transition(.opacity)
             }
         }

@@ -17,6 +17,7 @@ struct ProfileTab: View {
     @State private var medals: [MedalRow] = []
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
+    @State private var recentLoading = true
     @State private var showEditProfile = false
 
     // Mode-picker (per-mode stats) only covers modes backed by a GameMode enum.
@@ -45,6 +46,7 @@ struct ProfileTab: View {
                     medals = await MedalsService.recent(userId: uid)
                     socialLinks = await ProfileExtras.socialLinks(userId: uid)
                     recentMatches = await PublicProfileService.recentMatches(id: uid)
+                    recentLoading = false
                 }
             }
             // Banner inside the NavigationStack so the ScrollView insets for it
@@ -318,9 +320,18 @@ struct ProfileTab: View {
     /// VS rows (player2 set) render as "VS Match". Shares RecentMatchRow with the
     /// public profile so both are pixel-identical.
     @ViewBuilder private func recentMatchesSection(_ p: Profile) -> some View {
-        if !recentMatches.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("RECENT MATCHES").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+        // Web parity (profile/page.tsx): skeleton rows while loading, then either
+        // the matches or "No matches played yet." — the section never just vanishes.
+        VStack(alignment: .leading, spacing: 8) {
+            Text("RECENT MATCHES").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+            if recentLoading {
+                VStack(spacing: 8) {
+                    ForEach(0..<5, id: \.self) { _ in SkeletonBlock(height: 52, cornerRadius: 12) }
+                }
+            } else if recentMatches.isEmpty {
+                Text("No matches played yet.").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    .frame(maxWidth: .infinity).padding(.vertical, 16)
+            } else {
                 VStack(spacing: 8) {
                     ForEach(recentMatches.prefix(5)) { m in RecentMatchRow(match: m, profileId: p.id) }
                 }
@@ -580,7 +591,7 @@ struct LeaderboardTab: View {
                     .foregroundStyle(Theme.textMuted).frame(maxWidth: .infinity, alignment: .leading)
 
                 if loading {
-                    ProgressView().padding(.vertical, 40)
+                    LeaderboardSkeleton()   // web parity: animate-pulse rows, not a spinner
                 } else if entries.isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
@@ -645,9 +656,9 @@ struct LeaderboardTab: View {
             Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
             Spacer()
             Text(entry.completed ? "W" : "L").font(Brand.font(9, .heavy))
-                .foregroundStyle(entry.completed ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
                 .padding(.horizontal, 5).padding(.vertical, 1)
-                .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+                .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
             Text("\(Int(entry.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
@@ -664,8 +675,8 @@ struct LeaderboardTab: View {
         }
             .frame(maxWidth: .infinity).padding(.vertical, 12)
             .background(RoundedRectangle(cornerRadius: 16).fill(
-                LinearGradient(colors: [Color(hex: 0xFFFBEB), Theme.surface], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+                LinearGradient(colors: [Theme.highlightGold, Theme.surface], startPoint: .topLeading, endPoint: .bottomTrailing)))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.goldBorder, lineWidth: 1.5))
     }
 
     @ViewBuilder
@@ -694,14 +705,14 @@ struct LeaderboardTab: View {
                 HStack(spacing: 5) {
                     Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
-                        .foregroundStyle(entry.completed ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                        .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
                         .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+                        .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
                 }
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(isMe ? Color(hex: 0xFFFBEB) : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
     }
 
     private func detail(_ e: LeaderboardEntry) -> String {
@@ -813,11 +824,11 @@ struct AllTimeRecordsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if loading { ProgressView().frame(maxWidth: .infinity).padding(.vertical, 30) } else {
+            if loading { CardsSkeleton() } else {   // web parity: AllTimeSkeleton card blocks
                 // Hall of Fame
                 Text("HALL OF FAME").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
                 VStack(spacing: 0) {
-                    RoundedRectangle(cornerRadius: 2).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xFDE68A)], startPoint: .leading, endPoint: .trailing)).frame(height: 3)
+                    RoundedRectangle(cornerRadius: 2).fill(LinearGradient(colors: [Color(hex: 0xF59E0B), Theme.goldBorder], startPoint: .leading, endPoint: .trailing)).frame(height: 3)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                         ForEach(RecordCatalog.global, id: \.self) { rt in
                             RecordStatCell(type: rt, record: globalRecord(rt), accent: Color(hex: 0xD97706), isMe: globalRecord(rt)?.holderId == myId)
@@ -829,7 +840,7 @@ struct AllTimeRecordsView: View {
                 // Clip so the 3pt top accent bar's square corners don't poke
                 // past the card's rounded corners.
                 .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.goldBorder, lineWidth: 1.5))
 
                 // By Game Mode
                 Text("BY GAME MODE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
@@ -842,12 +853,21 @@ struct AllTimeRecordsView: View {
                         Text(m?.title ?? mode.rawValue).font(Brand.headline(16)).foregroundStyle(Theme.textPrimary)
                         Spacer()
                     }.padding(.horizontal, 12).padding(.top, 10)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                        ForEach(RecordCatalog.perMode, id: \.self) { rt in
-                            RecordStatCell(type: rt, record: modeRecord(rt), accent: m?.accent ?? Theme.primary, isMe: modeRecord(rt)?.holderId == myId)
+                    if RecordCatalog.perMode.contains(where: { modeRecord($0) != nil }) {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                            ForEach(RecordCatalog.perMode, id: \.self) { rt in
+                                RecordStatCell(type: rt, record: modeRecord(rt), accent: m?.accent ?? Theme.primary, isMe: modeRecord(rt)?.holderId == myId)
+                            }
                         }
+                        .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
+                    } else {
+                        // Web parity (records page): trophy + "No records yet" instead of a dash grid.
+                        VStack(spacing: 8) {
+                            Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+                            Text("No records yet").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 24)
                     }
-                    .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 16)
                 }
                 .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
                 // Clip the 3pt top accent bar to the card's rounded corners.
@@ -901,8 +921,8 @@ struct RecordStatCell: View {
             Spacer(minLength: 0)
         }
         .padding(8)
-        .background(RoundedRectangle(cornerRadius: 8).fill(isMe && has ? Color(hex: 0xFFFBEB) : Color.clear))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(isMe && has ? Color(hex: 0xFDE68A) : Color.clear, lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 8).fill(isMe && has ? Theme.highlightGold : Color.clear))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(isMe && has ? Theme.goldBorder : Color.clear, lineWidth: 1))
     }
 }
 
@@ -982,10 +1002,13 @@ struct DailyRecordsView: View {
                 Divider().overlay(Theme.border)
 
                 if loading {
-                    ProgressView().padding(.vertical, 30)
+                    LeaderboardSkeleton()   // web parity: animate-pulse rows
                 } else if entries.isEmpty {
-                    Text("No results yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                        .frame(maxWidth: .infinity).padding(.vertical, 30)
+                    VStack(spacing: 8) {
+                        Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+                        Text("No results yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 30)
                 } else {
                     ForEach(Array(entries.enumerated()), id: \.element.id) { idx, e in
                         dailyRow(idx + 1, e)
@@ -1027,14 +1050,14 @@ struct DailyRecordsView: View {
                 HStack(spacing: 5) {
                     Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     Text(e.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
-                        .foregroundStyle(e.completed ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                        .foregroundStyle(e.completed ? Theme.winText : Theme.lossText)
                         .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(e.completed ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+                        .background(RoundedRectangle(cornerRadius: 4).fill(e.completed ? Theme.winBG : Theme.lossBG))
                 }
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(isMe ? Color(hex: 0xFFFBEB) : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
     }
 
     private func load() async {

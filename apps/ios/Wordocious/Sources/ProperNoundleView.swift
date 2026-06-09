@@ -219,7 +219,7 @@ struct ProperNoundleView: View {
                     timeSeconds: vm.finalTimeSeconds ?? vm.elapsed, boardsSolved: vm.status == .won ? 1 : 0,
                     totalBoards: 1, solution: p.display, solutions: [],
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
-                .transition(.opacity)
+                .transition(.scale(scale: 0.8).combined(with: .opacity))   // web fade-in-scale 0.8→1.0
             }
             // Corner Home button — matches the web GameHomeButton (red accent) and
             // every other game's screen, in play and on the completed screen.

@@ -117,7 +117,7 @@ struct GameScreen: View {
                     solution: vm.boardCount == 1 ? vm.boards.first?.solution : nil,
                     solutions: vm.boardCount > 1 ? vm.boards.map(\.solution) : [],
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = false; revealComplete = true } })
-                .transition(.scale(scale: 0.92).combined(with: .opacity))
+                .transition(.scale(scale: 0.8).combined(with: .opacity))   // web fade-in-scale 0.8→1.0
             }
             // Gauntlet stage-transition overlay (auto-advances after 2.5s, or tap).
             if vm.stageCleared {
@@ -133,19 +133,26 @@ struct GameScreen: View {
         .hidesBottomNav()
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.status) { newValue in
-            if newValue == .won { Haptics.success(); SoundManager.shared.playSuccess() }
-            else if newValue == .lost { Haptics.error(); SoundManager.shared.playGameOver() }
-            // Celebrate the moment of finishing (Gauntlet has its own results flow).
-            // Wait out the final row's flip, then spring in the finished screen +
-            // victory overlay so the winning word animates first.
-            if (newValue == .won || newValue == .lost) && !vm.isGauntlet {
-                let delay = reduceMotion ? 0 : revealDuration + 0.2
+            // Haptics fire instantly; the jingle waits for the overlay (below).
+            if newValue == .won { Haptics.success() }
+            else if newValue == .lost { Haptics.error() }
+            // Celebrate the moment of finishing. Gauntlet only celebrates a WON
+            // run (web parity: a lost run goes straight to the results screen,
+            // no overlay and no game-over sound). Wait out the final row's flip,
+            // then fade in the victory overlay so the winning word animates first.
+            if (newValue == .won || newValue == .lost) && (!vm.isGauntlet || newValue == .won) {
+                let delay = Theme.reduceMotion ? 0 : revealDuration + 0.2
                 DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    // Web plays success/gameOver when the overlay mounts — i.e.
+                    // AFTER the reveal — not at the instant the game finishes.
+                    if newValue == .won { SoundManager.shared.playSuccess() }
+                    else { SoundManager.shared.playGameOver() }
                     // Show the victory card + confetti over the (dimmed) finished
                     // board first. The heavier finished/stats layout is built only
                     // after the user taps to continue, so it never competes with
-                    // the confetti for frames.
-                    withAnimation(Theme.animation(.spring(response: 0.5, dampingFraction: 0.82))) {
+                    // the confetti for frames. Web entrance: fade-in-scale
+                    // 0.8 → 1.0, 300ms ease-out.
+                    withAnimation(Theme.animation(.easeOut(duration: 0.3))) {
                         showVictory = true
                     }
                 }
@@ -266,7 +273,6 @@ struct GameScreen: View {
     /// `gauntlet-glow` (box-shadow 3px ↔ 8px+14px, #A855F7, 2.5s ease-in-out loop).
     private struct StageGlow: ViewModifier {
         let active: Bool
-        @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var on = false
         private let glow = Color(hex: 0xA855F7)
         func body(content: Content) -> some View {
@@ -274,7 +280,9 @@ struct GameScreen: View {
                 .shadow(color: active ? glow.opacity(on ? 0.6 : 0.3) : .clear, radius: active ? (on ? 7 : 3) : 0)
                 .shadow(color: active && on ? glow.opacity(0.25) : .clear, radius: active && on ? 12 : 0)
                 .onAppear {
-                    guard !reduceMotion else { return }
+                    // Theme.reduceMotion covers BOTH the in-app toggle and the OS
+                    // setting (the old env-only check ignored the in-app pref).
+                    guard !Theme.reduceMotion else { return }
                     withAnimation(.easeInOut(duration: 1.25).repeatForever(autoreverses: true)) { on = true }
                 }
         }

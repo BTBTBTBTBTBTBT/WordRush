@@ -42,14 +42,15 @@ struct FlipRevealTile: View {
     var height: CGFloat? = nil
     var delay: Double = 0
     var duration: Double = 0.5
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var progress: Double = 0
 
     var body: some View {
         TileView(letter: letter, state: state, revealed: true, size: size, height: height)
             .modifier(TileFlip(progress: progress))
             .onAppear {
-                guard !reduceMotion else { return }
+                // Theme.reduceMotion = in-app toggle OR OS setting (the old
+                // env-only check let the in-app toggle keep flipping tiles).
+                guard !Theme.reduceMotion else { return }
                 withAnimation(.easeInOut(duration: duration).delay(delay)) { progress = 1 }
             }
     }
@@ -71,10 +72,15 @@ struct TileView: View {
         let h = height ?? size
         let s = min(size, h)
         let filled = state != .empty
-        let fg: Color = isInvalid ? Color(hex: 0xEF4444) : (filled && revealed ? .white : Theme.textPrimary)
+        // Web HINT_USED tile: bg-gray-100 / border-gray-200 / text-gray-300 —
+        // a faint ghost tile, not a solid gray tile with white text.
+        let fg: Color = isInvalid ? Color(hex: 0xEF4444)
+            : (filled && revealed ? (state == .hintUsed ? Color(hex: 0xD1D5DB) : .white) : Theme.textPrimary)
         let bg: Color = isInvalid ? Color(hex: 0xFEF2F2) : (revealed ? Theme.tileColor(for: state) : Color.white)
         let border: Color = isInvalid ? Color(hex: 0xF87171)
-            : (!revealed ? Theme.emptyBorder : (state == .absent ? Theme.emptyBorder : Theme.borderAlt))
+            : (!revealed ? Theme.emptyBorder
+               : (state == .hintUsed ? Color(hex: 0xE5E7EB)
+                  : (state == .absent ? Theme.emptyBorder : Theme.borderAlt)))
         Text(letter)
             .font(Brand.font(s * 0.5, .black))
             .foregroundStyle(fg)

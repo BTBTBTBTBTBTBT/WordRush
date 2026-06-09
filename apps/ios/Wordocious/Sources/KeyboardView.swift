@@ -95,12 +95,15 @@ struct KeyboardView: View {
     }
 
     private func quadColor(_ st: TileState?) -> some View {
+        // Theme.correct/present are colorblind-aware — web's [data-colorblind]
+        // overrides recolor the quadrant mini-cells too (they use the same
+        // bg-green-500/yellow-500 classes the board tiles use).
         let c: Color
         switch st {
-        case .correct: c = Color(hex: 0x22C55E)
-        case .present: c = Color(hex: 0xEAB308)
-        case .absent: c = Color(hex: 0x9CA3AF)
-        default: c = Color(hex: 0xE8E5F0)
+        case .correct: c = Theme.correct
+        case .present: c = Theme.present
+        case .absent: c = Theme.keyAbsent
+        default: c = Theme.keyDefault
         }
         return c.frame(maxWidth: .infinity, maxHeight: .infinity)
     }

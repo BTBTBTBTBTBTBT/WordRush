@@ -41,7 +41,9 @@ struct XpToastView: View {
             .background(RoundedRectangle(cornerRadius: 18).fill(
                 LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
             .shadow(color: Color(hex: 0x7C3AED).opacity(0.35), radius: 16, x: 0, y: 8)
-            .offset(y: shown ? 0 : -80)
+            // Web parity: fade-in-up — rise 8px with a 300ms ease-out fade
+            // (xp-toast.tsx), not a springy drop from above.
+            .offset(y: shown ? 0 : 8)
             .opacity(shown ? 1 : 0)
             Spacer()
         }
@@ -49,7 +51,7 @@ struct XpToastView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .allowsHitTesting(false)
         .onAppear {
-            withAnimation(Theme.animation(.spring(response: 0.4, dampingFraction: 0.7))) { shown = true }
+            withAnimation(Theme.animation(.easeOut(duration: 0.3))) { shown = true }
             // Web parity: stretch 3s → 5s when a sweep/flawless bonus fired so the
             // bigger payout is actually readable.
             let dwell: Double = (result.sweepBonus + result.flawlessBonus) > 0 ? 5 : 3
@@ -85,7 +87,9 @@ struct VictoryOverlay: View {
     var body: some View {
         ZStack {
             Color(hex: 0x18182E).opacity(0.6).ignoresSafeArea()
-            ConfettiView()
+            // Confetti is a WIN-only celebration — web losses show a quiet
+            // fade-in card (game-over-animation.tsx) with no confetti.
+            if won { ConfettiView() }
             VStack(spacing: 0) {
                 LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24)],
                                startPoint: .leading, endPoint: .trailing).frame(height: 6)
@@ -135,7 +139,9 @@ struct VictoryOverlay: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { onDismiss() }
-        .onAppear { Haptics.success() }
+        // No haptic here: the game screen already fires Haptics.success/error at
+        // the moment of finishing — the old unconditional success() buzzed a
+        // CELEBRATION haptic on losses too.
     }
 
     private func statBlock(_ value: String, _ label: String) -> some View {
@@ -146,27 +152,31 @@ struct VictoryOverlay: View {
     }
 }
 
-/// Lightweight confetti — colored squares falling + spinning. Pure SwiftUI so
-/// there's no dependency; runs once when the victory overlay appears.
+/// Lightweight confetti — pure SwiftUI port of web effects/confetti.tsx:
+/// 50 pieces, 12×12 rounded squares, 8-color palette, random 0–0.5s delay,
+/// 2–4s LINEAR fall with 720° spin, fading out over the full height.
 struct ConfettiView: View {
-    private let colors = [Color(hex: 0xA78BFA), Color(hex: 0xEC4899), Color(hex: 0xFBBF24),
-                          Color(hex: 0x22C55E), Color(hex: 0x60A5FA)]
+    private static let colors = [Color(hex: 0xFFD700), Color(hex: 0xFF6B9D), Color(hex: 0xC084FC),
+                                 Color(hex: 0x60A5FA), Color(hex: 0x34D399), Color(hex: 0xFBBF24),
+                                 Color(hex: 0xF97316), Color(hex: 0xEC4899)]
     @State private var animate = false
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                ForEach(0..<40, id: \.self) { i in
-                    let startX = geo.size.width * CGFloat((i * 37) % 100) / 100
-                    let delay = Double((i * 13) % 100) / 100 * 0.6
-                    let drift = CGFloat((i % 5) - 2) * 30
-                    Rectangle()
-                        .fill(colors[i % colors.count])
-                        .frame(width: 8, height: 12)
-                        .rotationEffect(.degrees(animate ? Double((i * 47) % 360) + 360 : 0))
-                        .position(x: startX + (animate ? drift : 0), y: animate ? geo.size.height + 20 : -20)
+                ForEach(0..<50, id: \.self) { i in
+                    // Deterministic pseudo-random spread per piece (matches the
+                    // web's Math.random() ranges without per-render churn).
+                    let startX = geo.size.width * CGFloat((i * 37 + 11) % 100) / 100
+                    let delay = Double((i * 13) % 100) / 100 * 0.5
+                    let duration = 2.0 + Double((i * 29) % 100) / 100 * 2.0
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Self.colors[(i * 7) % Self.colors.count])
+                        .frame(width: 12, height: 12)
+                        .rotationEffect(.degrees(animate ? 720 : 0))
+                        .position(x: startX, y: animate ? geo.size.height + 20 : -20)
                         .opacity(animate ? 0 : 1)
-                        .animation(Theme.animation(.easeIn(duration: 1.8).delay(delay)), value: animate)
+                        .animation(Theme.animation(.linear(duration: duration).delay(delay)), value: animate)
                 }
             }
         }
