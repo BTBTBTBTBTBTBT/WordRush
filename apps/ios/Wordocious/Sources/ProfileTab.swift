@@ -655,9 +655,13 @@ struct LeaderboardTab: View {
 
 
     private func rankBanner(_ r: (rank: Int, total: Int)) -> some View {
-        (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
-         + Text("#\(r.rank)").font(Brand.title(18)).foregroundColor(Color(hex: 0xD97706))
-         + Text(" of \(r.total)").font(Brand.body(12)).foregroundColor(Theme.textMuted))
+        HStack(spacing: 3) {
+            (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
+             + Text("#\(r.rank)").font(Brand.title(18)).foregroundColor(Color(hex: 0xD97706)))
+            // Transient "+N/−N" movement pill since you last looked (web parity).
+            RankDeltaBadge(mode: mode.rawValue, playType: "solo", pageKey: "daily", currentRank: r.rank)
+            Text(" of \(r.total)").font(Brand.body(12)).foregroundColor(Theme.textMuted)
+        }
             .frame(maxWidth: .infinity).padding(.vertical, 12)
             .background(RoundedRectangle(cornerRadius: 16).fill(
                 LinearGradient(colors: [Color(hex: 0xFFFBEB), Theme.surface], startPoint: .topLeading, endPoint: .bottomTrailing)))
@@ -964,9 +968,13 @@ struct DailyRecordsView: View {
                     }.foregroundStyle(Theme.textMuted)
                     Spacer()
                     if let r = userRank {
-                        (Text("Your rank: ").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
-                         + Text("#\(r.rank)").font(Brand.font(12, .black)).foregroundColor(Color(hex: 0xD97706))
-                         + Text(" of \(r.total)").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted))
+                        HStack(spacing: 3) {
+                            (Text("Your rank: ").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
+                             + Text("#\(r.rank)").font(Brand.font(12, .black)).foregroundColor(Color(hex: 0xD97706)))
+                            // Transient "+N/−N" movement pill (web parity, pageKey records-daily).
+                            RankDeltaBadge(mode: mode.rawValue, playType: playType, pageKey: "records-daily", currentRank: r.rank)
+                            Text(" of \(r.total)").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
+                        }
                     }
                 }
                 .padding(.horizontal, 14).padding(.bottom, 8)
