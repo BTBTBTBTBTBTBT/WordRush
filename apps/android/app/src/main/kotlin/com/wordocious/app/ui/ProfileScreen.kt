@@ -787,7 +787,9 @@ private fun ModeChip(label: String, modeId: String?, accent: Color, count: Int, 
             else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, iconTint, glyphSize = 9.sp, iconSize = 12.dp) }
         }
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1)
-        if (count > 0) Text("$count", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        // Always reserve the count line (blank when 0) so chips are identical height
+        // whether or not a mode has games played — matches web's even row.
+        Text(if (count > 0) "$count" else " ", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
     }
 }
 
