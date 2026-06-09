@@ -251,11 +251,20 @@ final class AuthService: ObservableObject {
 
     /// TEST-ONLY: flip the profile's is_pro marker to preview free vs Pro states,
     /// mirroring the web's "Simulate Pro" / "Disable Pro" dev toggle. Writes the
-    /// same column real purchases set; remove before launch.
-    private struct ProToggle: Encodable { let is_pro: Bool }
+    /// same columns real purchases set; remove before launch.
+    ///
+    /// NOTE: `isProActive` is expiry-aware (is_pro && (expiry == nil || expiry > now)),
+    /// so flipping is_pro alone does NOTHING if the row has a lapsed pro_expires_at.
+    /// When simulating Pro ON we therefore also push pro_expires_at one year out so
+    /// the preview actually activates regardless of any stale expiry.
+    private struct ProToggle: Encodable { let is_pro: Bool; let pro_expires_at: String? }
     func setSimulatePro(_ on: Bool) async {
         guard let userId = try? await client.auth.session.user.id.uuidString else { return }
-        try? await client.from("profiles").update(ProToggle(is_pro: on)).eq("id", value: userId).execute()
+        let expiry: String? = on
+            ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(365 * 24 * 60 * 60))
+            : nil
+        try? await client.from("profiles").update(ProToggle(is_pro: on, pro_expires_at: expiry))
+            .eq("id", value: userId).execute()
         await refreshProfile()
     }
 
