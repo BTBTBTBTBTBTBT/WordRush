@@ -19,6 +19,16 @@ data class Palette(
     val bg: Color, val surface: Color, val border: Color, val borderLight: Color,
     val borderAlt: Color, val divider: Color, val surfaceHover: Color, val surfaceAlt: Color,
     val text: Color, val textMuted: Color, val textSecondary: Color,
+    // Win/Loss pills + gold-highlight rows — web themes these in dark
+    // (globals.css --color-win-bg/loss-bg/win-text/loss-text/highlight-gold/
+    // gold-border(-light)); the light themes share the :root values.
+    val winBg: Color = Color(0xFFDCFCE7),
+    val lossBg: Color = Color(0xFFFEE2E2),
+    val winText: Color = Color(0xFF16A34A),
+    val lossText: Color = Color(0xFFDC2626),
+    val highlightGold: Color = Color(0xFFFFFBEB),
+    val goldBorder: Color = Color(0xFFFDE68A),
+    val goldBorderLight: Color = Color(0xFFFEF3C7),
 )
 
 object Palettes {
@@ -33,6 +43,10 @@ object Palettes {
         borderLight = Color(0xFF2E2E4A), borderAlt = Color(0xFF3A3A5C), divider = Color(0xFF3A3A5C),
         surfaceHover = Color(0xFF2E2E4A), surfaceAlt = Color(0xFF2A2A48),
         text = Color(0xFFF0EEF6), textMuted = Color(0xFF9CA3AF), textSecondary = Color(0xFFA0A0B8),
+        winBg = Color(0xFF052E16), lossBg = Color(0xFF450A0A),
+        winText = Color(0xFF4ADE80), lossText = Color(0xFFF87171),
+        highlightGold = Color(0xFF422006), goldBorder = Color(0xFF92400E),
+        goldBorderLight = Color(0xFF78350F),
     )
     val Ocean = Palette(
         bg = Color(0xFFF0F7FB), surface = Color(0xFFFFFFFF), border = Color(0xFFCFE4EF),
@@ -72,10 +86,13 @@ object WTheme {
     val textMuted get() = palette.textMuted
     val textSecondary get() = palette.textSecondary
 
-    val winBg = Color(0xFFDCFCE7)
-    val lossBg = Color(0xFFFEE2E2)
-    val winText = Color(0xFF16A34A)
-    val lossText = Color(0xFFDC2626)
+    val winBg get() = palette.winBg
+    val lossBg get() = palette.lossBg
+    val winText get() = palette.winText
+    val lossText get() = palette.lossText
+    val highlightGold get() = palette.highlightGold
+    val goldBorder get() = palette.goldBorder
+    val goldBorderLight get() = palette.goldBorderLight
 
     // Brand
     val primary = Color(0xFF7C3AED)          // purple (hsl 263 70% 50%)
@@ -88,7 +105,7 @@ object WTheme {
     val present = Color(0xFFEAB308)
     val absent = Color(0xFF6B7280)
     val emptyBorder = Color(0xFFD1D5DB)      // gray-300
-    val hintUsed = Color(0xFFD1D5DB)         // web HINT_USED = gray (not present color)
+    val hintUsed = Color(0xFFF3F4F6)         // web HINT_USED tile = bg-gray-100 (faint ghost, gray-300 letter)
 
     // Keyboard keys — darker 600-weight + gray-400 (distinct from board tiles)
     val keyDefault = Color(0xFFE8E5F0)

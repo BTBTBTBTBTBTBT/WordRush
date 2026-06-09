@@ -1,6 +1,8 @@
 package com.wordocious.app.ui.game
 
 import androidx.compose.animation.AnimatedVisibility
+import com.wordocious.app.ui.theme.WTheme
+import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -54,10 +56,13 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
     }
 
     Box(Modifier.fillMaxSize().padding(top = 12.dp), contentAlignment = Alignment.TopCenter) {
+        // Web fade-in-up: rise 8dp with a 300ms ease-out fade (xp-toast.tsx),
+        // not a full-height slide. Snap under reduced motion.
+        val dur = if (WTheme.reducedMotion) 0 else 300
         AnimatedVisibility(
             visible = visible,
-            enter = slideInVertically(tween(360)) { -it } + fadeIn(tween(360)),
-            exit = slideOutVertically(tween(300)) { -it } + fadeOut(tween(300)),
+            enter = slideInVertically(tween(dur, easing = EaseOut)) { 16 } + fadeIn(tween(dur, easing = EaseOut)),
+            exit = slideOutVertically(tween(dur)) { 16 } + fadeOut(tween(dur)),
         ) {
             Row(
                 Modifier

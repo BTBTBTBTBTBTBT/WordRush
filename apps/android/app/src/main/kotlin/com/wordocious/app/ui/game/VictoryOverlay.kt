@@ -1,6 +1,8 @@
 package com.wordocious.app.ui.game
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -64,8 +66,10 @@ fun VictoryOverlay(
     // Spring-in scale of the card
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { shown = true }
-    val scale by animateFloatAsState(if (shown) 1f else 0.92f, tween(300), label = "victoryScale")
-    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(300), label = "victoryAlpha")
+    // Web fade-in-scale: 0.8 → 1.0 over 300ms ease-out; snap under reduced motion.
+    val dur = if (WTheme.reducedMotion) 0 else 300
+    val scale by animateFloatAsState(if (shown) 1f else 0.8f, tween(dur, easing = EaseOut), label = "victoryScale")
+    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(dur, easing = EaseOut), label = "victoryAlpha")
 
     Box(
         modifier = Modifier
@@ -74,7 +78,7 @@ fun VictoryOverlay(
             .clickableNoRipple(onContinue),
         contentAlignment = Alignment.Center,
     ) {
-        if (won) ConfettiView()
+        if (won && !WTheme.reducedMotion) ConfettiView()
 
         Column(
             modifier = Modifier
@@ -130,19 +134,23 @@ private fun StatBlock(label: String, value: String) {
     }
 }
 
-/** Confetti — 40 falling/spinning/fading rects, runs once over ~1.8s. */
+/** Confetti — web effects/confetti.tsx parity: 50 pieces, 12×12 rounded squares,
+ *  8-color palette, 0–0.5s random delay, 2–4s LINEAR full-height fall, 720° spin,
+ *  fading to 0 at the end. */
 @Composable
 private fun ConfettiView() {
-    val colors = listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24), Color(0xFF22C55E), Color(0xFF60A5FA))
+    val colors = listOf(
+        Color(0xFFFFD700), Color(0xFFFF6B9D), Color(0xFFC084FC), Color(0xFF60A5FA),
+        Color(0xFF34D399), Color(0xFFFBBF24), Color(0xFFF97316), Color(0xFFEC4899),
+    )
     // Stable per-piece params (seeded once)
     val pieces = remember {
-        List(40) { i ->
+        List(50) {
             ConfettiPiece(
                 xFrac = Random.nextFloat(),
-                color = colors[i % colors.size],
-                delayMs = Random.nextInt(0, 600),
-                spin = Random.nextInt(360, 1080) * (if (Random.nextBoolean()) 1 else -1),
-                drift = Random.nextInt(-40, 40),
+                color = colors[Random.nextInt(colors.size)],
+                delayMs = Random.nextInt(0, 500),
+                durationMs = Random.nextInt(2000, 4000),
             )
         }
     }
@@ -151,7 +159,7 @@ private fun ConfettiView() {
     }
 }
 
-private data class ConfettiPiece(val xFrac: Float, val color: Color, val delayMs: Int, val spin: Int, val drift: Int)
+private data class ConfettiPiece(val xFrac: Float, val color: Color, val delayMs: Int, val durationMs: Int)
 
 @Composable
 private fun ConfettiRect(p: ConfettiPiece) {
@@ -159,20 +167,20 @@ private fun ConfettiRect(p: ConfettiPiece) {
     LaunchedEffect(Unit) { go = true }
     val progress by animateFloatAsState(
         targetValue = if (go) 1f else 0f,
-        animationSpec = tween(durationMillis = 1800, delayMillis = p.delayMs, easing = LinearEasing),
+        animationSpec = tween(durationMillis = p.durationMs, delayMillis = p.delayMs, easing = LinearEasing),
         label = "confetti",
     )
-    // Fall from top (-5%) to ~110% of height; we approximate with dp using a tall offset.
-    val fallDp = (progress * 900).dp
-    val rot = progress * p.spin
+    val rot = progress * 720f
     val fade = (1f - progress).coerceIn(0f, 1f)
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val fall = maxHeight * progress
         Box(
             Modifier
                 .padding(start = (p.xFrac * 360).dp)
-                .offset(y = fallDp - 40.dp, x = (p.drift * progress).dp)
+                .offset(y = fall - 20.dp)
                 .rotate(rot)
-                .size(width = 8.dp, height = 12.dp)
+                .size(12.dp)
+                .clip(RoundedCornerShape(2.dp))
                 .background(p.color.copy(alpha = fade)),
         )
     }

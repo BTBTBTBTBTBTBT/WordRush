@@ -73,11 +73,15 @@ fun TileView(
     }
     val borderColor = when {
         isInvalid -> Color(0xFFF87171)
+        // Web HINT_USED: faint ghost tile — border gray-200 (#E5E7EB).
+        state == TileState.HINT_USED -> Color(0xFFE5E7EB)
         filled -> bgColor
         else -> WTheme.emptyBorder
     }
     val textColor = when {
         isInvalid -> Color(0xFFEF4444)
+        // Web HINT_USED letter = gray-300, not white-on-gray.
+        state == TileState.HINT_USED -> Color(0xFFD1D5DB)
         filled -> Color.White
         else -> WTheme.text
     }
@@ -88,7 +92,7 @@ fun TileView(
             .graphicsLayer { scaleY = if (flipDelay != null) scale else 1f }
             .clip(RoundedCornerShape(cornerRadius))
             .background(bgColor)
-            .then(if (!filled) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier),
+            .then(if (!filled || state == TileState.HINT_USED) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Text(

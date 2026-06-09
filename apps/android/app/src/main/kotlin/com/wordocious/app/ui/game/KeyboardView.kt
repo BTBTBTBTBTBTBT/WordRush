@@ -123,10 +123,11 @@ private fun RowScope.QuadrantKey(
     }
 }
 
-/** Board-tile (500) palette for quadrant sub-cells (NOT the darker key palette). */
+/** Board-tile (500) palette for quadrant sub-cells (NOT the darker key palette).
+ *  Colorblind-aware — web's [data-colorblind] overrides recolor these cells too. */
 private fun quadColor(state: TileState): Color = when (state) {
-    TileState.CORRECT -> Color(0xFF22C55E)
-    TileState.PRESENT, TileState.HINT_USED -> Color(0xFFEAB308)
+    TileState.CORRECT -> if (WTheme.colorblind) Color(0xFFF5793A) else Color(0xFF22C55E)
+    TileState.PRESENT, TileState.HINT_USED -> if (WTheme.colorblind) Color(0xFF85C0F9) else Color(0xFFEAB308)
     TileState.ABSENT -> Color(0xFF9CA3AF)
     TileState.EMPTY -> Color(0xFFE8E5F0)
 }
