@@ -489,23 +489,22 @@ private fun fmtMatchDate(iso: String): String {
 private fun GlobalSummaryRow(totalWins: Int, totalLosses: Int, currentStreak: Int, bestStreak: Int, dailyStreak: Int, bestDailyStreak: Int) {
     val totalGames = totalWins + totalLosses
     val winRate = if (totalGames > 0) Math.round(totalWins.toFloat() / totalGames * 100) else 0
-    // IntrinsicSize.Max + fillMaxHeight makes all four cards the same height
-    // (the Streak/Daily "Best:" subline no longer makes those two taller).
+    // Fixed card height keeps all four identical regardless of the "Best:" subline.
     Row(
-        Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        SummaryCard(Icons.Filled.EmojiEvents, "WINS", "$totalWins", null, Color(0xFF16A34A), Modifier.weight(1f).fillMaxHeight())
-        SummaryCard(Icons.Filled.TrackChanges, "WIN RATE", "$winRate%", null, Color(0xFF2563EB), Modifier.weight(1f).fillMaxHeight())
-        SummaryCard(Icons.Filled.Bolt, "STREAK", "$currentStreak", "Best: $bestStreak", Color(0xFF7C3AED), Modifier.weight(1f).fillMaxHeight())
-        SummaryCard(Icons.Filled.LocalFireDepartment, "DAILY", "$dailyStreak", "Best: $bestDailyStreak", Color(0xFFF97316), Modifier.weight(1f).fillMaxHeight())
+        SummaryCard(Icons.Filled.EmojiEvents, "WINS", "$totalWins", null, Color(0xFF16A34A), Modifier.weight(1f))
+        SummaryCard(Icons.Filled.TrackChanges, "WIN RATE", "$winRate%", null, Color(0xFF2563EB), Modifier.weight(1f))
+        SummaryCard(Icons.Filled.Bolt, "STREAK", "$currentStreak", "Best: $bestStreak", Color(0xFF7C3AED), Modifier.weight(1f))
+        SummaryCard(Icons.Filled.LocalFireDepartment, "DAILY", "$dailyStreak", "Best: $bestDailyStreak", Color(0xFFF97316), Modifier.weight(1f))
     }
 }
 
 @Composable
 private fun SummaryCard(icon: ImageVector, label: String, value: String, sub: String?, color: Color, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.clip(RoundedCornerShape(14.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)).padding(vertical = 12.dp, horizontal = 8.dp),
+        modifier = modifier.height(86.dp).clip(RoundedCornerShape(14.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)).padding(vertical = 10.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
