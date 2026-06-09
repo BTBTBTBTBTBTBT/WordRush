@@ -773,19 +773,16 @@ private fun ProfileModePicker(selected: String?, gamesPerMode: Map<String, Int>,
 @Composable
 private fun ModeChip(label: String, modeId: String?, accent: Color, count: Int, active: Boolean, onClick: () -> Unit) {
     val iconTint = if (active) accent else WTheme.textMuted
-    // Compact, even-height chips — matches web mode-picker (62px min-width, 28px
-    // icon box, 10px label, count only when > 0). Fixed height keeps the scroll
-    // row tidy whether or not a chip shows a game count.
+    // Compact chips, size-to-content like web mode-picker — minimal padding, tight spacing.
     Column(
-        Modifier.width(62.dp).height(62.dp).clip(RoundedCornerShape(12.dp))
+        Modifier.defaultMinSize(minWidth = 62.dp).clip(RoundedCornerShape(12.dp))
             .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
             .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
-            .clickableNoRipple(onClick).padding(horizontal = 6.dp, vertical = 6.dp),
+            .clickableNoRipple(onClick).padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
-        Box(Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(if (active) accent.copy(alpha = 0.12f) else WTheme.surfaceAlt), Alignment.Center) {
-            // "All" → bar-chart glyph; per-mode → web-faithful icon (ModeGlyph).
+        Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(if (active) accent.copy(alpha = 0.12f) else WTheme.surfaceAlt), Alignment.Center) {
             if (modeId == null) Icon(Icons.Filled.BarChart, null, tint = iconTint, modifier = Modifier.size(14.dp))
             else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, iconTint, glyphSize = 11.sp, iconSize = 14.dp) }
         }
