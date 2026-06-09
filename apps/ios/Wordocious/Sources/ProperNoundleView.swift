@@ -27,6 +27,9 @@ final class ProperNoundleVM: ObservableObject {
     @Published private(set) var revealedConsonant: String?
     @Published private(set) var finalTimeSeconds: Int?
     @Published private(set) var wikiImageURL: String?
+    /// XP earned by this game — drives the post-game XP toast (web parity:
+    /// propernoundle-game.tsx renders <XpToast/> after recording).
+    @Published var xpResult: GameResultsService.XpResult?
 
     /// Fetch the answer's Wikipedia photo for the result screen (web parity).
     func loadWikiImage() async {
@@ -154,9 +157,10 @@ final class ProperNoundleVM: ObservableObject {
         let answer = puzzle.map { ProperNoundle.normalize($0.answer) } ?? ""
         let guessWords = guesses.map { $0.word }
         Task {
-            await GameResultsService.record(gameMode: .propernoundle, won: won, guessCount: gc,
-                                            timeSeconds: secs, boardsSolved: won ? 1 : 0, totalBoards: 1,
-                                            seed: seed, hintsUsed: used)
+            let xp = await GameResultsService.record(gameMode: .propernoundle, won: won, guessCount: gc,
+                                                     timeSeconds: secs, boardsSolved: won ? 1 : 0, totalBoards: 1,
+                                                     seed: seed, hintsUsed: used)
+            await MainActor.run { self.xpResult = xp }   // post-game XP toast (web parity)
             // Match-history row (powers charts + the pure_proper hintless ladder).
             await GameResultsService.recordSoloMatch(gameMode: .propernoundle, won: won, score: gc,
                                                      timeSeconds: secs, seed: seed, solutions: [answer],
@@ -203,6 +207,11 @@ struct ProperNoundleView: View {
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(Capsule().fill(Theme.textPrimary.opacity(0.9)))
                     .padding(.top, 100).frame(maxHeight: .infinity, alignment: .top)
+            }
+            // Post-game XP toast (web parity — ProperNoundle was the one mode
+            // that never showed it).
+            if let xp = vm.xpResult {
+                XpToastView(result: xp) { vm.xpResult = nil }
             }
             if showVictory, let p = vm.puzzle {
                 VictoryOverlay(
@@ -314,10 +323,14 @@ struct ProperNoundleView: View {
     }
 
     private func shareResult() {
+        // Category pill + multi-word name gaps in the share image (web parity).
+        let p = vm.puzzle
         ShareService.share(kind: .single(grid: vm.shareGrid()), mode: .propernoundle,
-                           modeLabel: "ProperNoundle", accent: pnAccent, won: vm.status == .won,
+                           modeLabel: "PROPERNOUNDLE", accent: pnAccent, won: vm.status == .won,
                            guesses: vm.guesses.count, maxGuesses: vm.maxGuesses,
-                           timeSeconds: vm.finalTimeSeconds ?? vm.elapsed)
+                           timeSeconds: vm.finalTimeSeconds ?? vm.elapsed,
+                           category: p.map { categoryLabel($0.themeCategory) },
+                           wordGroups: p.map { ProperNoundle.wordGroups($0.display) })
     }
 }
 

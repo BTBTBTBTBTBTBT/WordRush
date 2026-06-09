@@ -34,12 +34,14 @@ enum ShareService {
     @MainActor
     static func share(
         kind: ShareCardView.Kind, mode: GameMode, modeLabel: String, accent: Color, won: Bool,
-        guesses: Int, maxGuesses: Int, timeSeconds: Int
+        guesses: Int, maxGuesses: Int, timeSeconds: Int,
+        category: String? = nil, wordGroups: [Int]? = nil
     ) {
         #if canImport(UIKit)
         let card = ShareCardView(
             kind: kind, modeLabel: modeLabel, accent: accent, won: won, guesses: guesses,
-            maxGuesses: maxGuesses, timeSeconds: timeSeconds, dateStr: shortDate()
+            maxGuesses: maxGuesses, timeSeconds: timeSeconds, dateStr: shortDate(),
+            category: category, wordGroups: wordGroups
         )
         let renderer = ImageRenderer(content: card)
         renderer.proposedSize = .init(card.size)
