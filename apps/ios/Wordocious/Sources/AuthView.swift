@@ -123,9 +123,15 @@ struct AuthView: View {
 
     private var footer: some View {
         HStack(spacing: 6) {
-            Text("Privacy Policy").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            // Functional legal links (App Review expects these to work) — open the
+            // in-app Privacy / Terms pages, matching the web's <Link href> footer.
+            NavigationLink { InfoPage(.privacy) } label: {
+                Text("Privacy Policy").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            }
             Text("|").foregroundStyle(Theme.borderLight)
-            Text("Terms of Service").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            NavigationLink { InfoPage(.terms) } label: {
+                Text("Terms of Service").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            }
         }
     }
 

@@ -116,7 +116,8 @@ struct PublicProfileView: View {
 
     private func overallCards(_ p: Profile) -> some View {
         let games = p.totalWins + p.totalLosses
-        let winRate = games > 0 ? Int((Double(p.totalWins) / Double(games) * 100).rounded()) : 0
+        // Web parity: one-decimal win rate (e.g. "66.7%"), not rounded to whole.
+        let winRate = games > 0 ? String(format: "%.1f", Double(p.totalWins) / Double(games) * 100) : "0.0"
         return HStack(spacing: 8) {
             card("trophy.fill", Color(hex: 0x16A34A), "\(p.totalWins)", "Wins", "\(winRate)% win rate")
             card("flame.fill", Color(hex: 0xEA580C), "\(p.currentStreak)", "Win Streak", "Best: \(p.bestStreak)")

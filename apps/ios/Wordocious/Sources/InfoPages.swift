@@ -86,9 +86,15 @@ struct InfoPage: View {
         ]
         case .privacy: return [
             InfoSection("Introduction", "This policy explains what Wordocious collects, how we use it, and your choices."),
-            InfoSection("Information We Collect", bullets: ["Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — browser type, usage patterns, anonymous analytics"]),
+            InfoSection("Information We Collect", bullets: ["Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — device type, usage patterns, anonymous analytics, and (with your permission) advertising identifiers"]),
             InfoSection("How We Use Your Information", bullets: ["To create and manage your account", "To track game progress, streaks, and statistics", "To display leaderboards and records", "To improve and maintain the app", "To communicate important service updates"]),
-            InfoSection("Third-Party Services", bullets: ["Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name"]),
+            InfoSection("Third-Party Services", bullets: ["Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name", "Google AdMob — displays advertisements to free-tier users; ad-related data collection is governed by Google's privacy policies. Pro subscribers are not shown ads."]),
+            InfoSection("Advertising & Data Sharing", "Wordocious shows advertisements to free-tier users. On iOS these are served by Google AdMob and are subject to Google's Privacy Policy. With your permission — requested through Apple's App Tracking Transparency prompt — ads may be personalized; if you decline, you'll see non-personalized ads. Pro subscribers enjoy a completely ad-free experience. We do not sell or rent your personal data for marketing beyond what is necessary for ad delivery."),
+            InfoSection("Data Security", "We use industry-standard measures to protect your data. No method of transmission or storage is 100% secure, but we work to safeguard your information."),
+            InfoSection("Your Rights", "You may request access to, correction of, or deletion of your personal data at any time. You can delete your account from Settings or by contacting us; upon deletion your personal data is removed from our systems."),
+            InfoSection("Children's Privacy", "Wordocious is not intended for children under 13. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us data, contact us so we can remove it."),
+            InfoSection("Changes to This Policy", "We may update this policy from time to time. Continued use of the app after changes constitutes acceptance of the updated policy."),
+            InfoSection("Contact Us", "Questions about this policy or your personal data? Contact us at privacy@wordocious.com."),
         ]
         case .terms: return [
             InfoSection("Agreement to Terms", "By using Wordocious you agree to these terms."),

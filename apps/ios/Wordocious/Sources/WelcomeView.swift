@@ -27,9 +27,9 @@ struct WelcomeView: View {
                     .padding(.top, 20).padding(.bottom, 16)
 
                     VStack(alignment: .leading, spacing: 12) {
-                        pillar("sparkles", Color(hex: 0x7C3AED), Color(hex: 0xF3F0FF), "Daily Puzzles", "New challenges every day across the game modes")
+                        pillar("sparkles", Color(hex: 0x7C3AED), Color(hex: 0xF3F0FF), "Daily Puzzles", "New challenges every day across 9 unique game modes")
                         pillar("flag.checkered", Color(hex: 0xEC4899), Color(hex: 0xFDF2F8), "Compete Head-to-Head", "Challenge friends or get matched with random opponents")
-                        pillar("trophy.fill", Color(hex: 0xD97706), Color(hex: 0xFFFBEB), "Leaderboards & Medals", "Climb the daily rankings and earn podium medals")
+                        pillar("trophy.fill", Color(hex: 0xD97706), Color(hex: 0xFFFBEB), "Climb the Leaderboards", "Earn medals, build streaks, and track your stats")
                     }
                     .padding(.bottom, 18)
 
@@ -42,11 +42,12 @@ struct WelcomeView: View {
                             .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
                             .overlay(RoundedRectangle(cornerRadius: 12).stroke(error == nil ? Theme.border : Color(hex: 0xDC2626), lineWidth: 1.5))
                         if let error { Text(error).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xDC2626)) }
+                        else { Text("3-20 characters. Letters, numbers, and underscores.").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted) }
                     }
                     .padding(.bottom, 14)
 
                     Button(action: save) {
-                        Text(saving ? "Saving…" : "Get Started").font(Brand.font(15, .black)).foregroundStyle(.white)
+                        Text(saving ? "Saving…" : "Let's Play!").font(Brand.font(15, .black)).foregroundStyle(.white)
                             .frame(maxWidth: .infinity).frame(height: 48)
                             .background(RoundedRectangle(cornerRadius: 12).fill(
                                 LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))

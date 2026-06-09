@@ -746,6 +746,9 @@ struct RecordsTab: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            // Tapping a record holder / daily-row username opens their public profile
+            // (web parity — Records links names to /profile/[id]).
+            .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .adBanner()
         }
     }
@@ -882,11 +885,13 @@ struct RecordStatCell: View {
                     .foregroundStyle(has ? Theme.textPrimary : Theme.textMuted)
                 Text(meta?.label ?? type).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 if has {
-                    HStack(spacing: 3) {
-                        Text(record?.holderUsername ?? "Unknown").font(Brand.font(10, .heavy)).lineLimit(1)
-                            .foregroundStyle(isMe ? Color(hex: 0xD97706) : accent)
-                        if isMe { Image(systemName: "crown.fill").font(.system(size: 8)).foregroundStyle(Color(hex: 0xD97706)) }
-                    }.padding(.top, 2)
+                    NavigationLink(value: record?.holderId ?? "") {
+                        HStack(spacing: 3) {
+                            Text(record?.holderUsername ?? "Unknown").font(Brand.font(10, .heavy)).lineLimit(1)
+                                .foregroundStyle(isMe ? Color(hex: 0xD97706) : accent)
+                            if isMe { Image(systemName: "crown.fill").font(.system(size: 8)).foregroundStyle(Color(hex: 0xD97706)) }
+                        }.padding(.top, 2)
+                    }.buttonStyle(.plain)
                 }
             }
             Spacer(minLength: 0)
@@ -1004,8 +1009,10 @@ struct DailyRecordsView: View {
         if e.totalBoards > 1 { line += " · \(e.boardsSolved)/\(e.totalBoards)" }
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
-            (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            NavigationLink(value: e.userId) {
+                (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
                 Text("\(Int(e.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
