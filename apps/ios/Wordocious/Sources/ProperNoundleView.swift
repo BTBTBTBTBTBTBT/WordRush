@@ -46,6 +46,9 @@ final class ProperNoundleVM: ObservableObject {
 
     // VS hooks (set by VSMatchViewModel when this drives a VS match).
     let isVersus: Bool
+    /// True when playing today's daily puzzle (no explicit seed, not VS) —
+    /// gates the "#N" puzzle number in the header (web parity).
+    let isDaily: Bool
     var onGuessCommitted: ((String) -> Void)?
     var onCompleted: ((GameStatus, Int) -> Void)?
 
@@ -53,6 +56,7 @@ final class ProperNoundleVM: ObservableObject {
     /// seed so both players get the same one.
     init(seed: String? = nil, isVersus: Bool = false) {
         self.isVersus = isVersus
+        self.isDaily = (seed == nil && !isVersus)
         puzzle = seed.flatMap { ProperNoundle.puzzle(forSeed: $0) } ?? ProperNoundle.dailyPuzzle()
     }
 
@@ -242,6 +246,10 @@ struct ProperNoundleView: View {
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Capsule().fill(categoryColors[p.themeCategory ?? ""] ?? Color(hex: 0x7C3AED)))
                 }
+                // Daily puzzle number (web parity — "#{getDailyPuzzleNumber()}" when daily).
+                if vm.isDaily {
+                    Text("#\(ProperNoundle.dailyPuzzleNumber())").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                }
                 Text("\(vm.answerLen) letters").font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
                 if !vm.isFinished {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -266,8 +274,6 @@ struct ProperNoundleView: View {
     private var result: some View {
         let secs = vm.finalTimeSeconds ?? vm.elapsed
         return VStack(spacing: 10) {
-            Text(vm.status == .won ? "🎉 Solved in \(vm.guesses.count) \(vm.guesses.count == 1 ? "guess" : "guesses")!" : "Out of guesses")
-                .font(Brand.headline(18)).foregroundStyle(Theme.textPrimary)
             // Wikipedia photo of the answer (web parity — result thumbnail).
             if let urlStr = vm.wikiImageURL, let url = URL(string: urlStr) {
                 AsyncImage(url: url) { img in img.resizable().aspectRatio(contentMode: .fill) }
@@ -275,7 +281,18 @@ struct ProperNoundleView: View {
                     .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.status == .won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626), lineWidth: 2))
             }
-            if let p = vm.puzzle { Text(p.display).font(Brand.title(20)).foregroundStyle(pnAccent) }
+            // Web parity: win → name in green + "Solved in N guesses · time" subtitle;
+            // loss → "The answer was: {name}" in red.
+            if let p = vm.puzzle {
+                Text(vm.status == .won ? p.display : "The answer was: \(p.display)")
+                    .font(Brand.title(20))
+                    .foregroundStyle(vm.status == .won ? Color(hex: 0x16A34A) : Color(hex: 0xEF4444))
+                    .multilineTextAlignment(.center)
+            }
+            if vm.status == .won {
+                Text("Solved in \(vm.guesses.count) \(vm.guesses.count == 1 ? "guess" : "guesses") · \(pnTime(secs))")
+                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+            }
             // Home / Share row (web parity).
             HStack(spacing: 18) {
                 Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
@@ -289,6 +306,11 @@ struct ProperNoundleView: View {
         }
         .padding(.vertical, 12)
         .task { await vm.loadWikiImage() }
+    }
+
+    /// Web PN formatTime: "m:ss" at ≥1 minute, otherwise "Ns".
+    private func pnTime(_ s: Int) -> String {
+        s >= 60 ? "\(s / 60):\(String(format: "%02d", s % 60))" : "\(s)s"
     }
 
     private func shareResult() {

@@ -92,8 +92,10 @@ struct VSLobbyView: View {
     }
 
     // MARK: - Daily VS limit modal (ports vs-limit-modal.tsx)
+    // Internal (not private) so VSGameView can reuse it for the non-Pro
+    // Rematch upsell — web parity: the Rematch button opens VsLimitModal.
 
-    private struct VSLimitModal: View {
+    struct VSLimitModal: View {
         var onClose: () -> Void
         @State private var secondsLeft = secondsUntilLocalMidnight()
         private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()

@@ -21,6 +21,9 @@ struct VSGameView: View {
     }
     private var label: String { "VS \(vsModeLabel)" }
 
+    // Non-Pro Rematch tap shows the Pro upsell modal (web parity — VsLimitModal).
+    @State private var showRematchUpsell = false
+
     var body: some View {
         ZStack {
             LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd],
@@ -41,6 +44,11 @@ struct VSGameView: View {
             // Post-match XP/level-up toast (parity with solo + web VS result).
             if let xp = vm.xpResult, vm.screen == .result {
                 XpToastView(result: xp) { vm.xpResult = nil }
+            }
+
+            // Pro upsell when a free user taps Rematch (web parity — VsLimitModal).
+            if showRematchUpsell {
+                VSLobbyView.VSLimitModal(onClose: { showRematchUpsell = false })
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -142,7 +150,22 @@ struct VSGameView: View {
                     .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
             }
             Spacer()
-            vsTitle(20)
+            VStack(spacing: 1) {
+                vsTitle(20)
+                // Live guesses + elapsed clock (web parity — vs-classic top stat row).
+                if let game = vm.game {
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        HStack(spacing: 6) {
+                            Text("\(game.rowsUsed)/\(game.maxGuesses) guesses")
+                            HStack(spacing: 2) {
+                                Image(systemName: "clock").font(.system(size: 9))
+                                Text("\(game.elapsedSeconds / 60):\(String(format: "%02d", game.elapsedSeconds % 60))")
+                            }
+                        }
+                        .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted).monospacedDigit()
+                    }
+                }
+            }
             Spacer()
             Color.clear.frame(width: 34, height: 34)
         }
@@ -262,7 +285,9 @@ struct VSGameView: View {
             case .received:
                 EmptyView()
             case .idle:
-                Button { vm.offerRematch() } label: {
+                // Free users get the Pro upsell modal instead of an inline error
+                // (web parity — Rematch opens VsLimitModal for non-Pro).
+                Button { if vm.isPro { vm.offerRematch() } else { showRematchUpsell = true } } label: {
                     Label("Rematch", systemImage: "arrow.clockwise").font(Brand.font(14, .black)).foregroundStyle(.white)
                         .frame(maxWidth: .infinity).padding(.vertical, 13)
                         .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))

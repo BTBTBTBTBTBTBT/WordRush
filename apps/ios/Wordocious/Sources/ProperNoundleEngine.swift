@@ -71,6 +71,12 @@ enum ProperNoundle {
         return list[max(0, idx)]
     }
 
+    /// Daily puzzle number shown in the header ("#N") — web parity:
+    /// getDailyPuzzleNumber = days since the 2024-01-01 epoch + 1.
+    static func dailyPuzzleNumber(date: String = LeaderboardService.todayLocal()) -> Int {
+        daysSinceEpoch(date) + 1
+    }
+
     /// Deterministic puzzle from a VS match seed (stable FNV-1a hash → index)
     /// so both players in a match get the same puzzle, independent of date.
     static func puzzle(forSeed seed: String) -> NPuzzle? {

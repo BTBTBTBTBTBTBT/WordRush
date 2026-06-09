@@ -155,12 +155,23 @@ struct AuthView: View {
     }
 
     private func submit() {
-        working = true; error = nil
+        error = nil
+        // Client-side validation — web parity (login-screen.tsx: password
+        // minLength=6; signup username required, 3–20 chars).
+        guard password.count >= 6 else {
+            error = "Password must be at least 6 characters."; return
+        }
+        let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        if mode == .signup {
+            guard (3...20).contains(trimmedUsername.count) else {
+                error = "Username must be 3-20 characters."; return
+            }
+        }
+        working = true
         Task {
             do {
                 if mode == .signup {
-                    try await auth.signUp(email: email, password: password,
-                                          username: username.isEmpty ? "Wordocious\(Int.random(in: 10000...99999))" : username)
+                    try await auth.signUp(email: email, password: password, username: trimmedUsername)
                 } else {
                     try await auth.signIn(email: email, password: password)
                 }
