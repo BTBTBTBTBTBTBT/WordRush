@@ -87,18 +87,24 @@ struct EditProfileView: View {
     /// to profiles.avatar_url (separate write, like the web — username Save is
     /// independent), then refresh so it shows everywhere immediately.
     private func uploadAvatar(_ item: PhotosPickerItem) async {
+        guard let uid = auth.profile?.id else { return }
+        // Web parity: surface upload failures instead of silently bailing
+        // (avatar-upload.tsx shows an "Avatar upload failed" toast).
         guard let data = try? await item.loadTransferable(type: Data.self),
-              let url = await AvatarUploader.upload(data),
-              let uid = auth.profile?.id else { return }
+              let url = await AvatarUploader.upload(data) else {
+            error = "Avatar upload failed. Please try again."
+            return
+        }
         try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: url)).eq("id", value: uid).execute()
         await auth.refreshProfile()
     }
 
     private func validate(_ name: String) -> String? {
+        // Web parity (profile-edit-modal.tsx): length-only validation, matching the
+        // DB constraint. The iOS-only charset regex locked out users whose web-set
+        // username contains a space/hyphen — they couldn't re-save their profile.
         let t = name.trimmingCharacters(in: .whitespaces)
-        if t.count < 3 { return "At least 3 characters" }
-        if t.count > 20 { return "20 characters max" }
-        if t.range(of: "^[a-zA-Z0-9_]+$", options: .regularExpression) == nil { return "Letters, numbers, and underscores only" }
+        if t.count < 3 || t.count > 20 { return "Username must be 3-20 characters" }
         return nil
     }
 
@@ -126,7 +132,10 @@ struct EditProfileView: View {
                 dismiss()
             } catch {
                 let msg = "\(error)"
-                self.error = msg.contains("23505") || msg.lowercased().contains("duplicate") ? "Username already taken" : "Something went wrong"
+                // Web parity: surface the real error message (fallback "Failed to save").
+                self.error = msg.contains("23505") || msg.lowercased().contains("duplicate")
+                    ? "Username already taken"
+                    : (error.localizedDescription.isEmpty ? "Failed to save" : error.localizedDescription)
                 saving = false
             }
         }

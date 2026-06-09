@@ -79,15 +79,24 @@ final class GameViewModel: ObservableObject {
 
     func gauntletStagesShare() -> [GauntletStageShare] {
         guard let g = state.gauntlet else { return [] }
-        return g.stageResults.map { r in
-            let stage = g.stages[safe: r.stageIndex]
-            let bc = stage?.boardCount ?? 0
-            let solved = r.status == .won ? bc : (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0)
-            return GauntletStageShare(name: stage?.name ?? "Stage \(r.stageIndex + 1)",
-                                      won: r.status == .won, guesses: r.guesses,
-                                      boardsSolved: solved, totalBoards: bc)
+        // Web parity (gauntlet-results.tsx handleShare): map EVERY stage config —
+        // stages the player never reached render as lost/0-guess entries so the
+        // share always shows the full run (was: only attempted stages, so a
+        // stage-2 loss shared "1/2 stages" instead of "1/5").
+        return g.stages.map { stage in
+            let r = g.stageResults.first { $0.stageIndex == stage.stageIndex }
+            let solved = r?.status == .won ? stage.boardCount
+                : (r?.boardsSnapshot?.filter { $0.status == .won }.count ?? 0)
+            return GauntletStageShare(name: stage.name, won: r?.status == .won,
+                                      guesses: r?.guesses ?? 0,
+                                      boardsSolved: solved, totalBoards: stage.boardCount)
         }
     }
+
+    /// Total guesses across the whole gauntlet run — the tally the web passes
+    /// as the share's guess count (NOT the last stage's rowsUsed).
+    var gauntletTotalGuesses: Int { state.gauntlet?.stageResults.reduce(0) { $0 + $1.guesses } ?? 0 }
+
     var boardsSolvedCount: Int { state.boards.filter { $0.status == .won }.count }
 
     let mode: GameMode

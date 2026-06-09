@@ -206,14 +206,16 @@ enum GameResultsService {
                     hintsUsed: hintsUsed
                 )
                 // Daily Sweep / Flawless bonus once all 9 dailies are in (web parity).
-                // Fold the bonus into the XpResult so the post-game toast shows it.
-                let bonus = await MedalService.awardDailyBonusesIfComplete(client, userId: userId)
-                if bonus > 0, let x = result {
-                    let newTotal = x.totalXp + bonus
+                // Kept SPLIT from dailyBonus so the toast shows distinct
+                // "+200 sweep" / "+400 flawless" chips like web xp-toast.tsx.
+                let (sweep, flawless) = await MedalService.awardDailyBonusesIfComplete(client, userId: userId)
+                if sweep + flawless > 0, let x = result {
+                    let newTotal = x.totalXp + sweep + flawless
                     result = XpResult(xpGain: x.xpGain, streakBonus: x.streakBonus,
-                                      dailyBonus: x.dailyBonus + bonus, totalXp: newTotal,
+                                      dailyBonus: x.dailyBonus, totalXp: newTotal,
                                       newLevel: newTotal / 1000 + 1,
-                                      leveledUp: x.leveledUp || (newTotal / 1000 + 1) > x.newLevel)
+                                      leveledUp: x.leveledUp || (newTotal / 1000 + 1) > x.newLevel,
+                                      sweepBonus: sweep, flawlessBonus: flawless)
                 }
             }
         }
@@ -251,9 +253,13 @@ enum GameResultsService {
     }
 
     /// XP earned by a finished game — drives the post-game XP toast.
+    /// sweep/flawless are SPLIT from dailyBonus so the toast can render the
+    /// distinct "+200 sweep" / "+400 flawless" chips (web xp-toast.tsx parity).
     struct XpResult {
         let xpGain: Int, streakBonus: Int, dailyBonus: Int
         let totalXp: Int, newLevel: Int, leveledUp: Bool
+        var sweepBonus: Int = 0
+        var flawlessBonus: Int = 0
     }
 
     @discardableResult

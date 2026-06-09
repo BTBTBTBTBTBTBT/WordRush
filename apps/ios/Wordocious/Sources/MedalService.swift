@@ -62,8 +62,9 @@ enum MedalService {
 
     /// Daily Sweep (+200 XP) / Flawless (+400 XP) bonuses, awarded once when all
     /// 9 daily solo results exist. Adds the XP to the profile and returns the
-    /// bonus amount (0 = nothing awarded) so the caller can fold it into the toast.
-    static func awardDailyBonusesIfComplete(_ client: SupabaseClient, userId: String) async -> Int {
+    /// (sweep, flawless) split so the XP toast can render the distinct
+    /// "+200 sweep" / "+400 flawless" chips (web xp-toast.tsx parity).
+    static func awardDailyBonusesIfComplete(_ client: SupabaseClient, userId: String) async -> (sweep: Int, flawless: Int) {
         let day = LeaderboardService.todayLocal()
         struct B: Decodable { let sweep_awarded: Bool?; let flawless_awarded: Bool? }
         let existingRows: [B] = (try? await client.from("daily_bonuses")
@@ -71,20 +72,19 @@ enum MedalService {
             .eq("day", value: day).limit(1).execute().value) ?? []
         let sweepAlready = existingRows.first?.sweep_awarded ?? false
         let flawlessAlready = existingRows.first?.flawless_awarded ?? false
-        if sweepAlready && flawlessAlready { return 0 }
+        if sweepAlready && flawlessAlready { return (0, 0) }
 
         struct R: Decodable { let completed: Bool }
         guard let results: [R] = try? await client.from("daily_results")
             .select("completed").eq("user_id", value: userId).eq("day", value: day)
-            .eq("play_type", value: "solo").execute().value, results.count >= 9 else { return 0 }
+            .eq("play_type", value: "solo").execute().value, results.count >= 9 else { return (0, 0) }
 
         let wonAll = results.allSatisfy { $0.completed }
-        let sweepNew = !sweepAlready
-        let flawlessNew = wonAll && !flawlessAlready
-        var bonus = 0
-        if sweepNew { bonus += 200 }
-        if flawlessNew { bonus += 400 }
-        guard bonus > 0 else { return 0 }
+        let sweepXp = sweepAlready ? 0 : 200
+        let flawlessXp = (wonAll && !flawlessAlready) ? 400 : 0
+        let bonus = sweepXp + flawlessXp
+        guard bonus > 0 else { return (0, 0) }
+        let sweepNew = sweepXp > 0, flawlessNew = flawlessXp > 0
 
         struct BonusUpsert: Encodable { let user_id, day: String; let sweep_awarded, flawless_awarded: Bool; let updated_at: String }
         try? await client.from("daily_bonuses").upsert(BonusUpsert(
@@ -100,6 +100,6 @@ enum MedalService {
             try? await client.from("profiles").update(XpUpd(xp: newXp, level: newXp / 1000 + 1))
                 .eq("id", value: userId).execute()
         }
-        return bonus
+        return (sweepXp, flawlessXp)
     }
 }

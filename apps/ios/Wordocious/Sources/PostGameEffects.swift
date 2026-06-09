@@ -24,6 +24,13 @@ struct XpToastView: View {
                         if result.dailyBonus > 0 {
                             Text("+\(result.dailyBonus) daily").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xDDD6FE))
                         }
+                        // Web parity: distinct sweep (pink) / flawless (yellow) chips.
+                        if result.sweepBonus > 0 {
+                            Text("+\(result.sweepBonus) sweep").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xFBCFE8))
+                        }
+                        if result.flawlessBonus > 0 {
+                            Text("+\(result.flawlessBonus) flawless").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xFDE047))
+                        }
                     }
                     if result.leveledUp {
                         Text("Level up! Lv.\(result.newLevel)").font(Brand.font(10, .black)).foregroundStyle(Color(hex: 0xFDE047))
@@ -43,7 +50,10 @@ struct XpToastView: View {
         .allowsHitTesting(false)
         .onAppear {
             withAnimation(Theme.animation(.spring(response: 0.4, dampingFraction: 0.7))) { shown = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            // Web parity: stretch 3s → 5s when a sweep/flawless bonus fired so the
+            // bigger payout is actually readable.
+            let dwell: Double = (result.sweepBonus + result.flawlessBonus) > 0 ? 5 : 3
+            DispatchQueue.main.asyncAfter(deadline: .now() + dwell) {
                 withAnimation(Theme.animation(.easeIn(duration: 0.3))) { shown = false }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { onDismiss() }
             }

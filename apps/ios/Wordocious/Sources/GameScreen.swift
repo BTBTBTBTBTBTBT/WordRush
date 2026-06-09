@@ -349,16 +349,21 @@ struct GameScreen: View {
     private func share() {
         let kind: ShareCardView.Kind
         if vm.isGauntlet {
-            kind = .gauntlet(stages: vm.gauntletStagesShare(),
-                             stagesCompleted: vm.gauntletStagesShare().filter { $0.won }.count,
-                             totalStages: vm.gauntletStagesShare().count)
+            let stages = vm.gauntletStagesShare()
+            kind = .gauntlet(stages: stages,
+                             stagesCompleted: stages.filter { $0.won }.count,
+                             totalStages: stages.count)
         } else if vm.boardCount > 1 {
             kind = .multi(boards: vm.shareBoards(), boardsSolved: vm.boardsSolvedCount, totalBoards: vm.boardCount)
         } else {
             kind = .single(grid: vm.shareGrid())
         }
+        // Gauntlet shares the RUN-total guesses (web gauntlet-results.tsx passes
+        // totalGuesses for both guesses and maxGuesses), not the last stage's.
+        let shareGuesses = vm.isGauntlet ? vm.gauntletTotalGuesses : vm.rowsUsed
+        let shareMax = vm.isGauntlet ? vm.gauntletTotalGuesses : vm.maxGuesses
         ShareService.share(kind: kind, mode: mode, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
-                           won: vm.status == .won, guesses: vm.rowsUsed, maxGuesses: vm.maxGuesses,
+                           won: vm.status == .won, guesses: shareGuesses, maxGuesses: shareMax,
                            timeSeconds: vm.elapsedSeconds)
     }
 

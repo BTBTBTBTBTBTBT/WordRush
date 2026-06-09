@@ -12,7 +12,8 @@ struct AvatarView: View {
     let username: String
     var size: CGFloat = 96
 
-    private var initial: String { String(username.prefix(1)).uppercased() }
+    // Web parity: two-character initials fallback (avatar-upload.tsx slice(0, 2)).
+    private var initial: String { String(username.prefix(2)).uppercased() }
 
     var body: some View {
         Group {

@@ -197,7 +197,23 @@ struct HomeView: View {
     // MARK: - Pro prompt (ports pro-prompt-modal)
 
     private var showProPrompt: Bool {
-        !proPromptShown && !auth.isProActive && (auth.profile?.dailyLoginStreak ?? 0) >= 7
+        // Honor the server-persisted dismissal too (web parity — a user who
+        // dismissed on web shouldn't see the one-time prompt again on iOS).
+        !proPromptShown && !(auth.profile?.proPromptShown ?? false)
+            && !auth.isProActive && (auth.profile?.dailyLoginStreak ?? 0) >= 7
+    }
+
+    /// Dismiss the one-time Pro prompt locally AND persist it to the profile
+    /// row, mirroring web pro-prompt-modal.tsx's `pro_prompt_shown` update.
+    private func dismissProPrompt() {
+        proPromptShown = true
+        Task {
+            struct Upd: Encodable { let pro_prompt_shown: Bool }
+            if let uid = auth.profile?.id {
+                try? await auth.client.from("profiles").update(Upd(pro_prompt_shown: true))
+                    .eq("id", value: uid).execute()
+            }
+        }
     }
 
     private var proPromptBanner: some View {
@@ -209,13 +225,13 @@ struct HomeView: View {
                     .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(2)
             }
             Spacer(minLength: 4)
-            Button { proPromptShown = true; showProSheet = true } label: {
+            Button { dismissProPrompt(); showProSheet = true } label: {
                 Text("Go Pro").font(Brand.font(10, .black)).foregroundStyle(.white)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(RoundedRectangle(cornerRadius: 8).fill(
                         LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
             }.buttonStyle(.plain)
-            Button { proPromptShown = true } label: {
+            Button { dismissProPrompt() } label: {
                 Image(systemName: "xmark").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
             }.buttonStyle(.plain)
         }
@@ -546,8 +562,17 @@ struct ModeLimitModal: View {
                         .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 4))
                 }.buttonStyle(.plain).padding(.bottom, 12)
 
-                Button("View Solved Puzzle", action: onViewSolved)
-                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.primary)
+                // Web parity: only show "View Solved Puzzle" when there IS a solved
+                // puzzle to review (VS has none) — otherwise a muted dismiss.
+                // Previously showViewSolved was never read, so the locked VS card
+                // dead-ended into an empty fullScreenCover.
+                if showViewSolved {
+                    Button("View Solved Puzzle", action: onViewSolved)
+                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.primary)
+                } else {
+                    Button("Come back tomorrow", action: onClose)
+                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                }
             }
             .padding(24)
             .frame(maxWidth: 360)
