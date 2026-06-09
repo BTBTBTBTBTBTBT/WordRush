@@ -507,12 +507,13 @@ private fun SummaryCard(icon: ImageVector, label: String, value: String, sub: St
     Column(
         modifier = modifier.clip(RoundedCornerShape(14.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)).padding(vertical = 12.dp, horizontal = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
         Text(value, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text, lineHeight = 18.sp)
         Text(label, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.5.sp)
-        if (sub != null) Text(sub, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        // Reserve space for subline on ALL cards (visible or invisible) — keeps heights equal
+        Text(sub ?: " ", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
 }
 
@@ -773,21 +774,21 @@ private fun ProfileModePicker(selected: String?, gamesPerMode: Map<String, Int>,
 @Composable
 private fun ModeChip(label: String, modeId: String?, accent: Color, count: Int, active: Boolean, onClick: () -> Unit) {
     val iconTint = if (active) accent else WTheme.textMuted
-    // Compact chips, size-to-content like web mode-picker — minimal padding, tight spacing.
+    // Ultra-compact chips matching web density — minimal padding/spacing, smaller icon/text
     Column(
-        Modifier.defaultMinSize(minWidth = 62.dp).clip(RoundedCornerShape(12.dp))
+        Modifier.width(56.dp).clip(RoundedCornerShape(12.dp))
             .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
             .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
-            .clickableNoRipple(onClick).padding(horizontal = 8.dp, vertical = 6.dp),
+            .clickableNoRipple(onClick).padding(horizontal = 6.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(1.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
-        Box(Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(if (active) accent.copy(alpha = 0.12f) else WTheme.surfaceAlt), Alignment.Center) {
-            if (modeId == null) Icon(Icons.Filled.BarChart, null, tint = iconTint, modifier = Modifier.size(14.dp))
-            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, iconTint, glyphSize = 11.sp, iconSize = 14.dp) }
+        Box(Modifier.size(24.dp).clip(RoundedCornerShape(6.dp)).background(if (active) accent.copy(alpha = 0.12f) else WTheme.surfaceAlt), Alignment.Center) {
+            if (modeId == null) Icon(Icons.Filled.BarChart, null, tint = iconTint, modifier = Modifier.size(12.dp))
+            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, iconTint, glyphSize = 9.sp, iconSize = 12.dp) }
         }
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1)
-        if (count > 0) Text("$count", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+        Text(label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1)
+        if (count > 0) Text("$count", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
     }
 }
 
