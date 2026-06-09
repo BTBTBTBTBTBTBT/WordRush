@@ -107,11 +107,13 @@ fun HomeScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     rowCards.forEach { card ->
                         val completion = card.engineMode?.let { completions[it.name] }
+                        // Unlimited mode: these aren't the daily puzzle — never show the
+                        // daily W/L result or lock; every tap starts a fresh puzzle (web parity).
+                        val shownCompletion = if (unlimitedMode) null else completion
                         val isLocked = !isPro && completion != null
-                        // VS swords overlay: Pro + Unlimited, on non-VS cards (web parity).
                         val showVs = unlimitedMode && card.id != "vs"
                         val unlimited = unlimitedMode && card.engineMode != null
-                        ModeCardView(card, completion, isLocked, showVs, Modifier.weight(1f), onVs = { onVs(card) }) {
+                        ModeCardView(card, shownCompletion, isLocked, showVs, Modifier.weight(1f), onVs = { onVs(card) }) {
                             if (isLocked) limitModal = card else onSelectMode(card, unlimited)
                         }
                     }

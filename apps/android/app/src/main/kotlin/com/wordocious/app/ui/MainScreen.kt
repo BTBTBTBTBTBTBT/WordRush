@@ -157,7 +157,13 @@ fun MainScreen() {
                         onVs = { card -> card.engineMode?.let { vsActive = it to false } },
                     )
                     1 -> LeaderboardScreen()
-                    2 -> ProfileScreen(onGoPro = { infoRoute = "pro" }, onEditProfile = { infoRoute = "edit" })
+                    2 -> ProfileScreen(
+                        onGoPro = { infoRoute = "pro" },
+                        onEditProfile = { infoRoute = "edit" },
+                        // Today's Dailies badge → open that mode's daily game (completed
+                        // puzzle if played, fresh if not) — web parity.
+                        onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
+                    )
                     3 -> RecordsScreen()
                 }
             }

@@ -147,6 +147,35 @@ object MatchStatsService {
         byDay.entries.take(days).map { DayActivity(it.key, it.value[0], it.value[1]) }.sortedBy { it.day }
     }.getOrElse { emptyList() }
 
+    /**
+     * 90-day GitHub-style activity heatmap data — every calendar day in the window
+     * (including zero-game days), oldest→newest. Ports web fetchDailyCalendar (UTC
+     * buckets, player1 OR player2). Used by the profile ACTIVITY calendar.
+     */
+    suspend fun dailyCalendar(userId: String, days: Int = 90): List<DayActivity> = runCatching {
+        val today = java.time.LocalDate.now(java.time.ZoneOffset.UTC)
+        val start = today.minusDays((days - 1).toLong())
+        val sinceIso = start.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toString()
+        val rows = client.postgrest["matches"]
+            .select(Columns.raw("created_at,winner_id")) {
+                filter {
+                    or { eq("player1_id", userId); eq("player2_id", userId) }
+                    gte("created_at", sinceIso)
+                }
+                limit(2000)
+            }
+            .decodeList<DateRow>()
+        // Pre-seed every day in the window with zeroes (chronological order).
+        val buckets = LinkedHashMap<String, IntArray>()
+        var d = start
+        while (!d.isAfter(today)) { buckets[d.toString()] = intArrayOf(0, 0); d = d.plusDays(1) }
+        rows.forEach { r ->
+            val key = r.createdAt.take(10)
+            buckets[key]?.let { it[0]++; if (r.winnerId == userId) it[1]++ }
+        }
+        buckets.entries.map { DayActivity(it.key, it.value[0], it.value[1]) }
+    }.getOrElse { emptyList() }
+
     // ── Solve times ──────────────────────────────────────────────────────────────
     /** Recent solo wins' solve times, oldest→newest (solve-time line chart). */
     suspend fun solveTimes(userId: String, mode: String? = null, limit: Int = 30): List<SolvePoint> = runCatching {
