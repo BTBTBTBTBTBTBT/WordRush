@@ -299,8 +299,9 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
     }
 
     if (showVictory) {
-        // Gauntlet uses its own results screen, not VictoryOverlay (spec #5).
-        if (mode != GameMode.GAUNTLET) {
+        // Gauntlet only celebrates a WON run (web parity: a lost run goes
+        // straight to the results screen, no overlay).
+        if (mode != GameMode.GAUNTLET || state.status == GameStatus.WON) {
             Box(modifier = Modifier.fillMaxSize()) {
                 VictoryOverlay(
                     state = state, mode = mode, elapsedSeconds = elapsed,
@@ -343,6 +344,11 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
             val progressLabel = if (mode == GameMode.GAUNTLET) {
                 val sn = (state.gauntlet?.currentStage ?: 0) + 1
                 "Stage $sn / ${state.gauntlet?.totalStages ?: 5}"
+            } else if (state.boards.size > 1) {
+                // Web parity (quordle-game header): boards solved AND the shared
+                // guess count, not just the guess counter.
+                val solved = state.boards.count { it.status == GameStatus.WON }
+                "$solved/${state.boards.size} solved · ${board0.guesses.size}/${board0.maxGuesses} guesses"
             } else {
                 "Guess ${board0.guesses.size + 1} / ${board0.maxGuesses}"
             }
@@ -369,6 +375,14 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
                 )
                 Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Daily ProperNoundle puzzle number (web "#{getDailyPuzzleNumber()}").
+                    if (mode == GameMode.PROPERNOUNDLE && seed.startsWith("daily-")) {
+                        Text(
+                            "#${com.wordocious.core.ProperNoundle.dailyPuzzleNumber(com.wordocious.app.todayLocalDate())}",
+                            color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        )
+                        Text("·", color = WTheme.textMuted, fontSize = 12.sp)
+                    }
                     Text(progressLabel, color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     Text("·", color = WTheme.textMuted, fontSize = 12.sp)
                     Text(fmtClock(elapsed), color = WTheme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Black)

@@ -27,6 +27,30 @@ object ShareHelper {
         val modeName = modeLabel(mode)
         val sb = StringBuilder()
 
+        // Gauntlet: share the WHOLE run — every stage config (unreached = ❌)
+        // and the run-total guess count, not just the final stage's boards
+        // (web gauntlet-results.tsx parity).
+        val g = state.gauntlet
+        if (mode == GameMode.GAUNTLET && g != null) {
+            val totalGuesses = g.stageResults.sumOf { it.guesses }
+            val cleared = g.stageResults.count { it.status == GameStatus.WON }
+            sb.appendLine("Wordocious Gauntlet $cleared/${g.totalStages} stages · $totalGuesses guesses")
+            sb.appendLine()
+            g.stages.forEach { st ->
+                val r = g.stageResults.firstOrNull { it.stageIndex == st.stageIndex }
+                val stageWon = r?.status == GameStatus.WON
+                val solved = if (stageWon) st.boardCount
+                else r?.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0
+                sb.appendLine("${if (stageWon) "✅" else "❌"} ${st.name}  $solved/${st.boardCount} boards · ${r?.guesses ?: 0} guesses")
+            }
+            val mins = elapsedSeconds / 60
+            val secs = elapsedSeconds % 60
+            sb.appendLine()
+            sb.appendLine("⏱ ${if (mins > 0) "${mins}m " else ""}${secs}s")
+            sb.append("Play at wordocious.com")
+            return sb.toString()
+        }
+
         if (state.boards.size == 1) {
             val board = state.boards[0]
             val tries = if (won) "${board.guesses.size}/${board.maxGuesses}" else "X/${board.maxGuesses}"

@@ -109,6 +109,31 @@ fun PostGameScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // ProperNoundle: Wikipedia photo + display-name result line (web parity:
+            // win = name in green; loss = "The answer was: X" in red).
+            if (mode == GameMode.PROPERNOUNDLE) {
+                val puzzle = androidx.compose.runtime.remember(board.solution) {
+                    com.wordocious.core.ProperNoundle.puzzleFor(board.solution)
+                }
+                val imageUrl by androidx.compose.runtime.produceState<String?>(initialValue = null, key1 = puzzle?.id) {
+                    value = puzzle?.let { com.wordocious.app.data.WikipediaHint.fetchImageUrl(it.display, it.wikiTitle) }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    imageUrl?.let { url ->
+                        coil.compose.AsyncImage(
+                            model = url, contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp))
+                                .border(2.dp, if (won) Color(0xFF16A34A) else Color(0xFFDC2626), RoundedCornerShape(12.dp)),
+                        )
+                    }
+                    Text(
+                        if (won) (puzzle?.display ?: solution) else "The answer was: ${puzzle?.display ?: solution}",
+                        fontSize = 18.sp, fontWeight = FontWeight.Black,
+                        color = if (won) Color(0xFF16A34A) else Color(0xFFEF4444),
+                    )
+                }
+            }
             FinishedStatsHeader(
                 mode = mode, won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
                 timeSeconds = elapsedSeconds, boardsSolved = boardsSolved, totalBoards = totalBoards,

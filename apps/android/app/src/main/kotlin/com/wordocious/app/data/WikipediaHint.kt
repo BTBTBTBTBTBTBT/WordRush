@@ -46,6 +46,28 @@ object WikipediaHint {
         }.getOrNull()
     }
 
+    /** The answer's Wikipedia photo for the post-game result thumbnail — reads
+     *  thumbnail/originalimage from the same REST summary. Null on any failure. */
+    suspend fun fetchImageUrl(displayName: String, wikiTitle: String?): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val raw = (if (!wikiTitle.isNullOrEmpty()) wikiTitle else displayName)
+                .replace(Regex("\\s+"), "_")
+            val title = URLEncoder.encode(raw, "UTF-8")
+                .replace("+", "%20").replace("%21", "!").replace("%7E", "~")
+                .replace("%2A", "*").replace("%27", "'").replace("%28", "(").replace("%29", ")")
+            val conn = (URL("$API/$title").openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                setRequestProperty("Accept", "application/json")
+                connectTimeout = 5000; readTimeout = 5000
+            }
+            if (conn.responseCode !in 200..299) return@runCatching null
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            val obj = json.parseToJsonElement(body).jsonObject
+            obj["thumbnail"]?.jsonObject?.get("source")?.jsonPrimitive?.content
+                ?: obj["originalimage"]?.jsonObject?.get("source")?.jsonPrimitive?.content
+        }.getOrNull()
+    }
+
     private fun sanitize(extract: String, displayName: String): String {
         // Protect multi-letter capitalized abbreviations (U.S., U.K.).
         var s = protectDots(extract, "\\b([A-Z])\\.\\s?([A-Z])\\.(\\s?[A-Z]\\.)?", RegexOption.UNIX_LINES)

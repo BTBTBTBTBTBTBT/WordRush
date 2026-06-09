@@ -84,6 +84,17 @@ object ProperNoundle {
         return list[maxOf(0, idx)]
     }
 
+    /** Daily puzzle number shown in the header ("#N") — web parity:
+     *  getDailyPuzzleNumber = days since the 2024-01-01 epoch + 1. */
+    fun dailyPuzzleNumber(date: String): Int = daysSinceEpoch(date) + 1
+
+    /** Look up the puzzle whose normalized answer matches [answer] — used by the
+     *  post-game screen to recover the display name + wiki title. */
+    fun puzzleFor(answer: String): NPuzzle? {
+        val n = normalize(answer)
+        return all.firstOrNull { normalize(it.answer) == n }
+    }
+
     /** Deterministic puzzle from a VS seed (FNV-1a 64-bit → index). */
     fun puzzleForSeed(seed: String): NPuzzle? {
         if (all.isEmpty()) return null
