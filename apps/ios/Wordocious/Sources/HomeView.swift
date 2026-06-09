@@ -460,7 +460,10 @@ struct HomeView: View {
     }
 
     private func cardBody(_ mode: HomeMode, locked: Bool) -> some View {
-        let done = mode.dbKey.flatMap { completions.byMode[$0] }
+        // Daily completion (W/L badge, "N guesses · time", accent tint) is a
+        // DAILY-only concept. In Unlimited mode the cards must show the static
+        // mode description with no badge/tint — matching the web. (Pro parity #91.)
+        let done = effectiveMode == .daily ? mode.dbKey.flatMap { completions.byMode[$0] } : nil
         let isDone = done != nil
         let lockGray = Color(hex: 0xD1D5DB)
         let barColors = locked ? [lockGray, lockGray] : [mode.accent, mode.accent.opacity(0.53)]
