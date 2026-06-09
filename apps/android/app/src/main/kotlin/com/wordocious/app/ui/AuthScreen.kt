@@ -50,6 +50,12 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun AuthScreen(onAuthenticated: () -> Unit) {
+    // Pre-auth Privacy/Terms overlay (web parity: the footer links work).
+    var infoRoute by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    infoRoute?.let { route ->
+        InfoScreen(kind = route, onDone = { infoRoute = null })
+        return
+    }
     var isSignIn by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -138,7 +144,8 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                 error = null
                 when {
                     email.isBlank() || password.isBlank() -> error = "Email and password are required"
-                    !isSignIn && username.isBlank() -> error = "Username is required"
+                    password.length < 6 -> error = "Password must be at least 6 characters."
+                    !isSignIn && username.trim().length !in 3..20 -> error = "Username must be 3-20 characters."
                     else -> {
                         working = true
                         scope.launch {
@@ -186,10 +193,14 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
 
         Spacer(Modifier.height(32.dp))
 
-        // Footer
+        // Footer — functional legal links (App Review expects these to work),
+        // opening the in-app Privacy/Terms pages like the web's <Link> footer.
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            listOf("Privacy Policy", "Terms of Service").forEach {
-                Text(it, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            listOf("Privacy Policy" to "privacy", "Terms of Service" to "terms").forEach { (label, route) ->
+                Text(
+                    label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    modifier = Modifier.clickableNoRipple { infoRoute = route },
+                )
             }
         }
     }

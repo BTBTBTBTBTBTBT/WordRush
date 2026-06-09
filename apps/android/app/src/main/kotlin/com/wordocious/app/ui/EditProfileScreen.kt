@@ -120,6 +120,9 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 }
                 AuthService.refreshProfile()
                 avatarOverride = url
+            } else {
+                // Web parity: surface upload failures instead of silently bailing.
+                error = "Avatar upload failed. Please try again."
             }
             uploading = false
         }
@@ -152,7 +155,8 @@ fun EditProfileScreen(onDone: () -> Unit) {
                         if (ok.isSuccess) { AuthService.refreshProfile(); onDone() }
                         else {
                             val msg = ok.exceptionOrNull()?.message ?: ""
-                            error = if (msg.contains("23505") || msg.contains("duplicate", true)) "Username already taken" else "Something went wrong"
+                            error = if (msg.contains("23505") || msg.contains("duplicate", true)) "Username already taken"
+                            else msg.ifBlank { "Failed to save" }
                             saving = false
                         }
                     }
@@ -170,7 +174,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 if (avatarUrl != null) {
                     coil.compose.AsyncImage(model = avatarUrl, contentDescription = "Avatar", modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                 } else {
-                    Text((profile?.username?.firstOrNull() ?: 'P').uppercaseChar().toString(), fontSize = 34.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text((profile?.username?.take(2) ?: "P").uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             }
             Text(
@@ -211,10 +215,11 @@ fun EditProfileScreen(onDone: () -> Unit) {
 }
 
 private fun validate(name: String): String? {
+    // Web parity (profile-edit-modal.tsx): length-only, matching the DB
+    // constraint. The charset regex was native-only and locked out users whose
+    // web-set username contains a space/hyphen — they couldn't re-save.
     val t = name.trim()
-    if (t.length < 3) return "At least 3 characters"
-    if (t.length > 20) return "20 characters max"
-    if (!t.matches(Regex("^[a-zA-Z0-9_]+$"))) return "Letters, numbers, and underscores only"
+    if (t.length !in 3..20) return "Username must be 3-20 characters"
     return null
 }
 

@@ -116,7 +116,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             // NOTIFICATIONS
             Section("NOTIFICATIONS") {
                 Card {
-                    ToggleRow("Daily Reminder", "A nudge to play today's puzzles", dailyReminder) {
+                    ToggleRow("Daily Reminders", "A nudge to play today's puzzles", dailyReminder) {
                         dailyReminder = it; SettingsPref.set(SettingsPref.DAILY_REMINDER, it)
                     }
                 }
@@ -147,7 +147,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 
             // Account
             Text(
-                "Sign out",
+                "Sign Out",
                 fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()

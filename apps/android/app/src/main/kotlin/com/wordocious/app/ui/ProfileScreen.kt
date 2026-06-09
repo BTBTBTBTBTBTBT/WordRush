@@ -157,12 +157,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         if (activity7.isNotEmpty()) {
             item { ActivityCard(activity7) }
         }
-        if (guessDist.any { it.count > 0 }) {
-            item { GuessDistributionCard(guessDist) }
-        }
-        if (solveTimes.size >= 2) {
-            item { SolveTimeCard(solveTimes) }
-        }
+        // Web parity: these two charts stay VISIBLE when empty, with
+        // chart-specific copy (guess-distribution.tsx / solve-time-chart.tsx).
+        item { GuessDistributionCard(guessDist) }
+        item { SolveTimeCard(solveTimes) }
         if (topWords.isNotEmpty()) {
             item { TopWordsCard(topWords) }
         }
@@ -171,9 +169,16 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         }
         // Per-mode Pro Insights (selected mode) / global Pro Stats (All view) —
         // both self-gate: locked teaser for free users, real data for Pro.
+        // Web parity: a Pro user with no data sees NOTHING here (web returns
+        // null); the free-user locked teaser always shows.
         item {
-            if (selectedMode != null) ProInsightsCard(proInsights, isProActive, onGoPro)
-            else ProStatsCard(stats, isProActive, onGoPro)
+            if (selectedMode != null) {
+                if (!isProActive || proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
+                    ProInsightsCard(proInsights, isProActive, onGoPro)
+                }
+            } else if (!isProActive || stats.isNotEmpty()) {
+                ProStatsCard(stats, isProActive, onGoPro)
+            }
         }
 
         // ── D. Daily Medals ───────────────────────────────────────
@@ -204,8 +209,23 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         }
 
         // ── Recent matches ────────────────────────────────────────
-        if (recentMatches.isNotEmpty()) {
-            item { SectionLabel("RECENT MATCHES") }
+        // Web parity (profile/page.tsx): skeleton rows while loading, then the
+        // matches or "No matches played yet." — the section never just vanishes.
+        item { SectionLabel("RECENT MATCHES") }
+        if (loading) {
+            item {
+                Column { repeat(5) { SkeletonBlock(height = 52.dp, cornerRadius = 12.dp); Spacer(Modifier.height(8.dp)) } }
+            }
+        } else if (recentMatches.isEmpty()) {
+            item {
+                Text(
+                    "No matches played yet.", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    color = WTheme.textMuted,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+            }
+        } else {
             items(recentMatches) { m ->
                 RecentMatchRow(m, userId)
                 Spacer(Modifier.height(8.dp))
@@ -568,6 +588,16 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            if (buckets.none { it.count > 0 }) {
+                // Web parity: chart-specific empty copy (guess-distribution.tsx).
+                Text(
+                    "Win a game to see your guess distribution", fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                return@Column
+            }
             buckets.forEach { b ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("${b.guesses}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(12.dp))
@@ -806,6 +836,16 @@ private fun SolveTimeCard(points: List<com.wordocious.app.data.MatchStatsService
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (points.size < 2) {
+                // Web parity: chart-specific empty copy (solve-time-chart.tsx).
+                Text(
+                    "Win more games to see your solve time trend", fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                return@Column
+            }
             androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(120.dp)) {
                 if (points.size < 2) return@Canvas
                 val w = size.width; val h = size.height

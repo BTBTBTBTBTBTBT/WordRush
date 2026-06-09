@@ -220,7 +220,13 @@ private fun infoSections(kind: String): List<InfoSec> = when (kind) {
         InfoSec("Introduction", "This policy explains what Wordocious collects, how we use it, and your choices."),
         InfoSec("Information We Collect", bullets = listOf("Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — browser type, usage patterns, anonymous analytics")),
         InfoSec("How We Use Your Information", bullets = listOf("To create and manage your account", "To track game progress, streaks, and statistics", "To display leaderboards and records", "To improve and maintain the app", "To communicate important service updates")),
-        InfoSec("Third-Party Services", bullets = listOf("Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name")),
+        InfoSec("Third-Party Services", bullets = listOf("Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name", "Google ads — advertisements may be shown to free-tier users; ad-related data collection is governed by Google's privacy policies. Pro subscribers are not shown ads.")),
+        InfoSec("Advertising & Data Sharing", "Wordocious may show advertisements to free-tier users, served by Google and subject to Google's Privacy Policy. Pro subscribers enjoy a completely ad-free experience. We do not sell or rent your personal data for marketing beyond what is necessary for ad delivery."),
+        InfoSec("Data Security", "We use industry-standard measures to protect your data. No method of transmission or storage is 100% secure, but we work to safeguard your information."),
+        InfoSec("Your Rights", "You may request access to, correction of, or deletion of your personal data at any time. You can delete your account from Settings or by contacting us; upon deletion your personal data is removed from our systems."),
+        InfoSec("Children's Privacy", "Wordocious is not intended for children under 13. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us data, contact us so we can remove it."),
+        InfoSec("Changes to This Policy", "We may update this policy from time to time. Continued use of the app after changes constitutes acceptance of the updated policy."),
+        InfoSec("Contact Us", "Questions about this policy or your personal data? Contact us at privacy@wordocious.com."),
     )
     "terms" -> listOf(
         InfoSec("Agreement to Terms", "By using Wordocious you agree to these terms."),

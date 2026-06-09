@@ -103,6 +103,11 @@ fun WelcomeScreen() {
                     colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.bg, unfocusedContainerColor = WTheme.bg),
                 )
                 error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626), modifier = Modifier.padding(top = 4.dp)) }
+                    ?: Text(
+                        "3-20 characters. Letters, numbers, and underscores.",
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 Spacer(Modifier.height(14.dp))
 
                 // Get Started
@@ -131,7 +136,7 @@ fun WelcomeScreen() {
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(if (saving) "Saving…" else "Get Started", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text(if (saving) "Saving…" else "Let's Play!", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
 
                 // Skip for now
