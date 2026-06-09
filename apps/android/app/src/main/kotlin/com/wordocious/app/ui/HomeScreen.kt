@@ -64,8 +64,10 @@ fun HomeScreen(
     onVs: (ModeCard) -> Unit = {},
 ) {
     // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
+    // Seed from the day-keyed cache so cold launches don't flash unbadged
+    // cards while the network fetch runs (web sessionStorage parity).
     val completions by androidx.compose.runtime.produceState(
-        initialValue = emptyMap<String, com.wordocious.app.data.DailyCompletionsService.Completion>()
+        initialValue = com.wordocious.app.data.DailyCompletionsService.readCache()
     ) {
         value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
     }
@@ -217,8 +219,17 @@ private fun WordOfTheDayCard() {
             Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_book_open), null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
             Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
         }
+        val w = word   // local capture: produceState delegate can't smart-cast
+        if (w == null) {
+            // Web parity: structural animate-pulse skeleton, not a "…" placeholder.
+            Spacer(Modifier.height(4.dp))
+            SkeletonBlock(height = 16.dp, width = 70.dp, cornerRadius = 6.dp)
+            Spacer(Modifier.height(6.dp))
+            SkeletonBlock(height = 10.dp, cornerRadius = 5.dp)
+            return@Column
+        }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val display = word?.let { it.first().uppercase() + it.drop(1).lowercase() } ?: "…"
+            val display = w.first().uppercase() + w.drop(1).lowercase()
             Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             def?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
                 // Web parity (page.tsx): plain italic purple text, no background pill.

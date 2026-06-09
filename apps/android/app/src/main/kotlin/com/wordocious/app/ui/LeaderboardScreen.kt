@@ -70,11 +70,15 @@ fun LeaderboardScreen() {
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
+    var playerCount by remember { mutableStateOf(0) }
     // Reload when mode changes
     LaunchedEffect(selectedMode) {
         loading = true
         entries = LeaderboardService.fetchDailyLeaderboard(selectedMode)
         loading = false
+        // Web parity: "{n} players today" counts ALL play types via an exact
+        // server count, independent of the (solo, 50-cap) leaderboard slice.
+        playerCount = LeaderboardService.playerCount(selectedMode)
     }
     LaunchedEffect(selectedMode, showYesterday) {
         yesterday = if (showYesterday) LeaderboardService.fetchYesterdayWinners(selectedMode) else emptyList()
@@ -102,7 +106,7 @@ fun LeaderboardScreen() {
         LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
             // Mode info card — icon box + "{n} players today"
             item {
-                ModeInfoCard(modeLabel = modeLabel, players = entries.size)
+                ModeInfoCard(modeLabel = modeLabel, players = playerCount)
                 Spacer(Modifier.height(12.dp))
             }
             // Completed-daily dropdown (your board for this mode), web parity:
@@ -113,7 +117,7 @@ fun LeaderboardScreen() {
             // User rank — "You're ranked #N of M"
             if (userIdx >= 0) {
                 item {
-                    UserRankCard(rank = userIdx + 1, total = entries.size)
+                    UserRankCard(rank = userIdx + 1, total = entries.size, mode = selectedMode)
                     Spacer(Modifier.height(12.dp))
                 }
             }
@@ -127,11 +131,8 @@ fun LeaderboardScreen() {
             }
             // Leaderboard body
             if (loading) {
-                item {
-                    Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = WTheme.primary)
-                    }
-                }
+                // Web parity: animate-pulse skeleton rows, not a spinner.
+                item { LeaderboardSkeleton() }
             } else if (entries.isEmpty()) {
                 item {
                     Column(
@@ -326,18 +327,20 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
 }
 
 @Composable
-private fun UserRankCard(rank: Int, total: Int) {
+private fun UserRankCard(rank: Int, total: Int, mode: String) {
     Box(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFFFFFBEB), WTheme.surface)))
-            .border(1.5.dp, Color(0xFFFDE68A), RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(listOf(WTheme.highlightGold, WTheme.surface)))
+            .border(1.5.dp, WTheme.goldBorder, RoundedCornerShape(16.dp))
             .padding(12.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             Text("You're ranked ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             Text("#$rank", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+            // Transient "+N/−N" movement pill since you last looked (web parity).
+            RankDeltaBadge(mode = mode, playType = "solo", pageKey = "daily", currentRank = rank)
             Text(" of $total", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }
@@ -362,7 +365,7 @@ private fun WinLossPill(completed: Boolean, abbrev: Boolean = false) {
 @Composable
 internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean) {
     val bg = when {
-        isCurrentUser -> Color(0xFFFFFBEB)   // highlight-gold
+        isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
         else -> Color.Transparent
     }

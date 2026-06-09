@@ -125,12 +125,14 @@ private fun DailyRecordsTab() {
         ModePickerRow(selectedMode) { selectedMode = it }
 
         if (loading) {
-            Box(Modifier.fillMaxSize(), Alignment.Center) {
-                CircularProgressIndicator(color = WTheme.primary)
-            }
+            // Web parity: animate-pulse skeleton rows, not a spinner.
+            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { LeaderboardSkeleton() }
         } else if (entries.isEmpty()) {
-            Box(Modifier.fillMaxSize(), Alignment.Center) {
-                Text("No results yet today", color = WTheme.textMuted, fontWeight = FontWeight.Bold)
+            // Web parity (records page): trophy + "No results yet today. Be the first!"
+            Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
+                Spacer(Modifier.height(8.dp))
+                Text("No results yet today. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
@@ -174,7 +176,8 @@ private fun AllTimeTab() {
     }
 
     if (loading) {
-        Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = WTheme.primary) }
+        // Web parity: AllTimeSkeleton pulsing card blocks, not a spinner.
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { CardsSkeleton() }
         return
     }
 
@@ -190,9 +193,9 @@ private fun AllTimeTab() {
             Spacer(Modifier.height(8.dp))
             Column(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                    .background(WTheme.surface).border(1.5.dp, Color(0xFFFDE68A), RoundedCornerShape(16.dp)),
+                    .background(WTheme.surface).border(1.5.dp, WTheme.goldBorder, RoundedCornerShape(16.dp)),
             ) {
-                Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(listOf(Color(0xFFF59E0B), Color(0xFFFDE68A)))))
+                Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(listOf(Color(0xFFF59E0B), WTheme.goldBorder))))
                 Column(Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)) {
                     GLOBAL_RECORD_TYPES.chunked(2).forEach { rowTypes ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -268,7 +271,7 @@ private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecor
             .clip(RoundedCornerShape(8.dp))
             .then(
                 if (isCurrentUser && hasRecord)
-                    Modifier.background(Color(0xFFFFFBEB)).border(1.dp, Color(0xFFFDE68A), RoundedCornerShape(8.dp))
+                    Modifier.background(WTheme.highlightGold).border(1.dp, WTheme.goldBorder, RoundedCornerShape(8.dp))
                 else Modifier,
             )
             .padding(8.dp),

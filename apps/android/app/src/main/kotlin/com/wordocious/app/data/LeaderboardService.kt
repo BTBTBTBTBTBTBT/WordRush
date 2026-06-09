@@ -102,9 +102,21 @@ object LeaderboardService {
     suspend fun getUserDailyRank(userId: String, gameMode: String, day: String = todayLocalDate()): Int? =
         userRankAndTotal(userId, gameMode)?.first
 
-    /** Total players who logged a result for today's [gameMode] (for "{n} players today"). */
-    suspend fun playerCount(gameMode: String, playType: String = "solo"): Int =
-        fetchDailyLeaderboard(gameMode, playType, limit = 1000).size
+    /** Total players who logged a result for today's [gameMode] (for "{n} players today").
+     *  Web parity: getDailyPlayerCount counts ALL play types (solo + VS) with an
+     *  exact server-side count — no solo filter, no row cap. */
+    suspend fun playerCount(gameMode: String): Int = runCatching {
+        client.postgrest["daily_results"]
+            .select(Columns.raw("user_id")) {
+                count(io.github.jan.supabase.postgrest.query.Count.EXACT)
+                limit(1)
+                filter {
+                    eq("game_mode", gameMode)
+                    eq("day", todayLocalDate())
+                }
+            }
+            .countOrNull()?.toInt() ?: 0
+    }.getOrElse { 0 }
 
     suspend fun fetchAllTimeRecords(): List<AllTimeRecord> = runCatching {
         client.postgrest["all_time_records"]
