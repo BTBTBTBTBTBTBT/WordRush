@@ -12,6 +12,7 @@ object ProfileService {
     @Serializable
     data class UserStat(
         @SerialName("game_mode") val gameMode: String,
+        @SerialName("play_type") val playType: String = "solo",
         val wins: Int = 0,
         val losses: Int = 0,
         @SerialName("total_games") val totalGames: Int = 0,

@@ -55,7 +55,7 @@ import com.wordocious.app.ui.theme.WTheme
  * All-time tab: Hall of Fame 2x2 grid (longest streak, highest level, most medals, most completions)
  */
 @Composable
-fun RecordsScreen() {
+fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Daily", "All-Time")
 
@@ -103,7 +103,7 @@ fun RecordsScreen() {
 
         when (tab) {
             0 -> DailyRecordsTab()
-            1 -> AllTimeTab()
+            1 -> AllTimeTab(onOpenProfile)
         }
     }
 }
@@ -164,7 +164,7 @@ private val GLOBAL_RECORD_TYPES = listOf("longest_streak", "highest_level", "mos
 private val PER_MODE_RECORD_TYPES = listOf("fastest_win", "fewest_guesses", "most_games_played", "longest_streak")
 
 @Composable
-private fun AllTimeTab() {
+private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
     var records by remember { mutableStateOf<List<LeaderboardService.AllTimeRecord>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var selectedMode by remember { mutableStateOf("DUEL") }
@@ -202,7 +202,7 @@ private fun AllTimeTab() {
                             rowTypes.forEach { rt ->
                                 val rec = globalRecords.find { it.recordType == rt }
                                 Box(Modifier.weight(1f)) {
-                                    StatCell(rt, rec, Color(0xFFD97706), isCurrentUser = userId != null && rec?.holderId == userId)
+                                    StatCell(rt, rec, Color(0xFFD97706), isCurrentUser = userId != null && rec?.holderId == userId, onOpenProfile = onOpenProfile)
                                 }
                             }
                         }
@@ -248,7 +248,7 @@ private fun AllTimeTab() {
                                     val cands = modeRecords.filter { it.recordType == rt }
                                     val rec = cands.find { it.playType == "solo" } ?: cands.firstOrNull()
                                     Box(Modifier.weight(1f)) {
-                                        StatCell(rt, rec, accent, isCurrentUser = userId != null && rec?.holderId == userId)
+                                        StatCell(rt, rec, accent, isCurrentUser = userId != null && rec?.holderId == userId, onOpenProfile = onOpenProfile)
                                     }
                                 }
                             }
@@ -263,7 +263,7 @@ private fun AllTimeTab() {
 
 /** Record stat cell — icon + formatted value + label + holder (me-highlight). Mirrors web StatCell. */
 @Composable
-private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecord?, accent: Color, isCurrentUser: Boolean) {
+private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecord?, accent: Color, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}) {
     val cfg = RECORD_CFG[recordType] ?: return
     val hasRecord = record != null
     Row(
@@ -292,6 +292,7 @@ private fun StatCell(recordType: String, record: LeaderboardService.AllTimeRecor
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         record!!.holderUsername ?: "Unknown",
+                        modifier = Modifier.clickableNoRipple { record.holderId?.let(onOpenProfile) },
                         fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
                         color = if (isCurrentUser) Color(0xFFD97706) else accent,
                         maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,

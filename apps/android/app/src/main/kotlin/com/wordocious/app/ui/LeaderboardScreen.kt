@@ -62,7 +62,7 @@ internal val MODE_OPTIONS = listOf(
  * - Top 50 entries with rank badges (🥇🥈🥉 for top 3), username, score, guesses/time
  */
 @Composable
-fun LeaderboardScreen() {
+fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}) {
     var selectedMode by remember { mutableStateOf("DUEL") }
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterday by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
@@ -157,6 +157,7 @@ fun LeaderboardScreen() {
                             LeaderboardRow(
                                 rank = index + 1, entry = entry, mode = selectedMode,
                                 isCurrentUser = entry.userId == userId,
+                                onOpenProfile = onOpenProfile,
                             )
                             if (index < entries.size - 1) Divider()
                         }
@@ -363,7 +364,7 @@ private fun WinLossPill(completed: Boolean, abbrev: Boolean = false) {
 }
 
 @Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean) {
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}) {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
@@ -375,8 +376,8 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         RankIcon(rank)
-        // Username (+ " (you)" gold suffix)
-        Row(Modifier.weight(1f)) {
+        // Username (+ " (you)" gold suffix) — taps open the public profile (web parity).
+        Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             Text(
                 entry.username ?: "Player",
                 fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,

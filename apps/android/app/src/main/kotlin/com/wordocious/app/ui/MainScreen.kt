@@ -54,6 +54,14 @@ fun MainScreen() {
     // VS flow: lobby (true) → active match (mode, isDaily).
     var vsLobby by remember { mutableStateOf(false) }
     var vsActive by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, Boolean>?>(null) }
+    // Public profile overlay (web /profile/[id]) — opened from leaderboard/records usernames.
+    var publicProfileId by remember { mutableStateOf<String?>(null) }
+
+    publicProfileId?.let { pid ->
+        androidx.activity.compose.BackHandler { publicProfileId = null }
+        PublicProfileScreen(userId = pid, onClose = { publicProfileId = null })
+        return
+    }
 
     // VS match (fullscreen, no bottom nav)
     vsActive?.let { (vsMode, vsDaily) ->
@@ -156,7 +164,7 @@ fun MainScreen() {
                         onGoPro = { infoRoute = "pro" },
                         onVs = { card -> card.engineMode?.let { vsActive = it to false } },
                     )
-                    1 -> LeaderboardScreen()
+                    1 -> LeaderboardScreen(onOpenProfile = { publicProfileId = it })
                     2 -> ProfileScreen(
                         onGoPro = { infoRoute = "pro" },
                         onEditProfile = { infoRoute = "edit" },
@@ -164,7 +172,7 @@ fun MainScreen() {
                         // puzzle if played, fresh if not) — web parity.
                         onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
                     )
-                    3 -> RecordsScreen()
+                    3 -> RecordsScreen(onOpenProfile = { publicProfileId = it })
                 }
             }
         }
