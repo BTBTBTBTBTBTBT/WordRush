@@ -1,5 +1,141 @@
 # Wordocious — Project Bible
 
+*Last updated: 2026-06-10 (iOS 1.0 **build 10 APPROVED by App Review** — sitting at Pending Developer Release (manual); **build 11** uploaded + VALID on TestFlight with the VS experience overhaul, Play Again on Pro Unlimited post-games, and the Unlimited ProperNoundle fix — the user is TestFlight-testing it and may swap it onto the version before release. The **native Android app is FEATURE-COMPLETE** (Kotlin + Jetpack Compose): all 9 modes + VS multiplayer, Supabase auth, Google Play Billing, AdMob, notifications, share images — zero known gaps vs web/iOS; what remains before Play submission is user-side setup (Play Console app/products/internal track, an Android AdMob app + real ad IDs, an Android OAuth client, store listing/privacy form). A cross-platform **VS overhaul** shipped on server + web + iOS + Android: matchmaking is now bucketed by (mode, dailySeed|random) — fixing the iOS↔web pairing failure (live cross-platform pairing test still pending) — plus a match-intro splash with all-time head-to-head, a tug-of-war header, moment callouts, a typing indicator, a spectator waiting screen, and a side-by-side final-board reveal; ALL VS matches now count on the daily VS Records leaderboard, and the personal profile gained a Solo/VS toggle. AdMob iOS GDPR (UMP) consent message is published; the payment profile and app-ads.txt verification remain for after release.)*
+
+A complete walkthrough of what Wordocious is, how it's built, where it stands, and what's pending — written for someone joining on the business side.
+
+---
+
+## 1. The product in one sentence
+
+Wordocious is a daily word-puzzle game (Wordle's lineage, expanded) with ~9 distinct modes — solo dailies, multi-board variants, a 5-stage Gauntlet, and real-time head-to-head VS matches — live on the web, approved on the iOS App Store (awaiting manual release), and feature-complete as a native Android app awaiting Play Store setup.
+
+## 2. Why it exists
+
+Wordle proved a single daily 5-letter puzzle could become a habit. Wordocious takes that loop and multiplies it: multiple board counts (1/2/4/8), letter lengths (5/6/7), a roguelike Gauntlet that chains modes into one run, and synchronous multiplayer where two players race the same seed. Daily seeds mean everyone plays the same puzzle each day — the shared-water-cooler effect that made Wordle viral — while the mode variety and VS ladder give committed players somewhere to go after the daily.
+
+Monetization is two-pronged: a **Pro** subscription (unlimited replays, streak shields, **ad-free**, etc.) and **ads** (AdMob on iOS and Android / AdSense on web) shown to free users. Neither gates the core daily — it stays free to protect the habit loop. See §5.
+
+---
+
+## 3. Technical stack
+
+| Layer | Stack |
+|---|---|
+| Web app | Next.js 13 (App Router), React 18, TypeScript, Tailwind + shadcn/ui. Full SSR (API routes + middleware) — **not** a static export. |
+| Native iOS | 100% native SwiftUI (no Capacitor/WebView). Game engine is a Swift port of `packages/core`; data via `supabase-swift`; realtime VS live on `socket.io-client-swift`; IAP live on StoreKit 2. |
+| Native Android | 100% native Kotlin + Jetpack Compose (`apps/android`, `:app` + `:core` Gradle modules; minSdk 26 / target 34). Game engine is a Kotlin port of `packages/core` in `:core`; data via supabase-kt; realtime VS on `io.socket:socket.io-client`; IAP via Google Play Billing (billing-ktx 7.1.1); ads via AdMob + UMP; daily reminder notifications via WorkManager (18:00 local). |
+| Realtime server | Standalone `socket.io` server (`apps/server`) on **Railway** behind `server.wordocious.com` (deploys from `main`) — matchmaking (bucketed by mode + dailySeed\|random) + live VS match state. |
+| Shared engine | `packages/core` — pure TypeScript game logic (evaluator, reducer, seed, scoring, dictionary, prefill). Source of truth for game rules across web + the Swift (iOS) and Kotlin (Android) ports. |
+| Hosting | Vercel (web, wordocious.com — the live Vercel project is `spellstrike`) + Railway (socket server). DNS at GoDaddy. Both deploy from `main`. |
+| Auth / DB / Storage | Supabase (Postgres + Auth + Storage). Project `eniiqqsxpmuyrspvepiw`. RLS enabled + correct on all 13 public tables. Email + Google + Apple sign-in all functional on iOS (confirmed on device). Android Google sign-in is built (Credential Manager) but blocked on creating an **Android OAuth client** in Google Cloud (package `com.wordocious.app` + SHA-1 `7A:2C:E8:AC:82:B7:F7:F6:10:64:E1:9D:CC:88:23:0A:8E:63:79:B0`) before tokens vend. |
+| Payments (web) | `lib/payment/` abstraction (PaymentProvider interface + factory). Currently `DemoProvider` — **no real charges collected on web yet.** Stripe is the planned web provider. |
+| Payments (iOS) | **Live: StoreKit 2 direct** (`com.wordocious.app.pro_{monthly,yearly,day}`); purchases tag `appAccountToken` = the Supabase user id. An App Store Server Notifications V2 webhook (`apps/web/app/api/appstore/notifications/route.ts`) is built fail-closed but **not yet enforced** (see §11). |
+| Payments (Android) | Google Play Billing (billing-ktx 7.1.1): `pro_monthly`/`pro_yearly` subs (+4 shields) + stacking `pro_day` consumable, `obfuscatedAccountId` = user id, restore supported. The 3 products still need to be **created in Play Console**. |
+| Cron | Vercel cron: `/api/cron/daily-medals` (05:05 UTC), `/api/cron/daily-reminder` (14:00 UTC). Auth via `CRON_SECRET`. |
+| iOS project gen | XcodeGen (`project.yml` → `Wordocious.xcodeproj`, gitignored & regenerated). |
+| Android build | Gradle: `./gradlew bundleRelease` produces a **signed release AAB (~18.5MB)** via the gitignored `apps/android/key.properties` → upload keystore at `~/.android-keys/wordocious-upload.jks` (**must be backed up**). |
+
+---
+
+## 4. Architecture: three clients, one backend
+
+The web app and the native iOS and Android apps are **three separate clients that share one backend** (Supabase + the socket server). Neither native app is a WebView shell — each renders fully native UI and runs its own port of the game engine. Nothing about adding a native client changes the web app.
+
+| Concern | Web | iOS (native) | Android (native) |
+|---|---|---|---|
+| UI | React / Tailwind | SwiftUI | Jetpack Compose |
+| Game logic | `packages/core` (TS) | Swift port of `packages/core` (parity-tested) | Kotlin port of `packages/core` in `:core` (parity-tested) |
+| Auth | `supabase-js` + RLS | `supabase-swift` + RLS (same `auth.uid()`) | supabase-kt + RLS (same `auth.uid()`) |
+| Data | Direct Supabase reads + Next API routes | Direct Supabase reads | Direct Supabase reads |
+| Realtime VS | `socket.io-client` | `socket.io-client-swift` (live) | `io.socket:socket.io-client` (live) |
+| Pro entitlement | `is_pro` + `pro_expires_at`, read via `isProActive()` | same columns, `isProActive()` ported 1:1 | same columns, ported 1:1 |
+| Ads | AdSense | AdMob (real IDs, approved) | AdMob (Google **test IDs** until an Android AdMob app exists) |
+| IAP | `DemoProvider` (Stripe planned) | StoreKit 2 (live) | Google Play Billing (built; products pending in Play Console) |
+
+**Engine parity is the load-bearing constraint.** Because daily seeds and VS matches must resolve to the *same words* on every client, the Swift and Kotlin engines are 1:1 ports validated against JSON fixtures generated from the live TS engine (see §8). Any two players on the same daily seed — web, iOS, or Android — get the same puzzle, byte-for-byte.
+
+**Why fully native (not a Capacitor shell):** the sibling app ShowLoud was repeatedly rejected by Apple under Guideline 4.2 ("minimum functionality") while it was a WebView wrapper; rejections stopped once it went fully native. Wordocious — an even more web-shaped SSR app — would hit the same wall, so it's native from day one. (Validated: build 10 passed App Review.)
+
+### Game modes
+
+| Mode | Boards | Guesses | Notes |
+|---|---|---|---|
+| DUEL (Classic) | 1 | 6 | 5-letter daily |
+| DUEL_6 / DUEL_7 (Six / Seven) | 1 | 7 / 8 | 6- and 7-letter, separate dictionaries |
+| MULTI_DUEL | 2 | 6 | |
+| QUORDLE (QuadWord) | 4 | 9 | |
+| OCTORDLE (OctoWord) | 8 | 13 | |
+| SEQUENCE | 4 | 10 | boards solved in order |
+| RESCUE (Deliverance) | 4 | 6 | starts with 3 prefilled guesses |
+| TOURNAMENT | 5 | 6 | |
+| PROPERNOUNDLE | 1 | — | proper-noun puzzles, separate data |
+| GAUNTLET | 1→4→4→4→8 | per-stage | 5-stage run chaining Duel→Quordle→Sequence→Rescue→Octordle |
+
+---
+
+## 5. Monetization
+
+Two channels: **(A) Pro subscription** (removes ads + unlocks extras) and **(B) ads** shown to free users. The core daily stays free either way.
+
+### A. Pro subscription
+
+**Three plans** (defined in `lib/payment/types.ts` `PRO_PLANS`):
+- `pro_day` — $1.00 / 24 hours (day pass; stacks on existing expiry, no streak-shield grant)
+- `pro_monthly` — $6.99 / month
+- `pro_yearly` — $59.99 / year (~$4.99/mo)
+
+**Unified entitlement.** All Pro state lives in two `profiles` columns: `is_pro` (write-side marker) and `pro_expires_at`. Every Pro gate reads through `isProActive(profile)` — never the raw boolean — because there's no expiry sweep cron yet, so the boolean alone would keep expired users Pro. Monthly/yearly grant 4 streak shields; the day pass intentionally does not.
+
+**The swap point.** `lib/payment/` is a clean abstraction: a `PaymentProvider` interface, a factory in `index.ts` ("the single swap point for monetization"), and fulfillment functions (`fulfillSubscription` / `cancelSubscription`) that write the entitlement. Today the factory returns `DemoProvider` — instant fulfillment, **no real money collected on web yet** (Stripe not wired).
+
+**Billing status by platform:**
+- **iOS — LIVE: StoreKit 2 direct.** Product IDs `com.wordocious.app.pro_{monthly,yearly,day}` (day pass = consumable that stacks 24h on the existing expiry). A verified transaction writes the same `profiles` entitlement columns the web uses; purchases tag `.appAccountToken(user id)`. **Hardening built but not enforced:** an App Store Server Notifications V2 webhook (`apps/web/app/api/appstore/notifications/route.ts`, verifies Apple's signed payload, maps `appAccountToken`→user, writes via service-role) ships fail-closed (503) until configured; the deferred migration that blocks client-side `is_pro` writes (`20260603000004_lock_pro_columns.sql`) runs only after a sandbox test. Until then fulfillment is client-side (RLS own-row writes, same trust model as the web). A Restore Purchases button ships (Apple-mandatory). Apple takes 15–30% of iOS subscription revenue.
+- **Android — built, pending store setup: Google Play Billing** (billing-ktx 7.1.1). `StoreManager` mirrors iOS: `pro_monthly`/`pro_yearly` subs (+4 shields), stacking `pro_day` consumable, `obfuscatedAccountId` = user id, restore. Pro-page CTAs show real prices with fallbacks. **User TODO: create the 3 products in Play Console** + an internal-testing track + license testers.
+- **Web — Stripe (planned;** the `DemoProvider` placeholder is in the same factory).
+
+### B. Ads (free users only)
+
+Free users see ads; **Pro removes them entirely** (every ad surface is gated on `isProActive`). The serving format on native is a **game-start rewarded interstitial** (banner units exist on iOS but are unused — interstitial-only is full parity across native); the web has an interstitial-on-game-start + bottom banner.
+
+- **iOS — AdMob** (`GoogleMobileAds` SDK, `AdsManager`/`AdBannerView`). **Account + app approved by Google.** Real units under publisher **`pub-3015627373086578`**: App ID `…~8393761846`, banner `…/4287985559`, rewarded-interstitial `…/6909445311`. Launch flow on first play: **Google UMP consent** (GDPR, EEA/UK) → **ATT** prompt (hardened `requestATTOnce`, see §11) → SDK init → ads serve (gated on `canRequestAds`). The **GDPR (UMP) consent message is PUBLISHED in the AdMob console** (2026-06-10; privacy policy URL `https://wordocious.com/privacy` set). `app-ads.txt` (`google.com, pub-3015627373086578, DIRECT, f08c47fec0942fa0`) is live at wordocious.com. **Remaining:** payment profile (banking), then link the App Store listing + verify app-ads.txt once the app is publicly released.
+- **Android — AdMob wired but on Google TEST IDs.** UMP consent → MobileAds init → game-start rewarded interstitial for free users (ad time excluded from the game timer). **User TODO: create a Wordocious ANDROID app in the AdMob console and swap the real IDs** into `AndroidManifest` (APPLICATION_ID) + `AdsManager.kt`.
+- **Web — AdSense** (`pub-3015627373086578`, same publisher). Interstitial-on-game-start (`AdGate`) + bottom `AdBanner`; `ads.txt` present. Activation is config (`NEXT_PUBLIC_ADS_ENABLED` + slot IDs) + site approval.
+- AdMob takes a revenue share (publisher keeps ~68% on content ads).
+
+---
+
+## 6. Core user flows
+
+### 6a. Play the daily (solo)
+1. Open the app → pick a mode from the home grid.
+2. Today's puzzle loads from the **daily seed** (`daily-YYYY-MM-DD-<MODE>`, keyed to the device-local date) — identical on web, iOS, and Android.
+3. Type guesses on the on-screen keyboard; tiles reveal green (correct) / yellow (present) / gray (absent); the keyboard keys color to the best-known state per letter.
+4. Win/loss is computed client-side by the engine; result persists locally (resume mid-game after backgrounding) and to Supabase for stats/leaderboards.
+
+### 6b. Gauntlet
+A single run through 5 escalating stages (Duel → Quordle → Sequence → Rescue → Octordle). Any board bust ends the run; clearing a stage advances to the next. Results screen shows a per-stage breakdown with a "review this stage" snapshot.
+
+### 6c. VS (head-to-head)
+Two players are matched via the socket server — **matchmaking is bucketed by (mode, dailySeed|random)** so clients only pair on the same puzzle — share a seed, and race. Live on all three clients. The 2026-06-10 overhaul added: a match-intro splash with all-time head-to-head record, a persistent tug-of-war progress header, moment callouts + typing indicator, a spectator waiting screen for the finished player, and a side-by-side final-board reveal (letters only after match end). Scoring = win bonus + guess diff + time diff + DNF penalty via `calculateScore`; rematch flow included. Daily-VS uses a shared daily seed; private matches use an invite code. **ALL completed VS matches now count on the daily VS Records leaderboard**, and the personal profile has a Solo/VS toggle. *(Pending: a live cross-platform pairing test of the bucketing fix.)*
+
+### 6d. Go Pro
+On `/pro` (web) the plans + copy are shown; the Subscribe button is what branches by platform. Web currently runs the demo provider (no charge); **iOS runs live StoreKit 2**; **Android runs Google Play Billing** (live once the products exist in Play Console). Entitlement lights up everywhere via `isProActive()`.
+
+---
+
+## 7. Where things stand (June 10, 2026)
+
+**iOS — approved, awaiting manual release.** Version 1.0 **build 10 is APPROVED by App Review** and sits at **Pending Developer Release** (manual release, per standing instruction). **Build 11** is uploaded and VALID on TestFlight — it contains the VS experience overhaul, Play Again on Pro Unlimited post-games, and the Unlimited ProperNoundle fix — and the user is TestFlight-testing it; he may swap build 11 onto the version before releasing.
+
+**Android — feature-complete, zero known gaps vs web/iOS.** Full inventory: all 9 game modes + VS multiplayer (socket.io), Supabase auth (email + native Google sign-in via Credential Manager — needs the Android OAuth client created before tokens vend), Google Play Billing, AdMob (UMP consent + game-start rewarded interstitial — currently Google test IDs), synthesized sound engine, daily reminder notifications (WorkManager 18:00), account deletion, public profiles, share-image pipeline (FileProvider PNG), achievements unlock detection, medals + sweep/flawless XP, deep links (`https://wordocious.com`, assetlinks.json published with the upload-cert SHA-256), real adaptive launcher icon, release signing, and signed release AAB builds (~18.5MB). **Remaining before Play submission (all user-side):** Play Console app + products + internal track + license testers, an Android AdMob app + real ad IDs, the Android OAuth client, and the store listing/privacy form.
+
+**Web + server — stable, deploying from `main`.** Web on Vercel (project `spellstrike`, wordocious.com); the socket.io matchmaking server on Railway behind `server.wordocious.com`. The VS overhaul (pairing-fix bucketing + records visibility + experience upgrade) is live across server, web, iOS (build-11 queue), and Android. Pending verification: a live iOS↔web VS pairing test.
+
+**AdMob (iOS):** account + app approved; GDPR (UMP) consent message published (2026-06-10). Remaining: payment profile, then link the App Store listing + verify app-ads.txt after release.
+
+### Build & change log (newest first)
+
 *2026-06-10 update part 4 (VS overhaul — pairing fix + records visibility + full experience upgrade, ALL platforms; server+web+iOS+Android, 4 commits): **PAIRING BUG (user report: iOS↔web never matched):** verified handshake compatible (same server/events/mode strings); root design flaw = server queues keyed by mode ONLY (first-two spliced regardless of seed; stale ghosts could absorb a side). FIX: matchmaking bucketed by (mode, dailySeed|random) + 10-min stale pruning + [queue] join/paired logs; queue_status now carries queueSize+dailySeed. Railway auto-deploys from main. NEEDS LIVE iOS↔web pairing test (task #75/#80 still open). **RECORDS (user report: no VS games visible):** writes were fine — surfacing wasn't: personal profile merged solo+vs with NO toggle (public had one) and Records only counts daily rows. Per user decision ALL VS now counts: every completed VS match records the daily_results play_type='vs' row (web stats-service + iOS GameResultsService + Android VSMatchViewModel; play-limit still daily-gated); personal profile gains Solo/VS toggle + VS RECORD card on all 3. **VS EXPERIENCE (all 3 platforms, web source of truth):** match_found now carries opponentUserId, match_ended carries opponentGuessLog+solutions (letters only after match end), new typing/opponent_typing relay. Features: 2.5s match-intro splash (avatar slam-in, Lv chips, ALL-TIME head-to-head per user decision — new head-to-head service on each platform, lines "You lead A–B"/"First meeting!"), persistent tug-of-war header (progress = 0.7·boards + 0.3·bestRowGreens, boundary clamp [0.1,0.9], purple you / pink them, crown #f59e0b, 500ms), moment callouts ("N greens! 😱"/"solved board N!"/"last guess!", 2.5s dedupe) + opponent-guess thunk (220Hz) + haptic, typing indicator (1.5s throttle, 2s decay), spectator waiting screen (2x colors-only live board, live clock, 5 stakes-copy variants incl. "must solve in N or fewer"), result rewrite (WINNER/DRAW/DEFEAT, win-only confetti, comparison bars, side-by-side FINAL BOARDS with letters, h2h refetch @1.2s, prominent Rematch keeping Pro gates), VS stinger (392+523Hz). Android also fixed opponent strip ABSENT color + pop-in. ProperNoundle gotcha honored (no local solution until end → 0 greens, reconstruct at end). Verified: server tsc, web tsc, xcodebuild, compileDebugKotlin all green. iOS changes in build-11 queue.*
 
 *2026-06-10 update part 3 (Pro daily-vs-unlimited tweak, all 3 platforms): user spec — Pro daily tab tapping a COMPLETED puzzle must open the completed/solved screen (never a new puzzle; new puzzles only from the Unlimited tab), and Unlimited post-games need a "Play Again" next to Home/Share. AUDIT RESULT: **web already compliant** (snapshot persistence resumes finished dailies; Play Again exists on all non-daily Pro game components, gauntlet prop-gated) — no web changes. **iOS already routed Pro completed-daily taps to SolvedPuzzleView**; added Play Again to FinishedStatsHeader + GauntletResultsView (gated !isDaily && Pro; HomeView mints a fresh unlimited seed + updates unlimited-current-MODE), AND fixed a real bug: Unlimited ProperNoundle fell through to the daily NavigationLink and replayed the DAILY puzzle — PN now takes seed+onPlayAgain via a fullScreenCover item with a fresh seed per tap. **Android** daily-completed taps already resume into PostGameScreen via persistence; added Play Again ("Try Again" on loss, amber, web Classic convention) threaded MainScreen→GameScreen→PostGameScreen, gated on seed unlimited- prefix + Pro; Play Again swaps activeSeed (new VM). xcodebuild + compileDebugKotlin green; iOS in build-11 queue.*
@@ -153,128 +289,11 @@
 *2026-06-01 update (audit pass complete): Finished the web→native parity audit — #20 **Pro page** (`/pro` benefits/plans/day-pass; Subscribe pending StoreKit), #21 **Auth** (matched login-screen.tsx — Google/Facebook buttons, email/password, copy), #22 **Settings + info pages** (theme picker + toggles + About/Privacy/Terms/Support). Remaining deferred: Profile chart dashboard (VS-data, revisit in Phase 3), StoreKit IAP, native login gate, native OAuth, full theming, VS multiplayer, ProperNoundle. Earlier: Parity audit #19 (pass 1) — rebuilt the native **Profile** core to match `/profile` (avatar + level tier + XP bar, Today's Dailies 5+4 grid, GlobalSummaryRow, mode picker + per-mode user_stats). Heavy bits deferred to a later pass (activity calendar, charts, top words, time-of-day heatmap, Pro insights, edit modal, social links). #18 — rebuilt the native **Records** tab to match `/records` (RECORDS header, Daily|All-Time toggle, Hall of Fame + By-Game-Mode mode picker, StatCell with current-user highlight, Daily solo/VS leaderboard). Earlier same day:*
 *Fixed a production bug where **first-time/signed-out users were stuck on an infinite loading spinner** — `AppLoaderDismiss` was nested inside `AuthGate`, so the signed-out (LoginScreen) path never dismissed the static `#app-loader` overlay; moved it outside the gate (deployed, verified live). Product decision: site **keeps login-required** (native app currently plays signed-out → TODO: add a matching auth gate to native for parity). Also audited the 2,611-word 5-letter solutions list and **removed 17 questionable answers** (BARRY/PUBES + vulgar + name-first words; kept legit common-word names + NAKED) on web + iOS, regenerated parity fixtures (17/17 pass). Removing answers shifts the daily seed→word mapping.*
 
-*Last updated: 2026-06-09 — see the dated changelog at the TOP of this file for the latest (iOS 1.0 **build 9** resubmitted to App Review: ATT 5.1.2i + EULA 3.1.2c rejection fixes; macOS iCloud build-hang root-caused & fixed by working from a `~/Developer` clone). Earlier milestone — 2026-05-29 (Native iOS build — **Phase 1 in progress**. Fully native SwiftUI iOS app underway in `apps/ios/`, sharing the live Supabase backend + a Swift port of the game engine. This session: ported `packages/core` to Swift with a 16-test parity suite (bit-identical to the TS engine), stood up the SwiftUI app via XcodeGen (bundle `com.wordocious.app`), built 7 playable solo modes (Classic, Six, Seven, QuadWord, OctoWord, Sequence, Deliverance) with native board/keyboard/haptics/persistence, wired Supabase auth via `supabase-swift` (email working; anon key live-verified), baked in Apple code signing (team Q32F6GRDYG), and matched the web aesthetic — bundled the Nunito typeface, pulled exact color tokens from globals.css, the purple→pink WORDOCIOUS gradient wordmark, and a 4-tab shell (Home/Leaderboard/Profile/Records), wired the **live daily leaderboard** from Supabase `daily_results`, and made iOS daily play **write its results** back (composite-score formula ported 1:1) so it lands on the shared leaderboard, built the **Records tab** (all-time hall of records), and added **Gauntlet** (the 5-stage run, with stage transitions + a full-run engine test), ported the **profile progression** path (`recordGameResult` core — user_stats + XP/level/streaks), **visually verified** the app in the simulator (Home, gradient wordmark, full Classic game loop), and **redesigned Home + Help to match the web identically** (audit-then-match: 2-col mode grid with exact bundled SVG icons, completed-card states, Flawless/Sweep banner, live Word of the Day, header pills; Help modal ported 1:1). Scoring change (web + native): the **guess bonus now applies only to hint modes** (Six/Seven/ProperNoundle) per product decision — other modes score on win + time (+ completion). Added an **active-play timer** (pauses on background, persists) and **multi-board + gauntlet share layouts**. Adopted a standing **audit-then-match** rule (read web source before building any native screen) tracked in `apps/ios/WEB_PARITY_AUDIT.md`. Audited + matched the **game post-game UX** (gradient title, live timer, score-breakdown card, definition, Home/Share) and the **exact share image** (pixel-faithful port of share-image.ts via ImageRenderer → native share sheet), verified live to a real win. Web app at wordocious.com is byte-for-byte untouched. Latest web `main`: abef5de — hints on daily leaderboard (#37).)*
+### Historical snapshot (May 29, 2026)
 
-A complete walkthrough of what Wordocious is, how it's built, where it stands, and what's pending — written for someone joining on the business side.
+*Preserved from the original §7 — the state of the world when the native iOS effort was mid-Phase-1. Everything below has since been superseded by the change log above (all tabs/modes complete, VS live, builds shipped from `main`).*
 
----
-
-## 1. The product in one sentence
-
-Wordocious is a daily word-puzzle game (Wordle's lineage, expanded) with ~9 distinct modes — solo dailies, multi-board variants, a 5-stage Gauntlet, and real-time head-to-head VS matches — playable on the web today and being rebuilt as a fully native iOS app.
-
-## 2. Why it exists
-
-Wordle proved a single daily 5-letter puzzle could become a habit. Wordocious takes that loop and multiplies it: multiple board counts (1/2/4/8), letter lengths (5/6/7), a roguelike Gauntlet that chains modes into one run, and synchronous multiplayer where two players race the same seed. Daily seeds mean everyone plays the same puzzle each day — the shared-water-cooler effect that made Wordle viral — while the mode variety and VS ladder give committed players somewhere to go after the daily.
-
-Monetization is two-pronged: a **Pro** subscription (unlimited replays, streak shields, **ad-free**, etc.) and **ads** (AdMob on iOS / AdSense on web) shown to free users. Neither gates the core daily — it stays free to protect the habit loop. See §5.
-
----
-
-## 3. Technical stack
-
-| Layer | Stack |
-|---|---|
-| Web app | Next.js 13 (App Router), React 18, TypeScript, Tailwind + shadcn/ui. Full SSR (API routes + middleware) — **not** a static export. |
-| Native iOS | 100% native SwiftUI (no Capacitor/WebView). Game engine is a Swift port of `packages/core`; data via `supabase-swift`; realtime VS planned on `socket.io-client-swift`; IAP planned on StoreKit 2. |
-| Realtime server | Standalone `socket.io` server (`apps/server`) on Render — matchmaking + live VS match state. |
-| Shared engine | `packages/core` — pure TypeScript game logic (evaluator, reducer, seed, scoring, dictionary, prefill). Source of truth for game rules across web + (ported to) iOS. |
-| Hosting | Vercel (web, wordocious.com) + Render (socket server). |
-| Auth / DB / Storage | Supabase (Postgres + Auth + Storage). Project `eniiqqsxpmuyrspvepiw`. RLS enabled + correct on all 13 public tables. Email + Google enabled; Apple OAuth not yet configured server-side. |
-| Payments (web) | `lib/payment/` abstraction (PaymentProvider interface + factory). Currently `DemoProvider` — **no real charges collected yet.** Stripe is the planned web provider. |
-| Payments (iOS) | Planned: StoreKit 2 direct (per ShowLoud's proven pattern), webhook → existing `fulfillSubscription`. |
-| Cron | Vercel cron: `/api/cron/daily-medals` (05:05 UTC), `/api/cron/daily-reminder` (14:00 UTC). Auth via `CRON_SECRET`. |
-| iOS project gen | XcodeGen (`project.yml` → `Wordocious.xcodeproj`, gitignored & regenerated). |
-
----
-
-## 4. Architecture: two clients, one backend
-
-The web app and the native iOS app are **separate clients that share one backend** (Supabase + the socket server). This is deliberately *not* a WebView shell — the iOS app renders native SwiftUI and runs its own copy of the game engine. Nothing about adding iOS changes the web app.
-
-| Concern | Web | iOS (native) |
-|---|---|---|
-| UI | React / Tailwind | SwiftUI |
-| Game logic | `packages/core` (TS) | Swift port of `packages/core` (parity-tested) |
-| Auth | `supabase-js` + RLS | `supabase-swift` + RLS (same `auth.uid()`) |
-| Data | Direct Supabase reads + Next API routes | Direct Supabase reads + (planned) API routes for IAP |
-| Realtime VS | `socket.io-client` | `socket.io-client-swift` (planned, Phase 3) |
-| Pro entitlement | `is_pro` + `pro_expires_at`, read via `isProActive()` | same columns, `isProActive()` ported 1:1 |
-
-**Engine parity is the load-bearing constraint.** Because daily seeds and VS matches must resolve to the *same words* on every client, the Swift engine is a 1:1 port validated against JSON fixtures generated from the live TS engine (see §8). A web player and an iOS player on the same daily seed get the same puzzle, byte-for-byte.
-
-**Why fully native (not a Capacitor shell):** the sibling app ShowLoud was repeatedly rejected by Apple under Guideline 4.2 ("minimum functionality") while it was a WebView wrapper; rejections stopped once it went fully native. Wordocious — an even more web-shaped SSR app — would hit the same wall, so it's native from day one.
-
-### Game modes
-
-| Mode | Boards | Guesses | Notes |
-|---|---|---|---|
-| DUEL (Classic) | 1 | 6 | 5-letter daily |
-| DUEL_6 / DUEL_7 (Six / Seven) | 1 | 7 / 8 | 6- and 7-letter, separate dictionaries |
-| MULTI_DUEL | 2 | 6 | |
-| QUORDLE (QuadWord) | 4 | 9 | |
-| OCTORDLE (OctoWord) | 8 | 13 | |
-| SEQUENCE | 4 | 10 | boards solved in order |
-| RESCUE (Deliverance) | 4 | 6 | starts with 3 prefilled guesses |
-| TOURNAMENT | 5 | 6 | |
-| PROPERNOUNDLE | 1 | — | proper-noun puzzles, separate data |
-| GAUNTLET | 1→4→4→4→8 | per-stage | 5-stage run chaining Duel→Quordle→Sequence→Rescue→Octordle |
-
----
-
-## 5. Monetization
-
-Two channels: **(A) Pro subscription** (removes ads + unlocks extras) and **(B) ads** shown to free users. The core daily stays free either way.
-
-### A. Pro subscription
-
-**Three plans** (defined in `lib/payment/types.ts` `PRO_PLANS`):
-- `pro_day` — $1.00 / 24 hours (day pass; stacks on existing expiry, no streak-shield grant)
-- `pro_monthly` — $6.99 / month
-- `pro_yearly` — $59.99 / year (~$4.99/mo)
-
-**Unified entitlement.** All Pro state lives in two `profiles` columns: `is_pro` (write-side marker) and `pro_expires_at`. Every Pro gate reads through `isProActive(profile)` — never the raw boolean — because there's no expiry sweep cron yet, so the boolean alone would keep expired users Pro. Monthly/yearly grant 4 streak shields; the day pass intentionally does not.
-
-**The swap point.** `lib/payment/` is a clean abstraction: a `PaymentProvider` interface, a factory in `index.ts` ("the single swap point for monetization"), and fulfillment functions (`fulfillSubscription` / `cancelSubscription`) that write the entitlement. Today the factory returns `DemoProvider` — instant fulfillment, **no real money collected on web yet** (Stripe not wired).
-
-**Planned billing:**
-- **iOS** → StoreKit 2 direct. Purchase → send signed transaction JWS to a server endpoint → verify with Apple → call the *existing* `fulfillSubscription`. A Restore Purchases button is mandatory (Apple). No promoting web checkout inside the iOS app (Guideline 3.1.1). A web subscriber recognized as Pro in the app is fine (just read `is_pro`).
-- **Web** → Stripe (planned; the `DemoProvider` placeholder is in the same factory).
-
-Apple takes 15–30% of iOS subscription revenue.
-
-### B. Ads (free users only)
-
-Free users see ads; **Pro removes them entirely** (every ad surface is gated on `isProActive`). Two formats on both clients: a **bottom banner** and a **game-start interstitial** (rewarded-video on native).
-
-- **iOS — AdMob** (`GoogleMobileAds` SDK, `AdsManager`/`AdBannerView`). **Approved by Google 2026-06-03.** Real units under publisher **`pub-3015627373086578`**: App ID `…~8393761846`, banner `…/4287985559`, rewarded-interstitial `…/6909445311`. Launch flow on first play: **Google UMP consent** (GDPR, EEA/UK) → **ATT** prompt → SDK init → ads serve (gated on `canRequestAds`). `app-ads.txt` (`google.com, pub-3015627373086578, DIRECT, f08c47fec0942fa0`) is live at wordocious.com — AdMob verifies it via the App Store listing once the app is public.
-- **Web — AdSense** (`pub-3015627373086578`, same publisher). Interstitial-on-game-start (`AdGate`) + bottom `AdBanner`; `ads.txt` present. Activation is config (`NEXT_PUBLIC_ADS_ENABLED` + slot IDs) + site approval.
-- **Still to do (business, not code):** AdMob **payment profile / banking** to receive payouts. AdMob takes a revenue share (publisher keeps ~68% on content ads).
-
----
-
-## 6. Core user flows
-
-### 6a. Play the daily (solo)
-1. Open the app → pick a mode from the home grid.
-2. Today's puzzle loads from the **daily seed** (`daily-YYYY-MM-DD-<MODE>`, computed in UTC) — identical on web and iOS.
-3. Type guesses on the on-screen keyboard; tiles reveal green (correct) / yellow (present) / gray (absent); the keyboard keys color to the best-known state per letter.
-4. Win/loss is computed client-side by the engine; result persists locally (resume mid-game after backgrounding) and to Supabase for stats/leaderboards.
-
-### 6b. Gauntlet
-A single run through 5 escalating stages (Duel → Quordle → Sequence → Rescue → Octordle). Any board bust ends the run; clearing a stage advances to the next. Results screen shows a per-stage breakdown with a "review this stage" snapshot.
-
-### 6c. VS (head-to-head)
-Two players are matched via the socket server, share a seed, and race. Live opponent progress, scoring (win bonus + guess diff + time diff + DNF penalty via `calculateScore`), and rematch flow. Daily-VS uses a shared daily seed; private matches use an invite code. *(Native iOS VS is Phase 3.)*
-
-### 6d. Go Pro
-On `/pro` (web) the plans + copy are shown; the Subscribe button is what branches by platform. Web currently runs the demo provider (no charge); iOS will run StoreKit 2. Entitlement lights up everywhere via `isProActive()`.
-
----
-
-## 7. Where things stand (May 29, 2026)
-
-### Native iOS — Phase 1 in progress (this session)
+#### Native iOS — Phase 1 (as of May 29, 2026)
 
 **Engine port (Phase 0 — done & verified).** Ported all of `packages/core` to Swift in `apps/ios/Sources/Core/` (Types, Evaluator, Dictionary, Seed, Scoring, Prefill, Reducer). Wrote `generate-fixtures.mjs` to emit JSON fixtures from the live TS engine, and `EngineParityTests` (XCTest) that replays them against the Swift engine — **16/16 passing**, including the critical `simpleHash` (Int32-truncated to match JS 32-bit bitwise overflow) and seed-generation cases. Confirms a seed → identical words on iOS and web.
 
@@ -302,52 +321,66 @@ On `/pro` (web) the plans + copy are shown; the Subscribe button is what branche
 
 All native work lives on branch `claude/eloquent-hodgkin-383095` (off `main` — never triggers a Vercel deploy).
 
-### Web — stable, untouched
+#### Web — stable, untouched (as of May 29, 2026)
 Latest `main` is `abef5de` (#37, hints on daily leaderboard). Recent merges: #34 multi-board Gauntlet fix, #35 hintless scoring + Pure achievements, #36 Gauntlet footer + RLS, #37 hints on leaderboard. No web files changed by the iOS effort.
 
 ---
 
 ## 8. Engine parity — implementation notes
 
-The single most important invariant in this project: **the Swift engine and the TS engine must compute identically.** If they drift, daily seeds and VS matches desync between platforms.
+The single most important invariant in this project: **the Swift, Kotlin, and TS engines must compute identically.** If they drift, daily seeds and VS matches desync between platforms.
 
-- **The contract** is `apps/ios/Tests/Fixtures/*.json` — generated from the live TS engine by `apps/ios/generate-fixtures.mjs` and replayed by `EngineParityTests`. Covers hashing, evaluation, seed generation (5/6/7-letter), scoring, prefill, and daily-seed helpers.
-- **The risk line** is `simpleHash`. JavaScript bitwise ops are 32-bit; Swift `Int` is 64-bit. The Swift port truncates to `Int32` so overflow matches exactly — this drives which words a seed selects, so an off-by-one there would diverge every puzzle. Verified bit-identical.
-- **The rule:** never change game logic on one platform without porting it to the other and re-running the fixtures. Treat `packages/core` as canonical; regenerate fixtures after any change to it.
-- **Dictionaries** are the same JSON word lists (`allowed`, `solutions`, and 6/7-letter variants) bundled into both the web app and the iOS app bundle. Keep one canonical copy.
+- **The contract** is `apps/ios/Tests/Fixtures/*.json` — generated from the live TS engine by `apps/ios/generate-fixtures.mjs` and replayed by `EngineParityTests`. Covers hashing, evaluation, seed generation (5/6/7-letter), scoring, prefill, and daily-seed helpers. The Android Kotlin engine in `apps/android/core` is the same port discipline.
+- **The risk line** is `simpleHash`. JavaScript bitwise ops are 32-bit; Swift `Int` is 64-bit (and Kotlin `Long` likewise). The native ports truncate to 32-bit so overflow matches exactly — this drives which words a seed selects, so an off-by-one there would diverge every puzzle. Verified bit-identical.
+- **The rule:** never change game logic on one platform without porting it to the others and re-running the fixtures. Treat `packages/core` as canonical; regenerate fixtures after any change to it.
+- **Dictionaries** are the same JSON word lists (`allowed`, `solutions`, and 6/7-letter variants) bundled into the web app, the iOS app bundle, and the Android app. Keep one canonical copy.
 
 ---
 
 ## 9. Build cadence
 
-**Web/server:** commit + push to `main` → Vercel auto-deploys the web app; the socket server deploys to Render. The user's standing preference is auto-commit + push to `main` after every change (Vercel deploys from `main`).
+**Web/server:** commit + push to `main` → Vercel auto-deploys the web app (project `spellstrike`); the socket server auto-deploys to Railway from `main` too. The user's standing preference is auto-commit + push to `main` after every change.
 
-**Native iOS (current workflow):** the project is driven from the command line because Xcode is sandboxed to click-only for the agent (no typing into the IDE):
+**Native iOS — development loop** (driven from the command line; Xcode is sandboxed to click-only for the agent):
 1. Edit Swift sources / `project.yml`.
 2. After adding files **or** packages, run `xcodegen generate` (regenerates the `.xcodeproj`).
 3. `swift test` for engine parity; `xcodebuild -scheme Wordocious -destination 'generic/platform=iOS Simulator' build` for the app.
 4. `xcrun simctl install/launch` to run in the simulator.
-5. Code signing (team) belongs to the human in Xcode → Signing & Capabilities; to survive XcodeGen regeneration it should be baked into `project.yml` as `DEVELOPMENT_TEAM` (pending the Team ID).
 
-Native work is committed to a feature branch (`claude/...`), **not** `main`, so it never triggers a Vercel rebuild.
+**Native iOS — release flow** (proven across builds 2→11):
+1. Bump `CURRENT_PROJECT_VERSION` in `project.yml` → `xcodegen generate`.
+2. Archive **UNSIGNED** (`CODE_SIGNING_ALLOWED=NO`).
+3. `xcodebuild -exportArchive` (method `app-store-connect`, automatic signing via the ASC API key `C8FRS9T697`).
+4. **Re-sign the exported .app to restore `com.apple.developer.applesignin`** — the export strips this entitlement every time (known quirk); skipping the re-sign breaks Sign in with Apple.
+5. Upload via `altool`.
+
+App Store Connect operations (attach build, cancel/resubmit review submissions, check processing) can be driven entirely via the **ASC REST API** (ES256 JWT; key at `~/.appstoreconnect/private_keys/`). Release is always **Manual** (standing instruction): user TestFlight-tests first, then releases on his own schedule.
+
+**Native Android:** `./gradlew assembleDebug` + emulator for development (no physical Android device — emulator-only testing); `./gradlew bundleRelease` for a **signed release AAB** (signing via the gitignored `apps/android/key.properties` → keystore `~/.android-keys/wordocious-upload.jks`).
+
+Native work (iOS + Android) now commits to `main` alongside everything else — the web deploy is unaffected because native directories don't change web build output.
 
 ---
 
 ## 10. Domains, accounts, infra
 
 - **Web production domain**: `wordocious.com` (Vercel)
-- **Vercel projects**: `wordrush` (current) + a legacy `spellstrike`
+- **Vercel projects**: the **live project is `spellstrike`** (the `wordrush` project is stale — do not deploy there)
 - **GitHub repo**: `BTBTBTBTBTBTBT/WordRush`, default branch `main`
 - **Supabase project**: `eniiqqsxpmuyrspvepiw` (Postgres + Auth + Storage); 13 public tables, RLS enabled + correct
-- **Realtime server**: `socket.io` on Render (`apps/server`)
-- **iOS bundle ID**: `com.wordocious.app` (App ID resolved against Apple via automatic signing)
-- **Brand typeface**: Nunito (bundled in the iOS app; Google font, same as web)
+- **Realtime server**: `socket.io` (`apps/server`) on **Railway** behind `server.wordocious.com` (deploys from `main`); DNS managed at **GoDaddy**, not Vercel
+- **iOS bundle ID**: `com.wordocious.app`
+- **Brand typeface**: Nunito (bundled in both native apps; Google font, same as web)
 - **Apple Developer Team ID**: `Q32F6GRDYG` (Apple Distribution; same team as ShowLoud) — baked into `project.yml`. (`CG6Q3FCB7B` is the personal/individual team, sim/personal-device only.)
-- **App Store Connect app ID**: `6775966055` (Wordocious). Version **1.0 (build 9)** in App Review as of 2026-06-09 (resubmitted after the build-8 rejection; **Manual release**). ASC API key for build automation: key ID `C8FRS9T697`, issuer `8bdd3f73-0d8b-427d-95c7-8097b77dfb7a`, `.p8` at `~/.appstoreconnect/private_keys/`.
-- **Google Play Console**: _not yet created_ ($25 one-time, required for Android)
-- **Local repo location**: primary working copy now at **`~/Developer/WordRush`** (NON-iCloud) — moved off `~/Desktop/Projects/WordRush` because Desktop is iCloud-synced with "Optimize Mac Storage", which evicted file contents at high disk usage and made `git`/`xcodebuild`/`find` hang forever (`fileproviderd` pegged). Both copies share the same GitHub remote; commit from `~/Developer`. Web deploy is unaffected (Vercel builds from GitHub `main`, not local).
+- **App Store Connect app ID**: `6775966055` (Wordocious). Version **1.0 (build 10) APPROVED — Pending Developer Release** (manual); **build 11 VALID on TestFlight** (may be swapped onto the version before release). ASC API key for build automation: key ID `C8FRS9T697`, issuer `8bdd3f73-0d8b-427d-95c7-8097b77dfb7a`, `.p8` at `~/.appstoreconnect/private_keys/`.
+- **AdMob**: publisher `pub-3015627373086578`. iOS app approved (App ID `…~8393761846`, banner `…/4287985559`, rewarded-interstitial `…/6909445311`); GDPR (UMP) consent message published 2026-06-10. **No Android AdMob app yet** (Android runs Google test IDs).
+- **Google Play Console**: _not yet created_ ($25 one-time) — the gating item for Android submission (app record, the 3 billing products, internal-testing track, license testers, store listing/privacy form).
+- **Android signing**: upload keystore at `~/.android-keys/wordocious-upload.jks`, referenced by the gitignored `apps/android/key.properties` (storepass inside). **MUST BE BACKED UP** — losing it loses the Play signing identity unless Play App Signing is enrolled.
+- **Android deep links**: `https://wordocious.com` app links; `/.well-known/assetlinks.json` is published with the upload-cert SHA-256 so verification is automatic.
+- **Android Google sign-in**: needs an **Android OAuth client** in the Google Cloud project (package `com.wordocious.app`, SHA-1 `7A:2C:E8:AC:82:B7:F7:F6:10:64:E1:9D:CC:88:23:0A:8E:63:79:B0`) before ID tokens vend.
+- **Local repo location**: primary working copy at **`~/Developer/WordRush`** (NON-iCloud) — moved off `~/Desktop/Projects/WordRush` because Desktop is iCloud-synced with "Optimize Mac Storage", which evicted file contents at high disk usage and made `git`/`xcodebuild`/`find` hang forever (`fileproviderd` pegged). Both copies share the same GitHub remote; commit from `~/Developer`. Web deploy is unaffected (Vercel builds from GitHub `main`, not local).
 - **Vercel env vars** (Production + Preview, Sensitive): `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`
-- **Supabase anon key**: public/publishable, shipped in both web bundle and iOS app (`SupabaseConfig.swift`), gated by RLS
+- **Supabase anon key**: public/publishable, shipped in the web bundle and both native apps (`SupabaseConfig.swift` / the Android config), gated by RLS
 - **RLS note**: `daily_results` AND `all_time_records` SELECT are both `TO authenticated` (despite a "publicly readable" comment) — leaderboards + records require a signed-in session; anon reads return `[]`. `profiles` SELECT allows the anon REST ping (HTTP 200).
 - **Cron**: `/api/cron/daily-medals` (05:05 UTC), `/api/cron/daily-reminder` (14:00 UTC)
 
@@ -355,36 +388,43 @@ Native work is committed to a feature branch (`claude/...`), **not** `main`, so 
 
 ## 11. Critical risks
 
-1. **Apple Guideline 4.2 (minimum functionality).** Mitigated by going fully native (the lesson from ShowLoud's repeated WebView rejections), but still the #1 review risk for a puzzle app. Native haptics, share, and push help establish "real app."
-2. **Engine parity drift.** If the Swift and TS engines diverge, cross-platform dailies and VS break. Guarded by the fixture suite — but only if it's re-run after every `packages/core` change.
-3. **Single-developer bus factor.** All web, native iOS, infra, and store negotiation sit with one person.
-4. **Sign in with Apple not configured server-side.** Supabase currently has email + Google enabled, Apple disabled. Apple requires SIWA if any third-party login is offered in the iOS app — must be enabled in Supabase + Apple Developer before submission.
-5. **No real payments yet.** Web runs `DemoProvider` (no charges). Revenue depends on wiring StoreKit 2 (iOS) and/or Stripe (web). The abstraction is ready; the providers are not.
-6. **Realtime VS on iOS is unproven.** `socket.io-client-swift` lags the JS client; reconnection / background-foreground lifecycle has no ShowLoud precedent and must be built from scratch (Phase 3).
-7. **Day-pass product shape on Apple.** `pro_day` ($1/24h) maps awkwardly to App Store product types (non-renewing sub vs consumable) — a design decision before IAP ships.
-8. **ATT prompt reliability (App Review 5.1.2i).** Build 8 was rejected because the reviewer never saw the ATT prompt — it was requested at the tail of the Google UMP network chain and while the app could still be `.inactive` (iOS silently denies without showing it). FIXED in build 9 (`AdsManager.requestATTOnce` gates on `.active` + 3s watchdog). If privacy labels keep declaring tracking, every build MUST reliably present ATT on first launch or it will be re-rejected.
-9. **Subscription metadata must carry an EULA link (App Review 3.1.2c).** Build 8 was also rejected for a missing Terms of Use (EULA) link in the App Store Description. The Description now includes subscription names/prices + the standard Apple EULA link + Privacy Policy — keep these whenever editing the Description.
-10. **iCloud eviction breaks builds (environmental).** Keeping the repo under an iCloud-synced folder (`~/Desktop`) with "Optimize Mac Storage" ON silently offloads file contents at high disk usage → all reads hang, `fileproviderd` pegs CPU. Mitigated by working from `~/Developer` (non-synced) and keeping disk < 85%. Do NOT toggle off "Desktop & Documents" sync (current macOS deletes local files with no keep-a-copy option).
+1. **Engine parity drift.** If the Swift, Kotlin, and TS engines diverge, cross-platform dailies and VS break. Guarded by the fixture suite — but only if it's re-run after every `packages/core` change.
+2. **Android upload-keystore loss.** `~/.android-keys/wordocious-upload.jks` is the Play signing identity — losing it means losing the ability to update the app (unless Play App Signing is enrolled at submission, which it should be). **Back it up.**
+3. **Pro entitlement is still client-writable.** The App Store Server Notifications V2 webhook is built fail-closed but **NOT enforced** — the migration that blocks client `is_pro` writes (`20260603000004_lock_pro_columns.sql`) is deferred until the webhook is configured (Apple root certs in `apps/web/certs/`, env vars, ASC webhook registration) and sandbox-tested. Until then a malicious client could self-grant Pro. See `apps/web/app/api/appstore/README.md`.
+4. **VS cross-platform pairing fix not yet live-verified.** The (mode, dailySeed|random) matchmaking bucketing that fixes the iOS↔web pairing failure is deployed but still needs a live two-player cross-platform test.
+5. **AdMob Android still on Google test IDs.** Shipping to Play without creating the Android AdMob app + swapping real IDs means zero ad revenue on Android.
+6. **Android Google sign-in blocked on config.** Built end-to-end, but no tokens vend until the Android OAuth client (package + SHA-1) exists in Google Cloud.
+7. **ATT prompt reliability (App Review 5.1.2i).** Build 8 was rejected because the reviewer never saw the ATT prompt — it was requested at the tail of the Google UMP network chain and while the app could still be `.inactive` (iOS silently denies without showing it). FIXED in build 9+ (`AdsManager.requestATTOnce` gates on `.active` + 3s watchdog) and validated by build 10's approval. If privacy labels keep declaring tracking, every build MUST reliably present ATT on first launch or it will be re-rejected.
+8. **Subscription metadata must carry an EULA link (App Review 3.1.2c).** Build 8 was also rejected for a missing Terms of Use (EULA) link in the App Store Description. The Description now includes subscription names/prices + the standard Apple EULA link + Privacy Policy — keep these whenever editing the Description.
+9. **No real payments collected yet.** iOS StoreKit 2 is live in the build but revenue starts only after release; web still runs `DemoProvider` (Stripe not wired); Android Billing awaits Play Console products.
+10. **Single-developer bus factor.** All web, native iOS, native Android, infra, and store negotiation sit with one person.
+11. **iCloud eviction breaks builds (environmental).** Keeping the repo under an iCloud-synced folder (`~/Desktop`) with "Optimize Mac Storage" ON silently offloads file contents at high disk usage → all reads hang, `fileproviderd` pegs CPU. Mitigated by working from `~/Developer` (non-synced) and keeping disk < 85%. Do NOT toggle off "Desktop & Documents" sync (current macOS deletes local files with no keep-a-copy option).
+12. **Apple Guideline 4.2 (minimum functionality).** Was the #1 review risk for a puzzle app; mitigated by going fully native (the lesson from ShowLoud's repeated WebView rejections) and now validated — build 10 passed App Review.
 
 ---
 
 ## 12. Pending non-engineering items
 
-- **Apple signing / app record**: provide Team ID; create the App Store Connect app record.
-- **Google Play Console**: create the $25 developer account before any Android work.
-- **Stripe (web Pro)**: decide whether to wire real web payments now or after iOS IAP.
-- **App Store assets**: icon (1024²), screenshots (6.7"/6.5"/5.5"), listing copy, privacy nutrition labels.
+- **iOS release**: user finishes TestFlight-testing build 11; either release build 10 manually or swap build 11 onto the version (resubmit) and release that.
+- **Google Play Console**: create the $25 developer account + the Wordocious app record; create the 3 billing products (`pro_monthly`, `pro_yearly`, `pro_day`); set up an internal-testing track + license testers; complete the store listing + privacy/data-safety form.
+- **Android AdMob app**: create it in the AdMob console and swap the real IDs into `AndroidManifest` + `AdsManager.kt`.
+- **Android OAuth client**: create in Google Cloud (package `com.wordocious.app` + the upload SHA-1) to activate native Google sign-in.
+- **AdMob payments**: set up the payment profile (banking); after the iOS app is publicly released, link the App Store listing and verify `app-ads.txt`.
+- **Pro entitlement enforcement**: configure + sandbox-test the App Store Server Notifications webhook, then run the deferred `lock_pro_columns` migration (see §11.3).
+- **Stripe (web Pro)**: decide whether to wire real web payments now or after the stores are live.
 - **Business entity / tax**: whether to ship under an individual or LLC (payment processors accept individuals; an entity is a liability/tax question, not a technical blocker).
-- **Legal**: Terms / Privacy pass before store submission.
-- **Push infra for native**: APNs key (one-shot download — back it up) + FCM project for Android; extend the daily-reminder transport to route per platform.
+- **Keystore backup**: copy `~/.android-keys/wordocious-upload.jks` (+ `key.properties` passwords) somewhere safe off-machine.
+- **Push infra for native**: APNs key (one-shot download — back it up) + FCM project, if server-pushed notifications are ever wanted (both apps currently use local/scheduled reminders).
 
 ---
 
 ## 13. What to read next (if you want to dig deeper)
 
-- `apps/ios/README.md` — native build setup + parity contract.
-- `packages/core/src/` — canonical game engine (TS). The Swift port mirrors it file-for-file in `apps/ios/Sources/Core/`.
+- `apps/ios/README.md` — native iOS build setup + parity contract.
+- `apps/android/` — the native Android app (`:app` Compose UI + services, `:core` Kotlin engine port; `key.properties` for release signing).
+- `packages/core/src/` — canonical game engine (TS). The Swift port mirrors it file-for-file in `apps/ios/Sources/Core/`; the Kotlin port lives in `apps/android/core`.
 - `apps/web/lib/payment/` — the monetization abstraction (interface, factory, fulfillment).
+- `apps/web/app/api/appstore/README.md` — the StoreKit server-notifications webhook + the steps to enforce server-side Pro entitlement.
 - `apps/web/lib/pro.ts` + `lib/auth-context.tsx` — the Pro entitlement read path.
 - `apps/server/src/` — socket.io matchmaking + VS protocol (`types.ts` has the event contract).
 - `supabase/migrations/` — the data model + RLS policies.
@@ -394,12 +434,12 @@ Native work is committed to a feature branch (`claude/...`), **not** `main`, so 
 
 ## Glossary
 
-- **Daily seed**: `daily-YYYY-MM-DD-<MODE>` (UTC). Deterministically selects the day's puzzle words; identical across web + iOS.
+- **Daily seed**: `daily-YYYY-MM-DD-<MODE>` (device-local date). Deterministically selects the day's puzzle words; identical across web + iOS + Android.
 - **Mode**: a puzzle variant (Classic/Quordle/Octordle/Sequence/Rescue/Gauntlet/VS/etc.), differing in board count, word length, and guess budget.
 - **Gauntlet**: a single 5-stage run chaining modes; one bust ends it.
-- **VS**: real-time head-to-head match on a shared seed via the socket server.
+- **VS**: real-time head-to-head match on a shared seed via the socket server; matchmaking is bucketed by (mode, dailySeed|random).
 - **Pro**: the single paid subscription (`pro_day` / `pro_monthly` / `pro_yearly`); entitlement = `is_pro` + `pro_expires_at`, read via `isProActive()`.
 - **Streak shield**: a consumable that protects a daily-login streak; granted with monthly/yearly Pro.
-- **Engine parity**: the guarantee that the Swift and TS engines compute identically, enforced by JSON fixtures.
+- **Engine parity**: the guarantee that the Swift, Kotlin, and TS engines compute identically, enforced by JSON fixtures.
 - **simpleHash**: the 32-bit string hash that drives seed→word selection; the parity linchpin.
 - **PaymentProvider**: the interface/factory in `lib/payment/` that is the single swap point between Demo / Stripe / StoreKit fulfillment.
