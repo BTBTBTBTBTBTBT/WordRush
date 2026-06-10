@@ -18,6 +18,8 @@ enum VSEvent {
     // re-emits offer_rematch rather than a distinct event.
     static let offerRematch = "offer_rematch"
     static let declineRematch = "decline_rematch"
+    /// Throttled "I have letters in my row" activity ping — relayed to the opponent.
+    static let typing = "typing"
 
     // Server → client event names
     static let queueStatus = "queue_status"
@@ -31,18 +33,27 @@ enum VSEvent {
     static let rematchDeclined = "rematch_declined"
     static let rematchStart = "rematch_start"
     static let opponentLeft = "opponent_left"
+    /// Opponent activity ping (no letters) — drives the "typing…" indicator.
+    static let opponentTyping = "opponent_typing"
     static let error = "error"
 }
 
 // MARK: - Server → client payloads
 
-struct VSQueueStatus: Codable { let position: Int; let mode: String }
+struct VSQueueStatus: Codable {
+    let position: Int
+    let mode: String
+    /// Total players waiting in this queue bucket (newer servers only).
+    let queueSize: Int?
+}
 
 struct VSMatchFound: Codable {
     let matchId: String
     let mode: String
     let serverStartAt: Double      // unix ms
     let countdownSeconds: Double
+    /// Opponent's Supabase user id (from presenceId `u:<id>`), or nil if anonymous.
+    let opponentUserId: String?
 }
 
 struct VSPuzzleMetadata: Codable {
@@ -92,6 +103,18 @@ struct VSMatchEnded: Codable {
     /// True only for the designated single writer (player1) so exactly one row
     /// is created per match. Optional for backward-compat with older servers.
     let recordMatch: Bool?
+    /// Opponent's full ordered guess words (+ board index) — letters are only
+    /// revealed at match end so the result screen can render their final board.
+    let opponentGuessLog: [VSGuessLogEntry]?
+    /// The match solutions, so the result screen can render both final boards.
+    let solutions: [String]?
+}
+
+/// One guess-word entry (mine, mirrored locally, or the opponent's from
+/// match_ended) — the wire shape of OpponentGuessLogEntry on the web.
+struct VSGuessLogEntry: Codable {
+    let boardIndex: Int
+    let guess: String
 }
 
 struct VSRematchStart: Codable {

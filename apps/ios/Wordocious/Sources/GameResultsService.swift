@@ -72,9 +72,9 @@ enum GameResultsService {
     /// A VS match as a `matches` row (player2_id set) so the battle appears in
     /// Recent Matches — ports lib/stats-service.ts recordMatch. Called by ONLY
     /// the designated writer (server sets match_ended.recordMatch on player1),
-    /// so exactly one shared row exists per match. We don't have the opponent's
-    /// guess words client-side (the server only relays counts), so
-    /// player2_guesses stays null — Recent Matches doesn't render it.
+    /// so exactly one shared row exists per match. Solutions + both players'
+    /// guess words come from match_ended (the server reveals the opponent's
+    /// letters at match end) so the row matches what the web writes.
     private struct VsMatchInsert: Encodable {
         let game_mode: String
         let player1_id: String
@@ -87,6 +87,7 @@ enum GameResultsService {
         let seed: String
         let solutions: [String]
         let player1_guesses: [String]
+        let player2_guesses: [String]
         let started_at: String
         let completed_at: String
     }
@@ -96,7 +97,7 @@ enum GameResultsService {
     static func recordVsMatch(
         gameMode: GameMode, opponentId: String, won: Bool, isDraw: Bool,
         playerGuesses: Int, opponentGuesses: Int, playerTimeSec: Int, opponentTimeSec: Int,
-        seed: String
+        seed: String, solutions: [String] = [], myGuesses: [String] = [], theirGuesses: [String] = []
     ) async {
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return }
@@ -108,7 +109,7 @@ enum GameResultsService {
             game_mode: gameMode.rawValue, player1_id: userId, player2_id: opponentId,
             winner_id: winnerId, player1_score: playerGuesses, player2_score: opponentGuesses,
             player1_time: playerTimeSec, player2_time: opponentTimeSec,
-            seed: seed, solutions: [], player1_guesses: [],
+            seed: seed, solutions: solutions, player1_guesses: myGuesses, player2_guesses: theirGuesses,
             started_at: iso.string(from: now.addingTimeInterval(-Double(playerTimeSec))),
             completed_at: iso.string(from: now))
         try? await client.from("matches").insert(row).execute()
@@ -194,29 +195,30 @@ enum GameResultsService {
         let xp = await updateProfileProgression(client, userId: userId, won: won, seed: seed)
 
         var result = xp
-        if isDailySeed(seed) {
-            if playType == "vs" {
-                // Daily Classic VS → daily_results (play_type='vs') so the player
-                // shows on the VS daily leaderboard (web recordDailyVsResult parity).
-                await DailyResultsService.recordVs(gameMode: gameMode, won: won)
-            } else {
-                await DailyResultsService.record(
-                    gameMode: gameMode, completed: won, guessCount: guessCount,
-                    timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
-                    hintsUsed: hintsUsed
-                )
-                // Daily Sweep / Flawless bonus once all 9 dailies are in (web parity).
-                // Kept SPLIT from dailyBonus so the toast shows distinct
-                // "+200 sweep" / "+400 flawless" chips like web xp-toast.tsx.
-                let (sweep, flawless) = await MedalService.awardDailyBonusesIfComplete(client, userId: userId)
-                if sweep + flawless > 0, let x = result {
-                    let newTotal = x.totalXp + sweep + flawless
-                    result = XpResult(xpGain: x.xpGain, streakBonus: x.streakBonus,
-                                      dailyBonus: x.dailyBonus, totalXp: newTotal,
-                                      newLevel: newTotal / 1000 + 1,
-                                      leveledUp: x.leveledUp || (newTotal / 1000 + 1) > x.newLevel,
-                                      sweepBonus: sweep, flawlessBonus: flawless)
-                }
+        if playType == "vs" {
+            // EVERY completed VS match accumulates into the local day's
+            // daily_results row (play_type='vs') — vs_wins/vs_losses/vs_games —
+            // so the VS daily leaderboard and VS records see all matches, not
+            // just daily-seed ones (web stats-service.ts recordDailyVsResult
+            // parity: the VS branch records unconditionally).
+            await DailyResultsService.recordVs(gameMode: gameMode, won: won)
+        } else if isDailySeed(seed) {
+            await DailyResultsService.record(
+                gameMode: gameMode, completed: won, guessCount: guessCount,
+                timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+                hintsUsed: hintsUsed
+            )
+            // Daily Sweep / Flawless bonus once all 9 dailies are in (web parity).
+            // Kept SPLIT from dailyBonus so the toast shows distinct
+            // "+200 sweep" / "+400 flawless" chips like web xp-toast.tsx.
+            let (sweep, flawless) = await MedalService.awardDailyBonusesIfComplete(client, userId: userId)
+            if sweep + flawless > 0, let x = result {
+                let newTotal = x.totalXp + sweep + flawless
+                result = XpResult(xpGain: x.xpGain, streakBonus: x.streakBonus,
+                                  dailyBonus: x.dailyBonus, totalXp: newTotal,
+                                  newLevel: newTotal / 1000 + 1,
+                                  leveledUp: x.leveledUp || (newTotal / 1000 + 1) > x.newLevel,
+                                  sweepBonus: sweep, flawlessBonus: flawless)
             }
         }
         // Refresh the in-memory profile so XP/streak/Pro reflect immediately.

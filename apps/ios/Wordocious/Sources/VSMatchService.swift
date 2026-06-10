@@ -24,6 +24,7 @@ final class VSMatchService {
     var onRematchDeclined: (() -> Void)?
     var onRematchStart: ((VSRematchStart) -> Void)?
     var onOpponentLeft: (() -> Void)?
+    var onOpponentTyping: (() -> Void)?
     var onServerError: ((VSServerError) -> Void)?
 
     var isConfigured: Bool { VSConfig.isConfigured }
@@ -71,6 +72,8 @@ final class VSMatchService {
     }
 
     func stageCompleted(stageIndex: Int) { socket?.emit(VSEvent.stageCompleted, ["stageIndex": stageIndex]) }
+    /// Throttled activity ping (the caller throttles) — relayed as opponent_typing.
+    func emitTyping() { socket?.emit(VSEvent.typing) }
     func abandonMatch() { socket?.emit(VSEvent.abandonMatch) }
     func offerRematch() { socket?.emit(VSEvent.offerRematch) }
     func declineRematch() { socket?.emit(VSEvent.declineRematch) }
@@ -95,6 +98,7 @@ final class VSMatchService {
         socket.on(VSEvent.rematchOffered) { [weak self] _, _ in self?.main { self?.onRematchOffered?() } }
         socket.on(VSEvent.rematchDeclined) { [weak self] _, _ in self?.main { self?.onRematchDeclined?() } }
         socket.on(VSEvent.opponentLeft) { [weak self] _, _ in self?.main { self?.onOpponentLeft?() } }
+        socket.on(VSEvent.opponentTyping) { [weak self] _, _ in self?.main { self?.onOpponentTyping?() } }
     }
 
     /// Decode the first element of a socket payload into `T` and deliver on main.

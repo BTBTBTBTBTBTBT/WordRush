@@ -13,6 +13,8 @@ struct ProfileTab: View {
     @State private var showPro = false
     @State private var statRows: [UserStatRow] = []
     @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
+    // Solo/VS toggle (mirrors the web personal profile) — filters user_stats by play_type.
+    @State private var activeTab = "solo"
     @State private var unlockedAchievements: Set<String> = []
     @State private var medals: [MedalRow] = []
     @State private var socialLinks: [String: String] = [:]
@@ -72,7 +74,9 @@ struct ProfileTab: View {
                 todaysDailies
                 globalSummary(p)
                 medalsSection(p)
-                ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(statRows), selected: $selectedMode)
+                soloVsToggle
+                if activeTab == "vs" { vsRecordCard }
+                ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(filteredStats), selected: $selectedMode)
                 if let mode = selectedMode { modeStats(p, mode: mode) }
                 ProfileDashboard(mode: selectedMode)
                 recentMatchesSection(p)
@@ -427,8 +431,67 @@ struct ProfileTab: View {
         }
     }
 
+    // MARK: Solo/VS toggle + VS RECORD card (ports profile/page.tsx section D)
+
+    /// Stats filtered to the active Solo/VS tab.
+    private var filteredStats: [UserStatRow] { statRows.filter { $0.playType == activeTab } }
+
+    private var soloVsToggle: some View {
+        HStack(spacing: 8) {
+            ForEach(["solo", "vs"], id: \.self) { t in
+                let active = activeTab == t
+                Button { activeTab = t } label: {
+                    HStack(spacing: 6) {
+                        if t == "solo" {
+                            Image(systemName: "person.fill").font(.system(size: 12, weight: .bold))
+                        } else {
+                            Image("swords").renderingMode(.template).resizable().scaledToFit()
+                                .frame(width: 14, height: 14)
+                        }
+                        Text(t == "solo" ? "Solo" : "VS").font(Brand.font(12, .heavy))
+                    }
+                    .foregroundStyle(active ? Theme.primary : Theme.textMuted)
+                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
+                }.buttonStyle(.plain)
+            }
+            Spacer()
+        }
+    }
+
+    /// "VS RECORD" summary card (VS tab only): aggregate W–L, win rate, total.
+    private var vsRecordCard: some View {
+        let rec = UserStatsService.vsRecord(statRows)
+        return HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12).fill(Theme.primary.opacity(0.08))
+                    .frame(width: 40, height: 40)
+                Image("swords").renderingMode(.template).resizable().scaledToFit()
+                    .frame(width: 20, height: 20).foregroundStyle(Theme.primary)
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                Text("VS RECORD").font(Brand.font(10, .heavy)).tracking(0.8)
+                    .foregroundStyle(Color(hex: 0x6D28D9))
+                Text("\(rec.wins)–\(rec.losses)").font(Brand.font(20, .black))
+                    .foregroundStyle(Theme.textPrimary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("\(rec.winRate)%").font(Brand.font(20, .black)).foregroundStyle(Theme.primary)
+                Text("WIN RATE · \(rec.total) \(rec.total == 1 ? "MATCH" : "MATCHES")")
+                    .font(Brand.font(9, .heavy)).tracking(0.4).foregroundStyle(Theme.textMuted)
+            }
+        }
+        .padding(16).frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 16).fill(LinearGradient(
+            colors: [Color(hex: 0xF5F3FF), Color(hex: 0xFCE7F3)],
+            startPoint: .topLeading, endPoint: .bottomTrailing)))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+    }
+
     private func modeStats(_ p: Profile, mode: GameMode) -> some View {
-        let s = UserStatsService.aggregate(statRows, mode: mode.rawValue)
+        let s = UserStatsService.aggregate(filteredStats, mode: mode.rawValue)
         let winRate = s.totalGames > 0 ? Int((Double(s.wins) / Double(s.totalGames) * 100).rounded()) : 0
         let cells: [(String, String)] = [
             ("Wins", "\(s.wins)"), ("Losses", "\(s.losses)"), ("Games", "\(s.totalGames)"), ("Win Rate", "\(winRate)%"),

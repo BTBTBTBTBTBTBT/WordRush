@@ -41,6 +41,30 @@ struct VSGameView: View {
 
             if vm.countdown != nil { countdownOverlay }
 
+            // Match-intro splash — sits above the countdown for 2.5s (or until
+            // tapped), web parity: MatchIntro renders only on the queue screen.
+            if vm.showIntro, vm.screen == .queue {
+                VSMatchIntroView(
+                    me: .init(username: AuthService.shared.profile?.username ?? "You",
+                              avatarUrl: AuthService.shared.profile?.avatarUrl,
+                              level: AuthService.shared.profile?.level),
+                    opponent: vm.opponentUserId != nil ? .init(username: vm.opponentInfo?.username ?? "…",
+                                                               avatarUrl: vm.opponentInfo?.avatarUrl,
+                                                               level: vm.opponentInfo?.level) : nil,
+                    headToHead: vm.headToHead,
+                    onDone: { vm.showIntro = false })
+            }
+
+            // Moment callout — opponent milestones (greens / board solved / last guess).
+            if let c = vm.callout, vm.screen == .match {
+                VStack {
+                    VSCalloutPill(text: c.text).id(c.id).padding(.top, 96)
+                    Spacer()
+                }
+                .allowsHitTesting(false)
+                .animation(Theme.animation(.easeOut(duration: 0.25)), value: c.id)
+            }
+
             // Post-match XP/level-up toast (parity with solo + web VS result).
             if let xp = vm.xpResult, vm.screen == .result {
                 XpToastView(result: xp) { vm.xpResult = nil }
@@ -78,6 +102,10 @@ struct VSGameView: View {
                 CyclingStatus()
                 Text("Position in queue: \(vm.queuePosition + 1)")
                     .font(Brand.body(13)).foregroundStyle(Theme.textMuted)
+                if vm.queueSize > 1 {
+                    Text("\(vm.queueSize) players waiting")
+                        .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                }
             }
             Button(action: goHome) {
                 Label("Cancel", systemImage: "xmark")
@@ -111,6 +139,8 @@ struct VSGameView: View {
         if mode == .propernoundle, let pvm = vm.proper {
             VStack(spacing: 0) {
                 matchHeader
+                tugOfWarHeader
+                    .padding(.horizontal, 10).padding(.top, 6)
                 OpponentStrip(opponent: vm.opponent, gradient: gradient)
                     .padding(.horizontal, 10).padding(.top, 6)
                 ProperNoundleVSBoard(vm: pvm)   // bespoke ProperNoundle board+keyboard
@@ -119,6 +149,8 @@ struct VSGameView: View {
         } else if let game = vm.game {
             VStack(spacing: 0) {
                 matchHeader
+                tugOfWarHeader
+                    .padding(.horizontal, 10).padding(.top, 6)
                 OpponentStrip(opponent: vm.opponent, gradient: gradient,
                               maxGuesses: game.maxGuesses, wordLength: game.wordLength)
                     .padding(.horizontal, 10).padding(.top, 6)
@@ -172,6 +204,21 @@ struct VSGameView: View {
         .padding(.horizontal, 10).padding(.top, 6)
     }
 
+    /// Persistent VS header: you vs opponent + tug-of-war lead bar + typing
+    /// indicator (ports vs-match-header.tsx, fed like vs-game.tsx does).
+    private var tugOfWarHeader: some View {
+        VSMatchHeaderBar(
+            me: .init(username: AuthService.shared.profile?.username ?? "You",
+                      avatarUrl: AuthService.shared.profile?.avatarUrl,
+                      guesses: vm.myGuessLog.count,
+                      progress: vm.myProgress),
+            opponent: .init(username: vm.opponentName,
+                            avatarUrl: vm.opponentInfo?.avatarUrl,
+                            guesses: vm.opponent.attempts,
+                            progress: vm.theirProgress),
+            opponentTyping: vm.opponentTyping)
+    }
+
     private func toastView(_ text: String) -> some View {
         Text(text).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
             .padding(.horizontal, 16).padding(.vertical, 10)
@@ -179,36 +226,114 @@ struct VSGameView: View {
             .padding(.top, 120).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
     }
 
-    // MARK: - Waiting (player done, opponent still playing)
+    // MARK: - Waiting (spectator: you finished, opponent still playing) —
+    // ports the vs-game.tsx 'waiting' screen: opponent live board at ~2x tile
+    // size (colors only), live guess counter + clock, and stakes copy.
 
     private var waitingScreen: some View {
-        VStack(spacing: 18) {
-            Text("Waiting for opponent…").font(Brand.font(30, .black))
-                .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
-            ProgressView().controlSize(.large).tint(Theme.primary)
-            if let game = vm.game {
-                statCard(title: "YOUR RESULT", rows: [
-                    ("Guesses", "\(game.rowsUsed)"),
-                    ("Time", formatTime(Double(vm.playerTimeMs))),
-                ])
+        let oppName = vm.opponentName
+        let liveTotalBoards = vm.opponent.totalBoards > 0 ? vm.opponent.totalBoards : vm.totalBoards
+        let oppRowsUsed = vm.opponent.tiles.values.map(\.count).max() ?? 0
+        // Cap rendered empty rows so Gauntlet's 50-guess budget doesn't blow up the layout.
+        let spectatorRows = min(vm.modeMaxGuesses, max(6, oppRowsUsed + 1))
+
+        return ScrollView {
+            VStack(spacing: 18) {
+                Text("\(oppName) is still playing...")
+                    .font(Brand.font(24, .black))
+                    .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 32)
+
+                // Opponent identity + live counters
+                HStack(spacing: 10) {
+                    AvatarView(url: vm.opponentInfo?.avatarUrl, username: oppName, size: 40)
+                        .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(oppName).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                        TimelineView(.periodic(from: .now, by: 1)) { _ in
+                            let secs = max(0, Int((Date().timeIntervalSince1970 * 1000 - vm.startTimeMs) / 1000))
+                            Text("\(vm.opponent.attempts) \(vm.opponent.attempts == 1 ? "guess" : "guesses") · \(secs / 60):\(String(format: "%02d", secs % 60))"
+                                 + (liveTotalBoards > 1 ? " · \(vm.opponent.boardsSolved)/\(liveTotalBoards) boards" : ""))
+                                .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted).monospacedDigit()
+                        }
+                    }
+                    if vm.opponentTyping { TypingDots(dotSize: 6) }
+                }
+
+                // Stakes copy
+                if let stakes = stakesCopy {
+                    Text(stakes)
+                        .font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                }
+
+                // Opponent live board — scaled-up mini board, colors only
+                Group {
+                    if liveTotalBoards <= 1 {
+                        OpponentMiniBoard(tiles: vm.opponent.tiles[0] ?? [],
+                                          maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: 16)
+                    } else {
+                        let columns = Array(repeating: GridItem(.flexible(), spacing: 8),
+                                            count: min(liveTotalBoards, 4))
+                        LazyVGrid(columns: columns, spacing: 8) {
+                            ForEach(0..<liveTotalBoards, id: \.self) { i in
+                                OpponentMiniBoard(tiles: vm.opponent.tiles[i] ?? [],
+                                                  maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: 16)
+                            }
+                        }
+                    }
+                }
+                .padding(16).frame(maxWidth: .infinity)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+
+                // Your stats
+                if let guesses = vm.myFinalGuesses {
+                    statCard(title: "YOUR RESULT", rows: [
+                        ("Guesses", "\(guesses)"),
+                        ("Time", formatTime(Double(vm.playerTimeMs))),
+                    ])
+                }
+
+                Button(action: goHome) {
+                    Label("Leave", systemImage: "xmark")
+                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
+                        .padding(.horizontal, 20).padding(.vertical, 10)
+                        .background(Capsule().fill(Theme.surface)).overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
+                }.buttonStyle(.plain)
             }
-            statCard(title: "OPPONENT PROGRESS", rows: opponentRows)
-            Button(action: goHome) {
-                Label("Leave", systemImage: "xmark")
-                    .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
-                    .padding(.horizontal, 20).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.surface)).overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
-            }.buttonStyle(.plain)
+            .padding(.horizontal, 24).padding(.bottom, 24)
         }
-        .padding(.horizontal, 24).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var opponentRows: [(String, String)] {
-        var rows = [("Guesses", "\(vm.opponent.attempts)")]
-        if vm.opponent.totalBoards > 1 {
-            rows.append(("Boards Solved", "\(vm.opponent.boardsSolved)/\(vm.opponent.totalBoards)"))
+    /// STAKES copy — ports the web waiting-screen IIFE. The real win rule is:
+    /// solve, then tie-break on boardsSolved, then composite score = guesses +
+    /// timeSeconds/45. We approximate the composite by guess count: the
+    /// opponent is still playing, so they're almost always behind on time and
+    /// need strictly FEWER guesses; if they're somehow still ahead of your
+    /// clock, matching your guess count could win on time.
+    private var stakesCopy: String? {
+        guard let myGuesses = vm.myFinalGuesses else { return nil }
+        let oppName = vm.opponentName
+        let liveTotalBoards = vm.opponent.totalBoards > 0 ? vm.opponent.totalBoards : vm.totalBoards
+        let boardsLeft = liveTotalBoards - vm.opponent.boardsSolved
+        if vm.myStatus == .lost {
+            return liveTotalBoards > 1
+                ? "\(oppName) needs \(boardsLeft) more board\(boardsLeft == 1 ? "" : "s") to win"
+                : "\(oppName) just needs to solve to win"
         }
-        return rows
+        if liveTotalBoards > 1, boardsLeft > 1 {
+            return "\(oppName) needs \(boardsLeft) more boards to stay alive"
+        }
+        let opponentTimeBehind = Date().timeIntervalSince1970 * 1000 - vm.startTimeMs > Double(vm.playerTimeMs)
+        let target = opponentTimeBehind ? myGuesses - 1 : myGuesses
+        if target <= 0 || vm.opponent.attempts >= target {
+            return "\(oppName) can no longer beat your score!"
+        }
+        return "\(oppName) must solve in \(target) or fewer to beat you"
     }
 
     // MARK: - Result
@@ -216,31 +341,57 @@ struct VSGameView: View {
     private var resultScreen: some View {
         let winner = vm.result?.winner
         let isWin = winner == "player", isDraw = winner == "draw"
-        let headline = isWin ? "VICTORY" : isDraw ? "DRAW" : "DEFEAT"
+        let headline = isWin ? "WINNER" : isDraw ? "DRAW" : "DEFEAT"
         let colors: [Color] = isWin ? [Color(hex: 0x4ADE80), Color(hex: 0x6EE7B7)]
             : isDraw ? [Color(hex: 0xFACC15), Color(hex: 0xFDBA74)]
             : [Color(hex: 0xF87171), Color(hex: 0xFDA4AF)]
-        return ScrollView {
-            VStack(spacing: 22) {
-                Text(headline).font(Brand.font(60, .black))
-                    .foregroundStyle(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
+        let myName = AuthService.shared.profile?.username ?? "You"
+        let oppName = vm.opponentName
+
+        return ZStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Headline + updated all-time head-to-head (refetched after
+                    // the match was recorded).
+                    VStack(spacing: 8) {
+                        Text(headline).font(Brand.font(56, .black))
+                            .foregroundStyle(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
+                            .minimumScaleFactor(0.6).lineLimit(1)
+                        if vm.opponentUserId != nil, let h2h = vm.headToHead {
+                            Text(HeadToHeadService.headToHeadLine(opponentName: oppName, h2h))
+                                .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textSecondary)
+                        }
+                    }
                     .padding(.top, 40)
-                if let r = vm.result {
-                    statCard(title: nil, rows: [
-                        ("Your Guesses", "\(r.playerGuesses)"),
-                        ("Opponent Guesses", "\(r.opponentGuesses)"),
-                        ("Your Time", formatTime(r.playerTime)),
-                        ("Opponent Time", formatTime(r.opponentTime)),
-                        ("Your Score", String(format: "%.2f", r.playerScore)),
-                        ("Opponent Score", String(format: "%.2f", r.opponentScore)),
-                    ])
-                    Text("Score = guesses + time penalty (lower is better)")
-                        .font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted)
+
+                    // Comparison bars: you (purple) vs them (pink), lower is better
+                    if let r = vm.result {
+                        VSComparisonBars(myName: myName, opponentName: oppName, metrics: [
+                            .init(label: "Guesses", mine: Double(r.playerGuesses), theirs: Double(r.opponentGuesses),
+                                  format: { "\(Int($0))" }),
+                            .init(label: "Time", mine: r.playerTime, theirs: r.opponentTime,
+                                  format: { [self] in formatTime($0) }),
+                            .init(label: "Score (guesses + time penalty)", mine: r.playerScore, theirs: r.opponentScore,
+                                  format: { String(format: "%.2f", $0) }),
+                        ])
+                    }
+
+                    rematchSection
+                    actions
+
+                    // Final boards with letters — opponent's reconstructed from
+                    // the match-end guess log + solutions.
+                    if let r = vm.result, let solutions = r.solutions, !solutions.isEmpty {
+                        VSFinalBoards(myName: myName, opponentName: oppName,
+                                      myGuessLog: vm.myGuessLog,
+                                      opponentGuessLog: r.opponentGuessLog ?? [],
+                                      solutions: solutions)
+                    }
                 }
-                rematchSection
-                actions
+                .padding(.horizontal, 24).padding(.bottom, 24)
             }
-            .padding(.horizontal, 24).padding(.bottom, 24)
+            // Confetti for wins only (web parity).
+            if isWin { ConfettiView().ignoresSafeArea() }
         }
     }
 
@@ -265,35 +416,60 @@ struct VSGameView: View {
         }
     }
 
+    /// Actions — prominent Rematch on top, Home/Share below (web parity).
     private var actions: some View {
-        HStack(spacing: 12) {
-            Button(action: goHome) {
-                Label("Home", systemImage: "house.fill").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-            }.buttonStyle(.plain)
-
+        VStack(spacing: 8) {
             switch vm.rematch {
             case .declined:
                 Label("No Rematch", systemImage: "xmark").font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
+                    .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
             case .offered:
-                Label("Waiting…", systemImage: "hourglass").font(Brand.font(14, .bold)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
+                Label("Waiting…", systemImage: "hourglass").font(Brand.font(14, .black)).foregroundStyle(.white.opacity(0.8))
+                    .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
             case .received:
-                EmptyView()
+                EmptyView()   // the "Opponent wants a rematch!" card carries the buttons
             case .idle:
                 // Free users get the Pro upsell modal instead of an inline error
                 // (web parity — Rematch opens VsLimitModal for non-Pro).
                 Button { if vm.isPro { vm.offerRematch() } else { showRematchUpsell = true } } label: {
                     Label("Rematch", systemImage: "arrow.clockwise").font(Brand.font(14, .black)).foregroundStyle(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, 13)
+                        .frame(maxWidth: .infinity).padding(.vertical, 14)
                         .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
                 }.buttonStyle(.plain)
             }
+
+            HStack(spacing: 12) {
+                Button(action: goHome) {
+                    Label("Home", systemImage: "house.fill").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity).padding(.vertical, 13)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                }.buttonStyle(.plain)
+
+                ShareLink(item: shareText) {
+                    Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity).padding(.vertical, 13)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                }.buttonStyle(.plain)
+            }
         }
+    }
+
+    /// Share copy — ports the web result-screen handleShare strings.
+    private var shareText: String {
+        let oppName = vm.opponentName
+        let winner = vm.result?.winner
+        let text: String
+        if winner == "player" {
+            text = "I just beat \(oppName) in a Wordocious VS \(vsModeLabel) duel! ⚔️🏆"
+        } else if winner == "draw" {
+            text = "\(oppName) and I battled to a draw in VS \(vsModeLabel) on Wordocious! ⚔️"
+        } else {
+            text = "Epic VS \(vsModeLabel) duel against \(oppName) on Wordocious! ⚔️"
+        }
+        return "\(text)\nhttps://wordocious.com"
     }
 
     // MARK: - Opponent left / not configured

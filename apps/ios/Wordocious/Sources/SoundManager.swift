@@ -64,6 +64,10 @@ final class SoundManager {
 
     // Frequencies/timings mirror lib/sounds.ts.
     func playKeyTap()  { guard enabled else { return }; tone(800, 0.04, 0.06) }
+    /// Two-note "VS" stinger for the match-intro splash (playVsStinger).
+    func playVsStinger() { guard enabled else { return }; tone(392, 0.10, 0.10); tone(523, 0.18, 0.10, delay: 0.10) }
+    /// Soft thunk played whenever the opponent lands a guess row (playOpponentThunk).
+    func playOpponentThunk() { guard enabled else { return }; tone(220, 0.06, 0.05) }
     func playInvalid() { guard enabled else { return }; tone(200, 0.15, 0.08); tone(150, 0.15, 0.06, delay: 0.08) }
     func playSuccess() { guard enabled else { return }; tone(523, 0.12, 0.10); tone(659, 0.12, 0.10, delay: 0.10); tone(784, 0.20, 0.12, delay: 0.20) }
     func playGameOver(){ guard enabled else { return }; tone(392, 0.20, 0.10); tone(330, 0.20, 0.10, delay: 0.15); tone(262, 0.30, 0.08, delay: 0.30) }
