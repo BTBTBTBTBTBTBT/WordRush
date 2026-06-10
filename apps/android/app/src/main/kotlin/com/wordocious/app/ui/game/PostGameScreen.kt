@@ -72,6 +72,7 @@ fun PostGameScreen(
     elapsedSeconds: Int = 0,
     hintsUsed: Int = 0,
     onBack: () -> Unit,
+    onPlayAgain: (() -> Unit)? = null,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val won = state.status == GameStatus.WON
@@ -168,6 +169,10 @@ fun PostGameScreen(
                 mode = mode, won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
                 timeSeconds = elapsedSeconds, boardsSolved = boardsSolved, totalBoards = totalBoards,
                 onHome = onBack, onShare = share,
+                // Web parity: Play Again only on non-daily (Unlimited) games for Pro.
+                onPlayAgain = if (seed.startsWith("unlimited-") &&
+                    com.wordocious.app.data.AuthService.isProActive
+                ) onPlayAgain else null,
             )
 
             DailyRankBadge(mode)
@@ -225,7 +230,7 @@ private fun clock(s: Int): String = "%d:%02d".format(s / 60, s % 60)
 private fun FinishedStatsHeader(
     mode: GameMode, won: Boolean, guessCount: Int, maxGuesses: Int,
     timeSeconds: Int, boardsSolved: Int, totalBoards: Int,
-    onHome: () -> Unit, onShare: () -> Unit,
+    onHome: () -> Unit, onShare: () -> Unit, onPlayAgain: (() -> Unit)? = null,
 ) {
     val isMulti = totalBoards > 1
     val timeStr = clock(timeSeconds)
@@ -262,6 +267,14 @@ private fun FinishedStatsHeader(
                 "Share", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6),
                 textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onShare),
             )
+            // Pro Unlimited only (web: amber "Play Again" on non-daily games).
+            if (onPlayAgain != null) {
+                Text(
+                    if (won) "Play Again" else "Try Again",
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706),
+                    textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onPlayAgain),
+                )
+            }
         }
     }
 }

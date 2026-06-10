@@ -119,6 +119,9 @@ fun MainScreen() {
             title = card.title,
             seed = seed,
             onBack = { activeGame = null; activeSeed = null },
+            // Pro Unlimited: "Play Again" mints a fresh non-daily seed for the
+            // same mode (web parity — Play Again on non-daily games).
+            onPlayAgain = { activeSeed = "unlimited-${card.engineMode.name}-${System.nanoTime()}" },
         )
         return
     }
