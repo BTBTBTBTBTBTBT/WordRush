@@ -56,7 +56,7 @@ object DailyCompletionsService {
      * grid shows "completed" instantly when the player returns — HomeScreen
      * seeds from this cache on every (re)composition. Never downgrades a win.
      */
-    fun noteCompletion(gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Double) {
+    fun noteCompletion(gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Int) {
         val current = readCache().toMutableMap()
         val existing = current[gameMode]
         if (existing != null && existing.completed && !completed) return

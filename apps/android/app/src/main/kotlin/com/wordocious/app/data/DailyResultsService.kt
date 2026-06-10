@@ -125,7 +125,7 @@ object DailyResultsService {
         val gameModeStr = mode.name
         // Optimistic local update FIRST so the home card flips to completed the
         // instant the game ends (web 'daily-completion' event parity).
-        DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds.toDouble())
+        DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds)
         val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
 
         try {
