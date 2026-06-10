@@ -15,6 +15,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,31 @@ fun MainScreen() {
     var vsActive by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, Boolean>?>(null) }
     // Public profile overlay (web /profile/[id]) — opened from leaderboard/records usernames.
     var publicProfileId by remember { mutableStateOf<String?>(null) }
+    // Invite-accepted VS match (mode + invite code) from the pending-invites banner.
+    var vsInvite by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, String>?>(null) }
+    // Streak-shield prompt — web StreakShieldProvider: checked once per session
+    // when the profile is available and the streak is at risk.
+    val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
+    var shieldChecked by remember { mutableStateOf(false) }
+    var showShieldModal by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(profile?.id) {
+        val p = profile ?: return@LaunchedEffect
+        if (shieldChecked) return@LaunchedEffect
+        shieldChecked = true
+        if (p.dailyLoginStreak > 0 && com.wordocious.app.data.ShieldService.isStreakAtRisk(p.lastPlayedAt)) {
+            showShieldModal = true
+        }
+    }
+
+    vsInvite?.let { (inviteMode, code) ->
+        androidx.activity.compose.BackHandler { vsInvite = null }
+        com.wordocious.app.ui.vs.VSGameScreen(
+            mode = inviteMode, isDaily = false, inviteCode = code,
+            onHome = { vsInvite = null },
+            onGoPro = { vsInvite = null; infoRoute = "pro" },
+        )
+        return
+    }
 
     publicProfileId?.let { pid ->
         androidx.activity.compose.BackHandler { publicProfileId = null }
@@ -153,6 +179,7 @@ fun MainScreen() {
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 when (selectedTab) {
                     0 -> HomeScreen(
+                        onJoinInvite = { m, code -> vsInvite = m to code },
                         onSelectMode = { card, unlimited ->
                             if (card.id == "vs") vsLobby = true
                             else {
@@ -173,6 +200,25 @@ fun MainScreen() {
                         onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
                     )
                     3 -> RecordsScreen(onOpenProfile = { publicProfileId = it })
+                }
+
+                if (showShieldModal) {
+                    val p = profile
+                    StreakShieldModal(
+                        streak = p?.dailyLoginStreak ?: 0,
+                        shields = p?.streakShields ?: 0,
+                        onUseShield = {
+                            p?.id?.let { com.wordocious.app.data.ShieldService.useShield(it) }
+                            com.wordocious.app.data.AuthService.refreshProfile()
+                            showShieldModal = false
+                        },
+                        onDecline = {
+                            p?.id?.let { com.wordocious.app.data.ShieldService.declineStreak(it) }
+                            com.wordocious.app.data.AuthService.refreshProfile()
+                            showShieldModal = false
+                        },
+                        onClose = { showShieldModal = false },
+                    )
                 }
             }
         }

@@ -27,11 +27,13 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -64,6 +66,7 @@ fun HomeScreen(
     onSelectMode: (ModeCard, Boolean) -> Unit,
     onGoPro: () -> Unit = {},
     onVs: (ModeCard) -> Unit = {},
+    onJoinInvite: (com.wordocious.core.GameMode, String) -> Unit = { _, _ -> },
 ) {
     // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
     // Seed from the day-keyed cache so cold launches don't flash unbadged
@@ -107,6 +110,8 @@ fun HomeScreen(
             // Daily hero shows Daily Sweep! / Flawless Victory! once all 9 are done.
             val dailyDone = completions.size
             val dailyWins = completions.values.count { it.completed }
+            // Pending VS invites banner (web pending-invites-banner.tsx).
+            PendingInvitesBanner(onJoinInvite = onJoinInvite)
             if (isPro) PlayModeToggle(playMode) { playMode = it }
             if (unlimitedMode) UnlimitedHero() else DailyHero(dailyDone, dailyWins)
             WordOfTheDayCard()
@@ -403,6 +408,83 @@ private fun ModeCardView(
 
 private fun fmtShort(secs: Int): String =
     if (secs <= 0) "—" else if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"
+
+@Composable
+private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, String) -> Unit) {
+    val userId = com.wordocious.app.data.AuthService.userId
+    var invites by remember {
+        mutableStateOf<List<com.wordocious.app.data.InviteService.MatchInvite>>(emptyList())
+    }
+    var inviterName by remember { mutableStateOf<String?>(null) }
+    androidx.compose.runtime.LaunchedEffect(userId) {
+        if (userId == null) return@LaunchedEffect
+        val list = com.wordocious.app.data.InviteService.fetchPendingInvitesForUser(userId)
+        invites = list
+        list.firstOrNull()?.let {
+            inviterName = com.wordocious.app.data.InviteService.lookupInviterUsername(it.inviterId)
+        }
+    }
+    val top = invites.firstOrNull() ?: return
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val modeTitle = MODE_CARDS.firstOrNull { it.engineMode?.name == top.gameMode }?.title ?: top.gameMode
+
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFFFDF4FF), Color(0xFFFCE7F3))))
+            .border(1.5.dp, Color(0xFFF5D0FE), RoundedCornerShape(14.dp))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0xFFEC4899)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(androidx.compose.material.icons.Icons.Filled.Email, null, tint = Color.White, modifier = Modifier.size(16.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(
+                "@${inviterName ?: "A friend"} invited you to $modeTitle",
+                fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text,
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
+            if (invites.size > 1) {
+                Text("+${invites.size - 1} more pending", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA21CAF))
+            }
+        }
+        Text(
+            "Play",
+            fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFFEC4899))
+                .clickableNoRipple {
+                    runCatching { com.wordocious.core.GameMode.valueOf(top.gameMode) }.getOrNull()?.let { m ->
+                        onJoinInvite(m, top.inviteCode)
+                    }
+                }
+                .padding(horizontal = 12.dp, vertical = 7.dp),
+        )
+        Box(
+            Modifier.size(28.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                .background(WTheme.surface)
+                .border(1.5.dp, Color(0xFFF5D0FE), androidx.compose.foundation.shape.CircleShape)
+                .clickableNoRipple {
+                    scope.launch {
+                        com.wordocious.app.data.InviteService.markInviteDeclined(top.id)
+                        invites = invites.filter { it.id != top.id }
+                        invites.firstOrNull()?.let {
+                            inviterName = com.wordocious.app.data.InviteService.lookupInviterUsername(it.inviterId)
+                        }
+                    }
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(androidx.compose.material.icons.Icons.Filled.Close, "Dismiss", tint = Color(0xFFA21CAF), modifier = Modifier.size(14.dp))
+        }
+    }
+}
 
 @Composable
 private fun LiveBanner() {

@@ -41,6 +41,7 @@ data class Profile(
     @SerialName("bronze_medals") val bronzeMedals: Int = 0,
     @SerialName("has_onboarded") val hasOnboarded: Boolean = true,
     @SerialName("pro_prompt_shown") val proPromptShown: Boolean = false,
+    @SerialName("last_played_at") val lastPlayedAt: String? = null,
     @SerialName("is_admin") val isAdmin: Boolean = false,
 )
 
