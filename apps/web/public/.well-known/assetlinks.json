@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.wordocious.app",
+      "sha256_cert_fingerprints": [
+        "57:2C:24:66:F4:FA:EE:79:D1:5F:BE:03:72:CD:8E:C3:E8:E2:8A:3D:A5:0B:FA:9B:BF:C5:8F:31:28:71:6D:1B"
+      ]
+    }
+  }
+]

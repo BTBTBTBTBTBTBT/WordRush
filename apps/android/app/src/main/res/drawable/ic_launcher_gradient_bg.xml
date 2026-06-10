@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher background: the brand purple->pink diagonal gradient sampled
+     from the iOS AppIcon-1024 corners. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="linear"
+        android:angle="315"
+        android:startColor="#7D3AEC"
+        android:endColor="#EB489A" />
+</shape>

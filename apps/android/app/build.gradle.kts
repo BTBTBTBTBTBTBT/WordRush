@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application") version "8.5.2"
     kotlin("android") version "2.0.20"
@@ -18,10 +20,29 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    // Release signing — reads apps/android/key.properties (gitignored; keystore
+    // lives at ~/.android-keys/wordocious-upload.jks — BACK IT UP). When the
+    // file is absent (CI, fresh clones) release builds stay unsigned.
+    val keystoreProps = Properties().apply {
+        val f = rootProject.file("key.properties")
+        if (f.exists()) f.inputStream().use { p -> load(p) }
+    }
+    signingConfigs {
+        if (!keystoreProps.isEmpty) {
+            create("release") {
+                storeFile = file(keystoreProps["storeFile"] as String)
+                storePassword = keystoreProps["storePassword"] as String
+                keyAlias = keystoreProps["keyAlias"] as String
+                keyPassword = keystoreProps["keyPassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (!keystoreProps.isEmpty) signingConfig = signingConfigs.getByName("release")
         }
     }
 
