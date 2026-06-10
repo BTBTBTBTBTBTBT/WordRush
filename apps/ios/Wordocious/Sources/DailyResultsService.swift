@@ -124,6 +124,16 @@ enum DailyResultsService {
         hintsUsed: Int = 0
     ) async -> Double? {
         guard DailyScoring.config[gameMode.rawValue] != nil else { return nil }
+        // Optimistic local update FIRST (before any network) so the home grid's
+        // completed state flips the instant the game ends (web parity: the
+        // 'daily-completion' window event).
+        await MainActor.run {
+            NotificationCenter.default.post(
+                name: DailyCompletionsStore.completionPosted,
+                object: DailyCompletion(
+                    gameMode: gameMode.rawValue, completed: completed,
+                    guessCount: guessCount, timeSeconds: Double(timeSeconds)))
+        }
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return nil }
         let userId = session.user.id.uuidString

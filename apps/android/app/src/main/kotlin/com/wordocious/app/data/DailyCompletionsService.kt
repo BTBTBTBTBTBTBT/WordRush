@@ -50,6 +50,20 @@ object DailyCompletionsService {
     // first render so cold launches don't flash unbadged cards while the
     // network fetch runs.
 
+    /**
+     * Optimistic local update the moment a daily finishes (web 'daily-completion'
+     * event parity): writes the completion into the day-keyed cache so the home
+     * grid shows "completed" instantly when the player returns — HomeScreen
+     * seeds from this cache on every (re)composition. Never downgrades a win.
+     */
+    fun noteCompletion(gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Double) {
+        val current = readCache().toMutableMap()
+        val existing = current[gameMode]
+        if (existing != null && existing.completed && !completed) return
+        current[gameMode] = Completion(gameMode = gameMode, completed = completed, guessCount = guessCount, timeSeconds = timeSeconds)
+        writeCache(current)
+    }
+
     fun readCache(): Map<String, Completion> {
         if (prefs.getString(CACHE_DAY_KEY, null) != todayLocalDate()) return emptyMap()
         val json = prefs.getString(CACHE_KEY, null) ?: return emptyMap()

@@ -36,8 +36,21 @@ final class DailyCompletionsStore: ObservableObject {
     var allDone: Bool { completedCount >= Self.totalDailyModes }
     var flawless: Bool { allDone && wonCount >= Self.totalDailyModes }
 
+    /// Posted by DailyResultsService the moment a daily finishes — the native
+    /// analogue of the web's `daily-completion` window event, so the home grid
+    /// flips to "completed" instantly instead of waiting for a refetch on the
+    /// next tab switch.
+    static let completionPosted = Notification.Name("wordocious.daily-completion")
+
     init() {
         byMode = Self.readCache() ?? [:]
+        NotificationCenter.default.addObserver(forName: Self.completionPosted, object: nil, queue: .main) { [weak self] note in
+            guard let self, let c = note.object as? DailyCompletion else { return }
+            // Best-result semantics: never downgrade a recorded win on replay.
+            if let existing = self.byMode[c.gameMode], existing.completed && !c.completed { return }
+            self.byMode[c.gameMode] = c
+            Self.writeCache(self.byMode)
+        }
     }
 
     func load() async {
