@@ -49,7 +49,8 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         visible = true
-        delay(3000)
+        // Web: 3s dwell, extended to 5s when sweep/flawless chips need reading.
+        delay(if (result.sweepBonus + result.flawlessBonus > 0) 5000L else 3000L)
         visible = false
         delay(320)
         onDismiss()
@@ -75,12 +76,17 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
                 Icon(Icons.Filled.Star, null, tint = Color(0xFFFDE047), modifier = Modifier.size(18.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("+${result.totalXp} XP", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
-                    if (result.streakBonus > 0 || result.dailyBonus > 0) {
+                    if (result.streakBonus > 0 || result.dailyBonus > 0 || result.sweepBonus > 0 || result.flawlessBonus > 0) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (result.streakBonus > 0)
                                 Text("+${result.streakBonus} streak", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDDD6FE))
                             if (result.dailyBonus > 0)
                                 Text("+${result.dailyBonus} daily", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDDD6FE))
+                            // Web xp-toast: distinct pink "+200 sweep" / yellow "+400 flawless" chips.
+                            if (result.sweepBonus > 0)
+                                Text("+${result.sweepBonus} sweep", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFFBCFE8))
+                            if (result.flawlessBonus > 0)
+                                Text("+${result.flawlessBonus} flawless", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFFFDE047))
                         }
                     }
                     if (result.leveledUp) {

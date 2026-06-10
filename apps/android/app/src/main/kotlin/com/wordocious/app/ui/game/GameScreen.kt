@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
@@ -489,6 +491,9 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
         // fill, 2dp accent stroke, house icon, shadow. Visible in play + post-game.
         CornerHomeButton(accent = accent, onClick = onBack, modifier = Modifier.padding(8.dp))
 
+        // Sound toggle (top-right) — web SoundToggle sits on every game header.
+        SoundToggleButton(accent = accent, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
+
         // Rejection toast — web: absolute @ top 90px, dark pill, white 12px bold
         // ("Not enough letters" / "Not in word list" / "Already guessed").
         val rejectMsg by vm.rejectMessage.collectAsState()
@@ -503,6 +508,39 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
                 )
             }
         }
+    }
+}
+
+/**
+ * Web game/sound-toggle.tsx: 44px circle, surface fill, 2px accent stroke,
+ * Volume2/VolumeX icon, active scale press. Persists to the same pref the
+ * Settings "Sound Effects" switch uses.
+ */
+@Composable
+internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
+    var enabled by remember {
+        mutableStateOf(com.wordocious.app.data.SettingsPref.get(com.wordocious.app.data.SettingsPref.SOUND, true))
+    }
+    val circle = androidx.compose.foundation.shape.CircleShape
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .shadow(4.dp, circle, clip = false)
+            .clip(circle)
+            .background(WTheme.surface)
+            .border(2.dp, accent, circle)
+            .clickableNoRipple {
+                enabled = !enabled
+                com.wordocious.app.data.SettingsPref.set(com.wordocious.app.data.SettingsPref.SOUND, enabled)
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            if (enabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+            contentDescription = if (enabled) "Mute sounds" else "Unmute sounds",
+            tint = accent,
+            modifier = Modifier.size(20.dp),
+        )
     }
 }
 

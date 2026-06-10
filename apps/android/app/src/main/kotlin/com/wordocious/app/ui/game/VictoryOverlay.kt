@@ -63,6 +63,14 @@ fun VictoryOverlay(
     val multi = state.boards.size > 1
     val boardsSolved = state.boards.count { it.status == GameStatus.WON }
 
+    // Web parity: victory-animation plays the success jingle on mount,
+    // game-over-animation the descending jingle (gauntlet losses never mount
+    // this overlay, so they stay silent — matches web/iOS).
+    LaunchedEffect(Unit) {
+        if (won) com.wordocious.app.data.SoundManager.playSuccess()
+        else com.wordocious.app.data.SoundManager.playGameOver()
+    }
+
     // Spring-in scale of the card
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { shown = true }

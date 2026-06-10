@@ -53,7 +53,8 @@ fun KeyboardView(
     // Quadrant mode (Quad/Octo/Deliverance): per-board states drive sub-cell colors.
     perBoardStates: List<Map<String, TileState>>? = null,
 ) {
-    // Web parity (keyboard.tsx): light haptic on letters, medium on ENTER, none on BACK.
+    // Web parity (keyboard.tsx): playKeyTap on EVERY key; light haptic on
+    // letters, medium on ENTER, none on BACK.
     val haptics = LocalHapticFeedback.current
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
@@ -66,10 +67,14 @@ fun KeyboardView(
                 horizontalArrangement = Arrangement.spacedBy(5.dp), // spec key spacing 5
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (rowIdx == 2) WideKey("BACK") { onDelete() }
+                if (rowIdx == 2) WideKey("BACK") {
+                    com.wordocious.app.data.SoundManager.playKeyTap()
+                    onDelete()
+                }
                 row.forEach { ch ->
                     val tap = {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        com.wordocious.app.data.SoundManager.playKeyTap()
                         onKey(ch)
                     }
                     if (perBoardStates != null) {
@@ -81,6 +86,7 @@ fun KeyboardView(
                 }
                 if (rowIdx == 2) WideKey("ENTER") {
                     haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    com.wordocious.app.data.SoundManager.playKeyTap()
                     onEnter()
                 }
             }

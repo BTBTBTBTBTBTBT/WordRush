@@ -166,6 +166,7 @@ class GameViewModel(
         if (_input.value.length == wordLength) _invalidWord.value = true
         _shakeKey.value = _shakeKey.value + 1
         _rejectMessage.value = message
+        com.wordocious.app.data.SoundManager.playInvalid()
         rejecting = true
         rejectJob?.cancel()
         rejectJob = viewModelScope.launch {

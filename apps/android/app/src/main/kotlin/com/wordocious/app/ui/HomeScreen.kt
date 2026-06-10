@@ -26,10 +26,12 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -76,6 +78,20 @@ fun HomeScreen(
     // users get a Daily/Unlimited toggle and replay unlimited (fresh seeds).
     val isPro = com.wordocious.app.data.AuthService.isProActive
     var limitModal by remember { mutableStateOf<ModeCard?>(null) }
+    // Contextual Pro prompt (web pro-prompt-modal.tsx): streak >= 7, not Pro,
+    // not previously dismissed (local pref for instant gating + server
+    // profiles.pro_prompt_shown for cross-device honor).
+    val authProfile by com.wordocious.app.data.AuthService.profile.collectAsState()
+    var proPromptDismissed by remember {
+        mutableStateOf(com.wordocious.app.data.SettingsPref.get("pro-prompt-shown", false))
+    }
+    val showProPrompt = !proPromptDismissed && authProfile?.proPromptShown != true &&
+        !isPro && (authProfile?.dailyLoginStreak ?: 0) >= 7
+    val dismissProPrompt: () -> Unit = {
+        proPromptDismissed = true
+        com.wordocious.app.data.SettingsPref.set("pro-prompt-shown", true)
+        com.wordocious.app.data.AuthService.markProPromptShown()
+    }
     var playMode by remember { mutableStateOf(PlayMode.DAILY) }
     val unlimitedMode = isPro && playMode == PlayMode.UNLIMITED
 
@@ -138,6 +154,59 @@ fun HomeScreen(
                 onViewPuzzle = { onSelectMode(card, false) },
             )
         }
+
+        // Pro-prompt banner pinned to the bottom (web: fixed bottom-16 card).
+        if (showProPrompt) {
+            ProPromptBanner(
+                modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 16.dp),
+                onGoPro = { dismissProPrompt(); onGoPro() },
+                onDismiss = dismissProPrompt,
+            )
+        }
+    }
+}
+
+/**
+ * Web modals/pro-prompt-modal.tsx: gold-bordered surface card with a Crown,
+ * "You're on a streak!" copy, a Go Pro gradient button, and an X dismiss.
+ */
+@Composable
+private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, onDismiss: () -> Unit) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(WTheme.surface)
+            .border(1.5.dp, Color(0xFFFDE68A), RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(
+            androidx.compose.material.icons.Icons.Filled.WorkspacePremium, null,
+            tint = Color(0xFFD97706), modifier = Modifier.size(32.dp),
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("You're on a streak!", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+            Text(
+                "Upgrade to Pro for ad-free play, stats, shields, and more.",
+                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            )
+        }
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                .clickableNoRipple(onGoPro)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Text("Go Pro", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+        }
+        Icon(
+            androidx.compose.material.icons.Icons.Filled.Close, null,
+            tint = WTheme.textMuted,
+            modifier = Modifier.size(16.dp).clickableNoRipple(onDismiss),
+        )
     }
 }
 

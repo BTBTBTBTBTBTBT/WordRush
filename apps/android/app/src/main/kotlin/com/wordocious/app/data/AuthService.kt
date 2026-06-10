@@ -40,6 +40,7 @@ data class Profile(
     @SerialName("silver_medals") val silverMedals: Int = 0,
     @SerialName("bronze_medals") val bronzeMedals: Int = 0,
     @SerialName("has_onboarded") val hasOnboarded: Boolean = true,
+    @SerialName("pro_prompt_shown") val proPromptShown: Boolean = false,
     @SerialName("is_admin") val isAdmin: Boolean = false,
 )
 
@@ -144,6 +145,17 @@ object AuthService {
         } catch (_: Exception) {}
         _profile.value = null
         _isAuthenticated.value = false
+    }
+
+    /** Persist pro-prompt dismissal cross-device (web pro-prompt-modal dismiss). */
+    fun markProPromptShown() {
+        val uid = userId ?: return
+        scope.launch {
+            runCatching {
+                client.postgrest["profiles"].update({ set("pro_prompt_shown", true) }) { filter { eq("id", uid) } }
+            }
+            refreshProfile()
+        }
     }
 
     /** Load profile row from `profiles` table. */

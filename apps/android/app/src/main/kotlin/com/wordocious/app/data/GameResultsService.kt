@@ -16,10 +16,12 @@ import kotlin.math.roundToInt
  * the `user_stats` aggregate (wins/losses/games/best/avg/fastest), and the
  * `profiles` XP + level + win-streak + daily-login-streak (+ 7-day shield grant).
  *
- * The daily_results leaderboard row stays in DailyResultsService (called by
- * PostGameScreen, idempotent best-score) so this service never double-writes it.
- * The daily Sweep/Flawless bonus is server-cron + iOS-only for now (Android has
- * no MedalService) — noted as deferred, the live XP flow is unaffected.
+ * For daily seeds this also records the daily_results row FIRST (idempotent
+ * best-score upsert; PostGameScreen's later call is a harmless no-op), then
+ * awards streak/perfect medals and the one-shot Daily Sweep (+200) / Flawless
+ * Victory (+400) bonuses via MedalService — matching web stats-service ordering
+ * (recordDailyResult → awardDailyBonusesIfComplete) so the 9th completion of
+ * the day sees all 9 rows.
  *
  * Call EXACTLY ONCE per live finish (gated in GameScreen on
  * isFinished && !wasFinishedOnEntry) — `matches` inserts and the wins/xp deltas
@@ -39,6 +41,8 @@ object GameResultsService {
         val totalXp: Int,
         val newLevel: Int,
         val leveledUp: Boolean,
+        val sweepBonus: Int = 0,
+        val flawlessBonus: Int = 0,
     )
 
     // ── matches insert (solo: player2_id = null) ─────────────────────────────────
@@ -269,7 +273,40 @@ object GameResultsService {
         val userId = AuthService.userId ?: return null
         updateUserStats(userId, gameMode.name, playType, won, guessCount, timeSeconds)
         recordSoloMatch(gameMode, won, guessCount, timeSeconds, seed, solutions, guesses, hintsUsed)
-        val xp = updateProfileProgression(userId, won, seed)
+        var xp = updateProfileProgression(userId, won, seed)
+
+        // Daily extras — web stats-service ordering: daily row first, then
+        // medals + the one-shot sweep/flawless bonuses (all idempotent).
+        if (isDailySeed(seed) && playType == "solo") {
+            DailyResultsService.recordDailyResult(
+                mode = gameMode, completed = won, guessCount = guessCount,
+                elapsedSeconds = timeSeconds, boardsSolved = boardsSolved,
+                totalBoards = totalBoards, hintsUsed = hintsUsed,
+            )
+            val today = com.wordocious.app.todayLocalDate()
+            MedalService.awardStreakMedals(userId, today)
+            MedalService.awardPerfectMedal(
+                userId, gameMode.name, today,
+                guessCount = guessCount, boardsSolved = boardsSolved,
+                totalBoards = totalBoards, completed = won,
+            )
+            val (sweep, flawless) = MedalService.awardDailyBonusesIfComplete(userId)
+            if (sweep + flawless > 0) {
+                xp = xp?.let {
+                    val newTotal = it.totalXp + sweep + flawless
+                    it.copy(
+                        totalXp = newTotal,
+                        sweepBonus = sweep,
+                        flawlessBonus = flawless,
+                    )
+                } ?: XpResult(
+                    xpGain = 0, streakBonus = 0, dailyBonus = 0,
+                    totalXp = sweep + flawless, newLevel = 1, leveledUp = false,
+                    sweepBonus = sweep, flawlessBonus = flawless,
+                )
+            }
+        }
+
         // Refresh in-memory profile so XP/streak/level reflect immediately on Profile/Home.
         AuthService.refreshProfile()
         return xp
