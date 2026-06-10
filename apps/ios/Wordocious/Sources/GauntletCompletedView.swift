@@ -187,6 +187,8 @@ struct GauntletResultsView: View {
     var elapsedMsFallback: Int = 0
     var onHome: () -> Void
     var onShare: () -> Void
+    /// Pro Unlimited only (web gauntlet-results showPlayAgain).
+    var onPlayAgain: (() -> Void)? = nil
 
     @State private var appeared = false
 
@@ -217,6 +219,9 @@ struct GauntletResultsView: View {
                     HStack(spacing: 16) {
                         Button("Home", action: onHome).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted).underline()
                         Button("Share", action: onShare).font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
+                        if let onPlayAgain {
+                            Button("Play Again", action: onPlayAgain).font(Brand.font(13, .bold)).foregroundStyle(Color(hex: 0xA855F7)).underline()
+                        }
                     }
                     .modifier(RiseIn(appeared: appeared, delay: 0.25))
                     if isDaily { DailyRankBadge(gameMode: mode).modifier(RiseIn(appeared: appeared, delay: 0.3)) }

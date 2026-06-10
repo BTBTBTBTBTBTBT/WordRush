@@ -25,6 +25,17 @@ struct HomeView: View {
     @State private var showShieldModal = false
     @State private var shieldChecked = false
 
+    /// An Unlimited ProperNoundle run (PN has its own view, not GameScreen).
+    struct PNGame: Identifiable {
+        let seed: String
+        var id: String { seed }
+    }
+    @State private var pnGame: PNGame?
+
+    private func freshPNSeed() -> String {
+        "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
+    }
+
     /// A game whose seed was resolved at tap time (Unlimited play).
     struct ActiveGame: Identifiable, Equatable {
         let seed: String; let mode: GameMode; let title: String
@@ -108,7 +119,18 @@ struct HomeView: View {
             // not on the board and not on the results/victory screen.
             .fullScreenCover(item: $pendingGame) { g in
                 NavigationStack {
-                    GameScreen(seed: g.seed, mode: g.mode, title: g.title)
+                    GameScreen(seed: g.seed, mode: g.mode, title: g.title, onPlayAgain: {
+                        // Mint a fresh Unlimited seed for the same mode and swap it in
+                        // (item change re-presents the cover with a new game).
+                        let fresh = "unlimited-\(g.mode.rawValue)-\(Int(Date().timeIntervalSince1970))"
+                        UserDefaults.standard.set(fresh, forKey: "unlimited-current-\(g.mode.rawValue)")
+                        pendingGame = ActiveGame(seed: fresh, mode: g.mode, title: g.title)
+                    })
+                }
+            }
+            .fullScreenCover(item: $pnGame) { g in
+                NavigationStack {
+                    ProperNoundleView(seed: g.seed, onPlayAgain: { pnGame = PNGame(seed: freshPNSeed()) })
                 }
             }
             .fullScreenCover(item: $solvedMode) { m in
@@ -438,8 +460,15 @@ struct HomeView: View {
                 .buttonStyle(.plain)
             }
         } else if mode.id == "propernoundle" {
-            NavigationLink { ProperNoundleView() } label: { cardBody(mode, locked: false) }
-                .buttonStyle(.plain)
+            if effectiveMode == .unlimited {
+                // Unlimited PN: fresh random puzzle per tap (was wrongly
+                // reopening the daily puzzle).
+                Button { pnGame = PNGame(seed: freshPNSeed()) } label: { cardBody(mode, locked: false) }
+                    .buttonStyle(.plain)
+            } else {
+                NavigationLink { ProperNoundleView() } label: { cardBody(mode, locked: false) }
+                    .buttonStyle(.plain)
+            }
         } else if mode.id == "vs" {
             NavigationLink { VSLobbyView() } label: { cardBody(mode, locked: false) }
                 .buttonStyle(.plain)

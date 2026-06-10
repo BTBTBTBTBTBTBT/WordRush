@@ -180,10 +180,17 @@ final class ProperNoundleVM: ObservableObject {
 }
 
 struct ProperNoundleView: View {
-    @StateObject private var vm = ProperNoundleVM()
+    @StateObject private var vm: ProperNoundleVM
+    /// Pro Unlimited "Play Again" — HomeView swaps in a fresh non-daily seed.
+    var onPlayAgain: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var adShown = false
     @State private var showVictory = false
+
+    init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
+        _vm = StateObject(wrappedValue: ProperNoundleVM(seed: seed))
+        self.onPlayAgain = onPlayAgain
+    }
 
     var body: some View {
         ZStack {
@@ -306,6 +313,11 @@ struct ProperNoundleView: View {
             HStack(spacing: 18) {
                 Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
                 Button { shareResult() } label: { Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(13, .black)) }
+                // Pro Unlimited only (web: Play Again on non-daily ProperNoundle).
+                if let onPlayAgain, !vm.isDaily, !vm.isVersus, AuthService.shared.isProActive {
+                    Button(action: onPlayAgain) { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
+                        .foregroundStyle(Color(hex: 0xD97706))
+                }
             }
             .foregroundStyle(pnAccent).padding(.top, 2)
             DailyRankBadge(gameMode: .propernoundle)

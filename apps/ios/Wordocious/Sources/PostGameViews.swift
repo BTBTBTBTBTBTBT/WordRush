@@ -81,6 +81,8 @@ struct FinishedStatsHeader: View {
     let totalBoards: Int
     var onHome: () -> Void
     var onShare: (() -> Void)? = nil
+    /// Pro Unlimited only (web: amber "Play Again" on non-daily games).
+    var onPlayAgain: (() -> Void)? = nil
 
     private var timeStr: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
     private var isMulti: Bool { totalBoards > 1 }
@@ -110,6 +112,10 @@ struct FinishedStatsHeader: View {
                 if let onShare {
                     Button("Share", action: onShare)
                         .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
+                }
+                if let onPlayAgain {
+                    Button(won ? "Play Again" : "Try Again", action: onPlayAgain)
+                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xD97706)).underline()
                 }
             }
         }

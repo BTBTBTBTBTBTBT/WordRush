@@ -2,6 +2,9 @@ import SwiftUI
 import WordociousCore
 
 struct GameScreen: View {
+    /// Pro Unlimited "Play Again": HomeView swaps in a fresh non-daily seed.
+    var onPlayAgain: (() -> Void)? = nil
+
     @StateObject private var vm: GameViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
@@ -13,9 +16,16 @@ struct GameScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let mode: GameMode
 
-    init(seed: String, mode: GameMode, title: String) {
+    init(seed: String, mode: GameMode, title: String, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: GameViewModel(seed: seed, mode: mode))
         self.mode = mode
+        self.onPlayAgain = onPlayAgain
+    }
+
+    /// Web parity: Play Again only on non-daily (Unlimited) games for Pro.
+    private var playAgainAction: (() -> Void)? {
+        guard !vm.isDaily, AuthService.shared.isProActive else { return nil }
+        return onPlayAgain
     }
 
     /// Time for the final row's flip to play out (flip duration + per-column
@@ -40,7 +50,8 @@ struct GameScreen: View {
                 if vm.isFinished && vm.isGauntlet, let g = vm.state.gauntlet {
                     GauntletResultsView(progress: g, won: vm.status == .won, mode: mode, isDaily: vm.isDaily,
                                         elapsedMsFallback: vm.elapsedSeconds * 1000,
-                                        onHome: { dismiss() }, onShare: { share() })
+                                        onHome: { dismiss() }, onShare: { share() },
+                                        onPlayAgain: playAgainAction)
                 // Other modes hold the in-play board until the winning row's flip completes.
                 } else if vm.isFinished && revealComplete {
                     ScrollView {
@@ -51,7 +62,8 @@ struct GameScreen: View {
                                 timeSeconds: vm.elapsedSeconds,
                                 boardsSolved: vm.boards.filter { $0.status == .won }.count,
                                 totalBoards: vm.boardCount,
-                                onHome: { dismiss() }, onShare: { share() })
+                                onHome: { dismiss() }, onShare: { share() },
+                                onPlayAgain: playAgainAction)
                             if vm.isDaily { DailyRankBadge(gameMode: mode) }
                             BoardLayout(vm: vm, availableWidth: root.size.width - 20)
                             ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
