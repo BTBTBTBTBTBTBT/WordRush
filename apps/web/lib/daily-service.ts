@@ -132,7 +132,10 @@ export function calculateVsCompositeScore(
   vsLosses: number,
   vsGames: number,
 ): number {
-  if (vsGames < 3) return 0; // Minimum games to qualify
+  // No minimum-games floor: freemium players get ONE VS game/day, so a
+  // 3-game qualification gate would leave their score permanently 0. The
+  // formula already weights volume (wins*100 + games*5), so multi-game
+  // players outrank single-game players naturally.
   const winRate = vsWins / Math.max(1, vsGames);
   return Math.round((vsWins * 100 + winRate * 50 + vsGames * 5) * 100) / 100;
 }

@@ -67,7 +67,7 @@ enum DailyResultsService {
     /// Mirrors lib/daily-service.ts calculateVsCompositeScore — needs ≥3 games to
     /// qualify; rewards win count, win rate, and volume.
     static func vsCompositeScore(wins: Int, losses: Int, games: Int) -> Double {
-        if games < 3 { return 0 }
+        // No minimum-games floor (freemium = 1 VS/day; volume terms still rank multi-game players higher).
         let winRate = Double(wins) / Double(max(1, games))
         return (((Double(wins) * 100) + (winRate * 50) + (Double(games) * 5)) * 100).rounded() / 100
     }

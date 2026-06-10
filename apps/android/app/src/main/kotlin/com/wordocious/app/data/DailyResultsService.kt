@@ -77,9 +77,8 @@ object DailyResultsService {
         }
     }
 
-    /** Web calculateVsCompositeScore: 0 until 3 games qualify. */
+    /** Web calculateVsCompositeScore — no minimum-games floor (freemium = 1 VS/day). */
     private fun vsCompositeScore(wins: Int, losses: Int, games: Int): Double {
-        if (games < 3) return 0.0
         val winRate = wins.toDouble() / max(1, games)
         return round((wins * 100 + winRate * 50 + games * 5) * 100) / 100
     }
