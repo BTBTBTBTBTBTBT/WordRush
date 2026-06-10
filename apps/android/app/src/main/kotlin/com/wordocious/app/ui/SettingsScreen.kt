@@ -61,6 +61,15 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     var dailyReminder by remember { mutableStateOf(SettingsPref.get(SettingsPref.DAILY_REMINDER, false)) }
     var colorblind by remember { mutableStateOf(SettingsPref.get(SettingsPref.COLORBLIND, false)) }
     var reducedMotion by remember { mutableStateOf(SettingsPref.get(SettingsPref.REDUCED_MOTION, false)) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // Permission launcher for the daily-reminder toggle (API 33+ runtime perm).
+    val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) com.wordocious.app.data.NotificationService.schedule(context) }
+    // Account deletion flow (Play compliance — web/iOS parity).
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         // Title bar with Done
@@ -118,6 +127,20 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 Card {
                     ToggleRow("Daily Reminders", "A nudge to play today's puzzles", dailyReminder) {
                         dailyReminder = it; SettingsPref.set(SettingsPref.DAILY_REMINDER, it)
+                        if (it) {
+                            // API 33+: ask for POST_NOTIFICATIONS before scheduling.
+                            if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                                androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context, android.Manifest.permission.POST_NOTIFICATIONS,
+                                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                com.wordocious.app.data.NotificationService.schedule(context)
+                            }
+                        } else {
+                            com.wordocious.app.data.NotificationService.cancel(context)
+                        }
                     }
                 }
             }
@@ -158,6 +181,17 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             )
 
             Text(
+                "Delete Account",
+                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFDC2626))
+                    .clickableNoRipple { showDeleteConfirm = true }
+                    .padding(vertical = 12.dp),
+            )
+
+            Text(
                 "Wordocious · v1.0.0",
                 fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -165,6 +199,48 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             )
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    if (showDeleteConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { if (!deleting) showDeleteConfirm = false },
+            title = { Text("Delete your account?", fontWeight = FontWeight.Black) },
+            text = {
+                Text(
+                    "This will permanently delete your profile, stats, streak, medals, " +
+                        "achievements, and all game data. This action cannot be undone.",
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    enabled = !deleting,
+                    onClick = {
+                        deleting = true
+                        scope.launch {
+                            val ok = AuthService.deleteAccount()
+                            deleting = false
+                            showDeleteConfirm = false
+                            if (ok) onDone() else deleteError = true
+                        }
+                    },
+                ) { Text(if (deleting) "Deleting…" else "Delete Forever", color = Color(0xFFDC2626), fontWeight = FontWeight.Black) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(enabled = !deleting, onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
+    if (deleteError) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { deleteError = false },
+            title = { Text("Couldn't delete account", fontWeight = FontWeight.Black) },
+            text = { Text("Please try again or contact support@wordocious.com.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { deleteError = false }) { Text("OK") }
+            },
+        )
     }
 }
 

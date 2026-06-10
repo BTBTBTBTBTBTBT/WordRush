@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wordocious.app.GameViewModel
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.DailyResultsService
 import com.wordocious.app.data.GameResultsService
 import com.wordocious.app.data.VSMatchEnded
 import com.wordocious.app.data.VSMatchFound
@@ -193,7 +194,14 @@ class VSMatchViewModel(
         result = data
         screen = VSScreen.RESULT
         recordResult(data)
-        if (dailyVsActive) VSPlayLimit.markPlayedToday()
+        if (dailyVsActive) {
+            VSPlayLimit.markPlayedToday()
+            // Web parity (stats-service): daily VS matches also land on the
+            // daily VS leaderboard (play_type='vs' row in daily_results).
+            viewModelScope.launch {
+                DailyResultsService.recordDailyVsResult(mode, data.winner == "player")
+            }
+        }
     }
 
     private fun recordResult(data: VSMatchEnded) {

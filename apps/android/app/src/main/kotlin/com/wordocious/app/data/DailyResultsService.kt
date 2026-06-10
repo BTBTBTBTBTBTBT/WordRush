@@ -39,6 +39,72 @@ object DailyResultsService {
         @SerialName("hints_used") val hintsUsed: Int = 0,
     )
 
+    /**
+     * Record a daily VS result — ports web daily-service recordDailyVsResult:
+     * one play_type='vs' row per (user, day, mode) accumulating vs_wins/losses/
+     * games, scored by calculateVsCompositeScore (0 until 3 games).
+     */
+    suspend fun recordDailyVsResult(mode: GameMode, won: Boolean) {
+        val userId = AuthService.userId ?: return
+        val day = todayLocalDate()
+        runCatching {
+            val existing = client.postgrest["daily_results"]
+                .select(io.github.jan.supabase.postgrest.query.Columns.raw("id, vs_wins, vs_losses, vs_games")) {
+                    filter { eq("user_id", userId); eq("day", day); eq("game_mode", mode.name); eq("play_type", "vs") }
+                    limit(1)
+                }
+                .decodeSingleOrNull<VsRow>()
+            if (existing != null) {
+                val wins = existing.vsWins + if (won) 1 else 0
+                val losses = existing.vsLosses + if (won) 0 else 1
+                val games = existing.vsGames + 1
+                client.postgrest["daily_results"].update({
+                    set("vs_wins", wins); set("vs_losses", losses); set("vs_games", games)
+                    set("composite_score", vsCompositeScore(wins, losses, games))
+                    set("completed", true)
+                }) { filter { eq("id", existing.id) } }
+            } else {
+                val wins = if (won) 1 else 0
+                val losses = if (won) 0 else 1
+                client.postgrest["daily_results"].insert(
+                    VsInsert(
+                        userId = userId, day = day, gameMode = mode.name,
+                        vsWins = wins, vsLosses = losses, vsGames = 1,
+                        compositeScore = vsCompositeScore(wins, losses, 1),
+                    )
+                )
+            }
+        }
+    }
+
+    /** Web calculateVsCompositeScore: 0 until 3 games qualify. */
+    private fun vsCompositeScore(wins: Int, losses: Int, games: Int): Double {
+        if (games < 3) return 0.0
+        val winRate = wins.toDouble() / max(1, games)
+        return round((wins * 100 + winRate * 50 + games * 5) * 100) / 100
+    }
+
+    @Serializable
+    private data class VsRow(
+        val id: String,
+        @SerialName("vs_wins") val vsWins: Int = 0,
+        @SerialName("vs_losses") val vsLosses: Int = 0,
+        @SerialName("vs_games") val vsGames: Int = 0,
+    )
+
+    @Serializable
+    private data class VsInsert(
+        @SerialName("user_id") val userId: String,
+        val day: String,
+        @SerialName("game_mode") val gameMode: String,
+        @SerialName("play_type") val playType: String = "vs",
+        val completed: Boolean = true,
+        @SerialName("vs_wins") val vsWins: Int,
+        @SerialName("vs_losses") val vsLosses: Int,
+        @SerialName("vs_games") val vsGames: Int,
+        @SerialName("composite_score") val compositeScore: Double,
+    )
+
     @Serializable
     private data class ExistingRow(
         val id: String,

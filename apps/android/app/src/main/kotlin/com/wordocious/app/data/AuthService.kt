@@ -147,6 +147,28 @@ object AuthService {
         _isAuthenticated.value = false
     }
 
+    /**
+     * Delete the account via the web's service-role endpoint (same as iOS):
+     * POST https://wordocious.com/api/account/delete with the Supabase Bearer
+     * token — the endpoint cascades user_stats/matches/daily_results/medals/
+     * achievements/profile then the auth user. Signs out locally on success.
+     */
+    suspend fun deleteAccount(): Boolean = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        val token = client.auth.currentSessionOrNull()?.accessToken ?: return@withContext false
+        runCatching {
+            val conn = java.net.URL("https://wordocious.com/api/account/delete")
+                .openConnection() as java.net.HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Authorization", "Bearer $token")
+            conn.connectTimeout = 15000
+            conn.readTimeout = 15000
+            val ok = conn.responseCode in 200..299
+            conn.disconnect()
+            if (ok) signOut()
+            ok
+        }.getOrDefault(false)
+    }
+
     /** Persist pro-prompt dismissal cross-device (web pro-prompt-modal dismiss). */
     fun markProPromptShown() {
         val uid = userId ?: return

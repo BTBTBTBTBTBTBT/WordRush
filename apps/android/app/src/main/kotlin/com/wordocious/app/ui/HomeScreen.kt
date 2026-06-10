@@ -406,6 +406,28 @@ private fun fmtShort(secs: Int): String =
 
 @Composable
 private fun LiveBanner() {
+    // Web useLivePlayerCount: poll {server}/presence every 10s for body.online;
+    // null until the first success, keep last value on errors.
+    val count by androidx.compose.runtime.produceState<Int?>(initialValue = null) {
+        while (true) {
+            val online = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching {
+                    val conn = java.net.URL(com.wordocious.app.data.VSConfig.SERVER_URL + "/presence")
+                        .openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout = 8000; conn.readTimeout = 8000
+                    val body = conn.inputStream.bufferedReader().readText()
+                    conn.disconnect()
+                    kotlinx.serialization.json.Json.parseToJsonElement(body)
+                        .let { it as? kotlinx.serialization.json.JsonObject }
+                        ?.get("online")?.let { el ->
+                            (el as? kotlinx.serialization.json.JsonPrimitive)?.content?.toIntOrNull()
+                        }
+                }.getOrNull()
+            }
+            if (online != null) value = online
+            kotlinx.coroutines.delay(10_000)
+        }
+    }
     Row(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
@@ -417,7 +439,10 @@ private fun LiveBanner() {
     ) {
         Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF22C55E)))
         Text("LIVE", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        Text("Players online", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        Text(
+            count?.let { "$it ${if (it == 1) "player" else "players"} online" } ?: "Players online",
+            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+        )
     }
 }
 
