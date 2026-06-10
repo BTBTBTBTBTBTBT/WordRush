@@ -9,7 +9,7 @@ import { Trophy, Clock } from 'lucide-react';
 import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 
-export function VsDeliverance({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime }: VsGameComponentProps) {
+export function VsDeliverance({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
     initializeGame(seed, GameMode.RESCUE)
@@ -68,8 +68,9 @@ export function VsDeliverance({ seed, mode, onBoardSolved, onCompleted, onGuessS
       setCurrentGuess(prev => prev.slice(0, -1));
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess(prev => prev + key);
+      onTyping?.();
     }
-  }, [state, currentGuess]);
+  }, [state, currentGuess, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

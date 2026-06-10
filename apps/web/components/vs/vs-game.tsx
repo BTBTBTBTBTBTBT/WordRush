@@ -1,17 +1,30 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { GameMode, generateDailySeed, generateSolutionsFromSeed } from '@wordle-duel/core';
+import {
+  GameMode,
+  generateDailySeed,
+  generateSolutionsFromSeed,
+  generateSolutionsFromSeedForLength,
+  evaluateGuess,
+} from '@wordle-duel/core';
 import Link from 'next/link';
-import { SocketIOMatchService } from '@/lib/adapters/match-service';
+import { SocketIOMatchService, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
 import { usePresenceId } from '@/lib/presence-id';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordMatch, type XpResult } from '@/lib/stats-service';
+import { fetchHeadToHead, fetchVsProfile, type HeadToHeadRecord, type VsProfile } from '@/lib/head-to-head';
 import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
-import { Crown, Loader2, Home, RotateCcw, Trophy, X } from 'lucide-react';
+import { playOpponentThunk } from '@/lib/sounds';
+import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { Confetti } from '@/components/effects/confetti';
+import { MatchIntro, headToHeadLine } from './match-intro';
+import { VsMatchHeader } from './vs-match-header';
+import { FinalBoards, ComparisonBars } from './vs-result-detail';
+import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
 import {
   hasPlayedModeToday,
   recordModePlayed,
@@ -151,6 +164,66 @@ const MODE_ACCENT_COLORS: Record<string, string> = {
   [GameMode.DUEL_7]: '#84cc16',
 };
 
+// Board count / max guesses / word length per mode — mirrors the server's
+// MODE_BOARD_COUNT + the core reducer's per-mode maxGuesses.
+const MODE_TOTAL_BOARDS: Record<string, number> = {
+  [GameMode.DUEL]: 1,
+  [GameMode.QUORDLE]: 4,
+  [GameMode.OCTORDLE]: 8,
+  [GameMode.SEQUENCE]: 4,
+  [GameMode.RESCUE]: 4,
+  [GameMode.GAUNTLET]: 21,
+  [GameMode.PROPERNOUNDLE]: 1,
+  [GameMode.DUEL_6]: 1,
+  [GameMode.DUEL_7]: 1,
+};
+
+const VS_MODE_MAX_GUESSES: Record<string, number> = {
+  [GameMode.DUEL]: 6,
+  [GameMode.QUORDLE]: 9,
+  [GameMode.OCTORDLE]: 13,
+  [GameMode.SEQUENCE]: 10,
+  [GameMode.RESCUE]: 6,
+  [GameMode.GAUNTLET]: 50,
+  [GameMode.PROPERNOUNDLE]: 6,
+  [GameMode.DUEL_6]: 7,
+  [GameMode.DUEL_7]: 8,
+};
+
+const MODE_WORD_LEN: Record<string, number> = {
+  [GameMode.DUEL_6]: 6,
+  [GameMode.DUEL_7]: 7,
+};
+
+/**
+ * Tug-of-war lead metric: boards solved dominate (weight 0.7); best-row
+ * greens add the within-board signal (weight 0.3). For single-board modes
+ * this reduces to greens-in-best-row until the solve flips boardsSolved.
+ */
+function computeVsProgress(
+  boardsSolved: number,
+  totalBoards: number,
+  bestGreens: number,
+  wordLen: number,
+): number {
+  return Math.min(
+    1,
+    (boardsSolved / Math.max(1, totalBoards)) * 0.7 + (bestGreens / Math.max(1, wordLen)) * 0.3,
+  );
+}
+
+/** Max count of CORRECT tiles in any single row across all boards. */
+function bestRowGreens(tiles: Record<number, string[][]>): number {
+  let best = 0;
+  for (const rows of Object.values(tiles)) {
+    for (const row of rows) {
+      const greens = row.filter((t) => t === 'CORRECT').length;
+      if (greens > best) best = greens;
+    }
+  }
+  return best;
+}
+
 export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   ensureDictionaryInitialized();
 
@@ -193,6 +266,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const [seed, setSeed] = useState('');
   const [startTime, setStartTime] = useState(0);
   const [queuePosition, setQueuePosition] = useState(0);
+  const [queueSize, setQueueSize] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(false);
   const [opponentProgress, setOpponentProgress] = useState({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
@@ -204,6 +278,70 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const [rematchState, setRematchState] = useState<'idle' | 'offered' | 'received' | 'declined'>('idle');
   const resultRecordedRef = useRef(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
+
+  // ── VS experience upgrade state ──
+  const [showIntro, setShowIntro] = useState(false);
+  const [opponentUserId, setOpponentUserId] = useState<string | null>(null);
+  const [opponentInfo, setOpponentInfo] = useState<VsProfile | null>(null);
+  const opponentNameRef = useRef('Opponent');
+  const [headToHead, setHeadToHead] = useState<HeadToHeadRecord | null>(null);
+  // My own play, mirrored locally so the header/result can render it:
+  // tiles are evaluated client-side from the seed-derived solutions.
+  const [myTiles, setMyTiles] = useState<Record<number, string[][]>>({});
+  const [myGuessLog, setMyGuessLog] = useState<OpponentGuessLogEntry[]>([]);
+  const myGuessLogRef = useRef<OpponentGuessLogEntry[]>([]);
+  const [myBoardsSolved, setMyBoardsSolved] = useState(0);
+  const [myStatus, setMyStatus] = useState<'won' | 'lost' | null>(null);
+  const [callout, setCallout] = useState<{ id: number; text: string } | null>(null);
+  const lastCalloutRef = useRef('');
+  const calloutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [opponentTyping, setOpponentTyping] = useState(false);
+  const typingHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSentRef = useRef(0);
+  const prevOppBoardsSolvedRef = useRef(0);
+  const [waitingClock, setWaitingClock] = useState(0);
+
+  const totalBoards = MODE_TOTAL_BOARDS[mode] || 1;
+  const modeMaxGuesses = VS_MODE_MAX_GUESSES[mode] || 6;
+  const wordLen = MODE_WORD_LEN[mode] || 5;
+
+  // Solutions derived from the match seed so my own guess rows can be
+  // evaluated locally for the tug-of-war bar and the result boards.
+  // ProperNoundle's answer is server-side until match end, so it stays
+  // empty (the result screen uses match_ended.solutions instead).
+  const mySolutions = useMemo(() => {
+    if (!seed || mode === GameMode.PROPERNOUNDLE) return [] as string[];
+    if (mode === GameMode.DUEL_6) return generateSolutionsFromSeedForLength(seed, 1, 6);
+    if (mode === GameMode.DUEL_7) return generateSolutionsFromSeedForLength(seed, 1, 7);
+    return generateSolutionsFromSeed(seed, totalBoards);
+  }, [seed, mode, totalBoards]);
+  const mySolutionsRef = useRef<string[]>([]);
+  mySolutionsRef.current = mySolutions;
+
+  const showCallout = useCallback((text: string) => {
+    // Dedupe consecutive identical callouts while one is still visible.
+    if (text === lastCalloutRef.current && calloutTimerRef.current) return;
+    lastCalloutRef.current = text;
+    setCallout({ id: Date.now(), text });
+    if (calloutTimerRef.current) clearTimeout(calloutTimerRef.current);
+    calloutTimerRef.current = setTimeout(() => {
+      setCallout(null);
+      calloutTimerRef.current = null;
+      lastCalloutRef.current = '';
+    }, 2500);
+  }, []);
+
+  const resetPerMatchState = useCallback(() => {
+    setMyTiles({});
+    setMyGuessLog([]);
+    myGuessLogRef.current = [];
+    setMyBoardsSolved(0);
+    setMyStatus(null);
+    setCallout(null);
+    setOpponentTyping(false);
+    prevOppBoardsSolvedRef.current = 0;
+    lastCalloutRef.current = '';
+  }, []);
 
   const formatTime = (ms: number) => {
     const totalSec = Math.round(ms / 1000);
@@ -223,11 +361,34 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
     matchService.onQueueStatus((data) => {
       setQueuePosition(data.position);
+      if (typeof data.queueSize === 'number') setQueueSize(data.queueSize);
     });
 
     matchService.onMatchFound((data) => {
       setShowCountdown(true);
       setCountdown(data.countdownSeconds);
+
+      // Match-intro splash: resolve the opponent's public profile and the
+      // all-time head-to-head record while the 2.5s intro plays.
+      setShowIntro(true);
+      setHeadToHead(null);
+      setOpponentInfo(null);
+      opponentNameRef.current = 'Opponent';
+      const oppId = data.opponentUserId ?? null;
+      setOpponentUserId(oppId);
+      if (oppId) {
+        fetchVsProfile(oppId)
+          .then((p) => {
+            if (p) {
+              setOpponentInfo(p);
+              opponentNameRef.current = p.username;
+            }
+          })
+          .catch(() => {});
+        if (profile) {
+          fetchHeadToHead(profile.id, oppId).then(setHeadToHead).catch(() => {});
+        }
+      }
 
       // Private-match invites: flip the match_invites row to 'accepted'
       // now that the matchmaking server paired both invitees. Keeps the
@@ -260,17 +421,44 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
       setOpponentTiles({});
       resultRecordedRef.current = false;
+      resetPerMatchState();
     });
 
     matchService.onOpponentProgress((data: any) => {
       setOpponentProgress(data);
+
+      // Moment callouts (one per progress event, most dramatic first).
+      const name = opponentNameRef.current;
+      let calloutText: string | null = null;
+      if (data.boardsSolved > prevOppBoardsSolvedRef.current && data.totalBoards > 1) {
+        calloutText = `${name} solved board ${data.boardsSolved}!`;
+      }
+      prevOppBoardsSolvedRef.current = data.boardsSolved;
+
       if (data.latestGuess) {
+        playOpponentThunk();
         setOpponentTiles(prev => {
           const boardIdx = data.latestGuess.boardIndex ?? 0;
           const boardTiles = prev[boardIdx] || [];
           return { ...prev, [boardIdx]: [...boardTiles, data.latestGuess.tiles] };
         });
+        const greens = data.latestGuess.tiles.filter((t: string) => t === 'CORRECT').length;
+        const len = data.latestGuess.tiles.length;
+        if (!calloutText && len >= 2 && greens === len - 1) {
+          calloutText = `${name} got ${greens} greens! 😱`;
+        }
       }
+      if (!calloutText && !data.solved && data.attempts === modeMaxGuesses - 1) {
+        calloutText = `${name} is on their last guess!`;
+      }
+      if (calloutText) showCallout(calloutText);
+    });
+
+    matchService.onOpponentTyping(() => {
+      setOpponentTyping(true);
+      // Hide after 2s without fresh pings (the sender throttles to 1/1.5s).
+      if (typingHideTimerRef.current) clearTimeout(typingHideTimerRef.current);
+      typingHideTimerRef.current = setTimeout(() => setOpponentTyping(false), 2000);
     });
 
     matchService.onMatchEnded((data) => {
@@ -298,11 +486,21 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             player1Time: Math.round(data.playerTime / 1000),
             player2Time: Math.round(data.opponentTime / 1000),
             seed,
-            solutions: [],
-            player1Guesses: [],
+            solutions: data.solutions ?? [],
+            player1Guesses: myGuessLogRef.current.map((g) => g.guess),
+            player2Guesses: (data.opponentGuessLog ?? []).map((g) => g.guess),
             startedAt: new Date(Date.now() - data.playerTime).toISOString(),
             completedAt: new Date().toISOString(),
           });
+        }
+        // Refresh the head-to-head line so the result screen shows the
+        // UPDATED record including this match. Small delay gives the
+        // single-writer client's `matches` insert time to land.
+        if (data.opponentId) {
+          const oppId = data.opponentId;
+          setTimeout(() => {
+            fetchHeadToHead(profile.id, oppId).then(setHeadToHead).catch(() => {});
+          }, 1200);
         }
       }
       // Freemium daily VS: lock the home-page VS tile for the rest of
@@ -333,6 +531,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       setRematchState('idle');
       setPlayerStats(null);
       resultRecordedRef.current = false;
+      resetPerMatchState();
     });
 
     matchService.onOpponentLeft(() => {
@@ -357,15 +556,26 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     return () => {
       matchService.disconnect();
     };
-  }, [mode, matchService, profile, alreadyPlayedDaily, todayDailySeed, dailyVsActive]);
+  }, [mode, matchService, profile, alreadyPlayedDaily, todayDailySeed, dailyVsActive, modeMaxGuesses, showCallout, resetPerMatchState]);
+
+  // Live clock while spectating the opponent finish their game.
+  useEffect(() => {
+    if (screen !== 'waiting') return;
+    const tick = () => setWaitingClock(Math.max(0, Math.floor((Date.now() - startTime) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [screen, startTime]);
 
   const handleBoardSolved = useCallback((boardIndex: number) => {
     matchService.reportBoardSolved(boardIndex);
+    setMyBoardsSolved((n) => n + 1);
   }, [matchService]);
 
   const handleCompleted = useCallback((status: 'won' | 'lost', totalGuesses: number, timeMs: number) => {
     matchService.reportCompletion(status, totalGuesses, timeMs);
     setPlayerStats({ guesses: totalGuesses, timeMs });
+    setMyStatus(status);
     setScreen('waiting');
   }, [matchService]);
 
@@ -375,6 +585,29 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
   const handleGuessSubmitted = useCallback((guess: string, boardIndex: number) => {
     matchService.submitGuess(guess, boardIndex);
+    // Mirror my own guess locally: word log for the result boards, tile
+    // colors (via the seed-derived solution) for the tug-of-war bar.
+    const entry = { boardIndex, guess: guess.toUpperCase() };
+    myGuessLogRef.current = [...myGuessLogRef.current, entry];
+    setMyGuessLog(myGuessLogRef.current);
+    const solution = mySolutionsRef.current[boardIndex];
+    if (solution) {
+      try {
+        const states = evaluateGuess(solution.toUpperCase(), guess.toUpperCase()).tiles.map((t: any) => t.state as string);
+        setMyTiles(prev => ({ ...prev, [boardIndex]: [...(prev[boardIndex] || []), states] }));
+      } catch {
+        // Length mismatch (shouldn't happen outside ProperNoundle) — skip greens.
+      }
+    }
+  }, [matchService]);
+
+  // Throttled typing relay: at most one ping per 1.5s while letters are
+  // being entered in the current row.
+  const handleTyping = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 1500) return;
+    lastTypingSentRef.current = now;
+    matchService.emitTyping();
   }, [matchService]);
 
   const handleCancel = useCallback(() => {
@@ -430,6 +663,23 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     return (
       <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
         <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); window.location.href = '/'; }} />
+        {/* Match-intro splash — sits above the countdown for 2.5s (or until tapped). */}
+        {showIntro && (
+          <MatchIntro
+            me={{
+              username: profile?.username || 'You',
+              avatarUrl: (profile as any)?.avatar_url ?? null,
+              level: (profile as any)?.level ?? null,
+            }}
+            opponent={opponentUserId ? {
+              username: opponentInfo?.username ?? '…',
+              avatarUrl: opponentInfo?.avatarUrl ?? null,
+              level: opponentInfo?.level ?? null,
+            } : null}
+            headToHead={headToHead}
+            onDone={() => setShowIntro(false)}
+          />
+        )}
         {/* Countdown overlay */}
         {showCountdown && (
           <div
@@ -461,6 +711,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           <div className="space-y-2">
             <CyclingStatus />
             <p className="text-gray-400 text-sm">Position in queue: {queuePosition + 1}</p>
+            {queueSize > 1 && (
+              <p className="text-gray-400 text-xs font-bold">{queueSize} players waiting</p>
+            )}
           </div>
 
           <button
@@ -485,58 +738,58 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     const winner = matchResult?.winner;
     const isWin = winner === 'player';
     const isDraw = winner === 'draw';
-    const headlineText = isWin ? 'VICTORY' : isDraw ? 'DRAW' : 'DEFEAT';
+    const headlineText = isWin ? 'WINNER' : isDraw ? 'DRAW' : 'DEFEAT';
     const headlineColor = isWin ? 'from-green-400 to-emerald-300' : isDraw ? 'from-yellow-400 to-orange-300' : 'from-red-400 to-rose-300';
+    const myName = profile?.username || 'You';
+    const oppName = opponentInfo?.username || 'Opponent';
+
+    const comparisonMetrics = [
+      { label: 'Guesses', mine: matchResult?.playerGuesses ?? 0, theirs: matchResult?.opponentGuesses ?? 0, format: (v: number) => `${v}` },
+      { label: 'Time', mine: matchResult?.playerTime ?? 0, theirs: matchResult?.opponentTime ?? 0, format: (v: number) => formatTime(v) },
+      ...(matchResult?.playerScore != null
+        ? [{ label: 'Score (guesses + time penalty)', mine: matchResult.playerScore, theirs: matchResult.opponentScore, format: (v: number) => v.toFixed(2) }]
+        : []),
+    ];
+
+    const handleShare = () => {
+      const text = isWin
+        ? `I just beat ${oppName} in a Wordocious VS ${label} duel! ⚔️🏆`
+        : isDraw
+          ? `${oppName} and I battled to a draw in VS ${label} on Wordocious! ⚔️`
+          : `Epic VS ${label} duel against ${oppName} on Wordocious! ⚔️`;
+      const payload = `${text}\nhttps://wordocious.com`;
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        navigator.share({ text: payload }).catch(() => {});
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(payload).then(() => {
+          setMessage('Copied to clipboard!');
+          setTimeout(() => setMessage(''), 2000);
+        }).catch(() => {});
+      }
+    };
 
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
+      <div className="min-h-screen overflow-y-auto relative" style={{ backgroundColor: 'var(--color-bg)' }}>
+        {/* Confetti for wins only */}
+        {isWin && <Confetti />}
         {/* Rematch upsell for freemium — handleRematch sets this open */}
         <VsLimitModal open={vsLimitOpen} onClose={() => setVsLimitOpen(false)} />
-        <div className="text-center space-y-8 max-w-md w-full px-6">
+        <div className="max-w-md w-full mx-auto px-6 py-10 space-y-5">
           {/* Headline */}
-          <div className="animate-fade-in-scale">
+          <div className="text-center animate-fade-in-scale">
             <h1 className={`text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${headlineColor}`}>
               {headlineText}
             </h1>
-          </div>
-
-          {/* Stats */}
-          <div
-            className="bg-gray-100 backdrop-blur-sm border border-gray-200 rounded-2xl p-6 space-y-3 animate-fade-in-up"
-            style={{ animationDelay: '0.3s' }}
-          >
-            <div className="flex justify-between text-gray-400 text-sm font-bold">
-              <span>Your Guesses</span>
-              <span className="text-gray-800">{matchResult?.playerGuesses}</span>
-            </div>
-            <div className="flex justify-between text-gray-400 text-sm font-bold">
-              <span>Opponent Guesses</span>
-              <span className="text-gray-800">{matchResult?.opponentGuesses}</span>
-            </div>
-            <div className="h-px bg-gray-200" />
-            <div className="flex justify-between text-gray-400 text-sm font-bold">
-              <span>Your Time</span>
-              <span className="text-gray-800">{formatTime(matchResult?.playerTime || 0)}</span>
-            </div>
-            <div className="flex justify-between text-gray-400 text-sm font-bold">
-              <span>Opponent Time</span>
-              <span className="text-gray-800">{formatTime(matchResult?.opponentTime || 0)}</span>
-            </div>
-            {matchResult?.playerScore != null && (
-              <>
-                <div className="h-px bg-gray-200" />
-                <div className="flex justify-between text-gray-400 text-sm font-bold">
-                  <span>Your Score</span>
-                  <span className="text-gray-800">{matchResult.playerScore.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-400 text-sm font-bold">
-                  <span>Opponent Score</span>
-                  <span className="text-gray-800">{matchResult.opponentScore.toFixed(2)}</span>
-                </div>
-                <p className="text-gray-400 text-[10px] text-center mt-1">Score = guesses + time penalty (lower is better)</p>
-              </>
+            {/* Updated all-time head-to-head (refetched after the match was recorded) */}
+            {opponentUserId && headToHead && (
+              <p className="text-sm font-extrabold mt-2" style={{ color: 'var(--color-text-secondary)' }}>
+                {headToHeadLine(oppName, headToHead)}
+              </p>
             )}
           </div>
+
+          {/* Comparison bars: you (purple) vs them (pink), lower is better */}
+          <ComparisonBars myName={myName} opponentName={oppName} metrics={comparisonMetrics} />
 
           {/* Rematch Status */}
           {rematchState === 'received' && (
@@ -561,50 +814,161 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             </div>
           )}
 
-          {/* Actions */}
-          <div
-            className="flex gap-3 animate-fade-in-up"
-            style={{ animationDelay: '0.5s' }}
-          >
-            <button
-              onClick={handleHome}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
-            >
-              <Home className="w-4 h-4" /> Home
-            </button>
+          {/* Actions — prominent Rematch on top, Home/Share below */}
+          <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
             {rematchState === 'declined' ? (
-              <div className="flex-1 bg-gray-100 border border-gray-200 text-gray-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+              <div className="w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
                 <X className="w-4 h-4" /> No Rematch
               </div>
             ) : rematchState === 'offered' ? (
-              <div className={`flex-1 bg-gradient-to-r ${titleGradient} text-white/80 font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg`}>
+              <div className={`w-full bg-gradient-to-r ${titleGradient} text-white/80 font-black py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg`}>
                 <Loader2 className="w-4 h-4 animate-spin" /> Waiting...
               </div>
             ) : rematchState !== 'received' ? (
               <button
                 onClick={handleRematch}
-                className={`flex-1 bg-gradient-to-r ${titleGradient} text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg`}
+                className={`w-full bg-gradient-to-r ${titleGradient} text-white font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg btn-3d`}
               >
                 <RotateCcw className="w-4 h-4" /> Rematch
               </button>
             ) : null}
+            <div className="flex gap-3">
+              <button
+                onClick={handleHome}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                <Home className="w-4 h-4" /> Home
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-4 h-4" /> Share
+              </button>
+            </div>
           </div>
+
+          {/* Final boards with letters — opponent's reconstructed from the
+              match-end guess log + solutions */}
+          {(matchResult?.solutions?.length ?? 0) > 0 && (
+            <FinalBoards
+              myName={myName}
+              opponentName={oppName}
+              myGuessLog={myGuessLog}
+              opponentGuessLog={matchResult?.opponentGuessLog ?? []}
+              solutions={matchResult?.solutions ?? []}
+            />
+          )}
         </div>
+
+        {message && (
+          <div className="fixed bottom-8 left-0 right-0 text-center z-50">
+            <span className="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded-lg">{message}</span>
+          </div>
+        )}
       </div>
     );
   }
 
-  // Waiting screen — shown after player completes, waiting for opponent
+  // Spectator waiting screen — you finished; watch the opponent's live
+  // board (colors only, letters stay hidden until match end).
   if (screen === 'waiting') {
+    const oppName = opponentInfo?.username || 'Opponent';
+    const liveTotalBoards = opponentProgress.totalBoards || totalBoards;
+    const oppRowsUsed = Math.max(0, ...Object.values(opponentTiles).map((rows) => rows.length));
+    // Cap rendered empty rows so Gauntlet's 50-guess budget doesn't blow up the layout.
+    const spectatorRows = Math.min(modeMaxGuesses, Math.max(6, oppRowsUsed + 1));
+    const clockStr = `${Math.floor(waitingClock / 60)}:${(waitingClock % 60).toString().padStart(2, '0')}`;
+
+    // STAKES copy. The real win rule is: solve, then tie-break on
+    // boardsSolved, then composite score = guesses + timeSeconds/45.
+    // We approximate the composite by guess count: the opponent is still
+    // playing, so they're almost always behind you on time and need
+    // strictly FEWER guesses; if they're somehow still ahead of your
+    // clock, matching your guess count could win on time.
+    const stakes = (() => {
+      if (!playerStats) return '';
+      const boardsLeft = liveTotalBoards - opponentProgress.boardsSolved;
+      if (myStatus === 'lost') {
+        return liveTotalBoards > 1
+          ? `${oppName} needs ${boardsLeft} more board${boardsLeft === 1 ? '' : 's'} to win`
+          : `${oppName} just needs to solve to win`;
+      }
+      if (liveTotalBoards > 1 && boardsLeft > 1) {
+        return `${oppName} needs ${boardsLeft} more boards to stay alive`;
+      }
+      const opponentTimeBehind = Date.now() - startTime > playerStats.timeMs;
+      const target = opponentTimeBehind ? playerStats.guesses - 1 : playerStats.guesses;
+      if (target <= 0 || opponentProgress.attempts >= target) {
+        return `${oppName} can no longer beat your score!`;
+      }
+      return `${oppName} must solve in ${target} or fewer to beat you`;
+    })();
+
     return (
-      <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
-        <div className="text-center space-y-6 max-w-md w-full px-6">
-          <h2 className={`text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
-            Waiting for opponent...
+      <div className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="text-center space-y-5 max-w-md w-full px-6 py-6">
+          <h2 className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
+            {oppName} is still playing...
           </h2>
 
-          <div>
-            <Loader2 className="h-12 w-12 text-purple-300 mx-auto animate-spin" />
+          {/* Opponent identity + live counters */}
+          <div className="flex items-center justify-center gap-3">
+            {opponentInfo?.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={opponentInfo.avatarUrl} alt={oppName} className="w-10 h-10 rounded-full object-cover" style={{ border: '1.5px solid var(--color-border)' }} />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <span className="text-white font-black text-xs">{oppName.slice(0, 2).toUpperCase()}</span>
+              </div>
+            )}
+            <div className="text-left">
+              <div className="text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>{oppName}</div>
+              <div className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                {opponentProgress.attempts} {opponentProgress.attempts === 1 ? 'guess' : 'guesses'} · {clockStr}
+                {liveTotalBoards > 1 && ` · ${opponentProgress.boardsSolved}/${liveTotalBoards} boards`}
+              </div>
+            </div>
+            {opponentTyping && (
+              <span className="flex gap-0.5 items-center">
+                {[0, 1, 2].map((i) => (
+                  <span key={i} className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#ec4899', animationDelay: `${i * 0.2}s` }} />
+                ))}
+              </span>
+            )}
+          </div>
+
+          {/* Stakes copy */}
+          {stakes && (
+            <div
+              className="inline-block px-4 py-2 rounded-xl text-xs font-extrabold animate-fade-in-up"
+              style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
+            >
+              {stakes}
+            </div>
+          )}
+
+          {/* Opponent live board — scaled-up mini board, colors only */}
+          <div
+            className="rounded-2xl p-4 flex justify-center"
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+          >
+            {liveTotalBoards <= 1 ? (
+              <OpponentMiniBoard
+                tiles={opponentTiles[0] || []}
+                maxGuesses={spectatorRows}
+                wordLength={wordLen}
+                tileSize={16}
+              />
+            ) : (
+              <OpponentMultiMiniBoard
+                opponentTiles={opponentTiles}
+                totalBoards={liveTotalBoards}
+                maxGuesses={spectatorRows}
+                wordLength={wordLen}
+                tileSize={16}
+              />
+            )}
           </div>
 
           {/* Your stats */}
@@ -621,21 +985,6 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               </div>
             </div>
           )}
-
-          {/* Opponent progress */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
-            <div className="text-gray-400 text-xs font-bold uppercase tracking-wider">Opponent Progress</div>
-            <div className="flex justify-between text-sm font-bold">
-              <span className="text-gray-500">Guesses</span>
-              <span className="text-gray-800">{opponentProgress.attempts}</span>
-            </div>
-            {opponentProgress.totalBoards > 1 && (
-              <div className="flex justify-between text-sm font-bold">
-                <span className="text-gray-500">Boards Solved</span>
-                <span className="text-gray-800">{opponentProgress.boardsSolved}/{opponentProgress.totalBoards}</span>
-              </div>
-            )}
-          </div>
 
           <button
             onClick={handleForfeit}
@@ -665,6 +1014,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       opponentProgress,
       opponentTiles,
       startTime,
+      onTyping: handleTyping,
     };
 
     switch (mode) {
@@ -703,6 +1053,35 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           VS {label}
         </h1>
       </div>
+
+      {/* Persistent VS header: you vs opponent + tug-of-war lead bar */}
+      <VsMatchHeader
+        me={{
+          username: profile?.username || 'You',
+          avatarUrl: (profile as any)?.avatar_url ?? null,
+          guesses: myGuessLog.length,
+          progress: computeVsProgress(myBoardsSolved, totalBoards, bestRowGreens(myTiles), wordLen),
+        }}
+        opponent={{
+          username: opponentInfo?.username || 'Opponent',
+          avatarUrl: opponentInfo?.avatarUrl ?? null,
+          guesses: opponentProgress.attempts,
+          progress: computeVsProgress(opponentProgress.boardsSolved, totalBoards, bestRowGreens(opponentTiles), wordLen),
+        }}
+        opponentTyping={opponentTyping}
+      />
+
+      {/* Moment callout — opponent milestones (greens / board solved / last guess) */}
+      {callout && (
+        <div className="absolute top-12 left-0 right-0 text-center z-40 pointer-events-none">
+          <span
+            key={callout.id}
+            className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg animate-fade-in-up"
+          >
+            {callout.text}
+          </span>
+        </div>
+      )}
 
       {/* Game content fills remaining space */}
       <div className="flex-1 min-h-0">

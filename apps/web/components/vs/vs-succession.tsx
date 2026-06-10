@@ -10,7 +10,7 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 
 const BOARD_ORDER = [0, 1, 2, 3];
 
-export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime }: VsGameComponentProps) {
+export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
     initializeGame(seed, GameMode.SEQUENCE)
@@ -110,8 +110,9 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
       setCurrentGuess(prev => prev.slice(0, -1));
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess(prev => prev + key);
+      onTyping?.();
     }
-  }, [state, currentGuess]);
+  }, [state, currentGuess, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

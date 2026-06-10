@@ -9,7 +9,7 @@ import { Trophy, Clock } from 'lucide-react';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import type { VsGameComponentProps } from './vs-classic';
 
-export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime }: VsGameComponentProps) {
+export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
     gameReducer,
     initializeGame(seed, GameMode.QUORDLE)
@@ -68,8 +68,9 @@ export function VsQuadword({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
       setCurrentGuess(prev => prev.slice(0, -1));
     } else if (currentGuess.length < 5 && /^[A-Z]$/.test(key)) {
       setCurrentGuess(prev => prev + key);
+      onTyping?.();
     }
-  }, [state, currentGuess]);
+  }, [state, currentGuess, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

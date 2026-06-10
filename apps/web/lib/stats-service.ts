@@ -163,29 +163,30 @@ export async function recordGameResult(
 
   // --- Daily result recording ---
   let sweepResult: Awaited<ReturnType<typeof awardDailyBonusesIfComplete>> = null;
-  if (seed && isDailySeed(seed)) {
+  if (playType === 'vs') {
+    // EVERY completed VS match counts toward today's Records (not just
+    // daily-seed matches) — recordDailyVsResult accumulates wins/losses
+    // idempotently into a single play_type='vs' row per day+mode.
+    await recordDailyVsResult(userId, gameMode, won);
+  } else if (seed && isDailySeed(seed)) {
     const boards = boardsSolved ?? (won ? (totalBoards ?? 1) : 0);
     const total = totalBoards ?? 1;
 
-    if (playType === 'vs') {
-      await recordDailyVsResult(userId, gameMode, won);
-    } else {
-      await recordDailyResult(
-        userId, gameMode, playType, won, guessCount, timeSeconds, boards, total, hintsUsed,
-      );
-      // Notify the DailyCompletionsProvider so the sweep banner updates
-      // instantly when navigating back to the home screen.
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('daily-completion', {
-          detail: { gameMode, won, guesses: guessCount, timeSeconds },
-        }));
-      }
-      // After the solo daily row lands, see whether this was the 7th
-      // of the day and award the one-shot Daily Sweep / Flawless
-      // Victory bonuses if so. Awaited so the XpResult below can carry
-      // the new XP into the XpToast in a single render.
-      sweepResult = await awardDailyBonusesIfComplete(userId);
+    await recordDailyResult(
+      userId, gameMode, playType, won, guessCount, timeSeconds, boards, total, hintsUsed,
+    );
+    // Notify the DailyCompletionsProvider so the sweep banner updates
+    // instantly when navigating back to the home screen.
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('daily-completion', {
+        detail: { gameMode, won, guesses: guessCount, timeSeconds },
+      }));
     }
+    // After the solo daily row lands, see whether this was the 7th
+    // of the day and award the one-shot Daily Sweep / Flawless
+    // Victory bonuses if so. Awaited so the XpResult below can carry
+    // the new XP into the XpToast in a single render.
+    sweepResult = await awardDailyBonusesIfComplete(userId);
   }
 
   // --- All-time record checks ---

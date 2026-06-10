@@ -55,6 +55,18 @@ export function playSuccess() {
   setTimeout(() => play(784, 0.2, 'sine', 0.12), 200);
 }
 
+/** Two-note "VS" stinger for the match-intro splash. */
+export function playVsStinger() {
+  if (!isSoundEnabled()) return;
+  play(392, 0.1, 'sine', 0.1);
+  setTimeout(() => play(523, 0.18, 'sine', 0.1), 100);
+}
+
+/** Soft thunk played whenever the opponent lands a guess row. */
+export function playOpponentThunk() {
+  play(220, 0.06, 'sine', 0.05);
+}
+
 export function playGameOver() {
   if (!isSoundEnabled()) return;
   play(392, 0.2, 'sine', 0.1);

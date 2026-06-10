@@ -30,6 +30,7 @@ export function VsProperNoundle({
   opponentProgress,
   opponentTiles,
   startTime,
+  onTyping,
   puzzleMetadata,
 }: VsProperNoundleProps) {
   const [guesses, setGuesses] = useState<Guess[]>([]);
@@ -114,8 +115,9 @@ export function VsProperNoundle({
       setCurrentGuess(prev => prev.slice(0, -1));
     } else if (/^[A-Z]$/.test(key) && normalizeString(currentGuess).length < answerLength) {
       setCurrentGuess(prev => prev + key);
+      onTyping?.();
     }
-  }, [currentGuess, gameStatus, guesses, letterStates, answerLength, answerDisplay]);
+  }, [currentGuess, gameStatus, guesses, letterStates, answerLength, answerDisplay, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

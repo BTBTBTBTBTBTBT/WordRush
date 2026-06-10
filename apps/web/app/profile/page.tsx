@@ -119,9 +119,27 @@ export default function ProfilePage() {
         fetchDailyCalendar(profile!.id, 90),
         fetchTopWordsAllTime(profile!.id, 5),
       ]);
+      // Resolve opponent usernames for VS rows in Recent Matches.
+      const matchRows = matchesRes as Match[];
+      const oppIds = Array.from(new Set(
+        matchRows
+          .filter((m) => m.player2_id)
+          .map((m) => (m.player1_id === profile!.id ? m.player2_id! : m.player1_id)),
+      ));
+      const opponentNames: Record<string, string> = {};
+      if (oppIds.length > 0) {
+        const { data: oppProfiles } = await (supabase as any)
+          .from('profiles')
+          .select('id, username')
+          .in('id', oppIds);
+        for (const p of (oppProfiles as Array<{ id: string; username: string }> | null) || []) {
+          opponentNames[p.id] = p.username;
+        }
+      }
       return {
         stats: statsRes as UserStats[],
-        matches: matchesRes as Match[],
+        matches: matchRows,
+        opponentNames,
         medals: medalsRes,
         userAchievements: new Set(achievementsRes.map(a => a.key)),
         todayDailies: dailiesRes,
@@ -137,6 +155,7 @@ export default function ProfilePage() {
 
   const stats = profileData?.stats ?? [];
   const matches = profileData?.matches ?? [];
+  const opponentNames = profileData?.opponentNames ?? {};
   const medals = profileData?.medals ?? [];
   const userAchievements = profileData?.userAchievements ?? new Set<string>();
   const todayDailies = profileData?.todayDailies ?? new Map<string, DailyCompletion>();
@@ -147,6 +166,8 @@ export default function ProfilePage() {
   const topWordsAllTime = profileData?.topWordsAllTime ?? [];
 
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  // Solo/VS toggle (mirrors the public profile) — filters user_stats by play_type.
+  const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
   const [editOpen, setEditOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -171,15 +192,27 @@ export default function ProfilePage() {
     }
   };
 
-  // Games per mode for the mode picker badge
+  // Stats filtered to the active Solo/VS tab.
+  const filteredStats = stats.filter((s) => s.play_type === activeTab);
+
+  // Games per mode for the mode picker badge (active tab only)
   const gamesPerMode: Record<string, number> = {};
-  for (const s of stats) {
+  for (const s of filteredStats) {
     gamesPerMode[s.game_mode] = (gamesPerMode[s.game_mode] || 0) + (s.total_games || 0);
   }
 
-  // Get stats for selected mode (combined solo+vs)
+  // Aggregate VS record across all modes for the VS RECORD summary card.
+  const vsRecord = (() => {
+    const vsStats = stats.filter((s) => s.play_type === 'vs');
+    const wins = vsStats.reduce((sum, s) => sum + (s.wins || 0), 0);
+    const losses = vsStats.reduce((sum, s) => sum + (s.losses || 0), 0);
+    const total = wins + losses;
+    return { wins, losses, total, winRate: total > 0 ? Math.round((wins / total) * 100) : 0 };
+  })();
+
+  // Get stats for selected mode (active tab only)
   const getStatsForMode = (dbKey: string) => {
-    const modeStats = stats.filter((s) => s.game_mode === dbKey);
+    const modeStats = filteredStats.filter((s) => s.game_mode === dbKey);
     if (modeStats.length === 0) return null;
     return {
       wins: modeStats.reduce((s, r) => s + (r.wins || 0), 0),
@@ -417,7 +450,49 @@ export default function ProfilePage() {
           bestDailyStreak={(profile as any).best_daily_login_streak ?? 0}
         />
 
-        {/* ── D. Mode Picker ── */}
+        {/* ── D. Solo/VS toggle + Mode Picker ── */}
+        <div className="flex gap-2">
+          {(['solo', 'vs'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setActiveTab(t)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold transition-all"
+              style={{
+                background: activeTab === t ? 'var(--color-surface)' : 'var(--color-surface-hover)',
+                border: activeTab === t ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
+                color: activeTab === t ? '#7c3aed' : 'var(--color-text-muted)',
+              }}
+            >
+              {t === 'solo' ? <User className="w-3.5 h-3.5" /> : <Swords className="w-3.5 h-3.5" />}
+              {t === 'solo' ? 'Solo' : 'VS'}
+            </button>
+          ))}
+        </div>
+
+        {/* VS RECORD summary card (VS tab only) */}
+        {activeTab === 'vs' && (
+          <div
+            className="p-4 flex items-center gap-4"
+            style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #fce7f3 100%)', border: '1.5px solid #c4b5fd', borderRadius: '16px' }}
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed15' }}>
+              <Swords className="w-5 h-5" style={{ color: '#7c3aed' }} />
+            </div>
+            <div className="flex-1">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#6d28d9' }}>VS Record</div>
+              <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                {vsRecord.wins}–{vsRecord.losses}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-black" style={{ color: '#7c3aed' }}>{vsRecord.winRate}%</div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Win rate · {vsRecord.total} {vsRecord.total === 1 ? 'match' : 'matches'}
+              </div>
+            </div>
+          </div>
+        )}
+
         <ModePicker
           selectedMode={selectedMode}
           onSelectMode={setSelectedMode}
@@ -613,6 +688,8 @@ export default function ProfilePage() {
               const playerTime = isPlayer1 ? match.player1_time : (match.player2_time ?? 0);
               const matchDate = new Date(match.created_at);
               const cfg = gameModeIcons[match.game_mode];
+              const opponentId = match.player2_id ? (isPlayer1 ? match.player2_id : match.player1_id) : null;
+              const opponentName = opponentId ? (opponentNames[opponentId] ?? 'Unknown') : null;
               return (
                 <div key={match.id} className="flex items-center gap-3 p-3" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px' }}>
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: cfg ? `${cfg.color}15` : 'var(--color-bg)' }}>
@@ -630,8 +707,9 @@ export default function ProfilePage() {
                         {match.player2_id ? 'VS' : 'Solo'}
                       </span>
                     </div>
-                    <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
                       {score} {score === 1 ? 'guess' : 'guesses'} · {playerTime > 0 ? formatDuration(playerTime) : '—'}
+                      {opponentName ? ` · vs ${opponentName}` : ''}
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">

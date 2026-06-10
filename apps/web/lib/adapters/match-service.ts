@@ -1,6 +1,28 @@
 import { GameMode } from '@wordle-duel/core';
 import { Socket, io } from 'socket.io-client';
 
+/** Per-board, per-row guess words revealed only at match end. */
+export interface OpponentGuessLogEntry {
+  boardIndex: number;
+  guess: string;
+}
+
+export interface MatchEndedData {
+  winner: 'player' | 'opponent' | 'draw' | null;
+  playerGuesses: number;
+  opponentGuesses: number;
+  playerTime: number;
+  opponentTime: number;
+  playerScore: number;
+  opponentScore: number;
+  opponentId: string | null;
+  recordMatch: boolean;
+  /** Opponent's full ordered guess words — revealed at match end only. */
+  opponentGuessLog?: OpponentGuessLogEntry[];
+  /** Match solutions so the result screen can render both final boards. */
+  solutions?: string[];
+}
+
 export interface IMatchService {
   connect(presenceId?: string): void;
   disconnect(): void;
@@ -13,12 +35,15 @@ export interface IMatchService {
   reportBoardSolved(boardIndex: number): void;
   reportCompletion(status: string, totalGuesses: number, timeMs: number): void;
   reportStageCompleted(stageIndex: number): void;
-  onQueueStatus(callback: (data: { position: number; mode: GameMode }) => void): void;
-  onMatchFound(callback: (data: { matchId: string; mode: GameMode; serverStartAt: number; countdownSeconds: number }) => void): void;
+  /** Throttled "I have letters in my row" ping — relayed to the opponent. */
+  emitTyping(): void;
+  onQueueStatus(callback: (data: { position: number; mode: GameMode; queueSize?: number; dailySeed?: string | null }) => void): void;
+  onMatchFound(callback: (data: { matchId: string; mode: GameMode; serverStartAt: number; countdownSeconds: number; opponentUserId?: string | null }) => void): void;
   onMatchStart(callback: (data: { seed: string; startTime: number; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void): void;
   onGuessResult(callback: (data: { boardIndex: number; isValid: boolean; isCorrect: boolean; reason?: string }) => void): void;
   onOpponentProgress(callback: (data: { attempts: number; solved: boolean; boardsSolved: number; totalBoards: number; latestGuess?: { boardIndex: number; tiles: string[] } }) => void): void;
-  onMatchEnded(callback: (data: { winner: 'player' | 'opponent' | 'draw' | null; playerGuesses: number; opponentGuesses: number; playerTime: number; opponentTime: number; playerScore: number; opponentScore: number; opponentId: string | null; recordMatch: boolean }) => void): void;
+  onOpponentTyping(callback: () => void): void;
+  onMatchEnded(callback: (data: MatchEndedData) => void): void;
   onOpponentStageCompleted(callback: (data: { stageIndex: number }) => void): void;
   onRematchOffered(callback: () => void): void;
   onRematchDeclined(callback: () => void): void;
@@ -85,11 +110,15 @@ export class SocketIOMatchService implements IMatchService {
     this.socket?.emit('stage_completed', { stageIndex });
   }
 
-  onQueueStatus(callback: (data: { position: number; mode: GameMode }) => void): void {
+  emitTyping(): void {
+    this.socket?.emit('typing');
+  }
+
+  onQueueStatus(callback: (data: { position: number; mode: GameMode; queueSize?: number; dailySeed?: string | null }) => void): void {
     this.socket?.on('queue_status', callback);
   }
 
-  onMatchFound(callback: (data: { matchId: string; mode: GameMode; serverStartAt: number; countdownSeconds: number }) => void): void {
+  onMatchFound(callback: (data: { matchId: string; mode: GameMode; serverStartAt: number; countdownSeconds: number; opponentUserId?: string | null }) => void): void {
     this.socket?.on('match_found', callback);
   }
 
@@ -105,8 +134,12 @@ export class SocketIOMatchService implements IMatchService {
     this.socket?.on('opponent_progress', callback);
   }
 
-  onMatchEnded(callback: (data: { winner: 'player' | 'opponent' | 'draw' | null; playerGuesses: number; opponentGuesses: number; playerTime: number; opponentTime: number; playerScore: number; opponentScore: number; opponentId: string | null; recordMatch: boolean }) => void): void {
+  onMatchEnded(callback: (data: MatchEndedData) => void): void {
     this.socket?.on('match_ended', callback);
+  }
+
+  onOpponentTyping(callback: () => void): void {
+    this.socket?.on('opponent_typing', callback);
   }
 
   onOpponentStageCompleted(callback: (data: { stageIndex: number }) => void): void {

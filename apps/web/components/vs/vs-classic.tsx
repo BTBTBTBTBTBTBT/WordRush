@@ -17,9 +17,11 @@ export interface VsGameComponentProps {
   opponentProgress: { attempts: number; boardsSolved: number; totalBoards: number };
   opponentTiles: Record<number, string[][]>;
   startTime: number;
+  /** Fired on letter entry — vs-game throttles + relays to the server as a typing ping. */
+  onTyping?: () => void;
 }
 
-export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime }: VsGameComponentProps) {
+export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(gameReducer, createInitialState(seed, mode));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
@@ -96,8 +98,9 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
       setCurrentGuess(prev => prev.slice(0, -1));
     } else if (/^[A-Z]$/.test(key) && currentGuess.length < currentBoard.solution.length) {
       setCurrentGuess(prev => prev + key);
+      onTyping?.();
     }
-  }, [currentGuess, currentBoard.status]);
+  }, [currentGuess, currentBoard.status, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

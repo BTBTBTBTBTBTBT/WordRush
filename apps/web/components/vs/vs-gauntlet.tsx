@@ -30,9 +30,11 @@ export interface VsGauntletProps {
   opponentTiles: Record<number, string[][]>;
   startTime: number;
   onStageCompleted?: (stageIndex: number) => void;
+  /** Fired on letter entry — vs-game throttles + relays as a typing ping. */
+  onTyping?: () => void;
 }
 
-export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onStageCompleted }: VsGauntletProps) {
+export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onStageCompleted, onTyping }: VsGauntletProps) {
   const [state, dispatch] = useReducer(gameReducer, initializeGame(seed, GameMode.GAUNTLET));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
@@ -176,8 +178,9 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
       setCurrentGuess(prev => prev.slice(0, -1));
     } else if (/^[A-Z]$/.test(key) && currentGuess.length < 5) {
       setCurrentGuess(prev => prev + key);
+      onTyping?.();
     }
-  }, [state, currentGuess, showTransition, isSingleBoard]);
+  }, [state, currentGuess, showTransition, isSingleBoard, onTyping]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
