@@ -33,6 +33,7 @@ class VSMatchService {
     var onRematchStart: ((VSRematchStart) -> Unit)? = null
     var onOpponentLeft: (() -> Unit)? = null
     var onServerError: ((VSServerError) -> Unit)? = null
+    var onOpponentTyping: (() -> Unit)? = null
 
     val isConfigured: Boolean get() = VSConfig.isConfigured
 
@@ -82,6 +83,9 @@ class VSMatchService {
         socket?.emit(VSEvent.STAGE_COMPLETED, JSONObject().put("stageIndex", stageIndex))
     }
 
+    /** Throttle upstream (VSMatchViewModel) — at most one ping per 1.5s. */
+    fun emitTyping() { socket?.emit(VSEvent.TYPING) }
+
     fun abandonMatch() { socket?.emit(VSEvent.ABANDON_MATCH) }
     fun offerRematch() { socket?.emit(VSEvent.OFFER_REMATCH) }
     fun declineRematch() { socket?.emit(VSEvent.DECLINE_REMATCH) }
@@ -104,6 +108,7 @@ class VSMatchService {
         s.on(VSEvent.REMATCH_OFFERED) { runOnMain { onRematchOffered?.invoke() } }
         s.on(VSEvent.REMATCH_DECLINED) { runOnMain { onRematchDeclined?.invoke() } }
         s.on(VSEvent.OPPONENT_LEFT) { runOnMain { onOpponentLeft?.invoke() } }
+        s.on(VSEvent.OPPONENT_TYPING) { runOnMain { onOpponentTyping?.invoke() } }
     }
 
     /** Decode args[0] (a JSONObject) into [T] and deliver on the main thread. */

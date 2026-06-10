@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.Button
@@ -91,6 +92,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var proInsights by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.ProInsights()) }
     // Per-mode dashboard filter — null == "All" (global view). Mirrors iOS ProfileModePicker.
     var selectedMode by remember { mutableStateOf<String?>(null) }
+    // Solo/VS toggle (web profile/page.tsx) — filters user_stats by play_type.
+    var activeTab by remember { mutableStateOf("solo") }
     var loading by remember { mutableStateOf(true) }
 
     val userId = profile?.id
@@ -143,9 +146,18 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             )
         }
 
+        // ── Solo/VS toggle (web profile/page.tsx §D) ────────────────
+        item { SoloVsToggle(activeTab) { activeTab = it } }
+
+        // VS RECORD summary card (VS tab only) — aggregated across all modes.
+        if (activeTab == "vs") {
+            item { VsRecordCard(stats) }
+        }
+
         // ── Dashboard: per-mode picker + charts ────────────────────
         item {
-            val gamesPerMode = stats.groupBy { it.gameMode }.mapValues { (_, rows) -> rows.sumOf { it.totalGames } }
+            val filtered = stats.filter { it.playType == activeTab }
+            val gamesPerMode = filtered.groupBy { it.gameMode }.mapValues { (_, rows) -> rows.sumOf { it.totalGames } }
             ProfileModePicker(selected = selectedMode, gamesPerMode = gamesPerMode, onSelect = { selectedMode = it })
         }
         // Web dashboard order (All-view): ACTIVITY calendar → LAST 7 DAYS →
@@ -187,12 +199,13 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // ── Achievements (collapsible 72-item grid) ───────────────
         item { AchievementsSection(unlockedAchievements) }
 
-        // ── E. Stats by mode ──────────────────────────────────────
+        // ── E. Stats by mode (active Solo/VS tab only) ────────────
+        val tabStats = stats.filter { it.playType == activeTab }
         if (loading) {
             item { Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) { CircularProgressIndicator(color = WTheme.primary) } }
-        } else if (stats.isNotEmpty()) {
+        } else if (tabStats.isNotEmpty()) {
             item { SectionLabel("STATS BY MODE") }
-            items(stats) { s ->
+            items(tabStats) { s ->
                 Row(
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
                         .background(WTheme.surface).border(1.dp, WTheme.border, RoundedCornerShape(10.dp)).padding(10.dp),
@@ -777,6 +790,81 @@ private fun AchievementsSection(unlocked: Set<String>) {
                     repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
+        }
+    }
+}
+
+// ── Solo/VS toggle + VS RECORD (web profile/page.tsx §D) ─────────────────────────
+@Composable
+private fun SoloVsToggle(active: String, onSelect: (String) -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("solo" to "Solo", "vs" to "VS").forEach { (key, label) ->
+            val isActive = active == key
+            Row(
+                Modifier.clip(RoundedCornerShape(12.dp))
+                    .background(if (isActive) WTheme.surface else WTheme.surfaceHover)
+                    .border(1.5.dp, if (isActive) Color(0xFF7C3AED) else WTheme.border, RoundedCornerShape(12.dp))
+                    .clickableNoRipple { onSelect(key) }
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                if (key == "solo") {
+                    Icon(
+                        Icons.Filled.Person, null,
+                        tint = if (isActive) Color(0xFF7C3AED) else WTheme.textMuted,
+                        modifier = Modifier.size(14.dp),
+                    )
+                } else {
+                    Icon(
+                        androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
+                        tint = if (isActive) Color(0xFF7C3AED) else WTheme.textMuted,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+                Text(
+                    label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
+                    color = if (isActive) Color(0xFF7C3AED) else WTheme.textMuted,
+                )
+            }
+        }
+    }
+}
+
+/** VS RECORD summary card — W–L, win rate, total VS games (all modes). */
+@Composable
+private fun VsRecordCard(stats: List<ProfileService.UserStat>) {
+    val vsStats = stats.filter { it.playType == "vs" }
+    val wins = vsStats.sumOf { it.wins }
+    val losses = vsStats.sumOf { it.losses }
+    val total = wins + losses
+    val winRate = if (total > 0) Math.round(wins.toFloat() / total * 100) else 0
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFFF5F3FF), Color(0xFFFCE7F3))))
+            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(16.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Box(
+            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF7C3AED).copy(alpha = 0.08f)),
+            Alignment.Center,
+        ) {
+            Icon(
+                androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
+                tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp),
+            )
+        }
+        Column(Modifier.weight(1f)) {
+            Text("VS RECORD", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF6D28D9))
+            Text("$wins–$losses", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A1A2E))
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text("$winRate%", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
+            Text(
+                "Win rate · $total ${if (total == 1) "match" else "matches"}",
+                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted,
+            )
         }
     }
 }

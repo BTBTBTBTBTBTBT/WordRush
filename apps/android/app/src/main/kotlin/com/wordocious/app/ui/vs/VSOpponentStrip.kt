@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,17 +65,42 @@ fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: 
     }
 }
 
+/**
+ * Colors-only opponent mini board (CORRECT green / PRESENT yellow / ABSENT
+ * gray). New rows pop in (fade + scale 0.8→1, 200ms; snap under reduced
+ * motion) — web OpponentMiniBoard's animate-fade-in-scale. Shared by the
+ * in-match HUD strip (small cells) and the spectator screen (16dp cells).
+ */
 @Composable
-private fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength: Int, cell: androidx.compose.ui.unit.Dp) {
-    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength: Int, cell: androidx.compose.ui.unit.Dp) {
+    val gap = if (cell >= 12.dp) 2.dp else 1.dp
+    Column(verticalArrangement = Arrangement.spacedBy(gap)) {
         repeat(maxOf(maxGuesses, 1)) { r ->
-            Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
+            val isNew = r == tiles.size - 1 && tiles.getOrNull(r) != null
+            // Pop-in for the newest row: fade + scale 0.8→1 over 200ms.
+            val pop = androidx.compose.runtime.remember(r, tiles.size) {
+                androidx.compose.animation.core.Animatable(if (isNew && !WTheme.reducedMotion) 0f else 1f)
+            }
+            if (isNew && !WTheme.reducedMotion) {
+                LaunchedEffect(r, tiles.size) {
+                    pop.animateTo(1f, androidx.compose.animation.core.tween(200))
+                }
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                modifier = Modifier.graphicsLayer {
+                    val v = pop.value
+                    alpha = v
+                    scaleX = 0.8f + 0.2f * v
+                    scaleY = 0.8f + 0.2f * v
+                },
+            ) {
                 repeat(maxOf(wordLength, 1)) { c ->
                     val st = tiles.getOrNull(r)?.getOrNull(c)
                     val color = when (st) {
                         TileState.CORRECT -> Color(0xFF22C55E)
                         TileState.PRESENT -> Color(0xFFEAB308)
-                        TileState.ABSENT -> WTheme.textMuted
+                        TileState.ABSENT -> Color(0xFF9CA3AF)
                         else -> Color.Transparent
                     }
                     Box(

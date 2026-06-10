@@ -21,6 +21,8 @@ object VSEvent {
     // (there is no accept_rematch handler) — so "accept" re-emits offer_rematch.
     const val OFFER_REMATCH = "offer_rematch"
     const val DECLINE_REMATCH = "decline_rematch"
+    /** Throttled "I have letters in my row" activity ping — relayed to the opponent. */
+    const val TYPING = "typing"
 
     // Server → client
     const val QUEUE_STATUS = "queue_status"
@@ -35,11 +37,18 @@ object VSEvent {
     const val REMATCH_START = "rematch_start"
     const val OPPONENT_LEFT = "opponent_left"
     const val ERROR = "error"
+    /** Opponent activity ping (no letters) — drives the "typing…" indicator. */
+    const val OPPONENT_TYPING = "opponent_typing"
 }
 
 // ── Server → client payloads ───────────────────────────────────────────────────
 @Serializable
-data class VSQueueStatus(val position: Int = 0, val mode: String = "")
+data class VSQueueStatus(
+    val position: Int = 0,
+    val mode: String = "",
+    /** Total players currently waiting in this mode's queue (optional on the wire). */
+    val queueSize: Int? = null,
+)
 
 @Serializable
 data class VSMatchFound(
@@ -47,6 +56,8 @@ data class VSMatchFound(
     val mode: String = "",
     val serverStartAt: Double = 0.0,    // unix ms
     val countdownSeconds: Double = 3.0,
+    /** Opponent's Supabase user id (from presenceId `u:<id>`), or null if anonymous. */
+    val opponentUserId: String? = null,
 )
 
 @Serializable
@@ -87,6 +98,10 @@ data class VSOpponentProgress(
     val latestGuess: VSOpponentLatestGuess? = null,
 )
 
+/** One opponent guess word (letters only revealed at match end). */
+@Serializable
+data class VSGuessLogEntry(val boardIndex: Int = 0, val guess: String = "")
+
 @Serializable
 data class VSMatchEnded(
     val winner: String? = null,         // "player" | "opponent" | "draw" | null
@@ -98,6 +113,10 @@ data class VSMatchEnded(
     val opponentScore: Double = 0.0,
     val opponentId: String? = null,     // opponent's Supabase user id (null if anon)
     val recordMatch: Boolean? = null,   // true only for the single designated writer (player1)
+    /** Opponent's full ordered guess words (+ board index) — revealed at match end. */
+    val opponentGuessLog: List<VSGuessLogEntry>? = null,
+    /** The match solutions, so the result screen can render both final boards. */
+    val solutions: List<String>? = null,
 )
 
 @Serializable

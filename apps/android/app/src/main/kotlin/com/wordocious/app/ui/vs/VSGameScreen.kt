@@ -82,7 +82,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
     ) {
         when (vm.screen) {
             VSScreen.NOT_CONFIGURED -> NotConfigured(label, gradient, ::goHome)
-            VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.message, ::goHome)
+            VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.queueSize, vm.message, ::goHome)
             VSScreen.MATCH -> MatchScreen(vm, label, gradient, ::goHome)
             VSScreen.WAITING -> WaitingScreen(vm, gradient, ::goHome)
             VSScreen.RESULT -> ResultScreen(vm, gradient, ::goHome, onGoPro)
@@ -91,6 +91,26 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
         }
 
         vm.countdown?.let { CountdownOverlay(it, gradient) }
+        // Match-intro splash — sits above the countdown for 2.5s (or until tapped).
+        if (vm.showIntro) {
+            val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
+            MatchIntro(
+                me = IntroPlayer(
+                    username = profile?.username ?: "You",
+                    avatarUrl = profile?.avatarUrl,
+                    level = profile?.level,
+                ),
+                opponent = vm.opponentUserId?.let {
+                    IntroPlayer(
+                        username = vm.opponentInfo?.displayName ?: "…",
+                        avatarUrl = vm.opponentInfo?.avatarUrl,
+                        level = vm.opponentInfo?.level,
+                    )
+                },
+                headToHead = vm.headToHead,
+                onDone = { vm.showIntro = false },
+            )
+        }
         if (vm.screen == VSScreen.RESULT) vm.xpResult?.let { XpToast(it) { vm.xpResult = null } }
     }
 }
@@ -101,13 +121,16 @@ private fun VsTitle(label: String, gradient: List<Color>, size: Int) {
 }
 
 @Composable
-private fun QueueScreen(label: String, gradient: List<Color>, position: Int, message: String?, onHome: () -> Unit) {
+private fun QueueScreen(label: String, gradient: List<Color>, position: Int, queueSize: Int, message: String?, onHome: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
         VsTitle(label, gradient, 36)
         CircularProgressIndicator(color = WTheme.primary)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             CyclingStatus()
             Text("Position in queue: ${position + 1}", fontSize = 13.sp, color = WTheme.textMuted)
+            if (queueSize > 1) {
+                Text("$queueSize players waiting", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            }
         }
         Pill("Cancel") { onHome() }
         message?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 8.dp)) }
@@ -139,6 +162,17 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
     else computeCombinedLetterStates(state.boards)
     val perBoardStates = if (useQuadrant) computePerBoardLetterStates(state.boards) else null
 
+    // Throttled typing relay — ping while letters are in the current row (web onTyping).
+    LaunchedEffect(input) { if (input.isNotEmpty()) vm.notifyTyping() }
+    // Light haptic on every opponent guess row (web navigator.vibrate parity).
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    LaunchedEffect(vm.opponentGuessTick) {
+        if (vm.opponentGuessTick > 0) haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+    }
+
+    val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
+
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
         // Header: home button + VS title
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -161,6 +195,33 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
             Spacer(Modifier.weight(1f))
             Spacer(Modifier.size(34.dp))
         }
+        // Persistent VS header: you vs opponent + tug-of-war lead bar + typing.
+        VsMatchHeader(
+            me = HeaderPlayer(
+                username = profile?.username ?: "You",
+                avatarUrl = profile?.avatarUrl,
+                guesses = vm.myGuessCount,
+                progress = computeVsProgress(
+                    boardsSolved = state.boards.count { it.status == GameStatus.WON },
+                    totalBoards = state.boards.size,
+                    bestGreens = myBestRowGreens(state.boards, vm.mode),
+                    wordLen = vm.wordLen,
+                ),
+            ),
+            opponent = HeaderPlayer(
+                username = vm.opponentName,
+                avatarUrl = vm.opponentInfo?.avatarUrl,
+                guesses = vm.opponent.attempts,
+                progress = computeVsProgress(
+                    boardsSolved = vm.opponent.boardsSolved,
+                    totalBoards = state.boards.size,
+                    bestGreens = bestRowGreens(vm.opponent.tiles),
+                    wordLen = vm.wordLen,
+                ),
+            ),
+            opponentTyping = vm.opponentTyping,
+            modifier = Modifier.padding(top = 6.dp),
+        )
         OpponentStrip(vm.opponent, game.maxGuesses, game.wordLength, Modifier.padding(top = 6.dp))
 
         Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp)) {
@@ -183,24 +244,133 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
         )
         Spacer(Modifier.height(6.dp))
     }
+
+    // Moment callout — opponent milestones (greens / board solved / last guess).
+    vm.callout?.let { text ->
+        Box(Modifier.fillMaxWidth().padding(top = 48.dp), Alignment.TopCenter) {
+            VsCalloutPill(text)
+        }
+    }
+    }
 }
 
 private fun mode(vm: VSMatchViewModel) = vm.mode
 
+/**
+ * Spectator waiting screen — you finished; watch the opponent's live board
+ * (colors only, ~2x tiles), with live guess counter + clock and stakes copy.
+ * Ports web vs-game.tsx's `waiting` screen.
+ */
 @Composable
 private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: () -> Unit) {
-    Column(Modifier.padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Waiting for opponent…", fontSize = 30.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
-        CircularProgressIndicator(color = WTheme.primary)
-        vm.game?.let { g ->
-            StatCard("YOUR RESULT", listOf("Guesses" to "${g.rowsUsed}", "Time" to fmtTime(vm.playerTimeMs.toDouble())))
+    val oppName = vm.opponentName
+    val totalBoardsLocal = vm.game?.boardCount ?: 1
+    val liveTotalBoards = if (vm.opponent.totalBoards > 0) vm.opponent.totalBoards else totalBoardsLocal
+    val oppRowsUsed = vm.opponent.tiles.values.maxOfOrNull { it.size } ?: 0
+    // Cap rendered empty rows so Gauntlet's 50-guess budget doesn't blow up the layout.
+    val spectatorRows = minOf(vm.modeMaxGuesses, maxOf(6, oppRowsUsed + 1))
+
+    // Live m:ss clock since match start.
+    var tick by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); tick++ } }
+    @Suppress("UNUSED_EXPRESSION") tick
+    val clockSecs = vm.matchElapsedSeconds
+    val clockStr = "${clockSecs / 60}:${"%02d".format(clockSecs % 60)}"
+
+    // STAKES copy — web parity. The real win rule is: solve, then tie-break on
+    // boardsSolved, then composite score = guesses + timeSeconds/45. The
+    // opponent is still playing, so they're almost always behind on time and
+    // need strictly FEWER guesses; if they're somehow still ahead of your
+    // clock, matching your guess count could win on time.
+    val myGuesses = vm.myGuessCount
+    val stakes: String = run {
+        val boardsLeft = liveTotalBoards - vm.opponent.boardsSolved
+        if (vm.myStatus == GameStatus.LOST) {
+            if (liveTotalBoards > 1) "$oppName needs $boardsLeft more board${if (boardsLeft == 1) "" else "s"} to win"
+            else "$oppName just needs to solve to win"
+        } else if (liveTotalBoards > 1 && boardsLeft > 1) {
+            "$oppName needs $boardsLeft more boards to stay alive"
+        } else {
+            val opponentTimeBehind = vm.matchElapsedSeconds * 1000L > vm.playerTimeMs
+            val target = if (opponentTimeBehind) myGuesses - 1 else myGuesses
+            if (target <= 0 || vm.opponent.attempts >= target) "$oppName can no longer beat your score!"
+            else "$oppName must solve in $target or fewer to beat you"
         }
-        val rows = buildList {
-            add("Guesses" to "${vm.opponent.attempts}")
-            if (vm.opponent.totalBoards > 1) add("Boards Solved" to "${vm.opponent.boardsSolved}/${vm.opponent.totalBoards}")
+    }
+
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(18.dp),
+    ) {
+        item { Spacer(Modifier.height(24.dp)) }
+        item {
+            Text(
+                "$oppName is still playing...", fontSize = 24.sp, fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center, style = TextStyle(brush = Brush.horizontalGradient(gradient)),
+            )
         }
-        StatCard("OPPONENT PROGRESS", rows)
-        Pill("Leave") { onHome() }
+        // Opponent identity + live counters (+ typing dots while pings arrive).
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 40.dp, borderColor = WTheme.border)
+                Column {
+                    Text(oppName, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+                    val attempts = vm.opponent.attempts
+                    Text(
+                        buildString {
+                            append("$attempts ${if (attempts == 1) "guess" else "guesses"} · $clockStr")
+                            if (liveTotalBoards > 1) append(" · ${vm.opponent.boardsSolved}/$liveTotalBoards boards")
+                        },
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    )
+                }
+                if (vm.opponentTyping) TypingDots(dotSize = 6.dp)
+            }
+        }
+        // Stakes pill
+        if (stakes.isNotEmpty()) {
+            item {
+                Text(
+                    stakes, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
+                        .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+        }
+        // Opponent live board — scaled-up mini board(s), colors only (16dp tiles).
+        item {
+            Box(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+                Alignment.Center,
+            ) {
+                if (liveTotalBoards <= 1) {
+                    OpponentMiniBoard(vm.opponent.tiles[0] ?: emptyList(), spectatorRows, vm.wordLen, 16.dp)
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Show up to 4 boards per row at 16dp; wrap via chunking.
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            (0 until liveTotalBoards).chunked(4).forEach { rowBoards ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    rowBoards.forEach { i ->
+                                        OpponentMiniBoard(vm.opponent.tiles[i] ?: emptyList(), spectatorRows, vm.wordLen, 16.dp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // Your stats
+        item {
+            StatCard("YOUR RESULT", listOf("Guesses" to "$myGuesses", "Time" to fmtTime(vm.playerTimeMs.toDouble())))
+        }
+        item { Pill("Leave") { onHome() } }
+        item { Spacer(Modifier.height(24.dp)) }
     }
 }
 
@@ -208,25 +378,47 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
 private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: () -> Unit, onGoPro: () -> Unit) {
     // Web parity: non-Pro Rematch opens the VsLimitModal Pro upsell.
     var showRematchUpsell by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
     val winner = vm.result?.winner
     val isWin = winner == "player"; val isDraw = winner == "draw"
-    val headline = if (isWin) "VICTORY" else if (isDraw) "DRAW" else "DEFEAT"
+    // Web headline: WINNER / DRAW / DEFEAT (green / yellow / red gradients).
+    val headline = if (isWin) "WINNER" else if (isDraw) "DRAW" else "DEFEAT"
     val colors = if (isWin) listOf(Color(0xFF4ADE80), Color(0xFF6EE7B7))
     else if (isDraw) listOf(Color(0xFFFACC15), Color(0xFFFDBA74))
     else listOf(Color(0xFFF87171), Color(0xFFFDA4AF))
+    val myName = profile?.username ?: "You"
+    val oppName = vm.opponentName
+    val modeLabel = vsModeLabel(vm.mode)
+
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         item { Spacer(Modifier.height(40.dp)) }
-        item { Text(headline, fontSize = 60.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(colors))) }
-        item { Spacer(Modifier.height(22.dp)) }
+        item { Text(headline, fontSize = 56.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(colors))) }
+        // Updated all-time head-to-head (refetched ~1.2s after the match was recorded).
+        if (vm.opponentUserId != null) {
+            vm.headToHead?.let { h2h ->
+                item {
+                    Text(
+                        com.wordocious.app.data.HeadToHeadService.headToHeadLine(oppName, h2h),
+                        fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textSecondary,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+            }
+        }
+        item { Spacer(Modifier.height(20.dp)) }
+        // Comparison bars: you (purple) vs them (pink), lower is better.
         vm.result?.let { r ->
             item {
-                StatCard(null, listOf(
-                    "Your Guesses" to "${r.playerGuesses}", "Opponent Guesses" to "${r.opponentGuesses}",
-                    "Your Time" to fmtTime(r.playerTime), "Opponent Time" to fmtTime(r.opponentTime),
-                    "Your Score" to String.format("%.2f", r.playerScore), "Opponent Score" to String.format("%.2f", r.opponentScore),
-                ))
+                ComparisonBars(
+                    myName = myName, opponentName = oppName,
+                    metrics = listOf(
+                        ComparisonMetric("Guesses", r.playerGuesses.toDouble(), r.opponentGuesses.toDouble()) { "${it.toInt()}" },
+                        ComparisonMetric("Time", r.playerTime, r.opponentTime) { fmtTime(it) },
+                        ComparisonMetric("Score (guesses + time penalty)", r.playerScore, r.opponentScore) { String.format("%.2f", it) },
+                    ),
+                )
             }
-            item { Text("Score = guesses + time penalty (lower is better)", fontSize = 10.sp, color = WTheme.textMuted, modifier = Modifier.padding(top = 8.dp)) }
         }
         if (vm.rematch == RematchState.RECEIVED) {
             item {
@@ -240,19 +432,49 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
             }
         }
         item { Spacer(Modifier.height(16.dp)) }
+        // Actions — prominent Rematch on top, Home/Share below (web parity).
+        when (vm.rematch) {
+            RematchState.DECLINED -> item { Pill("No Rematch", Modifier.fillMaxWidth()) {} }
+            RematchState.OFFERED -> item { GradientPill("Waiting…", gradient, Modifier.fillMaxWidth()) {} }
+            RematchState.RECEIVED -> {}
+            RematchState.IDLE -> item {
+                GradientPill("Rematch", gradient, Modifier.fillMaxWidth()) {
+                    if (vm.isPro) vm.offerRematch() else showRematchUpsell = true
+                }
+            }
+        }
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Pill("Home", Modifier.weight(1f)) { onHome() }
-                when (vm.rematch) {
-                    RematchState.DECLINED -> Pill("No Rematch", Modifier.weight(1f)) {}
-                    RematchState.OFFERED -> GradientPill("Waiting…", gradient, Modifier.weight(1f)) {}
-                    RematchState.RECEIVED -> {}
-                    RematchState.IDLE -> GradientPill("Rematch", gradient, Modifier.weight(1f)) { if (vm.isPro) vm.offerRematch() else showRematchUpsell = true }
+                Pill("Share", Modifier.weight(1f)) {
+                    val text = if (isWin) "I just beat $oppName in a Wordocious VS $modeLabel duel! ⚔️🏆"
+                    else if (isDraw) "$oppName and I battled to a draw in VS $modeLabel on Wordocious! ⚔️"
+                    else "Epic VS $modeLabel duel against $oppName on Wordocious! ⚔️"
+                    com.wordocious.app.data.ShareHelper.share(context, "$text\nhttps://wordocious.com")
+                }
+            }
+        }
+        // Final boards with letters — opponent's reconstructed from the
+        // match-end guess log + solutions; mine from local play.
+        val solutions = vm.result?.solutions ?: emptyList()
+        if (solutions.isNotEmpty()) {
+            item {
+                val myLog = vm.game?.state?.value?.boards.orEmpty().flatMapIndexed { i, b ->
+                    b.guesses.map { GuessLogEntry(i, it) }
+                }
+                val oppLog = (vm.result?.opponentGuessLog ?: emptyList()).map { GuessLogEntry(it.boardIndex, it.guess) }
+                Box(Modifier.padding(top = 16.dp)) {
+                    FinalBoards(
+                        myName = myName, opponentName = oppName,
+                        myGuessLog = myLog, opponentGuessLog = oppLog, solutions = solutions,
+                    )
                 }
             }
         }
         item { Spacer(Modifier.height(24.dp)) }
     }
+    // Confetti for wins only (web Confetti / VictoryOverlay parity).
+    if (isWin && !WTheme.reducedMotion) VsConfetti()
     if (showRematchUpsell) {
         VSLimitUpsellModal(onGoPro = onGoPro, onClose = { showRematchUpsell = false })
     }

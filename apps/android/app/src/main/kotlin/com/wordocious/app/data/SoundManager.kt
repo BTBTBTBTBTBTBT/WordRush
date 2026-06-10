@@ -55,6 +55,19 @@ object SoundManager {
         tone(784.0, 0.20, 0.12f, delayMs = 200)
     }
 
+    /** VS match-found stinger — web playVsStinger (392/0.10/g0.10 + 523/0.18/g0.10 @100ms). */
+    fun playVsStinger() {
+        if (!enabled) return
+        tone(392.0, 0.10, 0.10f)
+        tone(523.0, 0.18, 0.10f, delayMs = 100)
+    }
+
+    /** Soft thunk whenever the opponent lands a guess row — web playOpponentThunk (220/0.06/g0.05). */
+    fun playOpponentThunk() {
+        if (!enabled) return
+        tone(220.0, 0.06, 0.05f)
+    }
+
     fun playGameOver() {
         if (!enabled) return
         tone(392.0, 0.20, 0.10f)
