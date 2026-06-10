@@ -108,7 +108,8 @@ struct VictoryOverlay: View {
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: cols), spacing: 6) {
                             ForEach(solutions.indices, id: \.self) { i in
                                 Text(solutions[i].uppercased())
-                                    .font(Brand.font(solutions.count > 8 ? 13 : 16, .black)).tracking(1)
+                                    .font(Brand.font(solutions.count > 4 ? 13 : 16, .black)).tracking(1)
+                                    .lineLimit(1).minimumScaleFactor(0.55)
                                     .foregroundStyle(Theme.textPrimary)
                             }
                         }

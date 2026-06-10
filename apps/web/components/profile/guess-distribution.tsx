@@ -34,10 +34,10 @@ export function GuessDistribution({ data, accentColor }: GuessDistributionProps)
           return (
             <div key={d.guesses} className="flex items-center gap-2">
               <span
-                className="text-xs font-black w-3 text-right shrink-0"
+                className="text-xs font-black w-6 text-right shrink-0"
                 style={{ color: 'var(--color-text)' }}
               >
-                {d.guesses}
+                {(d as { label?: string }).label ?? d.guesses}
               </span>
               <div className="flex-1 h-6 relative">
                 <div

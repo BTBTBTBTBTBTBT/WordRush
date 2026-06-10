@@ -9,7 +9,7 @@ import WordociousCore
 enum MatchStatsService {
 
     // MARK: Result models
-    struct GuessBucket: Identifiable { let guesses: Int; let count: Int; var id: Int { guesses } }
+    struct GuessBucket: Identifiable { let guesses: Int; let count: Int; var label: String = ""; var id: Int { guesses } }
     struct DayActivity: Identifiable { let day: Date; let played: Int; let won: Int; var id: Date { day } }
     struct SolvePoint: Identifiable { let index: Int; let date: Date; let seconds: Int; let mode: String; var id: Int { index } }
     struct HourBucket: Identifiable { let hour: Int; let played: Int; let won: Int; var id: Int { hour } }
@@ -57,12 +57,23 @@ enum MatchStatsService {
             .eq("winner_id", value: uid)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [ScoreRow] = (try? await q.execute().value) ?? []
+        // Bucket range follows the mode's real max guesses — a 7/13 OctoWord win
+        // must not clamp into "6". GAUNTLET and the All view clamp into "N+".
+        let distMax: [String: Int] = [
+            "DUEL": 6, "RESCUE": 6, "PROPERNOUNDLE": 6, "DUEL_6": 7, "DUEL_7": 8,
+            "QUORDLE": 9, "SEQUENCE": 10, "OCTORDLE": 13, "GAUNTLET": 13,
+        ]
+        let maxBucket = mode.map { distMax[$0.rawValue] ?? 6 } ?? 6
+        let clampable = mode == nil || mode == .gauntlet
         var counts = [Int: Int]()
         for r in rows {
             guard let s = r.player1_score, s > 0 else { continue }
-            counts[min(s, 6), default: 0] += 1
+            counts[min(s, maxBucket), default: 0] += 1
         }
-        return (1...6).map { GuessBucket(guesses: $0, count: counts[$0] ?? 0) }
+        return (1...maxBucket).map {
+            GuessBucket(guesses: $0, count: counts[$0] ?? 0,
+                        label: "\($0)" + (clampable && $0 == maxBucket ? "+" : ""))
+        }
     }
 
     /// Per-day games played + won over the last `days` (activity calendar).

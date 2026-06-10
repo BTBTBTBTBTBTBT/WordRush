@@ -628,7 +628,7 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
             }
             buckets.forEach { b ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("${b.guesses}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(12.dp))
+                    Text(b.label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(24.dp))
                     Box(Modifier.weight(1f).height(20.dp), contentAlignment = Alignment.CenterStart) {
                         val frac = (b.count.toFloat() / max).coerceIn(0f, 1f)
                         Box(

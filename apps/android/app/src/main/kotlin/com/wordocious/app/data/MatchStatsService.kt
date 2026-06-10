@@ -28,7 +28,7 @@ object MatchStatsService {
     private val localZone: ZoneId get() = ZoneId.systemDefault()
 
     // ── Result models ──────────────────────────────────────────────────────────
-    data class GuessBucket(val guesses: Int, val count: Int)
+    data class GuessBucket(val guesses: Int, val count: Int, val label: String = guesses.toString())
     data class DayActivity(val day: String, val played: Int, val won: Int)
     data class SolvePoint(val index: Int, val seconds: Int, val mode: String)
     data class HourBucket(val hour: Int, val played: Int, val won: Int)
@@ -113,7 +113,13 @@ object MatchStatsService {
     }.getOrNull()
 
     // ── Guess distribution ───────────────────────────────────────────────────────
-    /** Guess-distribution buckets 1..6 over the user's solo wins. */
+    /** Per-mode bucket caps — a 7/13 OctoWord win must not clamp into "6". */
+    private val DIST_MAX = mapOf(
+        "DUEL" to 6, "RESCUE" to 6, "PROPERNOUNDLE" to 6, "DUEL_6" to 7, "DUEL_7" to 8,
+        "QUORDLE" to 9, "SEQUENCE" to 10, "OCTORDLE" to 13, "GAUNTLET" to 13,
+    )
+
+    /** Guess-distribution buckets 1..modeMax over the user's solo wins (GAUNTLET/All clamp into "N+"). */
     suspend fun guessDistribution(userId: String, mode: String? = null): List<GuessBucket> = runCatching {
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_score,game_mode,winner_id")) {
@@ -121,9 +127,13 @@ object MatchStatsService {
                 limit(2000)
             }
             .decodeList<ScoreRow>()
+        val maxBucket = mode?.let { DIST_MAX[it] ?: 6 } ?: 6
+        val clampable = mode == null || mode == "GAUNTLET"
         val counts = HashMap<Int, Int>()
-        rows.forEach { r -> r.player1Score?.takeIf { it > 0 }?.let { val b = minOf(it, 6); counts[b] = (counts[b] ?: 0) + 1 } }
-        (1..6).map { GuessBucket(it, counts[it] ?: 0) }
+        rows.forEach { r -> r.player1Score?.takeIf { it > 0 }?.let { val b = minOf(it, maxBucket); counts[b] = (counts[b] ?: 0) + 1 } }
+        (1..maxBucket).map {
+            GuessBucket(it, counts[it] ?: 0, label = "$it" + if (clampable && it == maxBucket) "+" else "")
+        }
     }.getOrElse { emptyList() }
 
     // ── Activity ─────────────────────────────────────────────────────────────────

@@ -501,17 +501,32 @@ export async function fetchGuessDistribution(userId: string, gameMode?: string) 
   query = query.limit(2000);
   const { data } = await query as { data: Array<{ player1_score: number; player2_id: string | null; winner_id: string; player1_id: string; game_mode: string }> | null };
 
-  const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  // Bucket range follows the mode's real max guesses — a 7/13 OctoWord win
+  // must not be clamped into "6". GAUNTLET (50 guesses) and the All view clamp
+  // into a final "N+" bucket instead.
+  const MAX_BUCKET: Record<string, number> = {
+    DUEL: 6, RESCUE: 6, PROPERNOUNDLE: 6, DUEL_6: 7, DUEL_7: 8,
+    QUORDLE: 9, SEQUENCE: 10, OCTORDLE: 13, GAUNTLET: 13,
+  };
+  const maxBucket = gameMode ? (MAX_BUCKET[gameMode] ?? 6) : 6;
+  const clampable = !gameMode || gameMode === 'GAUNTLET';
+
+  const dist: Record<number, number> = {};
+  for (let g = 1; g <= maxBucket; g++) dist[g] = 0;
   for (const row of data || []) {
     const isP1 = row.player1_id === userId;
     const won = row.winner_id === userId;
     if (!won) continue;
     const score = isP1 ? row.player1_score : 0;
     if (score <= 0) continue;
-    const bucket = Math.min(score, 6);
+    const bucket = Math.min(score, maxBucket);
     dist[bucket] = (dist[bucket] || 0) + 1;
   }
-  return Object.entries(dist).map(([g, c]) => ({ guesses: Number(g), count: c }));
+  return Object.entries(dist).map(([g, c]) => ({
+    guesses: Number(g),
+    count: c,
+    label: `${g}${clampable && Number(g) === maxBucket ? '+' : ''}`,
+  }));
 }
 
 /**

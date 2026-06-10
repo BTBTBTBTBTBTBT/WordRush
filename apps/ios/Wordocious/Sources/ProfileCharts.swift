@@ -68,7 +68,7 @@ private struct GuessDistributionChart: View {
                 EmptyChart(copy: "Win a game to see your guess distribution")
             } else {
                 Chart(data) { b in
-                    BarMark(x: .value("Guesses", "\(b.guesses)"), y: .value("Wins", b.count))
+                    BarMark(x: .value("Guesses", b.label.isEmpty ? "\(b.guesses)" : b.label), y: .value("Wins", b.count))
                         .foregroundStyle(color(b.guesses))
                         .annotation(position: .top) {
                             if b.count > 0 { Text("\(b.count)").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted) }
