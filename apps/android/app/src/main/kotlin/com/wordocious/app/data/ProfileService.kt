@@ -60,6 +60,19 @@ object ProfileService {
             .decodeList<RecentMatch>()
     }.getOrElse { emptyList() }
 
+    @Serializable
+    private data class NameRow(val id: String, val username: String? = null)
+
+    /** Batch-resolve usernames (e.g. VS opponents in Recent Matches). */
+    suspend fun fetchUsernames(ids: List<String>): Map<String, String> = runCatching {
+        if (ids.isEmpty()) return emptyMap()
+        client.postgrest["profiles"]
+            .select(Columns.raw("id, username")) { filter { isIn("id", ids) } }
+            .decodeList<NameRow>()
+            .mapNotNull { row -> row.username?.let { row.id to it } }
+            .toMap()
+    }.getOrElse { emptyMap() }
+
     suspend fun fetchUserMedals(userId: String, limit: Int = 10): List<UserMedal> = runCatching {
         client.postgrest["medals"]
             .select { filter { eq("user_id", userId) }; order("day", Order.DESCENDING); limit(limit.toLong()) }

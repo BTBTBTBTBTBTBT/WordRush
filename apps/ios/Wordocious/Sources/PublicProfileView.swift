@@ -312,6 +312,8 @@ struct PublicProfileView: View {
 struct RecentMatchRow: View {
     let match: PublicProfileService.RecentMatch
     let profileId: String
+    /// VS opponent's username — renders "· vs <name>" inline (web profile parity).
+    var opponentName: String? = nil
 
     private var mode: HomeMode? { homeModes.first { $0.dbKey == match.game_mode } }
 
@@ -339,6 +341,10 @@ struct RecentMatchRow: View {
                         .background(RoundedRectangle(cornerRadius: 5)
                             .fill(match.isSolo ? Color(hex: 0xF0FDF4) : Color(hex: 0xEDE9F6)))
                         .foregroundStyle(match.isSolo ? Color(hex: 0x16A34A) : Color(hex: 0x7C3AED))
+                    if !match.isSolo, let opponentName {
+                        Text("· vs \(opponentName)")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+                    }
                 }
                 Text("\(guesses) \(guesses == 1 ? "guess" : "guesses") · \(secs > 0 ? durationStr(secs) : "—")")
                     .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)

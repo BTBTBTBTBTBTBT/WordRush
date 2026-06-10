@@ -80,6 +80,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf<List<ProfileService.UserStat>>(emptyList()) }
     var recentMatches by remember { mutableStateOf<List<ProfileService.RecentMatch>>(emptyList()) }
+    // VS opponents' usernames for the "· vs <name>" line (web profile parity).
+    var opponentNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var medals by remember { mutableStateOf<List<ProfileService.UserMedal>>(emptyList()) }
     var todayDailies by remember { mutableStateOf<Map<String, DailyCompletionsService.Completion>>(emptyMap()) }
     var unlockedAchievements by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -101,6 +103,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         if (userId != null) {
             stats = ProfileService.fetchUserStats(userId)
             recentMatches = ProfileService.fetchRecentMatches(userId)
+            val oppIds = recentMatches.filter { it.player2Id != null }
+                .map { if (it.player1Id == userId) it.player2Id!! else it.player1Id }
+                .distinct()
+            opponentNames = ProfileService.fetchUsernames(oppIds)
             medals = ProfileService.fetchUserMedals(userId, limit = 100)
             todayDailies = DailyCompletionsService.fetchTodayCompletions()
             unlockedAchievements = com.wordocious.app.data.AchievementService.fetchUnlocked(userId)
@@ -240,7 +246,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             }
         } else {
             items(recentMatches) { m ->
-                RecentMatchRow(m, userId)
+                val oppId = if (m.player2Id == null) null else if (m.player1Id == userId) m.player2Id else m.player1Id
+                RecentMatchRow(m, userId, opponentName = oppId?.let { opponentNames[it] ?: "Unknown" })
                 Spacer(Modifier.height(8.dp))
             }
         }
@@ -468,7 +475,7 @@ private fun DailyBadge(modeId: String, completion: DailyCompletionsService.Compl
 
 // ── Recent match row (web parity: icon box + Solo/VS pill + guesses·time + Win/Loss + date) ──
 @Composable
-private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?) {
+private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, opponentName: String? = null) {
     val isPlayer1 = m.player1Id == userId
     val isVs = m.player2Id != null
     val won = m.winnerId == userId
@@ -493,6 +500,14 @@ private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?) {
                     modifier = Modifier.clip(RoundedCornerShape(4.dp))
                         .background(if (isVs) Color(0xFFEDE9F6) else Color(0xFFF0FDF4)).padding(horizontal = 6.dp, vertical = 2.dp),
                 )
+                // Web parity: "· vs <username>" inline on VS rows.
+                if (isVs && opponentName != null) {
+                    Text(
+                        "· vs $opponentName", fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                        color = WTheme.textMuted, maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
             }
             Text(
                 "$score ${if (score == 1) "guess" else "guesses"} · ${if (timeSec > 0) fmtMatchTime(timeSec) else "—"}",

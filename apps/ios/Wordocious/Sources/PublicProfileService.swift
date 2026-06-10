@@ -20,6 +20,10 @@ enum PublicProfileService {
         let created_at: String
 
         var isSolo: Bool { player2_id == nil }
+        func opponentId(_ uid: String) -> String? {
+            guard let p2 = player2_id else { return nil }
+            return player1_id == uid ? p2 : player1_id
+        }
         func isWinner(_ uid: String) -> Bool { winner_id == uid }
         func playerTime(_ uid: String) -> Int {
             Int((player1_id == uid ? player1_time : player2_time) ?? 0)
@@ -93,4 +97,15 @@ enum PublicProfileService {
         return counts.map { MatchStatsService.TopWord(word: $0.key, count: $0.value.count, wins: $0.value.wins) }
             .sorted { $0.count > $1.count }.prefix(limit).map { $0 }
     }
+    private struct NameRow: Decodable { let id: String; let username: String? }
+
+    /// Batch-resolve usernames (VS opponents in Recent Matches — web profile parity).
+    static func usernames(ids: [String]) async -> [String: String] {
+        guard !ids.isEmpty else { return [:] }
+        let rows: [NameRow] = (try? await AuthService.shared.client.from("profiles")
+            .select("id, username").in("id", values: ids)
+            .execute().value) ?? []
+        return Dictionary(uniqueKeysWithValues: rows.compactMap { r in r.username.map { (r.id, $0) } })
+    }
+
 }

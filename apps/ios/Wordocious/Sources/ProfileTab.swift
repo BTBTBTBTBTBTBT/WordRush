@@ -19,6 +19,7 @@ struct ProfileTab: View {
     @State private var medals: [MedalRow] = []
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
+    @State private var opponentNames: [String: String] = [:]
     @State private var recentLoading = true
     @State private var showEditProfile = false
 
@@ -48,6 +49,8 @@ struct ProfileTab: View {
                     medals = await MedalsService.recent(userId: uid)
                     socialLinks = await ProfileExtras.socialLinks(userId: uid)
                     recentMatches = await PublicProfileService.recentMatches(id: uid)
+                    let oppIds = Array(Set(recentMatches.compactMap { $0.opponentId(uid) }))
+                    opponentNames = await PublicProfileService.usernames(ids: oppIds)
                     recentLoading = false
                 }
             }
@@ -337,7 +340,11 @@ struct ProfileTab: View {
                     .frame(maxWidth: .infinity).padding(.vertical, 16)
             } else {
                 VStack(spacing: 8) {
-                    ForEach(recentMatches.prefix(5)) { m in RecentMatchRow(match: m, profileId: p.id) }
+                    ForEach(recentMatches.prefix(5)) { m in
+                        RecentMatchRow(
+                            match: m, profileId: p.id,
+                            opponentName: m.opponentId(p.id).map { opponentNames[$0] ?? "Unknown" })
+                    }
                 }
             }
         }
