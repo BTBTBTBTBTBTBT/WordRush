@@ -39,15 +39,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.StoreManager
 import com.wordocious.app.ui.theme.WTheme
 
 /**
  * Pro / subscription screen — ports app/pro/page.tsx + iOS ProView (header,
- * benefits, monthly/yearly/day plans, active-Pro state, disclosure). Google Play
- * Billing isn't integrated yet, so the plan CTAs are display-only for now
- * (purchase wiring is a later phase); everything else is full parity.
+ * benefits, monthly/yearly/day plans, active-Pro state, disclosure). Plan CTAs
+ * launch Google Play Billing via data/StoreManager (prices come from Play when
+ * available, falling back to the hardcoded US prices), plus Restore Purchases.
  */
 private val GOLD = Color(0xFFD97706)
 
@@ -112,14 +114,30 @@ fun ProScreen(onDone: () -> Unit) {
 
 @Composable
 private fun PlansContent() {
+    val activity = LocalContext.current as? android.app.Activity
+    val prices by StoreManager.prices.collectAsState()
+    val purchasingId by StoreManager.purchasingId.collectAsState()
+    val lastError by StoreManager.lastError.collectAsState()
+    fun buy(id: String) { activity?.let { StoreManager.purchase(it, id) } }
+
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionHeader("BENEFITS")
         BENEFITS.forEach { BenefitRow(it) }
 
         Spacer(Modifier.height(4.dp))
         SectionHeader("CHOOSE YOUR PLAN")
-        PlanCard("Monthly", "\$6.99", "/mo", "Cancel anytime", listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)), best = false, cta = "Subscribe Monthly")
-        PlanCard("Yearly", "\$59.99", "/yr", "\$4.99/mo billed annually", listOf(Color(0xFFF59E0B), GOLD), best = true, cta = "Subscribe Yearly")
+        PlanCard(
+            "Monthly", prices[StoreManager.PRO_MONTHLY] ?: "\$6.99", "/mo", "Cancel anytime",
+            listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)), best = false,
+            cta = if (purchasingId == StoreManager.PRO_MONTHLY) "Processing…" else "Subscribe Monthly",
+            onClick = { buy(StoreManager.PRO_MONTHLY) },
+        )
+        PlanCard(
+            "Yearly", prices[StoreManager.PRO_YEARLY] ?: "\$59.99", "/yr", "\$4.99/mo billed annually",
+            listOf(Color(0xFFF59E0B), GOLD), best = true,
+            cta = if (purchasingId == StoreManager.PRO_YEARLY) "Processing…" else "Subscribe Yearly",
+            onClick = { buy(StoreManager.PRO_YEARLY) },
+        )
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 6.dp)) {
             Box(Modifier.weight(1f).height(1.dp).background(WTheme.border))
@@ -128,12 +146,30 @@ private fun PlansContent() {
         }
         Box(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(vertical = 12.dp),
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+                .clickableNoRipple { buy(StoreManager.PRO_DAY) }.padding(vertical = 12.dp),
             contentAlignment = Alignment.Center,
-        ) { Text("Just today — \$1 for 24 hours of Pro →", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.primary) }
+        ) {
+            Text(
+                if (purchasingId == StoreManager.PRO_DAY) "Processing…"
+                else "Just today — ${prices[StoreManager.PRO_DAY] ?: "\$1"} for 24 hours of Pro →",
+                fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
+            )
+        }
         Text(
             "Eight day passes cost more than a month of Pro.",
             fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+        )
+        if (lastError != null) {
+            Text(
+                lastError ?: "", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
+                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            )
+        }
+        Text(
+            "Restore Purchases",
+            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.primary, textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clickableNoRipple { StoreManager.restore() },
         )
         // Disclosure (Google Play wording for Android).
         Text(
@@ -164,7 +200,7 @@ private fun BenefitRow(b: Benefit) {
 }
 
 @Composable
-private fun PlanCard(title: String, price: String, unit: String, note: String, gradient: List<Color>, best: Boolean, cta: String) {
+private fun PlanCard(title: String, price: String, unit: String, note: String, gradient: List<Color>, best: Boolean, cta: String, onClick: () -> Unit = {}) {
     Box {
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
@@ -178,7 +214,8 @@ private fun PlanCard(title: String, price: String, unit: String, note: String, g
             }
             Text(note, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(bottom = 8.dp))
             Box(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(gradient)).padding(vertical = 12.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(gradient))
+                    .clickableNoRipple(onClick).padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) { Text(cta, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
         }

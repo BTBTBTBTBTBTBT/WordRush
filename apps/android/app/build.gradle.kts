@@ -52,6 +52,9 @@ dependencies {
     // kotlinx-serialization for the :app data models
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
+    // Google Play Billing (Pro subscriptions + day pass) — coroutine extensions
+    implementation("com.android.billingclient:billing-ktx:7.1.1")
+
     // Socket.IO client for realtime VS (same server.wordocious.com socket.io
     // server the web + iOS connect to). Pulls org.json + OkHttp transitively.
     implementation("io.socket:socket.io-client:2.1.0")

@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         com.wordocious.app.data.ThemePref.load()
         AuthService.initialize()
+        com.wordocious.app.data.StoreManager.start(this)
         setContent {
             WordociousTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {

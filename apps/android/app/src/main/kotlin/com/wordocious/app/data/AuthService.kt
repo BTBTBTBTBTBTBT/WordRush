@@ -246,6 +246,25 @@ object AuthService {
     }
 
     /**
+     * Write Pro entitlement after a verified Play Billing purchase — mirrors
+     * iOS AuthService.applyProGrant and web purchase-service fulfillSubscription:
+     * is_pro=true + pro_expires_at, plus +addShields streak shields for
+     * monthly/yearly (0 for the day pass and for launch/restore reconciles).
+     */
+    suspend fun applyProGrant(expiresAtIso: String, addShields: Int) {
+        val uid = userId ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull() ?: return
+        val shields = (_profile.value?.streakShields ?: 0) + maxOf(0, addShields)
+        runCatching {
+            client.postgrest["profiles"].update({
+                set("is_pro", true)
+                set("pro_expires_at", expiresAtIso)
+                set("streak_shields", shields)
+            }) { filter { eq("id", uid) } }
+        }
+        loadProfile(uid)
+    }
+
+    /**
      * DEV-ONLY (is_admin-gated in the UI): flip `is_pro` for the "Simulate Pro"
      * toggle — 1:1 with the web profile-page button. Writes the column directly
      * (client-writable until the lock-pro migration) then refreshes the profile.
