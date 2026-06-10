@@ -34,6 +34,8 @@ class MainActivity : ComponentActivity() {
         com.wordocious.app.data.ThemePref.load()
         AuthService.initialize()
         com.wordocious.app.data.StoreManager.start(this)
+        // UMP consent -> Mobile Ads init -> preload the game-start interstitial.
+        com.wordocious.app.data.AdsManager.start(this)
         setContent {
             WordociousTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {

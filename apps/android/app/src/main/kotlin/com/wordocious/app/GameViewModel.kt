@@ -87,8 +87,12 @@ class GameViewModel(
     val isFinished: Boolean
         get() = _state.value.status != GameStatus.PLAYING
 
+    /** Wall-clock time the game was provably NOT playable (e.g. game-start ad). */
+    private var pausedMs: Long = 0
+    fun addPausedTime(ms: Long) { pausedMs += ms.coerceAtLeast(0) }
+
     fun elapsedSeconds(): Int =
-        ((System.currentTimeMillis() - _state.value.startTime) / 1000).toInt().coerceAtLeast(0)
+        (((System.currentTimeMillis() - _state.value.startTime).toLong() - pausedMs) / 1000).toInt().coerceAtLeast(0)
 
     // Rejection feedback — web parity (practice-game handleKey): the row turns
     // red + shakes, a message toast appears ("Not enough letters" / "Not in word

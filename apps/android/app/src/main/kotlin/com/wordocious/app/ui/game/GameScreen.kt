@@ -279,6 +279,22 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
     var dismissedVictory by remember { mutableStateOf(false) }
     val showVictory = isFinished && !wasFinishedOnEntry && !dismissedVictory
 
+    // Game-start interstitial for free users (web AdGate / iOS parity). Shown
+    // once per live game; the ad's duration is excluded from the game timer.
+    var adGateDone by rememberSaveable { mutableStateOf(false) }
+    val adActivity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    LaunchedEffect(Unit) {
+        if (!adGateDone && !isFinished && adActivity != null && com.wordocious.app.data.AdsManager.active) {
+            adGateDone = true
+            val t0 = System.currentTimeMillis()
+            com.wordocious.app.data.AdsManager.showGameStartInterstitial(adActivity) {
+                vm.addPausedTime(System.currentTimeMillis() - t0)
+            }
+        } else {
+            adGateDone = true
+        }
+    }
+
     // XP pipeline (#88): record matches/user_stats/profile progression EXACTLY
     // once on a live finish, and surface the earned XP in a top toast. Resumed
     // games (finished on entry) are skipped — their deltas were never owed here.
