@@ -96,7 +96,7 @@ object ShareHelper {
         context.startActivity(chooser)
     }
 
-    private fun modeLabel(mode: GameMode): String = when (mode) {
+    fun modeLabel(mode: GameMode): String = when (mode) {
         GameMode.DUEL -> "Classic"
         GameMode.MULTI_DUEL -> "Duel"
         GameMode.QUORDLE -> "QuadWord"

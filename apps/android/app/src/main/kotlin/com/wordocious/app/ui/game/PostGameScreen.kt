@@ -99,7 +99,20 @@ fun PostGameScreen(
     val accent = modeAccent(mode)
     val share = {
         val text = com.wordocious.app.data.ShareHelper.buildShareText(state, mode, elapsedSeconds)
-        com.wordocious.app.data.ShareHelper.share(context, text)
+        // Render the web-parity share card (1080px PNG) and share image + text.
+        val pn = if (mode == GameMode.PROPERNOUNDLE)
+            com.wordocious.core.ProperNoundle.puzzleFor(state.boards[0].solution) else null
+        val bitmap = runCatching {
+            com.wordocious.app.data.ShareImage.render(
+                context = context, state = state, mode = mode,
+                modeLabel = com.wordocious.app.data.ShareHelper.modeLabel(mode),
+                elapsedSeconds = elapsedSeconds,
+                category = pn?.themeCategory,
+                wordGroups = pn?.display?.split(" ")?.map { it.length }?.takeIf { it.size > 1 },
+            )
+        }.getOrNull()
+        if (bitmap != null) com.wordocious.app.data.ShareImage.share(context, bitmap, text)
+        else com.wordocious.app.data.ShareHelper.share(context, text)
     }
 
     Box(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
