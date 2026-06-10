@@ -309,6 +309,14 @@ object GameResultsService {
 
         // Refresh in-memory profile so XP/streak/level reflect immediately on Profile/Home.
         AuthService.refreshProfile()
+
+        // Achievement unlock detection — matches web stats-service.ts calling
+        // checkAchievements after recordGameResult. Never throws.
+        runCatching {
+            AchievementService.checkAchievements(
+                userId, gameMode.name, playType, won, guessCount, timeSeconds, seed, hintsUsed,
+            )
+        }
         return xp
     }
 }
