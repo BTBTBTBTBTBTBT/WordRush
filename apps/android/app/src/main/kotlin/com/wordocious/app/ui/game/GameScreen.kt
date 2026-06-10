@@ -494,6 +494,25 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit) 
         // Sound toggle (top-right) — web SoundToggle sits on every game header.
         SoundToggleButton(accent = accent, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
 
+        // Gauntlet stage-transition interstitial (web stage-transition.tsx):
+        // shown when currentStage advances while the run is still live.
+        if (mode == GameMode.GAUNTLET) {
+            var transition by remember {
+                mutableStateOf<Pair<com.wordocious.core.GauntletStageConfig, com.wordocious.core.GauntletStageConfig?>?>(null)
+            }
+            var lastStage by remember { mutableStateOf(state.gauntlet?.currentStage ?: 0) }
+            LaunchedEffect(state.gauntlet?.currentStage) {
+                val g = state.gauntlet ?: return@LaunchedEffect
+                if (g.currentStage > lastStage && state.status == GameStatus.PLAYING) {
+                    transition = g.stages[lastStage] to g.stages.getOrNull(g.currentStage)
+                }
+                lastStage = g.currentStage
+            }
+            transition?.let { (done, next) ->
+                StageTransitionOverlay(completed = done, next = next) { transition = null }
+            }
+        }
+
         // Rejection toast — web: absolute @ top 90px, dark pill, white 12px bold
         // ("Not enough letters" / "Not in word list" / "Already guessed").
         val rejectMsg by vm.rejectMessage.collectAsState()

@@ -122,6 +122,23 @@ fun PostGameScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Gauntlet: stage rows + tap-to-review (web gauntlet-results parity).
+            if (mode == GameMode.GAUNTLET) {
+                state.gauntlet?.let { g ->
+                    var reviewIndex by androidx.compose.runtime.remember {
+                        androidx.compose.runtime.mutableStateOf<Int?>(null)
+                    }
+                    GauntletStagesCard(g, won = won, onReview = { reviewIndex = it })
+                    reviewIndex?.let { idx ->
+                        val res = g.stageResults.firstOrNull { it.stageIndex == idx }
+                        val stage = g.stages.getOrNull(idx)
+                        if (res != null && stage != null) {
+                            StageReviewModal(stage = stage, result = res, onClose = { reviewIndex = null })
+                        }
+                    }
+                }
+            }
+
             // ProperNoundle: Wikipedia photo + display-name result line (web parity:
             // win = name in green; loss = "The answer was: X" in red).
             if (mode == GameMode.PROPERNOUNDLE) {
