@@ -2,6 +2,8 @@ package com.wordocious.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -104,7 +106,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
             )
 
             // TODO: Google / Apple OAuth buttons — deferred pending OAuth config
-            SocialPlaceholder()
+            GoogleSignInButton(onError = { error = it })
 
             // Divider
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -231,16 +233,36 @@ private fun AuthField(
     )
 }
 
+/** "Continue with Google" — web/iOS parity (white card button, G mark, bold label). */
 @Composable
-private fun SocialPlaceholder() {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun GoogleSignInButton(onError: (String) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+            .clickableNoRipple {
+                if (!busy) {
+                    busy = true
+                    scope.launch {
+                        val err = com.wordocious.app.data.AuthService.signInWithGoogle(context)
+                        busy = false
+                        if (err != null) onError(err)
+                    }
+                }
+            }
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("G", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color(0xFF4285F4))
+        Spacer(Modifier.width(8.dp))
         Text(
-            "Google sign-in coming soon",
-            fontSize = 11.sp, color = WTheme.textMuted,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-                .background(WTheme.surfaceAlt, RoundedCornerShape(10.dp))
-                .padding(12.dp),
+            if (busy) "Signing in…" else "Continue with Google",
+            fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF1F2937),
         )
     }
 }

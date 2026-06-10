@@ -50,6 +50,9 @@ data class Profile(
  * Mirrors apps/ios/Sources/AuthService.swift and web lib/auth-context.tsx.
  */
 object AuthService {
+    /** Web OAuth client ID — the Supabase Google provider's audience (same as iOS webClientID). */
+    private const val GOOGLE_WEB_CLIENT_ID = "193086095286-2h2smgnt72veffaufh1nuruvlris79d9.apps.googleusercontent.com"
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val client get() = SupabaseConfig.client
 
@@ -93,6 +96,45 @@ object AuthService {
     }
 
     /** Email + password sign in. Returns null on success, error message on failure. */
+    /**
+     * Native Google sign-in — Credential Manager -> Google ID token ->
+     * Supabase signInWithIdToken (same flow as iOS GoogleSignIn; Supabase
+     * Google provider has "Skip nonce checks" ON, required because neither
+     * SDK exposes a nonce parameter). Uses the WEB OAuth client ID as the
+     * audience, like iOS. Returns null on success, else an error message.
+     *
+     * Console prerequisite: an ANDROID OAuth client (package com.wordocious.app
+     * + signing SHA-1) must exist in the same Google Cloud project for
+     * Credential Manager to vend tokens on-device.
+     */
+    suspend fun signInWithGoogle(context: android.content.Context): String? {
+        return try {
+            val option = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(GOOGLE_WEB_CLIENT_ID)
+                .build()
+            val request = androidx.credentials.GetCredentialRequest.Builder()
+                .addCredentialOption(option)
+                .build()
+            val result = androidx.credentials.CredentialManager.create(context)
+                .getCredential(context, request)
+            val googleCred = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+                .createFrom(result.credential.data)
+            client.auth.signInWith(io.github.jan.supabase.auth.providers.builtin.IDToken) {
+                idToken = googleCred.idToken
+                provider = io.github.jan.supabase.auth.providers.Google
+            }
+            val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
+            loadProfile(user.id)
+            _isAuthenticated.value = true
+            null
+        } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
+            null // user dismissed the sheet — not an error
+        } catch (e: Exception) {
+            e.message?.take(120) ?: "Google sign-in failed"
+        }
+    }
+
     suspend fun signInWithEmail(email: String, password: String): String? {
         return try {
             client.auth.signInWith(Email) {
