@@ -1,34 +1,54 @@
 import { GameMode } from '@wordle-duel/core';
 import { QueueEntry, Player } from './types';
 
+/**
+ * Public matchmaking queue, bucketed by (mode, dailySeed-or-random).
+ *
+ * Daily-VS players must only pair with other daily players on the SAME seed
+ * (same local calendar day), and random players only with random players —
+ * otherwise an iOS daily player and a web random player in the same mode
+ * could be spliced together with mismatched puzzles (the old behaviour:
+ * queues were keyed by mode alone and `findMatch` paired the first two
+ * entries regardless of seed).
+ */
 export class MatchmakingQueue {
-  private queues: Map<GameMode, QueueEntry[]> = new Map([
-    [GameMode.DUEL, []],
-    [GameMode.MULTI_DUEL, []],
-    [GameMode.GAUNTLET, []],
-    [GameMode.QUORDLE, []],
-    [GameMode.OCTORDLE, []],
-    [GameMode.SEQUENCE, []],
-    [GameMode.RESCUE, []],
-    [GameMode.TOURNAMENT, []],
-    [GameMode.PROPERNOUNDLE, []]
-  ]);
+  private queues: Map<string, QueueEntry[]> = new Map();
+
+  /** Entries older than this are dropped on the next queue touch. */
+  private static readonly STALE_MS = 10 * 60 * 1000;
+
+  private key(mode: GameMode, dailySeed?: string): string {
+    return `${mode}:${dailySeed ?? 'random'}`;
+  }
+
+  private bucket(mode: GameMode, dailySeed?: string): QueueEntry[] {
+    const k = this.key(mode, dailySeed);
+    let q = this.queues.get(k);
+    if (!q) {
+      q = [];
+      this.queues.set(k, q);
+    }
+    // Prune entries whose sockets went away without a clean leave_queue,
+    // so a stale ghost can't absorb one side of a real pairing.
+    const cutoff = Date.now() - MatchmakingQueue.STALE_MS;
+    for (let i = q.length - 1; i >= 0; i--) {
+      if (q[i].joinedAt < cutoff) q.splice(i, 1);
+    }
+    return q;
+  }
 
   addToQueue(player: Player, mode: GameMode, dailySeed?: string): number {
-    const queue = this.queues.get(mode)!;
+    const queue = this.bucket(mode, dailySeed);
     const existing = queue.findIndex(e => e.player.id === player.id);
-
     if (existing !== -1) {
       return existing;
     }
-
     queue.push({
       player,
       mode,
       joinedAt: Date.now(),
       dailySeed,
     });
-
     return queue.length - 1;
   }
 
@@ -42,23 +62,20 @@ export class MatchmakingQueue {
     }
   }
 
-  findMatch(mode: GameMode): [QueueEntry, QueueEntry] | null {
-    const queue = this.queues.get(mode)!;
-
+  findMatch(mode: GameMode, dailySeed?: string): [QueueEntry, QueueEntry] | null {
+    const queue = this.bucket(mode, dailySeed);
     if (queue.length < 2) {
       return null;
     }
-
     const [entry1, entry2] = queue.splice(0, 2);
     return [entry1, entry2];
   }
 
-  getPosition(playerId: string, mode: GameMode): number {
-    const queue = this.queues.get(mode)!;
-    return queue.findIndex(e => e.player.id === playerId);
+  getPosition(playerId: string, mode: GameMode, dailySeed?: string): number {
+    return this.bucket(mode, dailySeed).findIndex(e => e.player.id === playerId);
   }
 
-  getQueueSize(mode: GameMode): number {
-    return this.queues.get(mode)!.length;
+  getQueueSize(mode: GameMode, dailySeed?: string): number {
+    return this.bucket(mode, dailySeed).length;
   }
 }

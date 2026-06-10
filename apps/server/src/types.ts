@@ -59,15 +59,19 @@ export interface ClientToServerEvents {
   board_solved: (data: { boardIndex: number }) => void;
   player_completed: (data: { status: string; totalGuesses: number; timeMs: number }) => void;
   stage_completed: (data: { stageIndex: number }) => void;
+  /** Throttled "I have letters in my row" activity ping — relayed to the opponent. */
+  typing: () => void;
 }
 
 export interface ServerToClientEvents {
-  queue_status: (data: { position: number; mode: GameMode }) => void;
+  queue_status: (data: { position: number; mode: GameMode; queueSize?: number; dailySeed?: string | null }) => void;
   match_found: (data: {
     matchId: string;
     mode: GameMode;
     serverStartAt: number;
     countdownSeconds: number;
+    /** Opponent's Supabase user id (from presenceId `u:<id>`), or null if anonymous. */
+    opponentUserId?: string | null;
   }) => void;
   match_start: (data: { seed: string; startTime: number; puzzleMetadata?: any }) => void;
   guess_result: (data: {
@@ -103,8 +107,14 @@ export interface ServerToClientEvents {
      * Avoids duplicate rows without a server-side DB write.
      */
     recordMatch: boolean;
+    /** Opponent's full ordered guess words (+ board index) — letters are only revealed at match end. */
+    opponentGuessLog?: { boardIndex: number; guess: string }[];
+    /** The match solutions, so the result screen can render both final boards. */
+    solutions?: string[];
   }) => void;
   opponent_stage_completed: (data: { stageIndex: number }) => void;
+  /** Opponent activity ping (no letters) — drives the "typing…" indicator. */
+  opponent_typing: (data: Record<string, never>) => void;
   rematch_offered: () => void;
   rematch_declined: () => void;
   rematch_start: (data: { matchId: string; seed: string; puzzleMetadata?: any }) => void;

@@ -118,6 +118,9 @@ const playerToMatch = new Map<string, string>();
 // it clears naturally on match end. Used to reject duplicate guesses
 // server-side even if a modified client bypasses its local check.
 const submittedWordsByMatch = new Map<string, { p1: Set<string>; p2: Set<string> }>();
+// Ordered per-player guess log (word + board) — revealed to the OPPONENT only
+// at match end so the result screen can show both final boards with letters.
+const guessLogByMatch = new Map<string, { p1: { boardIndex: number; guess: string }[]; p2: { boardIndex: number; guess: string }[] }>();
 // Private-match lobbies keyed by invite_code. First arrival is parked
 // here; the second arrival with the same code pairs up with them
 // immediately, bypassing the public matchmaking queue.
@@ -171,19 +174,31 @@ io.on('connection', (socket) => {
     }
 
     const position = queue.addToQueue(player, mode, dailySeed);
+    console.log(`[queue] join mode=${mode} seed=${dailySeed ?? 'random'} pos=${position} presence=${presenceId ?? socket.id} size=${queue.getQueueSize(mode, dailySeed)}`);
 
-    socket.emit('queue_status', { position, mode });
+    socket.emit('queue_status', { position, mode, queueSize: queue.getQueueSize(mode, dailySeed), dailySeed: dailySeed ?? null });
 
-    const matchPair = queue.findMatch(mode);
+    // Bucketed by (mode, dailySeed-or-random): daily players only pair with
+    // daily players on the same seed; random with random.
+    const matchPair = queue.findMatch(mode, dailySeed);
     if (matchPair) {
       const [entry1, entry2] = matchPair;
-      // If either queued player asked for a daily seed, use it as the
-      // match seed so everyone playing the daily gets the same puzzle.
-      // Rematches (see offer_rematch handler below) always use a fresh
-      // random seed — daily is only for the first matchup of the day.
       const preferredSeed = entry1.dailySeed || entry2.dailySeed;
+      console.log(`[queue] paired mode=${mode} seed=${preferredSeed ?? 'random'} p1=${entry1.player.id} p2=${entry2.player.id}`);
       createMatch(entry1.player, entry2.player, mode, preferredSeed);
     }
+  });
+
+  // Lightweight "opponent is typing" relay — clients send a throttled ping
+  // while the local player has letters in the current row; we forward it so
+  // the opponent's UI can show a live activity indicator. No letters leak.
+  socket.on('typing', () => {
+    const matchId = playerToMatch.get(playerId);
+    if (!matchId) return;
+    const match = matches.get(matchId);
+    if (!match) return;
+    const opponentSocket = match.player1.id === playerId ? match.player2.socketId : match.player1.socketId;
+    io.to(opponentSocket).emit('opponent_typing', {});
   });
 
   socket.on('leave_queue', () => {
@@ -248,6 +263,8 @@ io.on('connection', (socket) => {
       return;
     }
     playerHistory?.add(dedupeKey);
+    const log = guessLogByMatch.get(matchId);
+    if (log) (isPlayer1 ? log.p1 : log.p2).push({ boardIndex, guess: guess.toUpperCase() });
 
     const playerState = isPlayer1 ? match.player1State : match.player2State;
     const opponentState = isPlayer1 ? match.player2State : match.player1State;
@@ -479,6 +496,7 @@ io.on('connection', (socket) => {
         playerToMatch.delete(match.player2.id);
         matches.delete(matchId);
         submittedWordsByMatch.delete(matchId);
+        guessLogByMatch.delete(matchId);
       }
     }
   });
@@ -527,19 +545,27 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
   playerToMatch.set(player1.id, matchId);
   playerToMatch.set(player2.id, matchId);
   submittedWordsByMatch.set(matchId, { p1: new Set(), p2: new Set() });
+  guessLogByMatch.set(matchId, { p1: [], p2: [] });
+
+  // Opponent identity (Supabase user id from the handshake presenceId) so the
+  // client can render the match-intro splash (avatar/level/head-to-head).
+  const p1Uid = userIdFromSocket(player1.socketId);
+  const p2Uid = userIdFromSocket(player2.socketId);
 
   io.to(player1.socketId).emit('match_found', {
     matchId,
     mode,
     serverStartAt,
-    countdownSeconds: MATCH_COUNTDOWN
+    countdownSeconds: MATCH_COUNTDOWN,
+    opponentUserId: p2Uid,
   });
 
   io.to(player2.socketId).emit('match_found', {
     matchId,
     mode,
     serverStartAt,
-    countdownSeconds: MATCH_COUNTDOWN
+    countdownSeconds: MATCH_COUNTDOWN,
+    opponentUserId: p1Uid,
   });
 
   setTimeout(() => {
@@ -598,6 +624,7 @@ function endMatch(matchId: string): void {
   // exactly one row per match without giving the public server DB access.
   const p1UserId = userIdFromSocket(match.player1.socketId);
   const p2UserId = userIdFromSocket(match.player2.socketId);
+  const log = guessLogByMatch.get(matchId) ?? { p1: [], p2: [] };
 
   io.to(match.player1.socketId).emit('match_ended', {
     winner: winner === 'opponent' ? 'opponent' : winner === 'player' ? 'player' : winner,
@@ -609,6 +636,8 @@ function endMatch(matchId: string): void {
     opponentScore: Math.round(p2ScoreDisplay * 100) / 100,
     opponentId: p2UserId,
     recordMatch: p1UserId !== null,
+    opponentGuessLog: log.p2,
+    solutions: match.solutions,
   });
 
   io.to(match.player2.socketId).emit('match_ended', {
@@ -621,6 +650,8 @@ function endMatch(matchId: string): void {
     opponentScore: Math.round(p1ScoreDisplay * 100) / 100,
     opponentId: p1UserId,
     recordMatch: false,
+    opponentGuessLog: log.p1,
+    solutions: match.solutions,
   });
 }
 
