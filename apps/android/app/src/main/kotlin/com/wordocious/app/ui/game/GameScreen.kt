@@ -343,16 +343,36 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     LaunchedEffect(isFinished) {
         if (isFinished && !wasFinishedOnEntry && !vm.wasReplayed && !recorded) {
             recorded = true
+            // Gauntlet scores the WHOLE run (web gauntlet-game parity): guesses
+            // summed across stageResults (+ the failed stage's max on a loss —
+            // state.boards only holds the FINAL stage), boards solved tallied
+            // across stages, denominator = every stage's boardCount (21).
+            val g = state.gauntlet
+            val won = state.status == GameStatus.WON
+            val isGauntletRun = mode == GameMode.GAUNTLET && g != null
+            val runGuesses = if (isGauntletRun) {
+                g!!.stageResults.sumOf { it.guesses } +
+                    (if (won) 0 else state.boards.maxOf { it.guesses.size })
+            } else state.boards.maxOf { it.guesses.size } // web parity: max across boards
+            val runSolved = if (isGauntletRun) g!!.stageResults.sumOf { r ->
+                if (r.status == GameStatus.WON) (g.stages.getOrNull(r.stageIndex)?.boardCount ?: 0)
+                else (r.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0)
+            } else state.boards.count { it.status == GameStatus.WON }
+            val runTotal = if (isGauntletRun) (g!!.stages.sumOf { it.boardCount }.takeIf { it > 0 } ?: 21)
+                else state.boards.size
+            val runGuessList = if (isGauntletRun) state.boards.flatMap { it.guesses } // web: final-stage flatMap
+                else state.boards.maxByOrNull { it.guesses.size }?.guesses ?: emptyList() // longest board = full shared history
             xpResult = com.wordocious.app.data.GameResultsService.record(
                 gameMode = mode,
-                won = state.status == GameStatus.WON,
-                guessCount = state.boards.maxOf { it.guesses.size }, // web parity: max across boards
+                won = won,
+                guessCount = runGuesses,
                 timeSeconds = elapsed,
-                boardsSolved = state.boards.count { it.status == GameStatus.WON },
-                totalBoards = state.boards.size,
+                boardsSolved = runSolved,
+                totalBoards = runTotal,
                 seed = seed,
-                solutions = state.boards.map { it.solution },
-                guesses = state.boards.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(), // longest board = full shared history (web longestGuesses parity)
+                solutions = if (isGauntletRun) (g!!.allSolutions.ifEmpty { state.boards.map { it.solution } })
+                    else state.boards.map { it.solution },
+                guesses = runGuessList,
                 hintsUsed = vm.hintsUsed,
             )
         }

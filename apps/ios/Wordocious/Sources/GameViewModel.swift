@@ -365,7 +365,11 @@ final class GameViewModel: ObservableObject {
                 if r.status == .won { return sum + (g.stages[safe: r.stageIndex]?.boardCount ?? 0) }
                 return sum + (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0)
             }
-            total = g.stageResults.reduce(0) { $0 + (g.stages[safe: $1.stageIndex]?.boardCount ?? 0) }
+            // Web parity: the completion denominator is the WHOLE run's board
+            // count (all stages, 21), not just the stages reached — otherwise a
+            // stage-2 loss scores a higher completion ratio than on web.
+            let allBoards = g.stages.reduce(0) { $0 + $1.boardCount }
+            total = allBoards > 0 ? allBoards : 21
         } else {
             guesses = rowsUsed
             solved = state.boards.filter { $0.status == .won }.count
@@ -438,6 +442,15 @@ final class GameViewModel: ObservableObject {
             return best
         }
         var best: TileState?
+        // Deliverance: prefilled rows inform the keyboard too (web
+        // computeBoardLetterStates folds prefilledGuesses in first).
+        for board in state.boards {
+            for pf in board.prefilledGuesses ?? [] {
+                for tile in pf.evaluation.tiles where tile.letter == L {
+                    best = Self.merge(best, tile.state)
+                }
+            }
+        }
         for boardEvals in evaluations {
             for eval in boardEvals {
                 for tile in eval.tiles where tile.letter == L {
@@ -469,6 +482,13 @@ final class GameViewModel: ObservableObject {
         state.boards.enumerated().map { i, board in
             guard board.status == .playing else { return [:] }
             var d: [String: TileState] = [:]
+            // Deliverance prefilled rows count toward each board's quadrant
+            // states (web computeBoardLetterStates parity).
+            for pf in board.prefilledGuesses ?? [] {
+                for tile in pf.evaluation.tiles where !tile.letter.isEmpty {
+                    d[tile.letter] = Self.merge(d[tile.letter], tile.state)
+                }
+            }
             for eval in (evaluations[safe: i] ?? []) {
                 for tile in eval.tiles where !tile.letter.isEmpty {
                     d[tile.letter] = Self.merge(d[tile.letter], tile.state)
