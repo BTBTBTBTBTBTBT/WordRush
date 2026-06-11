@@ -158,7 +158,7 @@ struct PublicProfileView: View {
         // Web parity: one-decimal win rate (e.g. "66.7%"), not rounded to whole.
         let winRate = games > 0 ? String(format: "%.1f", Double(p.totalWins) / Double(games) * 100) : "0.0"
         return HStack(spacing: 8) {
-            card("trophy.fill", Color(hex: 0x16A34A), "\(p.totalWins)", "Wins", "\(winRate)% win rate")
+            card("trophy.fill", Color(hex: 0x7C3AED), "\(p.totalWins)", "Wins", "\(winRate)% win rate")
             card("flame.fill", Color(hex: 0xEA580C), "\(p.currentStreak)", "Win Streak", "Best: \(p.bestStreak)")
             card("bolt.fill", Theme.primary, "\(p.dailyLoginStreak)", "Daily", "Best: \(p.bestDailyLoginStreak)")
             card("target", Color(hex: 0x2563EB), "\(games)", "Games", "\(p.totalLosses) losses")
@@ -234,7 +234,7 @@ struct PublicProfileView: View {
             .overlay(Rectangle().fill(Theme.border).frame(height: 1), alignment: .bottom)
             if let s = stat {
                 let cells: [(String, String, Color)] = [
-                    ("Wins", "\(s.wins)", Color(hex: 0x16A34A)),
+                    ("Wins", "\(s.wins)", Color(hex: 0x7C3AED)),
                     ("Losses", "\(s.losses)", Color(hex: 0xDC2626)),
                     ("Best", s.bestScore > 0 ? "\(s.bestScore)" : "-", Color(hex: 0xD97706)),
                     ("Fastest", s.fastestTime > 0 ? fmtTime(s.fastestTime) : "-", Color(hex: 0x2563EB)),
@@ -339,8 +339,8 @@ struct RecentMatchRow: View {
                         .font(Brand.font(9, .heavy))
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(RoundedRectangle(cornerRadius: 5)
-                            .fill(match.isSolo ? Color(hex: 0xF0FDF4) : Color(hex: 0xEDE9F6)))
-                        .foregroundStyle(match.isSolo ? Color(hex: 0x16A34A) : Color(hex: 0x7C3AED))
+                            .fill(match.isSolo ? Color(hex: 0xEFF6FF) : Color(hex: 0xEDE9F6)))
+                        .foregroundStyle(match.isSolo ? Color(hex: 0x2563EB) : Color(hex: 0x7C3AED))
                     if !match.isSolo, let opponentName {
                         Text("· vs \(opponentName)")
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
@@ -352,7 +352,7 @@ struct RecentMatchRow: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
                 Text(won ? "Win" : "Loss").font(Brand.font(12, .heavy))
-                    .foregroundStyle(won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                    .foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626))
                 if let d = match.date {
                     Text(dateTimeStr(d)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                 }

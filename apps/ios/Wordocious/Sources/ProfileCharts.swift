@@ -58,7 +58,7 @@ private struct GuessDistributionChart: View {
     @State private var data: [MatchStatsService.GuessBucket] = []
 
     private func color(_ g: Int) -> Color {
-        g <= 2 ? Color(hex: 0x22C55E) : g <= 4 ? Color(hex: 0xEAB308) : Color(hex: 0x9CA3AF)
+        g <= 2 ? Color(hex: 0x7C3AED) : g <= 4 ? Color(hex: 0xF59E0B) : Color(hex: 0x9CA3AF)
     }
     private var totalWins: Int { data.reduce(0) { $0 + $1.count } }
 
@@ -151,7 +151,7 @@ private struct ActivityCalendarView: View {
         let ratio = Double(cell.won) / Double(cell.played)
         let intensity = Double(cell.played) / Double(maxPlayed)
         if ratio >= 0.8 {
-            return intensity > 0.6 ? Color(hex: 0x16A34A) : intensity > 0.3 ? Color(hex: 0x4ADE80) : Color(hex: 0x86EFAC)
+            return intensity > 0.6 ? Color(hex: 0x7C3AED) : intensity > 0.3 ? Color(hex: 0xA78BFA) : Color(hex: 0xDDD6FE)
         }
         return intensity > 0.6 ? Color(hex: 0x7C3AED) : intensity > 0.3 ? Color(hex: 0xA78BFA) : Color(hex: 0xC4B5FD)
     }
@@ -191,7 +191,7 @@ private struct SolveTimeChart: View {
                 .chartXAxis(.hidden)
                 .frame(height: 140)
                 HStack {
-                    timeStat("Fastest", data.map(\.seconds).min() ?? 0, Color(hex: 0x22C55E))
+                    timeStat("Fastest", data.map(\.seconds).min() ?? 0, Color(hex: 0x7C3AED))
                     Spacer()
                     timeStat("Average", Int(avg.rounded()), Theme.textPrimary)
                     Spacer()

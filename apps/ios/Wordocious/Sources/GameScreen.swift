@@ -265,9 +265,9 @@ struct GameScreen: View {
     private func gauntletStageNode(_ i: Int) -> some View {
         let completed = vm.gauntletCompletedIndices.contains(i)
         let active = i == vm.gauntletCurrentIndex
-        let bg = completed ? Color(hex: 0xDCFCE7) : active ? Color(hex: 0xF3E8FF) : Color(hex: 0xF9FAFB)
-        let border = completed ? Color(hex: 0x4ADE80) : active ? Color(hex: 0xC084FC) : Color(hex: 0xE5E7EB)
-        let fg = completed ? Color(hex: 0x16A34A) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9CA3AF)
+        let bg = completed ? Color(hex: 0xEDE9FE) : active ? Color(hex: 0xF3E8FF) : Color(hex: 0xF9FAFB)
+        let border = completed ? Color(hex: 0x8B5CF6) : active ? Color(hex: 0xC084FC) : Color(hex: 0xE5E7EB)
+        let fg = completed ? Color(hex: 0x6D28D9) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9CA3AF)
         ZStack {
             Circle().fill(bg).overlay(Circle().stroke(border, lineWidth: 2)).frame(width: 20, height: 20)
                 .modifier(StageGlow(active: active))
@@ -301,7 +301,7 @@ struct GameScreen: View {
     }
 
     private func gauntletConnectorColor(_ i: Int) -> Color {
-        if vm.gauntletCompletedIndices.contains(i) { return Color(hex: 0x4ADE80) }
+        if vm.gauntletCompletedIndices.contains(i) { return Color(hex: 0x8B5CF6) }
         if i == vm.gauntletCurrentIndex { return Color(hex: 0xD8B4FE) }
         return Color(hex: 0xE5E7EB)
     }
@@ -419,12 +419,12 @@ private struct StageTransitionOverlay: View {
             Color.black.opacity(0.8).ignoresSafeArea()
             VStack(spacing: 26) {
                 ZStack {
-                    Circle().fill(Color(hex: 0x22C55E).opacity(0.3)).frame(width: 80, height: 80)
-                        .overlay(Circle().stroke(Color(hex: 0x4ADE80), lineWidth: 4))
-                    Image(systemName: "checkmark").font(.system(size: 34, weight: .bold)).foregroundStyle(Color(hex: 0x86EFAC))
+                    Circle().fill(Color(hex: 0x8B5CF6).opacity(0.3)).frame(width: 80, height: 80)
+                        .overlay(Circle().stroke(Color(hex: 0xA78BFA), lineWidth: 4))
+                    Image(systemName: "checkmark").font(.system(size: 34, weight: .bold)).foregroundStyle(Color(hex: 0xC4B5FD))
                 }
                 VStack(spacing: 4) {
-                    Text("STAGE COMPLETE").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(Color(hex: 0x4ADE80))
+                    Text("STAGE COMPLETE").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xA78BFA))
                     Text(completedName).font(Brand.font(18, .bold)).foregroundStyle(.white.opacity(0.6))
                 }
                 if let n = next {

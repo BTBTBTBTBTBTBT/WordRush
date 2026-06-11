@@ -18,8 +18,8 @@ struct GauntletCompletedView: View {
     @State private var expanded: Int?
 
     // Web palette.
-    private let greenBg = Color(hex: 0xF0FDF4), greenBorder = Color(hex: 0xBBF7D0)
-    private let greenBadgeBg = Color(hex: 0xDCFCE7), greenBadge = Color(hex: 0x16A34A)
+    private let greenBg = Color(hex: 0xF5F3FF), greenBorder = Color(hex: 0xDDD6FE)
+    private let greenBadgeBg = Color(hex: 0xF5F3FF), greenBadge = Color(hex: 0x7C3AED)
     private let redBg = Color(hex: 0xFEF2F2), redBorder = Color(hex: 0xFECACA)
     private let redBadgeBg = Color(hex: 0xFEE2E2), redBadge = Color(hex: 0xDC2626)
 
@@ -229,7 +229,7 @@ struct GauntletResultsView: View {
                 .padding(.top, 4)
 
                 HStack(spacing: 12) {
-                    statCard("trophy.fill", Color(hex: 0x22C55E), "\(cleared)/\(progress.totalStages)", "Stages")
+                    statCard("trophy.fill", Color(hex: 0x7C3AED), "\(cleared)/\(progress.totalStages)", "Stages")
                     statCard("number", Color(hex: 0x60A5FA), "\(totalGuesses)", "Guesses")
                     statCard("clock", Color(hex: 0xFB923C), fmt(totalTimeMs), "Time")
                 }

@@ -220,8 +220,8 @@ struct SolvedBoardFrame: ViewModifier {
     func body(content: Content) -> some View {
         // Web: every multi board sits in a card — default border-gray-200 / white,
         // green when solved, red when lost. Single board (active:false) = no frame.
-        let border: Color = won ? Color(hex: 0x4ADE80) : (lost ? Color(hex: 0xF87171) : (active ? Color(hex: 0xE5E7EB) : .clear))
-        let fill: Color = won ? Color(hex: 0xF0FDF4) : (lost ? Color(hex: 0xFEF2F2) : (active ? .white : .clear))
+        let border: Color = won ? Color(hex: 0xA78BFA) : (lost ? Color(hex: 0xF87171) : (active ? Color(hex: 0xE5E7EB) : .clear))
+        let fill: Color = won ? Color(hex: 0xF5F3FF) : (lost ? Color(hex: 0xFEF2F2) : (active ? .white : .clear))
         let badge = max(13, min(20, tileSize * 0.7))
         return content
             .padding(active ? 4 : 0)
@@ -233,7 +233,7 @@ struct SolvedBoardFrame: ViewModifier {
                         .font(.system(size: badge * 0.55, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(width: badge, height: badge)
-                        .background(Circle().fill(Color(hex: 0x22C55E)))
+                        .background(Circle().fill(Color(hex: 0x8B5CF6)))
                         .offset(x: badge * 0.3, y: -badge * 0.3)
                 }
             }

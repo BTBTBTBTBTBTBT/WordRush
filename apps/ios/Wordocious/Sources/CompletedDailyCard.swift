@@ -46,17 +46,17 @@ struct CompletedDailyCard: View {
                 let won = d.won
                 VStack(spacing: 0) {
                     // Top accent bar: green won / gray attempted.
-                    LinearGradient(colors: won ? [Color(hex: 0x22C55E), Color(hex: 0x4ADE80)] : [Color(hex: 0x9CA3AF), Color(hex: 0xD1D5DB)],
+                    LinearGradient(colors: won ? [Color(hex: 0x7C3AED), Color(hex: 0xA78BFA)] : [Color(hex: 0x9CA3AF), Color(hex: 0xD1D5DB)],
                                    startPoint: .leading, endPoint: .trailing).frame(height: 4)
 
                     Button { withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { expanded.toggle() } } label: {
                         HStack(spacing: 8) {
-                            Text(won ? "✓" : "✗").font(Brand.font(9, .black)).foregroundStyle(won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                            Text(won ? "✓" : "✗").font(Brand.font(9, .black)).foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626))
                                 .frame(width: 16, height: 16)
-                                .background(Circle().fill(won ? Color(hex: 0xDCFCE7) : Color(hex: 0xFEE2E2)))
+                                .background(Circle().fill(won ? Color(hex: 0xF5F3FF) : Color(hex: 0xFEE2E2)))
                             Text(won ? "COMPLETED TODAY" : "ATTEMPTED TODAY")
                                 .font(Brand.font(10, .heavy)).tracking(0.6)
-                                .foregroundStyle(won ? Color(hex: 0x22C55E) : Theme.textMuted)
+                                .foregroundStyle(won ? Color(hex: 0x7C3AED) : Theme.textMuted)
                             Spacer()
                             Text(summaryLabel(d))
                                 .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)

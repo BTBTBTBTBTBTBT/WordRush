@@ -108,7 +108,7 @@ struct InfoPage: View {
             InfoSection("Contact Us", "Questions about these terms?"),
         ]
         case .support: return [
-            InfoSection("How do I play Wordocious?", "Guess the hidden word in the allotted tries; tiles show green (correct spot), yellow (wrong spot), gray (not in word)."),
+            InfoSection("How do I play Wordocious?", "Guess the hidden word in the allotted tries; tiles show purple (correct spot), amber (wrong spot), gray (not in word)."),
             InfoSection("What are the different game modes?", "10 modes from Classic to multi-board, Gauntlet, and VS — see About for the full list."),
             InfoSection("How are daily scores calculated?", "A base of 1,000 for completing, a guess bonus (hint modes), a speed bonus for finishing fast, and a completion bonus on multi-board modes."),
             InfoSection("How do XP and levels work?", "Win = 100 XP, loss = 25 XP, with streak + daily bonuses. Every 1,000 XP is a level."),

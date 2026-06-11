@@ -342,7 +342,7 @@ struct VSGameView: View {
         let winner = vm.result?.winner
         let isWin = winner == "player", isDraw = winner == "draw"
         let headline = isWin ? "WINNER" : isDraw ? "DRAW" : "DEFEAT"
-        let colors: [Color] = isWin ? [Color(hex: 0x4ADE80), Color(hex: 0x6EE7B7)]
+        let colors: [Color] = isWin ? [Color(hex: 0xA78BFA), Color(hex: 0xC4B5FD)]
             : isDraw ? [Color(hex: 0xFACC15), Color(hex: 0xFDBA74)]
             : [Color(hex: 0xF87171), Color(hex: 0xFDA4AF)]
         let myName = AuthService.shared.profile?.username ?? "You"
@@ -550,7 +550,7 @@ private struct OpponentStrip: View {
                 }
                 Text("\(opponent.attempts) guesses").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
                 if opponent.solved {
-                    Image(systemName: "checkmark.seal.fill").font(.system(size: 13)).foregroundStyle(Color(hex: 0x22C55E))
+                    Image(systemName: "checkmark.seal.fill").font(.system(size: 13)).foregroundStyle(Color(hex: 0x7C3AED))
                 }
             }
             // Live opponent tile preview (colors only, no letters) — ports the
@@ -597,8 +597,8 @@ private struct OpponentMiniBoard: View {
 
     private func color(_ s: TileState?) -> Color {
         switch s {
-        case .correct: return Color(hex: 0x22C55E)
-        case .present: return Color(hex: 0xEAB308)
+        case .correct: return Color(hex: 0x7C3AED)
+        case .present: return Color(hex: 0xF59E0B)
         case .absent:  return Theme.textMuted
         default:       return .clear
         }
@@ -640,7 +640,7 @@ private struct DailyVsAlreadyPlayed: View {
                     ForEach(Array(answer.uppercased().enumerated()), id: \.offset) { _, ch in
                         Text(String(ch)).font(Brand.font(18, .black)).foregroundStyle(.white)
                             .frame(width: 44, height: 44)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(LinearGradient(colors: [Color(hex: 0x22C55E), Color(hex: 0x16A34A)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                            .background(RoundedRectangle(cornerRadius: 6).fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
                     }
                 }
             }

@@ -262,8 +262,8 @@ struct ProfileTab: View {
         let result = m.dbKey.flatMap { completions.byMode[$0] }
         let played = result != nil
         let won = result?.completed == true
-        let bg: Color = !played ? Theme.background : won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)
-        let border: Color = !played ? Theme.border : won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626)
+        let bg: Color = !played ? Theme.background : won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)
+        let border: Color = !played ? Theme.border : won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626)
         // Tappable like the web: played → read-only solved board; not played → play it.
         return NavigationLink {
             if let gm = m.mode {
@@ -300,7 +300,7 @@ struct ProfileTab: View {
         let games = p.totalWins + p.totalLosses
         let winRate = games > 0 ? Int((Double(p.totalWins) / Double(games) * 100).rounded()) : 0
         return HStack(spacing: 8) {
-            summaryCard("trophy.fill", Color(hex: 0x16A34A), "\(p.totalWins)", "Wins", nil)
+            summaryCard("trophy.fill", Color(hex: 0x7C3AED), "\(p.totalWins)", "Wins", nil)
             summaryCard("target", Color(hex: 0x2563EB), "\(winRate)%", "Win Rate", nil)
             summaryCard("bolt.fill", Theme.primary, "\(p.currentStreak)", "Streak", "Best: \(p.bestStreak)")
             summaryCard("flame.fill", Color(hex: 0xF97316), "\(p.dailyLoginStreak)", "Daily", "Best: \(p.bestDailyLoginStreak)")
@@ -388,7 +388,7 @@ struct ProfileTab: View {
         case "streak_7":  (icon, color) = ("flame.fill", Color(hex: 0xEA580C))
         case "streak_30": (icon, color) = ("flame.fill", Color(hex: 0xDC2626))
         case "streak_100":(icon, color) = ("flame.fill", Color(hex: 0x7C3AED))
-        case "perfect":   (icon, color) = ("star.fill", Color(hex: 0x16A34A))
+        case "perfect":   (icon, color) = ("star.fill", Color(hex: 0x7C3AED))
         default:          (icon, color) = ("medal.fill", Theme.textMuted)
         }
         switch m.medalType {

@@ -27,9 +27,9 @@ struct ShareCardView: View {
 
     private let bg = Color(hex: 0xF8F7FF)
     private let textMuted = Color(hex: 0x6B7280)
-    private let winFG = Color(hex: 0x16A34A), winBG = Color(hex: 0xDCFCE7)
+    private let winFG = Color(hex: 0x7C3AED), winBG = Color(hex: 0xF5F3FF)
     private let lossFG = Color(hex: 0xDC2626), lossBG = Color(hex: 0xFEE2E2)
-    private let boardWinTint = Color(hex: 0xF0FDF4), boardLossTint = Color(hex: 0xFEF2F2)
+    private let boardWinTint = Color(hex: 0xF5F3FF), boardLossTint = Color(hex: 0xFEF2F2)
 
     /// Canvas matches the web: 1350 tall for OctoWord(8 boards) + Gauntlet, else 1080.
     var size: CGSize {
@@ -170,8 +170,8 @@ struct ShareCardView: View {
 
     private func tileColor(_ s: TileState) -> Color {
         switch s {
-        case .correct: return Color(hex: 0x16A34A)
-        case .present: return Color(hex: 0xEAB308)
+        case .correct: return Color(hex: 0x7C3AED)
+        case .present: return Color(hex: 0xF59E0B)
         case .absent, .hintUsed: return Color(hex: 0x9CA3AF)
         case .empty: return Color(hex: 0xE5E7EB)
         }

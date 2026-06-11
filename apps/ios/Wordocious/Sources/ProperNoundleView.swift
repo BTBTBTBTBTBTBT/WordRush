@@ -295,14 +295,14 @@ struct ProperNoundleView: View {
                 AsyncImage(url: url) { img in img.resizable().aspectRatio(contentMode: .fill) }
                     placeholder: { Color(hex: 0xE5E7EB) }
                     .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.status == .won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626), lineWidth: 2))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.status == .won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626), lineWidth: 2))
             }
             // Web parity: win → name in green + "Solved in N guesses · time" subtitle;
             // loss → "The answer was: {name}" in red.
             if let p = vm.puzzle {
                 Text(vm.status == .won ? p.display : "The answer was: \(p.display)")
                     .font(Brand.title(20))
-                    .foregroundStyle(vm.status == .won ? Color(hex: 0x16A34A) : Color(hex: 0xEF4444))
+                    .foregroundStyle(vm.status == .won ? Color(hex: 0x7C3AED) : Color(hex: 0xEF4444))
                     .multilineTextAlignment(.center)
             }
             if vm.status == .won {
@@ -357,7 +357,7 @@ struct NoundleHints: View {
             hintButton(vm.revealedVowel.map { $0 } ?? "Vowel", systemImage: "eye", used: vm.revealedVowel != nil,
                        text: Color(hex: 0x2563EB), border: Color(hex: 0x93C5FD), bg: Color(hex: 0xEFF6FF)) { vm.revealVowel() }
             hintButton(vm.revealedConsonant.map { $0 } ?? "Consonant", systemImage: "number", used: vm.revealedConsonant != nil,
-                       text: Color(hex: 0x16A34A), border: Color(hex: 0x86EFAC), bg: Color(hex: 0xF0FDF4)) { vm.revealConsonant() }
+                       text: Color(hex: 0x0D9488), border: Color(hex: 0x5EEAD4), bg: Color(hex: 0xF0FDFA)) { vm.revealConsonant() }
         }
         .padding(.bottom, 4)
     }

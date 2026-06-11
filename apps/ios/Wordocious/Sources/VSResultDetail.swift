@@ -105,10 +105,10 @@ struct VSFinalBoards: View {
     private func tileBackground(_ state: TileState) -> AnyShapeStyle {
         switch state {
         case .correct:
-            return AnyShapeStyle(LinearGradient(colors: [Color(hex: 0x22C55E), Color(hex: 0x16A34A)],
+            return AnyShapeStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
         case .present:
-            return AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xEAB308), Color(hex: 0xCA8A04)],
+            return AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
         default:
             return AnyShapeStyle(Theme.textMuted)

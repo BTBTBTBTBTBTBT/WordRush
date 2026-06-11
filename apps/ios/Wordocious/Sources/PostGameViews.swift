@@ -103,7 +103,7 @@ struct FinishedStatsHeader: View {
 
             Text(summary)
                 .font(Brand.font(12, .bold))
-                .foregroundStyle(won ? Color(hex: 0x16A34A) : Color(hex: 0xF87171))
+                .foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xF87171))
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 16) {
@@ -215,7 +215,7 @@ struct ScoreBreakdownView: View {
         let sign = value > 0 ? "+" : value < 0 ? "−" : ""
         let abs = Swift.abs((value * 100).rounded() / 100)
         return HStack(alignment: .firstTextBaseline) {
-            Text(label).font(Brand.font(12, .bold)).foregroundStyle(pure ? Color(hex: 0x16A34A) : Theme.textPrimary)
+            Text(label).font(Brand.font(12, .bold)).foregroundStyle(pure ? Color(hex: 0x7C3AED) : Theme.textPrimary)
             if !detail.isEmpty { Text(detail).font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted).lineLimit(1) }
             Spacer()
             Text("\(sign)\(Int(abs))").font(Brand.font(12, .black))

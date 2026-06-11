@@ -545,7 +545,7 @@ struct HomeView: View {
     private func winBadge(won: Bool) -> some View {
         Text(won ? "W" : "L").font(Brand.font(10, .black)).foregroundStyle(.white)
             .frame(width: 20, height: 20)
-            .background(RoundedRectangle(cornerRadius: 6).fill(Color(hex: won ? 0x16A34A : 0xDC2626)))
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color(hex: won ? 0x7C3AED : 0xDC2626)))
     }
 }
 

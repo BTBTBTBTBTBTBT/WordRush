@@ -20,9 +20,9 @@ struct Palette {
     // Win/Loss pills + gold-highlight rows — web themes these in dark
     // (globals.css --color-win-bg/loss-bg/win-text/loss-text/highlight-gold/
     // gold-border/gold-border-light); the light themes share the :root values.
-    var winBG = Color(hex: 0xDCFCE7)
+    var winBG = Color(hex: 0xF5F3FF)
     var lossBG = Color(hex: 0xFEE2E2)
-    var winText = Color(hex: 0x16A34A)
+    var winText = Color(hex: 0x7C3AED)
     var lossText = Color(hex: 0xDC2626)
     var highlightGold = Color(hex: 0xFFFBEB)
     var goldBorder = Color(hex: 0xFDE68A)
@@ -84,8 +84,8 @@ final class ThemeManager: ObservableObject {
             divider: Color(hex: 0x3A3A5C), surfaceAlt: Color(hex: 0x2A2A48),
             surfaceHover: Color(hex: 0x2E2E4A), textPrimary: Color(hex: 0xF0EEF6),
             textMuted: Color(hex: 0x9CA3AF), textSecondary: Color(hex: 0xA0A0B8),
-            winBG: Color(hex: 0x052E16), lossBG: Color(hex: 0x450A0A),
-            winText: Color(hex: 0x4ADE80), lossText: Color(hex: 0xF87171),
+            winBG: Color(hex: 0x2E1065), lossBG: Color(hex: 0x450A0A),
+            winText: Color(hex: 0xA78BFA), lossText: Color(hex: 0xF87171),
             highlightGold: Color(hex: 0x422006), goldBorder: Color(hex: 0x92400E),
             goldBorderLight: Color(hex: 0x78350F)),
 

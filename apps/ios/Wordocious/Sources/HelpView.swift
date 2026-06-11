@@ -67,7 +67,7 @@ struct HelpView: View {
                 .font(Brand.font(14, .semibold)).foregroundStyle(Theme.textSecondary)
 
             exampleRow(["W","E","A","R","Y"], [.correct,.empty,.empty,.empty,.empty],
-                       "W", Color(hex: 0x16A34A), " is in the word and in the correct spot.")
+                       "W", Color(hex: 0x7C3AED), " is in the word and in the correct spot.")
             exampleRow(["P","I","L","L","S"], [.empty,.present,.empty,.empty,.empty],
                        "I", Theme.present, " is in the word but in the wrong spot.")
             exampleRow(["V","A","G","U","E"], [.empty,.empty,.empty,.absent,.empty],

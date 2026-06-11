@@ -39,22 +39,30 @@ enum Theme {
     static let wordmarkEnd = Color(hex: 0xEC4899)
     static let gold = Color(hex: 0xF59E0B)
 
-    // Tiles — Tailwind green-500 / yellow-500 / gray-500. Colorblind mode swaps
-    // to the high-contrast palette (orange=correct, blue=present) for red-green
+    // Tiles — Royal palette (brand purple correct, amber present, slate absent;
+    // matches the web --tile-* vars). Colorblind mode swaps to the
+    // high-contrast palette (orange=correct, blue=present) for red-green
     // color blindness, matching the web [data-colorblind] overrides.
     private static var cb: Bool { ThemeManager.shared.colorblind }
-    static var correct: Color { cb ? Color(hex: 0xF5793A) : Color(hex: 0x22C55E) } // orange / green-500
-    static var present: Color { cb ? Color(hex: 0x85C0F9) : Color(hex: 0xEAB308) } // blue / yellow-500
-    static let absent = Color(hex: 0x6B7280)
+    static var correct: Color { cb ? Color(hex: 0xF5793A) : Color(hex: 0x7C3AED) } // orange / violet-600
+    static var present: Color { cb ? Color(hex: 0x85C0F9) : Color(hex: 0xF59E0B) } // blue / amber-500
+    static let absent = Color(hex: 0x64748B)             // slate-500
     static let emptyBorder = Color(hex: 0xD1D5DB)        // Tailwind gray-300 (web board empty tile)
     static let keyDefault = Color(hex: 0xE8E5F0)
 
-    // Keyboard keys use the darker 600-weight green/yellow + gray-400 (distinct
-    // from the lighter board tiles), matching the web keyboard.tsx palette.
+    // Keyboard keys use the darker 600/700-weight purple/amber + slate-400
+    // (distinct from the lighter board tiles), matching the web --key-* vars.
     // Colorblind swaps to darker orange/blue (the 600-equivalents).
-    static var keyCorrect: Color { cb ? Color(hex: 0xE8612A) : Color(hex: 0x16A34A) } // orange-600 / green-600
-    static var keyPresent: Color { cb ? Color(hex: 0x6AAEF0) : Color(hex: 0xCA8A04) } // blue-600 / yellow-600
-    static let keyAbsent = Color(hex: 0x9CA3AF)          // gray-400
+    static var keyCorrect: Color { cb ? Color(hex: 0xE8612A) : Color(hex: 0x6D28D9) } // orange-600 / violet-700
+    static var keyPresent: Color { cb ? Color(hex: 0x6AAEF0) : Color(hex: 0xD97706) } // blue-600 / amber-600
+    static let keyAbsent = Color(hex: 0x94A3B8)          // slate-400
+
+    // Win/success accents (Royal): win pills, "Solved!" badges, board win
+    // tints — web WIN_FG/WIN_BG/BOARD_WIN_TINT in lib/tile-theme.ts.
+    static let win = Color(hex: 0x7C3AED)
+    static let winSoftBG = Color(hex: 0xF5F3FF)          // violet-50
+    static let boardWinTint = Color(hex: 0xF5F3FF)       // violet-50
+    static let winBorder = Color(hex: 0xA78BFA)          // violet-400 (solved board border)
 
     /// Single reduced-motion source of truth: the in-app toggle OR the OS
     /// setting. Web kills every animation under BOTH [data-reduced-motion] and
