@@ -79,7 +79,7 @@ fun PostGameScreen(
     val board = state.boards[0]
     val solution = board.solution.uppercase()
 
-    val guessCount = board.guesses.size
+    val guessCount = state.boards.maxOf { it.guesses.size } // web parity: max across boards
     val boardsSolved = state.boards.count { it.status == GameStatus.WON }
     val totalBoards = state.boards.size
     val multiBoard = totalBoards > 1

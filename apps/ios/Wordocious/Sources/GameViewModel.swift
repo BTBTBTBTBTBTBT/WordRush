@@ -410,7 +410,10 @@ final class GameViewModel: ObservableObject {
 
     /// Number of guesses already committed (rows used). For multi-board modes
     /// every board shares the same guess list length, so board 0 is canonical.
-    var rowsUsed: Int { state.boards.first?.guesses.count ?? 0 }
+    /// Total guesses used — web parity: max across boards. In shared-guess
+    /// modes a solved board STOPS accumulating, so boards[0] underreports
+    /// whenever it solves early (e.g. OctoWord "9/13" after 12 real guesses).
+    var rowsUsed: Int { state.boards.map { $0.guesses.count }.max() ?? 0 }
 
     private var totalGuesses: Int { state.boards.map(\.guesses.count).reduce(0, +) }
 

@@ -50,7 +50,9 @@ class GameViewModel(
     val boardCount: Int get() = _state.value.boards.size
     val boardsSolvedCount: Int get() = _state.value.boards.count { it.status == GameStatus.WON }
     val maxGuesses: Int get() = _state.value.boards[_state.value.currentBoardIndex].maxGuesses
-    val rowsUsed: Int get() = _state.value.boards.firstOrNull()?.guesses?.size ?: 0
+    /** Total guesses used — web parity: MAX across boards (a solved board stops
+     *  accumulating, so boards[0] underreports when it solves early). */
+    val rowsUsed: Int get() = _state.value.boards.maxOfOrNull { it.guesses.size } ?: 0
 
     private val _input = MutableStateFlow("")
     val currentInput: StateFlow<String> = _input.asStateFlow()

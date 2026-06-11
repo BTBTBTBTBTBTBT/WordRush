@@ -346,7 +346,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             xpResult = com.wordocious.app.data.GameResultsService.record(
                 gameMode = mode,
                 won = state.status == GameStatus.WON,
-                guessCount = state.boards.first().guesses.size,
+                guessCount = state.boards.maxOf { it.guesses.size }, // web parity: max across boards
                 timeSeconds = elapsed,
                 boardsSolved = state.boards.count { it.status == GameStatus.WON },
                 totalBoards = state.boards.size,
@@ -454,7 +454,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         }
                     }
                     Text(
-                        "${board0.guesses.size}/${board0.maxGuesses} guesses",
+                        "${state.boards.maxOf { it.guesses.size }}/${board0.maxGuesses} guesses",
                         color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
