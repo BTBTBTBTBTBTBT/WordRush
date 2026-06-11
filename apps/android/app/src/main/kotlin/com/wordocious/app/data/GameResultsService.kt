@@ -3,6 +3,7 @@ package com.wordocious.app.data
 import com.wordocious.core.GameMode
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -79,6 +80,32 @@ object GameResultsService {
                 )
             )
         }
+    }
+
+    // ── Cross-device "view solved daily" (iOS parity) ─────────────────────────────
+    /** The recorded guess progression of a finished daily — fetched when a daily
+     *  was completed on ANOTHER device (or local state was lost) so GameScreen can
+     *  replay it through the engine instead of presenting a fresh board. */
+    @Serializable
+    data class RecordedDailyMatch(
+        @SerialName("player1_guesses") val player1Guesses: List<String> = emptyList(),
+        @SerialName("player1_time") val player1Time: Int = 0,
+        @SerialName("winner_id") val winnerId: String? = null,
+    )
+
+    /** Newest `matches` row this user recorded for [seed] (null if none / signed out). */
+    suspend fun fetchRecordedDailyMatch(seed: String): RecordedDailyMatch? {
+        val uid = AuthService.userId ?: return null
+        return runCatching {
+            client.postgrest["matches"]
+                .select(Columns.raw("player1_guesses,player1_time,winner_id")) {
+                    filter { eq("player1_id", uid); eq("seed", seed) }
+                    order("created_at", Order.DESCENDING)
+                    limit(1)
+                }
+                .decodeList<RecordedDailyMatch>()
+                .firstOrNull()
+        }.getOrNull()
     }
 
     // ── user_stats aggregate ──────────────────────────────────────────────────────

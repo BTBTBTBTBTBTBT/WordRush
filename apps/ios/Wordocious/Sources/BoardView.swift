@@ -268,7 +268,30 @@ enum CompletedBoardLayout {
 /// next board when a guess matches the current solution. Every other multi mode
 /// (Quordle/Octordle/Rescue) applies the shared guesses to all boards at once.
 enum CompletedBoardReconstruct {
-    static func boards(mode: GameMode, solutions: [String], guesses: [String], maxGuesses: Int) -> [BoardState] {
+    /// Engine replay: rebuild the finished boards by recreating the initial
+    /// state from the deterministic daily seed (which REGENERATES Deliverance's
+    /// prefilled rows and every mode's board structure) and replaying the
+    /// recorded guesses through the real reducer — so the review shows exactly
+    /// what the player saw, cross-device. Falls back to the legacy flat rebuild
+    /// only if the seed doesn't reproduce the recorded solutions.
+    static func boards(mode: GameMode, seed: String, solutions: [String], guesses: [String], maxGuesses: Int) -> [BoardState] {
+        var state = createInitialState(seed: seed, mode: mode)
+        let seedMatches = solutions.isEmpty ||
+            Set(state.boards.map { $0.solution.uppercased() }) == Set(solutions.map { $0.uppercased() })
+        if seedMatches, state.gauntlet == nil {
+            let applyToAll = state.boards.count > 1 && mode != .sequence
+            var safety = 0
+            for g in guesses {
+                guard state.status == .playing, safety < 200 else { break }
+                safety += 1
+                state = gameReducer(state: state, action: .submitGuess(guess: g, applyToAll: applyToAll))
+            }
+            return state.boards
+        }
+        return legacyBoards(mode: mode, solutions: solutions, guesses: guesses, maxGuesses: maxGuesses)
+    }
+
+    private static func legacyBoards(mode: GameMode, solutions: [String], guesses: [String], maxGuesses: Int) -> [BoardState] {
         let cap = maxGuesses > 0 ? maxGuesses : 6
         if mode == .sequence {
             var idx = 0

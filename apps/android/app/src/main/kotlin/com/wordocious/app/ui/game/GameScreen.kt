@@ -53,10 +53,13 @@ import com.wordocious.app.GameViewModel
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.BoardState
+import com.wordocious.core.GameAction
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameStatus
 import com.wordocious.core.TileState
+import com.wordocious.core.createInitialState
 import com.wordocious.core.evaluateGuess
+import com.wordocious.core.gameReducer
 
 /**
  * Full game screen — audit-then-match of the web game UI.
@@ -277,7 +280,9 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     // A game already finished on entry (resumed) skips straight to stats.
     val wasFinishedOnEntry = remember { state.status != GameStatus.PLAYING }
     var dismissedVictory by remember { mutableStateOf(false) }
-    val showVictory = isFinished && !wasFinishedOnEntry && !dismissedVictory
+    // vm.wasReplayed: a finish reconstructed from the server (daily completed on
+    // another device) lands directly on PostGameScreen — no victory celebration.
+    val showVictory = isFinished && !wasFinishedOnEntry && !dismissedVictory && !vm.wasReplayed
 
     // Game-start interstitial for free users (web AdGate / iOS parity). Shown
     // once per live game; the ad's duration is excluded from the game timer.
@@ -300,8 +305,43 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     // games (finished on entry) are skipped — their deltas were never owed here.
     var recorded by rememberSaveable { mutableStateOf(false) }
     var xpResult by remember { mutableStateOf<com.wordocious.app.data.GameResultsService.XpResult?>(null) }
+
+    // Cross-device "view solved daily" fallback (iOS parity): the game starts
+    // PLAYING with ZERO guesses on a daily seed (no local save), yet this mode's
+    // daily was already recorded today (played on another device / local state
+    // lost). Fetch the recorded matches row and replay its guesses through the
+    // engine so the player sees the solved board instead of a fresh one. The
+    // fresh board is briefly visible while the fetch is in flight — acceptable.
+    val freshDailyOnEntry = remember {
+        seed.startsWith("daily-") &&
+            state.status == GameStatus.PLAYING &&
+            state.boards.all { it.guesses.isEmpty() }
+    }
+    LaunchedEffect(Unit) {
+        if (!freshDailyOnEntry || recorded) return@LaunchedEffect
+        val playedToday = com.wordocious.app.data.DailyCompletionsService.readCache().containsKey(mode.name) ||
+            com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions().containsKey(mode.name)
+        if (!playedToday) return@LaunchedEffect
+        val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) ?: return@LaunchedEffect
+        if (row.player1Guesses.isEmpty()) return@LaunchedEffect
+        var replayed = createInitialState(seed, mode)
+        val applyAll = replayed.boards.size > 1 && mode != GameMode.SEQUENCE
+        for (g in row.player1Guesses.take(200)) {
+            if (replayed.status != GameStatus.PLAYING) break
+            replayed = gameReducer(replayed, GameAction.SubmitGuess(g, applyToAll = applyAll))
+        }
+        // Only install a state that actually reached a finish — otherwise leave
+        // the fresh board (replaying it live will record normally).
+        if (replayed.status == GameStatus.PLAYING) return@LaunchedEffect
+        // CRITICAL: wasFinishedOnEntry was captured with the ORIGINAL (fresh)
+        // state, so the record effect below WOULD fire for this finish. Guard it
+        // explicitly: mark recorded BEFORE installing (plus vm.wasReplayed).
+        recorded = true
+        vm.installReplayedState(replayed, row.player1Time)
+    }
+
     LaunchedEffect(isFinished) {
-        if (isFinished && !wasFinishedOnEntry && !recorded) {
+        if (isFinished && !wasFinishedOnEntry && !vm.wasReplayed && !recorded) {
             recorded = true
             xpResult = com.wordocious.app.data.GameResultsService.record(
                 gameMode = mode,

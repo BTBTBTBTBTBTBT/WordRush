@@ -177,7 +177,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         }
         // Web parity: these two charts stay VISIBLE when empty, with
         // chart-specific copy (guess-distribution.tsx / solve-time-chart.tsx).
-        item { GuessDistributionCard(guessDist) }
+        // Gauntlet: up to 50 guesses across 21 boards — a histogram is meaningless.
+        if (selectedMode != "GAUNTLET") {
+            item { GuessDistributionCard(guessDist) }
+        }
         item { SolveTimeCard(solveTimes) }
         if (topWords.isNotEmpty()) {
             item { TopWordsCard(topWords) }

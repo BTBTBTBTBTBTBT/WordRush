@@ -218,7 +218,8 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
           />
 
           {/* Guess Distribution */}
-          {data && <GuessDistribution data={data.guessDist} accentColor={accentColor} />}
+          {/* Gauntlet: up to 50 guesses across 21 boards — a histogram is meaningless. */}
+          {data && gameMode !== 'GAUNTLET' && <GuessDistribution data={data.guessDist} accentColor={accentColor} />}
 
           {/* Solve Time Trend */}
           {data && data.solveHistory.length >= 2 && (

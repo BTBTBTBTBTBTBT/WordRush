@@ -63,6 +63,9 @@ private struct GuessDistributionChart: View {
     private var totalWins: Int { data.reduce(0) { $0 + $1.count } }
 
     var body: some View {
+        // Gauntlet runs can take up to 50 guesses across 21 boards — a guess
+        // histogram is meaningless there, so the chart is hidden (all platforms).
+        if mode == .gauntlet { EmptyView() } else {
         ChartCard(title: "GUESS DISTRIBUTION") {
             if totalWins == 0 {
                 EmptyChart(copy: "Win a game to see your guess distribution")
@@ -80,6 +83,7 @@ private struct GuessDistributionChart: View {
             }
         }
         .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.guessDistribution(mode: mode) }
+        }
     }
 }
 

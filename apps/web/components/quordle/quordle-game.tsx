@@ -17,7 +17,7 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { boardToGrid } from '@/lib/share-image';
-import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
+import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
@@ -61,6 +61,16 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   );
 
   useGameSnapshot(GameMode.QUORDLE, !!isDaily, gameSeed, state, elapsedTime);
+
+  // Cross-device fallback: a daily already played on the native app (or
+  // another browser) has no local snapshot, so replay it from the server's
+  // matches row. Flag restored-completed BEFORE dispatching so the
+  // record-on-finish effect below sees the ref and doesn't re-record.
+  useServerDailyReplay(GameMode.QUORDLE, !!isDaily, gameSeed, profile?.id, !!savedSession, state, (session) => {
+    isRestoredCompleted.current = true;
+    dispatch({ type: 'RESTORE_STATE', state: session.state });
+    resetTimer(session.elapsedTime);
+  });
 
   useEffect(() => {
     if (state.status === 'WON' && !isRestoredCompleted.current) setShowVictory(true);

@@ -162,6 +162,30 @@ class GameViewModel(
     /** Stop the elapsed-timer coroutine — call when a directly-instantiated VS VM is released. */
     fun stopTimer() { timerJob?.cancel() }
 
+    // ── Cross-device "view solved daily" (iOS parity) ─────────────────────────
+    /** True when this VM's finished state was rebuilt by replaying the recorded
+     *  guesses from the server (daily completed on another device / local state
+     *  lost). GameScreen uses this to skip the VictoryOverlay and to NEVER
+     *  re-record the replayed finish. */
+    var wasReplayed: Boolean = false
+        private set
+
+    /**
+     * Install a finished state reconstructed by replaying the recorded guesses
+     * through the engine. Behaves like a finished-on-entry game: the displayed
+     * timer is frozen at [elapsedSeconds] and both state + elapsed are persisted
+     * so subsequent taps on this daily are instant local resumes.
+     */
+    fun installReplayedState(state: GameState, elapsedSeconds: Int) {
+        wasReplayed = true
+        _state.value = state
+        _elapsed.value = elapsedSeconds
+        if (!isVersus) {
+            GamePersistence.save(seed, mode, state)
+            GamePersistence.saveElapsed(seed, mode, elapsedSeconds)
+        }
+    }
+
     /**
      * Flag the rejected guess: red row (full-length only) + shake + toast.
      * Web timing: keys ignored + input cleared at 600ms, toast gone at 1500ms.

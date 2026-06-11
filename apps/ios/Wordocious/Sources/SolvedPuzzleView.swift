@@ -98,6 +98,13 @@ struct SolvedPuzzleView: View {
                 localWon = state.status == .won
             }
             data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)
+            // The matches insert is fire-and-forget at game end — if the player
+            // taps the completed card immediately, the row can still be in
+            // flight. One short retry covers the race.
+            if data == nil, localBoards == nil {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                data = await MatchStatsService.solvedDaily(mode: mode, seed: seed)
+            }
             maxGuesses = createInitialState(seed: seed, mode: mode).boards.map(\.maxGuesses).max() ?? 0
             let savedMs = Int(GamePersistence.shared.loadElapsed(seed: seed, mode: mode))
             elapsedMs = savedMs > 0 ? savedMs : (data?.timeSeconds ?? 0) * 1000
@@ -118,6 +125,18 @@ struct SolvedPuzzleView: View {
                 gauntlet = r.progress
                 localWon = r.won
             }
+            // No matches row (failed/in-flight insert) but the LOCAL finished game
+            // exists: synthesize the display payload from it so the review always
+            // renders for on-device plays — never "Couldn't load".
+            if data == nil, let lb = localBoards {
+                data = MatchStatsService.SolvedDaily(
+                    guesses: lb.first?.guesses ?? [],
+                    solutions: lb.map(\.solution),
+                    won: localWon,
+                    guessCount: lb.first?.guesses.count ?? 0,
+                    timeSeconds: elapsedMs / 1000,
+                    hintsUsed: 0)
+            }
             loaded = true
         }
     }
@@ -129,7 +148,8 @@ struct SolvedPuzzleView: View {
     /// Boards to display/share: local saved per-board state, else a mode-aware
     /// reconstruction (sequence-correct) from the matches row.
     private func displayBoards(_ d: MatchStatsService.SolvedDaily) -> [BoardState] {
-        localBoards ?? CompletedBoardReconstruct.boards(mode: mode, solutions: d.solutions,
+        localBoards ?? CompletedBoardReconstruct.boards(mode: mode, seed: DailySeed.today(mode: mode),
+                                                        solutions: d.solutions,
                                                         guesses: d.guesses, maxGuesses: maxGuesses)
     }
 

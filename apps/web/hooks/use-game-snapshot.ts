@@ -1,8 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { GameState, GameStatus, GameMode } from '@wordle-duel/core';
+import {
+  GameState,
+  GameStatus,
+  GameMode,
+  TileState,
+  type TileResult,
+  gameReducer,
+  createInitialState,
+  isDailySeed,
+} from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
+import { supabase } from '@/lib/supabase-client';
 
 // Full-state snapshot persistence shared by every reducer-based game mode.
 // Unlike a flat guess-replay approach, this serializes the entire reducer
@@ -279,6 +289,151 @@ export function clearGameSession(mode: GameMode, isDaily: boolean): void {
  * useGameSnapshot(mode, isDaily, seed, state, elapsedTime);
  * ```
  */
+// ---------------------------------------------------------------------------
+// Server-replay fallback (cross-device daily restore)
+// ---------------------------------------------------------------------------
+//
+// A daily played on the native app (or another browser) has no localStorage
+// snapshot here, so clicking the completed mode card used to start a fresh
+// board. The matches table already stores everything needed to rebuild the
+// finished game: the daily seed + the ordered player1_guesses. Mirroring the
+// native implementation, we regenerate the initial state from the seed
+// (which also re-creates Deliverance prefills) and replay the recorded
+// guesses through the same gameReducer that produced them.
+
+/** Modes whose live UI submits each guess to every PLAYING board at once. */
+const PARALLEL_MULTI_BOARD_MODES: ReadonlySet<GameMode> = new Set([
+  GameMode.QUORDLE,
+  GameMode.OCTORDLE,
+  GameMode.RESCUE,
+]);
+
+/** Hard cap on replay iterations — defends against corrupt rows. */
+const REPLAY_MAX_ITERATIONS = 200;
+
+/**
+ * Rebuild a finished GameState by replaying recorded guesses through the
+ * reducer. Returns null when the replay doesn't reach a terminal state
+ * (corrupt/mismatched data) so callers fall back to a fresh board instead
+ * of resurrecting a half-broken one.
+ *
+ * - Parallel multi-board modes (QuadWord/OctoWord/Deliverance) replay with
+ *   applyToAll, matching how their UIs dispatch live guesses.
+ * - Sequence records a flat per-board concatenation, so each guess is
+ *   applied to the first still-PLAYING board, which reproduces the exact
+ *   per-board guess lists.
+ * - Classic Six/Seven hint rows are stored verbatim in the guess list as
+ *   space-padded words (e.g. "  A  "); they fail dictionary validation, so
+ *   they're replayed via SUBMIT_HINT with the evaluation rebuilt from the
+ *   row itself (revealed positions CORRECT, the rest HINT_USED).
+ */
+export function replayRecordedGuesses(
+  mode: GameMode,
+  seed: string,
+  recordedGuesses: string[],
+): GameState | null {
+  let state = createInitialState(seed, mode);
+  const applyToAll = PARALLEL_MULTI_BOARD_MODES.has(mode);
+
+  let iterations = 0;
+  for (const raw of recordedGuesses) {
+    if (++iterations > REPLAY_MAX_ITERATIONS) break;
+    if (state.status !== GameStatus.PLAYING) break;
+    const guess = String(raw ?? '').toUpperCase();
+    if (!guess) continue;
+
+    if (/[^A-Z]/.test(guess)) {
+      // Hint row (Six/Seven only): rebuild the stored hint evaluation.
+      const tiles: TileResult[] = [...guess].map(ch =>
+        /[A-Z]/.test(ch)
+          ? { letter: ch, state: TileState.CORRECT }
+          : { letter: ' ', state: TileState.HINT_USED },
+      );
+      state = gameReducer(state, {
+        type: 'SUBMIT_HINT',
+        hintWord: guess,
+        hintEvaluation: { tiles, isCorrect: false },
+      });
+    } else if (mode === GameMode.SEQUENCE) {
+      const activeIndex = state.boards.findIndex(b => b.status === GameStatus.PLAYING);
+      if (activeIndex < 0) break;
+      state = gameReducer(state, { type: 'SUBMIT_GUESS', guess, boardIndex: activeIndex });
+    } else {
+      state = gameReducer(state, { type: 'SUBMIT_GUESS', guess, applyToAll });
+    }
+  }
+
+  return state.status !== GameStatus.PLAYING ? state : null;
+}
+
+/**
+ * Async second-phase restore for daily games played on another device.
+ *
+ * Runs ONLY when: signed-in user + daily seed + no local snapshot. Fetches
+ * the user's newest matches row for this seed, replays the recorded guesses,
+ * and hands the rebuilt {@link RestoredSession} to `onRestore`, where the
+ * component dispatches RESTORE_STATE and flags itself as restored-completed
+ * — the exact path a local terminal snapshot takes, so the normal post-game
+ * UI renders and the record-on-finish effects stay suppressed.
+ *
+ * `liveState` is read through a ref at resolve time: if the user started
+ * guessing on the fresh board while the fetch was in flight, the restore is
+ * dropped rather than clobbering their input.
+ */
+export function useServerDailyReplay(
+  mode: GameMode,
+  isDaily: boolean,
+  seed: string,
+  userId: string | undefined,
+  hasLocalSession: boolean,
+  liveState: GameState,
+  onRestore: (session: RestoredSession) => void,
+): void {
+  const onRestoreRef = useRef(onRestore);
+  onRestoreRef.current = onRestore;
+  const liveStateRef = useRef(liveState);
+  liveStateRef.current = liveState;
+  const attemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (attemptedRef.current) return;
+    if (!isDaily || hasLocalSession || !userId || !isDailySeed(seed)) return;
+    attemptedRef.current = true;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from('matches')
+          .select('player1_guesses, player1_time')
+          .eq('player1_id', userId)
+          .eq('seed', seed)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const row = data?.[0];
+        if (cancelled || !row) return;
+        const guesses: string[] = Array.isArray(row.player1_guesses) ? row.player1_guesses : [];
+        if (guesses.length === 0) return;
+
+        const state = replayRecordedGuesses(mode, seed, guesses);
+        if (cancelled || !state) return;
+        // User typed on the fresh board while we were fetching — keep theirs.
+        if (liveStateRef.current.boards.some(b => b.guesses.length > 0)) return;
+
+        onRestoreRef.current({
+          seed,
+          state,
+          elapsedTime: Math.max(0, Math.round(Number(row.player1_time) || 0)),
+          isCompleted: true,
+        });
+      } catch {
+        // Offline / RLS / transient error — fall back to a fresh board.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [mode, isDaily, seed, userId, hasLocalSession]);
+}
+
 export function useGameSnapshot(
   mode: GameMode,
   isDaily: boolean,

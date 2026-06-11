@@ -147,7 +147,7 @@ struct CompletedDailyCard: View {
     }
 
     @ViewBuilder private func boards(_ d: MatchStatsService.SolvedDaily) -> some View {
-        let bs = localBoards ?? CompletedBoardReconstruct.boards(mode: mode, solutions: d.solutions,
+        let bs = localBoards ?? CompletedBoardReconstruct.boards(mode: mode, seed: DailySeed.today(mode: mode), solutions: d.solutions,
                                                                  guesses: d.guesses, maxGuesses: maxGuesses)
         let rowCount = bs.map(\.maxGuesses).max() ?? 6
         if bs.count == 1 {
