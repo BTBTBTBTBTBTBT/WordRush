@@ -114,7 +114,7 @@ function Row({
         <span
           className="text-xs font-bold"
           style={{
-            color: highlight === 'pure' ? '#16a34a' : 'var(--color-text)',
+            color: highlight === 'pure' ? '#7c3aed' : 'var(--color-text)',
           }}
         >
           {label}

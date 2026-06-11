@@ -773,7 +773,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
               className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
                 hints.consonantUsed
                   ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                  : 'border-green-300 text-green-600 bg-green-50 hover:bg-green-100'
+                  : 'border-teal-300 text-teal-600 bg-teal-50 hover:bg-teal-100'
               }`}
             >
               <Hash className="w-3 h-3" />

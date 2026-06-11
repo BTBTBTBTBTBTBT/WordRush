@@ -18,9 +18,9 @@ interface HelpModalProps {
 /** A single example tile */
 function ExampleTile({ letter, color }: { letter: string; color: 'green' | 'yellow' | 'gray' | 'empty' }) {
   const styles = {
-    green: 'bg-green-500 border-green-500 text-white',
-    yellow: 'bg-yellow-500 border-yellow-500 text-white',
-    gray: 'bg-gray-500 border-gray-500 text-white',
+    green: 'tile-correct text-white',
+    yellow: 'tile-present text-white',
+    gray: 'tile-absent text-white',
     empty: 'bg-white border-gray-300 text-gray-800',
   };
 
@@ -172,12 +172,12 @@ function HowToPlayContent() {
         <ExampleRow
           letters={['W', 'E', 'A', 'R', 'Y']}
           colors={['green', 'empty', 'empty', 'empty', 'empty']}
-          caption={<><strong className="text-green-600">W</strong> is in the word and in the correct spot.</>}
+          caption={<><strong className="text-violet-600">W</strong> is in the word and in the correct spot.</>}
         />
         <ExampleRow
           letters={['P', 'I', 'L', 'L', 'S']}
           colors={['empty', 'yellow', 'empty', 'empty', 'empty']}
-          caption={<><strong className="text-yellow-500">I</strong> is in the word but in the wrong spot.</>}
+          caption={<><strong className="text-amber-500">I</strong> is in the word but in the wrong spot.</>}
         />
         <ExampleRow
           letters={['V', 'A', 'G', 'U', 'E']}

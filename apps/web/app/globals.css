@@ -20,10 +20,24 @@
   --color-highlight-gold: #fffbeb;
   --color-gold-border: #fde68a;
   --color-gold-border-light: #fef3c7;
-  --color-win-bg: #dcfce7;
+  --color-win-bg: #f5f3ff;
   --color-loss-bg: #fee2e2;
-  --color-win-text: #16a34a;
+  --color-win-text: #7c3aed;
   --color-loss-text: #dc2626;
+
+  /* Royal tile palette — single source for board/keyboard state colors.
+     Colorblind mode and themes override these vars; components use the
+     .tile-* / .key-* utilities (or TILE_HEX from lib/tile-theme.ts for
+     canvas/inline consumers) instead of hardcoded color classes. */
+  --tile-correct: #7c3aed;
+  --tile-present: #f59e0b;
+  --tile-absent: #64748b;
+  --tile-correct-border: #7c3aed;
+  --tile-present-border: #f59e0b;
+  --tile-absent-border: #64748b;
+  --key-correct: #6d28d9;
+  --key-present: #d97706;
+  --key-absent: #94a3b8;
 }
 
 [data-theme="dark"] {
@@ -41,10 +55,17 @@
   --color-highlight-gold: #422006;
   --color-gold-border: #92400e;
   --color-gold-border-light: #78350f;
-  --color-win-bg: #052e16;
+  --color-win-bg: #2e1065;
   --color-loss-bg: #450a0a;
-  --color-win-text: #4ade80;
+  --color-win-text: #a78bfa;
   --color-loss-text: #f87171;
+
+  /* Dark tiles keep the Royal fills but pick up lighter borders (parity with
+     the old bg-green-500/border-green-400 dark treatment). */
+  --tile-correct-border: #a78bfa;
+  --tile-present-border: #fcd34d;
+  --tile-absent: #3f3f46;
+  --tile-absent-border: #52525b;
 }
 
 /* Ocean — blue/teal-tinted light palette. (Previously only set unused tile
@@ -81,19 +102,26 @@
 }
 
 /* Colorblind mode — high-contrast tile/keyboard palette (orange=correct,
-   blue=present) for red-green color blindness. The board/keyboard use fixed
-   Tailwind green/yellow classes (the --correct/--present vars were never
-   referenced, so the old approach was a no-op); override those classes
-   directly. Matches the native ThemeManager colorblind palette. */
-[data-colorblind="true"] .bg-green-500 { background-color: #f5793a !important; }
-[data-colorblind="true"] .border-green-500 { border-color: #f5793a !important; }
-[data-colorblind="true"] .bg-yellow-500 { background-color: #85c0f9 !important; }
-[data-colorblind="true"] .border-yellow-500 { border-color: #85c0f9 !important; }
-/* Keyboard keys use the darker 600 weights. */
-[data-colorblind="true"] .bg-green-600 { background-color: #e8612a !important; }
-[data-colorblind="true"] .border-green-600 { border-color: #e8612a !important; }
-[data-colorblind="true"] .bg-yellow-600 { background-color: #6aaef0 !important; }
-[data-colorblind="true"] .border-yellow-600 { border-color: #6aaef0 !important; }
+   blue=present) for red-green color blindness. Overrides the tile/key vars
+   that the .tile-* / .key-* utilities consume, so it applies everywhere
+   automatically. Matches the native ThemeManager colorblind palette. */
+[data-colorblind="true"] {
+  --tile-correct: #f5793a;
+  --tile-present: #85c0f9;
+  --tile-correct-border: #f5793a;
+  --tile-present-border: #85c0f9;
+  --key-correct: #e8612a;
+  --key-present: #6aaef0;
+}
+
+/* Tile/keyboard state utilities — the only sanctioned way to color game
+   tiles and keys. Backgrounds + borders flow from the vars above. */
+.tile-correct { background-color: var(--tile-correct); border-color: var(--tile-correct-border); }
+.tile-present { background-color: var(--tile-present); border-color: var(--tile-present-border); }
+.tile-absent { background-color: var(--tile-absent); border-color: var(--tile-absent-border); }
+.key-correct { background-color: var(--key-correct); border-color: var(--key-correct); }
+.key-present { background-color: var(--key-present); border-color: var(--key-present); }
+.key-absent { background-color: var(--key-absent); border-color: var(--key-absent); }
 
 /* Reduced motion — the in-app toggle sets [data-reduced-motion]; kill
    animations/transitions globally (the old --transition-duration var was

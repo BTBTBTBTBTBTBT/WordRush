@@ -5,8 +5,8 @@ import { evaluateGuess } from '@wordle-duel/core';
 import type { OpponentGuessLogEntry } from '@/lib/adapters/match-service';
 
 const TILE_BG: Record<string, string> = {
-  CORRECT: 'linear-gradient(135deg, #22c55e, #16a34a)',
-  PRESENT: 'linear-gradient(135deg, #eab308, #ca8a04)',
+  CORRECT: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+  PRESENT: 'linear-gradient(135deg, #f59e0b, #d97706)',
   ABSENT: 'var(--color-text-muted)',
 };
 

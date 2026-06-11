@@ -1,6 +1,7 @@
 'use client';
 
 import { Trophy, Target, Flame, Zap } from 'lucide-react';
+import { WIN_FG } from '@/lib/tile-theme';
 
 interface GlobalSummaryRowProps {
   totalWins: number;
@@ -16,7 +17,7 @@ export function GlobalSummaryRow({ totalWins, totalLosses, currentStreak, bestSt
   const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
 
   const stats = [
-    { icon: Trophy, label: 'Wins', value: totalWins, color: '#16a34a' },
+    { icon: Trophy, label: 'Wins', value: totalWins, color: WIN_FG },
     { icon: Target, label: 'Win Rate', value: `${winRate}%`, color: '#2563eb' },
     { icon: Zap, label: 'Streak', value: currentStreak, sub: `Best: ${bestStreak}`, color: '#7c3aed' },
     { icon: Flame, label: 'Daily', value: dailyStreak, sub: `Best: ${bestDailyStreak}`, color: '#f97316' },

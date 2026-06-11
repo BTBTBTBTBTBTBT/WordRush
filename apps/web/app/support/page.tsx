@@ -19,7 +19,7 @@ export default function SupportPage() {
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>How do I play Wordocious?</h2>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Wordocious is a word puzzle game with multiple modes. In each mode, you guess hidden words by typing guesses and using color-coded feedback to narrow things down. Green means the letter is correct and in the right spot. Yellow means the letter is in the word but in the wrong position. Gray means the letter isn&apos;t in the word at all. Each mode has its own twist &mdash; from single-word puzzles to multi-board challenges!
+              Wordocious is a word puzzle game with multiple modes. In each mode, you guess hidden words by typing guesses and using color-coded feedback to narrow things down. Purple means the letter is correct and in the right spot. Amber means the letter is in the word but in the wrong position. Gray means the letter isn&apos;t in the word at all. Each mode has its own twist &mdash; from single-word puzzles to multi-board challenges!
             </p>
           </div>
 

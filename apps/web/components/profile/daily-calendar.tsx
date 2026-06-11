@@ -1,5 +1,7 @@
 'use client';
 
+import { CALENDAR_RAMP } from '@/lib/tile-theme';
+
 interface DailyCalendarProps {
   data: Array<{ day: string; gamesPlayed: number; gamesWon: number }>;
 }
@@ -33,15 +35,9 @@ export function DailyCalendar({ data }: DailyCalendarProps) {
   function getCellColor(d: typeof data[number] | null): string {
     if (!d || d.gamesPlayed === 0) return 'var(--color-surface-hover)';
     const intensity = d.gamesPlayed / maxGames;
-    const winRatio = d.gamesWon / d.gamesPlayed;
-    if (winRatio >= 0.8) {
-      if (intensity > 0.6) return '#16a34a';
-      if (intensity > 0.3) return '#4ade80';
-      return '#86efac';
-    }
-    if (intensity > 0.6) return '#7c3aed';
-    if (intensity > 0.3) return '#a78bfa';
-    return '#c4b5fd';
+    if (intensity > 0.6) return CALENDAR_RAMP[2];
+    if (intensity > 0.3) return CALENDAR_RAMP[1];
+    return CALENDAR_RAMP[0];
   }
 
   const months: Array<{ label: string; colStart: number }> = [];
@@ -109,7 +105,7 @@ export function DailyCalendar({ data }: DailyCalendarProps) {
       <div className="flex items-center justify-between mt-2">
         <div className="flex items-center gap-1">
           <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Less</span>
-          {['#f3f0ff', '#c4b5fd', '#a78bfa', '#7c3aed', '#16a34a'].map((c, i) => (
+          {['#f3f0ff', ...CALENDAR_RAMP].map((c, i) => (
             <div
               key={i}
               className="rounded-sm"

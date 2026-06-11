@@ -8,8 +8,8 @@ const SHARE_BUCKET = 'share-images';
 type TileStateString = 'CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY';
 
 const EMOJI_MAP: Record<TileStateString, string> = {
-  CORRECT: '\u{1F7E9}', // green square
-  PRESENT: '\u{1F7E8}', // yellow square
+  CORRECT: '\u{1F7EA}', // purple square
+  PRESENT: '\u{1F7E7}', // orange square
   ABSENT: '\u{2B1B}',   // black square
   EMPTY: '\u{2B1C}',    // white square
 };

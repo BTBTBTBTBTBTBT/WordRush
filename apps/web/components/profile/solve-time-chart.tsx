@@ -98,7 +98,7 @@ export function SolveTimeChart({ data, accentColor: customColor }: SolveTimeChar
 
       <div className="flex justify-between mt-2">
         <div className="text-center">
-          <div className="text-xs font-black" style={{ color: '#16a34a' }}>{formatTime(minTime)}</div>
+          <div className="text-xs font-black" style={{ color: '#6d28d9' }}>{formatTime(minTime)}</div>
           <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Fastest</div>
         </div>
         <div className="text-center">

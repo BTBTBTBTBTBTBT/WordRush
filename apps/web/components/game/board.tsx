@@ -3,16 +3,14 @@
 import { TileState, GuessResult } from '@wordle-duel/core';
 import { cn } from '@/lib/utils';
 
-// Tile palette. Previously driven by the cosmetics system so players could
-// unlock alternate tile themes; the coin/cosmetic economy was removed and
-// these are now the single source of truth. Matches the Wordle-standard
-// green/yellow/grey semantics that players already recognize.
+// Tile palette. Semantic token classes from globals.css drive the colors
+// (Royal palette, with dark + colorblind themes handled via CSS variables).
 const TILE = {
   border: 'border-2 border-gray-300',
   empty: 'bg-white',
-  absent: 'bg-gray-500',
-  present: 'bg-yellow-500',
-  correct: 'bg-green-500',
+  absent: 'tile-absent',
+  present: 'tile-present',
+  correct: 'tile-correct',
   text: 'text-white',
 } as const;
 
@@ -122,7 +120,7 @@ function Tile({ letter, state, flipDelay, isInvalid }: TileProps) {
   const colorClass = cn(
     state === TileState.EMPTY && !isInvalid && `${TILE.border} ${TILE.empty}`,
     state === TileState.EMPTY && isInvalid && 'border-red-400 bg-red-50',
-    state === TileState.ABSENT && `${TILE.border} ${TILE.absent} ${TILE.text}`,
+    state === TileState.ABSENT && `border-2 ${TILE.absent} ${TILE.text}`,
     state === TileState.PRESENT && `${TILE.present} ${TILE.text}`,
     state === TileState.CORRECT && `${TILE.correct} ${TILE.text}`,
     state === TileState.HINT_USED && 'border-2 border-gray-200 bg-gray-100 text-gray-300'

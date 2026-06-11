@@ -1,5 +1,7 @@
 'use client';
 
+import { CORRECT_GRADIENT, PRESENT_GRADIENT } from '@/lib/tile-theme';
+
 interface GuessDistributionProps {
   data: Array<{ guesses: number; count: number }>;
   accentColor?: string;
@@ -47,9 +49,9 @@ export function GuessDistribution({ data, accentColor }: GuessDistributionProps)
                     background: accentColor
                       ? `linear-gradient(90deg, ${accentColor}, ${accentColor}cc)`
                       : d.guesses <= 2
-                        ? 'linear-gradient(90deg, #22c55e, #16a34a)'
+                        ? `linear-gradient(90deg, ${CORRECT_GRADIENT[0]}, ${CORRECT_GRADIENT[1]})`
                         : d.guesses <= 4
-                        ? 'linear-gradient(90deg, #eab308, #ca8a04)'
+                        ? `linear-gradient(90deg, ${PRESENT_GRADIENT[0]}, ${PRESENT_GRADIENT[1]})`
                         : 'linear-gradient(90deg, #9ca3af, #6b7280)',
                     minWidth: d.count > 0 ? '28px' : '8px',
                   }}

@@ -12,18 +12,11 @@ interface MultiBoardProps {
 }
 
 const getTileColor = (state: TileState, colorBlind?: boolean) => {
-  if (colorBlind) {
-    switch (state) {
-      case TileState.CORRECT: return 'bg-cyan-600 border-cyan-600';
-      case TileState.PRESENT: return 'bg-orange-500 border-orange-500';
-      case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
-      default: return 'bg-white border-gray-300';
-    }
-  }
+  // Colorblind palette flows through the .tile-* CSS vars ([data-colorblind]).
   switch (state) {
-    case TileState.CORRECT: return 'bg-green-500 border-green-500';
-    case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
-    case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
+    case TileState.CORRECT: return 'tile-correct';
+    case TileState.PRESENT: return 'tile-present';
+    case TileState.ABSENT: return 'tile-absent';
     default: return 'bg-white border-gray-300';
   }
 };
@@ -97,14 +90,14 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
         invisible ? 'invisible' : ''
       } ${
         isWon
-          ? 'border-green-400 bg-green-50'
+          ? 'border-violet-400 bg-violet-50'
           : isLost
           ? 'border-red-400 bg-red-50'
           : 'border-gray-200 bg-white'
       }`}
     >
       {isWon && (
-        <div className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center z-10">
+        <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center z-10">
           ✓
         </div>
       )}

@@ -354,8 +354,8 @@ function GauntletSequenceMiniBoard({
 
   const getTileColor = (state: TileState) => {
     switch (state) {
-      case TileState.CORRECT: return 'bg-green-500 border-green-400';
-      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-300';
+      case TileState.CORRECT: return 'tile-correct';
+      case TileState.PRESENT: return 'tile-present';
       case TileState.ABSENT: return 'bg-zinc-700 border-zinc-600';
       default: return 'bg-zinc-800 border-zinc-600';
     }
@@ -371,7 +371,7 @@ function GauntletSequenceMiniBoard({
     <div
       className={`relative p-1 rounded-lg border-2 h-full flex flex-col transition-all duration-300 ${
         isCompleted
-          ? 'border-green-400 bg-green-900/20'
+          ? 'border-violet-400 bg-violet-900/20'
           : isFailed
           ? 'border-red-400 bg-red-900/20'
           : isActive

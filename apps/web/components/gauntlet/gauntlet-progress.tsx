@@ -22,7 +22,7 @@ export function GauntletProgress({ stages, currentStage, stageResults }: Gauntle
             {i > 0 && (
               <div
                 className={`w-4 h-0.5 mx-0.5 transition-colors duration-300 ${
-                  isCompleted ? 'bg-green-400' : isActive ? 'bg-purple-300' : 'bg-gray-200'
+                  isCompleted ? 'bg-violet-500' : isActive ? 'bg-purple-300' : 'bg-gray-200'
                 }`}
               />
             )}
@@ -31,7 +31,7 @@ export function GauntletProgress({ stages, currentStage, stageResults }: Gauntle
                 relative flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold
                 transition-all duration-300 border-2
                 ${isCompleted
-                  ? 'bg-green-100 border-green-400 text-green-600'
+                  ? 'bg-violet-500 border-violet-500 text-white'
                   : isActive
                     ? 'bg-purple-100 border-purple-400 text-purple-600'
                     : 'bg-gray-50 border-gray-200 text-gray-400'

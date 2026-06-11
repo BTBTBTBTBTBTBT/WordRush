@@ -157,7 +157,7 @@ export function GauntletResults({
           style={{ animationDelay: '0.6s' }}
         >
           <div className="bg-gray-100 backdrop-blur-sm rounded-xl p-4 text-center border border-gray-200">
-            <Trophy className="w-5 h-5 text-green-400 mx-auto mb-1" />
+            <Trophy className="w-5 h-5 text-violet-400 mx-auto mb-1" />
             <div className="text-2xl font-black text-gray-800">{stagesCompleted}/5</div>
             <div className="text-gray-400 text-xs">Stages</div>
           </div>
@@ -205,14 +205,14 @@ export function GauntletResults({
               <>
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                    isCompleted ? 'bg-green-500/30 text-green-600' :
+                    isCompleted ? 'bg-violet-500/30 text-violet-600' :
                     isFailed ? 'bg-red-500/30 text-red-300' :
                     'bg-gray-100 text-gray-300'
                   }`}>
                     {i + 1}
                   </div>
                   <span className={`font-bold ${
-                    isCompleted ? 'text-green-600' :
+                    isCompleted ? 'text-violet-600' :
                     isFailed ? 'text-red-300' :
                     'text-gray-300'
                   }`}>
@@ -235,7 +235,7 @@ export function GauntletResults({
                   {canReview && (
                     <ChevronRight
                       className={`w-4 h-4 shrink-0 ${
-                        isCompleted ? 'text-green-500/70' :
+                        isCompleted ? 'text-violet-500/70' :
                         isFailed ? 'text-red-400/70' :
                         'text-gray-300'
                       }`}
@@ -248,7 +248,7 @@ export function GauntletResults({
 
             const className = `flex items-center justify-between p-3 rounded-lg w-full text-left transition-colors ${
               isCompleted
-                ? 'bg-green-500/10 border border-green-400/20' + (canReview ? ' hover:bg-green-500/20 active:bg-green-500/20' : '')
+                ? 'bg-violet-500/10 border border-violet-400/20' + (canReview ? ' hover:bg-violet-500/20 active:bg-violet-500/20' : '')
                 : isFailed
                   ? 'bg-red-500/10 border border-red-400/20' + (canReview ? ' hover:bg-red-500/20 active:bg-red-500/20' : '')
                   : 'bg-gray-50 border border-white/5'
@@ -342,7 +342,7 @@ function StageReviewModal({
             Stage {stage.stageIndex + 1}
           </span>
         </div>
-        <h2 className={`text-2xl font-black mb-1 ${won ? 'text-green-600' : 'text-red-400'}`}>
+        <h2 className={`text-2xl font-black mb-1 ${won ? 'text-violet-600' : 'text-red-400'}`}>
           {stage.name}
         </h2>
         <div className="text-xs font-bold text-gray-500 mb-4">
@@ -378,7 +378,7 @@ function StageReviewModal({
                   key={i}
                   className={`text-xs font-black px-2 py-0.5 rounded ${
                     boardWon
-                      ? 'bg-green-100 text-green-700'
+                      ? 'bg-violet-100 text-violet-700'
                       : boardFailed
                         ? 'bg-red-100 text-red-700'
                         : 'bg-gray-200 text-gray-700'
@@ -407,9 +407,9 @@ function StageReviewModal({
 }
 
 const REVIEW_TILE_CLASS: Record<TileState, string> = {
-  [TileState.CORRECT]: 'bg-green-500 border-green-500 text-white',
-  [TileState.PRESENT]: 'bg-yellow-500 border-yellow-500 text-white',
-  [TileState.ABSENT]: 'bg-gray-400 border-gray-400 text-white',
+  [TileState.CORRECT]: 'tile-correct text-white',
+  [TileState.PRESENT]: 'tile-present text-white',
+  [TileState.ABSENT]: 'tile-absent text-white',
   [TileState.EMPTY]: 'bg-white border-gray-300 text-gray-800',
   [TileState.HINT_USED]: 'bg-gray-100 border-gray-200 text-gray-300',
 };
@@ -450,7 +450,7 @@ function StageReviewBoard({ board, stageWon }: { board: BoardState; stageWon: bo
   return (
     <div
       className={`p-1.5 rounded-lg border-2 h-full min-h-0 min-w-0 flex flex-col ${
-        won ? 'border-green-400 bg-green-50' :
+        won ? 'border-violet-400 bg-violet-50' :
         lost ? 'border-red-400 bg-red-50' :
         'border-gray-200 bg-white'
       }`}

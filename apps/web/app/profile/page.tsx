@@ -24,6 +24,7 @@ import {
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
+import { WIN_FG } from '@/lib/tile-theme';
 import { ProBadge } from '@/components/ui/pro-badge';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
@@ -406,8 +407,8 @@ export default function ProfilePage() {
                         const played = result !== undefined;
                         const won = result?.won === true;
                         const title = gameModeTitles[m.id] || m.id;
-                        const tileBg = !played ? 'var(--color-bg)' : won ? '#16a34a' : '#dc2626';
-                        const tileBorder = !played ? 'var(--color-border)' : won ? '#16a34a' : '#dc2626';
+                        const tileBg = !played ? 'var(--color-bg)' : won ? WIN_FG : '#dc2626';
+                        const tileBorder = !played ? 'var(--color-border)' : won ? WIN_FG : '#dc2626';
                         return (
                           <Link key={m.id} href={m.href} className="flex flex-col items-center gap-1" style={{ width: '42px' }}>
                             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: tileBg, border: `1.5px solid ${tileBorder}`, opacity: played ? 1 : 0.7 }}>
@@ -618,7 +619,7 @@ export default function ProfilePage() {
                       streak_7: { icon: Flame, color: '#ea580c', label: '7-Day Streak' },
                       streak_30: { icon: Flame, color: '#dc2626', label: '30-Day Streak' },
                       streak_100: { icon: Flame, color: '#7c3aed', label: '100-Day Streak' },
-                      perfect: { icon: Star, color: '#16a34a', label: 'Perfect' },
+                      perfect: { icon: Star, color: WIN_FG, label: 'Perfect' },
                     };
                     const cfg = medalConfig[medal.medal_type] || { icon: Medal, color: 'var(--color-text-muted)', label: medal.medal_type };
                     const MedalIcon = cfg.icon;
@@ -627,7 +628,7 @@ export default function ProfilePage() {
                         <MedalIcon className="w-4 h-4" style={{ color: cfg.color }} fill={cfg.icon === Flame || cfg.icon === Star ? 'currentColor' : 'none'} />
                         <span className="text-xs font-extrabold flex-1" style={{ color: 'var(--color-text)' }}>
                           {medal.medal_type.startsWith('streak') ? cfg.label : (gameModeTitles[medal.game_mode] || medal.game_mode)}
-                          {medal.medal_type === 'perfect' && <span className="text-[10px] font-bold ml-1" style={{ color: '#16a34a' }}>Perfect!</span>}
+                          {medal.medal_type === 'perfect' && <span className="text-[10px] font-bold ml-1" style={{ color: WIN_FG }}>Perfect!</span>}
                         </span>
                         <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                           {new Date(medal.day + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -703,7 +704,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{gameModeTitles[match.game_mode] || match.game_mode}</span>
-                      <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: match.player2_id ? '#ede9f6' : '#f0fdf4', color: match.player2_id ? '#7c3aed' : '#16a34a' }}>
+                      <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: match.player2_id ? '#ede9f6' : '#eff6ff', color: match.player2_id ? '#7c3aed' : '#2563eb' }}>
                         {match.player2_id ? 'VS' : 'Solo'}
                       </span>
                     </div>
@@ -713,7 +714,7 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <div className="text-xs font-extrabold" style={{ color: isWinner ? '#16a34a' : '#dc2626' }}>{isWinner ? 'Win' : 'Loss'}</div>
+                    <div className="text-xs font-extrabold" style={{ color: isWinner ? WIN_FG : '#dc2626' }}>{isWinner ? 'Win' : 'Loss'}</div>
                     <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                       {matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {matchDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                     </div>

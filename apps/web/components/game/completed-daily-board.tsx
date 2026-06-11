@@ -45,7 +45,7 @@ function CollapsibleCompletedCard({
         className="h-1"
         style={{
           background: won
-            ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+            ? 'linear-gradient(90deg, #7c3aed, #a78bfa)'
             : 'linear-gradient(90deg, #9ca3af, #d1d5db)',
         }}
       />
@@ -60,15 +60,15 @@ function CollapsibleCompletedCard({
           <span
             className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0"
             style={{
-              background: won ? '#dcfce7' : '#fee2e2',
-              color: won ? '#16a34a' : '#dc2626',
+              background: won ? '#f5f3ff' : '#fee2e2',
+              color: won ? '#7c3aed' : '#dc2626',
             }}
           >
             {won ? '✓' : '✗'}
           </span>
           <span
             className="text-[10px] font-extrabold uppercase tracking-wider"
-            style={{ color: won ? '#22c55e' : 'var(--color-text-muted)' }}
+            style={{ color: won ? '#7c3aed' : 'var(--color-text-muted)' }}
           >
             {won ? 'Completed' : 'Attempted'} Today
           </span>
@@ -176,9 +176,9 @@ interface CompletedDailyBoardProps {
 
 const getTileColor = (state: TileState) => {
   switch (state) {
-    case TileState.CORRECT: return 'bg-green-500 border-green-500';
-    case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
-    case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
+    case TileState.CORRECT: return 'tile-correct';
+    case TileState.PRESENT: return 'tile-present';
+    case TileState.ABSENT: return 'tile-absent';
     case TileState.HINT_USED: return 'bg-gray-100 border-gray-200';
     default: return 'bg-white border-gray-300';
   }
@@ -222,10 +222,10 @@ function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluation
   const fontSize = Math.max(6, Math.round(tileSize * 0.5));
   return (
     <div className={`relative p-0.5 rounded-lg border-2 ${
-      won ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'
+      won ? 'border-violet-400 bg-violet-50' : 'border-red-400 bg-red-50'
     }`}>
       {won && (
-        <div className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center z-10">
+        <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center z-10">
           ✓
         </div>
       )}
@@ -277,9 +277,9 @@ function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }:
 
   const getPNTileColor = (state: PNTileState) => {
     switch (state) {
-      case 'correct': return 'bg-green-500 border-green-500';
-      case 'present': return 'bg-yellow-500 border-yellow-500';
-      case 'absent': return 'bg-gray-500 border-gray-500';
+      case 'correct': return 'tile-correct';
+      case 'present': return 'tile-present';
+      case 'absent': return 'tile-absent';
       default: return 'bg-white border-gray-300';
     }
   };
@@ -394,8 +394,8 @@ function GauntletCompletedCard({
                 onClick={() => hasBoards && setExpandedStage(isExpanded ? null : i)}
                 className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors"
                 style={{
-                  background: stageWon ? '#f0fdf4' : '#fef2f2',
-                  border: `1px solid ${stageWon ? '#bbf7d0' : '#fecaca'}`,
+                  background: stageWon ? '#f5f3ff' : '#fef2f2',
+                  border: `1px solid ${stageWon ? '#ddd6fe' : '#fecaca'}`,
                   cursor: hasBoards ? 'pointer' : 'default',
                 }}
               >
@@ -403,8 +403,8 @@ function GauntletCompletedCard({
                   <span
                     className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black"
                     style={{
-                      background: stageWon ? '#dcfce7' : '#fee2e2',
-                      color: stageWon ? '#16a34a' : '#dc2626',
+                      background: stageWon ? '#f5f3ff' : '#fee2e2',
+                      color: stageWon ? '#7c3aed' : '#dc2626',
                     }}
                   >
                     {stageWon ? '✓' : '✗'}

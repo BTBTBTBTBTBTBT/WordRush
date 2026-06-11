@@ -31,11 +31,11 @@ function Tile({
   const getStyles = (): { bg: string; border: string; text: string } => {
     switch (state) {
       case 'correct':
-        return { bg: '#22c55e', border: '#22c55e', text: '#ffffff' };
+        return { bg: 'var(--tile-correct)', border: 'var(--tile-correct-border)', text: '#ffffff' };
       case 'present':
-        return { bg: '#eab308', border: '#eab308', text: '#ffffff' };
+        return { bg: 'var(--tile-present)', border: 'var(--tile-present-border)', text: '#ffffff' };
       case 'absent':
-        return { bg: '#6b7280', border: '#6b7280', text: '#ffffff' };
+        return { bg: 'var(--tile-absent)', border: 'var(--tile-absent-border)', text: '#ffffff' };
       case 'tbd':
         return { bg: 'var(--color-surface)', border: 'var(--color-text-muted)', text: 'var(--color-text)' };
       case 'hint-used':

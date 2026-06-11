@@ -1,74 +1,89 @@
 import { TileState } from '@wordle-duel/core';
 
-export const TILE_CLASSES = {
-  border: 'border-2 border-gray-300',
-  empty: 'bg-white',
-  absent: 'bg-gray-500',
-  present: 'bg-yellow-500',
-  correct: 'bg-green-500',
-  text: 'text-white',
+/**
+ * Royal tile palette — the single source of truth for game-state colors on
+ * web. Class consumers use getTileClasses/getKeyClasses (the .tile-* / .key-*
+ * utilities in globals.css read CSS vars, so the colorblind toggle and dark
+ * theme apply automatically). Canvas/inline-style consumers (share-image.ts,
+ * VS mini boards) use the hex exports below — these are the base Royal values
+ * and do NOT react to colorblind/theme, matching the previous behavior of
+ * those surfaces.
+ */
+
+// ── Hex tokens (canvas / inline styles / gradients) ────────────────────────
+export const TILE_HEX = {
+  correct: '#7c3aed',
+  present: '#f59e0b',
+  absent: '#9ca3af',
+  absentDeep: '#64748b',
+  empty: '#e5e7eb',
+  emptyBorder: '#d1d5db',
 } as const;
 
-const COLORBLIND_CLASSES = {
-  correct: 'bg-cyan-600 border-cyan-600',
-  present: 'bg-orange-500 border-orange-500',
-  absent: 'bg-gray-500 border-gray-500',
-  empty: 'bg-white border-gray-300',
+export const KEY_HEX = {
+  correct: '#6d28d9',
+  present: '#d97706',
+  absent: '#94a3b8',
 } as const;
 
-const DARK_CLASSES = {
-  correct: 'bg-green-500 border-green-400',
-  present: 'bg-yellow-500 border-yellow-300',
-  absent: 'bg-zinc-700 border-zinc-600',
-  empty: 'bg-zinc-800 border-zinc-600',
-} as const;
+// Win/Loss pill + board tints (share image, finished screens).
+export const WIN_FG = '#7c3aed';
+export const WIN_BG = '#f5f3ff'; // violet-50
+export const LOSS_FG = '#dc2626';
+export const LOSS_BG = '#fee2e2';
+export const BOARD_WIN_TINT = '#f5f3ff'; // violet-50
+export const BOARD_LOSS_TINT = '#fef2f2'; // red-50
 
-export function getTileClasses(
-  state: TileState | string,
-  opts?: { colorBlind?: boolean; dark?: boolean },
-): string {
-  const s = typeof state === 'string' ? state : state;
+// Gradient pairs (VS tug-of-war, victory accents).
+export const CORRECT_GRADIENT: [string, string] = ['#7c3aed', '#6d28d9'];
+export const PRESENT_GRADIENT: [string, string] = ['#f59e0b', '#d97706'];
 
-  if (opts?.colorBlind) {
-    switch (s) {
-      case TileState.CORRECT: case 'correct': return COLORBLIND_CLASSES.correct;
-      case TileState.PRESENT: case 'present': return COLORBLIND_CLASSES.present;
-      case TileState.ABSENT: case 'absent': return COLORBLIND_CLASSES.absent;
-      default: return COLORBLIND_CLASSES.empty;
-    }
-  }
+// Violet ramp for the profile activity calendar (replaces the green ramp).
+export const CALENDAR_RAMP = ['#ddd6fe', '#a78bfa', '#7c3aed'] as const;
 
-  if (opts?.dark) {
-    switch (s) {
-      case TileState.CORRECT: case 'correct': return DARK_CLASSES.correct;
-      case TileState.PRESENT: case 'present': return DARK_CLASSES.present;
-      case TileState.ABSENT: case 'absent': return DARK_CLASSES.absent;
-      default: return DARK_CLASSES.empty;
-    }
-  }
+// ── Class tokens (Tailwind-purge-safe static strings) ──────────────────────
+const TILE_CLASS: Record<string, string> = {
+  correct: 'tile-correct',
+  present: 'tile-present',
+  absent: 'tile-absent',
+};
 
-  switch (s) {
-    case TileState.CORRECT: case 'correct': return 'bg-green-500 border-green-500';
-    case TileState.PRESENT: case 'present': return 'bg-yellow-500 border-yellow-500';
-    case TileState.ABSENT: case 'absent': return 'bg-gray-500 border-gray-500';
-    default: return 'bg-white border-gray-300';
+const KEY_CLASS: Record<string, string> = {
+  correct: 'key-correct',
+  present: 'key-present',
+  absent: 'key-absent',
+};
+
+function norm(state: TileState | string): string {
+  // TileState is a string enum (CORRECT/PRESENT/ABSENT/EMPTY/HINT_USED);
+  // some callers pass lowercase strings. HINT_USED renders as present.
+  switch (String(state).toUpperCase()) {
+    case 'CORRECT': return 'correct';
+    case 'PRESENT': return 'present';
+    case 'HINT_USED': return 'present';
+    case 'ABSENT': return 'absent';
+    default: return 'empty';
   }
 }
 
-const HEX = {
-  correct: { bg: '#22c55e', border: '#22c55e', text: '#ffffff' },
-  present: { bg: '#eab308', border: '#eab308', text: '#ffffff' },
-  absent: { bg: '#6b7280', border: '#6b7280', text: '#ffffff' },
-  empty: { bg: '#ffffff', border: '#d1d5db', text: '#1a1a2e' },
-} as const;
+/** Board tile classes for a tile state ('' for EMPTY — callers keep their own empty/border treatment). */
+export function getTileClasses(state: TileState | string): string {
+  return TILE_CLASS[norm(state)] ?? '';
+}
 
+/** Keyboard key classes for a letter state ('' for unused keys). */
+export function getKeyClasses(state: TileState | string): string {
+  return KEY_CLASS[norm(state)] ?? '';
+}
+
+/** Hex values for a tile state (canvas / inline styles). */
 export function getTileHex(
   state: TileState | string,
 ): { bg: string; border: string; text: string } {
-  switch (state) {
-    case TileState.CORRECT: case 'correct': return HEX.correct;
-    case TileState.PRESENT: case 'present': return HEX.present;
-    case TileState.ABSENT: case 'absent': return HEX.absent;
-    default: return HEX.empty;
+  switch (norm(state)) {
+    case 'correct': return { bg: TILE_HEX.correct, border: TILE_HEX.correct, text: '#ffffff' };
+    case 'present': return { bg: TILE_HEX.present, border: TILE_HEX.present, text: '#ffffff' };
+    case 'absent': return { bg: TILE_HEX.absentDeep, border: TILE_HEX.absentDeep, text: '#ffffff' };
+    default: return { bg: '#ffffff', border: TILE_HEX.emptyBorder, text: '#1a1a2e' };
   }
 }

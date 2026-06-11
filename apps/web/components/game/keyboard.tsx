@@ -21,9 +21,9 @@ interface KeyboardProps {
 }
 
 const QUADRANT_COLORS: Record<string, string> = {
-  correct: 'bg-green-500',
-  present: 'bg-yellow-500',
-  absent: 'bg-gray-400',
+  correct: 'key-correct',
+  present: 'key-present',
+  absent: 'key-absent',
 };
 
 function QuadrantKey({
@@ -61,7 +61,7 @@ function QuadrantKey({
       }}
     >
       {allAbsent ? (
-        <div className="absolute inset-0" style={{ backgroundColor: '#9ca3af' }} />
+        <div className="absolute inset-0 key-absent" />
       ) : (
         <div
           className="absolute inset-0 grid"
@@ -164,12 +164,12 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 className={cn(
                   'h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
                   'transition-all duration-150 select-none',
-                  state === 'correct' && 'bg-green-600 text-white border-green-600',
-                  state === 'present' && 'bg-yellow-600 text-white border-yellow-600',
-                  state === 'absent' && 'text-white',
+                  state === 'correct' && 'key-correct text-white',
+                  state === 'present' && 'key-present text-white',
+                  state === 'absent' && 'key-absent text-white',
                 )}
                 style={{
-                  backgroundColor: state === 'correct' ? undefined : state === 'present' ? undefined : state === 'absent' ? '#9ca3af' : '#e8e5f0',
+                  backgroundColor: state ? undefined : '#e8e5f0',
                   border: state ? undefined : '1.5px solid var(--color-border)',
                   color: !state ? 'var(--color-text)' : undefined,
                 }}

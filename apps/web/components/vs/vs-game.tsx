@@ -1157,8 +1157,8 @@ function DailyVsAlreadyPlayed({
                 key={i}
                 className="w-11 h-11 rounded-md flex items-center justify-center text-lg font-black text-white"
                 style={{
-                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                  boxShadow: '0 3px 0 #15803d',
+                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                  boxShadow: '0 3px 0 #5b21b6',
                 }}
               >
                 {ch}

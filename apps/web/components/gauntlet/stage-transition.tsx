@@ -23,13 +23,13 @@ export function StageTransition({ completedStage, nextStage, onComplete }: Stage
     >
       <div className="text-center space-y-8">
         <div
-          className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/30 border-4 border-green-400 animate-fade-in-scale"
+          className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-violet-500/30 border-4 border-violet-400 animate-fade-in-scale"
         >
-          <Check className="w-10 h-10 text-green-300" />
+          <Check className="w-10 h-10 text-violet-300" />
         </div>
 
         <div className="animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-          <div className="text-green-400 text-sm font-bold uppercase tracking-wider mb-1">
+          <div className="text-violet-400 text-sm font-bold uppercase tracking-wider mb-1">
             Stage Complete
           </div>
           <div className="text-white/60 text-lg">

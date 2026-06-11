@@ -544,7 +544,7 @@ export default function HomePage() {
                   {isDailyDone && (
                     <div
                       className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center"
-                      style={{ background: dailyResult!.won ? '#16a34a' : '#dc2626' }}
+                      style={{ background: dailyResult!.won ? '#7c3aed' : '#dc2626' }}
                     >
                       <span className="text-[10px] font-black text-white leading-none">
                         {dailyResult!.won ? 'W' : 'L'}

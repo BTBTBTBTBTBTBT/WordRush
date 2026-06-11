@@ -24,6 +24,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchTopWords } from '@/lib/stats-service';
+import { WIN_FG } from '@/lib/tile-theme';
 import type { Database } from '@/lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -214,7 +215,7 @@ export default function PublicProfilePage() {
             style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-win-bg)', animationDelay: '0.2s', animationFillMode: 'both' }}
           >
             <div className="flex items-center gap-3">
-              <Trophy className="w-8 h-8" style={{ color: '#16a34a' }} />
+              <Trophy className="w-8 h-8" style={{ color: WIN_FG }} />
               <div>
                 <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Total Wins</div>
                 <div className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{profile.total_wins}</div>
@@ -335,7 +336,7 @@ export default function PublicProfilePage() {
                   <div className="p-4">
                     <div className="grid grid-cols-4 gap-3">
                       {[
-                        { label: 'Wins', value: stat.wins, color: '#16a34a' },
+                        { label: 'Wins', value: stat.wins, color: WIN_FG },
                         { label: 'Losses', value: stat.losses, color: '#dc2626' },
                         { label: 'Best', value: stat.best_score > 0 ? stat.best_score : '-', color: '#d97706' },
                         { label: 'Fastest', value: stat.fastest_time > 0 ? formatDuration(stat.fastest_time) : '-', color: '#2563eb' },
@@ -406,7 +407,7 @@ export default function PublicProfilePage() {
                         }}
                       >
                         {isWinner ? (
-                          <Check className="w-5 h-5" style={{ color: '#16a34a' }} />
+                          <Check className="w-5 h-5" style={{ color: WIN_FG }} />
                         ) : (
                           <X className="w-5 h-5" style={{ color: '#dc2626' }} />
                         )}

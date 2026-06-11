@@ -96,8 +96,8 @@ export function Landing() {
         <div className="p-5 space-y-2" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
           <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
             Guess the hidden word. After each guess, every tile flips to show how close you were:
-            <strong style={{ color: '#16a34a' }}> green</strong> means the right letter in the right spot,
-            <strong style={{ color: '#eab308' }}> yellow</strong> means the letter is in the word but elsewhere, and
+            <strong style={{ color: '#7c3aed' }}> purple</strong> means the right letter in the right spot,
+            <strong style={{ color: '#f59e0b' }}> amber</strong> means the letter is in the word but elsewhere, and
             <strong style={{ color: '#6b7280' }}> gray</strong> means it isn&apos;t in the word at all. Use those clues to
             narrow it down before you run out of tries.
           </p>

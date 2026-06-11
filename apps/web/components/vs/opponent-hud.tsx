@@ -39,7 +39,7 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
 
       {allSolved && (
         <span
-          className="bg-green-500/30 border border-green-400/40 text-green-300 text-xs font-bold px-2 py-0.5 rounded-full animate-fade-in-scale"
+          className="bg-violet-500/30 border border-violet-400/40 text-violet-300 text-xs font-bold px-2 py-0.5 rounded-full animate-fade-in-scale"
         >
           Solved!
         </span>

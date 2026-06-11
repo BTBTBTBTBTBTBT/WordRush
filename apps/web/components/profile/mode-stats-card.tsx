@@ -1,5 +1,7 @@
 'use client';
 
+import { WIN_FG } from '@/lib/tile-theme';
+
 interface ModeStatsCardProps {
   wins: number;
   losses: number;
@@ -22,7 +24,7 @@ export function ModeStatsCard({ wins, losses, totalGames, bestScore, fastestTime
   const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
 
   const stats = [
-    { label: 'Wins', value: wins, color: '#16a34a' },
+    { label: 'Wins', value: wins, color: WIN_FG },
     { label: 'Losses', value: losses, color: '#dc2626' },
     { label: 'Games', value: totalGames, color: accentColor },
     { label: 'Win Rate', value: `${winRate}%`, color: '#7c3aed' },

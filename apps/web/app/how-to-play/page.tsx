@@ -10,9 +10,9 @@ export const metadata: Metadata = {
 
 function TileExample({ letter, color }: { letter: string; color: 'green' | 'yellow' | 'gray' | 'empty' }) {
   const bg: Record<string, string> = {
-    green: '#22c55e',
-    yellow: '#eab308',
-    gray: '#6b7280',
+    green: '#7c3aed',
+    yellow: '#f59e0b',
+    gray: '#64748b',
     empty: 'var(--color-surface)',
   };
   const text: Record<string, string> = {
@@ -22,9 +22,9 @@ function TileExample({ letter, color }: { letter: string; color: 'green' | 'yell
     empty: 'var(--color-text)',
   };
   const border: Record<string, string> = {
-    green: '#22c55e',
-    yellow: '#eab308',
-    gray: '#6b7280',
+    green: '#7c3aed',
+    yellow: '#f59e0b',
+    gray: '#64748b',
     empty: 'var(--color-border)',
   };
 
@@ -81,7 +81,7 @@ export default function HowToPlayPage() {
                   <TileExample letter="Y" color="empty" />
                 </div>
                 <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  <strong style={{ color: '#22c55e' }}>Green</strong> &mdash; the letter is in the word and in the correct position.
+                  <strong style={{ color: '#7c3aed' }}>Purple</strong> &mdash; the letter is in the word and in the correct position.
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export default function HowToPlayPage() {
                   <TileExample letter="S" color="empty" />
                 </div>
                 <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                  <strong style={{ color: '#eab308' }}>Yellow</strong> &mdash; the letter is in the word but in the wrong position.
+                  <strong style={{ color: '#f59e0b' }}>Amber</strong> &mdash; the letter is in the word but in the wrong position.
                 </p>
               </div>
               <div className="flex items-center gap-3">

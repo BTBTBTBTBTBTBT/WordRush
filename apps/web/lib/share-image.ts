@@ -2,6 +2,7 @@
 
 import { evaluateGuess, GameStatus, type BoardState } from '@wordle-duel/core';
 import { getTodayLocal } from './daily-service';
+import { TILE_HEX, WIN_FG, WIN_BG, BOARD_WIN_TINT } from './tile-theme';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
@@ -88,8 +89,8 @@ export type ShareImageInput = ShareSingleInput | ShareMultiInput | ShareGauntlet
 
 const BG = '#f8f7ff';
 const TILE_COLORS: Record<TileStateString, string> = {
-  CORRECT: '#16a34a',
-  PRESENT: '#eab308',
+  CORRECT: TILE_HEX.correct,
+  PRESENT: TILE_HEX.present,
   ABSENT: '#9ca3af',
   EMPTY: '#e5e7eb',
 };
@@ -113,14 +114,12 @@ const TEXT_DARK = '#1a1a2e';
 const TEXT_MUTED = '#6b7280';
 
 // Win/Loss pill (same as profile + leaderboard pills we shipped earlier).
-const WIN_BG = '#dcfce7';
-const WIN_FG = '#16a34a';
+// WIN_BG / WIN_FG / BOARD_WIN_TINT come from tile-theme (Royal violet).
 const LOSS_BG = '#fee2e2';
 const LOSS_FG = '#dc2626';
 
 // Softer tint used behind a board's tile grid so the colored border has a
 // subtle fill to match the in-app finished screen.
-const BOARD_WIN_TINT = '#f0fdf4'; // green-50
 const BOARD_LOSS_TINT = '#fef2f2'; // red-50
 
 // ──────────────────────────────────────────────────────────────────────────

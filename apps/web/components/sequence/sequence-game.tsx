@@ -387,9 +387,9 @@ function SequenceMiniBoard({
 
   const getTileColor = (state: TileState) => {
     switch (state) {
-      case TileState.CORRECT: return 'bg-green-500 border-green-500';
-      case TileState.PRESENT: return 'bg-yellow-500 border-yellow-500';
-      case TileState.ABSENT: return 'bg-gray-500 border-gray-500';
+      case TileState.CORRECT: return 'tile-correct';
+      case TileState.PRESENT: return 'tile-present';
+      case TileState.ABSENT: return 'tile-absent';
       default: return 'bg-white border-gray-300';
     }
   };
@@ -406,7 +406,7 @@ function SequenceMiniBoard({
     <div
       className={`relative p-1 rounded-lg border-2 transition-colors duration-300 h-full flex flex-col overflow-hidden ${
         isCompleted
-          ? 'border-green-400 bg-green-50 shadow-lg shadow-green-500/20'
+          ? 'border-violet-400 bg-violet-50 shadow-lg shadow-violet-500/20'
           : isFailed
           ? 'border-red-400 bg-red-50'
           : isActive
