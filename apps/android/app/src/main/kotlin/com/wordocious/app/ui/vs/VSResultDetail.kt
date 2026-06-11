@@ -78,8 +78,8 @@ private fun evaluateLog(log: List<GuessLogEntry>, solutions: List<String>): Map<
 }
 
 private fun tileBrush(state: TileState): Brush = when (state) {
-    TileState.CORRECT -> Brush.linearGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A)))
-    TileState.PRESENT -> Brush.linearGradient(listOf(Color(0xFFEAB308), Color(0xFFCA8A04)))
+    TileState.CORRECT -> Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)))
+    TileState.PRESENT -> Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706)))
     else -> Brush.linearGradient(listOf(Color(0xFF9CA3AF), Color(0xFF9CA3AF)))
 }
 

@@ -456,7 +456,7 @@ private fun DailyBadge(modeId: String, completion: DailyCompletionsService.Compl
     val won = completion?.completed == true
     val mode = runCatching { GameMode.valueOf(modeId) }.getOrNull()
     val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
-    val tileBg = if (!played) WTheme.bg else if (won) Color(0xFF16A34A) else Color(0xFFDC2626)
+    val tileBg = if (!played) WTheme.bg else if (won) Color(0xFF7C3AED) else Color(0xFFDC2626)
     val tileBorder = if (!played) WTheme.border else tileBg
 
     // Web parity: each badge is a Link to the mode's daily game — tap opens the
@@ -499,9 +499,9 @@ private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, oppon
                 Text(modeLabel(m.gameMode), fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
                 Text(
                     if (isVs) "VS" else "Solo", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
-                    color = if (isVs) Color(0xFF7C3AED) else Color(0xFF16A34A),
+                    color = if (isVs) Color(0xFF7C3AED) else Color(0xFF2563EB),
                     modifier = Modifier.clip(RoundedCornerShape(4.dp))
-                        .background(if (isVs) Color(0xFFEDE9F6) else Color(0xFFF0FDF4)).padding(horizontal = 6.dp, vertical = 2.dp),
+                        .background(if (isVs) Color(0xFFEDE9F6) else Color(0xFFEFF6FF)).padding(horizontal = 6.dp, vertical = 2.dp),
                 )
                 // Web parity: "· vs <username>" inline on VS rows.
                 if (isVs && opponentName != null) {
@@ -518,7 +518,7 @@ private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, oppon
             )
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(if (won) "Win" else "Loss", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (won) Color(0xFF16A34A) else Color(0xFFDC2626))
+            Text(if (won) "Win" else "Loss", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
             Text(fmtMatchDate(m.createdAt), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }
@@ -545,7 +545,7 @@ private fun GlobalSummaryRow(totalWins: Int, totalLosses: Int, currentStreak: In
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        SummaryCard(Icons.Filled.EmojiEvents, "WINS", "$totalWins", null, Color(0xFF16A34A), Modifier.weight(1f))
+        SummaryCard(Icons.Filled.EmojiEvents, "WINS", "$totalWins", null, Color(0xFF7C3AED), Modifier.weight(1f))
         SummaryCard(Icons.Filled.TrackChanges, "WIN RATE", "$winRate%", null, Color(0xFF2563EB), Modifier.weight(1f))
         SummaryCard(Icons.Filled.Bolt, "STREAK", "$currentStreak", "Best: $bestStreak", Color(0xFF7C3AED), Modifier.weight(1f))
         SummaryCard(Icons.Filled.LocalFireDepartment, "DAILY", "$dailyStreak", "Best: $bestDailyStreak", Color(0xFFF97316), Modifier.weight(1f))
@@ -716,7 +716,7 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
         val intensity = d.played.toFloat() / maxGames
         val winRatio = d.won.toFloat() / d.played
         return if (winRatio >= 0.8f) {
-            when { intensity > 0.6f -> Color(0xFF16A34A); intensity > 0.3f -> Color(0xFF4ADE80); else -> Color(0xFF86EFAC) }
+            when { intensity > 0.6f -> Color(0xFF7C3AED); intensity > 0.3f -> Color(0xFFA78BFA); else -> Color(0xFFDDD6FE) }
         } else {
             when { intensity > 0.6f -> Color(0xFF7C3AED); intensity > 0.3f -> Color(0xFFA78BFA); else -> Color(0xFFC4B5FD) }
         }
@@ -754,7 +754,7 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("Less", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    listOf(0xFFF3F0FF, 0xFFC4B5FD, 0xFFA78BFA, 0xFF7C3AED, 0xFF16A34A).forEach { c ->
+                    listOf(0xFFF3F0FF, 0xFFC4B5FD, 0xFFA78BFA, 0xFF7C3AED, 0xFF6D28D9).forEach { c ->
                         Box(Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(Color(c)))
                     }
                     Text("More", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)

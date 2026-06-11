@@ -384,7 +384,7 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
     val isWin = winner == "player"; val isDraw = winner == "draw"
     // Web headline: WINNER / DRAW / DEFEAT (green / yellow / red gradients).
     val headline = if (isWin) "WINNER" else if (isDraw) "DRAW" else "DEFEAT"
-    val colors = if (isWin) listOf(Color(0xFF4ADE80), Color(0xFF6EE7B7))
+    val colors = if (isWin) listOf(Color(0xFFA78BFA), Color(0xFFC4B5FD))
     else if (isDraw) listOf(Color(0xFFFACC15), Color(0xFFFDBA74))
     else listOf(Color(0xFFF87171), Color(0xFFFDA4AF))
     val myName = profile?.username ?: "You"
@@ -508,7 +508,7 @@ private fun AlreadyPlayedDaily(answer: String, gradient: List<Color>, onHome: ()
         if (answer.isNotEmpty()) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 answer.uppercase().forEach { ch ->
-                    Box(Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)).background(Brush.linearGradient(listOf(Color(0xFF22C55E), Color(0xFF16A34A)))), Alignment.Center) {
+                    Box(Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)).background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)))), Alignment.Center) {
                         Text(ch.toString(), fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
                     }
                 }

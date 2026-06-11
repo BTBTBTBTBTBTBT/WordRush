@@ -63,12 +63,12 @@ fun MiniBoardView(
 
     val borderColor = when {
         active -> Color(0xFFFACC15)  // active board yellow border (spec)
-        isWon -> Color(0xFF4ADE80)   // green-400
+        isWon -> Color(0xFFA78BFA)   // green-400
         isLost -> Color(0xFFF87171)  // red-400
         else -> Color(0xFFE5E7EB)    // gray-200
     }
     val bgColor = when {
-        isWon -> Color(0xFFF0FDF4)   // green-50
+        isWon -> Color(0xFFF5F3FF)   // green-50
         isLost -> Color(0xFFFEF2F2)  // red-50
         locked -> Color(0xFFF9FAFB)  // web locked board: bg-gray-50
         else -> Color.White
@@ -175,7 +175,7 @@ fun MiniBoardView(
                     .size(18.dp)
                     .align(Alignment.TopEnd)
                     .clip(RoundedCornerShape(9.dp))
-                    .background(Color(0xFF22C55E)),
+                    .background(Color(0xFF8B5CF6)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("✓", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)

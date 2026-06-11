@@ -378,7 +378,7 @@ private fun ModeCardView(
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
                     .size(20.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (completion!!.completed) Color(0xFF16A34A) else Color(0xFFDC2626)),
+                    .background(if (completion!!.completed) Color(0xFF7C3AED) else Color(0xFFDC2626)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

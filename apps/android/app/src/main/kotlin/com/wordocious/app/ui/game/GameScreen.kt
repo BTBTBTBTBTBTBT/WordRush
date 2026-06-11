@@ -163,7 +163,7 @@ private fun ProperNoundleHints(
         NoundlePill(
             label = consonantRevealed ?: "Consonant",
             icon = Icons.Filled.Tag,
-            used = consonantRevealed != null, text = Color(0xFF16A34A), border = Color(0xFF86EFAC), bg = Color(0xFFF0FDF4),
+            used = consonantRevealed != null, text = Color(0xFF0D9488), border = Color(0xFF5EEAD4), bg = Color(0xFFF0FDFA),
             onClick = onConsonant, modifier = Modifier.weight(1f),
         )
     }
@@ -217,7 +217,7 @@ private fun HintPill(accent: Color, used: Boolean, label: String, onClick: () ->
  */
 @Composable
 private fun GauntletStepper(current: Int, total: Int) {
-    val green = Color(0xFF22C55E)
+    val green = Color(0xFF6D28D9)
     val purple = Color(0xFFA855F7)
     val gray = Color(0xFFD1D5DB)
     Row(verticalAlignment = Alignment.CenterVertically) {

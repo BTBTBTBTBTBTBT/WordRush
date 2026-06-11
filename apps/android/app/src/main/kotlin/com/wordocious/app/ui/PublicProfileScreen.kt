@@ -222,7 +222,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         val games = p.totalWins + p.totalLosses
         val winRate = if (games > 0) "%.1f".format(p.totalWins * 100.0 / games) else "0.0"
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OverallCard(Icons.Filled.EmojiEvents, Color(0xFF16A34A), "${p.totalWins}", "Total Wins", "$winRate% win rate", Modifier.weight(1f))
+            OverallCard(Icons.Filled.EmojiEvents, Color(0xFF7C3AED), "${p.totalWins}", "Total Wins", "$winRate% win rate", Modifier.weight(1f))
             OverallCard(Icons.Filled.LocalFireDepartment, Color(0xFFEA580C), "${p.currentStreak}", "Win Streak", "Best: ${p.bestStreak}", Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -291,7 +291,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                         Text(modeTitle(selectedMode), fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                     }
                     Row(Modifier.fillMaxWidth()) {
-                        ModeStat("Wins", "${stat?.wins ?: 0}", Color(0xFF16A34A), Modifier.weight(1f))
+                        ModeStat("Wins", "${stat?.wins ?: 0}", Color(0xFF7C3AED), Modifier.weight(1f))
                         ModeStat("Losses", "${stat?.losses ?: 0}", Color(0xFFDC2626), Modifier.weight(1f))
                         ModeStat("Best", stat?.bestScore?.let { if (it > 0) "${it.toInt()}" else "—" } ?: "—", Color(0xFFD97706), Modifier.weight(1f))
                         ModeStat(
@@ -387,7 +387,7 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
     ) {
         Icon(
             if (won) Icons.Filled.CheckCircle else Icons.Filled.Cancel, null,
-            tint = if (won) Color(0xFF16A34A) else Color(0xFFDC2626),
+            tint = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626),
             modifier = Modifier.size(20.dp),
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
@@ -398,7 +398,7 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
             Text(dateTime, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            Text(if (won) "Win" else "Loss", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF16A34A) else Color(0xFFDC2626))
+            Text(if (won) "Win" else "Loss", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
             Text("$guesses guesses · ${fmtDuration(time)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }

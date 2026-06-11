@@ -42,9 +42,9 @@ object ShareImage {
     private const val W = 1080
 
     private val TILE = mapOf(
-        TileState.CORRECT to 0xFF16A34A.toInt(),
-        TileState.PRESENT to 0xFFEAB308.toInt(),
-        TileState.HINT_USED to 0xFFEAB308.toInt(),
+        TileState.CORRECT to 0xFF7C3AED.toInt(),
+        TileState.PRESENT to 0xFFF59E0B.toInt(),
+        TileState.HINT_USED to 0xFFF59E0B.toInt(),
         TileState.ABSENT to 0xFF9CA3AF.toInt(),
         TileState.EMPTY to 0xFFE5E7EB.toInt(),
     )
@@ -131,9 +131,9 @@ object ShareImage {
             val tw = p.measureText(label)
             val pillW = tw + 32f; val pillH = 38f
             val rect = RectF(cx - pillW / 2, headerBottom, cx + pillW / 2, headerBottom + pillH)
-            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFDCFCE7 else 0xFFFEE2E2).toInt() }
+            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() }
             c.drawRoundRect(rect, 10f, 10f, fill)
-            p.color = (if (won) 0xFF16A34A else 0xFFDC2626).toInt()
+            p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
             c.drawText(label, cx, rect.centerY() + 8f, p)
             headerBottom = rect.bottom + 14f
         }
@@ -208,11 +208,11 @@ object ShareImage {
                 left - cardPad - borderW, top - cardPad - borderW,
                 left + totalW + cardPad + borderW, top + totalH + cardPad + borderW,
             )
-            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF0FDF4 else 0xFFFEF2F2).toInt() }
+            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEF2F2).toInt() }
             c.drawRoundRect(frame, 18f, 18f, fill)
             val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE; strokeWidth = borderW
-                color = (if (won) 0xFF16A34A else 0xFFDC2626).toInt()
+                color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
             }
             c.drawRoundRect(frame, 18f, 18f, stroke)
         }
@@ -278,12 +278,12 @@ object ShareImage {
             val reached = i <= g.currentStage
             val stageWon = i < g.currentStage || (i == g.currentStage && won)
             val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = (if (!reached) 0xFFF3F4F6 else if (stageWon) 0xFFF0FDF4 else 0xFFFEF2F2).toInt()
+                color = (if (!reached) 0xFFF3F4F6 else if (stageWon) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
             }
             c.drawRoundRect(rect, 18f, 18f, fill)
             val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE; strokeWidth = 3f
-                color = (if (!reached) 0xFFE5E7EB else if (stageWon) 0xFF16A34A else 0xFFDC2626).toInt()
+                color = (if (!reached) 0xFFE5E7EB else if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
             }
             c.drawRoundRect(rect, 18f, 18f, stroke)
 
@@ -295,7 +295,7 @@ object ShareImage {
             c.drawText(g.stages.getOrNull(i)?.name ?: "Stage ${i + 1}", rect.left + 80f, rect.centerY() + 11f, p)
             p.textAlign = Paint.Align.RIGHT
             p.textSize = 56f
-            p.color = (if (!reached) 0xFFD1D5DB else if (stageWon) 0xFF16A34A else 0xFFDC2626).toInt()
+            p.color = (if (!reached) 0xFFD1D5DB else if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
             c.drawText(if (!reached) "·" else if (stageWon) "✓" else "✗", rect.right - 28f, rect.centerY() + 20f, p)
             p.textAlign = Paint.Align.CENTER
         }

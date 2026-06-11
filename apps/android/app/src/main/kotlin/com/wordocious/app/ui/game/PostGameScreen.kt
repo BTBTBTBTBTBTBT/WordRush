@@ -155,13 +155,13 @@ fun PostGameScreen(
                             model = url, contentDescription = null,
                             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp))
-                                .border(2.dp, if (won) Color(0xFF16A34A) else Color(0xFFDC2626), RoundedCornerShape(12.dp)),
+                                .border(2.dp, if (won) Color(0xFF7C3AED) else Color(0xFFDC2626), RoundedCornerShape(12.dp)),
                         )
                     }
                     Text(
                         if (won) (puzzle?.display ?: solution) else "The answer was: ${puzzle?.display ?: solution}",
                         fontSize = 18.sp, fontWeight = FontWeight.Black,
-                        color = if (won) Color(0xFF16A34A) else Color(0xFFEF4444),
+                        color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444),
                     )
                 }
             }
@@ -256,7 +256,7 @@ private fun FinishedStatsHeader(
         }
         Text(
             summary, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-            color = if (won) Color(0xFF16A34A) else Color(0xFFF87171), textAlign = TextAlign.Center,
+            color = if (won) Color(0xFF7C3AED) else Color(0xFFF87171), textAlign = TextAlign.Center,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
@@ -361,7 +361,7 @@ internal fun ScoreBreakdownCard(
 private fun ScoreRow(label: String, detail: String, value: Double, pure: Boolean = false) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.weight(1f, fill = false)) {
-            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (pure) Color(0xFF16A34A) else WTheme.text)
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (pure) Color(0xFF7C3AED) else WTheme.text)
             if (detail.isNotEmpty()) Text(detail, fontSize = 10.sp, color = WTheme.textMuted, maxLines = 1)
         }
         val sign = if (value > 0) "+" else if (value < 0) "−" else ""

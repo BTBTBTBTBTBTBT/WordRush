@@ -10,14 +10,14 @@ import com.wordocious.core.evaluateGuess
 
 /**
  * Builds the shareable emoji grid + launches the Android share sheet —
- * mirrors the web share text (🟩/🟨/⬛ grid, header line, wordocious.com).
+ * mirrors the web share text (🟪/🟧/⬛ grid, header line, wordocious.com).
  */
 object ShareHelper {
 
     private fun emoji(state: TileState): String = when (state) {
-        TileState.CORRECT -> "🟩"
-        TileState.PRESENT -> "🟨"
-        TileState.HINT_USED -> "🟨"
+        TileState.CORRECT -> "🟪"
+        TileState.PRESENT -> "🟧"
+        TileState.HINT_USED -> "🟧"
         else -> "⬛"
     }
 

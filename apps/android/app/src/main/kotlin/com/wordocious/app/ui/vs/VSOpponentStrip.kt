@@ -53,7 +53,7 @@ fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: 
                 Text("${opponent.boardsSolved}/${opponent.totalBoards} boards", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             }
             Text("${opponent.attempts} guesses", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-            if (opponent.solved) Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF22C55E))
+            if (opponent.solved) Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
         }
         if (hasTiles) {
             val boards = if (opponent.totalBoards > 1) (0 until opponent.totalBoards).toList() else listOf(0)
@@ -98,8 +98,8 @@ fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength:
                 repeat(maxOf(wordLength, 1)) { c ->
                     val st = tiles.getOrNull(r)?.getOrNull(c)
                     val color = when (st) {
-                        TileState.CORRECT -> Color(0xFF22C55E)
-                        TileState.PRESENT -> Color(0xFFEAB308)
+                        TileState.CORRECT -> Color(0xFF7C3AED)
+                        TileState.PRESENT -> Color(0xFFF59E0B)
                         TileState.ABSENT -> Color(0xFF9CA3AF)
                         else -> Color.Transparent
                     }

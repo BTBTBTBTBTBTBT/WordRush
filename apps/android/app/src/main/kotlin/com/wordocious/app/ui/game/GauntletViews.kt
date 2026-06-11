@@ -71,16 +71,16 @@ fun StageTransitionOverlay(
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
             Box(
                 Modifier.size(80.dp).clip(CircleShape)
-                    .background(Color(0xFF22C55E).copy(alpha = 0.3f))
-                    .border(4.dp, Color(0xFF4ADE80), CircleShape),
+                    .background(Color(0xFF8B5CF6).copy(alpha = 0.3f))
+                    .border(4.dp, Color(0xFFA78BFA), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Check, null, tint = Color(0xFF86EFAC), modifier = Modifier.size(40.dp))
+                Icon(Icons.Filled.Check, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(40.dp))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     "STAGE COMPLETE",
-                    color = Color(0xFF4ADE80), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
+                    color = Color(0xFFA78BFA), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
                 )
                 Text(completed.name, color = Color.White.copy(alpha = 0.6f), fontSize = 17.sp, fontWeight = FontWeight.Bold)
             }
@@ -139,7 +139,7 @@ fun GauntletStagesCard(g: GauntletProgress, won: Boolean, onReview: (Int) -> Uni
                     .clip(RoundedCornerShape(10.dp))
                     .background(
                         when {
-                            cleared -> Color(0xFF22C55E).copy(alpha = 0.1f)
+                            cleared -> Color(0xFF8B5CF6).copy(alpha = 0.1f)
                             failed -> Color(0xFFEF4444).copy(alpha = 0.1f)
                             else -> WTheme.surfaceAlt
                         },
@@ -164,7 +164,7 @@ fun GauntletStagesCard(g: GauntletProgress, won: Boolean, onReview: (Int) -> Uni
                     if (cleared) "✓" else if (failed) "✗" else "·",
                     fontSize = 14.sp, fontWeight = FontWeight.Black,
                     color = when {
-                        cleared -> Color(0xFF16A34A)
+                        cleared -> Color(0xFF6D28D9)
                         failed -> Color(0xFFDC2626)
                         else -> WTheme.textMuted
                     },
@@ -209,7 +209,7 @@ fun StageReviewModal(stage: GauntletStageConfig, result: GauntletStageResult, on
             Text(
                 stage.name,
                 fontSize = 22.sp, fontWeight = FontWeight.Black,
-                color = if (won) Color(0xFF16A34A) else Color(0xFFF87171),
+                color = if (won) Color(0xFF7C3AED) else Color(0xFFF87171),
             )
             Text(
                 "${if (won) "Cleared" else "Failed"} · ${result.guesses} guess${if (result.guesses != 1) "es" else ""} · ${fmtMs(result.timeMs)}",
@@ -239,7 +239,7 @@ fun StageReviewModal(stage: GauntletStageConfig, result: GauntletStageResult, on
                                 modifier = Modifier.weight(1f)
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(
-                                        if (boardWon) Color(0xFFDCFCE7)
+                                        if (boardWon) Color(0xFFF5F3FF)
                                         else if (boardFailed) Color(0xFFFEE2E2)
                                         else Color(0xFFE5E7EB),
                                     )
@@ -271,10 +271,10 @@ private fun StageReviewBoard(board: BoardState, stageWon: Boolean, modifier: Mod
     Column(
         modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(if (won) Color(0xFFF0FDF4) else if (lost) Color(0xFFFEF2F2) else Color.White)
+            .background(if (won) Color(0xFFF5F3FF) else if (lost) Color(0xFFFEF2F2) else Color.White)
             .border(
                 2.dp,
-                if (won) Color(0xFF4ADE80) else if (lost) Color(0xFFF87171) else Color(0xFFE5E7EB),
+                if (won) Color(0xFFA78BFA) else if (lost) Color(0xFFF87171) else Color(0xFFE5E7EB),
                 RoundedCornerShape(10.dp),
             )
             .padding(4.dp),

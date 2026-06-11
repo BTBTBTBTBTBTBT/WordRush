@@ -88,7 +88,7 @@ fun CompletedDailyBoard(modeId: String) {
         Box(
             Modifier.fillMaxWidth().height(4.dp).background(
                 Brush.horizontalGradient(
-                    if (won) listOf(Color(0xFF22C55E), Color(0xFF4ADE80))
+                    if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))
                     else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)),
                 ),
             ),
@@ -98,14 +98,14 @@ fun CompletedDailyBoard(modeId: String) {
             Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFDCFCE7) else Color(0xFFFEE2E2)), Alignment.Center) {
-                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF16A34A) else Color(0xFFDC2626))
+            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
+                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
             }
             Spacer(Modifier.width(8.dp))
             Text(
                 if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY",
                 fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
-                color = if (won) Color(0xFF22C55E) else WTheme.textMuted,
+                color = if (won) Color(0xFF7C3AED) else WTheme.textMuted,
             )
             Spacer(Modifier.weight(1f))
             Text(summary, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)

@@ -78,8 +78,8 @@ private fun HowToPlay() {
         "Guess the 5-letter word. Each guess must be a valid word. After each guess, the tiles change color to show how close you are.",
         fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary,
     )
-    ExampleRow(listOf("W", "E", "A", "R", "Y"), 0, Color(0xFF22C55E), "W", Color(0xFF16A34A), " is in the word and in the correct spot.")
-    ExampleRow(listOf("P", "I", "L", "L", "S"), 1, Color(0xFFEAB308), "I", Color(0xFFEAB308), " is in the word but in the wrong spot.")
+    ExampleRow(listOf("W", "E", "A", "R", "Y"), 0, Color(0xFF7C3AED), "W", Color(0xFF7C3AED), " is in the word and in the correct spot.")
+    ExampleRow(listOf("P", "I", "L", "L", "S"), 1, Color(0xFFF59E0B), "I", Color(0xFFF59E0B), " is in the word but in the wrong spot.")
     ExampleRow(listOf("V", "A", "G", "U", "E"), 3, Color(0xFF6B7280), "U", Color(0xFF6B7280), " is not in the word at all.")
     Text(
         "Daily puzzles reset at your local midnight. Every player gets the same word of the day so you can compare results.",
@@ -240,7 +240,7 @@ private fun infoSections(kind: String): List<InfoSec> = when (kind) {
         InfoSec("Contact Us", "Questions about these terms?"),
     )
     else -> listOf(
-        InfoSec("How do I play Wordocious?", "Guess the hidden word in the allotted tries; tiles show green (correct spot), yellow (wrong spot), gray (not in word)."),
+        InfoSec("How do I play Wordocious?", "Guess the hidden word in the allotted tries; tiles show purple (correct spot), amber (wrong spot), gray (not in word)."),
         InfoSec("What are the different game modes?", "10 modes from Classic to multi-board, Gauntlet, and VS — see About for the full list."),
         InfoSec("How are daily scores calculated?", "A base of 1,000 for completing, a guess bonus (hint modes), a speed bonus for finishing fast, and a completion bonus on multi-board modes."),
         InfoSec("How do XP and levels work?", "Win = 100 XP, loss = 25 XP, with streak + daily bonuses. Every 1,000 XP is a level."),

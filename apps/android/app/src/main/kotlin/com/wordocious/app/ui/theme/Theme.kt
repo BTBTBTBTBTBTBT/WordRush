@@ -22,9 +22,9 @@ data class Palette(
     // Win/Loss pills + gold-highlight rows — web themes these in dark
     // (globals.css --color-win-bg/loss-bg/win-text/loss-text/highlight-gold/
     // gold-border(-light)); the light themes share the :root values.
-    val winBg: Color = Color(0xFFDCFCE7),
+    val winBg: Color = Color(0xFFF5F3FF),
     val lossBg: Color = Color(0xFFFEE2E2),
-    val winText: Color = Color(0xFF16A34A),
+    val winText: Color = Color(0xFF7C3AED),
     val lossText: Color = Color(0xFFDC2626),
     val highlightGold: Color = Color(0xFFFFFBEB),
     val goldBorder: Color = Color(0xFFFDE68A),
@@ -43,8 +43,8 @@ object Palettes {
         borderLight = Color(0xFF2E2E4A), borderAlt = Color(0xFF3A3A5C), divider = Color(0xFF3A3A5C),
         surfaceHover = Color(0xFF2E2E4A), surfaceAlt = Color(0xFF2A2A48),
         text = Color(0xFFF0EEF6), textMuted = Color(0xFF9CA3AF), textSecondary = Color(0xFFA0A0B8),
-        winBg = Color(0xFF052E16), lossBg = Color(0xFF450A0A),
-        winText = Color(0xFF4ADE80), lossText = Color(0xFFF87171),
+        winBg = Color(0xFF2E1065), lossBg = Color(0xFF450A0A),
+        winText = Color(0xFFA78BFA), lossText = Color(0xFFF87171),
         highlightGold = Color(0xFF422006), goldBorder = Color(0xFF92400E),
         goldBorderLight = Color(0xFF78350F),
     )
@@ -100,18 +100,21 @@ object WTheme {
     val wordmarkEnd = Color(0xFFEC4899)
     val gold = Color(0xFFF59E0B)
 
-    // Board tiles — Tailwind green-500 / yellow-500 / gray-500
-    val correct = Color(0xFF22C55E)
-    val present = Color(0xFFEAB308)
-    val absent = Color(0xFF6B7280)
+    // Board tiles — "Royal" palette: violet-600 / amber-500 / slate-500
+    val correct = Color(0xFF7C3AED)
+    val present = Color(0xFFF59E0B)
+    val absent = Color(0xFF64748B)
     val emptyBorder = Color(0xFFD1D5DB)      // gray-300
     val hintUsed = Color(0xFFF3F4F6)         // web HINT_USED tile = bg-gray-100 (faint ghost, gray-300 letter)
 
-    // Keyboard keys — darker 600-weight + gray-400 (distinct from board tiles)
+    // Win-tint family (light surfaces behind winning boards / pills)
+    val boardWinTint = Color(0xFFF5F3FF)     // violet-50
+
+    // Keyboard keys — darker 700-weight + slate-400 (distinct from board tiles)
     val keyDefault = Color(0xFFE8E5F0)
-    val keyCorrect = Color(0xFF16A34A)       // green-600
-    val keyPresent = Color(0xFFCA8A04)       // yellow-600
-    val keyAbsent = Color(0xFF9CA3AF)        // gray-400
+    val keyCorrect = Color(0xFF6D28D9)       // violet-700
+    val keyPresent = Color(0xFFD97706)       // amber-600
+    val keyAbsent = Color(0xFF94A3B8)        // slate-400
 
     val wordmarkGradient = Brush.linearGradient(
         colors = listOf(wordmarkStart, wordmarkEnd),
