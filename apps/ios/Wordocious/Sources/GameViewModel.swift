@@ -374,9 +374,11 @@ final class GameViewModel: ObservableObject {
 
         let theSeed = state.seed
         // Match-history row (player2_id = null) so this game feeds the Profile
-        // charts, mirroring the web's recordSoloMatch. board 0's guesses are the
-        // shared guess list; solutions = every board's answer.
-        let guessWords = state.boards.first?.guesses ?? []
+        // charts, mirroring the web's recordSoloMatch. The LONGEST board holds
+        // the complete shared guess list — solved boards stop accumulating, so
+        // board 0 truncates the history whenever it solves early (web parity:
+        // quordle/octordle/sequence record `longestGuesses`).
+        let guessWords = state.boards.max(by: { $0.guesses.count < $1.guesses.count })?.guesses ?? []
         let solutionWords = state.boards.map(\.solution)
         let hintsCount = hintsUsed   // Six/Seven hint penalty (0 for non-hint modes)
         Task {

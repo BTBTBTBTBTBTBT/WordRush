@@ -352,7 +352,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 totalBoards = state.boards.size,
                 seed = seed,
                 solutions = state.boards.map { it.solution },
-                guesses = state.boards.first().guesses,
+                guesses = state.boards.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(), // longest board = full shared history (web longestGuesses parity)
                 hintsUsed = vm.hintsUsed,
             )
         }

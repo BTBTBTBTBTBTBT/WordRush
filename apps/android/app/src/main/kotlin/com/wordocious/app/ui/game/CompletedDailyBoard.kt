@@ -67,7 +67,7 @@ fun CompletedDailyBoard(modeId: String) {
     val isMulti = boards.size > 1
     val boardsSolved = boards.count { it.status == GameStatus.WON }
     val totalBoards = boards.size
-    val guesses = boards.firstOrNull()?.guesses?.size ?: 0
+    val guesses = boards.maxOfOrNull { it.guesses.size } ?: 0 // MAX across boards (board 0 stops at its solve)
     val maxGuesses = boards.firstOrNull()?.maxGuesses ?: 6
     val timeSeconds = remember(modeId) { GamePersistence.loadElapsed(seed, mode) ?: 0 }
     val hints = boards.firstOrNull()?.hintEvaluations?.size ?: 0

@@ -156,7 +156,7 @@ class GameViewModel(
             val finishElapsed = elapsedSeconds()
             _elapsed.value = finishElapsed                       // freeze the displayed timer
             if (!isVersus) GamePersistence.saveElapsed(seed, mode, finishElapsed) // persist for re-entry
-            if (isVersus) onCompleted?.invoke(after.status, after.boards.firstOrNull()?.guesses?.size ?: 0)
+            if (isVersus) onCompleted?.invoke(after.status, after.boards.maxOfOrNull { it.guesses.size } ?: 0) // MAX across boards (board 0 stops at its solve)
         }
         return true
     }

@@ -129,11 +129,17 @@ struct SolvedPuzzleView: View {
             // exists: synthesize the display payload from it so the review always
             // renders for on-device plays — never "Couldn't load".
             if data == nil, let lb = localBoards {
+                // Use the LONGEST board's guess list: solved boards stop
+                // accumulating (board 0 solving on row 6 of a 10-guess
+                // Succession would report "6"), so the board with the most
+                // guesses holds the complete shared history — same MAX
+                // semantics as rowsUsed / the recorded player1_score.
+                let fullHistory = lb.max(by: { $0.guesses.count < $1.guesses.count })?.guesses ?? []
                 data = MatchStatsService.SolvedDaily(
-                    guesses: lb.first?.guesses ?? [],
+                    guesses: fullHistory,
                     solutions: lb.map(\.solution),
                     won: localWon,
-                    guessCount: lb.first?.guesses.count ?? 0,
+                    guessCount: fullHistory.count,
                     timeSeconds: elapsedMs / 1000,
                     hintsUsed: 0)
             }

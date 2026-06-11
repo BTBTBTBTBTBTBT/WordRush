@@ -348,7 +348,7 @@ class VSMatchViewModel(
                 gameMode = mode, playType = "vs", won = won, guessCount = data.playerGuesses,
                 timeSeconds = secs, boardsSolved = solved, totalBoards = total, seed = theSeed,
                 solutions = game?.state?.value?.boards?.map { it.solution } ?: emptyList(),
-                guesses = game?.state?.value?.boards?.firstOrNull()?.guesses ?: emptyList(),
+                guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(), // longest board = full shared history
             )
             // Single shared match-history row written only by the designated writer.
             if (data.recordMatch == true && data.opponentId != null) {
