@@ -110,11 +110,19 @@ struct KeyboardView: View {
 
     private func actionKey(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
-                .font(Brand.font(14, .bold))
-                .foregroundStyle(Theme.textPrimary)
-                .frame(width: 54, height: 52)
-                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+            Group {
+                if label == "⌫" {
+                    // Web parity: lucide Delete icon at h-5 (20px) — the "⌫" text
+                    // glyph at 14pt read as a comically tiny key.
+                    Image(systemName: "delete.left")
+                        .font(.system(size: 20, weight: .semibold))
+                } else {
+                    Text(label).font(Brand.font(14, .heavy))
+                }
+            }
+            .foregroundStyle(Theme.textPrimary)
+            .frame(width: 54, height: 52)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }
         .buttonStyle(.plain)
     }

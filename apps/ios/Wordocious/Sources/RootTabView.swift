@@ -16,7 +16,14 @@ struct RootTabView: View {
 
     enum Tab: Hashable { case home, leaderboard, profile, records }
 
-    init() { DictionaryLoader.ensureInitialized() }
+    init() {
+        DictionaryLoader.ensureInitialized()
+        // The system tab bar is fully replaced by the custom BottomNav below.
+        // `.toolbar(.hidden, for: .tabBar)` alone can FLASH the default (dark
+        // translucent) system bar mid-transition when a fullScreenCover game
+        // dismisses — hide the UIKit bar globally so it can never render.
+        UITabBar.appearance().isHidden = true
+    }
 
     /// Tab selection with stack-reset side effects (web-like tab behavior).
     private var tabSelection: Binding<Tab> {
