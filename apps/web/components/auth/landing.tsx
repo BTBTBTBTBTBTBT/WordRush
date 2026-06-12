@@ -11,17 +11,17 @@ import { LoginScreen } from './login-screen';
  * "Sign in to play" reveals the existing LoginScreen — gameplay stays
  * login-gated.
  */
-const MODES: { title: string; desc: string; accent: string; roman?: string }[] = [
-  { title: 'Classic', desc: 'Guess the hidden 5-letter word in six tries.', accent: '#7c3aed' },
+const MODES: { title: string; desc: string; accent: string; roman?: string; guide?: string }[] = [
+  { title: 'Classic', desc: 'Guess the hidden 5-letter word in six tries.', accent: '#7c3aed', guide: 'classic' },
   { title: 'VS Battle', desc: 'Race a live opponent on the same puzzle in real time.', accent: '#0d9488' },
-  { title: 'QuadWord', desc: 'Solve four words at once with nine shared guesses.', accent: '#ec4899', roman: 'IV' },
-  { title: 'OctoWord', desc: 'Eight boards, thirteen guesses — the ultimate grid.', accent: '#7e22ce', roman: 'VIII' },
-  { title: 'Succession', desc: 'Four words, unlocked and solved one at a time.', accent: '#2563eb' },
-  { title: 'Deliverance', desc: 'Four boards that start with letters already placed.', accent: '#059669' },
-  { title: 'Six', desc: 'Longer six-letter words in seven tries.', accent: '#06b6d4' },
-  { title: 'Seven', desc: 'Seven-letter words in eight tries for word pros.', accent: '#84cc16' },
-  { title: 'Gauntlet', desc: 'Five escalating stages chained into one run.', accent: '#d97706' },
-  { title: 'ProperNoundle', desc: 'Guess famous names from a daily category.', accent: '#dc2626' },
+  { title: 'QuadWord', desc: 'Solve four words at once with nine shared guesses.', accent: '#ec4899', roman: 'IV', guide: 'quadword' },
+  { title: 'OctoWord', desc: 'Eight boards, thirteen guesses — the ultimate grid.', accent: '#7e22ce', roman: 'VIII', guide: 'octoword' },
+  { title: 'Succession', desc: 'Four words, unlocked and solved one at a time.', accent: '#2563eb', guide: 'succession' },
+  { title: 'Deliverance', desc: 'Four boards that start with letters already placed.', accent: '#059669', guide: 'deliverance' },
+  { title: 'Six', desc: 'Longer six-letter words in seven tries.', accent: '#06b6d4', guide: 'six' },
+  { title: 'Seven', desc: 'Seven-letter words in eight tries for word pros.', accent: '#84cc16', guide: 'seven' },
+  { title: 'Gauntlet', desc: 'Five escalating stages chained into one run.', accent: '#d97706', guide: 'gauntlet' },
+  { title: 'ProperNoundle', desc: 'Guess famous names from a daily category.', accent: '#dc2626', guide: 'propernoundle' },
 ];
 
 const FAQ: { q: string; a: string }[] = [
@@ -85,9 +85,18 @@ export function Landing() {
                 <h3 className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{m.title}</h3>
               </div>
               <p className="text-xs font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{m.desc}</p>
+              {m.guide && (
+                <Link href={`/guides/${m.guide}`} className="inline-block text-[11px] font-extrabold mt-1.5" style={{ color: m.accent }}>
+                  Rules, scoring &amp; strategy →
+                </Link>
+              )}
             </div>
           ))}
         </div>
+        <p className="text-xs font-medium mt-3" style={{ color: 'var(--color-text-secondary)' }}>
+          Want the deep dives? The <Link href="/guides" style={{ color: '#7c3aed', fontWeight: 800 }}>mode guides</Link> cover
+          exact scoring formulas, hint economics, and leaderboard strategy for every mode.
+        </p>
       </section>
 
       {/* How to play */}
@@ -132,6 +141,7 @@ export function Landing() {
         <div className="flex items-center justify-center gap-3 text-[11px] font-bold flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
           <Link href="/about">About</Link><span>·</span>
           <Link href="/how-to-play">How to Play</Link><span>·</span>
+          <Link href="/guides">Mode Guides</Link><span>·</span>
           <Link href="/faq">FAQ</Link><span>·</span>
           <Link href="/privacy">Privacy</Link><span>·</span>
           <Link href="/terms">Terms</Link><span>·</span>
