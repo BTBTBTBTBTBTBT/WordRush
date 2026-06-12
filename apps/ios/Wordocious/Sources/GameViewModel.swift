@@ -382,7 +382,12 @@ final class GameViewModel: ObservableObject {
         // the complete shared guess list — solved boards stop accumulating, so
         // board 0 truncates the history whenever it solves early (web parity:
         // quordle/octordle/sequence record `longestGuesses`).
-        let guessWords = state.boards.max(by: { $0.guesses.count < $1.guesses.count })?.guesses ?? []
+        // SEQUENCE records the flat per-board concatenation (web shape — its
+        // replayer feeds each entry to the first still-PLAYING board); parallel
+        // modes record the longest board (= the full shared history).
+        let guessWords = isSequence
+            ? state.boards.flatMap(\.guesses)
+            : state.boards.max(by: { $0.guesses.count < $1.guesses.count })?.guesses ?? []
         let solutionWords = state.boards.map(\.solution)
         let hintsCount = hintsUsed   // Six/Seven hint penalty (0 for non-hint modes)
         Task {

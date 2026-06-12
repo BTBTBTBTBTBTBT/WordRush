@@ -132,8 +132,12 @@ class GameViewModel(
         if (isFinished || rejecting) return false
         val guess = _input.value
         if (guess.length != wordLength) { reject("Not enough letters"); return false }
-        // Reject already-guessed words on the active board (UI rule; reducer doesn't dedupe).
-        val activeBoard = _state.value.boards[_state.value.currentBoardIndex]
+        // Reject already-guessed words on the active board (UI rule; reducer doesn't
+        // dedupe). Sequence's active board = first still-PLAYING (currentBoardIndex
+        // is never advanced); other modes check board 0's shared history.
+        val activeBoard = if (mode == GameMode.SEQUENCE)
+            (_state.value.boards.firstOrNull { it.status == GameStatus.PLAYING } ?: _state.value.boards[0])
+        else _state.value.boards[_state.value.currentBoardIndex]
         if (activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }) { reject("Already guessed"); return false }
         val before = _state.value
         val after = gameReducer(before, GameAction.SubmitGuess(guess, applyToAll = applyToAll))

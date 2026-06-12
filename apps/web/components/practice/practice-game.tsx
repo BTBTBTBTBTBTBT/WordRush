@@ -16,6 +16,7 @@ import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
+import { recordDailyResult } from '@/lib/daily-service';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
@@ -108,19 +109,19 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   // Re-record a restored daily completion that may have failed to persist
   // (e.g. if a DB constraint was missing when the game was originally played).
-  // Only re-records the daily_results row (upsert) — NOT solo matches (which
-  // would create duplicates). Guarded by sessionStorage so it fires at most
-  // once per browser session per mode.
+  // ONLY the daily_results row (best-score upsert, idempotent) — NEVER
+  // recordGameResult: that pipeline increments user_stats/profile counters and
+  // XP, and re-running it per browser session minted phantom wins (the
+  // "46 games vs 39 in the chart" bug).
   useEffect(() => {
     if (!isRestoredCompleted.current || !profile || !isDaily) return;
     if (state.status !== GameStatus.WON && state.status !== GameStatus.LOST) return;
     const guardKey = `wordocious-rerecord-${mode}-${gameSeed}`;
     try { if (sessionStorage.getItem(guardKey)) return; } catch {}
     const guesses = currentBoard.guesses.length;
-    const timeMs = (savedSession?.elapsedTime ?? 0) * 1000;
-    recordGameResult(
+    recordDailyResult(
       profile.id, mode, 'solo',
-      state.status === GameStatus.WON, guesses, timeMs, gameSeed,
+      state.status === GameStatus.WON, guesses, savedSession?.elapsedTime ?? 0,
       state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed,
     ).catch(() => {});
     // Ensure freemium lock shows correctly for this mode

@@ -84,18 +84,11 @@ fun PostGameScreen(
     val totalBoards = state.boards.size
     val multiBoard = totalBoards > 1
 
-    // Record the daily result once — ONLY for daily seeds. Pro "Unlimited" games
-    // use a non-daily seed and must not overwrite the daily leaderboard row (the
-    // XP/matches/stats pipeline in GameScreen still records them — "all stats count").
-    LaunchedEffect(state.status) {
-        if (seed.startsWith("daily-")) {
-            DailyResultsService.recordDailyResult(
-                mode = mode, completed = won, guessCount = guessCount,
-                elapsedSeconds = elapsedSeconds, boardsSolved = boardsSolved,
-                totalBoards = totalBoards, hintsUsed = hintsUsed,
-            )
-        }
-    }
+    // NOTE: the daily_results row is written exclusively by GameScreen's record
+    // pipeline (GameResultsService.record → recordDailyResult) with run-correct
+    // values. A second writer here used FINAL-STAGE values for Gauntlet
+    // (solved/4 instead of solved/21) and could out-score the correct row in
+    // the best-score upsert — removed.
 
     val accent = modeAccent(mode)
     val share = {

@@ -266,13 +266,20 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     // Quadrant keyboard for parallel multi-board modes (Quad/Octo/Deliverance); NOT Sequence.
     val useQuadrant = multiBoard && !isSequential
     val letterStates = if (isSequential) {
-        // Sequence: keyboard colors from the ACTIVE board only (spec hot-spot #8).
-        computeCombinedLetterStates(listOf(state.boards[state.currentBoardIndex]))
+        // Sequence: keyboard colors from the ACTIVE board only (spec hot-spot #8)
+        // = the first still-PLAYING board (currentBoardIndex is never advanced).
+        val active = state.boards.firstOrNull { it.status == GameStatus.PLAYING } ?: state.boards.last()
+        computeCombinedLetterStates(listOf(active))
     } else {
         computeCombinedLetterStates(state.boards)
     }
     val perBoardStates = if (useQuadrant) computePerBoardLetterStates(state.boards) else null
-    val isApplyToAll = multiBoard && !isSequential
+    // ALL multi-board modes (incl. Sequence) apply each guess to every
+    // still-PLAYING board — web sequence-game dispatches applyToAll:true and
+    // iOS matches. The old !isSequential exception routed guesses to
+    // currentBoardIndex, which nothing advances: Succession was unwinnable
+    // past board 1 ("Not in word list" on every guess after the first solve).
+    val isApplyToAll = multiBoard
     val isFinished = state.status != GameStatus.PLAYING
 
     // Two-phase finish (spec hot-spot #4): a game that finishes LIVE this session
@@ -328,7 +335,15 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         val applyAll = replayed.boards.size > 1 && mode != GameMode.SEQUENCE
         for (g in row.player1Guesses.take(200)) {
             if (replayed.status != GameStatus.PLAYING) break
-            replayed = gameReducer(replayed, GameAction.SubmitGuess(g, applyToAll = applyAll))
+            replayed = if (mode == GameMode.SEQUENCE) {
+                // Web shape: flat per-board concatenation — each entry goes to
+                // the first still-PLAYING board (use-game-snapshot parity).
+                val idx = replayed.boards.indexOfFirst { it.status == GameStatus.PLAYING }
+                if (idx < 0) break
+                gameReducer(replayed, GameAction.SubmitGuess(g, boardIndex = idx, applyToAll = false))
+            } else {
+                gameReducer(replayed, GameAction.SubmitGuess(g, applyToAll = applyAll))
+            }
         }
         // Only install a state that actually reached a finish — otherwise leave
         // the fresh board (replaying it live will record normally).
@@ -360,8 +375,11 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             } else state.boards.count { it.status == GameStatus.WON }
             val runTotal = if (isGauntletRun) (g!!.stages.sumOf { it.boardCount }.takeIf { it > 0 } ?: 21)
                 else state.boards.size
-            val runGuessList = if (isGauntletRun) state.boards.flatMap { it.guesses } // web: final-stage flatMap
-                else state.boards.maxByOrNull { it.guesses.size }?.guesses ?: emptyList() // longest board = full shared history
+            val runGuessList = when {
+                isGauntletRun -> state.boards.flatMap { it.guesses } // web: final-stage flatMap
+                mode == GameMode.SEQUENCE -> state.boards.flatMap { it.guesses } // web shape: per-board concatenation (its replayer feeds first-PLAYING board)
+                else -> state.boards.maxByOrNull { it.guesses.size }?.guesses ?: emptyList() // longest board = full shared history
+            }
             xpResult = com.wordocious.app.data.GameResultsService.record(
                 gameMode = mode,
                 won = won,

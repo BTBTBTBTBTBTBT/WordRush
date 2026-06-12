@@ -77,7 +77,9 @@ enum ShareService {
         guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
 
         let sm = shareMode(mode)
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
         let dateStr = f.string(from: Date())
         let key = "\(uid)/\(sm)-\(dateStr)"
         let path = "\(key).png"

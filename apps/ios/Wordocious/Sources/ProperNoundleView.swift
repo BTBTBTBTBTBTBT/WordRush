@@ -60,8 +60,12 @@ final class ProperNoundleVM: ObservableObject {
     init(seed: String? = nil, isVersus: Bool = false) {
         self.isVersus = isVersus
         self.isDaily = (seed == nil && !isVersus)
+        self.gameSeed = seed
         puzzle = seed.flatMap { ProperNoundle.puzzle(forSeed: $0) } ?? ProperNoundle.dailyPuzzle()
     }
+
+    /// The seed the VM was created with (unlimited/VS); nil = today's daily.
+    private let gameSeed: String?
 
     func type(_ l: String) { guard !isFinished, input.count < answerLen else { return }; input += l.lowercased() }
     func delete() { if !input.isEmpty { input.removeLast() } }
@@ -152,7 +156,13 @@ final class ProperNoundleVM: ObservableObject {
         // vs result, so skip the solo recording below.
         if isVersus { onCompleted?(status, guesses.count); return }
         guard !recorded else { return }; recorded = true
-        let seed = generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: GameMode.propernoundle.rawValue)
+        // Unlimited (Pro Play Again) games carry their own seed — recording them
+        // under the DAILY seed put random puzzles on the daily leaderboard and
+        // corrupted cross-device replay of the real daily (web parity: only
+        // daily mode uses the daily seed).
+        let seed = isDaily
+            ? generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: GameMode.propernoundle.rawValue)
+            : (gameSeed ?? "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))")
         let won = status == .won, secs = elapsed, gc = guesses.count, used = hintsUsed
         let answer = puzzle.map { ProperNoundle.normalize($0.answer) } ?? ""
         let guessWords = guesses.map { $0.word }

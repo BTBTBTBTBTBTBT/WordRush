@@ -43,7 +43,9 @@ enum ShieldService {
     }
 
     private static func localDay(_ date: Date) -> String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
         return f.string(from: date)
     }
 }

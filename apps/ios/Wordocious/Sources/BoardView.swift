@@ -284,7 +284,14 @@ enum CompletedBoardReconstruct {
             for g in guesses {
                 guard state.status == .playing, safety < 200 else { break }
                 safety += 1
-                state = gameReducer(state: state, action: .submitGuess(guess: g, applyToAll: applyToAll))
+                if mode == .sequence {
+                    // Web shape: flat per-board concatenation — each entry goes
+                    // to the first still-PLAYING board (use-game-snapshot parity).
+                    guard let idx = state.boards.firstIndex(where: { $0.status == .playing }) else { break }
+                    state = gameReducer(state: state, action: .submitGuess(guess: g, boardIndex: idx, applyToAll: false))
+                } else {
+                    state = gameReducer(state: state, action: .submitGuess(guess: g, applyToAll: applyToAll))
+                }
             }
             return state.boards
         }

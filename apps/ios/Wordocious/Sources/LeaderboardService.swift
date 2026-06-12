@@ -40,7 +40,12 @@ struct LeaderboardEntry: Identifiable, Decodable {
 /// ordering). `day` is the device-LOCAL date (matches web getTodayLocal()).
 enum LeaderboardService {
     static func todayLocal() -> String {
+        // en_US_POSIX + Gregorian: without these, devices on the Buddhist or
+        // Japanese calendar render yyyy as e.g. 2569 — wrong daily seed, split
+        // leaderboards, broken streak comparisons.
         let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
         f.dateFormat = "yyyy-MM-dd"
         f.timeZone = .current
         return f.string(from: Date())

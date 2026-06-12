@@ -319,7 +319,9 @@ enum GameResultsService {
     // MARK: - Local day helpers (match lib/daily-service.ts toLocalDayString)
 
     private static func localDayString(from date: Date = Date()) -> String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
         return f.string(from: date)
     }
     private static func localDayString(daysAgo: Int) -> String {

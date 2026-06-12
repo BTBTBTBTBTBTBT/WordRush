@@ -299,7 +299,12 @@ object GameResultsService {
     ): XpResult? {
         val userId = AuthService.userId ?: return null
         updateUserStats(userId, gameMode.name, playType, won, guessCount, timeSeconds)
-        recordSoloMatch(gameMode, won, guessCount, timeSeconds, seed, solutions, guesses, hintsUsed)
+        // Solo games only: VS matches get their single shared row via
+        // recordVsMatch (designated writer) — writing a player2_id=null row
+        // here too polluted Recent Matches/charts with phantom solo games.
+        if (playType == "solo") {
+            recordSoloMatch(gameMode, won, guessCount, timeSeconds, seed, solutions, guesses, hintsUsed)
+        }
         var xp = updateProfileProgression(userId, won, seed)
 
         // Daily extras — web stats-service ordering: daily row first, then
