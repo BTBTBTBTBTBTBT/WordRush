@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, isValidWord } from '@wordle-duel/core';
+import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, generateMatchSeed, getDailySeedDate, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
 import dynamic from 'next/dynamic';
@@ -123,6 +123,9 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       profile.id, mode, 'solo',
       state.status === GameStatus.WON, guesses, savedSession?.elapsedTime ?? 0,
       state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed,
+      // Day derived from the daily seed so a re-record that happens after
+      // local midnight still lands on the day the puzzle was issued for.
+      getDailySeedDate(gameSeed) ?? undefined,
     ).catch(() => {});
     // Ensure freemium lock shows correctly for this mode
     const modePlayId = mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'practice';

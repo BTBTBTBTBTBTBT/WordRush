@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { GauntletGame } from '@/components/gauntlet/gauntlet-game';
 import { AdGate } from '@/components/ads/ad-gate';
+import { UnlimitedGate } from '@/components/game/unlimited-gate';
 import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
@@ -28,5 +29,5 @@ export default function GauntletPage() {
 
   const seed = isDaily ? generateDailySeed(getTodayLocal(), 'GAUNTLET') : undefined;
 
-  return <AdGate><GauntletGame initialSeed={seed} isDaily={isDaily} /></AdGate>;
+  return <AdGate><UnlimitedGate isDaily={isDaily} modeSlug="gauntlet"><GauntletGame initialSeed={seed} isDaily={isDaily} /></UnlimitedGate></AdGate>;
 }

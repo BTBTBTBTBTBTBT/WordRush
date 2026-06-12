@@ -249,19 +249,26 @@ object GameResultsService {
         val seed: String,
         val solutions: List<String>,
         @SerialName("player1_guesses") val player1Guesses: List<String>,
+        @SerialName("player2_guesses") val player2Guesses: List<String>?,
         @SerialName("started_at") val startedAt: String,
         @SerialName("completed_at") val completedAt: String,
     )
 
     /**
      * Insert the VS match-history row so the battle shows in Recent Matches —
-     * ports iOS recordVsMatch. Called by ONLY the server-designated writer
-     * (recordMatch=player1) so exactly one shared row exists per match. We don't
-     * have the opponent's guess words client-side, so player2_guesses stays null.
+     * ports iOS recordVsMatch / web vs-game recordMatch. Called by ONLY the
+     * server-designated writer (recordMatch=player1) so exactly one shared row
+     * exists per match. Solutions + both players' guess words are recorded
+     * (web row shape, stats-service recordMatch): the writer's own guesses
+     * from the finished game state, the opponent's from the match_ended
+     * payload's opponentGuessLog.
      */
     suspend fun recordVsMatch(
         gameMode: GameMode, opponentId: String, won: Boolean, isDraw: Boolean,
         playerGuesses: Int, opponentGuesses: Int, playerTimeSec: Int, opponentTimeSec: Int, seed: String,
+        solutions: List<String> = emptyList(),
+        player1Guesses: List<String> = emptyList(),
+        player2Guesses: List<String>? = null,
     ) {
         val uid = AuthService.userId ?: return
         val winnerId: String? = if (isDraw) null else if (won) uid else opponentId
@@ -272,7 +279,8 @@ object GameResultsService {
                     gameMode = gameMode.name, player1Id = uid, player2Id = opponentId,
                     winnerId = winnerId, player1Score = playerGuesses, player2Score = opponentGuesses,
                     player1Time = playerTimeSec, player2Time = opponentTimeSec,
-                    seed = seed, solutions = emptyList(), player1Guesses = emptyList(),
+                    seed = seed, solutions = solutions, player1Guesses = player1Guesses,
+                    player2Guesses = player2Guesses,
                     startedAt = now.minusSeconds(playerTimeSec.toLong()).toString(),
                     completedAt = now.toString(),
                 )
@@ -313,7 +321,7 @@ object GameResultsService {
             DailyResultsService.recordDailyResult(
                 mode = gameMode, completed = won, guessCount = guessCount,
                 elapsedSeconds = timeSeconds, boardsSolved = boardsSolved,
-                totalBoards = totalBoards, hintsUsed = hintsUsed,
+                totalBoards = totalBoards, hintsUsed = hintsUsed, seed = seed,
             )
             val today = com.wordocious.app.todayLocalDate()
             MedalService.awardStreakMedals(userId, today)

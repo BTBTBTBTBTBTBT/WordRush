@@ -349,11 +349,20 @@ class VSMatchViewModel(
                 guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(), // longest board = full shared history
             )
             // Single shared match-history row written only by the designated writer.
+            // Web row shape (vs-game recordMatch): solutions + BOTH players'
+            // guess words — mine from the finished game state (longest board =
+            // full shared history), the opponent's from match_ended's guess log.
             if (data.recordMatch == true && data.opponentId != null) {
                 GameResultsService.recordVsMatch(
                     gameMode = mode, opponentId = data.opponentId, won = won, isDraw = data.winner == "draw",
                     playerGuesses = data.playerGuesses, opponentGuesses = data.opponentGuesses,
                     playerTimeSec = secs, opponentTimeSec = opponentSecs, seed = theSeed,
+                    solutions = data.solutions
+                        ?: game?.state?.value?.boards?.map { it.solution }
+                        ?: emptyList(),
+                    player1Guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses
+                        ?: emptyList(),
+                    player2Guesses = data.opponentGuessLog?.map { it.guess },
                 )
             }
         }

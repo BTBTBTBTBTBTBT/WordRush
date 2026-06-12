@@ -206,7 +206,7 @@ enum GameResultsService {
             await DailyResultsService.record(
                 gameMode: gameMode, completed: won, guessCount: guessCount,
                 timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
-                hintsUsed: hintsUsed
+                hintsUsed: hintsUsed, seed: seed
             )
             // Daily Sweep / Flawless bonus once all 9 dailies are in (web parity).
             // Kept SPLIT from dailyBonus so the toast shows distinct

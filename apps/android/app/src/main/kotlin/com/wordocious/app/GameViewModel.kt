@@ -57,22 +57,62 @@ class GameViewModel(
     private val _input = MutableStateFlow("")
     val currentInput: StateFlow<String> = _input.asStateFlow()
 
+    // ── Active-play timer (web useActivePlayTimer / iOS accumulatedMs parity) ──
+    // Accumulates only foregrounded play milliseconds: pauses on ON_STOP
+    // (app backgrounded / closed), resumes on ON_START, and persists the
+    // accumulated value with the game so re-entry resumes it instead of
+    // counting wall-clock hours from the original startTime.
+    private var accumulatedMs: Long =
+        (GamePersistence.loadElapsed(seed, mode) ?: 0).toLong() * 1000L
+    private var resumeAtMs: Long? = null
+
     /**
-     * Live elapsed seconds. For an in-progress game this is wall-clock from
-     * startTime. For an ALREADY-finished game (resumed from persistence) we use
-     * the frozen elapsed-at-finish so the displayed time/score stays correct
-     * instead of growing from the original startTime.
+     * Live elapsed seconds. For an in-progress game this is the accumulated
+     * active-play time. For an ALREADY-finished game (resumed from persistence)
+     * we use the frozen elapsed-at-finish so the displayed time/score stays
+     * correct instead of growing.
      */
     private val _elapsed = MutableStateFlow(
         if (_state.value.status != GameStatus.PLAYING)
-            GamePersistence.loadElapsed(seed, mode) ?: elapsedSeconds()
+            GamePersistence.loadElapsed(seed, mode) ?: 0
         else elapsedSeconds()
     )
     val elapsed: StateFlow<Int> = _elapsed.asStateFlow()
 
     private var timerJob: kotlinx.coroutines.Job? = null
 
+    /** True while a GameScreen for this VM is composed. The VM is
+     *  activity-scoped (no NavHost), so it outlives the screen — without this
+     *  gate a foreground return while the user sits on Home would resume a
+     *  stale game's clock. VS VMs never set it (they don't use this timer). */
+    private var screenVisible = false
+
+    /** Pauses on app background, resumes on foreground (process-wide). */
+    private val lifecycleObserver = object : androidx.lifecycle.DefaultLifecycleObserver {
+        override fun onStart(owner: androidx.lifecycle.LifecycleOwner) {
+            if (screenVisible) resumeTimer()
+        }
+        override fun onStop(owner: androidx.lifecycle.LifecycleOwner) { pauseTimer() }
+    }
+
+    /** GameScreen entered composition — start counting active play. */
+    fun onScreenEnter() {
+        screenVisible = true
+        resumeTimer()
+    }
+
+    /** GameScreen left composition — stop counting + persist elapsed-so-far. */
+    fun onScreenExit() {
+        screenVisible = false
+        pauseTimer()
+    }
+
     init {
+        // Lifecycle registry requires the main thread; VS VMs are constructed
+        // from socket callbacks, so hop via viewModelScope (Main.immediate).
+        viewModelScope.launch {
+            androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
+        }
         // Tick the elapsed timer once per second while the game is in progress.
         timerJob = viewModelScope.launch {
             while (true) {
@@ -80,6 +120,40 @@ class GameViewModel(
                 delay(1000)
             }
         }
+    }
+
+    /** Start (or rebase) the running segment — no-op if finished or already running. */
+    fun resumeTimer() {
+        if (isFinished || resumeAtMs != null) return
+        resumeAtMs = System.currentTimeMillis()
+    }
+
+    /** Flush the running segment into the accumulator and persist elapsed-so-far. */
+    fun pauseTimer() {
+        flushTimer()
+        if (!isVersus) GamePersistence.saveElapsed(seed, mode, elapsedSeconds())
+    }
+
+    private fun flushTimer() {
+        resumeAtMs?.let { r ->
+            accumulatedMs += System.currentTimeMillis() - r
+            resumeAtMs = null
+        }
+    }
+
+    /** If the last action ended the game: stop accumulating, freeze + persist elapsed. */
+    private fun finalizeIfFinished() {
+        if (_state.value.status == GameStatus.PLAYING) return
+        flushTimer()
+        val finishElapsed = elapsedSeconds()
+        _elapsed.value = finishElapsed
+        if (!isVersus) GamePersistence.saveElapsed(seed, mode, finishElapsed)
+    }
+
+    override fun onCleared() {
+        if (!isFinished) pauseTimer()
+        androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.removeObserver(lifecycleObserver)
+        super.onCleared()
     }
 
     /** Active board's solution length — guess/input length must match it. */
@@ -93,8 +167,11 @@ class GameViewModel(
     private var pausedMs: Long = 0
     fun addPausedTime(ms: Long) { pausedMs += ms.coerceAtLeast(0) }
 
-    fun elapsedSeconds(): Int =
-        (((System.currentTimeMillis() - _state.value.startTime).toLong() - pausedMs) / 1000).toInt().coerceAtLeast(0)
+    /** Accumulated active-play seconds (running segment included, ad pauses excluded). */
+    fun elapsedSeconds(): Int {
+        val running = resumeAtMs?.let { System.currentTimeMillis() - it } ?: 0L
+        return ((accumulatedMs + running - pausedMs) / 1000).toInt().coerceAtLeast(0)
+    }
 
     // Rejection feedback — web parity (practice-game handleKey): the row turns
     // red + shakes, a message toast appears ("Not enough letters" / "Not in word
@@ -157,6 +234,7 @@ class GameViewModel(
             }
         }
         if (after.status != GameStatus.PLAYING) {
+            flushTimer()                                          // stop accumulating at finish
             val finishElapsed = elapsedSeconds()
             _elapsed.value = finishElapsed                       // freeze the displayed timer
             if (!isVersus) GamePersistence.saveElapsed(seed, mode, finishElapsed) // persist for re-entry
@@ -166,7 +244,14 @@ class GameViewModel(
     }
 
     /** Stop the elapsed-timer coroutine — call when a directly-instantiated VS VM is released. */
-    fun stopTimer() { timerJob?.cancel() }
+    fun stopTimer() {
+        timerJob?.cancel()
+        // Directly-instantiated VS VMs never get onCleared — unhook the
+        // process-lifecycle observer here (main-thread required).
+        viewModelScope.launch {
+            androidx.lifecycle.ProcessLifecycleOwner.get().lifecycle.removeObserver(lifecycleObserver)
+        }
+    }
 
     // ── Cross-device "view solved daily" (iOS parity) ─────────────────────────
     /** True when this VM's finished state was rebuilt by replaying the recorded
@@ -185,6 +270,8 @@ class GameViewModel(
     fun installReplayedState(state: GameState, elapsedSeconds: Int) {
         wasReplayed = true
         _state.value = state
+        resumeAtMs = null
+        accumulatedMs = elapsedSeconds.toLong() * 1000L
         _elapsed.value = elapsedSeconds
         if (!isVersus) {
             GamePersistence.save(seed, mode, state)
@@ -249,23 +336,45 @@ class GameViewModel(
             ?: com.wordocious.core.ProperNoundle.puzzleForSeed(seed)
     }
 
-    /** Hints used for scoring — PN counts clue+vowel+consonant; others count hint rows. */
+    /** Hints taken that had no candidate letter left ("—") — they add no board
+     *  row, but web useClassicHints still marks them used, so they must count
+     *  toward the hint penalty (web parity). */
+    private var noCandidateHints = 0
+
+    /** Hints used for scoring — PN counts clue+vowel+consonant; others count
+     *  hint rows PLUS zero-candidate hints (web sets used=true even when no
+     *  letter remained to reveal). */
     val hintsUsed: Int
         get() = if (mode == GameMode.PROPERNOUNDLE) {
             listOf(_clue.value, _vowelRevealed.value, _consonantRevealed.value).count { it != null }
         } else {
-            _state.value.boards.firstOrNull()?.hintEvaluations?.size ?: 0
+            (_state.value.boards.firstOrNull()?.hintEvaluations?.size ?: 0) + noCandidateHints
         }
 
-    /** Reveal the Wikipedia clue (ProperNoundle only). */
+    /** Reveal the Wikipedia clue (ProperNoundle only). Web parity
+     *  (propernoundle-game handleHintClue + use-hints fetchClue): the clue
+     *  COSTS A GUESS ROW — an all-gray hint-used row is pushed onto the board
+     *  and can trigger the loss when it fills the last of the 6 rows. */
     fun revealClue() {
-        if (mode != GameMode.PROPERNOUNDLE || _clue.value != null || _loadingClue.value) return
+        if (mode != GameMode.PROPERNOUNDLE || _clue.value != null || _loadingClue.value || isFinished) return
         val p = pnPuzzle ?: return
         _loadingClue.value = true
         viewModelScope.launch {
             val fetched = com.wordocious.app.data.WikipediaHint.fetch(p.display, p.wikiTitle)
             _clue.value = fetched ?: p.hint ?: "Category: ${categoryLabel(p.themeCategory)}"
             _loadingClue.value = false
+            // Consume a row: blank letters, every tile HINT_USED gray (web row
+            // shape: { word: '', tiles: 'hint-used' × answerLength }).
+            val board = _state.value.boards.firstOrNull() ?: return@launch
+            if (board.status != GameStatus.PLAYING) return@launch
+            val len = board.solution.length
+            val tiles = List(len) {
+                com.wordocious.core.TileResult(letter = "", state = com.wordocious.core.TileState.HINT_USED)
+            }
+            val eval = com.wordocious.core.GuessResult(tiles = tiles, isCorrect = false)
+            _state.value = gameReducer(_state.value, GameAction.SubmitHint(" ".repeat(len), eval, boardIndex = 0))
+            persist()
+            finalizeIfFinished()
         }
     }
 
@@ -289,6 +398,8 @@ class GameViewModel(
         val pick = candidates.randomOrNull()
         if (pick == null) {
             // None of that type left — mark used, reveal "—", add no row.
+            // Still counts toward the hint penalty (web sets used=true here).
+            noCandidateHints += 1
             if (vowels) { _vowelUsed.value = true; _vowelRevealed.value = "—" }
             else { _consonantUsed.value = true; _consonantRevealed.value = "—" }
             return
@@ -305,6 +416,6 @@ class GameViewModel(
         if (vowels) { _vowelUsed.value = true; _vowelRevealed.value = pick.toString() }
         else { _consonantUsed.value = true; _consonantRevealed.value = pick.toString() }
         persist()
-        if (_state.value.status != GameStatus.PLAYING) _elapsed.value = elapsedSeconds()
+        finalizeIfFinished()
     }
 }

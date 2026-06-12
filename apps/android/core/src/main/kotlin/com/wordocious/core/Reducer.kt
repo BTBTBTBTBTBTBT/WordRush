@@ -177,7 +177,9 @@ private fun reduceSubmitHint(state: GameState, a: GameAction.SubmitHint): GameSt
     val newBoards = state.boards.toMutableList().also { it[idx] = updated }
 
     val gameStatus = when (state.mode) {
-        GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7 -> newStatus
+        // Single-board hint modes: a hint row that fills the last guess loses the
+        // game (web parity — PN's clue/vowel/consonant rows can trigger the loss).
+        GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7, GameMode.PROPERNOUNDLE -> newStatus
         else -> state.status
     }
     return state.copy(boards = newBoards, status = gameStatus)

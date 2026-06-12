@@ -113,6 +113,11 @@ enum DailyResultsService {
 
     /// Records a finished solo daily game. No-ops if signed out or the mode
     /// has no daily score config. Returns the composite score (or nil).
+    ///
+    /// `seed`: the game's seed (`daily-YYYY-MM-DD-MODE`). The row's `day` is
+    /// derived from it so a daily started at 23:58 and finished at 00:02 still
+    /// records onto the day it belongs to, not "today at finish time". Falls
+    /// back to todayLocal() when the seed is missing/unparseable.
     @discardableResult
     static func record(
         gameMode: GameMode,
@@ -121,24 +126,30 @@ enum DailyResultsService {
         timeSeconds: Int,
         boardsSolved: Int,
         totalBoards: Int,
-        hintsUsed: Int = 0
+        hintsUsed: Int = 0,
+        seed: String? = nil
     ) async -> Double? {
         guard DailyScoring.config[gameMode.rawValue] != nil else { return nil }
+        // The puzzle's calendar day comes from the seed, NOT the finish time.
+        let day = seed.flatMap(getDailySeedDate) ?? LeaderboardService.todayLocal()
         // Optimistic local update FIRST (before any network) so the home grid's
         // completed state flips the instant the game ends (web parity: the
-        // 'daily-completion' window event).
-        await MainActor.run {
-            NotificationCenter.default.post(
-                name: DailyCompletionsStore.completionPosted,
-                object: DailyCompletion(
-                    gameMode: gameMode.rawValue, completed: completed,
-                    guessCount: guessCount, timeSeconds: Double(timeSeconds)))
+        // 'daily-completion' window event). Only when the row is for TODAY —
+        // a cross-midnight finish records onto yesterday and must not mark
+        // today's (different) puzzle complete.
+        if day == LeaderboardService.todayLocal() {
+            await MainActor.run {
+                NotificationCenter.default.post(
+                    name: DailyCompletionsStore.completionPosted,
+                    object: DailyCompletion(
+                        gameMode: gameMode.rawValue, completed: completed,
+                        guessCount: guessCount, timeSeconds: Double(timeSeconds)))
+            }
         }
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return nil }
         let userId = session.user.id.uuidString
 
-        let day = LeaderboardService.todayLocal()
         let composite = DailyScoring.compositeScore(
             gameMode: gameMode.rawValue, completed: completed, guessCount: guessCount,
             timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,

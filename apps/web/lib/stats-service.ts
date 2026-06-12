@@ -1,7 +1,7 @@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from './supabase-client';
 import { handleSupabaseError } from './supabase-error-handler';
-import { isDailySeed, type GauntletStageConfig, type GauntletStageResult } from '@wordle-duel/core';
+import { isDailySeed, getDailySeedDate, type GauntletStageConfig, type GauntletStageResult } from '@wordle-duel/core';
 import {
   recordDailyResult,
   recordDailyVsResult,
@@ -27,6 +27,186 @@ export interface XpResult {
   flawlessBonus?: number;
 }
 
+// ============================================================
+// Pending-record retry (tab-close / network-loss protection)
+// ============================================================
+//
+// A finished game can be silently lost when the tab closes right after the
+// last guess: the terminal board snapshot persists via beforeunload, but
+// recordGameResult/recordSoloMatch are plain async fetches — on reload the
+// snapshot restores isCompleted=true and the recording effects never refire.
+// To close that gap, each solo record call writes a compact arg payload to
+// localStorage BEFORE touching the network and marks its part done on
+// success; the key is removed once every registered part is done.
+// drainPendingRecords() re-runs leftovers on the next signed-in visit,
+// after first checking the server for an existing `matches` row so a
+// payload whose network calls DID land (but whose clear didn't) can never
+// double-increment user_stats / XP.
+
+const PENDING_RECORD_PREFIX = 'wordocious-pending-record-';
+const PENDING_RECORD_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+interface PendingGameResultArgs {
+  won: boolean;
+  guessCount: number;
+  timeMs: number;
+  boardsSolved?: number;
+  totalBoards?: number;
+  hintsUsed: number;
+}
+
+interface PendingSoloMatchArgs {
+  won: boolean;
+  score: number;
+  timeSeconds: number;
+  solutions: string[];
+  guesses: string[];
+  startedAtIso: string;
+  hintsUsed?: number;
+}
+
+interface PendingRecordPayload {
+  userId: string;
+  gameMode: string;
+  seed: string;
+  savedAt: number;
+  gameResult?: PendingGameResultArgs;
+  gameResultDone?: boolean;
+  soloMatch?: PendingSoloMatchArgs;
+  soloMatchDone?: boolean;
+}
+
+function pendingRecordKey(gameMode: string, seed: string): string {
+  return `${PENDING_RECORD_PREFIX}${gameMode}-${seed}`;
+}
+
+function readPendingRecord(key: string): PendingRecordPayload | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as PendingRecordPayload) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Merge a patch into the pending payload for this game (creating it if absent). */
+function mergePendingRecord(
+  userId: string,
+  gameMode: string,
+  seed: string,
+  patch: Partial<PendingRecordPayload>,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = pendingRecordKey(gameMode, seed);
+    const existing = readPendingRecord(key);
+    const next: PendingRecordPayload = {
+      ...existing,
+      userId,
+      gameMode,
+      seed,
+      savedAt: existing?.savedAt ?? Date.now(),
+      ...patch,
+    };
+    localStorage.setItem(key, JSON.stringify(next));
+  } catch {}
+}
+
+/** Mark one half of the pending payload complete; remove the key when all registered parts are done. */
+function markPendingRecordDone(gameMode: string, seed: string, part: 'gameResult' | 'soloMatch'): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = pendingRecordKey(gameMode, seed);
+    const p = readPendingRecord(key);
+    if (!p) return;
+    if (part === 'gameResult') p.gameResultDone = true;
+    else p.soloMatchDone = true;
+    const allDone = (!p.gameResult || p.gameResultDone) && (!p.soloMatch || p.soloMatchDone);
+    if (allDone) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(p));
+  } catch {}
+}
+
+/**
+ * Re-fire any solo game results whose record calls were cut off (tab close
+ * mid-flight, network drop at the final guess). Call once after auth
+ * hydration. Idempotent: a pending key whose `matches` row already exists
+ * on the server is cleared without re-running anything.
+ */
+export async function drainPendingRecords(userId: string): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const keys: string[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(PENDING_RECORD_PREFIX)) keys.push(k);
+    }
+  } catch {
+    return;
+  }
+
+  for (const key of keys) {
+    const p = readPendingRecord(key);
+    if (!p || !p.userId || !p.gameMode || !p.seed) {
+      try { localStorage.removeItem(key); } catch {}
+      continue;
+    }
+    // Too stale to be meaningful — drop regardless of owner.
+    if (Date.now() - (p.savedAt || 0) > PENDING_RECORD_MAX_AGE_MS) {
+      try { localStorage.removeItem(key); } catch {}
+      continue;
+    }
+    // Another account's pending result — leave it for that account's next session.
+    if (p.userId !== userId) continue;
+
+    try {
+      // A matches row for this seed+mode means the original calls (or a
+      // prior drain) landed — just clear, never re-run, so user_stats and
+      // XP can't double-increment.
+      const { data: existing, error } = await (supabase as any)
+        .from('matches')
+        .select('id')
+        .eq('player1_id', userId)
+        .eq('seed', p.seed)
+        .eq('game_mode', p.gameMode)
+        .limit(1)
+        .maybeSingle();
+      if (error) continue; // can't verify (offline?) — retry on a later drain
+      if (existing) {
+        try { localStorage.removeItem(key); } catch {}
+        continue;
+      }
+    } catch {
+      continue;
+    }
+
+    // Re-run the missing parts. Both functions re-register against the
+    // same pending key and clear it themselves on success, so a failure
+    // here simply leaves the payload in place for the next drain.
+    if (p.gameResult && !p.gameResultDone) {
+      await recordGameResult(
+        userId, p.gameMode, 'solo', p.gameResult.won, p.gameResult.guessCount,
+        p.gameResult.timeMs, p.seed, p.gameResult.boardsSolved,
+        p.gameResult.totalBoards, p.gameResult.hintsUsed ?? 0,
+      );
+    }
+    if (p.soloMatch && !p.soloMatchDone) {
+      await recordSoloMatch({
+        userId,
+        gameMode: p.gameMode,
+        seed: p.seed,
+        won: p.soloMatch.won,
+        score: p.soloMatch.score,
+        timeSeconds: p.soloMatch.timeSeconds,
+        solutions: p.soloMatch.solutions,
+        guesses: p.soloMatch.guesses,
+        startedAtIso: p.soloMatch.startedAtIso,
+        hintsUsed: p.soloMatch.hintsUsed,
+      });
+    }
+  }
+}
+
 /**
  * Record a game result (solo or VS) — upserts user_stats and updates profile.
  * If the seed is a daily seed, also records daily results and checks all-time records.
@@ -46,6 +226,17 @@ export async function recordGameResult(
 ): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
 
+  // Crash-protection: persist the args locally BEFORE any network call so a
+  // tab closed mid-flight can re-run this via drainPendingRecords(). Solo
+  // only — VS results are recorded server-coordinated and must not retry.
+  const trackPending = playType === 'solo' && !!seed && typeof window !== 'undefined';
+  if (trackPending) {
+    mergePendingRecord(userId, gameMode, seed!, {
+      gameResult: { won, guessCount, timeMs, boardsSolved, totalBoards, hintsUsed },
+      gameResultDone: false,
+    });
+  }
+
   try {
   // Fetch existing stats for this mode+playType
   const { data: existing } = await (supabase as any)
@@ -62,7 +253,10 @@ export async function recordGameResult(
       ? Math.round((existing.average_time * existing.total_games + timeSeconds) / newTotalGames)
       : timeSeconds;
 
-    await (supabase as any)
+    // supabase-js resolves (never throws) on failure — check the error so an
+    // offline/rejected write aborts to the catch and the pending payload
+    // survives for drainPendingRecords.
+    const { error: statsError } = await (supabase as any)
       .from('user_stats')
       .update({
         wins: existing.wins + (won ? 1 : 0),
@@ -77,8 +271,9 @@ export async function recordGameResult(
           : existing.fastest_time,
       })
       .eq('id', existing.id);
+    if (statsError) throw statsError;
   } else {
-    await (supabase as any)
+    const { error: statsError } = await (supabase as any)
       .from('user_stats')
       .insert({
         user_id: userId,
@@ -91,6 +286,7 @@ export async function recordGameResult(
         average_time: timeSeconds,
         fastest_time: timeSeconds,
       });
+    if (statsError) throw statsError;
   }
 
   // Update profile totals + daily login streak in a single fetch/update
@@ -174,6 +370,9 @@ export async function recordGameResult(
 
     await recordDailyResult(
       userId, gameMode, playType, won, guessCount, timeSeconds, boards, total, hintsUsed,
+      // Day comes from the SEED, not the wall clock: a daily started 23:58
+      // and finished 00:02 must land on the day its puzzle was issued for.
+      getDailySeedDate(seed) ?? undefined,
     );
     // Notify the DailyCompletionsProvider so the sweep banner updates
     // instantly when navigating back to the home screen.
@@ -266,6 +465,9 @@ export async function recordGameResult(
   // Check achievements (fire-and-forget, don't block game flow)
   checkAchievements(userId, gameMode, playType, won, guessCount, timeSeconds, seed, hintsUsed).catch(() => {});
 
+  // All critical writes above landed — release the crash-protection payload.
+  if (trackPending) markPendingRecordDone(gameMode, seed!, 'gameResult');
+
   // Return XP details for post-game display
   if (profile) {
     const xpGain = won ? 100 : 25;
@@ -357,8 +559,28 @@ export async function recordSoloMatch(data: {
    */
   hintsUsed?: number;
 }) {
+  // Crash-protection: persist the args locally BEFORE the network call so a
+  // tab closed mid-flight can re-run this via drainPendingRecords().
+  const trackPending = typeof window !== 'undefined';
+  if (trackPending) {
+    mergePendingRecord(data.userId, data.gameMode, data.seed, {
+      soloMatch: {
+        won: data.won,
+        score: data.score,
+        timeSeconds: data.timeSeconds,
+        solutions: data.solutions,
+        guesses: data.guesses,
+        startedAtIso: data.startedAtIso,
+        hintsUsed: data.hintsUsed,
+      },
+      soloMatchDone: false,
+    });
+  }
+
   try {
-    await (supabase as any).from('matches').insert({
+    // supabase-js resolves with { error } instead of throwing — check it so
+    // a failed insert hits the catch (toast) and keeps the pending payload.
+    const { error } = await (supabase as any).from('matches').insert({
       game_mode: data.gameMode,
       player1_id: data.userId,
       player2_id: null,
@@ -372,6 +594,8 @@ export async function recordSoloMatch(data: {
       started_at: data.startedAtIso,
       completed_at: new Date().toISOString(),
     });
+    if (error) throw error;
+    if (trackPending) markPendingRecordDone(data.gameMode, data.seed, 'soloMatch');
   } catch (err) {
     console.error('recordSoloMatch failed:', err);
     handleSupabaseError(err, 'recordSoloMatch');

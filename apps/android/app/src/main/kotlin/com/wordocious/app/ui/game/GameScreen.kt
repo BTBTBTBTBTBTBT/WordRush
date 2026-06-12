@@ -261,6 +261,16 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     val input by vm.currentInput.collectAsState()
     val elapsed by vm.elapsed.collectAsState()
 
+    // Active-play timer screen hooks (iOS GameScreen onAppear/onDisappear
+    // parity): the VM is activity-scoped (no NavHost), so backing out to Home
+    // does NOT clear it — pause on leave, rebase-resume on re-entry. App
+    // background/foreground is handled by the VM's ProcessLifecycleOwner
+    // observer (ON_STOP/ON_START).
+    androidx.compose.runtime.DisposableEffect(vm) {
+        vm.onScreenEnter()
+        onDispose { vm.onScreenExit() }
+    }
+
     val multiBoard = state.boards.size > 1
     val isSequential = mode == GameMode.SEQUENCE
     // Quadrant keyboard for parallel multi-board modes (Quad/Octo/Deliverance); NOT Sequence.
@@ -332,7 +342,6 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) ?: return@LaunchedEffect
         if (row.player1Guesses.isEmpty()) return@LaunchedEffect
         var replayed = createInitialState(seed, mode)
-        val applyAll = replayed.boards.size > 1 && mode != GameMode.SEQUENCE
         for (g in row.player1Guesses.take(200)) {
             if (replayed.status != GameStatus.PLAYING) break
             replayed = if (mode == GameMode.SEQUENCE) {
@@ -342,7 +351,19 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 if (idx < 0) break
                 gameReducer(replayed, GameAction.SubmitGuess(g, boardIndex = idx, applyToAll = false))
             } else {
+                // Recompute per guess: Gauntlet stages change board count
+                // (stage 1 is single-board, later stages are multi).
+                val applyAll = replayed.boards.size > 1
                 gameReducer(replayed, GameAction.SubmitGuess(g, applyToAll = applyAll))
+            }
+            // Gauntlet: stage cleared but run not finished → advance (records
+            // the won stage's result + boards snapshot, sets up the next
+            // stage). iOS GauntletReconstruct (BoardView.swift) parity —
+            // without this the replay stalls at stage 1.
+            if (replayed.status == GameStatus.PLAYING && replayed.gauntlet != null &&
+                replayed.boards.all { it.status == GameStatus.WON }
+            ) {
+                replayed = gameReducer(replayed, GameAction.NextStage(elapsedMs = null))
             }
         }
         // Only install a state that actually reached a finish — otherwise leave

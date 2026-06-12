@@ -191,9 +191,18 @@ final class GameViewModel: ObservableObject {
 
     /// Single-board modes that expose vowel/consonant hints (web HINT_BEARING_MODES).
     var hasHints: Bool { mode == .duel6 || mode == .duel7 }
-    /// Hints consumed — each adds a row stored in `hintEvaluations`, so this
-    /// persists with the board and drives the scoring penalty automatically.
-    var hintsUsed: Int { state.boards.first?.hintEvaluations?.count ?? 0 }
+    /// Hints consumed — each normally adds a row stored in `hintEvaluations`
+    /// (persists with the board). A hint pressed with NO unrevealed candidates
+    /// left adds no row but STILL counts (web parity: use-classic-hints.ts
+    /// sets vowelUsed/consonantUsed=true even when candidates.length === 0,
+    /// and practice-game.tsx computes hintsUsed from those flags — so the
+    /// 150-pt penalty applies). Those uses are marked by the "—" sentinel in
+    /// vowelRevealed/consonantRevealed, which persistHintUI saves/restores.
+    var hintsUsed: Int {
+        (state.boards.first?.hintEvaluations?.count ?? 0)
+            + (vowelRevealed == "—" ? 1 : 0)
+            + (consonantRevealed == "—" ? 1 : 0)
+    }
 
     func revealVowel() { revealHint(vowels: true) }
     func revealConsonant() { revealHint(vowels: false) }

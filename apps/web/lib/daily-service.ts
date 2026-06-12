@@ -219,6 +219,14 @@ export async function fetchDailySeed(
 /**
  * Record or update a daily result for solo play.
  * Only updates if the new score is better than the existing one.
+ *
+ * `day` (optional) is the puzzle's day derived from its daily seed
+ * (`daily-YYYY-MM-DD-MODE`). Callers that have the seed MUST pass it: a
+ * daily started at 23:58 and finished at 00:02 has to land on the day the
+ * puzzle was issued for — deriving the day at FINISH time via
+ * getTodayLocal() would record it onto tomorrow's leaderboard and make the
+ * completed-card reconstruction render against the wrong day's solutions.
+ * Falls back to getTodayLocal() when omitted.
  */
 export async function recordDailyResult(
   userId: string,
@@ -230,8 +238,9 @@ export async function recordDailyResult(
   boardsSolved: number,
   totalBoards: number,
   hintsUsed: number = 0,
+  day?: string,
 ) {
-  const day = getTodayLocal();
+  const targetDay = day || getTodayLocal();
   const compositeScore = calculateCompositeScore(
     gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
   );
@@ -241,7 +250,7 @@ export async function recordDailyResult(
       .from('daily_results')
       .select('id, composite_score')
       .eq('user_id', userId)
-      .eq('day', day)
+      .eq('day', targetDay)
       .eq('game_mode', gameMode)
       .eq('play_type', playType)
       .maybeSingle();
@@ -271,7 +280,7 @@ export async function recordDailyResult(
         .from('daily_results')
         .insert({
           user_id: userId,
-          day,
+          day: targetDay,
           game_mode: gameMode,
           play_type: playType,
           completed,
@@ -286,8 +295,8 @@ export async function recordDailyResult(
     }
 
     // Check for streak and perfect game medals (fire-and-forget)
-    checkAndAwardStreakMedals(userId, day).catch(() => {});
-    checkAndAwardPerfectMedal(userId, gameMode, day, guessCount, boardsSolved, totalBoards, completed).catch(() => {});
+    checkAndAwardStreakMedals(userId, targetDay).catch(() => {});
+    checkAndAwardPerfectMedal(userId, gameMode, targetDay, guessCount, boardsSolved, totalBoards, completed).catch(() => {});
   } catch (err) {
     console.error('recordDailyResult failed:', err);
     handleSupabaseError(err, 'recordDailyResult');
@@ -522,55 +531,6 @@ export async function fetchUserMedals(
     .limit(limit);
 
   return data || [];
-}
-
-/**
- * Assign medals for the previous day. Called client-side as a best-effort
- * or via a server cron. Idempotent due to UNIQUE constraint.
- */
-export async function assignDailyMedals(day?: string) {
-  const targetDay = day || getYesterdayLocal();
-  const gameModes = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
-  const playTypes = ['solo', 'vs'] as const;
-
-  for (const mode of gameModes) {
-    for (const pt of playTypes) {
-      const leaderboard = await fetchDailyLeaderboard(mode, pt, targetDay, 3);
-      const medalTypes = ['gold', 'silver', 'bronze'] as const;
-
-      for (let i = 0; i < Math.min(leaderboard.length, 3); i++) {
-        const entry = leaderboard[i];
-        if (entry.composite_score <= 0) continue;
-
-        // Insert medal (UNIQUE constraint prevents duplicates)
-        await (supabase as any)
-          .from('medals')
-          .upsert({
-            user_id: entry.user_id,
-            day: targetDay,
-            game_mode: mode,
-            play_type: pt,
-            medal_type: medalTypes[i],
-            composite_score: entry.composite_score,
-          }, { onConflict: 'user_id,day,game_mode,play_type' });
-
-        // Update profile medal counter
-        const medalCol = `${medalTypes[i]}_medals`;
-        const { data: profile } = await (supabase as any)
-          .from('profiles')
-          .select(medalCol)
-          .eq('id', entry.user_id)
-          .single();
-
-        if (profile) {
-          await (supabase as any)
-            .from('profiles')
-            .update({ [medalCol]: (profile[medalCol] || 0) + 1 })
-            .eq('id', entry.user_id);
-        }
-      }
-    }
-  }
 }
 
 // ============================================================

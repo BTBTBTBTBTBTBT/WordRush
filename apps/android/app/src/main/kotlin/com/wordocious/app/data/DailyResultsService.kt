@@ -137,9 +137,13 @@ object DailyResultsService {
         boardsSolved: Int,
         totalBoards: Int,
         hintsUsed: Int = 0,
+        /** The game seed (`daily-YYYY-MM-DD-MODE`). When present, the result is
+         *  keyed to the seed's date — a game finished after midnight records on
+         *  the day it was DEALT, not on tomorrow. Falls back to today's date. */
+        seed: String? = null,
     ) {
         val userId = AuthService.userId ?: return
-        val day = todayLocalDate()
+        val day = seed?.let { com.wordocious.core.getDailySeedDate(it) } ?: todayLocalDate()
         val gameModeStr = mode.name
         // Optimistic local update FIRST so the home card flips to completed the
         // instant the game ends (web 'daily-completion' event parity).

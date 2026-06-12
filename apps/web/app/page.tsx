@@ -330,7 +330,15 @@ export default function HomePage() {
     // Scope the play-limit cache to the signed-in user (or anon on sign-out)
     // so a prior account's daily completions can't leak into this one.
     setActivePlayUser(user?.id ?? null);
-    if (user) syncPlayLimits(user.id);
+    if (user) {
+      syncPlayLimits(user.id);
+      // Re-fire any game results whose record calls were cut off by a tab
+      // close right after the final guess. Dynamic import keeps
+      // stats-service out of the home page's critical JS bundle.
+      import('@/lib/stats-service')
+        .then((m) => m.drainPendingRecords(user.id))
+        .catch(() => {});
+    }
   }, [user]);
 
   // Daily completions are now served from the DailyCompletionsProvider

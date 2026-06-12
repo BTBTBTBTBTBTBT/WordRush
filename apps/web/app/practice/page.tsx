@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PracticeGame } from '@/components/practice/practice-game';
 import { AdGate } from '@/components/ads/ad-gate';
+import { UnlimitedGate } from '@/components/game/unlimited-gate';
 import { initDictionary, GameMode } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
@@ -28,5 +29,5 @@ export default function PracticePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayLocal(), 'DUEL') : undefined;
 
-  return <AdGate><PracticeGame mode={GameMode.DUEL} onBack={() => window.location.href = '/'} initialSeed={seed} isDaily={isDaily} /></AdGate>;
+  return <AdGate><UnlimitedGate isDaily={isDaily} modeSlug="practice"><PracticeGame mode={GameMode.DUEL} onBack={() => window.location.href = '/'} initialSeed={seed} isDaily={isDaily} /></UnlimitedGate></AdGate>;
 }

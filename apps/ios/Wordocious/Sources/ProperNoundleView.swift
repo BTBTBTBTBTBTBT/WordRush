@@ -100,13 +100,23 @@ final class ProperNoundleVM: ObservableObject {
     /// Clue hint — fetches the Wikipedia summary (first 2 sentences, name
     /// redacted), exactly like the web. Falls back to the puzzle's static hint
     /// (or category) on any network/parse failure.
+    /// Web parity (propernoundle-game.tsx handleHintClue + use-hints.ts
+    /// fetchClue): the clue COSTS a board row — an all-gray 'hint-used' row
+    /// with no letters is pushed into guesses (success AND fallback), and if
+    /// that fills the board the game is LOST.
     func revealClue() {
-        guard clue == nil, !loadingClue, let p = puzzle else { return }
+        guard clue == nil, !loadingClue, !isFinished, let p = puzzle else { return }
         loadingClue = true
         Task {
             let fetched = await WikipediaHint.fetch(displayName: p.display, wikiTitle: p.wikiTitle)
             self.clue = fetched ?? p.hint ?? "Category: \(categoryLabel(p.themeCategory))"
             self.loadingClue = false
+            // Consume a row (web: setGuesses([...guesses, hintGuess])) — empty
+            // word, every tile 'hint-used' (gray). Counted in guesses.count
+            // (recorded guess_count) exactly like a real guess.
+            guard !self.isFinished else { return }
+            self.guesses.append((word: "", tiles: Array(repeating: NTile.hintUsed, count: self.answerLen)))
+            if self.guesses.count >= self.maxGuesses { self.status = .lost; self.finish() }
         }
     }
     func revealVowel() { reveal(vowels: true) }
@@ -130,6 +140,9 @@ final class ProperNoundleVM: ObservableObject {
         let word = String(chars.map { $0 == pick ? $0 : " " }).lowercased()
         guesses.append((word: word, tiles: tiles))
         if vowels { revealedVowel = String(pick) } else { revealedConsonant = String(pick) }
+        // Web parity (handleVowelReveal/handleConsonantReveal): a hint row that
+        // fills the board loses the game.
+        if guesses.count >= maxGuesses, status == .playing { status = .lost; finish() }
     }
 
     /// Share grid (rows of tile states), padded to maxGuesses — for the share card.

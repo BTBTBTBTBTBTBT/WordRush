@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SequenceGame } from '@/components/sequence/sequence-game';
 import { AdGate } from '@/components/ads/ad-gate';
+import { UnlimitedGate } from '@/components/game/unlimited-gate';
 import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
@@ -28,5 +29,5 @@ export default function SequencePage() {
 
   const seed = isDaily ? generateDailySeed(getTodayLocal(), 'SEQUENCE') : undefined;
 
-  return <AdGate><SequenceGame initialSeed={seed} isDaily={isDaily} /></AdGate>;
+  return <AdGate><UnlimitedGate isDaily={isDaily} modeSlug="sequence"><SequenceGame initialSeed={seed} isDaily={isDaily} /></UnlimitedGate></AdGate>;
 }

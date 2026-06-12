@@ -51,5 +51,17 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Re-anchor the 18:00-local daily reminder when the timezone or
+             clock changes (the pending one-shot's delay was computed in the
+             old zone). TIMEZONE_CHANGED/TIME_SET need no permission. -->
+        <receiver
+            android:name=".data.TimeChangeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
