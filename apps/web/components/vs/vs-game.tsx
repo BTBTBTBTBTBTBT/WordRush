@@ -550,7 +550,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // users (and freemium who haven't played yet) join the queue
     // normally, passing the daily seed only when this is the daily flow.
     if (!alreadyPlayedDaily) {
-      matchService.joinQueue(mode, todayDailySeed, inviteCode);
+      // Re-derive at join time: the todayDailySeed memo only recomputes on
+      // dailyVsActive, so a tab left open across midnight queued with
+      // YESTERDAY'S seed and could only ever pair with other stale tabs.
+      const queueSeed = dailyVsActive ? generateDailySeed(getTodayLocal(), 'DUEL_VS') : undefined;
+      matchService.joinQueue(mode, queueSeed, inviteCode);
     }
 
     return () => {

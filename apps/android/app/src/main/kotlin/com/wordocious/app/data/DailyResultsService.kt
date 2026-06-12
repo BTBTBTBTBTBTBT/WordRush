@@ -44,6 +44,24 @@ object DailyResultsService {
      * one play_type='vs' row per (user, day, mode) accumulating vs_wins/losses/
      * games, scored by calculateVsCompositeScore (0 until 3 games).
      */
+    /** Server-side daily-VS check (iOS hasPlayedDailyVS parity): has this
+     *  user already recorded a daily VS today? Backs the freemium lobby lock
+     *  so clearing app data / a second device can't mint extra matches. */
+    suspend fun hasPlayedDailyVsToday(): Boolean {
+        val userId = AuthService.userId ?: return false
+        return runCatching {
+            client.postgrest["daily_results"]
+                .select(io.github.jan.supabase.postgrest.query.Columns.raw("id")) {
+                    filter { eq("user_id", userId); eq("day", todayLocalDate()); eq("game_mode", GameMode.DUEL.name); eq("play_type", "vs") }
+                    limit(1)
+                }
+                .decodeList<IdOnlyRow>().isNotEmpty()
+        }.getOrDefault(false)
+    }
+
+    @Serializable
+    private data class IdOnlyRow(val id: String? = null)
+
     suspend fun recordDailyVsResult(mode: GameMode, won: Boolean) {
         val userId = AuthService.userId ?: return
         val day = todayLocalDate()

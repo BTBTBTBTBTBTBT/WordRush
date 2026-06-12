@@ -206,7 +206,7 @@ object GameResultsService {
             val yesterday = com.wordocious.app.yesterdayLocalDate()
             var newDailyStreak = p.dailyLoginStreak
             var grantShield = false
-            val lastDay = p.lastPlayedAt?.let { runCatching { Instant.parse(if (it.endsWith("Z") || it.contains('+')) it else it + "Z").atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString() }.getOrNull() }
+            val lastDay = p.lastPlayedAt?.let { runCatching { java.time.OffsetDateTime.parse(if (it.endsWith("Z") || it.contains('+')) it else it + "Z").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString() }.getOrNull() }
             when {
                 lastDay == null -> newDailyStreak = 1
                 lastDay == today -> { /* same day, no change */ }

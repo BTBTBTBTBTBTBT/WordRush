@@ -322,12 +322,6 @@ class VSMatchViewModel(
                 headToHead = HeadToHeadService.fetchHeadToHead(myId, oppId)
             }
         }
-        // Web parity (stats-service): EVERY VS match lands on the daily VS
-        // leaderboard (play_type='vs' row in daily_results), not only the
-        // freemium daily-VS flow.
-        viewModelScope.launch {
-            DailyResultsService.recordDailyVsResult(mode, data.winner == "player")
-        }
         // The freemium one-per-day lock stays gated on the daily flow.
         if (dailyVsActive) {
             VSPlayLimit.markPlayedToday()
@@ -338,6 +332,10 @@ class VSMatchViewModel(
         if (resultRecorded || AuthService.profile.value == null) return
         resultRecorded = true
         val won = data.winner == "player"
+        // Web parity (stats-service): EVERY VS match lands on the daily VS
+        // leaderboard (play_type='vs'). Inside the guard — a duplicate
+        // match_ended event must not double-accumulate vs_wins/vs_games.
+        viewModelScope.launch { DailyResultsService.recordDailyVsResult(mode, won) }
         val secs = (data.playerTime / 1000).roundToInt()
         val solved = game?.boardsSolvedCount ?: (if (won) 1 else 0)
         val total = game?.boardCount ?: 1

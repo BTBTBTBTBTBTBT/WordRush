@@ -53,7 +53,7 @@ enum MatchStatsService {
         guard let uid = await userId() else { return [] }
         var q = AuthService.shared.client.from("matches")
             .select("player1_score,game_mode,winner_id")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("winner_id", value: uid)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [ScoreRow] = (try? await q.execute().value) ?? []
@@ -82,12 +82,15 @@ enum MatchStatsService {
         let since = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
         var q = AuthService.shared.client.from("matches")
             .select("created_at,winner_id,game_mode")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .gte("created_at", value: ISO8601DateFormatter().string(from: since))
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [DateWinRow] = (try? await q.limit(2000).execute().value) ?? []
         var byDay = [Date: (played: Int, won: Int)]()
-        let cal = Calendar.current
+        // UTC buckets — web stats-service + Android bucket created_at by UTC
+        // date; local buckets put the same game on different squares per platform.
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC") ?? .current
         for r in rows {
             guard let d = parseTimestamp(r.created_at) else { continue }
             let day = cal.startOfDay(for: d)
@@ -105,7 +108,7 @@ enum MatchStatsService {
         guard let uid = await userId() else { return [] }
         var q = AuthService.shared.client.from("matches")
             .select("player1_time,game_mode,created_at")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("winner_id", value: uid)
             .gt("player1_time", value: 0)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
@@ -122,7 +125,7 @@ enum MatchStatsService {
         guard let uid = await userId() else { return [] }
         var q = AuthService.shared.client.from("matches")
             .select("created_at,winner_id,game_mode")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [DateWinRow] = (try? await q.limit(2000).execute().value) ?? []
         var played = [Int: Int](), won = [Int: Int]()
@@ -149,7 +152,7 @@ enum MatchStatsService {
         struct Row: Decodable { let gauntlet_stages: GauntletStagesData? }
         let rows: [Row]? = try? await AuthService.shared.client.from("matches")
             .select("gauntlet_stages")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("game_mode", value: "GAUNTLET")
             .eq("seed", value: seed)
             .order("created_at", ascending: false)
@@ -169,7 +172,7 @@ enum MatchStatsService {
         }
         let rows: [Row] = (try? await AuthService.shared.client.from("matches")
             .select("player1_guesses,solutions,winner_id,player1_score,player1_time,hints_used")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("game_mode", value: mode.rawValue)
             .eq("seed", value: seed)
             .order("created_at", ascending: false)
@@ -185,7 +188,7 @@ enum MatchStatsService {
         guard let uid = await userId() else { return [] }
         var q = AuthService.shared.client.from("matches")
             .select("player1_guesses,winner_id,game_mode")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [GuessesRow] = (try? await q.order("created_at", ascending: false).limit(1000).execute().value) ?? []
         var counts = [String: (count: Int, wins: Int)]()
@@ -210,7 +213,7 @@ enum MatchStatsService {
         guard let uid = await userId() else { return ProInsights() }
         let rows: [InsightRow] = (try? await AuthService.shared.client.from("matches")
             .select("player1_time,player1_score,created_at")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("winner_id", value: uid)
             .eq("game_mode", value: mode.rawValue)
             .is("player2_id", value: nil)
@@ -274,7 +277,7 @@ enum MatchStatsService {
         struct Row: Decodable { let solutions: [String]?; let winner_id: String?; let player1_time: Double?; let player1_score: Int? }
         let rows: [Row] = (try? await AuthService.shared.client.from("matches")
             .select("solutions,winner_id,player1_time,player1_score")
-            .eq("player1_id", value: uid)
+            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("game_mode", value: mode.rawValue)
             .not("solutions", operator: .is, value: "null")
             .order("created_at", ascending: false)

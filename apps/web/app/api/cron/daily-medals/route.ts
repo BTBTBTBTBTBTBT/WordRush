@@ -44,19 +44,23 @@ export async function GET(req: NextRequest) {
         const entry = leaderboard[i];
         const medalType = MEDAL_TYPES[i];
 
-        // Upsert medal (unique constraint prevents duplicates)
+        // INSERT (not upsert): if the medal row already exists — cron re-run,
+        // manual retry, or a perfect medal sharing the key — skip the counter
+        // and XP grant entirely. The old upsert "succeeded" on conflict and
+        // double-incremented gold/silver/bronze counters + XP on every re-run
+        // (and silently overwrote same-day perfect medals).
         const { error: medalError } = await sb
           .from('medals')
-          .upsert({
+          .insert({
             user_id: entry.user_id,
             day: yesterday,
             game_mode: mode,
             play_type: pt,
             medal_type: medalType,
             composite_score: entry.composite_score,
-          }, { onConflict: 'user_id,day,game_mode,play_type' });
+          });
 
-        if (medalError) continue;
+        if (medalError) continue; // duplicate (already awarded) or transient — never re-grant
 
         // Increment profile medal counter + grant XP bonus
         const medalCol = `${medalType}_medals`;

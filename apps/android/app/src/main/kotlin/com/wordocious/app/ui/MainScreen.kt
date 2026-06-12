@@ -112,7 +112,13 @@ fun MainScreen() {
     // Game screen shown fullscreen (no bottom nav — matches web behavior)
     val card = activeGame
     if (card?.engineMode != null) {
-        val seed = activeSeed ?: com.wordocious.app.todayLocalSeed(card.engineMode.name)
+        // Latch the seed for the lifetime of this game: todayLocalSeed()
+        // re-evaluated on every recomposition, so any recomposition after
+        // local midnight (foreground return, profile refresh) minted the NEXT
+        // day's seed and replaced the in-progress board with a fresh puzzle.
+        val seed = androidx.compose.runtime.remember(card) {
+            activeSeed ?: com.wordocious.app.todayLocalSeed(card.engineMode.name)
+        }
         androidx.activity.compose.BackHandler { activeGame = null; activeSeed = null }
         GameScreen(
             mode = card.engineMode,

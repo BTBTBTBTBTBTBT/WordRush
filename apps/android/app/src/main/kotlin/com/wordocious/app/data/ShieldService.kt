@@ -17,9 +17,11 @@ object ShieldService {
     fun isStreakAtRisk(lastPlayedAt: String?): Boolean {
         if (lastPlayedAt == null) return false
         return runCatching {
-            val last = java.time.Instant.parse(
+            // OffsetDateTime: PostgREST serializes timestamptz as "+00:00",
+            // which Instant.parse rejects on API 26-29 (silent streak resets).
+            val last = java.time.OffsetDateTime.parse(
                 if (lastPlayedAt.endsWith("Z") || lastPlayedAt.contains('+')) lastPlayedAt else lastPlayedAt + "Z",
-            )
+            ).toInstant()
             val hoursSince = java.time.Duration.between(last, java.time.Instant.now()).toMinutes() / 60.0
             if (hoursSince > 20) {
                 val lastLocalDay = last.atZone(java.time.ZoneId.systemDefault()).toLocalDate().toString()

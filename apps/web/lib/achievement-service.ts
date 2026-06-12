@@ -1,4 +1,5 @@
 import { supabase } from './supabase-client';
+import { getTodayLocal } from './daily-service';
 
 // ============================================================
 // Achievement Definitions
@@ -351,7 +352,7 @@ export async function checkAchievements(
 
   // Lightning Round (under 20 min) / Speed Sweep (under 15 min)
   if (seed?.startsWith('daily-') && (!alreadyUnlocked.has('lightning_round') || !alreadyUnlocked.has('speed_sweep') || !alreadyUnlocked.has('hat_trick'))) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayLocal(); // daily_results.day is player-LOCAL; UTC missed evening plays
     const { data: todayResults } = await (supabase as any)
       .from('daily_results')
       .select('game_mode, time_seconds, completed')
@@ -430,7 +431,7 @@ export async function checkAchievements(
 
   // Triple Threat (3 VS wins in a single day)
   if (playType === 'vs' && won && !alreadyUnlocked.has('triple_threat')) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayLocal(); // daily_results.day is player-LOCAL; UTC missed evening plays
     const { data: todayDaily } = await (supabase as any)
       .from('daily_results')
       .select('vs_wins')
@@ -471,7 +472,7 @@ export async function checkAchievements(
 
   // Extended Vocabulary (win both Six and Seven daily in same day)
   if ((gameMode === 'DUEL_6' || gameMode === 'DUEL_7') && won && seed?.startsWith('daily-') && !alreadyUnlocked.has('extended_vocab')) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayLocal(); // daily_results.day is player-LOCAL; UTC missed evening plays
     const { data: sixSevenResults } = await (supabase as any)
       .from('daily_results')
       .select('game_mode')
@@ -635,7 +636,7 @@ export async function checkAchievements(
 
   // Linguist (Classic + Six + Seven daily wins in same day)
   if (['DUEL', 'DUEL_6', 'DUEL_7'].includes(gameMode) && won && seed?.startsWith('daily-') && !alreadyUnlocked.has('linguist')) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getTodayLocal(); // daily_results.day is player-LOCAL; UTC missed evening plays
     const { data: langResults } = await (supabase as any)
       .from('daily_results')
       .select('game_mode')

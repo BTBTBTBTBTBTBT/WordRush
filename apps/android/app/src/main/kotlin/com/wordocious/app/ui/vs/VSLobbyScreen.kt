@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,7 +73,13 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onGoPro: () -> Unit, onCl
                 SectionLabel("QUICK MATCH")
                 VS_MODES.forEach { m -> ModeRow(m) { onPlay(m, false) } }
             } else {
-                val used = VSPlayLimit.hasPlayedToday()
+                // Local flag OR server row — the SharedPreferences flag alone
+                // was evadable by clearing app data / using a second device.
+                var serverUsed by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    serverUsed = com.wordocious.app.data.DailyResultsService.hasPlayedDailyVsToday()
+                }
+                val used = VSPlayLimit.hasPlayedToday() || serverUsed
                 CtaCard(
                     title = "Play Daily VS",
                     subtitle = if (used) "Used today · resets at midnight" else "One free Classic match a day",

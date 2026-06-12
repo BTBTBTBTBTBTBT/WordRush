@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/daily-medals",
-      "schedule": "5 5 * * *"
+      "schedule": "5 12 * * *"
     },
     {
       "path": "/api/cron/daily-reminder",
