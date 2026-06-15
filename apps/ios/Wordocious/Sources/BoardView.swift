@@ -234,7 +234,11 @@ struct SolvedBoardFrame: ViewModifier {
                         .foregroundStyle(.white)
                         .frame(width: badge, height: badge)
                         .background(Circle().fill(Color(hex: 0x8B5CF6)))
-                        .offset(x: badge * 0.3, y: -badge * 0.3)
+                        // Flush to the board's right edge (no rightward overhang):
+                        // the right-column boards sit against the post-game
+                        // ScrollView's clip bound, so a positive x-offset sheared
+                        // the badge. Keep a small upward float (top has room).
+                        .offset(x: 0, y: -badge * 0.3)
                 }
             }
     }
