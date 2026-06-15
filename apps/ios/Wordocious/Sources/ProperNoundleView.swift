@@ -38,8 +38,9 @@ final class ProperNoundleVM: ObservableObject {
     }
 
     private var startMs = Date().timeIntervalSince1970 * 1000
-    /// Reset the clock so the game-start ad's time isn't counted.
-    func beginTimer() { startMs = Date().timeIntervalSince1970 * 1000 }
+    /// Reset the clock so the game-start ad's time isn't counted — but keep any
+    /// elapsed time carried over from a restored session.
+    func beginTimer() { startMs = Date().timeIntervalSince1970 * 1000 - restoredElapsedMs }
     private var recorded = false
     var answerLen: Int { puzzle.map { ProperNoundle.normalize($0.answer).count } ?? 0 }
     var maxGuesses: Int { ProperNoundle.maxGuesses }
@@ -62,10 +63,81 @@ final class ProperNoundleVM: ObservableObject {
         self.isDaily = (seed == nil && !isVersus)
         self.gameSeed = seed
         puzzle = seed.flatMap { ProperNoundle.puzzle(forSeed: $0) } ?? ProperNoundle.dailyPuzzle()
+        // Resume an in-progress / completed session for this exact puzzle so
+        // guesses + hints survive leaving and returning (web parity:
+        // propernoundle-game.tsx daily/practice localStorage restore). VS never
+        // persists (the match drives it).
+        restore()
     }
 
     /// The seed the VM was created with (unlimited/VS); nil = today's daily.
     private let gameSeed: String?
+
+    // MARK: - Persistence (mirrors web getSaved*/save*State)
+
+    /// Saved snapshot of an in-progress ProperNoundle game.
+    private struct Snapshot: Codable {
+        let puzzleId: String
+        let date: String              // local date — daily save invalidates at rollover
+        let guessWords: [String]
+        let guessTiles: [[NTile]]
+        let status: Int               // 0 playing, 1 won, 2 lost
+        let clue: String?
+        let revealedVowel: String?
+        let revealedConsonant: String?
+        let elapsed: Int
+        let savedAt: Double
+    }
+
+    /// One UserDefaults key per save slot: the daily shares a slot (validated by
+    /// date + puzzleId); each unlimited/practice seed gets its own.
+    private var storageKey: String? {
+        if isVersus { return nil }
+        return isDaily ? "pn-save-daily" : "pn-save-\(gameSeed ?? "practice")"
+    }
+    /// Practice/unlimited saves expire after 24h (web PRACTICE_TTL_MS).
+    private static let practiceTTLms: Double = 24 * 60 * 60 * 1000
+    /// Elapsed (ms) carried over from a restored session — beginTimer() rebases
+    /// the clock by this so the game-start ad gap isn't counted but resumed time is.
+    private var restoredElapsedMs: Double = 0
+
+    private func persist() {
+        guard let key = storageKey, let p = puzzle else { return }
+        let snap = Snapshot(
+            puzzleId: p.id, date: LeaderboardService.todayLocal(),
+            guessWords: guesses.map(\.word), guessTiles: guesses.map(\.tiles),
+            status: status == .won ? 1 : (status == .lost ? 2 : 0),
+            clue: clue, revealedVowel: revealedVowel, revealedConsonant: revealedConsonant,
+            elapsed: elapsed, savedAt: Date().timeIntervalSince1970 * 1000)
+        if let data = try? JSONEncoder().encode(snap) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
+    private func restore() {
+        guard let key = storageKey, let p = puzzle,
+              let data = UserDefaults.standard.data(forKey: key),
+              let snap = try? JSONDecoder().decode(Snapshot.self, from: data) else { return }
+        // Fail-closed: only restore the exact puzzle; daily also re-checks the
+        // local date (web getSavedDailyState), practice honours the 24h TTL.
+        let stale = snap.puzzleId != p.id
+            || (isDaily && snap.date != LeaderboardService.todayLocal())
+            || (!isDaily && Date().timeIntervalSince1970 * 1000 - snap.savedAt > Self.practiceTTLms)
+        if stale { UserDefaults.standard.removeObject(forKey: key); return }
+        guard snap.guessWords.count == snap.guessTiles.count else { return }
+        guesses = zip(snap.guessWords, snap.guessTiles).map { (word: $0, tiles: $1) }
+        status = snap.status == 1 ? .won : (snap.status == 2 ? .lost : .playing)
+        clue = snap.clue
+        revealedVowel = snap.revealedVowel
+        revealedConsonant = snap.revealedConsonant
+        restoredElapsedMs = Double(snap.elapsed) * 1000
+        if status != .playing {
+            // Completed restore: freeze the clock and block re-recording (web
+            // restoredDailyRef short-circuits the game-over effect).
+            finalTimeSeconds = snap.elapsed
+            recorded = true
+        }
+    }
 
     func type(_ l: String) { guard !isFinished, input.count < answerLen else { return }; input += l.lowercased() }
     func delete() { if !input.isEmpty { input.removeLast() } }
@@ -79,6 +151,7 @@ final class ProperNoundleVM: ObservableObject {
         onGuessCommitted?(word)
         if ProperNoundle.isWin(tiles) { status = .won; finish() }
         else if guesses.count >= maxGuesses { status = .lost; finish() }
+        persist()
     }
 
     func keyState(_ letter: String) -> NTile? {
@@ -117,6 +190,7 @@ final class ProperNoundleVM: ObservableObject {
             guard !self.isFinished else { return }
             self.guesses.append((word: "", tiles: Array(repeating: NTile.hintUsed, count: self.answerLen)))
             if self.guesses.count >= self.maxGuesses { self.status = .lost; self.finish() }
+            self.persist()
         }
     }
     func revealVowel() { reveal(vowels: true) }
@@ -134,6 +208,7 @@ final class ProperNoundleVM: ObservableObject {
         let pool = Set(chars.filter { c in c >= "A" && c <= "Z" && (vowels ? vset.contains(c) : !vset.contains(c)) })
         guard let pick = pool.randomElement() else {
             if vowels { revealedVowel = "None" } else { revealedConsonant = "None" }
+            persist()
             return
         }
         let tiles: [NTile] = chars.map { $0 == pick ? .correct : .hintUsed }
@@ -143,6 +218,7 @@ final class ProperNoundleVM: ObservableObject {
         // Web parity (handleVowelReveal/handleConsonantReveal): a hint row that
         // fills the board loses the game.
         if guesses.count >= maxGuesses, status == .playing { status = .lost; finish() }
+        persist()
     }
 
     /// Share grid (rows of tile states), padded to maxGuesses — for the share card.

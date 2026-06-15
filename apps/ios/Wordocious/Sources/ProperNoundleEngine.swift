@@ -14,7 +14,7 @@ struct NPuzzle: Codable, Equatable {
     let wikiTitle: String?
 }
 
-enum NTile: String { case correct, present, absent, empty, hintUsed }
+enum NTile: String, Codable { case correct, present, absent, empty, hintUsed }
 
 enum ProperNoundle {
     static let maxGuesses = 6

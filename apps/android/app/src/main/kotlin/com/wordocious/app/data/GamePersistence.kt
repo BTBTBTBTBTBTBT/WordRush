@@ -4,6 +4,7 @@ import android.content.Context
 import com.wordocious.app.App
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /**
@@ -47,4 +48,30 @@ object GamePersistence {
         val k = elapsedKey(seed, mode)
         return if (prefs.contains(k)) prefs.getInt(k, 0) else null
     }
+
+    // Hint UI state (Six/Seven/ProperNoundle) — the board guesses already persist
+    // via save(), but the revealed clue/vowel/consonant flags + clue text live
+    // outside GameState, so they need their own slot to survive a resume
+    // (mirrors iOS persistHintUI/restoreHintUI).
+    @Serializable
+    data class HintState(
+        val clue: String? = null,
+        val vowelRevealed: String? = null,
+        val consonantRevealed: String? = null,
+        val vowelUsed: Boolean = false,
+        val consonantUsed: Boolean = false,
+    )
+
+    private fun hintKey(seed: String, mode: GameMode) = "hints-${mode.name}-$seed"
+
+    fun saveHints(seed: String, mode: GameMode, state: HintState) {
+        runCatching {
+            prefs.edit().putString(hintKey(seed, mode), json.encodeToString(HintState.serializer(), state)).apply()
+        }
+    }
+
+    fun loadHints(seed: String, mode: GameMode): HintState? =
+        prefs.getString(hintKey(seed, mode), null)?.let {
+            runCatching { json.decodeFromString(HintState.serializer(), it) }.getOrNull()
+        }
 }

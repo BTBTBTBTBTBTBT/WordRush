@@ -329,6 +329,34 @@ class GameViewModel(
     private val _loadingClue = MutableStateFlow(false)
     val loadingClue: StateFlow<Boolean> = _loadingClue.asStateFlow()
 
+    // Restore the hint UI flags + clue text on resume. The board guesses (incl.
+    // the gray hint rows) already come back via GamePersistence.load(), but
+    // these flags live outside GameState, so without this a resumed Six/Seven/
+    // ProperNoundle would re-enable spent hint buttons and drop the clue text.
+    // This init runs AFTER the flows above are constructed (declaration order).
+    init {
+        if (hasHints && !isVersus) {
+            GamePersistence.loadHints(seed, mode)?.let { h ->
+                _clue.value = h.clue
+                _vowelRevealed.value = h.vowelRevealed
+                _consonantRevealed.value = h.consonantRevealed
+                _vowelUsed.value = h.vowelUsed
+                _consonantUsed.value = h.consonantUsed
+            }
+        }
+    }
+
+    private fun persistHints() {
+        if (isVersus) return
+        GamePersistence.saveHints(seed, mode, GamePersistence.HintState(
+            clue = _clue.value,
+            vowelRevealed = _vowelRevealed.value,
+            consonantRevealed = _consonantRevealed.value,
+            vowelUsed = _vowelUsed.value,
+            consonantUsed = _consonantUsed.value,
+        ))
+    }
+
     /** The ProperNoundle puzzle behind this game (null for other modes). */
     val pnPuzzle: com.wordocious.core.NPuzzle? by lazy {
         if (mode != GameMode.PROPERNOUNDLE) null
@@ -373,7 +401,7 @@ class GameViewModel(
             }
             val eval = com.wordocious.core.GuessResult(tiles = tiles, isCorrect = false)
             _state.value = gameReducer(_state.value, GameAction.SubmitHint(" ".repeat(len), eval, boardIndex = 0))
-            persist()
+            persist(); persistHints()
             finalizeIfFinished()
         }
     }
@@ -402,6 +430,7 @@ class GameViewModel(
             noCandidateHints += 1
             if (vowels) { _vowelUsed.value = true; _vowelRevealed.value = "—" }
             else { _consonantUsed.value = true; _consonantRevealed.value = "—" }
+            persistHints()
             return
         }
         val tiles = solution.map { ch ->
@@ -415,7 +444,7 @@ class GameViewModel(
         _state.value = gameReducer(_state.value, GameAction.SubmitHint(hintWord, eval, boardIndex = 0))
         if (vowels) { _vowelUsed.value = true; _vowelRevealed.value = pick.toString() }
         else { _consonantUsed.value = true; _consonantRevealed.value = pick.toString() }
-        persist()
+        persist(); persistHints()
         finalizeIfFinished()
     }
 }
