@@ -347,6 +347,16 @@ function GauntletCompletedCard({
     return `${Math.floor(s / 60)}m ${s % 60}s`;
   };
 
+  // Cumulative boards solved across all stages (cleared stage = full boardCount,
+  // failed stage = its WON snapshot count); denominator = every stage's boards.
+  const cumulativeBoardsSolved = stageResults.reduce((sum, r) => {
+    const stage = stages.find(s => s.stageIndex === r.stageIndex);
+    if (!stage) return sum;
+    if (r.status === GameStatus.WON) return sum + stage.boardCount;
+    return sum + (r.boardsSnapshot?.filter(b => b.status === GameStatus.WON).length ?? 0);
+  }, 0);
+  const cumulativeTotalBoards = Math.max(1, stages.reduce((sum, s) => sum + s.boardCount, 0));
+
   return (
     <CollapsibleCompletedCard
       won={won}
@@ -443,6 +453,19 @@ function GauntletCompletedCard({
             </div>
           );
         })}
+      </div>
+
+      {/* Score breakdown — cumulative run values, matching the native
+          completed-today card (iOS/Android) and the post-game results. */}
+      <div className="mt-3">
+        <ScoreBreakdownCard
+          gameMode="GAUNTLET"
+          completed={won}
+          guessCount={totalGuesses}
+          timeSeconds={Math.floor(totalTimeMs / 1000)}
+          boardsSolved={cumulativeBoardsSolved}
+          totalBoards={cumulativeTotalBoards}
+        />
       </div>
     </CollapsibleCompletedCard>
   );

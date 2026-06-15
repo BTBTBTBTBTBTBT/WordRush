@@ -277,6 +277,53 @@ fun StageReviewModal(stage: GauntletStageConfig, result: GauntletStageResult, on
     }
 }
 
+/**
+ * Inline stage review (no dialog) — the ANSWERS pills + final boards for a
+ * cleared/failed stage, used by the leaderboard "Completed Today" card's inline
+ * expand (iOS GauntletCompletedView.stageRow → solutionsReveal + stageBoards).
+ */
+@Composable
+internal fun GauntletStageInlineReview(result: GauntletStageResult) {
+    val boards = result.boardsSnapshot ?: return
+    val won = result.status == GameStatus.WON
+    val cols = if (boards.size == 1) 1 else if (boards.size <= 4) 2 else 4
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // ANSWERS pills
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Color(0xFFF9FAFB))
+                .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(10.dp)).padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                if (boards.size == 1) "ANSWER" else "ANSWERS",
+                fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFF9CA3AF), letterSpacing = 0.8.sp,
+            )
+            boards.chunked(cols).forEach { rowBoards ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    rowBoards.forEach { b ->
+                        val bWon = b.status == GameStatus.WON
+                        Text(
+                            b.solution.uppercase(),
+                            fontSize = 11.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
+                            color = if (bWon) Color(0xFF7C3AED) else Color(0xFFDC2626),
+                            modifier = Modifier.weight(1f).clip(RoundedCornerShape(6.dp))
+                                .background(if (bWon) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)).padding(vertical = 2.dp),
+                        )
+                    }
+                    repeat(cols - rowBoards.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+        // Final boards
+        boards.chunked(cols).forEach { rowBoards ->
+            Row(Modifier.fillMaxWidth().height(if (cols == 1) 200.dp else 150.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                rowBoards.forEach { b -> StageReviewBoard(b, won, Modifier.weight(1f).fillMaxHeight()) }
+                repeat(cols - rowBoards.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
 @Composable
 private fun StageReviewBoard(board: BoardState, stageWon: Boolean, modifier: Modifier = Modifier) {
     val won = board.status == GameStatus.WON

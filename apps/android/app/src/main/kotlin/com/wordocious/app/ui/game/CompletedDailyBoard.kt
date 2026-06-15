@@ -276,7 +276,7 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
     val cumTotal = (g.stages.sumOf { it.boardCount }).coerceAtLeast(1)
 
     var expanded by remember { mutableStateOf(false) }
-    var reviewIndex by remember { mutableStateOf<Int?>(null) }
+    var expandedStage by remember { mutableStateOf<Int?>(null) }
 
     Column(
         Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
@@ -314,29 +314,37 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     StatsRow(listOf("$cleared/${g.totalStages}" to "Stages", "$totalGuesses" to "Guesses", fmtMs(totalMs) to "Time"))
                 }
-                // Per-stage rows (tap → review the stage's boards)
+                // Per-stage rows (tap → inline expand: ANSWERS + final boards)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     g.stages.forEach { stage ->
                         val r = g.stageResults.firstOrNull { it.stageIndex == stage.stageIndex } ?: return@forEach
                         val sWon = r.status == GameStatus.WON
                         val hasBoards = !r.boardsSnapshot.isNullOrEmpty()
-                        Row(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                                .background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEF2F2))
-                                .border(1.dp, if (sWon) Color(0xFFDDD6FE) else Color(0xFFFECACA), RoundedCornerShape(10.dp))
-                                .then(if (hasBoards) Modifier.clickableNoRipple { reviewIndex = stage.stageIndex } else Modifier)
-                                .padding(horizontal = 10.dp, vertical = 7.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Box(Modifier.size(14.dp).clip(CircleShape).background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
-                                Text(if (sWon) "✓" else "✗", fontSize = 8.sp, fontWeight = FontWeight.Black, color = if (sWon) Color(0xFF7C3AED) else Color(0xFFDC2626))
-                            }
-                            Spacer(Modifier.width(6.dp))
-                            Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
-                            Text("${r.guesses}g · ${fmtMs(r.timeMs)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                            if (hasBoards) {
+                        val isExpanded = expandedStage == stage.stageIndex
+                        Column {
+                            Row(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                    .background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEF2F2))
+                                    .border(1.dp, if (sWon) Color(0xFFDDD6FE) else Color(0xFFFECACA), RoundedCornerShape(10.dp))
+                                    .then(if (hasBoards) Modifier.clickableNoRipple { expandedStage = if (isExpanded) null else stage.stageIndex } else Modifier)
+                                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Box(Modifier.size(14.dp).clip(CircleShape).background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
+                                    Text(if (sWon) "✓" else "✗", fontSize = 8.sp, fontWeight = FontWeight.Black, color = if (sWon) Color(0xFF7C3AED) else Color(0xFFDC2626))
+                                }
                                 Spacer(Modifier.width(6.dp))
-                                Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                                Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
+                                Text("${r.guesses}g · ${fmtMs(r.timeMs)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                if (hasBoards) {
+                                    Spacer(Modifier.width(6.dp))
+                                    Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp).rotate(if (isExpanded) 180f else 0f))
+                                }
+                            }
+                            AnimatedVisibility(visible = isExpanded && hasBoards) {
+                                Box(Modifier.padding(top = 6.dp, start = 4.dp, end = 4.dp, bottom = 2.dp)) {
+                                    GauntletStageInlineReview(r)
+                                }
                             }
                         }
                     }
@@ -348,11 +356,5 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
                 )
             }
         }
-    }
-
-    reviewIndex?.let { idx ->
-        val r = g.stageResults.firstOrNull { it.stageIndex == idx }
-        val stage = g.stages.getOrNull(idx)
-        if (r != null && stage != null) StageReviewModal(stage = stage, result = r, onClose = { reviewIndex = null })
     }
 }
