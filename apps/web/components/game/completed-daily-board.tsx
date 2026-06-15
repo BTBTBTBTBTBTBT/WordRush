@@ -2,8 +2,10 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { evaluateGuess, TileState, GameStatus, BoardState, generateDailySeed } from '@wordle-duel/core';
+import { evaluateGuess, TileState, GameStatus, BoardState, generateDailySeed, type GameState, type GameMode } from '@wordle-duel/core';
 import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
+import { replayRecordedGuesses } from '@/hooks/use-game-snapshot';
+import { supabase } from '@/lib/supabase-client';
 import { Board } from '@/components/game/board';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { useWordDefinition } from '@/hooks/use-word-definition';
@@ -474,10 +476,17 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const isGauntlet = modeId === 'GAUNTLET';
   const isProperNoundle = modeId === 'PROPERNOUNDLE';
 
-  const session = useMemo(
+  const localSession = useMemo(
     () => (!isProperNoundle ? loadCompletedSession(modeId) : null),
     [modeId, isProperNoundle],
   );
+  // Cross-device: a daily finished on another device (e.g. the native app) has
+  // no local session, so this card used to render nothing for non-gauntlet
+  // modes. Reconstruct the boards from the recorded matches row (same engine
+  // replay the game pages use) so "Completed Today" shows everywhere. Gauntlet
+  // has its own server fallback below; ProperNoundle is handled separately.
+  const [serverSession, setServerSession] = useState<{ state: GameState; elapsedTime: number } | null>(null);
+  const session = localSession ?? serverSession;
   const pnSaved = useMemo(() => isProperNoundle ? loadCompletedProperNoundle() : null, [isProperNoundle]);
   const pnPuzzle = useMemo(() => isProperNoundle ? getDailyPuzzle() : null, [isProperNoundle]);
 
@@ -517,6 +526,34 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
       .then(r => { if (!cancelled && r) setServerGauntlet(r); });
     return () => { cancelled = true; };
   }, [isGauntlet, session, profile]);
+
+  // Non-gauntlet cross-device fallback: no local session but a recorded daily
+  // result exists → replay the matches row through the engine so the card
+  // renders (same path useServerDailyReplay uses for the game pages).
+  useEffect(() => {
+    if (isGauntlet || isProperNoundle || localSession || !profile || !recorded) return;
+    let cancelled = false;
+    const seed = generateDailySeed(getTodayLocal(), modeId);
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from('matches')
+          .select('player1_guesses, player1_time')
+          .eq('player1_id', profile.id)
+          .eq('seed', seed)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const row = data?.[0];
+        if (cancelled || !row) return;
+        const guesses: string[] = Array.isArray(row.player1_guesses) ? row.player1_guesses : [];
+        if (guesses.length === 0) return;
+        const state = replayRecordedGuesses(modeId as GameMode, seed, guesses);
+        if (cancelled || !state) return;
+        setServerSession({ state, elapsedTime: Math.max(0, Math.round(Number(row.player1_time) || 0)) });
+      } catch { /* offline / RLS — leave the card hidden, no worse than before */ }
+    })();
+    return () => { cancelled = true; };
+  }, [isGauntlet, isProperNoundle, localSession, profile, recorded, modeId]);
 
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;

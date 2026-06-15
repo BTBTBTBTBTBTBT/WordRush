@@ -27,9 +27,11 @@ struct CompletedDailyCard: View {
             // fall back to elapsedMs only if stages carry no recorded times.
             let stageMs = g.stageResults.reduce(0) { $0 + $1.timeMs }
             let secs = (stageMs > 0 ? stageMs : elapsedMs) / 1000
-            return "\(cleared)/\(g.totalStages) · \(guesses)g · \(timeString(secs))"
+            return "\(cleared)/\(g.totalStages) · \(guesses) guesses · \(formatShortTime(secs))"
         }
-        return "\(d.guessCount) · \(timeString(d.timeSeconds))"
+        // Match the leaderboard row's wording ("4 Guesses · 13s") instead of the
+        // bare "4 · 0:13" — formatShortTime gives "13s" / "1m 5s".
+        return "\(d.guessCount) guess\(d.guessCount == 1 ? "" : "es") · \(formatShortTime(d.timeSeconds))"
     }
 
     /// Web-parity responsive tile size so all boards fit on one screen.
