@@ -13,6 +13,9 @@ struct EditProfileView: View {
     @State private var saving = false
     @State private var photoItem: PhotosPickerItem?
     @State private var uploadingAvatar = false
+    @State private var showPhotoChoice = false
+    @State private var showLibraryPicker = false
+    @State private var showCamera = false
 
     private let platforms: [(key: String, label: String, placeholder: String)] = [
         ("twitter", "Twitter / X", "username"), ("instagram", "Instagram", "username"),
@@ -34,11 +37,14 @@ struct EditProfileView: View {
                                     .opacity(uploadingAvatar ? 0.5 : 1)
                                 if uploadingAvatar { ProgressView() }
                             }
-                            PhotosPicker(selection: $photoItem, matching: .images) {
+                            Button {
+                                showPhotoChoice = true
+                            } label: {
                                 Text(uploadingAvatar ? "Uploading…" : "Change Photo")
                                     .font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
                             }
                             .disabled(uploadingAvatar)
+                            .buttonStyle(.plain)
                         }
                         Spacer()
                     }
@@ -78,6 +84,25 @@ struct EditProfileView: View {
                 uploadingAvatar = true
                 Task { await uploadAvatar(item); uploadingAvatar = false }
             }
+            // Take Photo (camera) or Choose from Library — web mobile file
+            // inputs already offer both; this brings the native flow to parity.
+            .confirmationDialog("Change Photo", isPresented: $showPhotoChoice, titleVisibility: .visible) {
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button("Take Photo") { showCamera = true }
+                }
+                Button("Choose from Library") { showLibraryPicker = true }
+                Button("Cancel", role: .cancel) {}
+            }
+            .photosPicker(isPresented: $showLibraryPicker, selection: $photoItem, matching: .images)
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraPicker { image in
+                    showCamera = false
+                    guard let data = image?.jpegData(compressionQuality: 0.9) else { return }
+                    uploadingAvatar = true
+                    Task { await uploadAvatar(data: data); uploadingAvatar = false }
+                }
+                .ignoresSafeArea()
+            }
         }
     }
 
@@ -90,8 +115,18 @@ struct EditProfileView: View {
         guard let uid = auth.profile?.id else { return }
         // Web parity: surface upload failures instead of silently bailing
         // (avatar-upload.tsx shows an "Avatar upload failed" toast).
-        guard let data = try? await item.loadTransferable(type: Data.self),
-              let url = await AvatarUploader.upload(data) else {
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            error = "Avatar upload failed. Please try again."
+            return
+        }
+        await uploadAvatar(data: data)
+    }
+
+    /// Upload raw image data (camera capture or library) → avatars bucket →
+    /// profiles.avatar_url, then refresh so it shows everywhere immediately.
+    private func uploadAvatar(data: Data) async {
+        guard let uid = auth.profile?.id else { return }
+        guard let url = await AvatarUploader.upload(data) else {
             error = "Avatar upload failed. Please try again."
             return
         }
@@ -139,5 +174,31 @@ struct EditProfileView: View {
                 saving = false
             }
         }
+    }
+}
+
+/// System camera picker (UIImagePickerController, .camera source) wrapped for
+/// SwiftUI — returns the captured UIImage (or nil if cancelled).
+private struct CameraPicker: UIViewControllerRepresentable {
+    let onImage: (UIImage?) -> Void
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.allowsEditing = true
+        picker.delegate = context.coordinator
+        return picker
+    }
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    func makeCoordinator() -> Coordinator { Coordinator(onImage: onImage) }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onImage: (UIImage?) -> Void
+        init(onImage: @escaping (UIImage?) -> Void) { self.onImage = onImage }
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            onImage((info[.editedImage] as? UIImage) ?? (info[.originalImage] as? UIImage))
+        }
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) { onImage(nil) }
     }
 }

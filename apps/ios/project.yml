@@ -70,6 +70,8 @@ targets:
         GADApplicationIdentifier: ca-app-pub-3015627373086578~8393761846
         # App Tracking Transparency prompt copy (shown before requesting IDFA).
         NSUserTrackingUsageDescription: Allow tracking to show you more relevant ads. Wordocious never sells your data.
+        # Camera permission — used only when taking a new profile photo.
+        NSCameraUsageDescription: Take a photo for your Wordocious profile picture.
         SKAdNetworkItems:
           - SKAdNetworkIdentifier: cstr6suwn9.skadnetwork
     settings:

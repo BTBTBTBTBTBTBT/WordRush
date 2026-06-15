@@ -100,8 +100,10 @@ fun EditProfileScreen(onDone: () -> Unit) {
         }.getOrNull()?.forEach { (k, v) -> socials[k] = v }
     }
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
+    // Shared upload path for both library picks and camera captures: read the
+    // image at [uri], resize to a 256² JPEG, upsert to the avatars bucket, then
+    // persist profiles.avatar_url (separate write, like the web).
+    val uploadUri: (android.net.Uri) -> Unit = { uri ->
         uploading = true
         scope.launch {
             val url = withContext(Dispatchers.IO) {
@@ -126,6 +128,42 @@ fun EditProfileScreen(onDone: () -> Unit) {
             }
             uploading = false
         }
+    }
+
+    var showPhotoChoice by remember { mutableStateOf(false) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let(uploadUri)
+    }
+    // Camera: capture into a FileProvider temp file (cacheDir/share is already
+    // mapped), then read it back through the same upload path.
+    val cameraUri = remember {
+        val dir = java.io.File(context.cacheDir, "share").apply { mkdirs() }
+        val file = java.io.File(dir, "avatar-camera.jpg")
+        androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        if (ok) uploadUri(cameraUri)
+    }
+
+    if (showPhotoChoice) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showPhotoChoice = false },
+            containerColor = WTheme.surface,
+            title = { Text("Change Photo", fontWeight = FontWeight.Black, color = WTheme.text) },
+            text = { Text("Take a new photo or choose one from your library.", color = WTheme.textSecondary) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showPhotoChoice = false
+                    cameraLauncher.launch(cameraUri)
+                }) { Text("Take Photo", color = WTheme.primary, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showPhotoChoice = false
+                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }) { Text("Choose from Library", color = WTheme.primary, fontWeight = FontWeight.Bold) }
+            },
+        )
     }
 
     Column(Modifier.fillMaxSize().background(WTheme.bg)) {
@@ -179,7 +217,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
             }
             Text(
                 if (uploading) "Uploading…" else "Change Photo", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
-                modifier = Modifier.clickableNoRipple { if (!uploading) picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                modifier = Modifier.clickableNoRipple { if (!uploading) showPhotoChoice = true },
             )
 
             // Username
