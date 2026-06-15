@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
@@ -61,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.DailyCompletionsService
 import com.wordocious.app.data.ProfileService
+import com.wordocious.app.data.SettingsPref
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 import kotlinx.coroutines.launch
@@ -104,6 +106,14 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf(false) }
+    // Daily Reminders toggle (web §H NotificationToggle parity) — backed by the
+    // existing NotificationService (WorkManager chain) + SettingsPref, identical
+    // to the Settings screen toggle.
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var dailyReminder by remember { mutableStateOf(SettingsPref.get(SettingsPref.DAILY_REMINDER, false)) }
+    val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) com.wordocious.app.data.NotificationService.schedule(context) }
 
     val userId = profile?.id
     LaunchedEffect(userId) {
@@ -274,12 +284,46 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         }
 
         // ── H. Account (web profile/page.tsx §H) ──────────────────
-        // Sign Out + Delete Account (inline confirm). Web also has a
-        // NotificationToggle here; Android has no notification backend yet,
-        // so it's intentionally omitted until notifications are wired.
+        // Daily Reminders toggle + Sign Out + Delete Account (inline confirm).
         item {
             Spacer(Modifier.height(4.dp))
             SectionLabel("ACCOUNT")
+        }
+        item {
+            // Daily Reminders — web NotificationToggle parity; wires the existing
+            // NotificationService (WorkManager) like the Settings toggle.
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(Icons.Filled.Notifications, null, tint = WTheme.textMuted, modifier = Modifier.size(20.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Daily Reminders", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+                    Text("A nudge to play today's puzzles", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+                androidx.compose.material3.Switch(
+                    checked = dailyReminder,
+                    onCheckedChange = { on ->
+                        dailyReminder = on; SettingsPref.set(SettingsPref.DAILY_REMINDER, on)
+                        if (on) {
+                            if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                                androidx.core.content.ContextCompat.checkSelfPermission(
+                                    context, android.Manifest.permission.POST_NOTIFICATIONS,
+                                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                com.wordocious.app.data.NotificationService.schedule(context)
+                            }
+                        } else {
+                            com.wordocious.app.data.NotificationService.cancel(context)
+                        }
+                    },
+                )
+            }
+            Spacer(Modifier.height(8.dp))
         }
         item {
             // Sign Out — surface card with logout icon (web parity).
