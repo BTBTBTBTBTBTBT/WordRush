@@ -414,6 +414,13 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 guesses = runGuessList,
                 hintsUsed = vm.hintsUsed,
             )
+            // Persist the Gauntlet stage breakdown onto the just-inserted matches
+            // row so the results screen renders cross-device (iOS/web parity).
+            if (isGauntletRun) {
+                com.wordocious.app.data.GameResultsService.recordGauntletStages(
+                    seed = seed, stages = g!!.stages, stageResults = g.stageResults,
+                )
+            }
         }
     }
 

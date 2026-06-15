@@ -82,6 +82,36 @@ object GameResultsService {
         }
     }
 
+    // ── Gauntlet per-stage breakdown (iOS/web parity) ─────────────────────────────
+    /** Persist the Gauntlet stage-by-stage breakdown onto the matches row so the
+     *  results screen can render cross-device (web ↔ iOS ↔ Android). Written as a
+     *  best-effort UPDATE after the row exists (record() awaits the insert first);
+     *  if the `gauntlet_stages` column isn't migrated this silently no-ops and the
+     *  match row is unaffected. Mirrors iOS GameResultsService.recordGauntletStages
+     *  + web recordGauntletStages — same JSON shape (UPPERCASE enums / camelCase). */
+    @Serializable
+    private data class GauntletStagesPayload(
+        val stages: List<com.wordocious.core.GauntletStageConfig>,
+        val stageResults: List<com.wordocious.core.GauntletStageResult>,
+    )
+    @Serializable
+    private data class GauntletStagesUpdate(
+        @SerialName("gauntlet_stages") val gauntletStages: GauntletStagesPayload,
+    )
+
+    suspend fun recordGauntletStages(
+        seed: String,
+        stages: List<com.wordocious.core.GauntletStageConfig>,
+        stageResults: List<com.wordocious.core.GauntletStageResult>,
+    ) {
+        val uid = AuthService.userId ?: return
+        runCatching {
+            client.postgrest["matches"].update(GauntletStagesUpdate(GauntletStagesPayload(stages, stageResults))) {
+                filter { eq("player1_id", uid); eq("game_mode", "GAUNTLET"); eq("seed", seed) }
+            }
+        }
+    }
+
     // ── Cross-device "view solved daily" (iOS parity) ─────────────────────────────
     /** The recorded guess progression of a finished daily — fetched when a daily
      *  was completed on ANOTHER device (or local state was lost) so GameScreen can
