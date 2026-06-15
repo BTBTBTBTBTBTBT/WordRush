@@ -199,6 +199,7 @@ fun MainScreen() {
                         },
                         onGoPro = { infoRoute = "pro" },
                         onVs = { card -> card.engineMode?.let { vsActive = it to false } },
+                        onNavigate = { infoRoute = it },
                     )
                     1 -> LeaderboardScreen(onOpenProfile = { publicProfileId = it })
                     2 -> ProfileScreen(

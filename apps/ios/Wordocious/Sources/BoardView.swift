@@ -456,7 +456,10 @@ struct BoardLayout: View {
                 multiGrid
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: fitHeight == nil ? nil : .infinity, alignment: .top)
+        // Center the board in the greedy area between header and keyboard so the
+        // leftover space is split top/bottom — matches the web `justify-center
+        // h-full` (practice-game.tsx) instead of pinning the board to the top.
+        .frame(maxWidth: .infinity, maxHeight: fitHeight == nil ? nil : .infinity, alignment: .center)
         // Zoom overlay covers only the board area (this view's frame), never the
         // keyboard below — matching the web backdrop.
         .overlay { if let i = expandedIndex { expandedOverlay(i) } }

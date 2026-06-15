@@ -69,6 +69,7 @@ fun HomeScreen(
     onGoPro: () -> Unit = {},
     onVs: (ModeCard) -> Unit = {},
     onJoinInvite: (com.wordocious.core.GameMode, String) -> Unit = { _, _ -> },
+    onNavigate: (String) -> Unit = {},
 ) {
     // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
     // Seed from the day-keyed cache so cold launches don't flash unbadged
@@ -161,7 +162,7 @@ fun HomeScreen(
                 Spacer(Modifier.width(4.dp))
                 Text("Sign Out", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
-            FooterLinks()
+            FooterLinks(onNavigate)
             Spacer(Modifier.height(16.dp))
         }
     }
@@ -560,13 +561,15 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
 }
 
 @Composable
-private fun FooterLinks() {
+private fun FooterLinks(onNavigate: (String) -> Unit = {}) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
     ) {
-        listOf("About", "How to Play", "Privacy", "Terms").forEach {
-            Text(it, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        // label → InfoScreen/Help route (web /about, /how-to-play, /privacy, /terms).
+        listOf("About" to "about", "How to Play" to "help", "Privacy" to "privacy", "Terms" to "terms").forEach { (label, route) ->
+            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                modifier = Modifier.clickable { onNavigate(route) })
         }
     }
 }
