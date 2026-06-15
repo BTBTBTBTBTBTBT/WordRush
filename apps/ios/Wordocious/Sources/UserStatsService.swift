@@ -20,6 +20,22 @@ struct UserStatRow: Decodable {
         case averageTime = "average_time"
         case fastestTime = "fastest_time"
     }
+    // Null-tolerant decode: best_score/average_time/fastest_time can be NULL in
+    // user_stats (modes with no recorded time, post-reconcile rows). A strict
+    // non-optional Int decode throws on NULL and — via `try?` in fetch() — drops
+    // the ENTIRE result set to [], which silently emptied the Pro Stats charts
+    // (and any other user_stats-derived UI). Default every numeric field to 0.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        gameMode = try c.decodeIfPresent(String.self, forKey: .gameMode) ?? ""
+        playType = try c.decodeIfPresent(String.self, forKey: .playType) ?? "solo"
+        wins = try c.decodeIfPresent(Int.self, forKey: .wins) ?? 0
+        losses = try c.decodeIfPresent(Int.self, forKey: .losses) ?? 0
+        totalGames = try c.decodeIfPresent(Int.self, forKey: .totalGames) ?? 0
+        bestScore = try c.decodeIfPresent(Int.self, forKey: .bestScore) ?? 0
+        averageTime = try c.decodeIfPresent(Int.self, forKey: .averageTime) ?? 0
+        fastestTime = try c.decodeIfPresent(Int.self, forKey: .fastestTime) ?? 0
+    }
 }
 
 /// Aggregated per-mode stats for one play_type (web profile filters by the

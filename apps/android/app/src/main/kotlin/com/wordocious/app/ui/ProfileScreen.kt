@@ -198,7 +198,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                     ProInsightsCard(proInsights, isProActive, onGoPro)
                 }
             } else if (!isProActive || stats.isNotEmpty()) {
-                ProStatsCard(stats, isProActive, onGoPro)
+                // Web parity (pro-stats.tsx): Pro Stats compute from SOLO rows only.
+                ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro)
             }
         }
 

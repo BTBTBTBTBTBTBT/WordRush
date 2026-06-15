@@ -469,7 +469,8 @@ private struct ProStatsCard: View {
 
     private func load() async {
         guard let uid = auth.profile?.id else { return }
-        let rows = await UserStatsService.fetch(userId: uid)
+        // Web parity (pro-stats.tsx): Pro Stats compute from SOLO rows only.
+        let rows = await UserStatsService.fetch(userId: uid).filter { $0.playType == "solo" }
         bars = Self.order.compactMap { mode in
             let mRows = rows.filter { $0.gameMode == mode }
             let games = mRows.reduce(0) { $0 + $1.totalGames }
