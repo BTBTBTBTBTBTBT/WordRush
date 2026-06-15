@@ -1,6 +1,7 @@
 package com.wordocious.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -99,6 +100,7 @@ fun HomeScreen(
     var playMode by remember { mutableStateOf(PlayMode.DAILY) }
     val unlimitedMode = isPro && playMode == PlayMode.UNLIMITED
     val signOutScope = androidx.compose.runtime.rememberCoroutineScope()
+    var inviteOpen by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
@@ -146,7 +148,7 @@ fun HomeScreen(
                 }
             }
 
-            LiveBanner()
+            LiveBanner(isPro = isPro, onInvite = { inviteOpen = true })
             // Sign Out (web + iOS home footer parity) — subtle muted text button.
             Row(
                 modifier = Modifier.fillMaxWidth()
@@ -183,6 +185,8 @@ fun HomeScreen(
             )
         }
     }
+    // Pro-only "Invite a friend to VS" modal (web InviteModal / iOS InviteSheet).
+    if (inviteOpen) InviteSheet(onDismiss = { inviteOpen = false })
 }
 
 /**
@@ -501,7 +505,7 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
 }
 
 @Composable
-private fun LiveBanner() {
+private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
     // Web useLivePlayerCount: poll {server}/presence every 10s for body.online;
     // null until the first success, keep last value on errors.
     val count by androidx.compose.runtime.produceState<Int?>(initialValue = null) {
@@ -539,6 +543,19 @@ private fun LiveBanner() {
             count?.let { "$it ${if (it == 1) "player" else "players"} online" } ?: "Players online",
             fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
         )
+        // Pro-only Invite button (web page.tsx + iOS HomeView LIVE banner parity).
+        if (isPro) {
+            Spacer(Modifier.weight(1f))
+            Text(
+                "Invite",
+                fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFFEC4899), Color(0xFFDB2777))))
+                    .clickable { onInvite() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
     }
 }
 

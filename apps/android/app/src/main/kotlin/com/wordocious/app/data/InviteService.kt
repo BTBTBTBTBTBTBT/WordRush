@@ -55,4 +55,58 @@ object InviteService {
             }
         }
     }
+
+    // MARK: Outgoing invites (home Invite modal — web lib/invite-service.ts createInvite)
+
+    /** Result of the home Invite modal — a shareable code or a user-facing error. */
+    data class InviteResult(val code: String?, val error: String?)
+
+    // No 0/O/1/I/l — easier to type (matches web CODE_ALPHABET + iOS).
+    private const val CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    private fun generateCode(length: Int = 8): String =
+        (0 until length).map { CODE_ALPHABET.random() }.joinToString("")
+
+    @Serializable
+    private data class IdRow(val id: String)
+
+    @Serializable
+    private data class InviteInsert(
+        @SerialName("inviter_id") val inviterId: String,
+        @SerialName("invitee_id") val inviteeId: String? = null,
+        @SerialName("invite_code") val inviteCode: String,
+        @SerialName("game_mode") val gameMode: String,
+    )
+
+    /**
+     * Create a VS invite for a mode. If [inviteeUsername] is non-empty the invite
+     * is targeted at that user (pending-invites badge); otherwise it's a public
+     * link anyone can redeem. Returns the shareable code, or a user-facing error.
+     * Retries a few times on the vanishingly unlikely unique-code collision.
+     */
+    suspend fun createInvite(gameMode: String, inviteeUsername: String?): InviteResult {
+        val uid = AuthService.userId?.lowercase()
+            ?: return InviteResult(null, "You're not signed in")
+
+        var inviteeId: String? = null
+        val uname = inviteeUsername?.trim()
+        if (!uname.isNullOrEmpty()) {
+            val row = runCatching {
+                client.postgrest["profiles"]
+                    .select(Columns.raw("id")) { filter { ilike("username", uname) }; limit(1) }
+                    .decodeSingleOrNull<IdRow>()
+            }.getOrNull() ?: return InviteResult(null, "User not found")
+            if (row.id.lowercase() == uid) return InviteResult(null, "You can't invite yourself")
+            inviteeId = row.id
+        }
+
+        repeat(3) {
+            val code = generateCode()
+            val ok = runCatching {
+                client.postgrest["match_invites"]
+                    .insert(InviteInsert(inviterId = uid, inviteeId = inviteeId, inviteCode = code, gameMode = gameMode))
+            }.isSuccess
+            if (ok) return InviteResult(code, null)
+        }
+        return InviteResult(null, "Could not generate a unique code")
+    }
 }
