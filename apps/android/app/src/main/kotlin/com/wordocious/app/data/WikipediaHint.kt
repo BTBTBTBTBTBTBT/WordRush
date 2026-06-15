@@ -26,7 +26,10 @@ object WikipediaHint {
         "Mon", "Tue", "Tues", "Wed", "Thu", "Thur", "Thurs", "Fri", "Sat", "Sun",
     )
 
-    suspend fun fetch(displayName: String, wikiTitle: String?): String? = withContext(Dispatchers.IO) {
+    // redact=false keeps the answer name in the text — the post-game result
+    // screen shows the full clue as the "definition" (proper nouns aren't in
+    // the dictionary).
+    suspend fun fetch(displayName: String, wikiTitle: String?, redact: Boolean = true): String? = withContext(Dispatchers.IO) {
         runCatching {
             val raw = (if (!wikiTitle.isNullOrEmpty()) wikiTitle else displayName)
                 .replace(Regex("\\s+"), "_")
@@ -42,7 +45,7 @@ object WikipediaHint {
             if (conn.responseCode !in 200..299) return@runCatching null
             val body = conn.inputStream.bufferedReader().use { it.readText() }
             val extract = json.parseToJsonElement(body).jsonObject["extract"]?.jsonPrimitive?.content
-            if (extract.isNullOrEmpty()) null else sanitize(extract, displayName)
+            if (extract.isNullOrEmpty()) null else sanitize(extract, displayName, redact)
         }.getOrNull()
     }
 
@@ -68,7 +71,7 @@ object WikipediaHint {
         }.getOrNull()
     }
 
-    private fun sanitize(extract: String, displayName: String): String {
+    private fun sanitize(extract: String, displayName: String, redact: Boolean = true): String {
         // Protect multi-letter capitalized abbreviations (U.S., U.K.).
         var s = protectDots(extract, "\\b([A-Z])\\.\\s?([A-Z])\\.(\\s?[A-Z]\\.)?", RegexOption.UNIX_LINES)
         // Protect common single-word abbreviations (case-insensitive).
@@ -80,6 +83,8 @@ object WikipediaHint {
         if (sentences.isEmpty()) sentences = listOf(s)
         var hint = sentences.take(2).joinToString(" ").trim()
         hint = hint.replace("###", ".")
+        // Post-game (redact=false) keeps the answer in the text.
+        if (!redact) return hint
         // Redact full name, then each word > 2 chars.
         val parts = displayName.split(Regex("\\s+")).filter { it.length > 2 }
         for (pattern in listOf(displayName) + parts) {

@@ -37,6 +37,14 @@ final class ProperNoundleVM: ObservableObject {
         wikiImageURL = await WikipediaHint.fetchImageURL(displayName: p.display, wikiTitle: p.wikiTitle)
     }
 
+    /// Full (un-redacted) Wikipedia clue for the result screen — doubles as the
+    /// definition (proper nouns aren't in the dictionary). Web parity.
+    @Published private(set) var resultClue: String?
+    func loadResultClue() async {
+        guard resultClue == nil, let p = puzzle else { return }
+        resultClue = await WikipediaHint.fetch(displayName: p.display, wikiTitle: p.wikiTitle, redact: false) ?? p.hint
+    }
+
     private var startMs = Date().timeIntervalSince1970 * 1000
     /// Reset the clock so the game-start ad's time isn't counted — but keep any
     /// elapsed time carried over from a restored session.
@@ -410,6 +418,13 @@ struct ProperNoundleView: View {
                 Text("Solved in \(vm.guesses.count) \(vm.guesses.count == 1 ? "guess" : "guesses") · \(pnTime(secs))")
                     .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
             }
+            // Full Wikipedia clue (un-redacted) — doubles as the definition.
+            if let clue = vm.resultClue {
+                Text(clue)
+                    .font(Brand.font(12, .medium)).foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24).padding(.top, 2)
+            }
             // Home / Share row (web parity).
             HStack(spacing: 18) {
                 Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
@@ -427,7 +442,7 @@ struct ProperNoundleView: View {
                                boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed)
         }
         .padding(.vertical, 12)
-        .task { await vm.loadWikiImage() }
+        .task { await vm.loadWikiImage(); await vm.loadResultClue() }
     }
 
     /// Web PN formatTime: "m:ss" at ≥1 minute, otherwise "Ns".

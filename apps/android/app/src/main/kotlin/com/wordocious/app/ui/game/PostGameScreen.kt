@@ -157,6 +157,17 @@ fun PostGameScreen(
                         color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444),
                     )
                 }
+                // Full (un-redacted) Wikipedia clue — doubles as the definition.
+                val clue by androidx.compose.runtime.produceState<String?>(initialValue = null, key1 = puzzle?.id) {
+                    value = puzzle?.let { com.wordocious.app.data.WikipediaHint.fetch(it.display, it.wikiTitle, redact = false) ?: it.hint }
+                }
+                clue?.let {
+                    Text(
+                        it, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    )
+                }
             }
             FinishedStatsHeader(
                 mode = mode, won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,

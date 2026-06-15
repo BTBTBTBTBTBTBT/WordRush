@@ -15,7 +15,7 @@ import { normalizeString, evaluateGuess, checkWin } from './game-logic';
 import { getDailyPuzzle, getRandomPuzzle, getDailyPuzzleNumber, getPuzzleById } from './puzzle-service';
 import { useHints, type PersistedHintState } from './use-hints';
 import Image from 'next/image';
-import { fetchWikipediaImage } from './wikipedia';
+import { fetchWikipediaImage, fetchWikipediaHint } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
 import { useAuth } from '@/lib/auth-context';
@@ -177,6 +177,9 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   const [playedIds, setPlayedIds] = useState<string[]>([]);
   const [wikiImageUrl, setWikiImageUrl] = useState<string | null>(null);
   const [wikiImageLoaded, setWikiImageLoaded] = useState(false);
+  // Full (un-redacted) Wikipedia clue shown on the result screen — doubles as
+  // the definition (proper nouns aren't in the dictionary).
+  const [resultClue, setResultClue] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const restoredDailyRef = useRef(false);
   const [xpResult, setXpResult] = useState<XpResult | null>(null);
@@ -289,6 +292,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
     setShowVictory(false);
     setWikiImageUrl(null);
     setWikiImageLoaded(false);
+    setResultClue(null);
     hints.resetHints();
   }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -351,13 +355,18 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       recordModePlayed('propernoundle');
       recordResult();
 
-      // Fetch Wikipedia image for result screen
+      // Fetch Wikipedia image + the full (un-redacted) clue for the result
+      // screen — the clue doubles as the definition once the puzzle is over.
       if (puzzle) {
         setWikiImageUrl(null);
         setWikiImageLoaded(false);
         fetchWikipediaImage(puzzle.display, puzzle.wikiTitle).then(url => {
           if (url) setWikiImageUrl(url);
         });
+        setResultClue(null);
+        fetchWikipediaHint(puzzle.display, puzzle.wikiTitle, false)
+          .then(text => setResultClue(text))
+          .catch(() => setResultClue(puzzle.hint ?? null));
       }
 
       // Save terminal state so returning shows the completed board —
@@ -590,6 +599,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
     hasRecordedRef.current = false;
     setWikiImageUrl(null);
     setWikiImageLoaded(false);
+    setResultClue(null);
     hints.resetHints();
   }, [puzzle, playedIds, hints]);
 
@@ -823,6 +833,9 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
                     <span className="text-xs text-gray-400">
                       Solved in {guesses.length} {guesses.length === 1 ? 'guess' : 'guesses'} · {formatTime(elapsedTime)}
                     </span>
+                  )}
+                  {resultClue && (
+                    <p className="text-xs text-gray-500 leading-snug mt-0.5">{resultClue}</p>
                   )}
                   <div className="flex items-center gap-3 mt-0.5">
                     <Link href="/" className="text-gray-400 text-xs font-bold underline">Home</Link>

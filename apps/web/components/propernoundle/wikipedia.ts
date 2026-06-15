@@ -10,7 +10,8 @@ interface WikiSummary {
 
 export async function fetchWikipediaHint(
   displayName: string,
-  wikiTitle?: string
+  wikiTitle?: string,
+  redact = true
 ): Promise<string> {
   const title = encodeURIComponent(
     (wikiTitle || displayName).replace(/\s+/g, '_')
@@ -30,7 +31,9 @@ export async function fetchWikipediaHint(
     throw new Error('No summary available');
   }
 
-  return sanitizeHint(data.extract, displayName);
+  // redact=false keeps the answer name in the text — used on the post-game
+  // result screen, where the full clue doubles as the "definition".
+  return sanitizeHint(data.extract, displayName, redact);
 }
 
 export async function fetchWikipediaImage(
@@ -71,7 +74,7 @@ const SINGLE_WORD_ABBREVIATIONS = [
   'Mon', 'Tue', 'Tues', 'Wed', 'Thu', 'Thur', 'Thurs', 'Fri', 'Sat', 'Sun',
 ];
 
-function sanitizeHint(extract: string, displayName: string): string {
+function sanitizeHint(extract: string, displayName: string, redact = true): string {
   // Protect multi-letter capitalized abbreviations like "U.S.", "U.K.", "D.C."
   let protected_ = extract.replace(/\b([A-Z])\.\s?([A-Z])\.(\s?[A-Z]\.)?/g, (m) => m.replace(/\./g, '###'));
 
@@ -90,6 +93,10 @@ function sanitizeHint(extract: string, displayName: string): string {
 
   // Restore abbreviation periods
   hint = hint.replace(/###/g, '.');
+
+  // Post-game (redact=false) keeps the answer in the text — the full clue is
+  // shown as the "definition" once the puzzle is over.
+  if (!redact) return hint;
 
   // Build patterns to redact: full name first, then each individual word (>2 chars)
   const nameParts = displayName.split(/\s+/).filter(p => p.length > 2);

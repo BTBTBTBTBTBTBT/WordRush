@@ -16,7 +16,10 @@ enum WikipediaHint {
 
     /// Returns the sanitized hint text, or nil on any failure (caller falls
     /// back to the puzzle's static hint — mirrors the web try/catch).
-    static func fetch(displayName: String, wikiTitle: String?) async -> String? {
+    /// `redact: false` keeps the answer name in the text — the post-game result
+    /// screen shows the full clue as the "definition" (proper nouns aren't in
+    /// the dictionary).
+    static func fetch(displayName: String, wikiTitle: String?, redact: Bool = true) async -> String? {
         let raw = (wikiTitle?.isEmpty == false ? wikiTitle! : displayName)
             .replacingOccurrences(of: "\\s+", with: "_", options: .regularExpression)
         guard let title = raw.addingPercentEncoding(withAllowedCharacters: allowed),
@@ -28,7 +31,7 @@ enum WikipediaHint {
             guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode),
                   let obj = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let extract = obj["extract"] as? String, !extract.isEmpty else { return nil }
-            return sanitize(extract, displayName: displayName)
+            return sanitize(extract, displayName: displayName, redact: redact)
         } catch {
             return nil
         }
@@ -64,7 +67,7 @@ enum WikipediaHint {
         "Mon", "Tue", "Tues", "Wed", "Thu", "Thur", "Thurs", "Fri", "Sat", "Sun",
     ]
 
-    private static func sanitize(_ extract: String, displayName: String) -> String {
+    private static func sanitize(_ extract: String, displayName: String, redact: Bool = true) -> String {
         // Protect multi-letter capitalized abbreviations like "U.S.", "U.K.".
         var s = protectDots(extract, pattern: "\\b([A-Z])\\.\\s?([A-Z])\\.(\\s?[A-Z]\\.)?")
         // Protect common single-word abbreviations (case-insensitive).
@@ -79,6 +82,8 @@ enum WikipediaHint {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         // Restore protected periods.
         hint = hint.replacingOccurrences(of: "###", with: ".")
+        // Post-game (redact=false) keeps the answer in the text.
+        guard redact else { return hint }
         // Redact the full name, then each word > 2 chars.
         let parts = displayName.split { $0.isWhitespace }.map(String.init).filter { $0.count > 2 }
         for pattern in ([displayName] + parts) {

@@ -59,7 +59,9 @@ struct SolvedPuzzleView: View {
                                            boardsSolved: d.won ? d.solutions.count : 0, totalBoards: d.solutions.count)
                         // Single-board modes (Classic / Six / Seven): word + definition,
                         // using the actual displayed board's solution (reliable).
-                        if let only = displayBoards(d).first, displayBoards(d).count == 1 {
+                        // ProperNoundle answers are proper nouns (not in the dictionary)
+                        // — its clue/photo stand in for the definition, so skip the card.
+                        if let only = displayBoards(d).first, displayBoards(d).count == 1, mode != .propernoundle {
                             DefinitionCard(solution: only.solution)
                         }
                     }
