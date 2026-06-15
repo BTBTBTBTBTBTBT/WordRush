@@ -7,6 +7,11 @@ import WordociousCore
 /// Pass `mode == nil` for the global "All" view, or a GameMode for per-mode.
 struct ProfileDashboard: View {
     let mode: GameMode?
+    /// All user_stats rows (both play_types) — passed down from ProfileTab so the
+    /// All-view Pro Stats charts never depend on their own fetch timing (the old
+    /// self-fetch could permanently early-return when auth.profile hydrated a
+    /// frame late, silently emptying the charts). Empty for the per-mode view.
+    var statRows: [UserStatRow] = []
 
     var body: some View {
         VStack(spacing: 12) {
@@ -15,11 +20,11 @@ struct ProfileDashboard: View {
             SolveTimeChart(mode: mode)
             TimeOfDayHeatmap(mode: mode)
             TopWordsCard(mode: mode)
-            // Per-mode Pro insights (selected mode) / global Pro Stats (All view)
-            // — both always render and self-gate: a locked "Upgrade to Pro"
-            // teaser for free users, real charts/stats for Pro. Mirrors the web
-            // pro-insights-card (per-mode) and pro-stats (All view).
-            if let mode { ProInsightsCard(mode: mode) } else { ProStatsCard() }
+            // Per-mode Pro insights (selected mode). On the All view the global
+            // Pro Stats card is rendered by ProfileTab AFTER the Insights + Medals
+            // sections, to match the web All-view order (…Insights → Medals →
+            // Pro Stats).
+            if let mode { ProInsightsCard(mode: mode) }
         }
     }
 }
@@ -154,6 +159,95 @@ private struct ActivityCalendarView: View {
             return intensity > 0.6 ? Color(hex: 0x7C3AED) : intensity > 0.3 ? Color(hex: 0xA78BFA) : Color(hex: 0xDDD6FE)
         }
         return intensity > 0.6 ? Color(hex: 0x7C3AED) : intensity > 0.3 ? Color(hex: 0xA78BFA) : Color(hex: 0xC4B5FD)
+    }
+}
+
+// MARK: - 7-day activity bars (web "LAST 7 DAYS")
+
+/// Web parity (profile/page.tsx section: "LAST 7 DAYS"): seven day-of-week bars
+/// of games played, with a header game count. Self-fetches the last 7 days from
+/// the 90-day activity calendar so it never depends on parent state timing.
+struct SevenDayActivityCard: View {
+    @State private var data: [MatchStatsService.DayActivity] = []
+
+    private var lastSeven: [MatchStatsService.DayActivity] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return (0..<7).reversed().compactMap { offset -> MatchStatsService.DayActivity in
+            let day = cal.date(byAdding: .day, value: -offset, to: today) ?? today
+            return data.first { cal.isDate($0.day, inSameDayAs: day) }
+                ?? MatchStatsService.DayActivity(day: day, played: 0, won: 0)
+        }
+    }
+
+    var body: some View {
+        let week = lastSeven
+        let total = week.reduce(0) { $0 + $1.played }
+        // Web parity: section hidden until there is activity to show.
+        Group {
+            if total > 0 {
+                let maxCount = max(1, week.map(\.played).max() ?? 1)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("LAST 7 DAYS").font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                        Spacer()
+                        Text("\(total) \(total == 1 ? "game" : "games")").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                    }
+                    HStack(alignment: .bottom, spacing: 6) {
+                        ForEach(Array(week.enumerated()), id: \.offset) { _, d in
+                            VStack(spacing: 4) {
+                                ZStack(alignment: .bottom) {
+                                    Color.clear.frame(height: 48)
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(d.played == 0 ? AnyShapeStyle(Theme.border)
+                                              : AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0x7C3AED)], startPoint: .top, endPoint: .bottom)))
+                                        .frame(height: d.played == 0 ? 3 : 6 + CGFloat(d.played) / CGFloat(maxCount) * 42)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                Text(dow(d.day)).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+                            }
+                        }
+                    }
+                }
+                .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            }
+        }
+        .task { data = await MatchStatsService.activityCalendar(days: 7) }
+    }
+
+    private func dow(_ d: Date) -> String {
+        let f = DateFormatter(); f.dateFormat = "EEEEE"; f.locale = Locale(identifier: "en_US")
+        return f.string(from: d)
+    }
+}
+
+// MARK: - Insights (web All-view INSIGHTS card)
+
+/// Web parity (profile/page.tsx "INSIGHTS"): up to 2 sparkle-prefixed insight
+/// lines. The strings are computed by ProfileTab (which holds profile + stats +
+/// dailies state) and passed in; the card hides when there are none.
+struct ProfileInsightsCard: View {
+    let insights: [String]
+    var body: some View {
+        if !insights.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("INSIGHTS").font(Brand.font(11, .heavy)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(Array(insights.enumerated()), id: \.offset) { _, text in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "sparkles").font(.system(size: 13)).foregroundStyle(Color(hex: 0x7C3AED))
+                            Text(text).font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+                .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 16).fill(LinearGradient(colors: [Color(hex: 0xF5F3FF), Color(hex: 0xEEF2FF)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xDDD6FE), lineWidth: 1.5))
+            }
+        }
     }
 }
 
@@ -418,9 +512,12 @@ private struct ProInsightsCard: View {
 /// Avg Solve Time by Mode. Ports the web pro-stats.tsx (locked teaser for free
 /// users, the two charts for Pro). Data from user_stats (combined solo+vs, the
 /// native convention).
-private struct ProStatsCard: View {
+struct ProStatsCard: View {
+    /// user_stats rows handed down from ProfileTab (already fetched once for the
+    /// whole profile). Computing bars from these instead of a private fetch fixes
+    /// the All-view Pro Stats showing nothing for a Pro user with data.
+    let statRows: [UserStatRow]
     @ObservedObject private var auth = AuthService.shared
-    @State private var bars: [ModeBar] = []
     @State private var showPro = false
 
     struct ModeBar: Identifiable { var id: String { label }; let label: String; let winRate: Double; let avgTime: Int }
@@ -429,6 +526,23 @@ private struct ProStatsCard: View {
     private static let order = ["DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE"]
     private static let label = ["DUEL": "Classic", "QUORDLE": "Quad", "OCTORDLE": "Octo", "SEQUENCE": "Succ",
                                 "RESCUE": "Deliv", "DUEL_6": "Six", "DUEL_7": "Seven", "GAUNTLET": "Gaunt", "PROPERNOUNDLE": "Proper"]
+
+    /// Derived synchronously from statRows — no async, no fetch-timing race.
+    /// Web parity (pro-stats.tsx): Pro Stats compute from SOLO rows only.
+    private var bars: [ModeBar] {
+        let rows = statRows.filter { $0.playType == "solo" }
+        return Self.order.compactMap { mode in
+            let mRows = rows.filter { $0.gameMode == mode }
+            let games = mRows.reduce(0) { $0 + $1.totalGames }
+            guard games > 0 else { return nil }
+            let wins = mRows.reduce(0) { $0 + $1.wins }
+            // Games-weighted average solve time across this mode's rows.
+            let weighted = mRows.reduce(0) { $0 + $1.averageTime * $1.totalGames }
+            return ModeBar(label: Self.label[mode] ?? mode,
+                           winRate: Double(wins) / Double(games) * 100,
+                           avgTime: weighted / games)
+        }
+    }
 
     var body: some View {
         // Web parity: pro-stats.tsx returns null for a Pro user with no data —
@@ -463,25 +577,7 @@ private struct ProStatsCard: View {
                 }
             }
         }
-        .task(id: auth.isProActive) { if auth.isProActive { await load() } }
         .sheet(isPresented: $showPro) { ProView() }
-    }
-
-    private func load() async {
-        guard let uid = auth.profile?.id else { return }
-        // Web parity (pro-stats.tsx): Pro Stats compute from SOLO rows only.
-        let rows = await UserStatsService.fetch(userId: uid).filter { $0.playType == "solo" }
-        bars = Self.order.compactMap { mode in
-            let mRows = rows.filter { $0.gameMode == mode }
-            let games = mRows.reduce(0) { $0 + $1.totalGames }
-            guard games > 0 else { return nil }
-            let wins = mRows.reduce(0) { $0 + $1.wins }
-            // Games-weighted average solve time across this mode's rows.
-            let weighted = mRows.reduce(0) { $0 + $1.averageTime * $1.totalGames }
-            return ModeBar(label: Self.label[mode] ?? mode,
-                           winRate: Double(wins) / Double(games) * 100,
-                           avgTime: weighted / games)
-        }
     }
 
     private var locked: some View {

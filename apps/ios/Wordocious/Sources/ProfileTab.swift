@@ -22,6 +22,14 @@ struct ProfileTab: View {
     @State private var opponentNames: [String: String] = [:]
     @State private var recentLoading = true
     @State private var showEditProfile = false
+    // Account section (web parity): notification toggle + Delete Account flow.
+    @AppStorage("pref-daily-reminder") private var dailyReminder = false
+    @State private var reminderDenied = false
+    @State private var showDeleteConfirm = false
+    @State private var deleting = false
+    @State private var deleteError = false
+    // Games played in the last 7 days — powers the Insights "this week" line.
+    @State private var sevenDayTotal = 0
 
     // Mode-picker (per-mode stats) only covers modes backed by a GameMode enum.
     private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
@@ -51,6 +59,14 @@ struct ProfileTab: View {
                     recentMatches = await PublicProfileService.recentMatches(id: uid)
                     let oppIds = Array(Set(recentMatches.compactMap { $0.opponentId(uid) }))
                     opponentNames = await PublicProfileService.usernames(ids: oppIds)
+                    // Last-7-days game count for the Insights "this week" line.
+                    let cal = Calendar.current
+                    let today = cal.startOfDay(for: Date())
+                    let week = await MatchStatsService.activityCalendar(days: 7)
+                    sevenDayTotal = week.filter {
+                        guard let cutoff = cal.date(byAdding: .day, value: -6, to: today) else { return true }
+                        return $0.day >= cutoff
+                    }.reduce(0) { $0 + $1.played }
                     recentLoading = false
                 }
             }
@@ -71,26 +87,145 @@ struct ProfileTab: View {
     }
 
     private func content(_ p: Profile) -> some View {
+        // Web order (profile/page.tsx): header → Today's Dailies → Global Summary
+        // → Solo/VS toggle + (VS card) + Mode Picker → [All view: charts, 7-day,
+        // Insights, Daily Medals, Pro Stats | Mode view: mode stats + per-mode
+        // dashboard] → Recent Matches → Achievements → Account (notifications,
+        // Sign Out, Delete Account).
         ScrollView {
             VStack(spacing: 16) {
                 header(p)
                 todaysDailies
                 globalSummary(p)
-                medalsSection(p)
                 soloVsToggle
                 if activeTab == "vs" { vsRecordCard }
                 ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(filteredStats), selected: $selectedMode)
-                if let mode = selectedMode { modeStats(p, mode: mode) }
-                ProfileDashboard(mode: selectedMode)
+                if let mode = selectedMode {
+                    // Mode-detail view.
+                    modeStats(p, mode: mode)
+                    ProfileDashboard(mode: mode)
+                } else {
+                    // "All" global view — charts, then 7-day, Insights, Daily
+                    // Medals, and Pro Stats (web All-view order).
+                    ProfileDashboard(mode: nil)
+                    SevenDayActivityCard()
+                    ProfileInsightsCard(insights: allViewInsights(p))
+                    medalsSection(p)
+                    ProStatsCard(statRows: statRows)
+                }
                 recentMatchesSection(p)
                 achievementsSection
-                Button { Task { await auth.signOut() } } label: {
-                    Text("Sign out").font(Brand.body(15)).frame(maxWidth: .infinity).frame(height: 46)
-                }
-                .buttonStyle(.bordered).tint(Theme.textSecondary)
+                accountSection
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
+            .padding(.horizontal, 12).padding(.top, 8)
+            // Web parity: the Account actions stay scrollable above the custom
+            // bottom nav + ad banner. The safeAreaInsets push content up, but add
+            // breathing room so Sign Out / Delete Account never sit flush against
+            // them.
+            .padding(.bottom, 32)
         }
+    }
+
+    /// Account actions — ports profile/page.tsx section H (notification toggle,
+    /// Sign Out, Delete Account with confirm).
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("ACCOUNT").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+            // Daily reminder toggle (web NotificationToggle).
+            Toggle(isOn: $dailyReminder) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Daily Reminders").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                    Text("A nudge to play today's puzzles").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                }
+            }
+            .tint(Theme.primary).padding(14)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+
+            Button { Task { await auth.signOut() } } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "rectangle.portrait.and.arrow.right").font(.system(size: 18)).foregroundStyle(Theme.textMuted)
+                    Text("Sign Out").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                }
+                .padding(16)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            }.buttonStyle(.plain)
+
+            Button(role: .destructive) { showDeleteConfirm = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "trash").font(.system(size: 18)).foregroundStyle(Color(hex: 0xDC2626))
+                    Text("Delete Account").font(Brand.font(14, .heavy)).foregroundStyle(Color(hex: 0xDC2626))
+                    Spacer()
+                }
+                .padding(16)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xFECACA), lineWidth: 1.5))
+            }.buttonStyle(.plain).disabled(deleting)
+        }
+        .onChange(of: dailyReminder) { on in
+            if on {
+                Task {
+                    let granted = await NotificationService.requestAndSchedule()
+                    if !granted { dailyReminder = false; reminderDenied = true }
+                }
+            } else {
+                NotificationService.cancel()
+            }
+        }
+        .alert("Notifications are off", isPresented: $reminderDenied) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Enable notifications for Wordocious in iOS Settings to get a daily reminder.")
+        }
+        .alert("Delete your account?", isPresented: $showDeleteConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button(deleting ? "Deleting…" : "Delete Forever", role: .destructive) {
+                deleting = true
+                Task { let ok = await auth.deleteAccount(); deleting = false; if !ok { deleteError = true } }
+            }.disabled(deleting)
+        } message: {
+            Text("This will permanently delete your profile, stats, streak, medals, achievements, and all game data. This action cannot be undone.")
+        }
+        .alert("Couldn't delete account", isPresented: $deleteError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Please try again or contact support@wordocious.com.")
+        }
+    }
+
+    /// Insight strings for the All view — ports the web `insights` IIFE
+    /// (profile/page.tsx): strongest mode, weekly volume, XP-to-next, dailies.
+    /// Capped at 2, matching `.slice(0, 2)`.
+    private func allViewInsights(_ p: Profile) -> [String] {
+        var out: [String] = []
+        // Strongest mode by win rate among modes with ≥3 games (all play types,
+        // matching the web which uses the unfiltered `stats`).
+        let qualifying = statRows.filter { $0.totalGames >= 3 }
+        if let strongest = qualifying.max(by: {
+            (Double($0.wins) / Double(max($0.totalGames, 1))) < (Double($1.wins) / Double(max($1.totalGames, 1)))
+        }) {
+            let name = GameMode(rawValue: strongest.gameMode).map { ModeStyle.title($0) } ?? strongest.gameMode
+            let rate = Int((Double(strongest.wins) / Double(strongest.totalGames) * 100).rounded())
+            out.append("Your strongest mode is \(name) at \(rate)% win rate.")
+        }
+        // Weekly volume.
+        let weekTotal = sevenDayTotal
+        if weekTotal >= 10 { out.append("You've played \(weekTotal) games this week — on a roll!") }
+        else if weekTotal >= 1 && weekTotal < 5 { out.append("Only \(weekTotal) game\(weekTotal == 1 ? "" : "s") this week — warm up with a daily.") }
+        // XP to next level.
+        let toNext = 1000 - (p.xp % 1000)
+        if toNext <= 300 { out.append("Just \(toNext) XP away from Level \(p.level + 1).") }
+        // Dailies progress.
+        let done = completions.completedCount
+        let total = DailyCompletionsStore.totalDailyModes
+        if done == total {
+            out.append(completions.flawless ? "Flawless Victory — all \(total) dailies won today." : "All \(total) dailies done today. Legendary.")
+        } else if done >= 3 {
+            out.append("\(done)/\(total) dailies complete today — keep going.")
+        }
+        return Array(out.prefix(2))
     }
 
     // MARK: Header

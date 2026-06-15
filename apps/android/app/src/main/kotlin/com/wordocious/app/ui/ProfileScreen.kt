@@ -16,14 +16,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -33,8 +37,7 @@ import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -97,6 +100,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     // Solo/VS toggle (web profile/page.tsx) — filters user_stats by play_type.
     var activeTab by remember { mutableStateOf("solo") }
     var loading by remember { mutableStateOf(true) }
+    // Account section (web §H) — Delete Account inline confirm + error/in-flight state.
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleting by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf(false) }
 
     val userId = profile?.id
     LaunchedEffect(userId) {
@@ -120,7 +127,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         val uid = userId ?: return@LaunchedEffect
         val m = selectedMode
         guessDist = com.wordocious.app.data.MatchStatsService.guessDistribution(uid, m)
-        activity7 = com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = m)
+        // LAST 7 DAYS is GLOBAL (web fetchActivityByDay takes no mode) and only
+        // rendered in the All view — load it unfiltered.
+        activity7 = com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = null)
         solveTimes = com.wordocious.app.data.MatchStatsService.solveTimes(uid, m)
         timeOfDay = com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m)
         topWords = com.wordocious.app.data.MatchStatsService.topWords(uid, m)
@@ -129,7 +138,12 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().background(WTheme.bg).padding(horizontal = 16.dp),
+        // navigationBarsPadding keeps the bottom of the scroll (Sign Out / Delete
+        // Account) clear of the system gesture-nav inset; the host Scaffold already
+        // reserves the bottom-nav height. Extra 24dp tail matches web's pb-32.
+        modifier = Modifier.fillMaxSize().background(WTheme.bg).navigationBarsPadding()
+            .padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { Spacer(Modifier.height(8.dp)) }
@@ -172,7 +186,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         if (selectedMode == null && activityCal.any { it.played > 0 }) {
             item { DailyCalendarCard(activityCal) }
         }
-        if (activity7.isNotEmpty()) {
+        // LAST 7 DAYS — All view only (web renders it inside the selectedMode===null block).
+        if (selectedMode == null && activity7.isNotEmpty()) {
             item { ActivityCard(activity7) }
         }
         // Web parity: these two charts stay VISIBLE when empty, with
@@ -185,7 +200,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         if (topWords.isNotEmpty()) {
             item { TopWordsCard(topWords) }
         }
-        if (timeOfDay.any { it.played > 0 }) {
+        // WHEN YOU PLAY (time-of-day) — mode view only. On web it lives INSIDE the
+        // per-mode ProInsights card, never standalone in the All view.
+        if (selectedMode != null && timeOfDay.any { it.played > 0 }) {
             item { WhenYouPlayCard(timeOfDay) }
         }
         // Per-mode Pro Insights (selected mode) / global Pro Stats (All view) —
@@ -256,15 +273,90 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             }
         }
 
-        // ── F. Sign out ───────────────────────────────────────────
+        // ── H. Account (web profile/page.tsx §H) ──────────────────
+        // Sign Out + Delete Account (inline confirm). Web also has a
+        // NotificationToggle here; Android has no notification backend yet,
+        // so it's intentionally omitted until notifications are wired.
         item {
-            Spacer(Modifier.height(8.dp))
-            Button(
-                onClick = { scope.launch { AuthService.signOut() } },
-                modifier = Modifier.fillMaxWidth().height(44.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = WTheme.surfaceAlt),
-            ) { Text("Sign Out", color = WTheme.textSecondary, fontWeight = FontWeight.Black) }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(4.dp))
+            SectionLabel("ACCOUNT")
+        }
+        item {
+            // Sign Out — surface card with logout icon (web parity).
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+                    .clickableNoRipple { scope.launch { AuthService.signOut() } }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, null, tint = WTheme.textMuted, modifier = Modifier.size(20.dp))
+                Text("Sign Out", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+            }
+        }
+        item {
+            if (!showDeleteConfirm) {
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                        .border(1.5.dp, Color(0xFFFECACA), RoundedCornerShape(16.dp))
+                        .clickableNoRipple { showDeleteConfirm = true }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Filled.DeleteOutline, null, tint = Color(0xFFDC2626), modifier = Modifier.size(20.dp))
+                    Text("Delete Account", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFDC2626))
+                }
+            } else {
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFFFEF2F2))
+                        .border(1.5.dp, Color(0xFFFECACA), RoundedCornerShape(16.dp)).padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Filled.Warning, null, tint = Color(0xFFDC2626), modifier = Modifier.size(20.dp))
+                        Text("Delete your account?", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFDC2626))
+                    }
+                    Text(
+                        "This will permanently delete your profile, stats, streak, medals, achievements, and all game data. This action cannot be undone.",
+                        fontSize = 12.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary, lineHeight = 18.sp,
+                    )
+                    if (deleteError) {
+                        Text(
+                            "Couldn't delete account. Please try again or contact support@wordocious.com.",
+                            fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(
+                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
+                                .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+                                .clickableNoRipple { if (!deleting) showDeleteConfirm = false }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { Text("Cancel", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text) }
+                        Box(
+                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(Color(0xFFDC2626))
+                                .clickableNoRipple {
+                                    if (!deleting) {
+                                        deleting = true; deleteError = false
+                                        scope.launch {
+                                            val ok = AuthService.deleteAccount()
+                                            deleting = false
+                                            if (ok) showDeleteConfirm = false else deleteError = true
+                                        }
+                                    }
+                                }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                if (deleting) "Deleting…" else "Delete Forever",
+                                fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

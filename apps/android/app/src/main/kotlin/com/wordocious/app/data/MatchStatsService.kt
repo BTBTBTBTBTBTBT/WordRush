@@ -137,24 +137,34 @@ object MatchStatsService {
     }.getOrElse { emptyList() }
 
     // ── Activity ─────────────────────────────────────────────────────────────────
-    /** Per-day played/won over the last [days] (most recent first → chronological). */
+    /**
+     * Per-day played/won over the last [days] — zero-seeded contiguous days,
+     * oldest→newest (web fetchActivityByDay parity: player1 OR player2, UTC date
+     * buckets, gapless so the LAST 7 DAYS chart has a bar for every day).
+     */
     suspend fun activity(userId: String, days: Int = 7, mode: String? = null): List<DayActivity> = runCatching {
+        val today = java.time.LocalDate.now(java.time.ZoneOffset.UTC)
+        val start = today.minusDays((days - 1).toLong())
+        val sinceIso = start.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toString()
         val rows = client.postgrest["matches"]
             .select(Columns.raw("created_at,winner_id")) {
-                filter { eq("player1_id", userId); mode?.let { eq("game_mode", it) } }
-                order("created_at", Order.DESCENDING)
+                filter {
+                    or { eq("player1_id", userId); eq("player2_id", userId) }
+                    mode?.let { eq("game_mode", it) }
+                    gte("created_at", sinceIso)
+                }
                 limit(2000)
             }
             .decodeList<DateRow>()
+        // Pre-seed every day in the window with zeroes (chronological order).
         val byDay = LinkedHashMap<String, IntArray>()  // day -> [played, won]
+        var d = start
+        while (!d.isAfter(today)) { byDay[d.toString()] = intArrayOf(0, 0); d = d.plusDays(1) }
         rows.forEach { r ->
             val day = r.createdAt.take(10)
-            if (day.length == 10) {
-                val e = byDay.getOrPut(day) { intArrayOf(0, 0) }
-                e[0]++; if (r.winnerId == userId) e[1]++
-            }
+            byDay[day]?.let { it[0]++; if (r.winnerId == userId) it[1]++ }
         }
-        byDay.entries.take(days).map { DayActivity(it.key, it.value[0], it.value[1]) }.sortedBy { it.day }
+        byDay.entries.map { DayActivity(it.key, it.value[0], it.value[1]) }
     }.getOrElse { emptyList() }
 
     /**
