@@ -105,7 +105,7 @@ fun PostGameScreen(
                 wordGroups = pn?.display?.split(" ")?.map { it.length }?.takeIf { it.size > 1 },
             )
         }.getOrNull()
-        if (bitmap != null) com.wordocious.app.data.ShareImage.share(context, bitmap, text)
+        if (bitmap != null) com.wordocious.app.data.ShareImage.share(context, bitmap, text, state, mode, elapsedSeconds)
         else com.wordocious.app.data.ShareHelper.share(context, text)
     }
 

@@ -10,6 +10,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import com.wordocious.app.R
@@ -19,6 +20,12 @@ import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
 import com.wordocious.core.TileState
 import com.wordocious.core.evaluateGuess
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -301,25 +308,105 @@ object ShareImage {
         }
     }
 
-    /** Share the rendered card + text via the system sheet (FileProvider PNG). */
-    fun share(context: Context, bitmap: Bitmap, text: String) {
-        runCatching {
+    /**
+     * Share the rendered card + text via the system sheet (FileProvider PNG).
+     *
+     * Mirrors iOS ShareService: first uploads the PNG to the public
+     * `share-images/<uid>/<ShareMode>-<date>.png` bucket and appends the matching
+     * https://wordocious.com/s/<key>?… hosted-result URL to the share text (so
+     * Messages/social previews resolve to a rich card). The image attachment is
+     * always included; if the upload can't happen (signed out / failure) we just
+     * drop the hosted link and share image + text — same fallback as iOS.
+     */
+    fun share(
+        context: Context, bitmap: Bitmap, text: String,
+        state: GameState, mode: GameMode, elapsedSeconds: Int,
+    ) {
+        val uri = runCatching {
             val dir = File(context.cacheDir, "share").apply { mkdirs() }
             val file = File(dir, "wordocious-share.png")
             file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "image/png"
-                putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_TEXT, text)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        }.getOrNull()
+        if (uri == null) { ShareHelper.share(context, text); return }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val url = uploadAndBuildUrl(bitmap, state, mode, elapsedSeconds)
+            val finalText = if (url != null) "$text\n$url" else text
+            withContext(Dispatchers.Main) {
+                runCatching {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(Intent.EXTRA_TEXT, finalText)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share your result").apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+                }.onFailure {
+                    // Fall back to the text-only share if the sheet can't open.
+                    ShareHelper.share(context, finalText)
+                }
             }
-            context.startActivity(Intent.createChooser(intent, "Share your result").apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
-        }.onFailure {
-            // Fall back to the text-only share if rendering/IO fails.
-            ShareHelper.share(context, text)
         }
     }
+
+    /** ShareMode strings the web /s/[...key] route + iOS ShareService use. */
+    private fun shareMode(mode: GameMode): String = when (mode) {
+        GameMode.DUEL -> "Classic"
+        GameMode.QUORDLE -> "QuadWord"
+        GameMode.OCTORDLE -> "OctoWord"
+        GameMode.SEQUENCE -> "Succession"
+        GameMode.RESCUE -> "Deliverance"
+        GameMode.DUEL_6 -> "Six"
+        GameMode.DUEL_7 -> "Seven"
+        GameMode.GAUNTLET -> "Gauntlet"
+        GameMode.PROPERNOUNDLE -> "ProperNoundle"
+        else -> mode.name
+    }
+
+    /**
+     * Upload the PNG to `share-images/<uid>/<ShareMode>-<date>.png` and return the
+     * matching https://wordocious.com/s/<uid>/<ShareMode>-<date> URL with the
+     * result stats in its query (consumed by app/s/[...key]). Null if signed out
+     * or the upload fails — caller then shares image + text only.
+     */
+    private suspend fun uploadAndBuildUrl(
+        bitmap: Bitmap, state: GameState, mode: GameMode, elapsedSeconds: Int,
+    ): String? = runCatching {
+        // RLS keys the folder on auth.uid()::text, which is lowercase.
+        val uid = AuthService.userId?.lowercase() ?: return null
+
+        val sm = shareMode(mode)
+        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val key = "$uid/$sm-$dateStr"
+
+        val png = ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it); it.toByteArray() }
+        SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
+
+        val won = state.status == GameStatus.WON
+        // Longest board's guess count = the complete shared history (solved
+        // boards stop accumulating) — same MAX semantics as the recorded score.
+        val guesses = state.boards.maxOfOrNull { it.guesses.size } ?: 0
+        val maxGuesses = state.boards.maxOfOrNull { it.maxGuesses } ?: 0
+        val isVertical = mode == GameMode.OCTORDLE || mode == GameMode.GAUNTLET
+
+        val q = linkedMapOf(
+            "m" to sm, "won" to if (won) "1" else "0",
+            "g" to "$guesses", "mg" to "$maxGuesses", "t" to "$elapsedSeconds",
+            "w" to "1080", "h" to if (isVertical) "1350" else "1080",
+            "v" to "${if (won) "w" else "x"}$guesses-$elapsedSeconds",
+        )
+        val gauntlet = state.gauntlet
+        if (gauntlet != null) {
+            q["sc"] = "${gauntlet.stageResults.count { it.status == GameStatus.WON }}"
+            q["ts"] = "${gauntlet.totalStages}"
+        } else if (state.boards.size > 1) {
+            q["bs"] = "${if (won) state.boards.size else state.boards.count { it.status == GameStatus.WON }}"
+            q["tb"] = "${state.boards.size}"
+        }
+
+        "https://wordocious.com/s/$key?" + q.entries.joinToString("&") { "${it.key}=${Uri.encode(it.value)}" }
+    }.getOrNull()
 }
