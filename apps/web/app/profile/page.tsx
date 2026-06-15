@@ -294,7 +294,7 @@ export default function ProfilePage() {
   })();
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className="min-h-screen pb-32" style={{ backgroundColor: 'var(--color-bg)' }}>
       <AppHeader />
 
       <div className="max-w-2xl mx-auto px-4 space-y-4">

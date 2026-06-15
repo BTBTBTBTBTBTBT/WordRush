@@ -21,6 +21,8 @@ const MODE_LABELS: Record<string, string> = {
   RESCUE: 'Deliv.',
   PROPERNOUNDLE: 'Proper',
   TOURNAMENT: 'Tourney',
+  DUEL_6: 'Six',   // were falling through to the raw enum key ("DUEL_6"/"DUEL_7")
+  DUEL_7: 'Seven',
 };
 
 function formatTime(seconds: number): string {
