@@ -305,6 +305,28 @@ class GameViewModel(
         persist()
     }
 
+    /** True when the live Gauntlet stage is cleared (all boards won, run still
+     *  in progress) — drives the stage-transition overlay (iOS stageCleared). */
+    val gauntletStageCleared: Boolean
+        get() = mode == GameMode.GAUNTLET && _state.value.status == GameStatus.PLAYING &&
+            _state.value.boards.isNotEmpty() && _state.value.boards.all { it.status == GameStatus.WON }
+
+    /** Advance to the next Gauntlet stage (or finish the run on the last stage).
+     *  Mirrors iOS GameViewModel.nextStage(): NEXT_STAGE records the cleared
+     *  stage + sets up the next, or flips the run to WON. When the run finishes
+     *  here, freeze the timer + persist elapsed exactly like submit() does. */
+    fun advanceGauntletStage() {
+        if (!gauntletStageCleared) return
+        _state.value = gameReducer(_state.value, GameAction.NextStage(elapsedMs = elapsedSeconds().toDouble() * 1000.0))
+        persist()
+        if (_state.value.status != GameStatus.PLAYING) {
+            flushTimer()
+            val finishElapsed = elapsedSeconds()
+            _elapsed.value = finishElapsed
+            if (!isVersus) GamePersistence.saveElapsed(seed, mode, finishElapsed)
+        }
+    }
+
     private fun persist() { if (!isVersus) GamePersistence.save(seed, mode, _state.value) }
 
     // ── Hints (Six / Seven / ProperNoundle) ──────────────────────────────────

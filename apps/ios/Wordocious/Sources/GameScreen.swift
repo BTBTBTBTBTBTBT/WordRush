@@ -429,6 +429,16 @@ private struct StageTransitionOverlay: View {
                     Text("STAGE COMPLETE").font(Brand.font(12, .black)).tracking(1.2).foregroundStyle(Color(hex: 0xA78BFA))
                     Text(completedName).font(Brand.font(18, .bold)).foregroundStyle(.white.opacity(0.6))
                 }
+                // Final stage (no next): wait for a tap so the player can take in
+                // the cleared run before the results screen, instead of the 2.5s
+                // auto-advance used between stages.
+                if next == nil {
+                    Text("Tap to see your results")
+                        .font(Brand.font(13, .black)).foregroundStyle(.white.opacity(0.85))
+                        .padding(.horizontal, 16).padding(.vertical, 9)
+                        .background(Capsule().fill(Color(hex: 0x8B5CF6).opacity(0.35)))
+                        .overlay(Capsule().stroke(Color(hex: 0xA78BFA), lineWidth: 1.5))
+                }
                 if let n = next {
                     VStack(spacing: 6) {
                         HStack(spacing: 6) {
@@ -448,6 +458,10 @@ private struct StageTransitionOverlay: View {
         .contentShape(Rectangle())
         .onTapGesture { onAdvance() }
         .task {
+            // Between stages: auto-advance after 2.5s (web StageTransition).
+            // After the FINAL stage: no auto-advance — the player taps to move
+            // on to the results screen so the run's finish isn't rushed.
+            guard next != nil else { return }
             try? await Task.sleep(nanoseconds: 2_500_000_000)
             onAdvance()
         }

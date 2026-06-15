@@ -60,7 +60,11 @@ fun StageTransitionOverlay(
     next: GauntletStageConfig?,
     onComplete: () -> Unit,
 ) {
+    // Between stages: auto-advance after 2.5s (web StageTransition). After the
+    // FINAL stage (next == null): no auto-advance — the player taps to move on
+    // to the results screen so the run's finish isn't rushed.
     LaunchedEffect(completed.stageIndex) {
+        if (next == null) return@LaunchedEffect
         delay(2500)
         onComplete()
     }
@@ -83,6 +87,18 @@ fun StageTransitionOverlay(
                     color = Color(0xFFA78BFA), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
                 )
                 Text(completed.name, color = Color.White.copy(alpha = 0.6f), fontSize = 17.sp, fontWeight = FontWeight.Bold)
+            }
+            // Final stage: prompt the player to tap when ready (no auto-advance).
+            if (next == null) {
+                Text(
+                    "Tap to see your results",
+                    color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp, fontWeight = FontWeight.Black,
+                    modifier = Modifier
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+                        .background(Color(0xFF8B5CF6).copy(alpha = 0.35f))
+                        .border(1.5.dp, Color(0xFFA78BFA), androidx.compose.foundation.shape.RoundedCornerShape(50))
+                        .padding(horizontal = 16.dp, vertical = 9.dp),
+                )
             }
             if (next != null) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {

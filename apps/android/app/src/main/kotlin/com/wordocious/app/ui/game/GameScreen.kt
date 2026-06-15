@@ -610,23 +610,22 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         // Sound toggle (top-right) — web SoundToggle sits on every game header.
         SoundToggleButton(accent = accent, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
 
-        // Gauntlet stage-transition interstitial (web stage-transition.tsx):
-        // shown when currentStage advances while the run is still live.
-        if (mode == GameMode.GAUNTLET) {
-            var transition by remember {
-                mutableStateOf<Pair<com.wordocious.core.GauntletStageConfig, com.wordocious.core.GauntletStageConfig?>?>(null)
-            }
-            var lastStage by remember { mutableStateOf(state.gauntlet?.currentStage ?: 0) }
-            LaunchedEffect(state.gauntlet?.currentStage) {
-                val g = state.gauntlet ?: return@LaunchedEffect
-                if (g.currentStage > lastStage && state.status == GameStatus.PLAYING) {
-                    transition = g.stages[lastStage] to g.stages.getOrNull(g.currentStage)
-                }
-                lastStage = g.currentStage
-            }
-            transition?.let { (done, next) ->
-                StageTransitionOverlay(completed = done, next = next) { transition = null }
-            }
+        // Gauntlet stage-transition interstitial (web stage-transition.tsx /
+        // iOS stageCleared): shown the moment every board in the current stage
+        // is won and the run is still live. Tapping (or, between stages, the
+        // 2.5s auto-advance) dispatches NEXT_STAGE — which records the cleared
+        // stage and either sets up the next stage or finishes the run. The
+        // FINAL stage waits for a manual tap (StageTransitionOverlay gates its
+        // auto-advance on `next != null`) so the run's finish isn't rushed.
+        val gauntlet = state.gauntlet
+        if (mode == GameMode.GAUNTLET && gauntlet != null &&
+            state.status == GameStatus.PLAYING && state.boards.isNotEmpty() &&
+            state.boards.all { it.status == GameStatus.WON }
+        ) {
+            StageTransitionOverlay(
+                completed = gauntlet.stages[gauntlet.currentStage],
+                next = gauntlet.stages.getOrNull(gauntlet.currentStage + 1),
+            ) { vm.advanceGauntletStage() }
         }
 
         // Rejection toast — web: absolute @ top 90px, dark pill, white 12px bold
