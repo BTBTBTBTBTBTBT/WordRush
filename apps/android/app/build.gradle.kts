@@ -15,7 +15,7 @@ android {
         applicationId = "com.wordocious.app"
         minSdk = 26          // Android 8.0 — matches the modern install base; web/iOS parity not affected
         targetSdk = 34
-        versionCode = 1
+        versionCode = 24
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }
     }
