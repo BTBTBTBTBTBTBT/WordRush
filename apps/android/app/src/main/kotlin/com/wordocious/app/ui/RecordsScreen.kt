@@ -16,8 +16,11 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Schedule
@@ -111,18 +114,20 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
 @Composable
 private fun DailyRecordsTab() {
     var selectedMode by remember { mutableStateOf("DUEL") }
+    var playType by remember { mutableStateOf("solo") }
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
-    LaunchedEffect(selectedMode) {
+    LaunchedEffect(selectedMode, playType) {
         loading = true
-        entries = LeaderboardService.fetchDailyLeaderboard(selectedMode)
+        entries = LeaderboardService.fetchDailyLeaderboard(selectedMode, playType)
         loading = false
     }
 
     Column {
         ModePickerRow(selectedMode) { selectedMode = it }
+        SoloVsToggle(playType) { playType = it }
 
         if (loading) {
             // Web parity: animate-pulse skeleton rows, not a spinner.
@@ -139,10 +144,39 @@ private fun DailyRecordsTab() {
                 item { Spacer(Modifier.height(8.dp)) }
                 items(entries) { entry ->
                     val rank = entries.indexOf(entry) + 1
-                    LeaderboardRow(rank = rank, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId)
+                    LeaderboardRow(rank = rank, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, playType = playType)
                     Spacer(Modifier.height(4.dp))
                 }
                 item { Spacer(Modifier.height(24.dp)) }
+            }
+        }
+    }
+}
+
+/** Solo|VS segmented toggle — icon + accent active state, web records-page parity. */
+@Composable
+private fun SoloVsToggle(playType: String, onSelect: (String) -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(8.dp)),
+    ) {
+        listOf("solo" to "Solo", "vs" to "VS").forEach { (key, label) ->
+            val active = playType == key
+            Row(
+                modifier = Modifier
+                    .background(if (active) WTheme.primary.copy(alpha = 0.10f) else WTheme.surface)
+                    .clickable { onSelect(key) }
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(
+                    if (key == "solo") Icons.Filled.Person else Icons.Filled.People, null,
+                    tint = if (active) WTheme.primary else WTheme.textMuted, modifier = Modifier.size(14.dp),
+                )
+                Text(label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = if (active) WTheme.primary else WTheme.textMuted)
             }
         }
     }

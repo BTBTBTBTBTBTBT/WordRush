@@ -364,7 +364,7 @@ private fun WinLossPill(completed: Boolean, abbrev: Boolean = false) {
 }
 
 @Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}) {
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo") {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
@@ -389,8 +389,14 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         Column(horizontalAlignment = Alignment.End) {
             Text("${entry.compositeScore.toInt()}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(rowDetail(entry, mode), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                WinLossPill(entry.completed)
+                if (playType == "vs") {
+                    // VS records show the head-to-head W/L tally instead of the
+                    // solo guesses/time + Win/Loss pill (web records page parity).
+                    Text("${entry.vsWins}W / ${entry.vsGames}G", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                } else {
+                    Text(rowDetail(entry, mode), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    WinLossPill(entry.completed)
+                }
             }
         }
     }

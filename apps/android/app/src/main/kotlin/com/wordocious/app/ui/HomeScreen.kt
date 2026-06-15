@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
@@ -97,6 +98,7 @@ fun HomeScreen(
     }
     var playMode by remember { mutableStateOf(PlayMode.DAILY) }
     val unlimitedMode = isPro && playMode == PlayMode.UNLIMITED
+    val signOutScope = androidx.compose.runtime.rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
@@ -145,6 +147,18 @@ fun HomeScreen(
             }
 
             LiveBanner()
+            // Sign Out (web + iOS home footer parity) — subtle muted text button.
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .clickableNoRipple { signOutScope.launch { com.wordocious.app.data.AuthService.signOut() } }
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Sign Out", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            }
             FooterLinks()
             Spacer(Modifier.height(16.dp))
         }
