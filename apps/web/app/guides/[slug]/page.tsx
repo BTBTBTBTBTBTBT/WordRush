@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { MODE_GUIDES, getGuide } from '@/lib/guide-content';
+import { GuideIcon } from '@/components/guides/guide-icon';
 
 export function generateStaticParams() {
   return MODE_GUIDES.map((g) => ({ slug: g.slug }));
@@ -36,7 +37,9 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
         </Link>
 
         <div className="flex items-center gap-2.5 mb-1">
-          <span className="w-3 h-3 rounded-full" style={{ background: guide.accent }} />
+          <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${guide.accent}15` }}>
+            <GuideIcon slug={guide.slug} accent={guide.accent} className="w-5 h-5" />
+          </span>
           <h1 className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{guide.title}</h1>
         </div>
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>

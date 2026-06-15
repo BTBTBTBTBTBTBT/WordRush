@@ -2,7 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Swords, TrendingUp, Shield, Skull, Crown } from 'lucide-react';
+import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
+import { SixIcon } from '@/components/ui/six-icon';
+import { SevenIcon } from '@/components/ui/seven-icon';
 import { LoginScreen } from './login-screen';
+
+type IconCmp = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
 /**
  * Public marketing landing shown to signed-out visitors (and AdSense / search
@@ -11,17 +17,19 @@ import { LoginScreen } from './login-screen';
  * "Sign in to play" reveals the existing LoginScreen — gameplay stays
  * login-gated.
  */
-const MODES: { title: string; desc: string; accent: string; roman?: string; guide?: string }[] = [
-  { title: 'Classic', desc: 'Guess the hidden 5-letter word in six tries.', accent: '#7c3aed', guide: 'classic' },
-  { title: 'VS Battle', desc: 'Race a live opponent on the same puzzle in real time.', accent: '#0d9488' },
+// Icons mirror the signed-in home grid (app/page.tsx MODE_CARDS): real game
+// icons everywhere, except QuadWord/OctoWord which brand with roman numerals.
+const MODES: { title: string; desc: string; accent: string; roman?: string; guide?: string; Icon?: IconCmp }[] = [
+  { title: 'Classic', desc: 'Guess the hidden 5-letter word in six tries.', accent: '#7c3aed', guide: 'classic', Icon: WordleGridIcon },
+  { title: 'VS Battle', desc: 'Race a live opponent on the same puzzle in real time.', accent: '#0d9488', Icon: Swords },
   { title: 'QuadWord', desc: 'Solve four words at once with nine shared guesses.', accent: '#ec4899', roman: 'IV', guide: 'quadword' },
   { title: 'OctoWord', desc: 'Eight boards, thirteen guesses — the ultimate grid.', accent: '#7e22ce', roman: 'VIII', guide: 'octoword' },
-  { title: 'Succession', desc: 'Four words, unlocked and solved one at a time.', accent: '#2563eb', guide: 'succession' },
-  { title: 'Deliverance', desc: 'Four boards that start with letters already placed.', accent: '#059669', guide: 'deliverance' },
-  { title: 'Six', desc: 'Longer six-letter words in seven tries.', accent: '#06b6d4', guide: 'six' },
-  { title: 'Seven', desc: 'Seven-letter words in eight tries for word pros.', accent: '#84cc16', guide: 'seven' },
-  { title: 'Gauntlet', desc: 'Five escalating stages chained into one run.', accent: '#d97706', guide: 'gauntlet' },
-  { title: 'ProperNoundle', desc: 'Guess famous names from a daily category.', accent: '#dc2626', guide: 'propernoundle' },
+  { title: 'Succession', desc: 'Four words, unlocked and solved one at a time.', accent: '#2563eb', guide: 'succession', Icon: TrendingUp },
+  { title: 'Deliverance', desc: 'Four boards that start with letters already placed.', accent: '#059669', guide: 'deliverance', Icon: Shield },
+  { title: 'Six', desc: 'Longer six-letter words in seven tries.', accent: '#06b6d4', guide: 'six', Icon: SixIcon },
+  { title: 'Seven', desc: 'Seven-letter words in eight tries for word pros.', accent: '#84cc16', guide: 'seven', Icon: SevenIcon },
+  { title: 'Gauntlet', desc: 'Five escalating stages chained into one run.', accent: '#d97706', guide: 'gauntlet', Icon: Skull },
+  { title: 'ProperNoundle', desc: 'Guess famous names from a daily category.', accent: '#dc2626', guide: 'propernoundle', Icon: Crown },
 ];
 
 const FAQ: { q: string; a: string }[] = [
@@ -80,7 +88,7 @@ export function Landing() {
               <div className="absolute top-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, ${m.accent}, ${m.accent}88)` }} />
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black" style={{ background: `${m.accent}15`, color: m.accent }}>
-                  {m.roman ?? m.title.charAt(0)}
+                  {m.roman ? m.roman : m.Icon ? <m.Icon className="w-4 h-4" style={{ color: m.accent }} /> : m.title.charAt(0)}
                 </span>
                 <h3 className="text-sm font-black" style={{ color: 'var(--color-text)' }}>{m.title}</h3>
               </div>
