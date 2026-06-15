@@ -112,6 +112,32 @@ object GameResultsService {
         }
     }
 
+    /** The persisted Gauntlet per-stage breakdown, read back for cross-device
+     *  review (re-opening a Gauntlet daily played on another device / reinstall).
+     *  Mirrors iOS MatchStatsService.gauntletStages. Each GauntletStageResult
+     *  carries its boardsSnapshot, so the whole run rebuilds without the guesses. */
+    @Serializable
+    data class GauntletStagesData(
+        val stages: List<com.wordocious.core.GauntletStageConfig> = emptyList(),
+        val stageResults: List<com.wordocious.core.GauntletStageResult> = emptyList(),
+    )
+    @Serializable
+    private data class GauntletStagesRow(
+        @SerialName("gauntlet_stages") val gauntletStages: GauntletStagesData? = null,
+    )
+
+    suspend fun fetchGauntletStages(seed: String): GauntletStagesData? {
+        val uid = AuthService.userId ?: return null
+        return runCatching {
+            client.postgrest["matches"]
+                .select(Columns.raw("gauntlet_stages")) {
+                    filter { eq("player1_id", uid); eq("game_mode", "GAUNTLET"); eq("seed", seed) }
+                    order("created_at", Order.DESCENDING); limit(1)
+                }
+                .decodeList<GauntletStagesRow>().firstOrNull()?.gauntletStages
+        }.getOrNull()
+    }
+
     // ── Cross-device "view solved daily" (iOS parity) ─────────────────────────────
     /** The recorded guess progression of a finished daily — fetched when a daily
      *  was completed on ANOTHER device (or local state was lost) so GameScreen can

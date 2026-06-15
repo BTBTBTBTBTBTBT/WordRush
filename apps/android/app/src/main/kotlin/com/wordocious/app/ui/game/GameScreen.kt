@@ -340,6 +340,35 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions().containsKey(mode.name)
         if (!playedToday) return@LaunchedEffect
         val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) ?: return@LaunchedEffect
+        // Gauntlet: rebuild the finished run from the persisted per-stage
+        // breakdown. player1_guesses only holds the FINAL stage, so the generic
+        // guess-replay below can't reconstruct the earlier stages — gauntlet_stages
+        // carries every stage's result + boardsSnapshot. iOS CompletedDailyCard parity.
+        if (mode == GameMode.GAUNTLET) {
+            val gs = com.wordocious.app.data.GameResultsService.fetchGauntletStages(seed)
+            if (gs != null && gs.stages.isNotEmpty() && gs.stageResults.isNotEmpty()) {
+                val runWon = gs.stageResults.size == gs.stages.size &&
+                    gs.stageResults.all { it.status == GameStatus.WON }
+                val lastResult = gs.stageResults.maxByOrNull { it.stageIndex }
+                val base = createInitialState(seed, GameMode.GAUNTLET)
+                val rebuilt = base.copy(
+                    boards = lastResult?.boardsSnapshot?.takeIf { it.isNotEmpty() } ?: base.boards,
+                    status = if (runWon) GameStatus.WON else GameStatus.LOST,
+                    gauntlet = base.gauntlet?.copy(
+                        currentStage = if (runWon) gs.stages.size else (lastResult?.stageIndex ?: 0),
+                        totalStages = gs.stages.size,
+                        stages = gs.stages,
+                        stageResults = gs.stageResults,
+                        allSolutions = emptyList(),
+                    ),
+                )
+                recorded = true
+                vm.installReplayedState(rebuilt, row.player1Time)
+                return@LaunchedEffect
+            }
+            // No persisted breakdown (older row) → fall through to the best-effort
+            // guess replay below.
+        }
         if (row.player1Guesses.isEmpty()) return@LaunchedEffect
         var replayed = createInitialState(seed, mode)
         for (g in row.player1Guesses.take(200)) {
