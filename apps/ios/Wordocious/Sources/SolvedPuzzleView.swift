@@ -88,6 +88,8 @@ struct SolvedPuzzleView: View {
         }
         .navigationBarBackButtonHidden(true)
         .hidesBottomNav()
+        // Left-edge swipe → back to Home (parity with the web back gesture).
+        .swipeToGoBack { dismiss() }
         .task {
             let seed = DailySeed.today(mode: mode)
             // Prefer the local saved game (correct per-board state for every mode).

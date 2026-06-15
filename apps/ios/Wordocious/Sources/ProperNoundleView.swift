@@ -265,6 +265,8 @@ struct ProperNoundleView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .hidesBottomNav()
+        // Left-edge swipe → back to Home (parity with the web back gesture).
+        .swipeToGoBack { dismiss() }
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.status) { s in
             if s == .won || s == .lost { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = true } }
