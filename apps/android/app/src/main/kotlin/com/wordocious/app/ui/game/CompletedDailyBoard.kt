@@ -48,6 +48,7 @@ import com.wordocious.core.GameAction
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
+import com.wordocious.core.GauntletProgress
 import com.wordocious.core.createInitialState
 import com.wordocious.core.gameReducer
 
@@ -70,8 +71,17 @@ fun CompletedDailyBoard(modeId: String) {
     // everywhere. Gauntlet is excluded (its replay needs stage advancement).
     var serverState by remember(modeId) { mutableStateOf<GameState?>(null) }
     var serverTime by remember(modeId) { mutableStateOf(0) }
+    // Gauntlet has no flat guess-replay (player1_guesses holds only the final
+    // stage), so the cross-device card rebuilds from the persisted per-stage
+    // breakdown (matches.gauntlet_stages) — iOS CompletedDailyCard parity.
+    var serverGauntlet by remember(modeId) { mutableStateOf<com.wordocious.app.data.GameResultsService.GauntletStagesData?>(null) }
     LaunchedEffect(modeId) {
-        if (localState != null || mode == GameMode.GAUNTLET) return@LaunchedEffect
+        if (localState != null) return@LaunchedEffect
+        if (mode == GameMode.GAUNTLET) {
+            serverGauntlet = com.wordocious.app.data.GameResultsService.fetchGauntletStages(seed)
+            serverTime = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed)?.player1Time ?: 0
+            return@LaunchedEffect
+        }
         val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) ?: return@LaunchedEffect
         if (row.player1Guesses.isEmpty()) return@LaunchedEffect
         var replayed = createInitialState(seed, mode)
@@ -88,6 +98,22 @@ fun CompletedDailyBoard(modeId: String) {
         }
         if (replayed.status != GameStatus.PLAYING) { serverState = replayed; serverTime = row.player1Time }
     }
+
+    // Gauntlet: dedicated stage-breakdown card (3-stat summary + per-stage rows +
+    // score breakdown), reconstructed from local state or server gauntlet_stages.
+    if (mode == GameMode.GAUNTLET) {
+        val g = localState?.gauntlet ?: serverGauntlet?.takeIf { it.stages.isNotEmpty() }?.let {
+            GauntletProgress(
+                currentStage = it.stages.size, totalStages = it.stages.size,
+                stages = it.stages, stageResults = it.stageResults,
+                stageStartTime = 0.0, allSolutions = emptyList(),
+            )
+        } ?: return
+        val gTime = if (localState != null) (GamePersistence.loadElapsed(seed, mode) ?: 0) else serverTime
+        GauntletCompletedDailyCard(g = g, elapsedSeconds = gTime)
+        return
+    }
+
     val state = localState ?: serverState ?: return
     if (state.status == GameStatus.PLAYING) return
 
@@ -221,3 +247,112 @@ private fun formatHints(mode: GameMode, hints: Int): String? {
 }
 
 private fun fmt(s: Int): String = if (s < 60) "${s}s" else "${s / 60}m ${s % 60}s"
+private fun fmtMs(ms: Int): String = fmt(ms / 1000)
+private fun fmtShort(s: Int): String = if (s < 60) "${s}s" else "${s / 60}m"
+
+/**
+ * Gauntlet "Completed Today" card — ports iOS CompletedDailyCard's gauntlet
+ * branch (GauntletCompletedView + ScoreBreakdownView): collapsible header with a
+ * "C/5 · Ng · Xm" summary, then a 3-stat row (Stages / Guesses / Time), the
+ * per-stage rows (✓/✗ badge + name + "Ng · time", tap → StageReviewModal), and
+ * the score breakdown.
+ */
+@Composable
+private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int) {
+    val cleared = g.stageResults.count { it.status == GameStatus.WON }
+    val won = g.stageResults.size == g.totalStages && cleared == g.totalStages
+    val totalGuesses = g.stageResults.sumOf { it.guesses }
+    val stageMs = g.stageResults.sumOf { it.timeMs }
+    val totalMs = if (stageMs > 0) stageMs else elapsedSeconds * 1000
+    val totalSecs = totalMs / 1000
+    // Cumulative boards solved across stages — same tally the score is recorded
+    // with (matches the post-game breakdown). Denominator = every stage's boards.
+    val cumBoards = g.stageResults.sumOf { r ->
+        val st = g.stages.firstOrNull { it.stageIndex == r.stageIndex }
+        if (st == null) 0
+        else if (r.status == GameStatus.WON) st.boardCount
+        else (r.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0)
+    }
+    val cumTotal = (g.stages.sumOf { it.boardCount }).coerceAtLeast(1)
+
+    var expanded by remember { mutableStateOf(false) }
+    var reviewIndex by remember { mutableStateOf<Int?>(null) }
+
+    Column(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
+            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(4.dp).background(
+                Brush.horizontalGradient(
+                    if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))
+                    else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)),
+                ),
+            ),
+        )
+        Row(
+            Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
+                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY",
+                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
+                color = if (won) Color(0xFF7C3AED) else WTheme.textMuted,
+            )
+            Spacer(Modifier.weight(1f))
+            Text("$cleared/${g.totalStages} · ${totalGuesses}g · ${fmtShort(totalSecs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Spacer(Modifier.width(6.dp))
+            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp).rotate(if (expanded) 180f else 0f))
+        }
+        AnimatedVisibility(visible = expanded) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // 3-stat summary (Stages / Guesses / Time)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    StatsRow(listOf("$cleared/${g.totalStages}" to "Stages", "$totalGuesses" to "Guesses", fmtMs(totalMs) to "Time"))
+                }
+                // Per-stage rows (tap → review the stage's boards)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    g.stages.forEach { stage ->
+                        val r = g.stageResults.firstOrNull { it.stageIndex == stage.stageIndex } ?: return@forEach
+                        val sWon = r.status == GameStatus.WON
+                        val hasBoards = !r.boardsSnapshot.isNullOrEmpty()
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                .background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEF2F2))
+                                .border(1.dp, if (sWon) Color(0xFFDDD6FE) else Color(0xFFFECACA), RoundedCornerShape(10.dp))
+                                .then(if (hasBoards) Modifier.clickableNoRipple { reviewIndex = stage.stageIndex } else Modifier)
+                                .padding(horizontal = 10.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(Modifier.size(14.dp).clip(CircleShape).background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
+                                Text(if (sWon) "✓" else "✗", fontSize = 8.sp, fontWeight = FontWeight.Black, color = if (sWon) Color(0xFF7C3AED) else Color(0xFFDC2626))
+                            }
+                            Spacer(Modifier.width(6.dp))
+                            Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
+                            Text("${r.guesses}g · ${fmtMs(r.timeMs)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                            if (hasBoards) {
+                                Spacer(Modifier.width(6.dp))
+                                Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                            }
+                        }
+                    }
+                }
+                // Score breakdown (cumulative run values — same as post-game).
+                ScoreBreakdownCard(
+                    mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = totalSecs,
+                    boardsSolved = cumBoards, totalBoards = cumTotal, hintsUsed = 0,
+                )
+            }
+        }
+    }
+
+    reviewIndex?.let { idx ->
+        val r = g.stageResults.firstOrNull { it.stageIndex == idx }
+        val stage = g.stages.getOrNull(idx)
+        if (r != null && stage != null) StageReviewModal(stage = stage, result = r, onClose = { reviewIndex = null })
+    }
+}
