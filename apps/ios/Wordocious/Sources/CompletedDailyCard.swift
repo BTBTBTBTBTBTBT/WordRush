@@ -27,11 +27,17 @@ struct CompletedDailyCard: View {
             // fall back to elapsedMs only if stages carry no recorded times.
             let stageMs = g.stageResults.reduce(0) { $0 + $1.timeMs }
             let secs = (stageMs > 0 ? stageMs : elapsedMs) / 1000
-            return "\(cleared)/\(g.totalStages) · \(guesses) guesses · \(formatShortTime(secs))"
+            return "\(cleared)/\(g.totalStages) · \(guesses)g · \(formatShortTime(secs))"
         }
-        // Match the leaderboard row's wording ("4 Guesses · 13s") instead of the
-        // bare "4 · 0:13" — formatShortTime gives "13s" / "1m 5s".
-        return "\(d.guessCount) guess\(d.guessCount == 1 ? "" : "es") · \(formatShortTime(d.timeSeconds))"
+        // Web + Android parity (completed-daily-board summaryLabel): multi-board =
+        // "solved/total · Ng · 13s", single = "guesses/max · 13s". Was the bare
+        // "4 · 0:13" (m:ss, no denominator); formatShortTime gives "13s" / "1m 5s".
+        if boardCount > 1 {
+            let solved = localBoards?.filter { $0.status == .won }.count
+                ?? d.solutions.filter { sol in d.guesses.contains { $0.uppercased() == sol.uppercased() } }.count
+            return "\(solved)/\(boardCount) · \(d.guessCount)g · \(formatShortTime(d.timeSeconds))"
+        }
+        return "\(d.guessCount)/\(maxGuesses) · \(formatShortTime(d.timeSeconds))"
     }
 
     /// Web-parity responsive tile size so all boards fit on one screen.

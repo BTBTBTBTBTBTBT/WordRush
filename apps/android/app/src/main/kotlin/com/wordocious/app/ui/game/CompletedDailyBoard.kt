@@ -44,8 +44,12 @@ import com.wordocious.app.data.GamePersistence
 import com.wordocious.app.todayLocalSeed
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.GameAction
 import com.wordocious.core.GameMode
+import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
+import com.wordocious.core.createInitialState
+import com.wordocious.core.gameReducer
 
 /**
  * Completed-daily "dropdown" shown above the leaderboard for the selected mode —
@@ -59,8 +63,33 @@ import com.wordocious.core.GameStatus
 fun CompletedDailyBoard(modeId: String) {
     val mode = remember(modeId) { runCatching { GameMode.valueOf(modeId) }.getOrNull() } ?: return
     val seed = remember(modeId) { todayLocalSeed(modeId) }
-    val state = remember(modeId) { GamePersistence.load(seed, mode) }
-    if (state == null || state.status == GameStatus.PLAYING) return
+    val localState = remember(modeId) { GamePersistence.load(seed, mode) }
+    // Cross-device: a daily finished on another device (native/web) has no local
+    // save, so this card used to render nothing. Replay the recorded matches row
+    // through the engine (same loop GameScreen uses) so "Completed Today" shows
+    // everywhere. Gauntlet is excluded (its replay needs stage advancement).
+    var serverState by remember(modeId) { mutableStateOf<GameState?>(null) }
+    var serverTime by remember(modeId) { mutableStateOf(0) }
+    LaunchedEffect(modeId) {
+        if (localState != null || mode == GameMode.GAUNTLET) return@LaunchedEffect
+        val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) ?: return@LaunchedEffect
+        if (row.player1Guesses.isEmpty()) return@LaunchedEffect
+        var replayed = createInitialState(seed, mode)
+        val applyAll = replayed.boards.size > 1 && mode != GameMode.SEQUENCE
+        for (g in row.player1Guesses.take(200)) {
+            if (replayed.status != GameStatus.PLAYING) break
+            replayed = if (mode == GameMode.SEQUENCE) {
+                val idx = replayed.boards.indexOfFirst { it.status == GameStatus.PLAYING }
+                if (idx < 0) break
+                gameReducer(replayed, GameAction.SubmitGuess(g, boardIndex = idx, applyToAll = false))
+            } else {
+                gameReducer(replayed, GameAction.SubmitGuess(g, applyToAll = applyAll))
+            }
+        }
+        if (replayed.status != GameStatus.PLAYING) { serverState = replayed; serverTime = row.player1Time }
+    }
+    val state = localState ?: serverState ?: return
+    if (state.status == GameStatus.PLAYING) return
 
     val won = state.status == GameStatus.WON
     val boards = state.boards
@@ -69,7 +98,7 @@ fun CompletedDailyBoard(modeId: String) {
     val totalBoards = boards.size
     val guesses = boards.maxOfOrNull { it.guesses.size } ?: 0 // MAX across boards (board 0 stops at its solve)
     val maxGuesses = boards.firstOrNull()?.maxGuesses ?: 6
-    val timeSeconds = remember(modeId) { GamePersistence.loadElapsed(seed, mode) ?: 0 }
+    val timeSeconds = if (localState != null) (GamePersistence.loadElapsed(seed, mode) ?: 0) else serverTime
     val hints = boards.firstOrNull()?.hintEvaluations?.size ?: 0
     val hintLabel = formatHints(mode, hints)
 
