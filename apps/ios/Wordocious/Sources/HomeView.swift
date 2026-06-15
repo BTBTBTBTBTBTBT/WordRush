@@ -81,7 +81,10 @@ struct HomeView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 4)
-                        .padding(.bottom, 16)
+                        // Generous bottom clearance so the last items (Sign Out /
+                        // footer) always sit above the custom bottom nav and stay
+                        // tappable, regardless of safe-area-inset propagation.
+                        .padding(.bottom, 72)
                     }
                 }
 

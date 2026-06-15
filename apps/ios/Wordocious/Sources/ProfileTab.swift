@@ -115,14 +115,12 @@ struct ProfileTab: View {
                 }
                 recentMatchesSection(p)
                 achievementsSection
-                accountSection
             }
             .padding(.horizontal, 12).padding(.top, 8)
-            // Web parity: the Account actions stay scrollable above the custom
-            // bottom nav + ad banner. The safeAreaInsets push content up, but add
-            // breathing room so Sign Out / Delete Account never sit flush against
-            // them.
-            .padding(.bottom, 32)
+            // Generous bottom clearance so the last section always sits above the
+            // custom bottom nav and stays tappable (Account actions live in
+            // Settings now, not here).
+            .padding(.bottom, 72)
         }
     }
 

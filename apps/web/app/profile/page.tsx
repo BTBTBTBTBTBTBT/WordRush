@@ -13,16 +13,12 @@ import {
   User,
   Medal,
   Crown,
-  LogOut,
-  Trash2,
-  AlertTriangle,
   Shield,
   Skull,
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
-import { toast } from '@/hooks/use-toast';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
 import { WIN_FG } from '@/lib/tile-theme';
 import { ProBadge } from '@/components/ui/pro-badge';
@@ -47,7 +43,6 @@ import { GlobalSummaryRow } from '@/components/profile/global-summary-row';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import { CollapsibleSection } from '@/components/profile/collapsible-section';
-import { NotificationToggle } from '@/components/profile/notification-toggle';
 import type { Database } from '@/lib/database.types';
 
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -99,7 +94,7 @@ function formatDuration(seconds: number): string {
 }
 
 export default function ProfilePage() {
-  const { profile, loading, refreshProfile, signOut, isProActive } = useAuth();
+  const { profile, loading, refreshProfile, isProActive } = useAuth();
   const { data: profileData, isLoading: loadingStats } = useSWR(
     profile ? ['profile-data', profile.id] : null,
     async () => {
@@ -170,28 +165,6 @@ export default function ProfilePage() {
   // Solo/VS toggle (mirrors the public profile) — filters user_stats by play_type.
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
   const [editOpen, setEditOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const handleDeleteAccount = async () => {
-    if (!profile) return;
-    setDeleting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error('No session');
-      const res = await fetch('/api/account/delete', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (!res.ok) throw new Error('Delete failed');
-      await signOut();
-      window.location.href = '/';
-    } catch (err) {
-      console.error('Delete account error:', err);
-      toast({ title: 'Failed to delete account', description: 'Please try again or contact support@wordocious.com.', variant: 'destructive' });
-      setDeleting(false);
-    }
-  };
 
   // Stats filtered to the active Solo/VS tab.
   const filteredStats = stats.filter((s) => s.play_type === activeTab);
@@ -750,47 +723,6 @@ export default function ProfilePage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── H. Account Actions ── */}
-        <div className="section-header mb-2 mt-4">ACCOUNT</div>
-        <div className="space-y-2">
-          <NotificationToggle />
-          <button
-            onClick={() => signOut()}
-            className="w-full flex items-center gap-3 p-4 transition-colors active:scale-[0.98]"
-            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
-          >
-            <LogOut className="w-5 h-5" style={{ color: 'var(--color-text-muted)' }} />
-            <span className="text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>Sign Out</span>
-          </button>
-          {!showDeleteConfirm ? (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="w-full flex items-center gap-3 p-4 transition-colors active:scale-[0.98]"
-              style={{ background: 'var(--color-surface)', border: '1.5px solid #fecaca', borderRadius: '16px' }}
-            >
-              <Trash2 className="w-5 h-5" style={{ color: '#dc2626' }} />
-              <span className="text-sm font-extrabold" style={{ color: '#dc2626' }}>Delete Account</span>
-            </button>
-          ) : (
-            <div className="p-5" style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: '16px' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle className="w-5 h-5" style={{ color: '#dc2626' }} />
-                <span className="text-sm font-black" style={{ color: '#dc2626' }}>Delete your account?</span>
-              </div>
-              <p className="text-xs leading-relaxed mb-4" style={{ color: 'var(--color-text-secondary)' }}>
-                This will permanently delete your profile, stats, streak, medals, achievements, and all game data. This action cannot be undone.
-              </p>
-              <div className="flex gap-2">
-                <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 py-2.5 rounded-xl text-sm font-black" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}>
-                  Cancel
-                </button>
-                <button onClick={handleDeleteAccount} disabled={deleting} className="flex-1 py-2.5 rounded-xl text-white text-sm font-black disabled:opacity-50" style={{ background: '#dc2626' }}>
-                  {deleting ? 'Deleting...' : 'Delete Forever'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       <BottomNav />
