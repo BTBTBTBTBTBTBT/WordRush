@@ -235,7 +235,8 @@ struct ProfileTab: View {
         return VStack(spacing: 10) {
             AvatarView(url: p.avatarUrl, username: p.username, size: 96)
             HStack(spacing: 6) {
-                Text(p.username).font(Brand.title(28)).foregroundStyle(Theme.textPrimary)
+                Text(p.username).font(Brand.title(28))
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
                 if auth.isProActive {
                     Text("PRO").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(.white)
                         .padding(.horizontal, 8).padding(.vertical, 2)

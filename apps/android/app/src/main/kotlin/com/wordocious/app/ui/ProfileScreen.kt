@@ -341,7 +341,12 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
         }
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(
+                profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                style = androidx.compose.ui.text.TextStyle(
+                    brush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA))),
+                ),
+            )
             if (profile?.isPro == true) {
                 Text(
                     "PRO", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
