@@ -92,11 +92,11 @@ export const MODE_GUIDES: ModeGuide[] = [
     tips: [
       {
         heading: 'Think in affixes',
-        body: 'Six-letter answers are full of -ING, -ED, -ER, -LY, RE-, UN-, and double letters. Once you have two or three placed letters, ask which prefix or suffix frames fit before brute-forcing letter positions. PLACED, HONEST, BRIGHT — most answers decompose into a familiar chunk plus a stem.',
+        body: 'Six-letter answers are full of -ING, -ED, -ER, -LY, RE-, UN-, and double letters. Once you have two or three placed letters, ask which prefix or suffix frames fit before brute-forcing letter positions. RELOAD, HONEST, BRIGHT — most answers decompose into a familiar chunk plus a stem.',
       },
       {
         heading: 'Spend your opener on vowels',
-        body: 'Six-letter words usually carry two or three vowels. An opener like SOIREE or AUDITS maps the vowel skeleton immediately, and the consonant frame falls out from there.',
+        body: 'Six-letter words usually carry two or three vowels. An opener like SOIREE or AROUSE maps the vowel skeleton immediately, and the consonant frame falls out from there.',
       },
       {
         heading: 'The consonant hint beats the vowel hint',
@@ -137,7 +137,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Two openers, ten letters',
-        body: 'With eight rows you can afford a two-word opening that covers ten distinct letters — try AUCTION then SPHERES style pairings. By row three you will know more about this word than you would know about a Classic word at the same depth.',
+        body: 'With eight rows you can afford a two-word opening that covers ten distinct letters — try AUCTION then FRESHLY style pairings. By row three you will know more about this word than you would know about a Classic word at the same depth.',
       },
       {
         heading: 'Watch for double letters',

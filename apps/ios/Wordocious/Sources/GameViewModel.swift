@@ -333,11 +333,18 @@ final class GameViewModel: ObservableObject {
         }
     }
 
-    /// Reject an invalid/duplicate guess: toast + sound + a row shake (web parity).
+    /// Reject an invalid/duplicate guess: toast + sound + a row shake, then clear
+    /// the typed row (web parity — web shakes for 600ms then setCurrentGuess('')).
     private func rejectGuess(_ message: String) {
         flash(message)
         SoundManager.shared.playInvalid()
         shakeCount += 1
+        let rejected = currentInput
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            guard let self else { return }
+            // Only clear if the player hasn't already started a new entry.
+            if self.currentInput == rejected { self.currentInput = "" }
+        }
     }
 
     /// Post the finished daily result to Supabase (once). No-ops for
