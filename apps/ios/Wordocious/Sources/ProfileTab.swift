@@ -786,12 +786,14 @@ struct LeaderboardTab: View {
                     if mode == .propernoundle { showPNDaily = true }
                     else { lbGame = LbGame(mode: mode, title: m?.title ?? mode.rawValue) }
                 } label: {
-                    Text("Play \(m?.title ?? "")")
-                        .font(Brand.font(12, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 16).padding(.vertical, 9)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(
-                            LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                        .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 3)
+                    HStack(spacing: 5) {
+                        Image(systemName: "play.fill").font(.system(size: 11))
+                        Text("Play").font(Brand.font(13, .black))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16).padding(.vertical, 9)
+                    .background(Capsule().fill(accent))
+                    .shadow(color: accent.opacity(0.3), radius: 4, x: 0, y: 2)
                 }.buttonStyle(.plain)
             }
             .padding(.horizontal, 14).padding(.vertical, 12)

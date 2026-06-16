@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -259,15 +260,18 @@ private fun ModeInfoCard(modeId: String, players: Int, onPlay: (com.wordocious.c
                 }
             }
             card?.engineMode?.let { gm ->
-                Text(
-                    "Play ${card.title}",
-                    fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(accent)
                         .clickableNoRipple { onPlay(gm) }
                         .padding(horizontal = 14.dp, vertical = 9.dp),
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.size(15.dp))
+                    Text("Play", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
             }
         }
     }

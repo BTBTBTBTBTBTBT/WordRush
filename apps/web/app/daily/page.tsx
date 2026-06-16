@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
+import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -221,13 +221,11 @@ export default function DailyPage() {
               </div>
               <button
                 onClick={handlePlayDaily}
-                className="btn-3d px-4 py-2 rounded-lg text-white font-black text-xs"
-                style={{
-                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                  boxShadow: '0 3px 0 #92400e',
-                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-white font-black text-xs active:scale-95 transition-transform"
+                style={{ background: color }}
               >
-                Play {mode.shortTitle}
+                <Play className="w-3.5 h-3.5" fill="currentColor" />
+                Play
               </button>
             </div>
           </div>
