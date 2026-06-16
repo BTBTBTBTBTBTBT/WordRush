@@ -29,7 +29,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
       >
         <DialogHeader>
-          <DialogTitle className="font-black" style={{ color: 'var(--color-text)' }}>Settings</DialogTitle>
+          <DialogTitle className="font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Settings</DialogTitle>
           <DialogDescription style={{ color: 'var(--color-text-muted)' }} className="text-xs font-bold">
             Customize your Wordocious experience
           </DialogDescription>

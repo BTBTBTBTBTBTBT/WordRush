@@ -77,7 +77,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Settings", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text("Settings", fontSize = 18.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient))
             Spacer(Modifier.weight(1f))
             Text(
                 "Done", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,

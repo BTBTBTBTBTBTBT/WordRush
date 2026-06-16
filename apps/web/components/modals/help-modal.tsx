@@ -299,7 +299,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
 
             {/* Header */}
             <div className="px-5 pt-4 pb-0 flex-shrink-0">
-              <h2 className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+              <h2 className="text-xl font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>
                 {activeTab === 'how-to-play' && 'How to Play'}
                 {activeTab === 'modes' && 'Game Modes'}
                 {activeTab === 'faq' && 'FAQ'}

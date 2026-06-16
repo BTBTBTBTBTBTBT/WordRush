@@ -103,8 +103,13 @@ struct SettingsView: View {
                     .padding(16)
                 }
             }
-            .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Settings").font(Brand.font(17, .black)).foregroundStyle(Theme.wordmarkGradient)
+                }
+                ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+            }
             .onChange(of: dailyReminder) { on in
                 if on {
                     Task {
