@@ -1,7 +1,7 @@
 import java.util.Properties
 
 plugins {
-    id("com.android.application") version "8.5.2"
+    id("com.android.application") version "8.6.1"
     kotlin("android") version "2.0.20"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
     kotlin("plugin.serialization") version "2.0.20"
@@ -9,12 +9,13 @@ plugins {
 
 android {
     namespace = "com.wordocious.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.wordocious.app"
         minSdk = 26          // Android 8.0 — matches the modern install base; web/iOS parity not affected
-        targetSdk = 34
+        targetSdk = 35       // Play requires new apps target API 35 (Android 15) as of 2025-08
+
         versionCode = 24
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }

@@ -1,0 +1,23 @@
+# Release signing for the Play Store AAB. Copy this to `key.properties`
+# (same directory) and fill in your real values. `key.properties` is gitignored
+# — NEVER commit it or the keystore.
+#
+# Create the keystore first (you choose the passwords):
+#   mkdir -p ~/.android-keys
+#   keytool -genkeypair -v \
+#     -keystore ~/.android-keys/wordocious-upload.jks \
+#     -alias wordocious-upload \
+#     -keyalg RSA -keysize 2048 -validity 10000
+#
+# BACK UP the .jks file + passwords somewhere safe. Losing them means you can
+# no longer update the app (unless you enrolled in Play App Signing, recommended
+# on first upload).
+#
+# Then build the signed bundle:
+#   ./gradlew :app:bundleRelease
+#   -> app/build/outputs/bundle/release/app-release.aab
+
+storeFile=/Users/brianterchin/.android-keys/wordocious-upload.jks
+storePassword=CHANGE_ME
+keyAlias=wordocious-upload
+keyPassword=CHANGE_ME
