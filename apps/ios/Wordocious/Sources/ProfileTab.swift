@@ -732,6 +732,10 @@ struct LeaderboardTab: View {
     @State private var showAuth = false
     @State private var secondsLeft = secondsUntilLocalMidnight()
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    // Play CTA → launch the selected mode's daily (GameScreen, or ProperNoundle).
+    @State private var lbGame: LbGame?
+    @State private var showPNDaily = false
+    struct LbGame: Identifiable { let id = UUID(); let mode: GameMode; let title: String }
 
     /// All 9 daily-recordable modes (incl. ProperNoundle, which has a dbKey but
     /// no GameMode enum on its HomeMode — its leaderboard keys off the dbKey).
@@ -751,7 +755,50 @@ struct LeaderboardTab: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
             .adBanner()
+            .fullScreenCover(item: $lbGame) { g in
+                NavigationStack { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
+            }
+            .fullScreenCover(isPresented: $showPNDaily) {
+                NavigationStack { ProperNoundleView() }
+            }
         }
+    }
+
+    /// "Play CTA" card (web /daily): mode icon + title + players-today + a Play
+    /// button that launches today's daily for the selected mode.
+    private var playCtaCard: some View {
+        let m = homeModes.first { $0.dbKey == mode.rawValue }
+        let accent = ModeStyle.accent(mode)
+        return VStack(spacing: 0) {
+            LinearGradient(colors: [accent, accent.opacity(0.5)], startPoint: .leading, endPoint: .trailing)
+                .frame(height: 3)
+            HStack(spacing: 10) {
+                if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    HStack(spacing: 4) {
+                        Image(systemName: "person.2.fill").font(.system(size: 10))
+                        Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(10, .bold))
+                    }.foregroundStyle(Theme.textMuted)
+                }
+                Spacer()
+                Button {
+                    if mode == .propernoundle { showPNDaily = true }
+                    else { lbGame = LbGame(mode: mode, title: m?.title ?? mode.rawValue) }
+                } label: {
+                    Text("Play \(m?.title ?? "")")
+                        .font(Brand.font(12, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 16).padding(.vertical, 9)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(
+                            LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                        .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 3)
+                }.buttonStyle(.plain)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+        }
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     private var header: some View {
@@ -787,6 +834,7 @@ struct LeaderboardTab: View {
             VStack(spacing: 12) {
                 header
                 HModePicker(selected: $mode)
+                playCtaCard
                 CompletedDailyCard(mode: mode)
                 if let r = userRank { rankBanner(r) }
 
@@ -812,13 +860,6 @@ struct LeaderboardTab: View {
                     }
                     .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-                }
-
-                if playerCount > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.2.fill").font(.system(size: 11))
-                        Text("\(playerCount) player\(playerCount == 1 ? "" : "s") today").font(Brand.font(10, .bold))
-                    }.foregroundStyle(Theme.textMuted)
                 }
 
                 Button { showYesterday.toggle(); if showYesterday { Task { await loadYesterday() } } } label: {

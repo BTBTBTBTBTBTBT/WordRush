@@ -62,7 +62,7 @@ internal val MODE_OPTIONS = listOf(
  * - Top 50 entries with rank badges (🥇🥈🥉 for top 3), username, score, guesses/time
  */
 @Composable
-fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}) {
+fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordocious.core.GameMode) -> Unit = {}) {
     var selectedMode by remember { mutableStateOf("DUEL") }
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterday by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
@@ -104,9 +104,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}) {
         ModePickerRow(selectedMode) { selectedMode = it }
 
         LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
-            // Mode info card — icon box + "{n} players today"
+            // Play CTA card — mode icon + "{n} players today" + Play button.
             item {
-                ModeInfoCard(modeLabel = modeLabel, players = playerCount)
+                ModeInfoCard(modeId = selectedMode, players = playerCount, onPlay = onPlay)
                 Spacer(Modifier.height(12.dp))
             }
             // Completed-daily dropdown (your board for this mode), web parity:
@@ -225,24 +225,48 @@ private fun RankIcon(rank: Int) {
 }
 
 @Composable
-private fun ModeInfoCard(modeLabel: String, players: Int) {
-    Row(
+private fun ModeInfoCard(modeId: String, players: Int, onPlay: (com.wordocious.core.GameMode) -> Unit) {
+    // Per-mode card (web /daily Play CTA): accent bar + icon + title + players
+    // today + an orange Play button that launches today's daily for this mode.
+    val card = MODE_CARDS.firstOrNull { it.engineMode?.name == modeId }
+    val accent = card?.accent ?: WTheme.primary
+    Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
     ) {
-        Box(
-            Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(WTheme.primary.copy(alpha = 0.10f)),
-            contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.primary, modifier = Modifier.size(16.dp)) }
-        Column {
-            Text(modeLabel, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+        Box(Modifier.fillMaxWidth().height(3.dp).background(
+            Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.5f))),
+        ))
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.10f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (card != null) ModeGlyph(card, accent, 13.sp, 16.dp)
+                else Icon(Icons.Filled.EmojiEvents, null, tint = accent, modifier = Modifier.size(16.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(card?.title ?: modeId, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                    Text(
+                        "$players player${if (players != 1) "s" else ""} today",
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    )
+                }
+            }
+            card?.engineMode?.let { gm ->
                 Text(
-                    "$players player${if (players != 1) "s" else ""} today",
-                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    "Play ${card.title}",
+                    fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                        .clickableNoRipple { onPlay(gm) }
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
                 )
             }
         }
