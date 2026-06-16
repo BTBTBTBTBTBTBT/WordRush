@@ -8,6 +8,7 @@ const VictoryAnimation = dynamic(() => import('@/components/effects/victory-anim
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import NoundleBoard from './noundle-board';
 import { Puzzle, Guess, TileState } from './types';
@@ -693,6 +694,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       {/* Header — compact, matching other modes */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#dc2626" />
+        <GameGuideButton slug="propernoundle" accentColor="#dc2626" />
         <SoundToggle accentColor="#dc2626" />
         <h1 className="text-2xl font-black" style={{ color: '#dc2626' }}>
           PROPERNOUNDLE

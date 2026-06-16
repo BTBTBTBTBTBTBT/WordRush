@@ -643,8 +643,19 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         // fill, 2dp accent stroke, house icon, shadow. Visible in play + post-game.
         CornerHomeButton(accent = accent, onClick = onBack, modifier = Modifier.padding(8.dp))
 
-        // Sound toggle (top-right) — web SoundToggle sits on every game header.
-        SoundToggleButton(accent = accent, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
+        // Help "?" button (top-right corner) — opens this mode's strategy guide
+        // and pauses the clock while it's open. Sound toggle shifts left of it.
+        var showGuide by remember { mutableStateOf(false) }
+        CornerHelpButton(
+            accent = accent,
+            onClick = { showGuide = true; vm.pauseTimer() },
+            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+        )
+        // Sound toggle — sits to the left of the help button.
+        SoundToggleButton(accent = accent, modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 60.dp))
+        if (showGuide) {
+            GuideSheet(mode = mode, onDismiss = { showGuide = false; vm.resumeTimer() })
+        }
 
         // Gauntlet stage-transition interstitial (web stage-transition.tsx /
         // iOS stageCleared): shown the moment every board in the current stage
@@ -733,6 +744,24 @@ private fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modif
             tint = accent,
             modifier = Modifier.size(20.dp),
         )
+    }
+}
+
+/** Top-right "?" help button — mirrors CornerHomeButton's circle/stroke/shadow. */
+@Composable
+private fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val circle = androidx.compose.foundation.shape.CircleShape
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .shadow(4.dp, circle, clip = false)
+            .clip(circle)
+            .background(WTheme.surface)
+            .border(2.dp, accent, circle)
+            .clickableNoRipple(onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("?", color = accent, fontSize = 22.sp, fontWeight = FontWeight.Black)
     }
 }
 

@@ -15,6 +15,7 @@ import { Board } from '@/components/game/board';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
 import Link from 'next/link';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { Keyboard } from '@/components/game/keyboard';
 import dynamic from 'next/dynamic';
@@ -487,6 +488,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
             on unmount, so the run resumes cleanly when the player taps
             the Gauntlet mode card again. */}
         <GameHomeButton accentColor="#d97706" positionClass="absolute top-1 left-2 z-10" />
+        <GameGuideButton slug="gauntlet" accentColor="#d97706" positionClass="absolute top-1 right-2 z-10" />
         <SoundToggle accentColor="#d97706" positionClass="absolute top-1 right-2 z-10" />
         <GauntletProgress
           stages={gauntlet.stages}

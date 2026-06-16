@@ -49,6 +49,12 @@ final class ProperNoundleVM: ObservableObject {
     /// Reset the clock so the game-start ad's time isn't counted — but keep any
     /// elapsed time carried over from a restored session.
     func beginTimer() { startMs = Date().timeIntervalSince1970 * 1000 - restoredElapsedMs }
+
+    /// Pause the clock while the in-game guide is open (reading it shouldn't
+    /// count). Resuming shifts startMs forward by the paused duration.
+    private var guidePauseStart: Double?
+    func pauseForGuide() { guard guidePauseStart == nil, !isFinished else { return }; guidePauseStart = Date().timeIntervalSince1970 * 1000 }
+    func resumeFromGuide() { guard let s = guidePauseStart else { return }; startMs += Date().timeIntervalSince1970 * 1000 - s; guidePauseStart = nil }
     private var recorded = false
     var answerLen: Int { puzzle.map { ProperNoundle.normalize($0.answer).count } ?? 0 }
     var maxGuesses: Int { ProperNoundle.maxGuesses }
@@ -293,6 +299,7 @@ struct ProperNoundleView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var adShown = false
     @State private var showVictory = false
+    @State private var showGuide = false
 
     init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: ProperNoundleVM(seed: seed))
@@ -346,8 +353,21 @@ struct ProperNoundleView: View {
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.top, 8).padding(.leading, 8)
+
+            // Help "?" button (top-right) — opens ProperNoundle's guide.
+            Button { showGuide = true } label: {
+                Image(systemName: "questionmark").font(.system(size: 20, weight: .bold)).foregroundStyle(ModeStyle.accent(.propernoundle))
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(Theme.surface)).overlay(Circle().stroke(ModeStyle.accent(.propernoundle), lineWidth: 2))
+                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .padding(.top, 8).padding(.trailing, 8)
+            .sheet(isPresented: $showGuide) { GuideSheet(mode: .propernoundle) }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: showGuide) { open in if open { vm.pauseForGuide() } else { vm.resumeFromGuide() } }
         .hidesBottomNav()
         // Left-edge swipe → back to Home (parity with the web back gesture).
         .swipeToGoBack { dismiss() }

@@ -9,6 +9,7 @@ const VictoryAnimation = dynamic(() => import('../effects/victory-animation').th
 const GameOverAnimation = dynamic(() => import('../effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { Trophy, Clock, ArrowRight, Lock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
@@ -247,6 +248,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
       {/* Compact Header */}
       <div className="text-center py-2 px-2 shrink-0 relative">
         <GameHomeButton accentColor="#2563eb" />
+        <GameGuideButton slug="succession" accentColor="#2563eb" />
         <SoundToggle accentColor="#2563eb" />
         <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400">
           SUCCESSION

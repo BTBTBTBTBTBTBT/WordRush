@@ -10,6 +10,7 @@ struct GameScreen: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var adShown = false
     @State private var showVictory = false
+    @State private var showGuide = false
     // Holds the in-play board on screen after a win/loss until the final row has
     // finished flipping, then the finished screen + victory overlay spring in.
     @State private var revealComplete = false
@@ -107,6 +108,24 @@ struct GameScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.top, 8).padding(.leading, 8)
 
+            // Help "?" button (top-right) — opens this mode's strategy guide.
+            // Matches the Home button's size/aesthetic; shifts left of the
+            // Gauntlet sound toggle so the two don't overlap.
+            Button { showGuide = true } label: {
+                Image(systemName: "questionmark")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(ModeStyle.accent(mode))
+                    .frame(width: 44, height: 44)
+                    .background(Circle().fill(Theme.surface))
+                    .overlay(Circle().stroke(ModeStyle.accent(mode), lineWidth: 2))
+                    .shadow(color: ModeStyle.accent(mode).opacity(0.2), radius: 0, x: 0, y: 2)
+                    .shadow(color: .black.opacity(0.08), radius: 12, x: 0, y: 4)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .padding(.top, 8).padding(.trailing, vm.isGauntlet ? 60 : 8)
+            .sheet(isPresented: $showGuide) { GuideSheet(mode: mode) }
+
             // Sound toggle (top-right) — mirrors the web SoundToggle on the
             // Gauntlet screen. Reads/writes the same `pref-sound` SoundManager key.
             if vm.isGauntlet {
@@ -187,7 +206,11 @@ struct GameScreen: View {
         }
         .onDisappear { vm.pauseTimer() }
         .onChange(of: scenePhase) { phase in
-            if phase == .active { vm.resumeTimer() } else { vm.pauseTimer() }
+            if phase == .active && !showGuide { vm.resumeTimer() } else { vm.pauseTimer() }
+        }
+        // Reading the guide mid-game pauses the clock (resumes on close).
+        .onChange(of: showGuide) { open in
+            if open { vm.pauseTimer() } else { vm.resumeTimer() }
         }
     }
 

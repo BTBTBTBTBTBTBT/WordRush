@@ -9,6 +9,7 @@ const VictoryAnimation = dynamic(() => import('@/components/effects/victory-anim
 const GameOverAnimation = dynamic(() => import('@/components/effects/game-over-animation').then(m => m.GameOverAnimation), { ssr: false });
 import { Clock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
+import { GameGuideButton } from '@/components/game/game-guide-button';
 import { SoundToggle } from '@/components/game/sound-toggle';
 import Link from 'next/link';
 import { PostGameSummary } from '@/components/game/post-game-summary';
@@ -343,6 +344,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
           return (
             <>
               <GameHomeButton accentColor={cfg.accent} />
+              <GameGuideButton slug={mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'classic'} accentColor={cfg.accent} />
               <SoundToggle accentColor={cfg.accent} />
               <h1 className="text-3xl font-black" style={{ backgroundImage: cfg.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', color: 'transparent' }}>
                 {cfg.title}
