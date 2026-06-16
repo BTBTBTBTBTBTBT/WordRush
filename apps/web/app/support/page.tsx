@@ -12,7 +12,7 @@ export default function SupportPage() {
           Back to Wordocious
         </Link>
 
-        <h1 className="text-3xl font-black mb-1" style={{ color: 'var(--color-text)' }}>Help &amp; Support</h1>
+        <h1 className="text-3xl font-black mb-1 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Help &amp; Support</h1>
         <p className="text-xs font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Got a question? We&apos;ve got answers.</p>
 
         <div className="space-y-4">

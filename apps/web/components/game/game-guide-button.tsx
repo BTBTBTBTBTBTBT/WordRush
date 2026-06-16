@@ -84,7 +84,12 @@ export function GameGuideButton({
 
             <div className="flex items-start justify-between px-5 pb-2">
               <div>
-                <h2 className="text-2xl font-black" style={{ color: 'var(--color-text)' }}>{guide.title}</h2>
+                <h2
+                  className="text-2xl font-black uppercase tracking-wide text-transparent bg-clip-text"
+                  style={{ backgroundImage: GUIDE_TITLE_GRADIENTS[slug] ?? `linear-gradient(135deg, ${accentColor}, ${accentColor})` }}
+                >
+                  {guide.title}
+                </h2>
                 <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
               </div>
               <button
@@ -139,6 +144,20 @@ export function GameGuideButton({
     </>
   );
 }
+
+// Per-mode title gradients — 1:1 with each mode's in-game header so the guide
+// sheet title reads with the same accent aesthetic as the game screen.
+const GUIDE_TITLE_GRADIENTS: Record<string, string> = {
+  classic: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+  six: 'linear-gradient(135deg, #06b6d4, #22d3ee)',
+  seven: 'linear-gradient(135deg, #84cc16, #a3e635)',
+  quadword: 'linear-gradient(to right, #facc15, #f472b6, #c084fc)',
+  octoword: 'linear-gradient(to right, #22d3ee, #c084fc, #f472b6)',
+  succession: 'linear-gradient(to right, #facc15, #fb923c, #f87171)',
+  deliverance: 'linear-gradient(to right, #818cf8, #c084fc, #e879f9)',
+  gauntlet: 'linear-gradient(135deg, #d97706, #f59e0b)',
+  propernoundle: 'linear-gradient(135deg, #dc2626, #f87171)',
+};
 
 const card = {
   background: 'var(--color-surface)',

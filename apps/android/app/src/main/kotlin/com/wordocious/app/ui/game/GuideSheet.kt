@@ -64,7 +64,14 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(g.title, fontSize = 26.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    Text(
+                        g.title.uppercase(), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
+                        style = androidx.compose.ui.text.TextStyle(
+                            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                com.wordocious.app.ui.modeTitleGradient(mode),
+                            ),
+                        ),
+                    )
                     Text(g.tagline, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
                 // Quick facts — 2-col chips

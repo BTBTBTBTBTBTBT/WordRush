@@ -17,7 +17,7 @@ export default function AboutPage() {
           Back to Wordocious
         </Link>
 
-        <h1 className="text-3xl font-black mb-2" style={{ color: 'var(--color-text)' }}>About Wordocious</h1>
+        <h1 className="text-3xl font-black mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>About Wordocious</h1>
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Epic Word Battles &mdash; Daily Puzzles &amp; Multiplayer Showdowns</p>
 
         <div className="space-y-4">

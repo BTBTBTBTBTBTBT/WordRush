@@ -24,7 +24,7 @@ struct InfoPage: View {
             Theme.background.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(title).font(Brand.title(30)).foregroundStyle(Theme.textPrimary)
+                    Text(title).font(Brand.title(30)).foregroundStyle(Theme.wordmarkGradient)
                     if let sub = subtitle { Text(sub).font(Brand.body(13)).foregroundStyle(Theme.textMuted) }
                     ForEach(0..<sections.count, id: \.self) { i in sectionView(sections[i]) }
                     if let contact { Text(contact).font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary) }

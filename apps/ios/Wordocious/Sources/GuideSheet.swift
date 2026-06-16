@@ -95,7 +95,8 @@ struct GuideSheet: View {
             VStack(alignment: .leading, spacing: 14) {
                 // Title + tagline
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(g.title).font(Brand.font(26, .black)).foregroundStyle(Theme.textPrimary)
+                    Text(g.title.uppercased()).font(Brand.font(26, .black))
+                        .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(mode), startPoint: .leading, endPoint: .trailing))
                     Text(g.tagline).font(Brand.font(13, .bold)).foregroundStyle(Theme.textMuted)
                 }
 
