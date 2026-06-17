@@ -4,6 +4,14 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   transpilePackages: ['@wordle-duel/core'],
+  experimental: {
+    // The App Store webhook reads Apple root certs from ./certs at runtime via a
+    // computed path, which Next can't trace statically — force-include them so
+    // the serverless function bundle on Vercel actually contains the .cer files.
+    outputFileTracingIncludes: {
+      '/api/appstore/notifications': ['./certs/**'],
+    },
+  },
   // Disable source maps in production to reduce bundle size
   productionBrowserSourceMaps: false,
   // Remove the X-Powered-By header
