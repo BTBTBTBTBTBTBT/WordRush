@@ -19,7 +19,7 @@ function ShieldIcon({ className }: { className?: string }) {
 }
 
 export function AppHeader() {
-  const { profile, isProActive } = useAuth();
+  const { profile, isProActive, isGuest, exitGuest } = useAuth();
   const [helpOpen, setHelpOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [streakOpen, setStreakOpen] = useState(false);
@@ -87,6 +87,17 @@ export function AppHeader() {
           >
             <Settings className="w-4 h-4" />
           </button>
+
+          {/* Guest — prominent Sign In entry (returns to the landing/login). */}
+          {isGuest && !profile && (
+            <button
+              onClick={exitGuest}
+              className="px-3.5 py-1.5 rounded-xl text-white font-extrabold text-sm transition-transform active:scale-95"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 2px 0 #4c1d95' }}
+            >
+              Sign In
+            </button>
+          )}
 
           {profile && (
             <>

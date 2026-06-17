@@ -94,7 +94,7 @@ function formatDuration(seconds: number): string {
 }
 
 export default function ProfilePage() {
-  const { profile, loading, refreshProfile, isProActive } = useAuth();
+  const { profile, loading, refreshProfile, isProActive, exitGuest } = useAuth();
   const { data: profileData, isLoading: loadingStats } = useSWR(
     profile ? ['profile-data', profile.id] : null,
     async () => {
@@ -209,15 +209,24 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-bg)' }}>
         <div className="text-center">
-          <h1 className="text-2xl font-black mb-4" style={{ color: 'var(--color-text)' }}>Sign in to view your profile</h1>
-          <Link href="/">
+          <h1 className="text-2xl font-black mb-2" style={{ color: 'var(--color-text)' }}>Sign in to view your profile</h1>
+          <p className="text-sm font-medium mb-5" style={{ color: 'var(--color-text-secondary)' }}>
+            Create a free account to save your stats, streaks, and daily leaderboard ranks.
+          </p>
+          <div className="flex items-center justify-center gap-3">
             <button
+              onClick={exitGuest}
               className="btn-3d px-6 py-2.5 rounded-xl text-white font-black text-sm"
               style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
             >
-              Go Home
+              Sign In
             </button>
-          </Link>
+            <Link href="/">
+              <button className="px-6 py-2.5 rounded-xl font-black text-sm" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}>
+                Go Home
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     );

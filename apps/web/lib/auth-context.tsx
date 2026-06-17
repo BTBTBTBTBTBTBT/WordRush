@@ -28,6 +28,9 @@ interface AuthContextType {
    */
   isGuest: boolean;
   enterGuest: () => void;
+  /** Leave guest mode → AuthGate shows the Landing/sign-in (used by the header
+   *  "Sign In" button and the account-surface prompts so guests can register). */
+  exitGuest: () => void;
   signUp: (email: string, password: string, username: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -48,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const enterGuest = () => {
     try { localStorage.setItem('wordocious-guest', '1'); } catch {}
     setIsGuest(true);
+  };
+
+  const exitGuest = () => {
+    try { localStorage.removeItem('wordocious-guest'); } catch {}
+    setIsGuest(false);
   };
 
   const fetchProfile = async (userId: string, userData?: User) => {
@@ -250,6 +258,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isProActive: isProActive(profile),
         isGuest,
         enterGuest,
+        exitGuest,
         signUp,
         signIn,
         signInWithGoogle,
