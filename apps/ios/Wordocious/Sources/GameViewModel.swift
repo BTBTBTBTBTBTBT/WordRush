@@ -174,7 +174,11 @@ final class GameViewModel: ObservableObject {
     func nextStage() {
         guard isGauntlet, stageCleared else { return }
         let clearedStage = state.gauntlet?.currentStage ?? 0
-        let elapsedMs = Date().timeIntervalSince1970 * 1000 - state.startTime
+        // Active-play elapsed (pauses on background), matching web gauntlet-game.tsx
+        // which passes its active-play timer. Using wall-clock (Date.now - startTime)
+        // inflated the per-stage times + the post-game total so they disagreed with
+        // the recorded finalTimeSeconds shown on the leaderboard/share.
+        let elapsedMs = accumulatedMs + (resumeAtMs.map { nowMs - $0 } ?? 0)
         state = gameReducer(state: state, action: .nextStage(elapsedMs: elapsedMs))
         if isVersus { onStageCompleted?(clearedStage) }
         currentInput = ""
