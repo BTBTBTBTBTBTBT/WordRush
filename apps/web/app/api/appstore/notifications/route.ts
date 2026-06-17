@@ -107,6 +107,11 @@ export async function POST(req: NextRequest) {
   const { payload, tx } = decoded;
   const userId = tx?.appAccountToken;          // = Supabase user UUID (set by StoreManager)
   const productId = tx?.productId;
+  // TEMP DIAGNOSTIC (Pro-hardening verification) — remove after confirming.
+  console.log('[appstore-webhook]', JSON.stringify({
+    type: payload.notificationType, subtype: payload.subtype,
+    productId, hasUser: !!userId, userId, expiresDate: tx?.expiresDate,
+  }));
   if (!userId || !productId || !PRO_PRODUCT_IDS.has(productId)) {
     return NextResponse.json({ ok: true, note: 'ignored (no user / non-pro product)' });
   }
@@ -131,7 +136,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const sb = getAdminSupabase();
-    await sb.from('profiles').update({ is_pro: isPro, pro_expires_at: proExpiresAt }).eq('id', userId);
+    const { error } = await sb.from('profiles').update({ is_pro: isPro, pro_expires_at: proExpiresAt }).eq('id', userId);
+    console.log('[appstore-webhook] write', JSON.stringify({ userId, isPro, proExpiresAt, error: error?.message ?? null }));
   } catch (e) {
     return NextResponse.json({ error: 'db update failed', detail: (e as Error).message }, { status: 500 });
   }
