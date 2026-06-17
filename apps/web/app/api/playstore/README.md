@@ -6,6 +6,20 @@ the Apple webhook, this is the prerequisite for running the deferred
 `supabase/migrations/20260603000004_lock_pro_columns.sql` (which blocks
 client-side `is_pro` writes) without breaking Android purchases.
 
+## Status (2026-06-17 — partially pre-provisioned)
+
+Done proactively (no Google account needed):
+- Route deployed on Vercel; fails closed at 503 until the service-account vars exist.
+- `PLAY_PUBSUB_TOKEN` already generated + set in Vercel **production** — retrieve it for
+  the push-subscription URL via `vercel env pull --environment=production` (in `apps/web`)
+  or the Vercel dashboard. Do NOT regenerate it.
+- `SUPABASE_SERVICE_ROLE_KEY` already set (shared with the Apple webhook).
+- `PLAY_PACKAGE_NAME` not set → uses the default `com.wordocious.app` (correct).
+
+Still required before this webhook goes live (all need your Google Cloud / Play Console):
+steps 1, 3, 4, 5 below, **plus** setting `PLAY_SA_EMAIL` + `PLAY_SA_PRIVATE_KEY` (step 2).
+Skip the `PLAY_PUBSUB_TOKEN` / service-role parts of step 2 — already done.
+
 ## Setup (one-time, ~20 min)
 
 1. **Service account** (Google Cloud console, same project as the Android
