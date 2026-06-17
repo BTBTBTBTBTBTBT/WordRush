@@ -46,6 +46,7 @@ fun AppHeader(
     onSettings: () -> Unit = {},
 ) {
     val profile by AuthService.profile.collectAsState()
+    val isGuest by AuthService.isGuest.collectAsState()
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -74,6 +75,19 @@ fun AppHeader(
         }
         CircleIconButton(onClick = onSettings) {
             Icon(Icons.Filled.Settings, "Settings", tint = WTheme.textMuted, modifier = Modifier.size(17.dp))
+        }
+
+        // Guest — prominent Sign In entry (account tabs also prompt, but Home
+        // had none). exitGuest() returns to the AuthScreen.
+        if (isGuest) {
+            Text(
+                "Sign In", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
+                    .clickableNoRipple { AuthService.exitGuest() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
         }
 
         // Daily-streak pill (only if a streak exists)

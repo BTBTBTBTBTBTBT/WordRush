@@ -11,6 +11,7 @@ struct AppHeaderView: View {
     @State private var showSettings = false
     @State private var showStreak = false
     @State private var showShield = false
+    @State private var showAuth = false
 
     var body: some View {
         HStack(spacing: 6) {
@@ -31,6 +32,18 @@ struct AppHeaderView: View {
 
             circleButton("questionmark") { showHelp = true }
             circleButton("gearshape.fill") { showSettings = true }
+
+            // Guest — prominent Sign In entry (account tabs also prompt, but the
+            // Home header had no entry). Presents the sign-in sheet.
+            if auth.isGuest {
+                Button { showAuth = true } label: {
+                    Text("Sign In").font(Brand.font(13, .heavy)).foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Capsule().fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)],
+                                                                  startPoint: .topLeading, endPoint: .bottomTrailing)))
+                }
+                .buttonStyle(.plain)
+            }
 
             if let p = auth.profile, p.dailyLoginStreak > 0 {
                 Button { showStreak = true } label: {
@@ -54,6 +67,7 @@ struct AppHeaderView: View {
         .padding(.horizontal, 16).padding(.vertical, 8)
         .sheet(isPresented: $showHelp) { HelpView().presentationDetents([.large]) }
         .sheet(isPresented: $showSettings) { SettingsView() }
+        .sheet(isPresented: $showAuth) { AuthView() }
     }
 
     // MARK: - Pieces
