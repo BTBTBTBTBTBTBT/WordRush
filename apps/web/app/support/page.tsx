@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { SUPPORT_SECTIONS } from '@/lib/content/static-content';
+
+const CARD = { background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' } as const;
 
 export default function SupportPage() {
   return (
@@ -16,79 +19,17 @@ export default function SupportPage() {
         <p className="text-xs font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Got a question? We&apos;ve got answers.</p>
 
         <div className="space-y-4">
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>How do I play Wordocious?</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Wordocious is a word puzzle game with multiple modes. In each mode, you guess hidden words by typing guesses and using color-coded feedback to narrow things down. Purple means the letter is correct and in the right spot. Amber means the letter is in the word but in the wrong position. Gray means the letter isn&apos;t in the word at all. Each mode has its own twist &mdash; from single-word puzzles to multi-board challenges!
-            </p>
-          </div>
+          {SUPPORT_SECTIONS.map((section) => (
+            <div key={section.heading} style={CARD} className="p-5">
+              <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>{section.heading}</h2>
+              {section.paragraphs?.map((p, i) => (
+                <p key={i} className="text-xs leading-relaxed mb-2 last:mb-0" style={{ color: 'var(--color-text-secondary)' }}>{p}</p>
+              ))}
+            </div>
+          ))}
 
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>What are the different game modes?</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Wordocious offers a variety of modes to keep things fresh. There are daily puzzles that everyone shares, multi-board modes like QuadWord and OctoWord where you solve multiple puzzles at once, timed challenges like Gauntlet, and more. Head to the home page to see all available modes and find your favorite.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>How are daily scores calculated?</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Your daily score is a composite: a <span className="font-bold" style={{ color: 'var(--color-text)' }}>base score</span> of 1,000 points for completing the puzzle, a <span className="font-bold" style={{ color: 'var(--color-text)' }}>speed bonus</span> for finishing quickly, and &mdash; on multi-board modes &mdash; a <span className="font-bold" style={{ color: 'var(--color-text)' }}>completion bonus</span> based on how many boards you solved. Hint modes (Six, Seven, ProperNoundle) also award a <span className="font-bold" style={{ color: 'var(--color-text)' }}>guess bonus</span> for using fewer guesses. For example, Classic solved in 13 seconds: 1,000 base + 287 speed bonus (300s cap &minus; 13s) = 1,287 points. The fewer guesses and less time you take, the higher your score.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>How do XP and levels work?</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              You earn XP after every game. Winning awards 100 XP and losing awards 25 XP. You can earn bonus XP from win streaks (+50), completing daily challenges (+50), and earning medals (gold +100, silver +50, bronze +25). Your level is based on your total XP &mdash; every 1,000 XP advances you one level. Check your progress on your profile page.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>How do streaks work?</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Your streak counts how many consecutive days you&apos;ve completed a daily puzzle. Play and solve at least one daily puzzle each day to keep your streak alive. If you miss a day, your current streak resets to zero &mdash; but your best streak is always saved. Streaks reset at midnight based on your local time.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>What is Wordocious Pro?</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Pro is an optional subscription that unlocks extra features and game modes. It&apos;s designed for players who want even more from Wordocious. You can subscribe from your profile page, and you can cancel anytime &mdash; you&apos;ll keep Pro access through the end of your billing period. Wordocious is completely playable for free, and Pro is just a bonus for those who want it.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>How do I cancel my Pro subscription?</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              You can cancel your Pro subscription at any time from your profile settings. Once cancelled, you&apos;ll continue to have Pro access until the end of your current billing cycle. No questions asked, no hidden fees.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>My stats aren&apos;t showing up. What do I do?</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Make sure you&apos;re signed in to your account. Game stats are saved to your profile, so if you played while signed out, those results may not be linked to your account. Try refreshing the page or signing out and back in. If the issue persists, reach out to us and we&apos;ll help sort it out.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>I found a bug or have a suggestion!</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              We love hearing from players. Whether it&apos;s a bug report, a feature idea, or just a kind word, feel free to reach out. Your feedback helps make Wordocious better for everyone.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
-            <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>Contact Support</h2>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Can&apos;t find what you&apos;re looking for? Send us an email at{' '}
-              <a href="mailto:support@wordocious.com" className="font-bold" style={{ color: '#7c3aed' }}>support@wordocious.com</a>{' '}
-              and we&apos;ll get back to you as soon as we can.
-            </p>
-          </div>
-
-          <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
+          {/* Legal (static chrome — links to legal pages) */}
+          <div style={CARD} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>Legal</h2>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
               For more details on how we handle your data and the rules of the road, check out our{' '}

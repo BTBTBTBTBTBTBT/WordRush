@@ -7,6 +7,7 @@ import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
 import { useFocusTrap } from '@/hooks/use-focus-trap';
+import { HELP_MODES, HELP_FAQ } from '@/lib/content/static-content';
 
 type HelpTab = 'how-to-play' | 'modes' | 'faq';
 
@@ -57,109 +58,30 @@ const TABS: { id: HelpTab; label: string }[] = [
   { id: 'faq', label: 'FAQ' },
 ];
 
-const GAME_MODES = [
-  {
-    icon: WordleGridIcon,
-    title: 'Classic',
-    desc: '1 word, 6 guesses. The original formula.',
-    color: '#7c3aed',
-  },
-  {
-    icon: Swords,
-    title: 'VS Battle',
-    desc: 'Race an opponent in real-time. First to solve wins.',
-    color: '#0d9488',
-  },
-  {
-    icon: null,
-    romanNumeral: 'IV',
-    title: 'QuadWord',
-    desc: '4 words at once. 9 guesses total. Each guess applies to all 4 boards.',
-    color: '#ec4899',
-  },
-  {
-    icon: null,
-    romanNumeral: 'VIII',
-    title: 'OctoWord',
-    desc: '8 words at once. 13 guesses. Same idea, bigger challenge.',
-    color: '#7e22ce',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Succession',
-    desc: '4 words solved in order. Solve one to unlock the next. 10 guesses total.',
-    color: '#2563eb',
-  },
-  {
-    icon: Shield,
-    title: 'Deliverance',
-    desc: '4 boards with pre-filled hints to get you started. 6 guesses to solve them all.',
-    color: '#059669',
-  },
-  {
-    icon: SixIcon,
-    title: 'Six',
-    desc: 'Guess a 6-letter word in 7 tries. Same rules as Classic, bigger vocabulary.',
-    color: '#06b6d4',
-  },
-  {
-    icon: SevenIcon,
-    title: 'Seven',
-    desc: 'Guess a 7-letter word in 8 tries. The ultimate single-word challenge.',
-    color: '#84cc16',
-  },
-  {
-    icon: Skull,
-    title: 'Gauntlet',
-    desc: '5 stages of increasing difficulty — Classic through OctoWord. Survive them all.',
-    color: '#d97706',
-  },
-  {
-    icon: Crown,
-    title: 'ProperNoundle',
-    desc: 'Guess famous names instead of dictionary words. Themed daily puzzles.',
-    color: '#dc2626',
-  },
-];
+// Game-mode descriptions + help FAQ are single-sourced in lib/content (shared
+// with the native apps via /api/content). Icons stay web-native, mapped by
+// title; roman numerals for the multi-board modes.
+const MODE_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  Classic: WordleGridIcon,
+  'VS Battle': Swords,
+  Succession: TrendingUp,
+  Deliverance: Shield,
+  Six: SixIcon,
+  Seven: SevenIcon,
+  Gauntlet: Skull,
+  ProperNoundle: Crown,
+};
+const MODE_ROMAN: Record<string, string> = { QuadWord: 'IV', OctoWord: 'VIII' };
 
-const FAQ_ITEMS = [
-  {
-    q: 'How are scores calculated?',
-    a: "Solving earns a 1,000-point base, plus a speed bonus (your mode's time cap minus your solve time — faster is better) and a completion bonus of up to 200, scaled by how many boards you solved. Six, Seven, and ProperNoundle also add a guess bonus for solving in fewer guesses. Example: a Classic solve in 27s scores 1,000 + 273 (speed) + 200 (completion) = 1,473. Your daily-leaderboard rank is based on this composite score.",
-  },
-  {
-    q: 'Do hints affect my score?',
-    a: 'Yes. In Six, Seven, and ProperNoundle you can reveal a hint, but each one is subtracted from your score — 120 points per hint in ProperNoundle and 150 in Six and Seven. Hints never push a winning score below zero, and modes without hint buttons are unaffected.',
-  },
-  {
-    q: 'How do XP and levels work?',
-    a: "Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Play all 9 of the day's puzzles for a Daily Sweep (+200 XP), and win every one for a Flawless Victory (+400 XP more — 600 total). Every 1,000 XP = 1 level.",
-  },
-  {
-    q: 'How do medals work?',
-    a: "Finish in the top three of a mode's daily leaderboard to earn a gold, silver, or bronze medal, with extra medals for streak milestones and perfect games. Your medal tally is shown on your profile.",
-  },
-  {
-    q: 'Are there achievements?',
-    a: 'Yes — 75 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile.',
-  },
-  {
-    q: "What's a streak?",
-    a: 'Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it.',
-  },
-  {
-    q: 'What are Streak Shields?',
-    a: 'A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header.',
-  },
-  {
-    q: 'What does PRO unlock?',
-    a: 'PRO removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, and VS extras like sending invites and rematches.',
-  },
-  {
-    q: 'Do daily puzzles use the same words for everyone?',
-    a: 'Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard.',
-  },
-];
+const GAME_MODES = HELP_MODES.map((m) => ({
+  icon: MODE_ICONS[m.title] ?? null,
+  romanNumeral: MODE_ROMAN[m.title],
+  title: m.title,
+  desc: m.desc,
+  color: m.accent,
+}));
+
+const FAQ_ITEMS = HELP_FAQ;
 
 function HowToPlayContent() {
   return (
