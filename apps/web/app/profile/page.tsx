@@ -33,7 +33,8 @@ const ProStats = dynamic(() => import('@/components/profile/pro-stats').then(m =
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
-import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar, fetchTopWordsAllTime } from '@/lib/stats-service';
+import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar, fetchTopWordsAllTime, fetchDailySweepStats, fetchDailyPointsOverTime } from '@/lib/stats-service';
+import { SweepStatsCard } from '@/components/profile/sweep-stats';
 import { GuessDistribution } from '@/components/profile/guess-distribution';
 import { SolveTimeChart } from '@/components/profile/solve-time-chart';
 import { DailyCalendar } from '@/components/profile/daily-calendar';
@@ -98,7 +99,7 @@ export default function ProfilePage() {
   const { data: profileData, isLoading: loadingStats } = useSWR(
     profile ? ['profile-data', profile.id] : null,
     async () => {
-      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes] = await Promise.all([
+      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes, sweepStatsRes, sweepPointsRes] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
         supabase.from('matches')
           .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
@@ -114,6 +115,8 @@ export default function ProfilePage() {
         fetchSolveTimeHistory(profile!.id, 30),
         fetchDailyCalendar(profile!.id, 90),
         fetchTopWordsAllTime(profile!.id, 5),
+        fetchDailySweepStats(profile!.id),
+        fetchDailyPointsOverTime(profile!.id, 30),
       ]);
       // Resolve opponent usernames for VS rows in Recent Matches.
       const matchRows = matchesRes as Match[];
@@ -144,6 +147,8 @@ export default function ProfilePage() {
         solveHistory: solveRes,
         calendar: calendarRes,
         topWordsAllTime: topWordsRes,
+        sweepStats: sweepStatsRes,
+        sweepPoints: sweepPointsRes,
       };
     },
     { revalidateOnFocus: true, onError: (err: any) => handleSupabaseError(err, 'profile-data') },
@@ -160,6 +165,8 @@ export default function ProfilePage() {
   const solveHistory = profileData?.solveHistory ?? [];
   const calendar = profileData?.calendar ?? [];
   const topWordsAllTime = profileData?.topWordsAllTime ?? [];
+  const sweepStats = profileData?.sweepStats;
+  const sweepPoints = profileData?.sweepPoints ?? [];
 
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   // Solo/VS toggle (mirrors the public profile) — filters user_stats by play_type.
@@ -548,6 +555,14 @@ export default function ProfilePage() {
                 <SolveTimeChart data={solveHistory} />
               </>
             )}
+
+            {/* Daily Sweeps & Flawless Victories */}
+            {sweepStats?.sweepCount ? (
+              <>
+                <div className="section-header mb-2">DAILY SWEEPS</div>
+                <SweepStatsCard stats={sweepStats} points={sweepPoints} />
+              </>
+            ) : null}
 
             {/* All-Time Top Words */}
             {topWordsAllTime.length > 0 && (

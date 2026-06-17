@@ -16,8 +16,10 @@ import { PendingInvitesBanner } from '@/components/invites/pending-invites-banne
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { useCountdown } from '@/hooks/use-countdown';
-import { getSecondsUntilMidnightLocal, type DailyCompletion } from '@/lib/daily-service';
+import { getSecondsUntilMidnightLocal, computeDailyTotals, getTodayLocal, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
+import { SweepCelebration } from '@/components/effects/sweep-celebration';
+import { shareDailySweep } from '@/lib/daily-share';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 interface WordDefinition {
@@ -289,9 +291,27 @@ export default function HomePage() {
   const livePlayerCount = useLivePlayerCount();
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
   const { todayDailies } = useDailyCompletions();
+  const [sweepCeleb, setSweepCeleb] = useState(false);
   const router = useRouter();
 
   const isPro = isProActive;
+
+  // One-time-per-day celebration modal when all 9 dailies are complete. Keyed
+  // on the local day; re-fires if the player upgrades a Sweep → Flawless.
+  useEffect(() => {
+    if (!user) return;
+    const completed = todayDailies.size;
+    if (completed < 9) return;
+    const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
+    const tier = wins >= 9 ? 'flawless' : 'sweep';
+    const key = `wordocious-sweep-celebrated-${getTodayLocal()}`;
+    try {
+      const seen = localStorage.getItem(key);
+      if (seen === 'flawless' || seen === tier) return;
+      localStorage.setItem(key, tier);
+      setSweepCeleb(true);
+    } catch {}
+  }, [user, todayDailies]);
 
   // Restore the toggle preference on mount for Pro users. Freemium users
   // never see the toggle and are forced back to 'daily' so the mode
@@ -391,6 +411,8 @@ export default function HomePage() {
           // surface instead of two stacked cards. Tap still routes to
           // /daily (the leaderboards page) like the plain button does.
           if (allDone) {
+            const totals = computeDailyTotals(todayDailies);
+            const totalTime = `${Math.floor(totals.totalTimeSeconds / 60)}:${String(totals.totalTimeSeconds % 60).padStart(2, '0')}`;
             const bg = flawless
               ? 'linear-gradient(135deg, #fef3c7, #fde68a)'
               : 'linear-gradient(135deg, #f5f3ff, #fce7f3)';
@@ -400,44 +422,51 @@ export default function HomePage() {
               ? 'linear-gradient(135deg, #d97706, #b45309)'
               : 'linear-gradient(135deg, #a78bfa, #ec4899)';
             const subtitle = flawless
-              ? `All ${total} dailies won today · +600 XP earned`
-              : `All ${total} dailies completed · +200 XP earned`;
+              ? `All ${total} won · ${totalTime} · ${totals.totalScore.toLocaleString()} pts`
+              : `All ${total} done · ${totalTime} · ${totals.totalScore.toLocaleString()} pts`;
             const subtitleColor = flawless ? '#b45309' : '#6d28d9';
             const iconColor = flawless ? '#b45309' : '#7c3aed';
 
+            // Tap shares the all-dailies card (was: route to /daily).
             return (
-              <Link href="/daily">
-                <button
-                  className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative"
-                  style={{ background: bg, border, borderRadius: '14px' }}
-                >
-                  <div className="flex items-center gap-2">
-                    {flawless ? (
-                      <>
-                        <Trophy className="w-5 h-5" style={{ color: iconColor }} fill="currentColor" />
-                        <span className="text-lg font-black text-transparent bg-clip-text" style={{ backgroundImage: titleGradient }}>
-                          {titleText}
-                        </span>
-                        <Trophy className="w-5 h-5" style={{ color: iconColor }} fill="currentColor" />
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
-                        <span className="text-base font-black text-transparent bg-clip-text" style={{ backgroundImage: titleGradient }}>
-                          {titleText}
-                        </span>
-                        <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
-                      </>
-                    )}
-                  </div>
-                  <div className="text-[11px] font-extrabold mt-0.5" style={{ color: subtitleColor }}>
-                    {subtitle}
-                  </div>
-                  <div className="text-[10px] font-bold mt-0.5" style={{ color: subtitleColor, opacity: 0.75 }}>
-                    Next puzzles in <DailyCountdownText />
-                  </div>
-                </button>
-              </Link>
+              <button
+                onClick={() => { shareDailySweep(todayDailies); }}
+                className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative overflow-hidden"
+                style={{ background: bg, border, borderRadius: '14px' }}
+              >
+                {/* Subtle foil shimmer sweep */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                  <div
+                    className="animate-foil-sweep absolute top-0 h-full"
+                    style={{ width: '40%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.45), transparent)' }}
+                  />
+                </div>
+                <div className="relative flex items-center gap-2">
+                  {flawless ? (
+                    <>
+                      <Trophy className="w-5 h-5" style={{ color: iconColor }} fill="currentColor" />
+                      <span className="text-lg font-black text-transparent bg-clip-text" style={{ backgroundImage: titleGradient }}>
+                        {titleText}
+                      </span>
+                      <Trophy className="w-5 h-5" style={{ color: iconColor }} fill="currentColor" />
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
+                      <span className="text-base font-black text-transparent bg-clip-text" style={{ backgroundImage: titleGradient }}>
+                        {titleText}
+                      </span>
+                      <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
+                    </>
+                  )}
+                </div>
+                <div className="relative text-[11px] font-extrabold mt-0.5" style={{ color: subtitleColor }}>
+                  {subtitle}
+                </div>
+                <div className="relative text-[10px] font-bold mt-0.5" style={{ color: subtitleColor, opacity: 0.75 }}>
+                  Tap to share · Next in <DailyCountdownText />
+                </div>
+              </button>
             );
           }
 
@@ -671,6 +700,9 @@ export default function HomePage() {
         onViewPuzzle={() => router.push(limitModal.modeHref.includes('daily=true') ? limitModal.modeHref : `${limitModal.modeHref}?daily=true`)}
       />
       <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      {sweepCeleb && (
+        <SweepCelebration completions={todayDailies} onClose={() => setSweepCeleb(false)} />
+      )}
     </div>
   );
 }

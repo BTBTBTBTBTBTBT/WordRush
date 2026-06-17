@@ -533,6 +533,29 @@
 .animate-fade-in-scale { animation: fade-in-scale 300ms ease-out both; }
 .animate-fade-in { animation: fade-in 300ms ease-out both; }
 
+/* Daily Sweep / Flawless Victory celebration effects ----------------------- */
+
+/* Sparkle burst (Daily Sweep): twinkle radiating from the title and fading. */
+@keyframes sweep-spark {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0) rotate(0deg); }
+  20%  { opacity: 1; transform: translate(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3)) scale(1) rotate(90deg); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(220deg); }
+}
+
+/* Firework spark (Flawless Victory): brighter, larger radial bursts. */
+@keyframes firework-spark {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0); }
+  15%  { opacity: 1; transform: translate(calc(var(--dx) * 0.4), calc(var(--dy) * 0.4)) scale(1.1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2); }
+}
+
+/* Foil shimmer sweep across the celebration card surface. */
+@keyframes foil-sweep {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(220%) skewX(-18deg); }
+}
+.animate-foil-sweep { animation: foil-sweep 2.4s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

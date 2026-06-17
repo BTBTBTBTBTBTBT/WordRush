@@ -13,6 +13,7 @@ const MODE_DISPLAY: Record<string, string> = {
   Six: 'Classic Six',
   Seven: 'Classic Seven',
   ProperNoundle: 'ProperNoundle',
+  DailySweep: 'Daily Sweep',
 };
 
 // Map a share mode back to its play route so the CTA sends visitors to it.
@@ -26,6 +27,7 @@ const MODE_ROUTE: Record<string, string> = {
   ProperNoundle: '/propernoundle',
   Six: '/six',
   Seven: '/seven',
+  DailySweep: '/daily',
 };
 
 type SP = Record<string, string | string[] | undefined>;
@@ -46,6 +48,23 @@ function fmtTime(s: number): string {
 function buildCopy(sp: SP) {
   const mode = str(sp.m) ?? 'Wordocious';
   const modeDisp = MODE_DISPLAY[mode] ?? mode;
+
+  // All-dailies share card has its own copy shape (X/9 won · time · pts).
+  if (mode === 'DailySweep') {
+    const flawless = str(sp.sweep) === 'flawless';
+    const w = Number(str(sp.won)) || 0;
+    const tot = Number(str(sp.tot)) || 9;
+    const t = Number(str(sp.t)) || 0;
+    const pts = Number(str(sp.pts)) || 0;
+    const label = flawless ? 'Flawless Victory' : 'Daily Sweep';
+    const stats = `${w}/${tot} won · ${fmtTime(t)} · ${pts.toLocaleString()} pts`;
+    const title = `Wordocious ${label} — ${stats}`;
+    const description = flawless
+      ? `I won all ${tot} daily puzzles on Wordocious (${stats}). Can you go flawless?`
+      : `I completed all ${tot} daily puzzles on Wordocious (${stats}). Think you can sweep them?`;
+    return { mode, modeDisp: label, won: w >= tot, stats, title, description };
+  }
+
   const won = str(sp.won) === '1';
   const g = Number(str(sp.g)) || 0;
   const mg = Number(str(sp.mg)) || 0;

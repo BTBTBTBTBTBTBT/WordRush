@@ -81,7 +81,57 @@ export interface ShareGauntletInput extends ShareBase {
   totalStages: number;
 }
 
-export type ShareImageInput = ShareSingleInput | ShareMultiInput | ShareGauntletInput;
+/** One daily game's row in the all-dailies share card. */
+export interface ShareDailyGame {
+  /** Drives the row's accent color + glyph badge. */
+  mode: ShareMode;
+  /** Display name (e.g. "Classic Six"). */
+  modeLabel: string;
+  won: boolean;
+  guesses: number;
+  timeSeconds: number;
+  score: number;
+}
+
+export interface ShareDailySweepInput {
+  layout: 'daily-sweep';
+  /** Always 'Classic' — present only to satisfy callers that read `.mode`;
+   *  the daily-sweep card renders its own multi-mode header. */
+  mode: ShareMode;
+  /** All games won → Flawless Victory (gold); else Daily Sweep (violet). */
+  flawless: boolean;
+  games: ShareDailyGame[];
+  total: number;
+  won: number;
+  totalGuesses: number;
+  totalTimeSeconds: number;
+  totalScore: number;
+  date?: Date;
+}
+
+export type ShareImageInput =
+  | ShareSingleInput
+  | ShareMultiInput
+  | ShareGauntletInput
+  | ShareDailySweepInput;
+
+/**
+ * Short per-mode glyph drawn inside the accent badge on the all-dailies share
+ * card. Numeral modes use their in-app roman/number glyph; the icon modes use
+ * a single initial (the full mode name prints alongside). Kept identical on
+ * iOS + Android so the three share cards match exactly.
+ */
+export const MODE_SHARE_GLYPH: Record<ShareMode, string> = {
+  Classic: 'C',
+  QuadWord: 'IV',
+  OctoWord: 'VIII',
+  Succession: 'S',
+  Deliverance: 'D',
+  Gauntlet: 'G',
+  ProperNoundle: 'P',
+  Six: '6',
+  Seven: '7',
+};
 
 // ──────────────────────────────────────────────────────────────────────────
 // Palette (matches the in-app tile + chip colors)
@@ -366,7 +416,7 @@ function formatShortDate(d: Date): string {
 
 function drawHeader(
   ctx: CanvasRenderingContext2D,
-  input: ShareImageInput,
+  input: ShareSingleInput | ShareMultiInput | ShareGauntletInput,
   width: number,
 ): { bottomY: number } {
   // Wordmark
@@ -627,12 +677,123 @@ function drawGauntlet(
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// All-dailies share card (Daily Sweep / Flawless Victory)
+// ──────────────────────────────────────────────────────────────────────────
+
+const SWEEP_VIOLET: [string, string] = ['#a78bfa', '#ec4899'];
+const SWEEP_GOLD: [string, string] = ['#d97706', '#b45309'];
+
+function drawDailySweepCard(
+  ctx: CanvasRenderingContext2D,
+  input: ShareDailySweepInput,
+  width: number,
+  height: number,
+): void {
+  const titleGrad = input.flawless ? SWEEP_GOLD : SWEEP_VIOLET;
+
+  // Wordmark
+  const wordmarkY = 72;
+  ctx.save();
+  ctx.font = '900 56px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const wm = ctx.createLinearGradient(width / 2 - 200, wordmarkY - 48, width / 2 + 200, wordmarkY + 8);
+  wm.addColorStop(0, WORDMARK_GRADIENT[0]);
+  wm.addColorStop(1, WORDMARK_GRADIENT[1]);
+  ctx.fillStyle = wm;
+  ctx.fillText('WORDOCIOUS', width / 2, wordmarkY);
+  ctx.restore();
+
+  // Title
+  const titleY = wordmarkY + 70;
+  ctx.font = '900 52px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const tg = ctx.createLinearGradient(width / 2 - 260, titleY - 44, width / 2 + 260, titleY + 8);
+  tg.addColorStop(0, titleGrad[0]);
+  tg.addColorStop(1, titleGrad[1]);
+  ctx.fillStyle = tg;
+  ctx.fillText(input.flawless ? 'FLAWLESS VICTORY' : 'DAILY SWEEP', width / 2, titleY);
+
+  // Stats line
+  const date = input.date ?? new Date(getTodayLocal() + 'T00:00:00');
+  const statsText = `${input.won}/${input.total} won · ${formatTime(input.totalTimeSeconds)} · ${input.totalScore.toLocaleString()} pts · ${formatShortDate(date)}`;
+  const metaY = titleY + 50;
+  ctx.font = '700 26px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = TEXT_MUTED;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(statsText, width / 2, metaY);
+
+  const headerBottom = metaY + 30;
+  const footerTop = height - 80;
+
+  // Rows — one per daily game.
+  const n = input.games.length;
+  const horizontalPad = 90;
+  const areaWidth = width - horizontalPad * 2;
+  const areaTop = headerBottom + 28;
+  const areaHeight = footerTop - areaTop - 20;
+  const gap = 16;
+  const rowH = Math.floor((areaHeight - gap * (n - 1)) / n);
+
+  for (let i = 0; i < n; i++) {
+    const g = input.games[i];
+    const rowY = areaTop + i * (rowH + gap);
+    const accent = MODE_ACCENT[g.mode];
+
+    // Row card
+    drawRoundRect(ctx, horizontalPad, rowY, areaWidth, rowH, 20);
+    ctx.fillStyle = g.won ? WIN_BG : LOSS_BG;
+    ctx.fill();
+    ctx.strokeStyle = g.won ? WIN_FG : LOSS_FG;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Accent glyph badge
+    const badge = Math.min(rowH - 24, 72);
+    const badgeX = horizontalPad + 20;
+    const badgeY = rowY + (rowH - badge) / 2;
+    drawRoundRect(ctx, badgeX, badgeY, badge, badge, 16);
+    ctx.fillStyle = accent;
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `900 ${MODE_SHARE_GLYPH[g.mode].length >= 3 ? 24 : 30}px "Nunito", system-ui, -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(MODE_SHARE_GLYPH[g.mode], badgeX + badge / 2, badgeY + badge / 2 + 1);
+
+    const textX = badgeX + badge + 22;
+    // Mode name
+    ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_DARK;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(g.modeLabel, textX, rowY + rowH / 2 - 13);
+
+    // Per-game stats
+    ctx.font = '700 21px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_MUTED;
+    const guessDisp = g.won ? `${g.guesses}g` : 'X';
+    ctx.fillText(`${guessDisp} · ${formatTime(g.timeSeconds)} · ${g.score.toLocaleString()} pts`, textX, rowY + rowH / 2 + 15);
+
+    // Pass/fail mark at right
+    ctx.font = '900 48px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = g.won ? WIN_FG : LOSS_FG;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(g.won ? '✓' : '✗', horizontalPad + areaWidth - 32, rowY + rowH / 2);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Public entry point
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function generateShareImage(input: ShareImageInput): Promise<Blob | null> {
   if (typeof document === 'undefined') return null;
-  const isVertical = input.mode === 'OctoWord' || input.mode === 'Gauntlet';
+  const isVertical =
+    input.layout === 'daily-sweep' || input.mode === 'OctoWord' || input.mode === 'Gauntlet';
   const width = 1080;
   const height = isVertical ? 1350 : 1080;
 
@@ -647,6 +808,15 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   // Background
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, width, height);
+
+  // The all-dailies card renders its own multi-mode header + rows + footer.
+  if (input.layout === 'daily-sweep') {
+    drawDailySweepCard(ctx, input, width, height);
+    drawFooter(ctx, width, height);
+    return new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
+    });
+  }
 
   // Header
   const { bottomY: headerBottom } = drawHeader(ctx, input, width);

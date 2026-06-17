@@ -115,7 +115,10 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
     // One object per (user, mode, day): re-sharing the same result overwrites
     // identical bytes rather than accumulating, while the date keeps distinct
     // days on distinct URLs so social scrapers never serve a stale image.
-    const key = `${user.id}/${input.mode}-${dateStr}`;
+    // The all-dailies card is keyed by a synthetic mode so it never collides
+    // with a single-mode share on the same day.
+    const keyMode = input.layout === 'daily-sweep' ? 'DailySweep' : input.mode;
+    const key = `${user.id}/${keyMode}-${dateStr}`;
     const path = `${key}.png`;
 
     const { error } = await supabase.storage
@@ -123,8 +126,21 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
       .upload(path, blob, { upsert: true, contentType: 'image/png' });
     if (error) return null;
 
-    const isVertical = input.mode === 'OctoWord' || input.mode === 'Gauntlet';
     const params = new URLSearchParams();
+    if (input.layout === 'daily-sweep') {
+      params.set('m', 'DailySweep');
+      params.set('sweep', input.flawless ? 'flawless' : 'sweep');
+      params.set('won', String(input.won));
+      params.set('tot', String(input.total));
+      params.set('t', String(input.totalTimeSeconds));
+      params.set('pts', String(input.totalScore));
+      params.set('w', '1080');
+      params.set('h', '1350');
+      params.set('v', `${input.flawless ? 'f' : 's'}${input.won}-${input.totalTimeSeconds}-${input.totalScore}`);
+      return `https://wordocious.com/s/${key}?${params.toString()}`;
+    }
+
+    const isVertical = input.mode === 'OctoWord' || input.mode === 'Gauntlet';
     params.set('m', input.mode);
     params.set('won', input.won ? '1' : '0');
     params.set('g', String(input.guesses));
