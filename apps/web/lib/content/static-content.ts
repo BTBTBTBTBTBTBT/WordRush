@@ -48,7 +48,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       { q: 'What is a Daily Sweep and a Flawless Victory?', a: 'Completing all of the day’s puzzles earns a Daily Sweep and bonus XP. Winning every one of them (not just completing) earns a Flawless Victory and a larger bonus. Streaks of sweeps and flawless days unlock achievements.' },
       { q: 'How do medals work?', a: 'Each daily puzzle has a leaderboard; the top finishers earn gold, silver, and bronze medals that accumulate on your profile. Medal counts feed several collection achievements.' },
       { q: 'Are there achievements to earn?', a: 'Yes — 75 achievements span five categories: beginner milestones, consistency (streaks and daily sweeps), skill (speed solves, perfect games, beating the Gauntlet), social (VS wins), and collection (medals). They unlock automatically as you hit each milestone, and your full set — locked and unlocked, with progress toward each — is displayed on your profile, so there is always a next goal to chase.' },
-      { q: 'What does Pro unlock?', a: 'Pro removes ads, gives unlimited replays of every mode beyond the free daily, adds VS battles in every mode, grants streak shields, a profile badge, and extended stats. The daily puzzles stay free for everyone.' },
+      { q: 'What does Pro unlock?', a: 'Pro removes ads, unlocks unlimited replays of every mode beyond the free daily (free players get one play per mode per day), adds Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches. The daily puzzles stay free for everyone.' },
     ],
   },
 ];
@@ -78,7 +78,7 @@ export const HELP_FAQ: FaqItem[] = [
   { q: 'Are there achievements?', a: 'Yes — 75 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile.' },
   { q: "What's a streak?", a: 'Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it.' },
   { q: 'What are Streak Shields?', a: 'A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header.' },
-  { q: 'What does PRO unlock?', a: 'PRO removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, and VS extras like sending invites and rematches.' },
+  { q: 'What does Pro unlock?', a: 'Pro removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, a profile badge, and VS extras like sending invites and rematches.' },
   { q: 'Do daily puzzles use the same words for everyone?', a: 'Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard.' },
 ];
 
@@ -131,7 +131,7 @@ export const ABOUT_SECTIONS: ContentSection[] = [
     heading: 'Free to Play',
     paragraphs: [
       'Wordocious is completely free to play. Every game mode, every daily puzzle, and every leaderboard is accessible without paying. Free players get one attempt per game mode per day.',
-      'Wordocious Pro unlocks unlimited daily plays across all game modes and removes advertisements for an ad-free experience.',
+      'Wordocious Pro removes ads and unlocks unlimited replays across all game modes, plus Unlimited mode for endless fresh puzzles, deep Pro Insights stats, streak shields, and VS extras like invites and rematches.',
     ],
   },
 ];

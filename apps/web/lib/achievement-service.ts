@@ -51,7 +51,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   // Mode mastery
   { key: 'quad_king', name: 'Quad King', description: 'Win 50 QuadWord games', category: 'skill', icon: 'grid' },
   { key: 'octo_boss', name: 'Octo Boss', description: 'Win 50 OctoWord games', category: 'skill', icon: 'grid' },
-  { key: 'sequence_ace', name: 'Sequence Ace', description: 'Win 50 Sequence games', category: 'skill', icon: 'zap' },
+  { key: 'sequence_ace', name: 'Succession Ace', description: 'Win 50 Succession games', category: 'skill', icon: 'zap' },
   { key: 'rescue_hero', name: 'Rescue Hero', description: 'Win 50 Deliverance games', category: 'skill', icon: 'star' },
 
   // Skill ceiling
@@ -73,7 +73,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'extended_vocab', name: 'Extended Vocabulary', description: 'Win both a Six and Seven daily in the same day', category: 'beginner', icon: 'grid' },
 
   // Mode mastery completion
-  { key: 'proper_scholar', name: 'Proper Scholar', description: 'Win 50 Propernoundle games', category: 'skill', icon: 'grid' },
+  { key: 'proper_scholar', name: 'Proper Scholar', description: 'Win 50 ProperNoundle games', category: 'skill', icon: 'grid' },
   { key: 'classic_master', name: 'Classic Master', description: 'Win 100 Classic games', category: 'skill', icon: 'trophy' },
 
   // Speed
