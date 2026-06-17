@@ -11,7 +11,7 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about', '/faq', '/guides'];
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest } = useAuth();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -68,13 +68,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Not authenticated — show the public marketing landing (content-rich, with a
-  // "Sign in to play" CTA that reveals the login form). Gives crawlers/AdSense
-  // real content instead of a bare login wall.
-  if (!user) {
+  // Not authenticated and not a guest — show the public marketing landing
+  // (content-rich, with a "Sign in to play" CTA that reveals the login form).
+  // Gives crawlers/AdSense real content instead of a bare login wall.
+  if (!user && !isGuest) {
     return <Landing />;
   }
 
-  // Authenticated — render app
+  // Authenticated, or a guest playing the daily without an account — render app.
+  // (Account surfaces — leaderboard, VS, profile, records, unlimited, Pro — gate
+  // themselves on `user` and prompt a guest to sign in.)
   return <>{children}</>;
 }

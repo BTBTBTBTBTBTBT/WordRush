@@ -7,6 +7,7 @@ import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
 import { LoginScreen } from './login-screen';
+import { useAuth } from '@/lib/auth-context';
 
 type IconCmp = React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 
@@ -42,6 +43,7 @@ const FAQ: { q: string; a: string }[] = [
 
 export function Landing() {
   const [showLogin, setShowLogin] = useState(false);
+  const { enterGuest } = useAuth();
   if (showLogin) return <LoginScreen />;
 
   const wordmarkStyle = {
@@ -75,6 +77,14 @@ export function Landing() {
         <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm" style={ctaStyle}>
           Sign in to play
         </button>
+        <div className="mt-3">
+          <button onClick={enterGuest} className="text-sm font-extrabold underline underline-offset-2" style={{ color: 'var(--color-text-secondary)' }}>
+            Play without an account
+          </button>
+          <p className="text-[11px] font-medium mt-1" style={{ color: 'var(--color-text-muted)' }}>
+            Play today&apos;s daily puzzles free. Sign in to save stats, streaks, and compete.
+          </p>
+        </div>
       </section>
 
       {/* Modes */}
@@ -143,9 +153,14 @@ export function Landing() {
 
       {/* Footer */}
       <footer className="px-5 py-8 text-center border-t" style={{ borderColor: 'var(--color-border)' }}>
-        <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm mb-4" style={ctaStyle}>
+        <button onClick={() => setShowLogin(true)} className="btn-3d px-8 py-3 rounded-xl text-white font-black text-sm mb-2" style={ctaStyle}>
           Sign in to play
         </button>
+        <div className="mb-4">
+          <button onClick={enterGuest} className="text-sm font-extrabold underline underline-offset-2" style={{ color: 'var(--color-text-secondary)' }}>
+            Play without an account
+          </button>
+        </div>
         <div className="flex items-center justify-center gap-3 text-[11px] font-bold flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
           <Link href="/about">About</Link><span>·</span>
           <Link href="/how-to-play">How to Play</Link><span>·</span>

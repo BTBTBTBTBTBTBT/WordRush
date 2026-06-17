@@ -19,6 +19,15 @@ interface AuthContextType {
    * raw write-side marker that can remain true after `pro_expires_at` passes.
    */
   isProActive: boolean;
+  /**
+   * Guest mode — a signed-out visitor who chose "Play without an account".
+   * Apple 5.1.1(v) / Google Play require the single-player daily to be playable
+   * without forcing registration. Guests can play the daily puzzle of each solo
+   * mode (recording no-ops with no session, so nothing is saved); leaderboards,
+   * VS, profile, records, unlimited, and Pro still require sign-in.
+   */
+  isGuest: boolean;
+  enterGuest: () => void;
   signUp: (email: string, password: string, username: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
@@ -34,6 +43,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
+
+  const enterGuest = () => {
+    try { localStorage.setItem('wordocious-guest', '1'); } catch {}
+    setIsGuest(true);
+  };
 
   const fetchProfile = async (userId: string, userData?: User) => {
     const { data, error } = await supabase
@@ -105,7 +120,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          // A real session supersedes guest mode.
+          try { localStorage.removeItem('wordocious-guest'); } catch {}
           await fetchProfile(session.user.id, session.user);
+        } else {
+          // Restore a prior "Play without an account" choice across refreshes.
+          try { if (localStorage.getItem('wordocious-guest') === '1') setIsGuest(true); } catch {}
         }
         setLoading(false);
       })();
@@ -118,6 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          try { localStorage.removeItem('wordocious-guest'); } catch {}
+          setIsGuest(false);
           await fetchProfile(session.user.id, session.user);
         } else {
           setProfile(null);
@@ -211,6 +233,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    try { localStorage.removeItem('wordocious-guest'); } catch {}
+    setIsGuest(false);
     setUser(null);
     setProfile(null);
     setSession(null);
@@ -224,6 +248,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         loading,
         isProActive: isProActive(profile),
+        isGuest,
+        enterGuest,
         signUp,
         signIn,
         signInWithGoogle,
