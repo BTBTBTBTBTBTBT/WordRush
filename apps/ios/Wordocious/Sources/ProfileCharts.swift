@@ -125,6 +125,8 @@ private struct ActivityCalendarView: View {
                 Text("\(totalDays) day\(totalDays == 1 ? "" : "s") played · \(totalGames) games")
                     .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.activityCalendar(mode: mode) }
@@ -336,6 +338,8 @@ private struct TimeOfDayHeatmap: View {
                             .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                     }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.timeOfDay(mode: mode) }
@@ -382,6 +386,8 @@ private struct TopWordsCard: View {
                     }
                 }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.topWords(mode: mode) }
@@ -556,6 +562,8 @@ private struct SweepStatsCard: View {
                         }
                     }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task {
