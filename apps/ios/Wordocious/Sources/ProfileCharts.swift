@@ -20,6 +20,7 @@ struct ProfileDashboard: View {
             SolveTimeChart(mode: mode)
             TimeOfDayHeatmap(mode: mode)
             TopWordsCard(mode: mode)
+            if mode == nil { SweepStatsCard() }
             // Per-mode Pro insights (selected mode). On the All view the global
             // Pro Stats card is rendered by ProfileTab AFTER the Insights + Medals
             // sections, to match the web All-view order (…Insights → Medals →
@@ -503,6 +504,78 @@ private struct ProInsightsCard: View {
         let ampm = h >= 12 ? "PM" : "AM"
         let h12 = h == 0 ? 12 : (h > 12 ? h - 12 : h)
         return "\(h12) \(ampm)"
+    }
+}
+
+// MARK: - Daily Sweeps (All view)
+
+/// Sweep / Flawless counts, avg & best times, current sweep streak, plus a
+/// 30-day daily-points trend. Mirrors web components/profile/sweep-stats.tsx.
+private struct SweepStatsCard: View {
+    @State private var stats = MatchStatsService.DailySweepStats()
+    @State private var points: [MatchStatsService.DailyPointsPoint] = []
+
+    var body: some View {
+        Group {
+            if stats.sweepCount > 0 {
+                ChartCard(title: "DAILY SWEEPS") {
+                    VStack(spacing: 12) {
+                        HStack(alignment: .top) {
+                            iconStat("sparkles", Color(hex: 0x7C3AED), "\(stats.sweepCount)", "Sweeps")
+                            Spacer()
+                            iconStat("trophy.fill", Color(hex: 0xD97706), "\(stats.flawlessCount)", "Flawless")
+                            Spacer()
+                            iconStat("flame.fill", Color(hex: 0xEF4444), "\(stats.currentSweepStreak)", "Streak")
+                        }
+                        HStack {
+                            timeStat("Avg Sweep", stats.avgSweepSecs)
+                            Spacer()
+                            timeStat("Best Sweep", stats.bestSweepSecs)
+                            Spacer()
+                            timeStat("Best Flawless", stats.bestFlawlessSecs)
+                        }
+                        if points.count >= 2 {
+                            Text("DAILY POINTS · LAST 30 DAYS")
+                                .font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Chart {
+                                ForEach(points) { p in
+                                    LineMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
+                                        .foregroundStyle(Color(hex: 0x7C3AED)).interpolationMethod(.catmullRom)
+                                    AreaMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
+                                        .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA).opacity(0.3), .clear], startPoint: .top, endPoint: .bottom))
+                                        .interpolationMethod(.catmullRom)
+                                    if p.swept || p.flawless {
+                                        PointMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
+                                            .foregroundStyle(p.flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xEC4899))
+                                    }
+                                }
+                            }
+                            .chartXAxis(.hidden)
+                            .frame(height: 110)
+                        }
+                    }
+                }
+            }
+        }
+        .task {
+            stats = await MatchStatsService.dailySweepStats()
+            points = await MatchStatsService.dailyPointsOverTime(days: 30)
+        }
+    }
+
+    private func iconStat(_ icon: String, _ color: Color, _ value: String, _ label: String) -> some View {
+        VStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color)
+            Text(value).font(Brand.font(18, .black)).foregroundStyle(color)
+            Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+        }
+    }
+    private func timeStat(_ label: String, _ s: Int) -> some View {
+        VStack(spacing: 2) {
+            Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
+            Text(s > 0 ? "\(s/60):\(String(format: "%02d", s%60))" : "—").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+        }
     }
 }
 

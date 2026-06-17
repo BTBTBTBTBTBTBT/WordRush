@@ -25,6 +25,22 @@ struct HomeView: View {
     @State private var showShieldModal = false
     @State private var shieldChecked = false
 
+    /// One-time-per-day Daily Sweep / Flawless Victory celebration.
+    @State private var showSweepCeleb = false
+    @AppStorage("sweep-celebrated-day") private var sweepCelebratedDay = ""
+
+    /// Show the celebration once per local day when all 9 dailies complete.
+    /// Re-fires if the player upgrades a Sweep → Flawless.
+    private func checkSweepCelebration() {
+        guard auth.isAuthenticated, completions.allDone else { return }
+        let day = LeaderboardService.todayLocal()
+        let tier = completions.flawless ? "flawless" : "sweep"
+        let token = "\(day):\(tier)"
+        if sweepCelebratedDay == token || sweepCelebratedDay == "\(day):flawless" { return }
+        sweepCelebratedDay = token
+        showSweepCeleb = true
+    }
+
     /// An Unlimited ProperNoundle run (PN has its own view, not GameScreen).
     struct PNGame: Identifiable {
         let seed: String
@@ -156,8 +172,17 @@ struct HomeView: View {
                     VSGameView(mode: inv.mode, inviteCode: inv.code)
                 }
             }
-            .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites(); checkStreakAtRisk() }
+            .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites(); checkStreakAtRisk(); checkSweepCelebration() }
             .onAppear { livePlayers.start() }
+            .onChange(of: completions.byMode.count) { _ in checkSweepCelebration() }
+            .fullScreenCover(isPresented: $showSweepCeleb) {
+                if #available(iOS 16.4, *) {
+                    SweepCelebrationView(byMode: completions.byMode) { showSweepCeleb = false }
+                        .presentationBackground(.clear)
+                } else {
+                    SweepCelebrationView(byMode: completions.byMode) { showSweepCeleb = false }
+                }
+            }
             .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -180,30 +205,41 @@ struct HomeView: View {
         let borderC = flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xC4B5FD)
         let titleGradient: [Color] = flawless ? [Color(hex: 0xD97706), Color(hex: 0xB45309)] : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)]
         let subtitleC = flawless ? Color(hex: 0xB45309) : Color(hex: 0x6D28D9)
-        return VStack(spacing: 3) {
-            HStack(spacing: 8) {
-                Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                    .font(.system(size: flawless ? 20 : 16)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
-                Text(flawless ? "Flawless Victory!" : "Daily Sweep!")
-                    .font(Brand.font(flawless ? 18 : 16, .black))
-                    .foregroundStyle(LinearGradient(colors: titleGradient, startPoint: .topLeading, endPoint: .bottomTrailing))
-                Image(systemName: flawless ? "trophy.fill" : "sparkles")
-                    .font(.system(size: flawless ? 20 : 16)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
+        let totals = completions.totals
+        let totalTime = "\(Int(totals.totalTimeSeconds) / 60):\(String(format: "%02d", Int(totals.totalTimeSeconds) % 60))"
+        let score = Int(totals.totalScore.rounded())
+        return Button {
+            ShareService.shareDailySweep(byMode: completions.byMode)
+        } label: {
+            VStack(spacing: 3) {
+                HStack(spacing: 8) {
+                    Image(systemName: flawless ? "trophy.fill" : "sparkles")
+                        .font(.system(size: flawless ? 20 : 16)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
+                    Text(flawless ? "Flawless Victory!" : "Daily Sweep!")
+                        .font(Brand.font(flawless ? 18 : 16, .black))
+                        .foregroundStyle(LinearGradient(colors: titleGradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                    Image(systemName: flawless ? "trophy.fill" : "sparkles")
+                        .font(.system(size: flawless ? 20 : 16)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0xEC4899))
+                }
+                Text(flawless ? "All \(totals.total) won · \(totalTime) · \(score) pts"
+                              : "All \(totals.total) done · \(totalTime) · \(score) pts")
+                    .font(Brand.font(11, .heavy)).foregroundStyle(subtitleC)
+                TimelineView(.periodic(from: .now, by: 1)) { _ in
+                    Text("Tap to share · Next in \(countdown())").font(Brand.font(10, .bold))
+                        .foregroundStyle(subtitleC.opacity(0.75))
+                }
             }
-            Text(flawless ? "All \(DailyCompletionsStore.totalDailyModes) dailies won today · +600 XP earned"
-                          : "All \(DailyCompletionsStore.totalDailyModes) dailies completed · +200 XP earned")
-                .font(Brand.font(11, .heavy)).foregroundStyle(subtitleC)
-            TimelineView(.periodic(from: .now, by: 1)) { _ in
-                Text("Next puzzles in \(countdown())").font(Brand.font(10, .bold))
-                    .foregroundStyle(subtitleC.opacity(0.75))
-            }
+            // Fixed height so swapping hero ⇄ banner ⇄ unlimited on the Daily/Unlimited
+            // toggle never shifts the cards below (all three heroes share this height).
+            .frame(maxWidth: .infinity).frame(height: heroHeight)
+            .background(
+                RoundedRectangle(cornerRadius: 14).fill(
+                    LinearGradient(colors: bg, startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .overlay(BannerShimmer().clipShape(RoundedRectangle(cornerRadius: 14)))
+            )
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderC, lineWidth: 1.5))
         }
-        // Fixed height so swapping hero ⇄ banner ⇄ unlimited on the Daily/Unlimited
-        // toggle never shifts the cards below (all three heroes share this height).
-        .frame(maxWidth: .infinity).frame(height: heroHeight)
-        .background(RoundedRectangle(cornerRadius: 14).fill(
-            LinearGradient(colors: bg, startPoint: .topLeading, endPoint: .bottomTrailing)))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(borderC, lineWidth: 1.5))
+        .buttonStyle(.plain)
     }
 
     private func countdown() -> String {

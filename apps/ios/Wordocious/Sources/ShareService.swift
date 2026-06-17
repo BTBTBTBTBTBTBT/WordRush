@@ -115,7 +115,7 @@ enum ShareService {
 
     #if canImport(UIKit)
     @MainActor
-    private static func present(items: [Any]) {
+    static func present(items: [Any]) {
         let av = UIActivityViewController(activityItems: items, applicationActivities: nil)
         guard let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
               let root = scene.keyWindow?.rootViewController else { return }
