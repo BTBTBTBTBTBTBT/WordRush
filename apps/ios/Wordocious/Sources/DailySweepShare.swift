@@ -23,18 +23,18 @@ struct DailySweepRow: Identifiable {
 }
 
 /// DB game_mode → (share label, accent, glyph) in canonical daily order.
+/// Order/accent/glyph are single-sourced from the mode catalog (modes.json →
+/// ModeGen); only the shortened sweep-card label for ProperNoundle is local.
 enum DailySweepCatalog {
-    static let modes: [(dbKey: String, label: String, accent: Color, glyph: String)] = [
-        ("DUEL", "Classic", Color(hex: 0x7C3AED), "C"),
-        ("QUORDLE", "QuadWord", Color(hex: 0xEC4899), "IV"),
-        ("OCTORDLE", "OctoWord", Color(hex: 0x7E22CE), "VIII"),
-        ("SEQUENCE", "Succession", Color(hex: 0x2563EB), "S"),
-        ("RESCUE", "Deliverance", Color(hex: 0x059669), "D"),
-        ("DUEL_6", "Classic Six", Color(hex: 0x06B6D4), "6"),
-        ("DUEL_7", "Classic Seven", Color(hex: 0x84CC16), "7"),
-        ("GAUNTLET", "Gauntlet", Color(hex: 0xD97706), "G"),
-        ("PROPERNOUNDLE", "Proper", Color(hex: 0xDC2626), "P"),
-    ]
+    /// Sweep-card label override — "Proper" is shortened to fit the row width
+    /// (the catalog shareLabel, used elsewhere, is the full "ProperNoundle").
+    private static let labelOverride: [String: String] = ["PROPERNOUNDLE": "Proper"]
+
+    static let modes: [(dbKey: String, label: String, accent: Color, glyph: String)] =
+        ModeGen.daily.map { m in
+            let key = m.dbKey ?? ""
+            return (dbKey: key, label: labelOverride[key] ?? m.shareLabel, accent: m.accent, glyph: m.glyph ?? "")
+        }
 
     /// Build the ordered rows present in today's completions.
     static func rows(from byMode: [String: DailyCompletion]) -> [DailySweepRow] {

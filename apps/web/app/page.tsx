@@ -20,6 +20,7 @@ import { getSecondsUntilMidnightLocal, computeDailyTotals, getTodayLocal, type D
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { shareDailySweep } from '@/lib/daily-share';
+import { MODES } from '@/lib/modes.generated';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 interface WordDefinition {
@@ -165,17 +166,10 @@ function DailyCountdownText() {
 
 // Home-screen mode-card id → daily_results.game_mode key. The VS card
 // isn't a daily mode (no row in daily_results), so it's absent.
-const MODE_ID_TO_DB: Record<string, string> = {
-  practice: 'DUEL',
-  quordle: 'QUORDLE',
-  octordle: 'OCTORDLE',
-  sequence: 'SEQUENCE',
-  rescue: 'RESCUE',
-  gauntlet: 'GAUNTLET',
-  propernoundle: 'PROPERNOUNDLE',
-  six: 'DUEL_6',
-  seven: 'DUEL_7',
-};
+// Single-sourced from the mode catalog (modes.json → modes.generated).
+const MODE_ID_TO_DB: Record<string, string> = Object.fromEntries(
+  MODES.filter((m) => m.dbKey).map((m) => [m.id, m.dbKey as string]),
+);
 
 function formatShortTime(seconds: number): string {
   if (seconds <= 0) return '—';
@@ -185,102 +179,31 @@ function formatShortTime(seconds: number): string {
   return s === 0 ? `${m}m` : `${m}m ${s}s`;
 }
 
-const MODE_CARDS = [
-  {
-    id: 'practice',
-    title: 'Classic',
-    icon: WordleGridIcon,
-    desc: '1 word, 6 tries',
-    accentColor: '#7c3aed',
-    href: '/practice?daily=true',
-    vsHref: '/practice/vs',
-  },
-  {
-    id: 'vs',
-    title: 'VS Battle',
-    icon: Swords,
-    desc: 'Real-time PvP',
-    accentColor: '#0d9488',
-    // Freemium: daily VS (1 match/day, shared puzzle). Pro users get
-    // redirected to the plain /practice/vs at click time in handleVsClick.
-    href: '/practice/vs?daily=true',
-    vsHref: '/practice/vs?daily=true',
-  },
-  {
-    id: 'quordle',
-    title: 'QuadWord',
-    icon: null,
-    romanNumeral: 'IV',
-    desc: '4 words at once',
-    accentColor: '#ec4899',
-    href: '/quordle?daily=true',
-    vsHref: '/quordle/vs',
-  },
-  {
-    id: 'octordle',
-    title: 'OctoWord',
-    icon: null,
-    romanNumeral: 'VIII',
-    desc: '8 boards, 13 tries',
-    accentColor: '#7e22ce',
-    href: '/octordle?daily=true',
-    vsHref: '/octordle/vs',
-  },
-  {
-    id: 'sequence',
-    title: 'Succession',
-    icon: TrendingUp,
-    desc: '4 words, one by one',
-    accentColor: '#2563eb',
-    href: '/sequence?daily=true',
-    vsHref: '/sequence/vs',
-  },
-  {
-    id: 'rescue',
-    title: 'Deliverance',
-    icon: Shield,
-    desc: '4 prefilled boards',
-    accentColor: '#059669',
-    href: '/rescue?daily=true',
-    vsHref: '/rescue/vs',
-  },
-  {
-    id: 'six',
-    title: 'Six',
-    icon: SixIcon,
-    desc: '6 letters, 7 tries',
-    accentColor: '#06b6d4',
-    href: '/six?daily=true',
-    vsHref: '/six/vs',
-  },
-  {
-    id: 'seven',
-    title: 'Seven',
-    icon: SevenIcon,
-    desc: '7 letters, 8 tries',
-    accentColor: '#84cc16',
-    href: '/seven?daily=true',
-    vsHref: '/seven/vs',
-  },
-  {
-    id: 'gauntlet',
-    title: 'Gauntlet',
-    icon: Skull,
-    desc: '5 escalating stages',
-    accentColor: '#d97706',
-    href: '/gauntlet?daily=true',
-    vsHref: '/gauntlet/vs',
-  },
-  {
-    id: 'propernoundle',
-    title: 'ProperNoundle',
-    icon: Crown,
-    desc: 'Guess famous names',
-    accentColor: '#dc2626',
-    href: '/propernoundle?daily=true',
-    vsHref: '/propernoundle/vs',
-  },
-];
+// Per-mode icon + route chrome (web-native; not centralizable). Title/desc/
+// accent/romanNumeral come from the single-source catalog (modes.generated).
+const MODE_CHROME: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> | null; href: string; vsHref: string }> = {
+  practice: { icon: WordleGridIcon, href: '/practice?daily=true', vsHref: '/practice/vs' },
+  vs: { icon: Swords, href: '/practice/vs?daily=true', vsHref: '/practice/vs?daily=true' },
+  quordle: { icon: null, href: '/quordle?daily=true', vsHref: '/quordle/vs' },
+  octordle: { icon: null, href: '/octordle?daily=true', vsHref: '/octordle/vs' },
+  sequence: { icon: TrendingUp, href: '/sequence?daily=true', vsHref: '/sequence/vs' },
+  rescue: { icon: Shield, href: '/rescue?daily=true', vsHref: '/rescue/vs' },
+  six: { icon: SixIcon, href: '/six?daily=true', vsHref: '/six/vs' },
+  seven: { icon: SevenIcon, href: '/seven?daily=true', vsHref: '/seven/vs' },
+  gauntlet: { icon: Skull, href: '/gauntlet?daily=true', vsHref: '/gauntlet/vs' },
+  propernoundle: { icon: Crown, href: '/propernoundle?daily=true', vsHref: '/propernoundle/vs' },
+};
+
+const MODE_CARDS = MODES.map((m) => ({
+  id: m.id,
+  title: m.title,
+  icon: MODE_CHROME[m.id]?.icon ?? null,
+  romanNumeral: m.romanNumeral ?? undefined,
+  desc: m.desc,
+  accentColor: m.accentHex,
+  href: MODE_CHROME[m.id]?.href ?? '/',
+  vsHref: MODE_CHROME[m.id]?.vsHref ?? '/',
+}));
 
 
 export default function HomePage() {

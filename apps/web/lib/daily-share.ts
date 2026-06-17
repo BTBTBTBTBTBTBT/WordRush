@@ -10,19 +10,11 @@ import { shareResult } from '@/lib/share-utils';
 import type { ShareDailyGame, ShareDailySweepInput, ShareMode } from '@/lib/share-image';
 import type { DailyCompletion } from '@/lib/daily-service';
 import { computeDailyTotals } from '@/lib/daily-service';
+import { DAILY_MODES } from '@/lib/modes.generated';
 
-/** DB game_mode → share mode + display label, in the canonical daily order. */
-const DAILY_SHARE_MODES: Array<{ dbKey: string; mode: ShareMode; label: string }> = [
-  { dbKey: 'DUEL', mode: 'Classic', label: 'Classic' },
-  { dbKey: 'QUORDLE', mode: 'QuadWord', label: 'QuadWord' },
-  { dbKey: 'OCTORDLE', mode: 'OctoWord', label: 'OctoWord' },
-  { dbKey: 'SEQUENCE', mode: 'Succession', label: 'Succession' },
-  { dbKey: 'RESCUE', mode: 'Deliverance', label: 'Deliverance' },
-  { dbKey: 'DUEL_6', mode: 'Six', label: 'Classic Six' },
-  { dbKey: 'DUEL_7', mode: 'Seven', label: 'Classic Seven' },
-  { dbKey: 'GAUNTLET', mode: 'Gauntlet', label: 'Gauntlet' },
-  { dbKey: 'PROPERNOUNDLE', mode: 'ProperNoundle', label: 'ProperNoundle' },
-];
+/** DB game_mode → share mode + display label, from the single-source catalog. */
+const DAILY_SHARE_MODES: Array<{ dbKey: string; mode: ShareMode; label: string }> =
+  DAILY_MODES.map((m) => ({ dbKey: m.dbKey as string, mode: m.title as ShareMode, label: m.shareLabel }));
 
 /** Map today's completions into the share-card input. */
 export function buildDailySweepInput(

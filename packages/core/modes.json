@@ -1,0 +1,15 @@
+{
+  "_comment": "Canonical mode presentation catalog — the single source of truth for mode display metadata across web/iOS/Android. Edit here, then run `pnpm gen:modes` to regenerate the native files (ModeCatalog.generated.swift / .kt). Web imports this JSON directly. Icons stay platform-native (lucide / SF Symbols assets / Android drawables); only data lives here. accentHex is shared by all 3. Board/guess counts live in the engine (reducer), not here.",
+  "modes": [
+    { "id": "practice", "dbKey": "DUEL", "title": "Classic", "shortTitle": "Classic", "shareLabel": "Classic", "desc": "1 word, 6 tries", "accentHex": "#7c3aed", "glyph": "C", "romanNumeral": null, "dailyEligible": true },
+    { "id": "vs", "dbKey": null, "title": "VS Battle", "shortTitle": "VS", "shareLabel": "VS Battle", "desc": "Real-time PvP", "accentHex": "#0d9488", "glyph": null, "romanNumeral": null, "dailyEligible": false },
+    { "id": "quordle", "dbKey": "QUORDLE", "title": "QuadWord", "shortTitle": "Quad", "shareLabel": "QuadWord", "desc": "4 words at once", "accentHex": "#ec4899", "glyph": "IV", "romanNumeral": "IV", "dailyEligible": true },
+    { "id": "octordle", "dbKey": "OCTORDLE", "title": "OctoWord", "shortTitle": "Octo", "shareLabel": "OctoWord", "desc": "8 boards, 13 tries", "accentHex": "#7e22ce", "glyph": "VIII", "romanNumeral": "VIII", "dailyEligible": true },
+    { "id": "sequence", "dbKey": "SEQUENCE", "title": "Succession", "shortTitle": "Succ.", "shareLabel": "Succession", "desc": "4 words, one by one", "accentHex": "#2563eb", "glyph": "S", "romanNumeral": null, "dailyEligible": true },
+    { "id": "rescue", "dbKey": "RESCUE", "title": "Deliverance", "shortTitle": "Deliv.", "shareLabel": "Deliverance", "desc": "4 prefilled boards", "accentHex": "#059669", "glyph": "D", "romanNumeral": null, "dailyEligible": true },
+    { "id": "six", "dbKey": "DUEL_6", "title": "Six", "shortTitle": "Six", "shareLabel": "Classic Six", "desc": "6 letters, 7 tries", "accentHex": "#06b6d4", "glyph": "6", "romanNumeral": null, "dailyEligible": true },
+    { "id": "seven", "dbKey": "DUEL_7", "title": "Seven", "shortTitle": "Seven", "shareLabel": "Classic Seven", "desc": "7 letters, 8 tries", "accentHex": "#84cc16", "glyph": "7", "romanNumeral": null, "dailyEligible": true },
+    { "id": "gauntlet", "dbKey": "GAUNTLET", "title": "Gauntlet", "shortTitle": "Gauntlet", "shareLabel": "Gauntlet", "desc": "5 escalating stages", "accentHex": "#d97706", "glyph": "G", "romanNumeral": null, "dailyEligible": true },
+    { "id": "propernoundle", "dbKey": "PROPERNOUNDLE", "title": "ProperNoundle", "shortTitle": "Proper", "shareLabel": "ProperNoundle", "desc": "Guess famous names", "accentHex": "#dc2626", "glyph": "P", "romanNumeral": null, "dailyEligible": true }
+  ]
+}

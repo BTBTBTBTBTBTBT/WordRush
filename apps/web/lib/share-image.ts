@@ -3,6 +3,7 @@
 import { evaluateGuess, GameStatus, type BoardState } from '@wordle-duel/core';
 import { getTodayLocal } from './daily-service';
 import { TILE_HEX, WIN_FG, WIN_BG, BOARD_WIN_TINT } from './tile-theme';
+import { MODES } from './modes.generated';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
@@ -117,21 +118,12 @@ export type ShareImageInput =
 
 /**
  * Short per-mode glyph drawn inside the accent badge on the all-dailies share
- * card. Numeral modes use their in-app roman/number glyph; the icon modes use
- * a single initial (the full mode name prints alongside). Kept identical on
- * iOS + Android so the three share cards match exactly.
+ * card — derived from the single-source mode catalog (modes.json → modes.generated).
+ * Keyed by ShareMode (== catalog title); kept identical on iOS + Android.
  */
-export const MODE_SHARE_GLYPH: Record<ShareMode, string> = {
-  Classic: 'C',
-  QuadWord: 'IV',
-  OctoWord: 'VIII',
-  Succession: 'S',
-  Deliverance: 'D',
-  Gauntlet: 'G',
-  ProperNoundle: 'P',
-  Six: '6',
-  Seven: '7',
-};
+export const MODE_SHARE_GLYPH: Record<ShareMode, string> = Object.fromEntries(
+  MODES.filter((m) => m.dbKey && m.glyph).map((m) => [m.title, m.glyph as string]),
+) as Record<ShareMode, string>;
 
 // ──────────────────────────────────────────────────────────────────────────
 // Palette (matches the in-app tile + chip colors)
@@ -146,17 +138,10 @@ const TILE_COLORS: Record<TileStateString, string> = {
 };
 const TILE_BORDER_EMPTY = '#d1d5db';
 
-const MODE_ACCENT: Record<ShareMode, string> = {
-  Classic: '#7c3aed',
-  QuadWord: '#ec4899',
-  OctoWord: '#7e22ce',
-  Succession: '#2563eb',
-  Deliverance: '#059669',
-  Gauntlet: '#d97706',
-  ProperNoundle: '#dc2626',
-  Six: '#06b6d4',
-  Seven: '#84cc16',
-};
+// Per-mode accent, derived from the single-source mode catalog (keyed by title == ShareMode).
+const MODE_ACCENT: Record<ShareMode, string> = Object.fromEntries(
+  MODES.filter((m) => m.dbKey).map((m) => [m.title, m.accentHex]),
+) as Record<ShareMode, string>;
 
 const WORDMARK_GRADIENT: [string, string] = ['#a78bfa', '#ec4899'];
 const FOOT_COLOR = '#9ca3af';

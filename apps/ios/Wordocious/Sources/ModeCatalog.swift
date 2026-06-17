@@ -19,30 +19,33 @@ struct HomeMode: Identifiable {
     let mode: GameMode?
     /// daily_results.game_mode key for the completed-today lookup.
     let dbKey: String?
+
+    /// Title/desc/accent/dbKey come from the single-source catalog (modes.json →
+    /// ModeCatalog.generated.swift); only icon + engine mode stay native here.
+    init(genId: String, icon: ModeIconKind, mode: GameMode?) {
+        let g = ModeGen.byId(genId)!
+        self.id = g.id
+        self.title = g.title
+        self.desc = g.desc
+        self.accent = g.accent
+        self.icon = icon
+        self.mode = mode
+        self.dbKey = g.dbKey
+    }
 }
 
-/// The home grid, in the exact order + copy + accent colors as the web.
+/// The home grid; order + copy + accent come from ModeGen, icons stay native.
 let homeModes: [HomeMode] = [
-    HomeMode(id: "practice", title: "Classic", desc: "1 word, 6 tries", accent: Color(hex: 0x7C3AED),
-             icon: .original("wordle-grid"), mode: .duel, dbKey: "DUEL"),
-    HomeMode(id: "vs", title: "VS Battle", desc: "Real-time PvP", accent: Color(hex: 0x0D9488),
-             icon: .asset("swords"), mode: nil, dbKey: nil),
-    HomeMode(id: "quordle", title: "QuadWord", desc: "4 words at once", accent: Color(hex: 0xEC4899),
-             icon: .roman("IV"), mode: .quordle, dbKey: "QUORDLE"),
-    HomeMode(id: "octordle", title: "OctoWord", desc: "8 boards, 13 tries", accent: Color(hex: 0x7E22CE),
-             icon: .roman("VIII"), mode: .octordle, dbKey: "OCTORDLE"),
-    HomeMode(id: "sequence", title: "Succession", desc: "4 words, one by one", accent: Color(hex: 0x2563EB),
-             icon: .asset("trending-up"), mode: .sequence, dbKey: "SEQUENCE"),
-    HomeMode(id: "rescue", title: "Deliverance", desc: "4 prefilled boards", accent: Color(hex: 0x059669),
-             icon: .asset("shield"), mode: .rescue, dbKey: "RESCUE"),
-    HomeMode(id: "six", title: "Six", desc: "6 letters, 7 tries", accent: Color(hex: 0x06B6D4),
-             icon: .hand("six-hand", "6"), mode: .duel6, dbKey: "DUEL_6"),
-    HomeMode(id: "seven", title: "Seven", desc: "7 letters, 8 tries", accent: Color(hex: 0x84CC16),
-             icon: .hand("seven-hand", "7"), mode: .duel7, dbKey: "DUEL_7"),
-    HomeMode(id: "gauntlet", title: "Gauntlet", desc: "5 escalating stages", accent: Color(hex: 0xD97706),
-             icon: .asset("skull"), mode: .gauntlet, dbKey: "GAUNTLET"),
-    HomeMode(id: "propernoundle", title: "ProperNoundle", desc: "Guess famous names", accent: Color(hex: 0xDC2626),
-             icon: .asset("crown"), mode: nil, dbKey: "PROPERNOUNDLE"),
+    HomeMode(genId: "practice",      icon: .original("wordle-grid"),    mode: .duel),
+    HomeMode(genId: "vs",            icon: .asset("swords"),            mode: nil),
+    HomeMode(genId: "quordle",       icon: .roman("IV"),                mode: .quordle),
+    HomeMode(genId: "octordle",      icon: .roman("VIII"),              mode: .octordle),
+    HomeMode(genId: "sequence",      icon: .asset("trending-up"),       mode: .sequence),
+    HomeMode(genId: "rescue",        icon: .asset("shield"),            mode: .rescue),
+    HomeMode(genId: "six",           icon: .hand("six-hand", "6"),      mode: .duel6),
+    HomeMode(genId: "seven",         icon: .hand("seven-hand", "7"),    mode: .duel7),
+    HomeMode(genId: "gauntlet",      icon: .asset("skull"),             mode: .gauntlet),
+    HomeMode(genId: "propernoundle", icon: .asset("crown"),             mode: nil),
 ]
 
 /// Renders a mode's icon inside a rounded accent-tinted square (matches web).

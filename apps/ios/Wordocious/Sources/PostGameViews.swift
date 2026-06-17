@@ -6,35 +6,15 @@ import WordociousCore
 /// others derive from the mode accent.
 enum ModeStyle {
     static func title(_ mode: GameMode) -> String {
-        switch mode {
-        case .duel: return "CLASSIC"
-        case .duel6: return "CLASSIC SIX"
-        case .duel7: return "CLASSIC SEVEN"
-        case .quordle: return "QUADWORD"
-        case .octordle: return "OCTOWORD"
-        case .sequence: return "SUCCESSION"
-        case .rescue: return "DELIVERANCE"
-        case .gauntlet: return "GAUNTLET"
-        case .propernoundle: return "PROPERNOUNDLE"
-        default: return "WORDOCIOUS"
-        }
+        // Single-sourced: uppercased shareLabel from the mode catalog.
+        ModeGen.byDbKey(mode.rawValue).map { $0.shareLabel.uppercased() } ?? "WORDOCIOUS"
     }
     /// Share-image mode label (special-cases Six/Seven like the web).
     static func shareLabel(_ mode: GameMode) -> String { title(mode) }
 
     static func accent(_ mode: GameMode) -> Color {
-        switch mode {
-        case .duel: return Color(hex: 0x7C3AED)
-        case .duel6: return Color(hex: 0x06B6D4)
-        case .duel7: return Color(hex: 0x84CC16)
-        case .quordle: return Color(hex: 0xEC4899)
-        case .octordle: return Color(hex: 0x7E22CE)
-        case .sequence: return Color(hex: 0x2563EB)
-        case .rescue: return Color(hex: 0x059669)
-        case .gauntlet: return Color(hex: 0xD97706)
-        case .propernoundle: return Color(hex: 0xDC2626)
-        default: return Theme.primary
-        }
+        // Single-sourced from the mode catalog (modes.json → ModeGen).
+        ModeGen.byDbKey(mode.rawValue)?.accent ?? Theme.primary
     }
 
     static func gradient(_ mode: GameMode) -> [Color] {

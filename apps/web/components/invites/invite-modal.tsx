@@ -7,6 +7,7 @@ import { createInvite } from '@/lib/invite-service';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
+import { DAILY_MODES } from '@/lib/modes.generated';
 
 interface ModeOption {
   id: string;
@@ -16,17 +17,19 @@ interface ModeOption {
   romanNumeral?: string;
 }
 
-const MODES: ModeOption[] = [
-  { id: 'DUEL',          label: 'Classic',      color: '#7c3aed', icon: WordleGridIcon },
-  { id: 'QUORDLE',       label: 'QuadWord',     color: '#ec4899', romanNumeral: 'IV' },
-  { id: 'OCTORDLE',      label: 'OctoWord',     color: '#7e22ce', romanNumeral: 'VIII' },
-  { id: 'SEQUENCE',      label: 'Succession',   color: '#2563eb', icon: TrendingUp },
-  { id: 'RESCUE',        label: 'Deliverance',  color: '#059669', icon: Shield },
-  { id: 'DUEL_6',        label: 'Six',          color: '#06b6d4', icon: SixIcon },
-  { id: 'DUEL_7',        label: 'Seven',        color: '#84cc16', icon: SevenIcon },
-  { id: 'GAUNTLET',      label: 'Gauntlet',     color: '#d97706', icon: Skull },
-  { id: 'PROPERNOUNDLE', label: 'ProperNoundle',color: '#dc2626', icon: Crown },
-];
+// Icons stay web-native (keyed by dbKey); label/color/order from the single-source catalog.
+const MODE_ICONS: Record<string, React.ComponentType<{ className?: string }> | undefined> = {
+  DUEL: WordleGridIcon, SEQUENCE: TrendingUp, RESCUE: Shield,
+  DUEL_6: SixIcon, DUEL_7: SevenIcon, GAUNTLET: Skull, PROPERNOUNDLE: Crown,
+};
+
+const MODES: ModeOption[] = DAILY_MODES.map((m) => ({
+  id: m.dbKey as string,
+  label: m.title,
+  color: m.accentHex,
+  icon: MODE_ICONS[m.dbKey as string],
+  romanNumeral: m.romanNumeral ?? undefined,
+}));
 
 function ModeGlyph({ mode, size = 16 }: { mode: ModeOption; size?: number }) {
   if (mode.romanNumeral) {

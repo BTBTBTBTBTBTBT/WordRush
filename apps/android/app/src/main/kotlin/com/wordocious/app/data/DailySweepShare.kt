@@ -2,6 +2,7 @@ package com.wordocious.app.data
 
 import android.content.Context
 import android.content.Intent
+import com.wordocious.app.ModeGen
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
@@ -49,18 +50,15 @@ object DailySweepShare {
         val won: Boolean, val guesses: Int, val timeSeconds: Int, val score: Int,
     )
 
-    /** DB game_mode → (label, accent, glyph) in canonical daily order. */
-    private val MODES = listOf(
-        Triple("DUEL", "Classic", 0xFF7C3AED.toInt()) to "C",
-        Triple("QUORDLE", "QuadWord", 0xFFEC4899.toInt()) to "IV",
-        Triple("OCTORDLE", "OctoWord", 0xFF7E22CE.toInt()) to "VIII",
-        Triple("SEQUENCE", "Succession", 0xFF2563EB.toInt()) to "S",
-        Triple("RESCUE", "Deliverance", 0xFF059669.toInt()) to "D",
-        Triple("DUEL_6", "Classic Six", 0xFF06B6D4.toInt()) to "6",
-        Triple("DUEL_7", "Classic Seven", 0xFF84CC16.toInt()) to "7",
-        Triple("GAUNTLET", "Gauntlet", 0xFFD97706.toInt()) to "G",
-        Triple("PROPERNOUNDLE", "Proper", 0xFFDC2626.toInt()) to "P",
-    )
+    /** DB game_mode → (label, accent, glyph) in canonical daily order — order,
+     *  accent and glyph are single-sourced from the catalog (modes.json → ModeGen).
+     *  Only ProperNoundle's label is shortened to "Proper" to fit the row. */
+    private val LABEL_OVERRIDE = mapOf("PROPERNOUNDLE" to "Proper")
+    private val MODES: List<Pair<Triple<String, String, Int>, String>> =
+        ModeGen.daily.map { m ->
+            val key = m.dbKey ?: ""
+            Triple(key, LABEL_OVERRIDE[key] ?: m.shareLabel, m.accentInt) to (m.glyph ?: "")
+        }
 
     fun rows(byMode: Map<String, DailyCompletionsService.Completion>): List<Row> =
         MODES.mapNotNull { (meta, glyph) ->

@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import com.wordocious.core.GameMode
+import com.wordocious.app.ModeGen
 
 /**
  * The home-screen mode cards — ported 1:1 from the web `MODE_CARDS`
@@ -34,19 +35,9 @@ data class ModeCard(
     val lucide: String? = null,  // web lucide icon name (for the exact-icon pass)
 )
 
-/** In-game uppercase mode title (matches iOS ModeStyle titles). */
-fun modeTitle(mode: GameMode): String = when (mode) {
-    GameMode.DUEL -> "CLASSIC"
-    GameMode.DUEL_6 -> "CLASSIC SIX"
-    GameMode.DUEL_7 -> "CLASSIC SEVEN"
-    GameMode.QUORDLE -> "QUADWORD"
-    GameMode.OCTORDLE -> "OCTOWORD"
-    GameMode.SEQUENCE -> "SUCCESSION"
-    GameMode.RESCUE -> "DELIVERANCE"
-    GameMode.GAUNTLET -> "GAUNTLET"
-    GameMode.PROPERNOUNDLE -> "PROPERNOUNDLE"
-    else -> mode.name
-}
+/** In-game uppercase mode title — single-sourced uppercased shareLabel from ModeGen. */
+fun modeTitle(mode: GameMode): String =
+    ModeGen.byDbKey(mode.name)?.shareLabel?.uppercase() ?: mode.name
 
 /** Mode accent color (from MODE_CARDS). */
 fun modeAccent(mode: GameMode): Color =
@@ -60,18 +51,28 @@ fun modeTitleGradient(mode: GameMode): List<Color> = when (mode) {
     else -> modeAccent(mode).let { listOf(it, it.copy(alpha = 0.65f)) }
 }
 
-val MODE_CARDS: List<ModeCard> = listOf(
-    ModeCard("practice", "Classic", "1 word, 6 tries", Color(0xFF7C3AED), GameMode.DUEL, lucide = "WordleGrid"),
-    ModeCard("vs", "VS Battle", "Real-time PvP", Color(0xFF0D9488), null, lucide = "Swords"),
-    ModeCard("quordle", "QuadWord", "4 words at once", Color(0xFFEC4899), GameMode.QUORDLE, glyph = "IV"),
-    ModeCard("octordle", "OctoWord", "8 boards, 13 tries", Color(0xFF7E22CE), GameMode.OCTORDLE, glyph = "VIII"),
-    ModeCard("sequence", "Succession", "4 words, one by one", Color(0xFF2563EB), GameMode.SEQUENCE, lucide = "TrendingUp"),
-    ModeCard("rescue", "Deliverance", "4 prefilled boards", Color(0xFF059669), GameMode.RESCUE, lucide = "Shield"),
-    ModeCard("six", "Six", "6 letters, 7 tries", Color(0xFF06B6D4), GameMode.DUEL_6, glyph = "6"),
-    ModeCard("seven", "Seven", "7 letters, 8 tries", Color(0xFF84CC16), GameMode.DUEL_7, glyph = "7"),
-    ModeCard("gauntlet", "Gauntlet", "5 escalating stages", Color(0xFFD97706), GameMode.GAUNTLET, lucide = "Skull"),
-    ModeCard("propernoundle", "ProperNoundle", "Guess famous names", Color(0xFFDC2626), GameMode.PROPERNOUNDLE, lucide = "Crown"),
+/** Per-mode icon chrome (web-native; keyed by catalog id). glyph = roman/number
+ *  shown instead of an icon; lucide = web icon name. Title/desc/accent/order come
+ *  from the single-source catalog (modes.json → ModeGen). */
+private data class ModeChrome(val glyph: String?, val lucide: String?)
+private val MODE_CHROME: Map<String, ModeChrome> = mapOf(
+    "practice" to ModeChrome(null, "WordleGrid"),
+    "vs" to ModeChrome(null, "Swords"),
+    "quordle" to ModeChrome("IV", null),
+    "octordle" to ModeChrome("VIII", null),
+    "sequence" to ModeChrome(null, "TrendingUp"),
+    "rescue" to ModeChrome(null, "Shield"),
+    "six" to ModeChrome("6", null),
+    "seven" to ModeChrome("7", null),
+    "gauntlet" to ModeChrome(null, "Skull"),
+    "propernoundle" to ModeChrome(null, "Crown"),
 )
+
+val MODE_CARDS: List<ModeCard> = ModeGen.all.map { m ->
+    val chrome = MODE_CHROME[m.id]
+    val engine = m.dbKey?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
+    ModeCard(m.id, m.title, m.desc, m.accent, engine, glyph = chrome?.glyph, lucide = chrome?.lucide)
+}
 
 /** The MODE_CARDS entry for a `:core` GameMode (icon/accent/glyph source of truth). */
 fun modeCardFor(mode: GameMode): ModeCard? = MODE_CARDS.firstOrNull { it.engineMode == mode }
