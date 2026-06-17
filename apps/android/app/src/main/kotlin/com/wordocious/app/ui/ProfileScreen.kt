@@ -823,7 +823,10 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
 // ── Achievements ──────────────────────────────────────────────────────────────
 @Composable
 private fun AchievementsSection(unlocked: Set<String>) {
-    val all = com.wordocious.app.data.AchievementService.all
+    // Single-sourced via /api/achievements (cached); detection stays per-platform.
+    val all by androidx.compose.runtime.produceState(
+        initialValue = com.wordocious.app.data.AchievementCatalog.cached()
+    ) { value = com.wordocious.app.data.AchievementCatalog.load() }
     var open by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth()) {
         Row(

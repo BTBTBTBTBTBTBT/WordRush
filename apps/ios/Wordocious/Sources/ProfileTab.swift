@@ -16,6 +16,7 @@ struct ProfileTab: View {
     // Solo/VS toggle (mirrors the web personal profile) — filters user_stats by play_type.
     @State private var activeTab = "solo"
     @State private var unlockedAchievements: Set<String> = []
+    @StateObject private var achievementCatalog = AchievementCatalog.shared
     @State private var medals: [MedalRow] = []
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
@@ -51,6 +52,7 @@ struct ProfileTab: View {
             .toolbar(.hidden, for: .navigationBar)
             .task(id: auth.profile?.id) {
                 await completions.load()
+                await achievementCatalog.load()
                 if let uid = auth.profile?.id {
                     statRows = await UserStatsService.fetch(userId: uid)
                     unlockedAchievements = await AchievementService.fetchUnlocked(userId: uid)
@@ -553,9 +555,9 @@ struct ProfileTab: View {
     // MARK: Achievements (collapsible grid)
 
     private var achievementsSection: some View {
-        CollapsibleSection(title: "ACHIEVEMENTS", badge: "\(unlockedAchievements.count)/\(AchievementService.all.count)") {
+        CollapsibleSection(title: "ACHIEVEMENTS", badge: "\(unlockedAchievements.count)/\(achievementCatalog.all.count)") {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                ForEach(AchievementService.all) { a in
+                ForEach(achievementCatalog.all) { a in
                     let on = unlockedAchievements.contains(a.key)
                     VStack(spacing: 2) {
                         Text(on ? "✓" : "?").font(Brand.font(18, .black)).foregroundStyle(on ? Theme.primary : Theme.textMuted)
