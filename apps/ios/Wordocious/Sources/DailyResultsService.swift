@@ -132,6 +132,11 @@ enum DailyResultsService {
         guard DailyScoring.config[gameMode.rawValue] != nil else { return nil }
         // The puzzle's calendar day comes from the seed, NOT the finish time.
         let day = seed.flatMap(getDailySeedDate) ?? LeaderboardService.todayLocal()
+        let composite = DailyScoring.compositeScore(
+            gameMode: gameMode.rawValue, completed: completed, guessCount: guessCount,
+            timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
+            hintsUsed: hintsUsed
+        )
         // Optimistic local update FIRST (before any network) so the home grid's
         // completed state flips the instant the game ends (web parity: the
         // 'daily-completion' window event). Only when the row is for TODAY —
@@ -143,18 +148,13 @@ enum DailyResultsService {
                     name: DailyCompletionsStore.completionPosted,
                     object: DailyCompletion(
                         gameMode: gameMode.rawValue, completed: completed,
-                        guessCount: guessCount, timeSeconds: Double(timeSeconds)))
+                        guessCount: guessCount, timeSeconds: Double(timeSeconds),
+                        score: composite))
             }
         }
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return nil }
         let userId = session.user.id.uuidString
-
-        let composite = DailyScoring.compositeScore(
-            gameMode: gameMode.rawValue, completed: completed, guessCount: guessCount,
-            timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
-            hintsUsed: hintsUsed
-        )
 
         do {
             let existing: [ExistingRow] = try await client.from("daily_results")

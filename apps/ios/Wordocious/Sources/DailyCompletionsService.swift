@@ -10,11 +10,49 @@ struct DailyCompletion: Codable {
     let completed: Bool
     let guessCount: Int
     let timeSeconds: Double
+    /// Per-mode daily composite score (daily_results.composite_score). Optional in
+    /// the on-device cache written before this field existed → defaults to 0.
+    let score: Double
     enum CodingKeys: String, CodingKey {
         case gameMode = "game_mode"
         case completed
         case guessCount = "guess_count"
         case timeSeconds = "time_seconds"
+        case score = "composite_score"
+    }
+    init(gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Double, score: Double = 0) {
+        self.gameMode = gameMode; self.completed = completed
+        self.guessCount = guessCount; self.timeSeconds = timeSeconds; self.score = score
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        gameMode = try c.decode(String.self, forKey: .gameMode)
+        completed = try c.decode(Bool.self, forKey: .completed)
+        guessCount = try c.decode(Int.self, forKey: .guessCount)
+        timeSeconds = try c.decode(Double.self, forKey: .timeSeconds)
+        score = (try? c.decodeIfPresent(Double.self, forKey: .score)) ?? 0
+    }
+}
+
+/// Summed totals across today's daily completions — one helper shared by the
+/// banner, celebration modal, and share card so all three always agree.
+struct DailyTotals {
+    var completed: Int = 0
+    var won: Int = 0
+    let total: Int = DailyCompletionsStore.totalDailyModes
+    var totalGuesses: Int = 0
+    var totalTimeSeconds: Double = 0
+    var totalScore: Double = 0
+    var flawless: Bool { completed >= total && won >= total }
+
+    init(_ byMode: [String: DailyCompletion]) {
+        for c in byMode.values {
+            completed += 1
+            if c.completed { won += 1 }
+            totalGuesses += c.guessCount
+            totalTimeSeconds += c.timeSeconds
+            totalScore += c.score
+        }
     }
 }
 
@@ -35,6 +73,9 @@ final class DailyCompletionsStore: ObservableObject {
     var wonCount: Int { byMode.values.filter { $0.completed }.count }
     var allDone: Bool { completedCount >= Self.totalDailyModes }
     var flawless: Bool { allDone && wonCount >= Self.totalDailyModes }
+
+    /// Summed totals (points/time/guesses) across today's completions.
+    var totals: DailyTotals { DailyTotals(byMode) }
 
     /// Posted by DailyResultsService the moment a daily finishes — the native
     /// analogue of the web's `daily-completion` window event, so the home grid
@@ -61,7 +102,7 @@ final class DailyCompletionsStore: ObservableObject {
         }
         do {
             let rows: [DailyCompletion] = try await client.from("daily_results")
-                .select("game_mode, completed, guess_count, time_seconds")
+                .select("game_mode, completed, guess_count, time_seconds, composite_score")
                 .eq("user_id", value: userId)
                 .eq("day", value: LeaderboardService.todayLocal())
                 .eq("play_type", value: "solo")

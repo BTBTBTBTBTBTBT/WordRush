@@ -145,10 +145,10 @@ object DailyResultsService {
         val userId = AuthService.userId ?: return
         val day = seed?.let { com.wordocious.core.getDailySeedDate(it) } ?: todayLocalDate()
         val gameModeStr = mode.name
+        val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
         // Optimistic local update FIRST so the home card flips to completed the
         // instant the game ends (web 'daily-completion' event parity).
-        DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds)
-        val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
+        DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds, score)
 
         try {
             // Check if a row already exists for today

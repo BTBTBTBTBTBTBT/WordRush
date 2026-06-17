@@ -368,7 +368,7 @@ export async function recordGameResult(
     const boards = boardsSolved ?? (won ? (totalBoards ?? 1) : 0);
     const total = totalBoards ?? 1;
 
-    await recordDailyResult(
+    const dailyScore = await recordDailyResult(
       userId, gameMode, playType, won, guessCount, timeSeconds, boards, total, hintsUsed,
       // Day comes from the SEED, not the wall clock: a daily started 23:58
       // and finished 00:02 must land on the day its puzzle was issued for.
@@ -378,7 +378,7 @@ export async function recordGameResult(
     // instantly when navigating back to the home screen.
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('daily-completion', {
-        detail: { gameMode, won, guesses: guessCount, timeSeconds },
+        detail: { gameMode, won, guesses: guessCount, timeSeconds, score: Math.round(dailyScore ?? 0) },
       }));
     }
     // After the solo daily row lands, see whether this was the 7th
@@ -1121,4 +1121,119 @@ export async function fetchHeadToHeadRecord(userId: string, gameMode: string) {
   }
   const total = wins + losses;
   return { wins, losses, total, winRate: total > 0 ? Math.round((wins / total) * 100) : 0 };
+}
+
+// ── Daily Sweep / Flawless Victory stats (profile "All" view) ──────────────
+// Source of truth: daily_bonuses (sweep/flawless flags per day) ⨝ daily_results
+// (per-mode time + composite_score per day). All aggregation is client-side.
+
+export interface DailySweepStats {
+  sweepCount: number;
+  flawlessCount: number;
+  avgSweepSecs: number;
+  avgFlawlessSecs: number;
+  bestSweepSecs: number;
+  bestFlawlessSecs: number;
+  currentSweepStreak: number;
+}
+
+export interface DailyPointsPoint {
+  day: string;
+  totalPoints: number;
+  swept: boolean;
+  flawless: boolean;
+}
+
+/** Add/subtract days from a YYYY-MM-DD local-day string. */
+function dayShift(day: string, delta: number): string {
+  const [y, m, d] = day.split('-').map(Number);
+  const dt = new Date(y, (m ?? 1) - 1, d ?? 1);
+  dt.setDate(dt.getDate() + delta);
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${dt.getFullYear()}-${mm}-${dd}`;
+}
+
+export async function fetchDailySweepStats(userId: string): Promise<DailySweepStats> {
+  const empty: DailySweepStats = {
+    sweepCount: 0, flawlessCount: 0, avgSweepSecs: 0, avgFlawlessSecs: 0,
+    bestSweepSecs: 0, bestFlawlessSecs: 0, currentSweepStreak: 0,
+  };
+
+  const { data: bonuses } = await (supabase as any)
+    .from('daily_bonuses')
+    .select('day, sweep_awarded, flawless_awarded')
+    .eq('user_id', userId) as {
+    data: Array<{ day: string; sweep_awarded: boolean; flawless_awarded: boolean }> | null;
+  };
+  if (!bonuses || bonuses.length === 0) return empty;
+
+  const sweepDays = bonuses.filter((b) => b.sweep_awarded).map((b) => b.day);
+  const flawlessDays = new Set(bonuses.filter((b) => b.flawless_awarded).map((b) => b.day));
+  if (sweepDays.length === 0) return empty;
+
+  // Per-day total solo time across that day's daily modes.
+  const { data: rows } = await (supabase as any)
+    .from('daily_results')
+    .select('day, time_seconds')
+    .eq('user_id', userId)
+    .eq('play_type', 'solo')
+    .in('day', sweepDays) as { data: Array<{ day: string; time_seconds: number }> | null };
+
+  const perDayTime = new Map<string, number>();
+  for (const r of rows || []) perDayTime.set(r.day, (perDayTime.get(r.day) ?? 0) + (r.time_seconds ?? 0));
+
+  const sweepTimes = sweepDays.map((d) => perDayTime.get(d) ?? 0).filter((t) => t > 0);
+  const flawlessTimes = [...flawlessDays].map((d) => perDayTime.get(d) ?? 0).filter((t) => t > 0);
+  const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
+  const min = (xs: number[]) => (xs.length ? Math.min(...xs) : 0);
+
+  // Current consecutive-sweep streak ending today or yesterday.
+  const sweepSet = new Set(sweepDays);
+  const today = getTodayLocal();
+  let cursor: string | null = sweepSet.has(today)
+    ? today
+    : (sweepSet.has(dayShift(today, -1)) ? dayShift(today, -1) : null);
+  let streak = 0;
+  while (cursor && sweepSet.has(cursor)) { streak += 1; cursor = dayShift(cursor, -1); }
+
+  return {
+    sweepCount: sweepDays.length,
+    flawlessCount: flawlessDays.size,
+    avgSweepSecs: avg(sweepTimes),
+    avgFlawlessSecs: avg(flawlessTimes),
+    bestSweepSecs: min(sweepTimes),
+    bestFlawlessSecs: min(flawlessTimes),
+    currentSweepStreak: streak,
+  };
+}
+
+export async function fetchDailyPointsOverTime(userId: string, days = 30): Promise<DailyPointsPoint[]> {
+  const cutoff = dayShift(getTodayLocal(), -(days - 1));
+  const { data: rows } = await (supabase as any)
+    .from('daily_results')
+    .select('day, composite_score, completed')
+    .eq('user_id', userId)
+    .eq('play_type', 'solo')
+    .gte('day', cutoff) as {
+    data: Array<{ day: string; composite_score: number; completed: boolean }> | null;
+  };
+  if (!rows || rows.length === 0) return [];
+
+  const { data: bonuses } = await (supabase as any)
+    .from('daily_bonuses')
+    .select('day, sweep_awarded, flawless_awarded')
+    .eq('user_id', userId)
+    .gte('day', cutoff) as {
+    data: Array<{ day: string; sweep_awarded: boolean; flawless_awarded: boolean }> | null;
+  };
+  const sweptSet = new Set((bonuses || []).filter((b) => b.sweep_awarded).map((b) => b.day));
+  const flawlessSet = new Set((bonuses || []).filter((b) => b.flawless_awarded).map((b) => b.day));
+
+  const perDay = new Map<string, number>();
+  for (const r of rows) perDay.set(r.day, (perDay.get(r.day) ?? 0) + Math.round(r.composite_score ?? 0));
+
+  return [...perDay.entries()]
+    .map(([day, totalPoints]) => ({ day, totalPoints, swept: sweptSet.has(day), flawless: flawlessSet.has(day) }))
+    .sort((a, b) => a.day.localeCompare(b.day));
 }

@@ -830,6 +830,36 @@ export interface DailyCompletion {
   won: boolean;
   guesses: number;
   timeSeconds: number;
+  /** Per-mode daily composite score (daily_results.composite_score). */
+  score: number;
+}
+
+/** Aggregate totals across today's daily completions — the single source the
+ *  Sweep/Flawless banner, celebration modal, and share card all consume so the
+ *  three never disagree. */
+export interface DailyTotals {
+  completed: number;
+  won: number;
+  total: number;
+  totalGuesses: number;
+  totalTimeSeconds: number;
+  totalScore: number;
+  flawless: boolean;
+}
+
+export function computeDailyTotals(completions: Map<string, DailyCompletion>): DailyTotals {
+  let won = 0, totalGuesses = 0, totalTimeSeconds = 0, totalScore = 0;
+  for (const c of completions.values()) {
+    if (c.won) won += 1;
+    totalGuesses += c.guesses;
+    totalTimeSeconds += c.timeSeconds;
+    totalScore += c.score;
+  }
+  const completed = completions.size;
+  return {
+    completed, won, total: DAILY_MODE_COUNT, totalGuesses, totalTimeSeconds, totalScore,
+    flawless: completed >= DAILY_MODE_COUNT && won >= DAILY_MODE_COUNT,
+  };
 }
 
 /**
@@ -844,7 +874,7 @@ export async function fetchTodayDailyCompletions(
   const day = getTodayLocal();
   const { data } = await (supabase as any)
     .from('daily_results')
-    .select('game_mode, completed, guess_count, time_seconds')
+    .select('game_mode, completed, guess_count, time_seconds, composite_score')
     .eq('user_id', userId)
     .eq('day', day)
     .eq('play_type', 'solo') as {
@@ -853,6 +883,7 @@ export async function fetchTodayDailyCompletions(
       completed: boolean;
       guess_count: number;
       time_seconds: number;
+      composite_score: number;
     }> | null;
   };
 
@@ -862,6 +893,7 @@ export async function fetchTodayDailyCompletions(
       won: !!row.completed,
       guesses: row.guess_count ?? 0,
       timeSeconds: row.time_seconds ?? 0,
+      score: Math.round(row.composite_score ?? 0),
     });
   }
   return out;

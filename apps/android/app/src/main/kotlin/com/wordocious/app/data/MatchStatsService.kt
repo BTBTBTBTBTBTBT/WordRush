@@ -393,4 +393,106 @@ object MatchStatsService {
         val total = wins + losses
         H2H(wins, losses, total, if (total > 0) ((wins.toDouble() / total) * 100).roundToInt() else 0)
     }.getOrElse { H2H(0, 0, 0, 0) }
+
+    // ── Daily Sweep / Flawless Victory stats (profile "All" view) ────────────────
+    // Source of truth: daily_bonuses (sweep/flawless flags per day) ⨝ daily_results
+    // (per-mode time + composite_score per day). Mirrors stats-service.ts.
+
+    data class DailySweepStats(
+        val sweepCount: Int = 0,
+        val flawlessCount: Int = 0,
+        val avgSweepSecs: Int = 0,
+        val avgFlawlessSecs: Int = 0,
+        val bestSweepSecs: Int = 0,
+        val bestFlawlessSecs: Int = 0,
+        val currentSweepStreak: Int = 0,
+    ) {
+        val hasData: Boolean get() = sweepCount > 0 || flawlessCount > 0
+    }
+
+    data class DailyPointsPoint(val day: String, val totalPoints: Int, val swept: Boolean, val flawless: Boolean)
+
+    @Serializable
+    private data class BonusRow(
+        val day: String,
+        @SerialName("sweep_awarded") val sweepAwarded: Boolean = false,
+        @SerialName("flawless_awarded") val flawlessAwarded: Boolean = false,
+    )
+
+    @Serializable
+    private data class DayTimeRow(val day: String, @SerialName("time_seconds") val timeSeconds: Int = 0)
+
+    @Serializable
+    private data class DayScoreRow(val day: String, @SerialName("composite_score") val compositeScore: Double = 0.0)
+
+    /** Add/subtract days from a YYYY-MM-DD local-day string. */
+    private fun dayShift(day: String, delta: Int): String =
+        runCatching { java.time.LocalDate.parse(day).plusDays(delta.toLong()).toString() }.getOrElse { day }
+
+    suspend fun dailySweepStats(): DailySweepStats = runCatching {
+        val userId = AuthService.userId ?: return DailySweepStats()
+        val bonuses = client.postgrest["daily_bonuses"]
+            .select(Columns.raw("day,sweep_awarded,flawless_awarded")) { filter { eq("user_id", userId) } }
+            .decodeList<BonusRow>()
+        if (bonuses.isEmpty()) return DailySweepStats()
+
+        val sweepDays = bonuses.filter { it.sweepAwarded }.map { it.day }
+        val flawlessDays = bonuses.filter { it.flawlessAwarded }.map { it.day }.toSet()
+        if (sweepDays.isEmpty()) return DailySweepStats()
+
+        val rows = client.postgrest["daily_results"]
+            .select(Columns.raw("day,time_seconds")) {
+                filter { eq("user_id", userId); eq("play_type", "solo"); isIn("day", sweepDays) }
+            }
+            .decodeList<DayTimeRow>()
+        val perDayTime = HashMap<String, Int>()
+        rows.forEach { perDayTime[it.day] = (perDayTime[it.day] ?: 0) + it.timeSeconds }
+
+        val sweepTimes = sweepDays.mapNotNull { perDayTime[it] }.filter { it > 0 }
+        val flawlessTimes = flawlessDays.mapNotNull { perDayTime[it] }.filter { it > 0 }
+        fun avg(xs: List<Int>) = if (xs.isEmpty()) 0 else (xs.sum().toDouble() / xs.size).roundToInt()
+        fun best(xs: List<Int>) = xs.minOrNull() ?: 0
+
+        val sweepSet = sweepDays.toSet()
+        val today = com.wordocious.app.todayLocalDate()
+        var cursor: String? = when {
+            sweepSet.contains(today) -> today
+            sweepSet.contains(dayShift(today, -1)) -> dayShift(today, -1)
+            else -> null
+        }
+        var streak = 0
+        while (cursor != null && sweepSet.contains(cursor)) { streak++; cursor = dayShift(cursor!!, -1) }
+
+        DailySweepStats(
+            sweepCount = sweepDays.size, flawlessCount = flawlessDays.size,
+            avgSweepSecs = avg(sweepTimes), avgFlawlessSecs = avg(flawlessTimes),
+            bestSweepSecs = best(sweepTimes), bestFlawlessSecs = best(flawlessTimes),
+            currentSweepStreak = streak,
+        )
+    }.getOrElse { DailySweepStats() }
+
+    suspend fun dailyPointsOverTime(days: Int = 30): List<DailyPointsPoint> = runCatching {
+        val userId = AuthService.userId ?: return emptyList()
+        val cutoff = dayShift(com.wordocious.app.todayLocalDate(), -(days - 1))
+        val rows = client.postgrest["daily_results"]
+            .select(Columns.raw("day,composite_score")) {
+                filter { eq("user_id", userId); eq("play_type", "solo"); gte("day", cutoff) }
+            }
+            .decodeList<DayScoreRow>()
+        if (rows.isEmpty()) return emptyList()
+
+        val bonuses = client.postgrest["daily_bonuses"]
+            .select(Columns.raw("day,sweep_awarded,flawless_awarded")) {
+                filter { eq("user_id", userId); gte("day", cutoff) }
+            }
+            .decodeList<BonusRow>()
+        val sweptSet = bonuses.filter { it.sweepAwarded }.map { it.day }.toSet()
+        val flawlessSet = bonuses.filter { it.flawlessAwarded }.map { it.day }.toSet()
+
+        val perDay = HashMap<String, Int>()
+        rows.forEach { perDay[it.day] = (perDay[it.day] ?: 0) + it.compositeScore.roundToInt() }
+        perDay.entries
+            .map { DailyPointsPoint(it.key, it.value, sweptSet.contains(it.key), flawlessSet.contains(it.key)) }
+            .sortedBy { it.day }
+    }.getOrElse { emptyList() }
 }

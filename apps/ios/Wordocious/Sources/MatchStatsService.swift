@@ -359,4 +359,111 @@ enum MatchStatsService {
         let total = wins + losses
         return (wins, losses, total, total > 0 ? Int((Double(wins) / Double(total) * 100).rounded()) : 0)
     }
+
+    // MARK: Daily Sweep / Flawless Victory stats (profile "All" view)
+    // Source of truth: daily_bonuses (sweep/flawless flags per day) ⨝ daily_results
+    // (per-mode time + composite_score per day). Mirrors stats-service.ts.
+
+    struct DailySweepStats {
+        var sweepCount = 0
+        var flawlessCount = 0
+        var avgSweepSecs = 0
+        var avgFlawlessSecs = 0
+        var bestSweepSecs = 0
+        var bestFlawlessSecs = 0
+        var currentSweepStreak = 0
+        var hasData: Bool { sweepCount > 0 || flawlessCount > 0 }
+    }
+
+    struct DailyPointsPoint: Identifiable {
+        let day: String
+        let totalPoints: Int
+        let swept: Bool
+        let flawless: Bool
+        var id: String { day }
+    }
+
+    /// Add/subtract days from a YYYY-MM-DD local-day string.
+    private static func dayShift(_ day: String, _ delta: Int) -> String {
+        let parts = day.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return day }
+        var comps = DateComponents(); comps.year = parts[0]; comps.month = parts[1]; comps.day = parts[2]
+        let cal = Calendar.current
+        guard let base = cal.date(from: comps),
+              let shifted = cal.date(byAdding: .day, value: delta, to: base) else { return day }
+        let f = DateFormatter(); f.calendar = cal; f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: shifted)
+    }
+
+    static func dailySweepStats() async -> DailySweepStats {
+        guard let uid = await userId() else { return DailySweepStats() }
+        struct BonusRow: Decodable { let day: String; let sweep_awarded: Bool?; let flawless_awarded: Bool? }
+        struct TimeRow: Decodable { let day: String; let time_seconds: Double? }
+
+        let bonuses: [BonusRow] = (try? await AuthService.shared.client.from("daily_bonuses")
+            .select("day, sweep_awarded, flawless_awarded")
+            .eq("user_id", value: uid)
+            .execute().value) ?? []
+        guard !bonuses.isEmpty else { return DailySweepStats() }
+
+        let sweepDays = bonuses.filter { $0.sweep_awarded == true }.map { $0.day }
+        let flawlessDays = Set(bonuses.filter { $0.flawless_awarded == true }.map { $0.day })
+        guard !sweepDays.isEmpty else { return DailySweepStats() }
+
+        let rows: [TimeRow] = (try? await AuthService.shared.client.from("daily_results")
+            .select("day, time_seconds")
+            .eq("user_id", value: uid)
+            .eq("play_type", value: "solo")
+            .in("day", values: sweepDays)
+            .execute().value) ?? []
+        var perDayTime: [String: Double] = [:]
+        for r in rows { perDayTime[r.day, default: 0] += (r.time_seconds ?? 0) }
+
+        let sweepTimes = sweepDays.compactMap { perDayTime[$0] }.filter { $0 > 0 }
+        let flawlessTimes = flawlessDays.compactMap { perDayTime[$0] }.filter { $0 > 0 }
+        func avg(_ xs: [Double]) -> Int { xs.isEmpty ? 0 : Int((xs.reduce(0,+) / Double(xs.count)).rounded()) }
+        func best(_ xs: [Double]) -> Int { xs.isEmpty ? 0 : Int(xs.min()!) }
+
+        let sweepSet = Set(sweepDays)
+        let today = LeaderboardService.todayLocal()
+        var cursor: String? = sweepSet.contains(today) ? today
+            : (sweepSet.contains(dayShift(today, -1)) ? dayShift(today, -1) : nil)
+        var streak = 0
+        while let c = cursor, sweepSet.contains(c) { streak += 1; cursor = dayShift(c, -1) }
+
+        return DailySweepStats(
+            sweepCount: sweepDays.count, flawlessCount: flawlessDays.count,
+            avgSweepSecs: avg(sweepTimes), avgFlawlessSecs: avg(flawlessTimes),
+            bestSweepSecs: best(sweepTimes), bestFlawlessSecs: best(flawlessTimes),
+            currentSweepStreak: streak)
+    }
+
+    static func dailyPointsOverTime(days: Int = 30) async -> [DailyPointsPoint] {
+        guard let uid = await userId() else { return [] }
+        struct ScoreRow: Decodable { let day: String; let composite_score: Double? }
+        struct BonusRow: Decodable { let day: String; let sweep_awarded: Bool?; let flawless_awarded: Bool? }
+        let cutoff = dayShift(LeaderboardService.todayLocal(), -(days - 1))
+
+        let rows: [ScoreRow] = (try? await AuthService.shared.client.from("daily_results")
+            .select("day, composite_score")
+            .eq("user_id", value: uid)
+            .eq("play_type", value: "solo")
+            .gte("day", value: cutoff)
+            .execute().value) ?? []
+        guard !rows.isEmpty else { return [] }
+
+        let bonuses: [BonusRow] = (try? await AuthService.shared.client.from("daily_bonuses")
+            .select("day, sweep_awarded, flawless_awarded")
+            .eq("user_id", value: uid)
+            .gte("day", value: cutoff)
+            .execute().value) ?? []
+        let sweptSet = Set(bonuses.filter { $0.sweep_awarded == true }.map { $0.day })
+        let flawlessSet = Set(bonuses.filter { $0.flawless_awarded == true }.map { $0.day })
+
+        var perDay: [String: Int] = [:]
+        for r in rows { perDay[r.day, default: 0] += Int((r.composite_score ?? 0).rounded()) }
+        return perDay.map { DailyPointsPoint(day: $0.key, totalPoints: $0.value,
+            swept: sweptSet.contains($0.key), flawless: flawlessSet.contains($0.key)) }
+            .sorted { $0.day < $1.day }
+    }
 }

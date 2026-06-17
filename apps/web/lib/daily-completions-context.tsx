@@ -108,8 +108,8 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
   // this context.
   useEffect(() => {
     const handler = (e: Event) => {
-      const { gameMode, won, guesses, timeSeconds } = (e as CustomEvent).detail;
-      addCompletion(gameMode, { won, guesses, timeSeconds });
+      const { gameMode, won, guesses, timeSeconds, score } = (e as CustomEvent).detail;
+      addCompletion(gameMode, { won, guesses, timeSeconds, score: score ?? 0 });
     };
     window.addEventListener('daily-completion', handler);
     return () => window.removeEventListener('daily-completion', handler);

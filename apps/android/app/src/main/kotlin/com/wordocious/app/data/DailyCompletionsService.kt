@@ -25,14 +25,43 @@ object DailyCompletionsService {
         val completed: Boolean,
         @SerialName("guess_count") val guessCount: Int = 0,
         @SerialName("time_seconds") val timeSeconds: Int = 0,
+        /** Per-mode daily composite score (daily_results.composite_score). */
+        @SerialName("composite_score") val score: Double = 0.0,
     )
+
+    /**
+     * Summed totals across today's completions — one helper shared by the
+     * banner, celebration modal, and share card so all three always agree.
+     */
+    data class Totals(
+        val completed: Int,
+        val won: Int,
+        val total: Int,
+        val totalGuesses: Int,
+        val totalTimeSeconds: Int,
+        val totalScore: Int,
+    ) {
+        val flawless: Boolean get() = completed >= total && won >= total
+    }
+
+    /** The 9 daily modes (VS excluded — no daily row). */
+    const val TOTAL_DAILY_MODES = 9
+
+    fun totals(byMode: Map<String, Completion>): Totals {
+        var won = 0; var guesses = 0; var time = 0; var score = 0.0
+        for (c in byMode.values) {
+            if (c.completed) won++
+            guesses += c.guessCount; time += c.timeSeconds; score += c.score
+        }
+        return Totals(byMode.size, won, TOTAL_DAILY_MODES, guesses, time, Math.round(score).toInt())
+    }
 
     /** Map of game_mode → completion for today's daily (solo). Empty if not signed in. */
     suspend fun fetchTodayCompletions(): Map<String, Completion> {
         val userId = AuthService.userId ?: return emptyMap()
         return runCatching {
             val map = client.postgrest["daily_results"]
-                .select(Columns.raw("game_mode,completed,guess_count,time_seconds")) {
+                .select(Columns.raw("game_mode,completed,guess_count,time_seconds,composite_score")) {
                     filter {
                         eq("user_id", userId)
                         eq("day", todayLocalDate())
@@ -56,11 +85,11 @@ object DailyCompletionsService {
      * grid shows "completed" instantly when the player returns — HomeScreen
      * seeds from this cache on every (re)composition. Never downgrades a win.
      */
-    fun noteCompletion(gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Int) {
+    fun noteCompletion(gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Int, score: Double = 0.0) {
         val current = readCache().toMutableMap()
         val existing = current[gameMode]
         if (existing != null && existing.completed && !completed) return
-        current[gameMode] = Completion(gameMode = gameMode, completed = completed, guessCount = guessCount, timeSeconds = timeSeconds)
+        current[gameMode] = Completion(gameMode = gameMode, completed = completed, guessCount = guessCount, timeSeconds = timeSeconds, score = score)
         writeCache(current)
     }
 
