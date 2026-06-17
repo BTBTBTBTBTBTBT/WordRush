@@ -141,7 +141,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Are there achievements?',
-    a: 'Yes — 70 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile.',
+    a: 'Yes — 75 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile.',
   },
   {
     q: "What's a streak?",

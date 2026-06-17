@@ -91,6 +91,12 @@ object AchievementService {
         AchievementDef("pure_proper_adept", "Pure Proper Adept", "Win 10 ProperNoundle games without hints", "skill"),
         AchievementDef("pure_proper_master", "Pure Proper Master", "Win 50 ProperNoundle games without hints", "skill"),
         AchievementDef("pure_player", "Pure Player", "Win 50 hintless games across Six, Seven, and ProperNoundle combined", "skill"),
+        // Sweep / Flawless ladder extensions (daily_bonuses + daily_results).
+        AchievementDef("flawless_5", "High Five", "Achieve Flawless Victory on 5 different days", "consistency"),
+        AchievementDef("flawless_25", "Flawless 25", "Achieve Flawless Victory 25 times", "consistency"),
+        AchievementDef("flawless_streak_5", "Flawless Streak 5", "Achieve Flawless Victory 5 days in a row", "skill"),
+        AchievementDef("sweep_streak_60", "Sweep Streak 60", "Complete the daily sweep 60 days in a row", "consistency"),
+        AchievementDef("flawless_speed", "Flawless Blitz", "Win all 9 dailies with total time under 18 minutes", "skill"),
     )
 
     @Serializable
@@ -323,13 +329,13 @@ object AchievementService {
             }
         }
 
-        // Sweep Streak (7 days) / Iron Will (30 days)
-        if ("sweep_streak_7" !in alreadyUnlocked || "iron_will" !in alreadyUnlocked) {
+        // Sweep Streak (7 days) / Iron Will (30 days) / Sweep Streak 60
+        if ("sweep_streak_7" !in alreadyUnlocked || "iron_will" !in alreadyUnlocked || "sweep_streak_60" !in alreadyUnlocked) {
             val bonusDays = client.postgrest["daily_bonuses"]
                 .select(Columns.raw("day")) {
                     filter { eq("user_id", userId); eq("sweep_awarded", true) }
                     order("day", Order.DESCENDING)
-                    limit(30)
+                    limit(90)
                 }
                 .decodeList<DayRow>()
             if (bonusDays.isNotEmpty()) {
@@ -340,6 +346,7 @@ object AchievementService {
                 }
                 if (streak >= 7) tryUnlock("sweep_streak_7")
                 if (streak >= 30) tryUnlock("iron_will")
+                if (streak >= 60) tryUnlock("sweep_streak_60")
             }
         }
 
@@ -365,8 +372,8 @@ object AchievementService {
             if (totalWins >= threshold) tryUnlock(key)
         }
 
-        // Lightning Round (under 20 min) / Speed Sweep (under 15 min) / Hat Trick
-        if (isDaily && ("lightning_round" !in alreadyUnlocked || "speed_sweep" !in alreadyUnlocked || "hat_trick" !in alreadyUnlocked)) {
+        // Lightning Round (under 20 min) / Speed Sweep (under 15 min) / Hat Trick / Flawless Blitz
+        if (isDaily && ("lightning_round" !in alreadyUnlocked || "speed_sweep" !in alreadyUnlocked || "hat_trick" !in alreadyUnlocked || "flawless_speed" !in alreadyUnlocked)) {
             val today = todayLocalDate()
             val todayResults = client.postgrest["daily_results"]
                 .select(Columns.raw("game_mode, time_seconds, completed")) {
@@ -384,6 +391,8 @@ object AchievementService {
                     val totalTime = todayResults.sumOf { it.timeSeconds ?: 0 }
                     if (totalTime < 1200) tryUnlock("lightning_round")
                     if (totalTime < 900) tryUnlock("speed_sweep")
+                    // todayResults is filtered completed=true, so all 9 present == Flawless day.
+                    if (totalTime < 1080) tryUnlock("flawless_speed")
                 }
             }
         }
@@ -500,6 +509,18 @@ object AchievementService {
             if (sweepCount >= 100) tryUnlock("centurion")
         }
 
+        // High Five (5 flawless) / Flawless 25 (25 flawless) — flawless-day count.
+        if ("flawless_5" !in alreadyUnlocked || "flawless_25" !in alreadyUnlocked) {
+            val flawlessCount = client.postgrest["daily_bonuses"]
+                .select(Columns.raw("id")) {
+                    count(Count.EXACT); limit(1)
+                    filter { eq("user_id", userId); eq("flawless_awarded", true) }
+                }
+                .countOrNull() ?: 0L
+            if (flawlessCount >= 5) tryUnlock("flawless_5")
+            if (flawlessCount >= 25) tryUnlock("flawless_25")
+        }
+
         // Rising Star (level 10) / Elite (level 50)
         if ("rising_star" !in alreadyUnlocked || "elite" !in alreadyUnlocked) {
             val profile = client.postgrest["profiles"]
@@ -519,24 +540,23 @@ object AchievementService {
             if (profile != null && profile.dailyLoginStreak >= 365) tryUnlock("year_one")
         }
 
-        // Flawless Streak (Flawless Victory 3 days in a row)
-        if ("flawless_streak" !in alreadyUnlocked) {
+        // Flawless Streak (3 days in a row) / Flawless Streak 5 (5 days in a row)
+        if ("flawless_streak" !in alreadyUnlocked || "flawless_streak_5" !in alreadyUnlocked) {
             val flawlessDays = client.postgrest["daily_bonuses"]
                 .select(Columns.raw("day")) {
                     filter { eq("user_id", userId); eq("flawless_awarded", true) }
                     order("day", Order.DESCENDING)
-                    limit(3)
+                    limit(10)
                 }
                 .decodeList<DayRow>()
-            if (flawlessDays.size >= 3) {
-                var consecutive = true
+            if (flawlessDays.isNotEmpty()) {
+                // Length of the current consecutive run from the most recent flawless day.
+                var run = 1
                 for (i in 1 until flawlessDays.size) {
-                    if (!isConsecutiveDays(flawlessDays[i - 1].day, flawlessDays[i].day)) {
-                        consecutive = false
-                        break
-                    }
+                    if (isConsecutiveDays(flawlessDays[i - 1].day, flawlessDays[i].day)) run++ else break
                 }
-                if (consecutive) tryUnlock("flawless_streak")
+                if (run >= 3) tryUnlock("flawless_streak")
+                if (run >= 5) tryUnlock("flawless_streak_5")
             }
         }
 

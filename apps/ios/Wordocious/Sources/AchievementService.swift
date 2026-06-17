@@ -84,6 +84,12 @@ enum AchievementService {
         .init(key: "pure_proper_adept", name: "Pure Proper Adept", description: "Win 10 ProperNoundle games without hints", category: "skill"),
         .init(key: "pure_proper_master", name: "Pure Proper Master", description: "Win 50 ProperNoundle games without hints", category: "skill"),
         .init(key: "pure_player", name: "Pure Player", description: "Win 50 hintless games across Six, Seven, and ProperNoundle combined", category: "skill"),
+        // Sweep / Flawless ladder extensions (daily_bonuses + daily_results).
+        .init(key: "flawless_5", name: "High Five", description: "Achieve Flawless Victory on 5 different days", category: "consistency"),
+        .init(key: "flawless_25", name: "Flawless 25", description: "Achieve Flawless Victory 25 times", category: "consistency"),
+        .init(key: "flawless_streak_5", name: "Flawless Streak 5", description: "Achieve Flawless Victory 5 days in a row", category: "skill"),
+        .init(key: "sweep_streak_60", name: "Sweep Streak 60", description: "Complete the daily sweep 60 days in a row", category: "consistency"),
+        .init(key: "flawless_speed", name: "Flawless Blitz", description: "Win all 9 dailies with total time under 18 minutes", category: "skill"),
     ]
 
     static func fetchUnlocked(userId: String) async -> Set<String> {
@@ -215,10 +221,17 @@ enum AchievementService {
             if sweepCount >= 50 { await tryUnlock("daily_devotee") }
             if sweepCount >= 100 { await tryUnlock("centurion") }
             let sweepDays = bonuses.filter { $0.sweep_awarded }.map { $0.day }
-            if consecutiveRun(sweepDays) >= 7 { await tryUnlock("sweep_streak_7") }
-            if consecutiveRun(sweepDays) >= 30 { await tryUnlock("iron_will") }
+            let sweepRun = consecutiveRun(sweepDays)
+            if sweepRun >= 7 { await tryUnlock("sweep_streak_7") }
+            if sweepRun >= 30 { await tryUnlock("iron_will") }
+            if sweepRun >= 60 { await tryUnlock("sweep_streak_60") }
             let flawlessDays = bonuses.filter { $0.flawless_awarded }.map { $0.day }
-            if consecutiveRun(flawlessDays) >= 3 { await tryUnlock("flawless_streak") }
+            let flawlessCount = flawlessDays.count
+            if flawlessCount >= 5 { await tryUnlock("flawless_5") }
+            if flawlessCount >= 25 { await tryUnlock("flawless_25") }
+            let flawlessRun = consecutiveRun(flawlessDays)
+            if flawlessRun >= 3 { await tryUnlock("flawless_streak") }
+            if flawlessRun >= 5 { await tryUnlock("flawless_streak_5") }
         }
 
         // Pure ladder (matches counts) — only after a hintless win in a pure mode.
@@ -259,6 +272,8 @@ enum AchievementService {
                 let totalTime = todays.reduce(0) { $0 + ($1.time_seconds ?? 0) }
                 if totalTime < 1200 { await tryUnlock("lightning_round") }
                 if totalTime < 900 { await tryUnlock("speed_sweep") }
+                // todays is filtered completed=true, so all 9 present == Flawless day.
+                if totalTime < 1080 { await tryUnlock("flawless_speed") }
             }
             if playType == "vs" && won && !has("triple_threat") {
                 if todays.reduce(0, { $0 + ($1.vs_wins ?? 0) }) >= 3 { await tryUnlock("triple_threat") }

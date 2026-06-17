@@ -144,6 +144,16 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'pure_proper_adept',     name: 'Pure Proper Adept',   description: 'Win 10 ProperNoundle games without hints',        category: 'skill', icon: 'star' },
   { key: 'pure_proper_master',    name: 'Pure Proper Master',  description: 'Win 50 ProperNoundle games without hints',        category: 'skill', icon: 'crown' },
   { key: 'pure_player',           name: 'Pure Player',         description: 'Win 50 hintless games across Six, Seven, and ProperNoundle combined', category: 'skill', icon: 'crown' },
+
+  // ────────────────────────────────────────────────────────────
+  // Sweep / Flawless ladder extensions (powered by the daily
+  // sweep stat calcs). All detectable from daily_bonuses + daily_results.
+  // ────────────────────────────────────────────────────────────
+  { key: 'flawless_5', name: 'High Five', description: 'Achieve Flawless Victory on 5 different days', category: 'consistency', icon: 'trophy' },
+  { key: 'flawless_25', name: 'Flawless 25', description: 'Achieve Flawless Victory 25 times', category: 'consistency', icon: 'crown' },
+  { key: 'flawless_streak_5', name: 'Flawless Streak 5', description: 'Achieve Flawless Victory 5 days in a row', category: 'skill', icon: 'trophy' },
+  { key: 'sweep_streak_60', name: 'Sweep Streak 60', description: 'Complete the daily sweep 60 days in a row', category: 'consistency', icon: 'flame' },
+  { key: 'flawless_speed', name: 'Flawless Blitz', description: 'Win all 9 dailies with total time under 18 minutes', category: 'skill', icon: 'zap' },
 ];
 
 // ============================================================
@@ -299,15 +309,15 @@ export async function checkAchievements(
     }
   }
 
-  // Sweep Streak (7 days) / Iron Will (30 days)
-  if (!alreadyUnlocked.has('sweep_streak_7') || !alreadyUnlocked.has('iron_will')) {
+  // Sweep Streak (7 days) / Iron Will (30 days) / Sweep Streak 60
+  if (!alreadyUnlocked.has('sweep_streak_7') || !alreadyUnlocked.has('iron_will') || !alreadyUnlocked.has('sweep_streak_60')) {
     const { data: bonusDays } = await (supabase as any)
       .from('daily_bonuses')
       .select('day')
       .eq('user_id', userId)
       .eq('sweep_awarded', true)
       .order('day', { ascending: false })
-      .limit(30);
+      .limit(90);
     if (bonusDays && bonusDays.length > 0) {
       // Count consecutive days backwards from the most recent sweep day
       let streak = 1;
@@ -323,6 +333,7 @@ export async function checkAchievements(
       }
       if (streak >= 7) await tryUnlock('sweep_streak_7');
       if (streak >= 30) await tryUnlock('iron_will');
+      if (streak >= 60) await tryUnlock('sweep_streak_60');
     }
   }
 
@@ -351,7 +362,7 @@ export async function checkAchievements(
   }
 
   // Lightning Round (under 20 min) / Speed Sweep (under 15 min)
-  if (seed?.startsWith('daily-') && (!alreadyUnlocked.has('lightning_round') || !alreadyUnlocked.has('speed_sweep') || !alreadyUnlocked.has('hat_trick'))) {
+  if (seed?.startsWith('daily-') && (!alreadyUnlocked.has('lightning_round') || !alreadyUnlocked.has('speed_sweep') || !alreadyUnlocked.has('hat_trick') || !alreadyUnlocked.has('flawless_speed'))) {
     const today = getTodayLocal(); // daily_results.day is player-LOCAL; UTC missed evening plays
     const { data: todayResults } = await (supabase as any)
       .from('daily_results')
@@ -372,6 +383,9 @@ export async function checkAchievements(
           const totalTime = todayResults.reduce((s: number, r: any) => s + (r.time_seconds || 0), 0);
           if (totalTime < 1200) await tryUnlock('lightning_round');
           if (totalTime < 900) await tryUnlock('speed_sweep');
+          // Flawless Blitz: all 9 WON (completed) AND under 18 minutes. Since the
+          // query already filters completed=true, 9 rows here means a Flawless day.
+          if (totalTime < 1080) await tryUnlock('flawless_speed');
         }
       }
     }
@@ -512,6 +526,17 @@ export async function checkAchievements(
     if ((sweepCount || 0) >= 100) await tryUnlock('centurion');
   }
 
+  // High Five (5 flawless) / Flawless 25 (25 flawless) — flawless-day count.
+  if (!alreadyUnlocked.has('flawless_5') || !alreadyUnlocked.has('flawless_25')) {
+    const { count: flawlessCount } = await (supabase as any)
+      .from('daily_bonuses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('flawless_awarded', true);
+    if ((flawlessCount || 0) >= 5) await tryUnlock('flawless_5');
+    if ((flawlessCount || 0) >= 25) await tryUnlock('flawless_25');
+  }
+
   // Rising Star (level 10) / Elite (level 50)
   if (!alreadyUnlocked.has('rising_star') || !alreadyUnlocked.has('elite')) {
     const { data: profile } = await (supabase as any)
@@ -537,28 +562,27 @@ export async function checkAchievements(
     }
   }
 
-  // Flawless Streak (Flawless Victory 3 days in a row)
-  if (!alreadyUnlocked.has('flawless_streak')) {
+  // Flawless Streak (3 days in a row) / Flawless Streak 5 (5 days in a row)
+  if (!alreadyUnlocked.has('flawless_streak') || !alreadyUnlocked.has('flawless_streak_5')) {
     const { data: flawlessDays } = await (supabase as any)
       .from('daily_bonuses')
       .select('day')
       .eq('user_id', userId)
       .eq('flawless_awarded', true)
       .order('day', { ascending: false })
-      .limit(3);
-    if (flawlessDays && flawlessDays.length >= 3) {
-      // Check if all 3 are consecutive
-      let consecutive = true;
+      .limit(10);
+    if (flawlessDays && flawlessDays.length > 0) {
+      // Length of the current consecutive run ending at the most recent flawless day.
+      let run = 1;
       for (let i = 1; i < flawlessDays.length; i++) {
         const prev = new Date(flawlessDays[i - 1].day);
         const curr = new Date(flawlessDays[i].day);
         const diffMs = prev.getTime() - curr.getTime();
-        if (diffMs < 82800000 || diffMs > 90000000) {
-          consecutive = false;
-          break;
-        }
+        if (diffMs >= 82800000 && diffMs <= 90000000) run++;
+        else break;
       }
-      if (consecutive) await tryUnlock('flawless_streak');
+      if (run >= 3) await tryUnlock('flawless_streak');
+      if (run >= 5) await tryUnlock('flawless_streak_5');
     }
   }
 

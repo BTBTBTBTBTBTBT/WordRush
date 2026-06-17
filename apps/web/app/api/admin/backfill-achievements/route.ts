@@ -319,15 +319,20 @@ export async function POST(req: NextRequest) {
     }
     const lightningUsers = new Set<string>();
     const speedSweepUsers = new Set<string>();
+    const flawlessSpeedUsers = new Set<string>();
     for (const [key, { modes, totalTime }] of dayResultsByUserDay) {
+      // allDailyResults is filtered completed=true, so having all 9 modes here
+      // means all 9 were WON → a Flawless day.
       if (ALL_MODES.every((m) => modes.has(m))) {
         const uid = key.split('|')[0];
         if (totalTime < 1200) lightningUsers.add(uid);
         if (totalTime < 900) speedSweepUsers.add(uid);
+        if (totalTime < 1080) flawlessSpeedUsers.add(uid);
       }
     }
     await award('lightning_round', [...lightningUsers]);
     await award('speed_sweep', [...speedSweepUsers]);
+    await award('flawless_speed', [...flawlessSpeedUsers]);
 
     // Triple Threat (3 VS wins in a single day)
     const vsWinsByUserDay = new Map<string, number>();
@@ -407,6 +412,16 @@ export async function POST(req: NextRequest) {
     await award('daily_devotee', [...sweepCountByUser.entries()].filter(([, c]) => c >= 50).map(([uid]) => uid));
     await award('centurion', [...sweepCountByUser.entries()].filter(([, c]) => c >= 100).map(([uid]) => uid));
 
+    // High Five (5 flawless) / Flawless 25 (25 flawless) — flawless-day count.
+    const flawlessCountByUser = new Map<string, number>();
+    for (const b of allBonuses) {
+      if (b.flawless_awarded) {
+        flawlessCountByUser.set(b.user_id, (flawlessCountByUser.get(b.user_id) || 0) + 1);
+      }
+    }
+    await award('flawless_5', [...flawlessCountByUser.entries()].filter(([, c]) => c >= 5).map(([uid]) => uid));
+    await award('flawless_25', [...flawlessCountByUser.entries()].filter(([, c]) => c >= 25).map(([uid]) => uid));
+
     // Sweep Streak (7 days) / Iron Will (30 days)
     // Uses the "islands" technique: sort days, group consecutive ones
     const sweepDaysByUser = new Map<string, string[]>();
@@ -419,6 +434,7 @@ export async function POST(req: NextRequest) {
 
     const sweepStreak7Users: string[] = [];
     const ironWillUsers: string[] = [];
+    const sweepStreak60Users: string[] = [];
     for (const [uid, days] of sweepDaysByUser) {
       const sorted = days.sort();
       let maxStreak = 1;
@@ -437,9 +453,11 @@ export async function POST(req: NextRequest) {
       }
       if (maxStreak >= 7) sweepStreak7Users.push(uid);
       if (maxStreak >= 30) ironWillUsers.push(uid);
+      if (maxStreak >= 60) sweepStreak60Users.push(uid);
     }
     await award('sweep_streak_7', sweepStreak7Users);
     await award('iron_will', ironWillUsers);
+    await award('sweep_streak_60', sweepStreak60Users);
 
     // Flawless Streak (3 consecutive flawless days)
     const flawlessDaysByUser = new Map<string, string[]>();
@@ -450,6 +468,7 @@ export async function POST(req: NextRequest) {
       }
     }
     const flawlessStreakUsers: string[] = [];
+    const flawlessStreak5Users: string[] = [];
     for (const [uid, days] of flawlessDaysByUser) {
       const sorted = days.sort();
       let maxStreak = 1;
@@ -466,8 +485,10 @@ export async function POST(req: NextRequest) {
         }
       }
       if (maxStreak >= 3) flawlessStreakUsers.push(uid);
+      if (maxStreak >= 5) flawlessStreak5Users.push(uid);
     }
     await award('flawless_streak', flawlessStreakUsers);
+    await award('flawless_streak_5', flawlessStreak5Users);
   }
 
   // ── Pure ladder (hintless wins from `matches`) ─────────────────
