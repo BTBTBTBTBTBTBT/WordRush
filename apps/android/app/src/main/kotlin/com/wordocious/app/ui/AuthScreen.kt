@@ -193,7 +193,17 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
             }
         }
 
-        Spacer(Modifier.height(32.dp))
+        // Apple 5.1.1(v) / Google Play: a signed-out visitor must be able to play
+        // the single-player daily without registering.
+        TextButton(onClick = { AuthService.enterGuest() }) {
+            Text(
+                "Play without an account",
+                fontSize = 13.sp, color = WTheme.textMuted, fontWeight = FontWeight.Black,
+                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
 
         // Footer — functional legal links (App Review expects these to work),
         // opening the in-app Privacy/Terms pages like the web's <Link> footer.

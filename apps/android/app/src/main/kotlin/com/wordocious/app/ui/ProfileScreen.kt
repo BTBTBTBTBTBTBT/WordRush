@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
@@ -147,6 +148,26 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         else com.wordocious.app.data.MatchStatsService.ProInsights()
     }
 
+    val isGuest by AuthService.isGuest.collectAsState()
+    if (isGuest) {
+        // Guest — profile/stats are account-based. Prompt sign-in (web/iOS parity).
+        Column(
+            Modifier.fillMaxSize().background(WTheme.bg).padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Spacer(Modifier.weight(1f))
+            Text("Sign in to track your stats", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, textAlign = TextAlign.Center)
+            Text("Save your streaks, climb the daily leaderboards, and unlock achievements.", fontSize = 13.sp, color = WTheme.textMuted, textAlign = TextAlign.Center)
+            Box(
+                Modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.primary)
+                    .clickableNoRipple { AuthService.exitGuest() }.padding(horizontal = 32.dp, vertical = 13.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text("Sign in", color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp) }
+            Spacer(Modifier.weight(1f))
+        }
+        return
+    }
     LazyColumn(
         // navigationBarsPadding keeps the bottom of the scroll (Sign Out / Delete
         // Account) clear of the system gesture-nav inset; the host Scaffold already

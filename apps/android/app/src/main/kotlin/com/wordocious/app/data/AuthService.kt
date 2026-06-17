@@ -66,6 +66,16 @@ object AuthService {
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // Guest mode — chose "Play without an account". Lets a signed-out user reach
+    // the app to play the daily single-player puzzle (Apple 5.1.1(v) / Google
+    // Play). No session, so recording no-ops; account surfaces prompt sign-in.
+    private val _isGuest = MutableStateFlow(false)
+    val isGuest: StateFlow<Boolean> = _isGuest.asStateFlow()
+    fun enterGuest() { _isGuest.value = true }
+    /** Leave guest mode → the MainActivity gate shows AuthScreen so the guest
+     *  can sign in (used by the "Sign in" prompts on account-only surfaces). */
+    fun exitGuest() { _isGuest.value = false }
+
     val isProActive: Boolean
         get() {
             val p = _profile.value ?: return false
@@ -86,7 +96,7 @@ object AuthService {
                 val user = runCatching { client.auth.currentUserOrNull() }.getOrNull()
                 if (user != null) {
                     loadProfile(user.id)
-                    _isAuthenticated.value = true
+                    _isAuthenticated.value = true; _isGuest.value = false
                 }
             } catch (_: Exception) {
                 // No session — stay unauthenticated
@@ -127,7 +137,7 @@ object AuthService {
             }
             val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
             loadProfile(user.id)
-            _isAuthenticated.value = true
+            _isAuthenticated.value = true; _isGuest.value = false
             null
         } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
             null // user dismissed the sheet — not an error
@@ -144,7 +154,7 @@ object AuthService {
             }
             val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
             loadProfile(user.id)
-            _isAuthenticated.value = true
+            _isAuthenticated.value = true; _isGuest.value = false
             null
         } catch (e: Exception) {
             e.message?.take(120) ?: "Sign in failed"
@@ -170,7 +180,7 @@ object AuthService {
             when {
                 user != null -> {
                     loadProfile(user.id)
-                    _isAuthenticated.value = true
+                    _isAuthenticated.value = true; _isGuest.value = false
                     null
                 }
                 result != null -> "Check your email to confirm your account, then sign in."
@@ -188,6 +198,7 @@ object AuthService {
         } catch (_: Exception) {}
         _profile.value = null
         _isAuthenticated.value = false
+        _isGuest.value = false
     }
 
     /**

@@ -41,12 +41,13 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
                     val isLoading by AuthService.isLoading.collectAsState()
                     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
+                    val isGuest by AuthService.isGuest.collectAsState()
 
                     when {
                         isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = WTheme.primary)
                         }
-                        !isAuthenticated -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
+                        !isAuthenticated && !isGuest -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
                         else -> {
                             val profile by AuthService.profile.collectAsState()
                             Box(Modifier.fillMaxSize()) {

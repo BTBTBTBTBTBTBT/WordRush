@@ -69,7 +69,14 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onGoPro: () -> Unit, onCl
                 Text("Race a live opponent on the same puzzle", fontSize = 13.sp, color = WTheme.textMuted)
             }
 
-            if (isPro) {
+            if (profile == null) {
+                // Guest — VS is account-based (live opponents + recorded results).
+                CtaCard(
+                    title = "Sign in to play VS",
+                    subtitle = "VS pits you against a live opponent and records results — it needs an account.",
+                    gradient = listOf(Color(0xFF14B8A6), Color(0xFF0D9488)),
+                ) { AuthService.exitGuest() }
+            } else if (isPro) {
                 SectionLabel("QUICK MATCH")
                 VS_MODES.forEach { m -> ModeRow(m) { onPlay(m, false) } }
             } else {

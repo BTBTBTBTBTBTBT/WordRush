@@ -90,7 +90,21 @@ fun ProScreen(onDone: () -> Unit) {
             )
             Spacer(Modifier.height(24.dp))
 
-            if (isPro) {
+            if (profile == null) {
+                // Guest — Pro is account-based (the purchase must attach to an account).
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Sign in to go Pro", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    Text(
+                        "Create a free account or sign in first — Pro unlocks unlimited replays, VS on every mode, and more, tied to your account.",
+                        fontSize = 13.sp, color = WTheme.textMuted, textAlign = TextAlign.Center,
+                    )
+                    Box(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.primary)
+                            .clickableNoRipple { AuthService.exitGuest(); onDone() }.padding(vertical = 13.dp),
+                        contentAlignment = Alignment.Center,
+                    ) { Text("Sign in", color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp) }
+                }
+            } else if (isPro) {
                 Column(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
                         .border(1.5.dp, Color(0xFFFDE68A), RoundedCornerShape(16.dp)).padding(28.dp),
