@@ -114,6 +114,18 @@ struct AuthView: View {
                 }
                 .font(Brand.body(13)).foregroundStyle(Theme.primary)
             }
+
+            // Apple 5.1.1(v): a signed-out visitor must be able to reach the
+            // single-player daily without registering. Shown only on the root
+            // gate (not the in-app "Sign in" sheet, which already has a close X).
+            if !showsCloseButton {
+                Button(action: { auth.isGuest = true }) {
+                    Text("Play without an account")
+                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textSecondary).underline()
+                }
+                .buttonStyle(.plain)
+                .disabled(working)
+            }
         }
         .padding(18)
         .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))

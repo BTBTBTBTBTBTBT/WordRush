@@ -13,7 +13,7 @@ struct ContentView: View {
     var body: some View {
         if auth.isLoading {
             LoadingSkeleton()
-        } else if !auth.isAuthenticated {
+        } else if !auth.isAuthenticated && !auth.isGuest {
             AuthView(showsCloseButton: false)
         } else {
             RootTabView()

@@ -9,6 +9,7 @@ struct ProView: View {
     @ObservedObject var auth = AuthService.shared
     @ObservedObject var store = StoreManager.shared
     @Environment(\.dismiss) private var dismiss
+    @State private var showAuth = false
 
     private let gold = Color(hex: 0xD97706)
 
@@ -42,7 +43,8 @@ struct ProView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         header
-                        if auth.isProActive { activePro } else { plansContent }
+                        if !auth.isAuthenticated { guestPrompt }
+                        else if auth.isProActive { activePro } else { plansContent }
                     }
                     .padding(.horizontal, 14).padding(.bottom, 24)
                 }
@@ -53,7 +55,26 @@ struct ProView: View {
             } message: {
                 Text(store.lastError ?? "")
             }
+            .sheet(isPresented: $showAuth) { AuthView() }
         }
+    }
+
+    // Pro is account-based — a guest must sign in before subscribing so the
+    // purchase can be tied to an account (appAccountToken → entitlement).
+    private var guestPrompt: some View {
+        VStack(spacing: 16) {
+            Text("Sign in to go Pro")
+                .font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+            Text("Create a free account or sign in first — Pro unlocks unlimited replays, VS on every mode, and more, tied to your account.")
+                .font(Brand.font(13, .medium)).foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+            Button { showAuth = true } label: {
+                Text("Sign in").font(Brand.font(15, .black)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 13)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
+            }.buttonStyle(.plain)
+        }
+        .padding(20).padding(.top, 8)
     }
 
     private var header: some View {

@@ -15,6 +15,7 @@ struct VSLobbyView: View {
     @State private var creatingInvite: GameMode?
     @State private var dailyVSUsed = false
     @State private var showVSLimit = false
+    @State private var showAuth = false
 
     /// All VS-capable modes (matches the web VS mode list). Gauntlet runs through
     /// the shared board engine; ProperNoundle uses its own VS flow.
@@ -26,10 +27,12 @@ struct VSLobbyView: View {
         ScrollView {
             VStack(spacing: 14) {
                 header
-                if isPro { proContent } else { freeContent }
+                if !auth.isAuthenticated { guestPrompt }
+                else if isPro { proContent } else { freeContent }
             }
             .padding(.horizontal, 16).padding(.bottom, 24)
         }
+        .sheet(isPresented: $showAuth) { AuthView() }
         .background(LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
         .navigationTitle("VS Battle")
         .navigationBarTitleDisplayMode(.inline)
@@ -49,6 +52,25 @@ struct VSLobbyView: View {
             Text("Race a live opponent on the same puzzle").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
         }
         .padding(.top, 8).padding(.bottom, 4)
+    }
+
+    // VS is account-based (live opponents, recorded results) — guests sign in first.
+    private var guestPrompt: some View {
+        VStack(spacing: 14) {
+            Text("Sign in to play VS")
+                .font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
+            Text("VS Battle pits you against a live opponent and records your results — it needs an account.")
+                .font(Brand.font(13, .medium)).foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+            Button { showAuth = true } label: {
+                Text("Sign in").font(Brand.font(15, .black)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 13)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
+            }.buttonStyle(.plain)
+        }
+        .padding(20)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
     // MARK: - Free

@@ -77,6 +77,10 @@ final class AuthService: ObservableObject {
     @Published private(set) var profile: Profile?
     @Published private(set) var isAuthenticated = false
     @Published private(set) var isLoading = true
+    /// Guest mode — chose "Play without an account". Lets a signed-out user reach
+    /// the app to play the daily single-player puzzle (Apple 5.1.1(v)). No session,
+    /// so recording no-ops; account surfaces show their signed-out "Sign in" state.
+    @Published var isGuest = false
 
     let client: SupabaseClient
 
@@ -198,6 +202,7 @@ final class AuthService: ObservableObject {
         try? await client.auth.signOut()
         profile = nil
         isAuthenticated = false
+        isGuest = false
     }
 
     /// Permanently delete the account. The native client only holds the anon
@@ -277,6 +282,7 @@ final class AuthService: ObservableObject {
 
     private func handleSignedIn(userId: String) async {
         isAuthenticated = true
+        isGuest = false  // a real session supersedes guest mode
         if let row = await fetchProfileRow(userId: userId) {
             if row.isBanned { await signOut(); return }
             profile = row
