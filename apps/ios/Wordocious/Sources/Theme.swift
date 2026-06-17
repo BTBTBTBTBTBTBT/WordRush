@@ -127,6 +127,14 @@ extension Color {
             opacity: alpha
         )
     }
+
+    /// Parse a "#rrggbb" / "rrggbb" hex string (e.g. accent colors from the
+    /// content/mode APIs). Returns nil on malformed input.
+    init?(hexString: String) {
+        let s = hexString.hasPrefix("#") ? String(hexString.dropFirst()) : hexString
+        guard s.count == 6, let v = UInt(s, radix: 16) else { return nil }
+        self.init(hex: v)
+    }
 }
 
 /// The WORDOCIOUS gradient wordmark, matching the web header.

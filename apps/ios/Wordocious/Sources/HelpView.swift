@@ -6,6 +6,7 @@ import WordociousCore
 struct HelpView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var tab: Tab = .howToPlay
+    @StateObject private var content = ContentService.shared
 
     enum Tab: String, CaseIterable {
         case howToPlay = "How to Play"
@@ -57,6 +58,7 @@ struct HelpView: View {
             }
         }
         .background(Theme.surface.ignoresSafeArea())
+        .task { await content.load() }
     }
 
     // MARK: How to Play
@@ -109,7 +111,7 @@ struct HelpView: View {
                     ModeIconView(icon: mode.icon, accent: mode.accent, box: 32)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(mode.title).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                        Text(helpDesc[mode.id] ?? mode.desc).font(Brand.font(12, .semibold))
+                        Text(content.helpDesc(forTitle: mode.title) ?? mode.desc).font(Brand.font(12, .semibold))
                             .foregroundStyle(Theme.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -123,39 +125,14 @@ struct HelpView: View {
         }
     }
 
-    private let helpDesc: [String: String] = [
-        "practice": "1 word, 6 guesses. The original formula.",
-        "vs": "Race an opponent in real-time. First to solve wins.",
-        "quordle": "4 words at once. 9 guesses total. Each guess applies to all 4 boards.",
-        "octordle": "8 words at once. 13 guesses. Same idea, bigger challenge.",
-        "sequence": "4 words solved in order. Solve one to unlock the next. 10 guesses total.",
-        "rescue": "4 boards with pre-filled hints to get you started. 6 guesses to solve them all.",
-        "six": "Guess a 6-letter word in 7 tries. Same rules as Classic, bigger vocabulary.",
-        "seven": "Guess a 7-letter word in 8 tries. The ultimate single-word challenge.",
-        "gauntlet": "5 stages of increasing difficulty — Classic through OctoWord. Survive them all.",
-        "propernoundle": "Guess famous names instead of dictionary words. Themed daily puzzles.",
-    ]
-
-    // MARK: FAQ
-
-    private let faqItems: [(String, String)] = [
-        ("How are scores calculated?", "Solving earns a 1,000-point base, plus a speed bonus (your mode's time cap minus your solve time — faster is better) and a completion bonus of up to 200, scaled by how many boards you solved. Six, Seven, and ProperNoundle also add a guess bonus for solving in fewer guesses. Example: a Classic solve in 27s scores 1,000 + 273 (speed) + 200 (completion) = 1,473. Your daily-leaderboard rank is based on this composite score."),
-        ("Do hints affect my score?", "Yes. In Six, Seven, and ProperNoundle you can reveal a hint, but each one is subtracted from your score — 120 points per hint in ProperNoundle and 150 in Six and Seven. Hints never push a winning score below zero, and modes without hint buttons are unaffected."),
-        ("How do XP and levels work?", "Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Play all 9 of the day's puzzles for a Daily Sweep (+200 XP), and win every one for a Flawless Victory (+400 XP more — 600 total). Every 1,000 XP = 1 level."),
-        ("How do medals work?", "Finish in the top three of a mode's daily leaderboard to earn a gold, silver, or bronze medal, with extra medals for streak milestones and perfect games. Your medal tally is shown on your profile."),
-        ("Are there achievements?", "Yes — 75 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile."),
-        ("What's a streak?", "Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it."),
-        ("What are Streak Shields?", "A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header."),
-        ("What does PRO unlock?", "PRO removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, and VS extras like sending invites and rematches."),
-        ("Do daily puzzles use the same words for everyone?", "Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard."),
-    ]
+    // MARK: FAQ (single-sourced via ContentService → /api/content)
 
     private var faq: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(Array(faqItems.enumerated()), id: \.offset) { _, item in
+            ForEach(content.helpFaq) { item in
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.0).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                    Text(item.1).font(Brand.font(12, .semibold)).foregroundStyle(Theme.textSecondary)
+                    Text(item.q).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    Text(item.a).font(Brand.font(12, .semibold)).foregroundStyle(Theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }

@@ -18,6 +18,7 @@ struct InfoSection {
 struct InfoPage: View {
     let kind: InfoKind
     init(_ kind: InfoKind) { self.kind = kind }
+    @StateObject private var content = ContentService.shared
 
     var body: some View {
         ZStack {
@@ -26,13 +27,47 @@ struct InfoPage: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text(title).font(Brand.title(30)).foregroundStyle(Theme.wordmarkGradient)
                     if let sub = subtitle { Text(sub).font(Brand.body(13)).foregroundStyle(Theme.textMuted) }
-                    ForEach(0..<sections.count, id: \.self) { i in sectionView(sections[i]) }
+                    // About + Support are single-sourced via /api/content (ContentService);
+                    // Privacy + Terms stay hardcoded for offline / pre-sign-in compliance.
+                    if kind == .about || kind == .support {
+                        let cs = kind == .about ? content.about : content.support
+                        if cs.isEmpty {
+                            Text("Loading…").font(Brand.font(12, .regular)).foregroundStyle(Theme.textMuted)
+                        } else {
+                            ForEach(cs) { contentSectionView($0) }
+                        }
+                    } else {
+                        ForEach(0..<sections.count, id: \.self) { i in sectionView(sections[i]) }
+                    }
                     if let contact { Text(contact).font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary) }
                 }
                 .padding(16)
             }
         }
         .navigationTitle(navTitle).navigationBarTitleDisplayMode(.inline)
+        .task { if kind == .about || kind == .support { await content.load() } }
+    }
+
+    private func contentSectionView(_ s: ContentService.ContentSection) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(s.heading).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+            ForEach(Array((s.paragraphs ?? []).enumerated()), id: \.offset) { _, p in
+                Text(p).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary)
+                    .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
+            }
+            ForEach(s.items ?? []) { item in
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.heading).font(Brand.font(12, .black))
+                        .foregroundStyle(item.accent.flatMap { Color(hexString: $0) } ?? Theme.primary)
+                    Text(item.body).font(Brand.font(12, .regular)).foregroundStyle(Theme.textSecondary)
+                        .lineSpacing(6).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
     private func sectionView(_ s: InfoSection) -> some View {
@@ -76,14 +111,8 @@ struct InfoPage: View {
 
     private var sections: [InfoSection] {
         switch kind {
-        case .about: return [
-            InfoSection("What is Wordocious?", "A daily word-puzzle game with 10 modes — from the classic single-board to multi-board challenges, a 5-stage Gauntlet, and real-time VS battles."),
-            InfoSection("10 Game Modes", bullets: ["Classic — 1 word, 6 tries", "VS Battle — real-time PvP", "QuadWord — 4 boards", "OctoWord — 8 boards", "Succession — 4 words in order", "Deliverance — 4 prefilled boards", "Six / Seven — 6- and 7-letter words", "Gauntlet — 5 escalating stages", "ProperNoundle — famous names"]),
-            InfoSection("Daily Challenges & Streaks", "Every player gets the same daily puzzles. Play each day to build your streak — streak shields protect it if you miss a day."),
-            InfoSection("Leaderboards & Competition", "Compete on daily leaderboards per mode and chase the all-time hall of records."),
-            InfoSection("How Scoring Works", "A 1,000-point base for solving, plus time and completion bonuses (and a guess bonus on hint modes). Fewer guesses and faster solves rank higher."),
-            InfoSection("Free to Play", "All daily puzzles are free. Pro unlocks unlimited replays, VS on every mode, and more."),
-        ]
+        // About + Support render from ContentService (/api/content), not here.
+        case .about, .support: return []
         case .privacy: return [
             InfoSection("Introduction", "This policy explains what Wordocious collects, how we use it, and your choices."),
             InfoSection("Information We Collect", bullets: ["Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — device type, usage patterns, anonymous analytics, and (with your permission) advertising identifiers"]),
@@ -106,16 +135,6 @@ struct InfoPage: View {
             InfoSection("Disclaimer & Limitation of Liability", "The Service is provided \"as is\" without warranties; liability is limited to the extent permitted by law."),
             InfoSection("Termination", "We may suspend or terminate accounts that violate these terms."),
             InfoSection("Contact Us", "Questions about these terms?"),
-        ]
-        case .support: return [
-            InfoSection("How do I play Wordocious?", "Guess the hidden word in the allotted tries; tiles show purple (correct spot), amber (wrong spot), gray (not in word)."),
-            InfoSection("What are the different game modes?", "10 modes from Classic to multi-board, Gauntlet, and VS — see About for the full list."),
-            InfoSection("How are daily scores calculated?", "A base of 1,000 for completing, a guess bonus (hint modes), a speed bonus for finishing fast, and a completion bonus on multi-board modes."),
-            InfoSection("How do XP and levels work?", "Win = 100 XP, loss = 25 XP, with streak + daily bonuses. Every 1,000 XP is a level."),
-            InfoSection("How do streaks work?", "Play a daily each day to build your streak; streak shields protect it if you miss."),
-            InfoSection("What is Wordocious Pro?", "Unlimited replays, VS on every mode, streak shields, a Pro badge, and extended stats."),
-            InfoSection("My stats aren't showing up?", "Make sure you're signed in — stats and leaderboards require an account."),
-            InfoSection("Found a bug or have a suggestion?", "We'd love to hear it — reach out below."),
         ]
         }
     }

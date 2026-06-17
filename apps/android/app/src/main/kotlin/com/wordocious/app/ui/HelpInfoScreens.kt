@@ -43,6 +43,10 @@ import com.wordocious.app.ui.theme.WTheme
 fun HelpScreen(onDone: () -> Unit) {
     var tab by remember { mutableStateOf(0) }
     val tabs = listOf("How to Play", "Game Modes", "FAQ")
+    // Game-mode descriptions + FAQ are single-sourced via /api/content.
+    val content by androidx.compose.runtime.produceState(
+        initialValue = com.wordocious.app.data.ContentService.cached()
+    ) { value = com.wordocious.app.data.ContentService.load() }
 
     Column(Modifier.fillMaxSize().background(WTheme.surface)) {
         // Top accent bar (purple → pink → amber)
@@ -65,8 +69,8 @@ fun HelpScreen(onDone: () -> Unit) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when (tab) {
                 0 -> HowToPlay()
-                1 -> GameModesHelp()
-                else -> Faq()
+                1 -> GameModesHelp(content?.helpModes ?: emptyList())
+                else -> Faq(content?.helpFaq ?: emptyList())
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -111,50 +115,25 @@ private fun ExampleRow(letters: List<String>, highlightIdx: Int, fill: Color, hi
     }
 }
 
-private val HELP_MODES = listOf(
-    "Classic" to "1 word, 6 guesses. The original formula.",
-    "VS Battle" to "Race an opponent in real-time. First to solve wins.",
-    "QuadWord" to "4 words at once. 9 guesses total. Each guess applies to all 4 boards.",
-    "OctoWord" to "8 words at once. 13 guesses. Same idea, bigger challenge.",
-    "Succession" to "4 words solved in order. Solve one to unlock the next. 10 guesses total.",
-    "Deliverance" to "4 boards with pre-filled hints to get you started. 6 guesses to solve them all.",
-    "Six" to "Guess a 6-letter word in 7 tries. Same rules as Classic, bigger vocabulary.",
-    "Seven" to "Guess a 7-letter word in 8 tries. The ultimate single-word challenge.",
-    "Gauntlet" to "5 stages of increasing difficulty — Classic through OctoWord. Survive them all.",
-    "ProperNoundle" to "Guess famous names instead of dictionary words. Themed daily puzzles.",
-)
-
 @Composable
-private fun GameModesHelp() {
-    HELP_MODES.forEach { (title, desc) ->
+private fun GameModesHelp(modes: List<com.wordocious.app.data.ContentService.HelpMode>) {
+    modes.forEach { mode ->
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
                 .border(1.dp, WTheme.divider, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text(desc, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
+            Text(mode.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(mode.desc, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
         }
     }
 }
 
-private val FAQ = listOf(
-    "How are scores calculated?" to "Solving earns a 1,000-point base, plus a speed bonus (your mode's time cap minus your solve time — faster is better) and a completion bonus of up to 200, scaled by how many boards you solved. Six, Seven, and ProperNoundle also add a guess bonus for solving in fewer guesses. Example: a Classic solve in 27s scores 1,000 + 273 (speed) + 200 (completion) = 1,473. Your daily-leaderboard rank is based on this composite score.",
-    "Do hints affect my score?" to "Yes. In Six, Seven, and ProperNoundle you can reveal a hint, but each one is subtracted from your score — 120 points per hint in ProperNoundle and 150 in Six and Seven. Hints never push a winning score below zero, and modes without hint buttons are unaffected.",
-    "How do XP and levels work?" to "Win = 100 XP, loss = 25 XP. Bonuses: +50 for a win streak, +50 for a daily challenge, and medal XP (gold +100, silver +50, bronze +25). Play all 9 of the day's puzzles for a Daily Sweep (+200 XP), and win every one for a Flawless Victory (+400 XP more — 600 total). Every 1,000 XP = 1 level.",
-    "How do medals work?" to "Finish in the top three of a mode's daily leaderboard to earn a gold, silver, or bronze medal, with extra medals for streak milestones and perfect games. Your medal tally is shown on your profile.",
-    "Are there achievements?" to "Yes — 75 achievements to unlock across beginner, consistency, skill, social, and collection challenges, from your First Win to a flawless Gauntlet run, 30-day streaks, winning 50 games in a single mode, and big medal hauls. They unlock automatically as you play, and your full collection (with progress toward each one) lives on your profile.",
-    "What's a streak?" to "Play at least one daily puzzle each day to build your daily streak. Puzzles reset at your local midnight, and missing a day resets the streak — unless a Streak Shield saves it.",
-    "What are Streak Shields?" to "A Streak Shield automatically protects your streak the first time you miss a day. You earn shields through gameplay milestones, and your current count appears in the header.",
-    "What does PRO unlock?" to "PRO removes all ads and unlocks unlimited replays (free players get one play per mode per day), Unlimited mode for endless fresh puzzles, deep Pro Insights stats, and VS extras like sending invites and rematches.",
-    "Do daily puzzles use the same words for everyone?" to "Yes! Every player gets the same daily puzzles, so you can compare results on the leaderboard.",
-)
-
 @Composable
-private fun Faq() {
-    FAQ.forEach { (q, a) ->
+private fun Faq(items: List<com.wordocious.app.data.ContentService.FaqItem>) {
+    items.forEach { item ->
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(q, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text(a, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
+            Text(item.q, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(item.a, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
         }
     }
 }
@@ -174,7 +153,12 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
         else -> "Got a question? We've got answers."
     }
     val contact = when (kind) { "terms" -> "legal@wordocious.com"; "support" -> "support@wordocious.com"; else -> null }
-    val sections = infoSections(kind)
+    // About + Support are single-sourced via /api/content; Privacy + Terms stay hardcoded.
+    val fromApi = kind == "about" || kind == "support"
+    val content by androidx.compose.runtime.produceState(
+        initialValue = if (fromApi) com.wordocious.app.data.ContentService.cached() else null
+    ) { if (fromApi) value = com.wordocious.app.data.ContentService.load() }
+    val contentSections = if (kind == "about") content?.about else content?.support
 
     Column(Modifier.fillMaxSize().background(WTheme.bg)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -183,9 +167,34 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
         }
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(subtitle, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            sections.forEach { InfoSectionCard(it) }
+            if (fromApi) {
+                val cs = contentSections ?: emptyList()
+                if (cs.isEmpty()) Text("Loading…", fontSize = 12.sp, color = WTheme.textMuted)
+                else cs.forEach { ContentSectionCard(it) }
+            } else {
+                infoSections(kind).forEach { InfoSectionCard(it) }
+            }
             if (contact != null) Text(contact, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.primary)
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun ContentSectionCard(s: com.wordocious.app.data.ContentService.Section) {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(s.heading, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        s.paragraphs.forEach { Text(it, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp) }
+        s.items.forEach { item ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(item.heading, fontSize = 12.sp, fontWeight = FontWeight.Black,
+                    color = item.accent?.let { runCatching { Color(("ff" + it.removePrefix("#")).toLong(16)) }.getOrNull() } ?: WTheme.primary)
+                Text(item.body, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
+            }
         }
     }
 }
@@ -208,15 +217,9 @@ private fun InfoSectionCard(s: InfoSec) {
     }
 }
 
+// Only Privacy + Terms are hardcoded here (offline / pre-sign-in compliance).
+// About + Support come from /api/content via ContentService.
 private fun infoSections(kind: String): List<InfoSec> = when (kind) {
-    "about" -> listOf(
-        InfoSec("What is Wordocious?", "A daily word-puzzle game with 10 modes — from the classic single-board to multi-board challenges, a 5-stage Gauntlet, and real-time VS battles."),
-        InfoSec("10 Game Modes", bullets = listOf("Classic — 1 word, 6 tries", "VS Battle — real-time PvP", "QuadWord — 4 boards", "OctoWord — 8 boards", "Succession — 4 words in order", "Deliverance — 4 prefilled boards", "Six / Seven — 6- and 7-letter words", "Gauntlet — 5 escalating stages", "ProperNoundle — famous names")),
-        InfoSec("Daily Challenges & Streaks", "Every player gets the same daily puzzles. Play each day to build your streak — streak shields protect it if you miss a day."),
-        InfoSec("Leaderboards & Competition", "Compete on daily leaderboards per mode and chase the all-time hall of records."),
-        InfoSec("How Scoring Works", "A 1,000-point base for solving, plus time and completion bonuses (and a guess bonus on hint modes). Fewer guesses and faster solves rank higher."),
-        InfoSec("Free to Play", "All daily puzzles are free. Pro unlocks unlimited replays, VS on every mode, and more."),
-    )
     "privacy" -> listOf(
         InfoSec("Introduction", "This policy explains what Wordocious collects, how we use it, and your choices."),
         InfoSec("Information We Collect", bullets = listOf("Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — browser type, usage patterns, anonymous analytics")),
@@ -240,14 +243,5 @@ private fun infoSections(kind: String): List<InfoSec> = when (kind) {
         InfoSec("Termination", "We may suspend or terminate accounts that violate these terms."),
         InfoSec("Contact Us", "Questions about these terms?"),
     )
-    else -> listOf(
-        InfoSec("How do I play Wordocious?", "Guess the hidden word in the allotted tries; tiles show purple (correct spot), amber (wrong spot), gray (not in word)."),
-        InfoSec("What are the different game modes?", "10 modes from Classic to multi-board, Gauntlet, and VS — see About for the full list."),
-        InfoSec("How are daily scores calculated?", "A base of 1,000 for completing, a guess bonus (hint modes), a speed bonus for finishing fast, and a completion bonus on multi-board modes."),
-        InfoSec("How do XP and levels work?", "Win = 100 XP, loss = 25 XP, with streak + daily bonuses. Every 1,000 XP is a level."),
-        InfoSec("How do streaks work?", "Play a daily each day to build your streak; streak shields protect it if you miss."),
-        InfoSec("What is Wordocious Pro?", "Unlimited replays, VS on every mode, streak shields, a Pro badge, and extended stats."),
-        InfoSec("My stats aren't showing up?", "Make sure you're signed in — stats and leaderboards require an account."),
-        InfoSec("Found a bug or have a suggestion?", "We'd love to hear it — reach out below."),
-    )
+    else -> emptyList()
 }
