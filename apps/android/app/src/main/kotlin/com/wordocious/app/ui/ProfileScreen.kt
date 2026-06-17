@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -98,6 +99,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var timeOfDay by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.HourBucket>>(emptyList()) }
     var topWords by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.TopWord>>(emptyList()) }
     var proInsights by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.ProInsights()) }
+    var sweepStats by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.DailySweepStats()) }
+    var sweepPoints by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>>(emptyList()) }
     // Per-mode dashboard filter — null == "All" (global view). Mirrors iOS ProfileModePicker.
     var selectedMode by remember { mutableStateOf<String?>(null) }
     // Solo/VS toggle (web profile/page.tsx) — filters user_stats by play_type.
@@ -129,6 +132,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             todayDailies = DailyCompletionsService.fetchTodayCompletions()
             unlockedAchievements = com.wordocious.app.data.AchievementService.fetchUnlocked(userId)
             activityCal = com.wordocious.app.data.MatchStatsService.dailyCalendar(userId, days = 90)
+            sweepStats = com.wordocious.app.data.MatchStatsService.dailySweepStats()
+            sweepPoints = com.wordocious.app.data.MatchStatsService.dailyPointsOverTime(days = 30)
         }
         loading = false
     }
@@ -230,6 +235,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         item { SolveTimeCard(solveTimes) }
         if (topWords.isNotEmpty()) {
             item { TopWordsCard(topWords) }
+        }
+        // DAILY SWEEPS — All view only (sweep/flawless counts, times, streak, trend).
+        if (selectedMode == null && sweepStats.sweepCount > 0) {
+            item { SweepStatsCard(sweepStats, sweepPoints) }
         }
         // WHEN YOU PLAY (time-of-day) — mode view only. On web it lives INSIDE the
         // per-mode ProInsights card, never standalone in the All view.
@@ -1038,6 +1047,67 @@ private fun TimeStat(label: String, seconds: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
         Text(fmtTime(seconds), fontSize = 13.sp, fontWeight = FontWeight.Black, color = color)
+    }
+}
+
+// ── Daily Sweeps (All view) ──────────────────────────────────────────────────────
+@Composable
+private fun SweepStatsCard(
+    stats: com.wordocious.app.data.MatchStatsService.DailySweepStats,
+    points: List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionLabel("DAILY SWEEPS")
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                IconStat(Icons.Filled.AutoAwesome, Color(0xFF7C3AED), "${stats.sweepCount}", "Sweeps")
+                IconStat(Icons.Filled.EmojiEvents, Color(0xFFD97706), "${stats.flawlessCount}", "Flawless")
+                IconStat(Icons.Filled.LocalFireDepartment, Color(0xFFEF4444), "${stats.currentSweepStreak}", "Streak")
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TimeStat("Avg Sweep", stats.avgSweepSecs, WTheme.text)
+                TimeStat("Best Sweep", stats.bestSweepSecs, WTheme.correct)
+                TimeStat("Best Flawless", stats.bestFlawlessSecs, Color(0xFFD97706))
+            }
+            if (points.size >= 2) {
+                Text("DAILY POINTS · LAST 30 DAYS", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+                val maxV = (points.maxOfOrNull { it.totalPoints } ?: 1).coerceAtLeast(1)
+                androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(100.dp)) {
+                    val w = size.width; val h = size.height
+                    fun x(i: Int) = w * i / (points.size - 1)
+                    fun y(v: Int) = h - (h * v / maxV)
+                    val areaPath = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(0f, h)
+                        points.forEachIndexed { i, p -> lineTo(x(i), y(p.totalPoints)) }
+                        lineTo(w, h); close()
+                    }
+                    drawPath(areaPath, brush = Brush.verticalGradient(listOf(WTheme.primary.copy(alpha = 0.25f), Color.Transparent)))
+                    val linePath = androidx.compose.ui.graphics.Path().apply {
+                        points.forEachIndexed { i, p -> if (i == 0) moveTo(x(i), y(p.totalPoints)) else lineTo(x(i), y(p.totalPoints)) }
+                    }
+                    drawPath(linePath, WTheme.primary, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f))
+                    points.forEachIndexed { i, p ->
+                        if (p.swept || p.flawless) {
+                            drawCircle(if (p.flawless) Color(0xFFF59E0B) else Color(0xFFEC4899),
+                                radius = 5f, center = androidx.compose.ui.geometry.Offset(x(i), y(p.totalPoints)))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IconStat(icon: ImageVector, color: Color, value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
+        Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = color)
+        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
 }
 

@@ -47,6 +47,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -102,6 +110,21 @@ fun HomeScreen(
     val unlimitedMode = isPro && playMode == PlayMode.UNLIMITED
     val signOutScope = androidx.compose.runtime.rememberCoroutineScope()
     var inviteOpen by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    // One-time-per-day Daily Sweep / Flawless Victory celebration. Keyed on the
+    // local day; re-fires on sweep→flawless upgrade (web/iOS parity).
+    var showSweep by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(completions) {
+        if (completions.size < com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES) return@LaunchedEffect
+        val totals = com.wordocious.app.data.DailyCompletionsService.totals(completions)
+        val day = com.wordocious.app.todayLocalDate()
+        val token = "$day:${if (totals.flawless) "flawless" else "sweep"}"
+        val seen = com.wordocious.app.data.SettingsPref.get("sweep-celebrated-day", "")
+        if (seen == token || seen == "$day:flawless") return@LaunchedEffect
+        com.wordocious.app.data.SettingsPref.set("sweep-celebrated-day", token)
+        showSweep = true
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
@@ -113,12 +136,11 @@ fun HomeScreen(
         ) {
             // Pro-only Daily/Unlimited toggle; Unlimited swaps the daily hero.
             // Daily hero shows Daily Sweep! / Flawless Victory! once all 9 are done.
-            val dailyDone = completions.size
-            val dailyWins = completions.values.count { it.completed }
             // Pending VS invites banner (web pending-invites-banner.tsx).
             PendingInvitesBanner(onJoinInvite = onJoinInvite)
             if (isPro) PlayModeToggle(playMode) { playMode = it }
-            if (unlimitedMode) UnlimitedHero() else DailyHero(dailyDone, dailyWins)
+            if (unlimitedMode) UnlimitedHero()
+            else DailyHero(completions) { com.wordocious.app.data.DailySweepShare.share(context, completions) }
             WordOfTheDayCard()
 
             Text(
@@ -185,6 +207,14 @@ fun HomeScreen(
                 onDismiss = dismissProPrompt,
             )
         }
+        // One-time Daily Sweep / Flawless Victory celebration overlay.
+        if (showSweep) {
+            SweepCelebration(
+                byMode = completions,
+                onShare = { com.wordocious.app.data.DailySweepShare.share(context, completions) },
+                onClose = { showSweep = false },
+            )
+        }
     }
     // Pro-only "Invite a friend to VS" modal (web InviteModal / iOS InviteSheet).
     if (inviteOpen) InviteSheet(onDismiss = { inviteOpen = false })
@@ -239,11 +269,18 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
 internal val HERO_HEIGHT = 78.dp
 
 @Composable
-private fun DailyHero(completed: Int, wins: Int) {
+private fun DailyHero(
+    completions: Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>,
+    onShare: () -> Unit = {},
+) {
     val secs by rememberMidnightCountdown()
     val total = 9
+    val completed = completions.size
+    val wins = completions.values.count { it.completed }
     val allDone = completed >= total
     val flawless = allDone && wins >= total
+    val totals = remember(completions) { com.wordocious.app.data.DailyCompletionsService.totals(completions) }
+    val totalTime = "%d:%02d".format(totals.totalTimeSeconds / 60, totals.totalTimeSeconds % 60)
     // Sweep/Flawless variants replace the daily challenge once all 9 are done (web parity).
     val grad = when {
         flawless -> listOf(Color(0xFFFEF3C7), Color(0xFFFDE68A))
@@ -254,6 +291,8 @@ private fun DailyHero(completed: Int, wins: Int) {
     Column(
         modifier = Modifier.fillMaxWidth().height(HERO_HEIGHT)
             .clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(grad))
+            .then(if (allDone) Modifier.heroShimmer() else Modifier)
+            .then(if (allDone) Modifier.clickableNoRipple { onShare() } else Modifier)
             .border(1.5.dp, border, RoundedCornerShape(14.dp)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -273,10 +312,10 @@ private fun DailyHero(completed: Int, wins: Int) {
                 }
             }
             Text(
-                if (flawless) "All $total dailies won today · +600 XP earned" else "All $total dailies completed · +200 XP earned",
+                if (flawless) "All $total won · $totalTime · ${totals.totalScore} pts" else "All $total done · $totalTime · ${totals.totalScore} pts",
                 fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = subColor, modifier = Modifier.padding(top = 2.dp),
             )
-            Text("Next puzzles in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subColor.copy(alpha = 0.75f), modifier = Modifier.padding(top = 2.dp))
+            Text("Tap to share · Next in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subColor.copy(alpha = 0.75f), modifier = Modifier.padding(top = 2.dp))
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
@@ -602,4 +641,26 @@ private fun formatCountdown(secs: Long): String {
     val m = (secs % 3600) / 60
     val s = secs % 60
     return "%02d:%02d:%02d".format(h, m, s)
+}
+
+/** Subtle diagonal foil shimmer sweeping across the Sweep/Flawless banner. */
+private fun Modifier.heroShimmer(): Modifier = composed {
+    val transition = rememberInfiniteTransition(label = "heroShimmer")
+    val x by transition.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Restart),
+        label = "x",
+    )
+    drawWithContent {
+        drawContent()
+        val w = size.width
+        val bandW = w * 0.4f
+        val start = -bandW + x * (w + bandW * 2f)
+        drawRect(
+            brush = Brush.horizontalGradient(
+                colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.4f), Color.Transparent),
+                startX = start, endX = start + bandW,
+            ),
+        )
+    }
 }

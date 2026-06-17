@@ -16,6 +16,9 @@ object SettingsPref {
     fun get(key: String, default: Boolean): Boolean = prefs.getBoolean(key, default)
     fun set(key: String, value: Boolean) = prefs.edit().putBoolean(key, value).apply()
 
+    fun get(key: String, default: String): String = prefs.getString(key, default) ?: default
+    fun set(key: String, value: String) = prefs.edit().putString(key, value).apply()
+
     const val SOUND = "pref-sound"
     const val DAILY_REMINDER = "pref-daily-reminder"
     const val COLORBLIND = "pref-colorblind"
