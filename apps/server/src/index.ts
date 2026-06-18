@@ -489,8 +489,17 @@ io.on('connection', (socket) => {
       const match = matches.get(matchId);
       if (match) {
         const isPlayer1 = match.player1.id === playerId;
-        const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
-        io.to(opponentSocket).emit('opponent_left');
+        const playerState = isPlayer1 ? match.player1State : match.player2State;
+        const opponentState = isPlayer1 ? match.player2State : match.player1State;
+        // Mid-match disconnect = forfeit: end the match so the remaining player
+        // gets a recorded WIN + result screen, instead of just `opponent_left`
+        // (which booted them home with no stats logged). If both already
+        // finished, the match has already ended via the normal path.
+        if (playerState.status === GameStatus.PLAYING || opponentState.status === GameStatus.PLAYING) {
+          playerState.status = GameStatus.ABANDONED;
+          playerState.completedAt = playerState.completedAt ?? Date.now();
+          endMatch(matchId, playerId);
+        }
 
         playerToMatch.delete(match.player1.id);
         playerToMatch.delete(match.player2.id);
@@ -574,7 +583,7 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
   }, MATCH_COUNTDOWN * 1000);
 }
 
-function endMatch(matchId: string): void {
+function endMatch(matchId: string, forfeitBy?: string): void {
   const match = matches.get(matchId);
   if (!match) return;
 
@@ -611,6 +620,12 @@ function endMatch(matchId: string): void {
         winner = 'opponent';
       }
     }
+  }
+
+  // A disconnect/abandon forfeits: whoever left loses regardless of board state,
+  // so the remaining player is credited the win and it records in their stats.
+  if (forfeitBy) {
+    winner = forfeitBy === match.player1.id ? 'opponent' : 'player';
   }
 
   // Compute composite scores for display
