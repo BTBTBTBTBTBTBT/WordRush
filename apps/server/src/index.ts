@@ -658,6 +658,7 @@ function endMatch(matchId: string, forfeitBy?: string): void {
     opponentScore: Math.round(p2ScoreDisplay * 100) / 100,
     opponentId: p2UserId,
     recordMatch: p1Records,
+    forfeit: forfeitBy != null,
     opponentGuessLog: log.p2,
     solutions: match.solutions,
   });
@@ -672,6 +673,7 @@ function endMatch(matchId: string, forfeitBy?: string): void {
     opponentScore: Math.round(p1ScoreDisplay * 100) / 100,
     opponentId: p1UserId,
     recordMatch: p2Records,
+    forfeit: forfeitBy != null,
     opponentGuessLog: log.p1,
     solutions: match.solutions,
   });

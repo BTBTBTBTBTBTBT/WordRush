@@ -107,6 +107,8 @@ export interface ServerToClientEvents {
      * Avoids duplicate rows without a server-side DB write.
      */
     recordMatch: boolean;
+    /** True when the match ended by the opponent disconnecting/abandoning (forfeit win). */
+    forfeit?: boolean;
     /** Opponent's full ordered guess words (+ board index) — letters are only revealed at match end. */
     opponentGuessLog?: { boardIndex: number; guess: string }[];
     /** The match solutions, so the result screen can render both final boards. */
