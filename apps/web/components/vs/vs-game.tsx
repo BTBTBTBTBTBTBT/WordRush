@@ -265,6 +265,16 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const presenceId = usePresenceId();
   const [seed, setSeed] = useState('');
   const [startTime, setStartTime] = useState(0);
+  // Live refs so the socket connect effect can run ONCE per mount and read the
+  // latest profile/seed without listing them as deps. Listing `profile` as a
+  // dep caused the effect to re-run (and its cleanup to disconnect the socket)
+  // mid-match whenever auth refreshed the profile object — e.g. right after a
+  // win wrote XP — which the opponent's client saw as "opponent left" and got
+  // booted to home. Refs keep the connection stable for the whole match.
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const seedRef = useRef(seed);
+  seedRef.current = seed;
   const [queuePosition, setQueuePosition] = useState(0);
   const [queueSize, setQueueSize] = useState(0);
   const [countdown, setCountdown] = useState(3);
@@ -385,8 +395,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             }
           })
           .catch(() => {});
-        if (profile) {
-          fetchHeadToHead(profile.id, oppId).then(setHeadToHead).catch(() => {});
+        const me = profileRef.current;
+        if (me) {
+          fetchHeadToHead(me.id, oppId).then(setHeadToHead).catch(() => {});
         }
       }
 
@@ -466,10 +477,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       setScreen('result');
 
       // Record stats
-      if (profile && !resultRecordedRef.current) {
+      const me = profileRef.current;
+      if (me && !resultRecordedRef.current) {
         resultRecordedRef.current = true;
         const won = data.winner === 'player';
-        recordGameResult(profile.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seed)
+        recordGameResult(me.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seedRef.current)
           .then(xp => { if (xp) setXpResult(xp); });
         // Persist a match-history row so this VS battle shows in Recent Matches.
         // Exactly one client writes it (server flags player1 via recordMatch),
@@ -477,15 +489,15 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         if (data.recordMatch && data.opponentId) {
           recordMatch({
             gameMode: mode,
-            player1Id: profile.id,
+            player1Id: me.id,
             player2Id: data.opponentId,
-            winnerId: data.winner === 'player' ? profile.id
+            winnerId: data.winner === 'player' ? me.id
               : data.winner === 'opponent' ? data.opponentId : undefined,
             player1Score: data.playerGuesses,
             player2Score: data.opponentGuesses,
             player1Time: Math.round(data.playerTime / 1000),
             player2Time: Math.round(data.opponentTime / 1000),
-            seed,
+            seed: seedRef.current,
             solutions: data.solutions ?? [],
             player1Guesses: myGuessLogRef.current.map((g) => g.guess),
             player2Guesses: (data.opponentGuessLog ?? []).map((g) => g.guess),
@@ -499,7 +511,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         if (data.opponentId) {
           const oppId = data.opponentId;
           setTimeout(() => {
-            fetchHeadToHead(profile.id, oppId).then(setHeadToHead).catch(() => {});
+            fetchHeadToHead(me.id, oppId).then(setHeadToHead).catch(() => {});
           }, 1200);
         }
       }
@@ -560,7 +572,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     return () => {
       matchService.disconnect();
     };
-  }, [mode, matchService, profile, alreadyPlayedDaily, todayDailySeed, dailyVsActive, modeMaxGuesses, showCallout, resetPerMatchState]);
+    // Connect ONCE per mount. Volatile values (profile, seed, daily flags) are
+    // read via refs/stable closures inside the handlers, so the socket is never
+    // torn down mid-match. Only matchService/presenceId (stable) gate the effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchService, presenceId]);
 
   // Live clock while spectating the opponent finish their game.
   useEffect(() => {
