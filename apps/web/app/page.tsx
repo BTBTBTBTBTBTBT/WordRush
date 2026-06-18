@@ -299,13 +299,10 @@ export default function HomePage() {
   const resetCountdownText = resetSecs !== null ? formatCountdown(resetSecs) : '';
 
   const handleVsClick = (vsHref: string) => {
-    // Pro users playing the main VS Classic tile skip the daily flow
-    // entirely — they get unlimited random-seed matches. Freemium users
-    // (and the ?daily=true variant) go through the daily VS flow.
-    if (isPro && (vsHref === '/practice/vs?daily=true' || vsHref === '/practice/vs')) {
-      router.push('/practice/vs');
-      return;
-    }
+    // Everyone (incl. Pro) follows the href the card passed: the daily tile →
+    // shared daily VS (?daily=true); the unlimited-mode tile → /practice/vs.
+    // Pro now plays the same shared daily VS as freemium, with an "Unlimited
+    // VS" escape offered on the already-played screen.
     router.push(vsHref);
   };
 
@@ -443,7 +440,9 @@ export default function HomePage() {
             // mode.id → db key. The VS Battle card has no daily row.
             const dbKey = MODE_ID_TO_DB[mode.id];
             const dailyResult = playMode === 'daily' && dbKey ? todayDailies.get(dbKey) : undefined;
-            const isDailyDone = !!dailyResult;
+            // VS has no daily_results row; reflect its completed state from the
+            // play-limit cache so the card shows "played" like other modes.
+            const isDailyDone = !!dailyResult || (mode.id === 'vs' && playMode === 'daily' && hasPlayedModeToday('vs'));
 
             // Freemium users: lock card once the daily is done OR the
             // play-limit cache says played. isDailyDone covers modes
@@ -504,10 +503,10 @@ export default function HomePage() {
                   {isDailyDone && (
                     <div
                       className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center"
-                      style={{ background: dailyResult!.won ? '#7c3aed' : '#dc2626' }}
+                      style={{ background: dailyResult ? (dailyResult.won ? '#7c3aed' : '#dc2626') : '#7c3aed' }}
                     >
                       <span className="text-[10px] font-black text-white leading-none">
-                        {dailyResult!.won ? 'W' : 'L'}
+                        {dailyResult ? (dailyResult.won ? 'W' : 'L') : '✓'}
                       </span>
                     </div>
                   )}
@@ -530,7 +529,9 @@ export default function HomePage() {
                   <div className="text-[13px] font-black" style={{ color: isLocked ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{mode.title}</div>
                   <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                     {isDailyDone
-                      ? `${dailyResult!.guesses} ${dailyResult!.guesses === 1 ? 'guess' : 'guesses'} · ${formatShortTime(dailyResult!.timeSeconds)}`
+                      ? (dailyResult
+                          ? `${dailyResult.guesses} ${dailyResult.guesses === 1 ? 'guess' : 'guesses'} · ${formatShortTime(dailyResult.timeSeconds)}`
+                          : 'Played today')
                       : isLocked
                       ? `Play again in ${resetCountdownText}`
                       : mode.desc}

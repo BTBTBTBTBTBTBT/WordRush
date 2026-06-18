@@ -18,7 +18,7 @@ import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { playOpponentThunk } from '@/lib/sounds';
-import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X } from 'lucide-react';
+import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine } from './match-intro';
@@ -230,11 +230,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const { profile, isProActive } = useAuth();
   const isPro = isProActive;
 
-  // Freemium daily-VS gating is only active when (a) the caller asked
-  // for the daily flow, (b) the user isn't pro, and (c) the mode is the
-  // main Classic VS (DUEL). Other modes' VS buttons are pro-only so
-  // they never reach this branch.
-  const dailyVsActive = isDaily && !isPro && mode === GameMode.DUEL;
+  // Daily VS uses the shared daily seed for EVERYONE (incl. Pro) so all players
+  // play the same puzzle and pair together. The once-per-day limit + already-
+  // played screen apply to all; Pro gets an "Unlimited VS" escape there.
+  // Other modes' VS buttons are pro-only and never reach this branch.
+  const dailyVsActive = isDaily && mode === GameMode.DUEL;
 
   // The deterministic seed for today's free daily VS puzzle. Intentionally
   // uses a different mode slug ("DUEL_VS") from Classic's daily
@@ -686,6 +686,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       <DailyVsAlreadyPlayed
         answer={todayDailyAnswer}
         titleGradient={titleGradient}
+        isPro={isPro}
       />
     );
   }
@@ -1141,9 +1142,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 function DailyVsAlreadyPlayed({
   answer,
   titleGradient,
+  isPro,
 }: {
   answer: string;
   titleGradient: string;
+  isPro: boolean;
 }) {
   const [countdown, setCountdown] = useState('');
 
@@ -1209,12 +1212,14 @@ function DailyVsAlreadyPlayed({
           </span>
         </div>
 
-        {/* Pro upsell copy */}
+        {/* Pro: prompt unlimited VS. Freemium: upsell to Pro. */}
         <p
           className="text-xs font-bold px-4 animate-fade-in"
           style={{ color: 'var(--color-text-secondary)', animationDelay: '0.35s' }}
         >
-          Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.
+          {isPro
+            ? 'Want more? Jump into unlimited VS battles with fresh puzzles.'
+            : 'Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.'}
         </p>
 
         {/* Actions */}
@@ -1222,18 +1227,33 @@ function DailyVsAlreadyPlayed({
           className="space-y-2 animate-fade-in-up"
           style={{ animationDelay: '0.45s' }}
         >
-          <Link href="/pro" className="block">
-            <button
-              className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d flex items-center justify-center gap-2"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                boxShadow: '0 4px 0 #92400e',
-              }}
-            >
-              <Crown className="w-4 h-4" />
-              Upgrade to Pro
-            </button>
-          </Link>
+          {isPro ? (
+            <Link href="/practice/vs" className="block">
+              <button
+                className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d flex items-center justify-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                  boxShadow: '0 4px 0 #5b21b6',
+                }}
+              >
+                <Swords className="w-4 h-4" />
+                Play Unlimited VS
+              </button>
+            </Link>
+          ) : (
+            <Link href="/pro" className="block">
+              <button
+                className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d flex items-center justify-center gap-2"
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                  boxShadow: '0 4px 0 #92400e',
+                }}
+              >
+                <Crown className="w-4 h-4" />
+                Upgrade to Pro
+              </button>
+            </Link>
+          )}
           <Link href="/" className="block">
             <button
               className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all"
