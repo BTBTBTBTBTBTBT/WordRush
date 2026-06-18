@@ -23,6 +23,8 @@ struct VSGameView: View {
 
     // Non-Pro Rematch tap shows the Pro upsell modal (web parity — VsLimitModal).
     @State private var showRematchUpsell = false
+    // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
+    @State private var confirmForfeit = false
 
     var body: some View {
         ZStack {
@@ -83,6 +85,12 @@ struct VSGameView: View {
             else { vm.start() }
         }
         .onDisappear { vm.leave() }
+        .confirmationDialog("Forfeit match?", isPresented: $confirmForfeit, titleVisibility: .visible) {
+            Button("Forfeit & Leave", role: .destructive) { goHome() }
+            Button("Keep Playing", role: .cancel) { }
+        } message: {
+            Text("Leaving now forfeits the match — it counts as a loss" + (vm.isDaily ? " and uses today's daily VS." : "."))
+        }
     }
 
     private func goHome() { vm.forfeit(); dismiss() }
@@ -183,11 +191,15 @@ struct VSGameView: View {
                               maxGuesses: game.maxGuesses, wordLength: game.wordLength)
                     .padding(.horizontal, 10).padding(.top, 6)
 
+                // Board fills the slack BETWEEN header and keyboard. The keyboard
+                // gets layout priority so the VStack always reserves its full
+                // height first and the greedy board yields — otherwise the board
+                // ate the space and clipped the keyboard's bottom row.
                 GeometryReader { geo in
                     BoardLayout(vm: game, availableWidth: geo.size.width, fitHeight: geo.size.height)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
-                .frame(maxHeight: .infinity)
+                .layoutPriority(0)
                 // Gauntlet: a cleared stage shows Continue (advance the run)
                 // instead of the keyboard, mirroring the solo GameScreen.
                 if game.stageCleared {
@@ -195,7 +207,7 @@ struct VSGameView: View {
                         .buttonStyle(.borderedProminent).tint(Theme.primary).controlSize(.large)
                         .padding(.bottom, 10)
                 } else {
-                    KeyboardView(vm: game).padding(.bottom, 6)
+                    KeyboardView(vm: game).padding(.bottom, 6).layoutPriority(1)
                 }
             }
             .frame(maxHeight: .infinity)
@@ -205,7 +217,7 @@ struct VSGameView: View {
 
     private var matchHeader: some View {
         HStack {
-            Button(action: goHome) {
+            Button { confirmForfeit = true } label: {
                 Image(systemName: "house.fill").font(.system(size: 15, weight: .bold))
                     .foregroundStyle(ModeStyle.accent(mode))
                     .frame(width: 34, height: 34)

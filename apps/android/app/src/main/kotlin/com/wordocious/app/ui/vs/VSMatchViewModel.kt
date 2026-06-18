@@ -177,6 +177,31 @@ class VSMatchViewModel(
     }
 
     fun forfeit() {
+        // Forfeiting an IN-PROGRESS match counts as a loss and (for daily VS)
+        // consumes today's play — you can't replay. The server credits the
+        // opponent the win + writes the shared match row; this records OUR side
+        // (user_stats VS loss + daily loss) since we leave before match_ended.
+        // Bailing from the queue (no match yet) records nothing.
+        if ((screen == VSScreen.MATCH || screen == VSScreen.WAITING) && !resultRecorded) {
+            resultRecorded = true
+            val secs = if (matchStartMs > 0) max(0, ((System.currentTimeMillis() - matchStartMs) / 1000).toInt()) else 0
+            val gc = game?.rowsUsed ?: 0
+            val solved = game?.boardsSolvedCount ?: 0
+            val total = game?.boardCount ?: 1
+            val theSeed = seed
+            val daily = dailyVsActive
+            val m = mode
+            if (daily) VSPlayLimit.markPlayedToday()
+            viewModelScope.launch {
+                GameResultsService.record(
+                    gameMode = m, playType = "vs", won = false, guessCount = gc,
+                    timeSeconds = secs, boardsSolved = solved, totalBoards = total, seed = theSeed,
+                    solutions = game?.state?.value?.boards?.map { it.solution } ?: emptyList(),
+                    guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(),
+                )
+                if (daily) DailyResultsService.recordDailyVsResult(m, false)
+            }
+        }
         service.abandonMatch()
         service.disconnect()
         game?.stopTimer()

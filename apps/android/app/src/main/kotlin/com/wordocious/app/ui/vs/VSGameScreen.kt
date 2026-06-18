@@ -196,12 +196,23 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
     }
 
     val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
+    // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
+    var confirmForfeit by remember { mutableStateOf(false) }
+    if (confirmForfeit) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirmForfeit = false },
+            title = { Text("Forfeit match?") },
+            text = { Text("Leaving now forfeits the match — it counts as a loss" + (if (vm.isDaily) " and uses today's daily VS." else ".")) },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { confirmForfeit = false; onHome() }) { Text("Forfeit & Leave") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { confirmForfeit = false }) { Text("Keep Playing") } },
+        )
+    }
 
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
         // Header: home button + VS title
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(34.dp).clip(CircleShape).background(WTheme.surface).border(1.5.dp, WTheme.border, CircleShape).clickableNoRipple(onHome), Alignment.Center) {
+            Box(Modifier.size(34.dp).clip(CircleShape).background(WTheme.surface).border(1.5.dp, WTheme.border, CircleShape).clickableNoRipple { confirmForfeit = true }, Alignment.Center) {
                 Text("⌂", fontSize = 18.sp, color = WTheme.primary, fontWeight = FontWeight.Black)
             }
             Spacer(Modifier.weight(1f))

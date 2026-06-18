@@ -239,6 +239,28 @@ final class VSMatchViewModel: ObservableObject {
     }
 
     func forfeit() {
+        // Forfeiting an IN-PROGRESS match counts as a loss and (for daily VS)
+        // consumes today's play — you can't replay it. The server already
+        // credits the opponent the win + writes the shared match row; this records
+        // OUR side (user_stats VS loss + daily_results loss) since we leave before
+        // match_ended arrives. Bailing from the queue (no match yet) records nothing.
+        if (screen == .match || screen == .waiting), !resultRecorded {
+            resultRecorded = true
+            let secs = matchStartMs > 0 ? Int(max(0, Date().timeIntervalSince1970 * 1000 - matchStartMs) / 1000) : 0
+            let gc = game?.rowsUsed ?? 0
+            let solved = game?.boardsSolvedCount ?? 0
+            let total = game?.boardCount ?? 1
+            let theSeed = seed
+            let daily = dailyVsActive
+            let m = mode
+            if daily { VSPlayLimit.markPlayedToday() }
+            Task {
+                _ = await GameResultsService.record(
+                    gameMode: m, playType: "vs", won: false, guessCount: gc,
+                    timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
+                if daily { await DailyResultsService.recordVs(gameMode: m, won: false) }
+            }
+        }
         service.abandonMatch()
         service.disconnect()
     }
