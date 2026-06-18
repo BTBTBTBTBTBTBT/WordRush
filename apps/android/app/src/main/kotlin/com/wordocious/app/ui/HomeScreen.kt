@@ -184,16 +184,21 @@ fun HomeScreen(
 
             LiveBanner(isPro = isPro, onInvite = { inviteOpen = true })
             // Sign Out (web + iOS home footer parity) — subtle muted text button.
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .clickableNoRipple { signOutScope.launch { com.wordocious.app.data.AuthService.signOut() } }
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Logout, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Sign Out", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            // Only when there's a real session: a guest has nothing to sign out
+            // of (the header shows "Sign In").
+            val isAuthed by com.wordocious.app.data.AuthService.isAuthenticated.collectAsState()
+            if (isAuthed) {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .clickableNoRipple { signOutScope.launch { com.wordocious.app.data.AuthService.signOut() } }
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Logout, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Sign Out", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
             }
             FooterLinks(onNavigate)
             Spacer(Modifier.height(16.dp))

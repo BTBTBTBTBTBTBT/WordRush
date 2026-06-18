@@ -214,8 +214,20 @@ final class VSMatchViewModel: ObservableObject {
 
         wireHandlers()
         let presenceId = AuthService.shared.profile.map { "u:\($0.id)" }
+        // Emit join_queue ONLY once the socket is actually connected. Emitting it
+        // synchronously right after connect() drops the event — Socket.IO-Swift,
+        // unlike the JS client, does NOT buffer pre-connection emits — which left
+        // both players stuck on the "waiting" screen, connected but never queued.
+        // Re-fires on reconnect while still in the queue (server dedupes by player
+        // id); the screen guard avoids re-queuing once a match has started.
+        let joinMode = mode.rawValue
+        let joinSeed = dailySeed
+        let joinInvite = inviteCode
+        service.onConnect = { [weak self] in
+            guard let self, self.screen == .queue else { return }
+            self.service.joinQueue(mode: joinMode, dailySeed: joinSeed, inviteCode: joinInvite)
+        }
         service.connect(presenceId: presenceId)
-        service.joinQueue(mode: mode.rawValue, dailySeed: dailySeed, inviteCode: inviteCode)
     }
 
     func leave() {

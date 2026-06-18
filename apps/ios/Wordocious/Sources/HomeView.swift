@@ -93,7 +93,9 @@ struct HomeView: View {
                                 }
                             }
                             liveBar
-                            signOutButton
+                            // Sign Out only when there's a real session — a guest
+                            // has nothing to sign out of (the header shows "Sign In").
+                            if auth.isAuthenticated { signOutButton }
                             footerLinks
                         }
                         .padding(.horizontal, 16)

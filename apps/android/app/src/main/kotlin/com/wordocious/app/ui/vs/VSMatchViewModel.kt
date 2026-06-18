@@ -155,8 +155,18 @@ class VSMatchViewModel(
 
     private fun connectAndQueue(dailySeed: String?) {
         wireHandlers()
+        // Emit join_queue ONLY once the socket is actually connected. Emitting it
+        // synchronously right after connect() drops the event — the socket.io Java
+        // client, unlike the JS client, does NOT buffer pre-connection emits — which
+        // left both players stuck on the "waiting" screen, connected but never
+        // queued. Re-fires on reconnect while still in the queue (server dedupes by
+        // player id); the screen guard avoids re-queuing once a match has started.
+        service.onConnect = {
+            if (screen == VSScreen.QUEUE) {
+                service.joinQueue(mode = mode.name, dailySeed = dailySeed, inviteCode = inviteCode)
+            }
+        }
         service.connect(presenceId = AuthService.userId?.let { "u:$it" })
-        service.joinQueue(mode = mode.name, dailySeed = dailySeed, inviteCode = inviteCode)
     }
 
     fun leave() {

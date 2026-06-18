@@ -597,15 +597,18 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Sign out */}
-        <button
-          onClick={() => signOut()}
-          className="w-full py-1 text-center text-[10px] font-bold hover:opacity-70 transition-colors"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          <LogOut className="w-3 h-3 inline mr-1" />
-          Sign Out
-        </button>
+        {/* Sign out — only with a real session; a guest has nothing to sign
+            out of (the header shows "Sign In"). */}
+        {user && (
+          <button
+            onClick={() => signOut()}
+            className="w-full py-1 text-center text-[10px] font-bold hover:opacity-70 transition-colors"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            <LogOut className="w-3 h-3 inline mr-1" />
+            Sign Out
+          </button>
+        )}
 
         {/* Footer links for SEO */}
         <div className="flex justify-center gap-3 pt-2 pb-4">
