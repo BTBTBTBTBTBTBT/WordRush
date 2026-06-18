@@ -554,6 +554,10 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   // result exists → replay the matches row through the engine so the card
   // renders (same path useServerDailyReplay uses for the game pages).
   useEffect(() => {
+    // Clear any reconstruction from a previously-selected mode FIRST, so when
+    // the new mode has no session we render nothing — never the prior mode's
+    // board under the new mode's header (the "everything shows Classic" bug).
+    setServerSession(null);
     if (isGauntlet || isProperNoundle || localSession || !profile || !recorded) return;
     let cancelled = false;
     const seed = generateDailySeed(getTodayLocal(), modeId);
