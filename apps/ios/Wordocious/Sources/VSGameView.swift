@@ -36,7 +36,7 @@ struct VSGameView: View {
             case .waiting:           waitingScreen
             case .result:            resultScreen
             case .opponentLeft:      opponentLeftScreen
-            case .alreadyPlayedDaily: DailyVsAlreadyPlayed(answer: vm.dailyAnswer, gradient: gradient, onHome: goHome)
+            case .alreadyPlayedDaily: DailyVsAlreadyPlayed(answer: vm.dailyAnswer, gradient: gradient, isPro: AuthService.shared.isProActive, won: vm.dailyWon, onHome: goHome)
             }
 
             if vm.countdown != nil { countdownOverlay }
@@ -97,6 +97,9 @@ struct VSGameView: View {
     private var queueScreen: some View {
         VStack(spacing: 22) {
             vsTitle(36)
+            // Private match: surface the shareable code/link so the host can
+            // actually invite a friend (the matchmaker buckets both by code).
+            if let code = vm.inviteCode { invitePanel(code) }
             ProgressView().controlSize(.large).tint(Theme.primary)
             VStack(spacing: 6) {
                 CyclingStatus()
@@ -116,6 +119,31 @@ struct VSGameView: View {
             if let m = vm.message { errorPill(m) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Private-match invite panel shown on the queue screen — the code + a
+    /// share button so the host can send the join link. The match starts when
+    /// the friend joins with the same code (server buckets by inviteCode).
+    private func invitePanel(_ code: String) -> some View {
+        VStack(spacing: 10) {
+            Text("PRIVATE MATCH").font(Brand.font(10, .heavy)).tracking(2).foregroundStyle(Theme.textMuted)
+            Text(code).font(Brand.font(30, .black)).tracking(6)
+                .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
+            Text("Share this code — the match starts when your friend joins.")
+                .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
+            ShareLink(item: URL(string: "https://wordocious.com/vs/join/\(code)")!,
+                      message: Text("Join my Wordocious VS match — code \(code)")) {
+                Label("Share invite", systemImage: "square.and.arrow.up")
+                    .font(Brand.font(14, .black)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
+            }.buttonStyle(.plain)
+        }
+        .padding(16).frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .padding(.horizontal, 24)
     }
 
     private var countdownOverlay: some View {
@@ -628,6 +656,8 @@ struct CyclingStatus: View {
 private struct DailyVsAlreadyPlayed: View {
     let answer: String
     let gradient: [Color]
+    var isPro: Bool = false
+    var won: Bool? = nil
     let onHome: () -> Void
 
     var body: some View {
@@ -636,6 +666,14 @@ private struct DailyVsAlreadyPlayed: View {
                 Text("TODAY'S VS PUZZLE").font(Brand.font(10, .heavy)).tracking(2).foregroundStyle(Theme.textMuted)
                 Text("Already Played").font(Brand.font(32, .black))
                     .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
+            }
+            // Today's daily VS outcome — W/L pill (web shows just the answer;
+            // the user asked for an explicit result indicator here).
+            if let won {
+                Text(won ? "YOU WON" : "YOU LOST")
+                    .font(Brand.font(13, .black)).foregroundStyle(.white)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
+                    .background(Capsule().fill(Color(hex: won ? 0x7C3AED : 0xDC2626)))
             }
             if !answer.isEmpty {
                 HStack(spacing: 6) {
@@ -654,16 +692,33 @@ private struct DailyVsAlreadyPlayed: View {
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Capsule().fill(Theme.primary.opacity(0.12)))
             }
-            Text("Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.")
+            Text(isPro
+                 ? "Want more? Jump into unlimited VS battles with fresh puzzles."
+                 : "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.")
                 .font(Brand.font(12, .bold)).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 16)
-            // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
-            NavigationLink { ProView() } label: {
-                Label("Upgrade to Pro", systemImage: "crown.fill").font(Brand.font(14, .black)).foregroundStyle(.white)
+            if isPro {
+                // Pro: route to the VS lobby for unlimited (any-mode) battles
+                // (web parity — DailyVsAlreadyPlayed's "Play Unlimited VS").
+                NavigationLink { VSLobbyView() } label: {
+                    HStack(spacing: 8) {
+                        Image("swords").renderingMode(.template).resizable().scaledToFit().frame(width: 16, height: 16)
+                        Text("Play Unlimited VS")
+                    }
+                    .font(Brand.font(14, .black)).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)
                     .background(RoundedRectangle(cornerRadius: 12).fill(
-                        LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-            }.buttonStyle(.plain)
+                        LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                }.buttonStyle(.plain)
+            } else {
+                // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
+                NavigationLink { ProView() } label: {
+                    Label("Upgrade to Pro", systemImage: "crown.fill").font(Brand.font(14, .black)).foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 13)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(
+                            LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                }.buttonStyle(.plain)
+            }
             Button(action: onHome) {
                 Label("Home", systemImage: "house.fill").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)

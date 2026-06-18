@@ -87,6 +87,11 @@ fun HomeScreen(
     ) {
         value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
     }
+    // Today's daily VS outcome (true=won, false=lost, null=not played) → drives
+    // the VS card's W/L badge + tint, since VS has no solo daily_results row.
+    val vsDailyWon by androidx.compose.runtime.produceState<Boolean?>(initialValue = null) {
+        value = com.wordocious.app.data.DailyResultsService.dailyVsResult()
+    }
     // Pro/Unlimited dimension (web parity): free users get one daily play per
     // mode; once played, the card LOCKS (dimmed + tap → ModeLimitModal). Pro
     // users get a Daily/Unlimited toggle and replay unlimited (fresh seeds).
@@ -156,14 +161,20 @@ fun HomeScreen(
             MODE_CARDS.chunked(2).forEach { rowCards ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     rowCards.forEach { card ->
+                        val isVsCard = card.id == "vs"
                         val completion = card.engineMode?.let { completions[it.name] }
                         // Unlimited mode: these aren't the daily puzzle — never show the
                         // daily W/L result or lock; every tap starts a fresh puzzle (web parity).
                         val shownCompletion = if (unlimitedMode) null else completion
-                        val isLocked = !isPro && completion != null
-                        val showVs = unlimitedMode && card.id != "vs"
-                        val unlimited = unlimitedMode && card.engineMode != null
-                        ModeCardView(card, shownCompletion, isLocked, showVs, Modifier.weight(1f), onVs = { onVs(card) }) {
+                        // VS card (daily only): reflect today's daily-VS W/L (no solo row).
+                        val vsWon = if (!unlimitedMode && isVsCard) vsDailyWon else null
+                        // Free user who used today's daily VS → locked like other modes.
+                        val isLocked = !isPro && (completion != null || (isVsCard && vsDailyWon != null))
+                        val showVs = unlimitedMode && !isVsCard
+                        // The VS card needs the unlimited flag too (no engineMode) so the
+                        // handler can choose lobby (unlimited) vs daily match.
+                        val unlimited = unlimitedMode && (card.engineMode != null || isVsCard)
+                        ModeCardView(card, shownCompletion, isLocked, showVs, Modifier.weight(1f), vsWon = vsWon, onVs = { onVs(card) }) {
                             if (isLocked) limitModal = card else onSelectMode(card, unlimited)
                         }
                     }
@@ -384,10 +395,14 @@ private fun ModeCardView(
     isLocked: Boolean,
     showVs: Boolean,
     modifier: Modifier,
+    vsWon: Boolean? = null,
     onVs: () -> Unit,
     onClick: () -> Unit,
 ) {
-    val isDone = completion != null
+    // VS has no solo completion row; vsWon carries today's daily-VS outcome.
+    val vsDone = vsWon != null
+    val isDone = completion != null || vsDone
+    val doneWon = completion?.completed ?: (vsWon == true)
     // Completed daily: soft tint in the mode's accent + accent border (web parity).
     // Locked (free user, played today): dimmed 60% + gray border.
     val cardBg = if (isDone) card.accent.copy(alpha = 0.06f) else WTheme.surface
@@ -422,10 +437,10 @@ private fun ModeCardView(
             Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             // Completed daily shows guesses · time; else the mode description (web parity).
             Text(
-                if (isDone) {
-                    val g = completion!!.guessCount
+                if (completion != null) {
+                    val g = completion.guessCount
                     "$g ${if (g == 1) "guess" else "guesses"} · ${fmtShort(completion.timeSeconds)}"
-                } else card.desc,
+                } else if (vsDone) "Played today" else card.desc,
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             )
         }
@@ -436,11 +451,11 @@ private fun ModeCardView(
                 modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
                     .size(20.dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (completion!!.completed) Color(0xFF7C3AED) else Color(0xFFDC2626)),
+                    .background(if (doneWon) Color(0xFF7C3AED) else Color(0xFFDC2626)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    if (completion.completed) "W" else "L",
+                    if (doneWon) "W" else "L",
                     fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
                 )
             }

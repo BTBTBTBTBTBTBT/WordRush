@@ -10,6 +10,7 @@ struct HomeView: View {
     @State private var showProSheet = false
     @AppStorage("pref-play-mode") private var playMode: PlayMode = .daily
     @State private var showVSLobby = false
+    @State private var vsDailyWon: Bool? = nil     // today's daily VS outcome (nil = not played) → card W/L badge
     @State private var pendingGame: ActiveGame?    // tap-time-resolved Unlimited game
     @State private var showInvite = false
     @StateObject private var livePlayers = LivePlayerCount()
@@ -172,7 +173,7 @@ struct HomeView: View {
                     VSGameView(mode: inv.mode, inviteCode: inv.code)
                 }
             }
-            .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites(); checkStreakAtRisk(); checkSweepCelebration() }
+            .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites(); vsDailyWon = await DailyResultsService.dailyVSResult(); checkStreakAtRisk(); checkSweepCelebration() }
             .onAppear { livePlayers.start() }
             .onChange(of: completions.byMode.count) { _ in checkSweepCelebration() }
             .fullScreenCover(isPresented: $showSweepCeleb) {
@@ -509,8 +510,19 @@ struct HomeView: View {
                     .buttonStyle(.plain)
             }
         } else if mode.id == "vs" {
-            NavigationLink { VSLobbyView() } label: { cardBody(mode, locked: false) }
-                .buttonStyle(.plain)
+            if effectiveMode == .unlimited {
+                // Unlimited VS (Pro): the mode-picker lobby — any-mode battles
+                // + private matches.
+                NavigationLink { VSLobbyView() } label: { cardBody(mode, locked: false) }
+                    .buttonStyle(.plain)
+            } else {
+                // Daily VS: the shared once-a-day Classic match. Launch the VS
+                // game directly — it shows the matchmaking queue, or the
+                // already-played finished screen if today's daily VS is done
+                // (Pro included). No more dropping into the lobby. (web parity)
+                NavigationLink { VSGameView(mode: .duel, isDaily: true) } label: { cardBody(mode, locked: false) }
+                    .buttonStyle(.plain)
+            }
         } else {
             Button { comingSoon = mode.title } label: { cardBody(mode, locked: false) }
                 .buttonStyle(.plain)
@@ -547,8 +559,13 @@ struct HomeView: View {
         // Daily completion (W/L badge, "N guesses · time", accent tint) is a
         // DAILY-only concept. In Unlimited mode the cards must show the static
         // mode description with no badge/tint — matching the web. (Pro parity #91.)
-        let done = effectiveMode == .daily ? mode.dbKey.flatMap { completions.byMode[$0] } : nil
-        let isDone = done != nil
+        let isVs = mode.id == "vs"
+        let done = (!isVs && effectiveMode == .daily) ? mode.dbKey.flatMap { completions.byMode[$0] } : nil
+        // VS has no solo daily_results row; reflect today's daily-VS outcome
+        // (won/lost) so the card gets the same W/L badge + accent tint as the
+        // other completed daily cards (greyed when locked for freemium).
+        let vsWon: Bool? = (isVs && effectiveMode == .daily) ? vsDailyWon : nil
+        let isDone = done != nil || vsWon != nil
         let lockGray = Color(hex: 0xD1D5DB)
         let barColors = locked ? [lockGray, lockGray] : [mode.accent, mode.accent.opacity(0.53)]
         let borderC = locked ? lockGray : (isDone ? mode.accent.opacity(0.4) : Theme.border)
@@ -561,10 +578,12 @@ struct HomeView: View {
                     ModeIconView(icon: mode.icon, accent: mode.accent, box: 32)
                     Spacer()
                     if let done { winBadge(won: done.completed) }
+                    else if let vsWon { winBadge(won: vsWon) }
                 }
                 Text(mode.title).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                     .padding(.top, 8)
-                Text(resultText(mode, done)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text(isVs ? (vsWon != nil ? "Played today" : mode.desc) : resultText(mode, done))
+                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     .padding(.top, 1)
             }
             .padding(12)

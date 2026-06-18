@@ -50,6 +50,21 @@ enum DailyResultsService {
         return count > 0
     }
 
+    /// Today's daily Classic VS outcome for the home card badge: true=won,
+    /// false=lost, nil if not played yet. (One shared daily VS per day, so a
+    /// single win/loss.)
+    static func dailyVSResult() async -> Bool? {
+        let client = AuthService.shared.client
+        guard let uid = try? await client.auth.session.user.id.uuidString else { return nil }
+        let rows: [VsRow] = (try? await client.from("daily_results")
+            .select("id, vs_wins, vs_losses, vs_games")
+            .eq("user_id", value: uid).eq("day", value: LeaderboardService.todayLocal())
+            .eq("game_mode", value: "DUEL").eq("play_type", value: "vs")
+            .limit(1).execute().value) ?? []
+        guard let row = rows.first else { return nil }
+        return row.vsWins > 0
+    }
+
     private struct VsRow: Decodable {
         let id: String; let vsWins: Int; let vsLosses: Int; let vsGames: Int
         enum CodingKeys: String, CodingKey {

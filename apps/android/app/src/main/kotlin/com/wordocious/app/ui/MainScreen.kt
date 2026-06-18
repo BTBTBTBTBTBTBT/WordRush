@@ -96,6 +96,8 @@ fun MainScreen() {
             mode = vsMode, isDaily = vsDaily,
             onHome = { vsActive = null; vsLobby = false },
             onGoPro = { vsActive = null; infoRoute = "pro" },
+            // Pro "Play Unlimited VS" from the already-played daily screen → lobby.
+            onPlayUnlimited = { vsActive = null; vsLobby = true },
         )
         return
     }
@@ -190,8 +192,13 @@ fun MainScreen() {
                     0 -> HomeScreen(
                         onJoinInvite = { m, code -> vsInvite = m to code },
                         onSelectMode = { card, unlimited ->
-                            if (card.id == "vs") vsLobby = true
-                            else {
+                            if (card.id == "vs") {
+                                // Unlimited VS (Pro): the mode-picker lobby. Daily VS:
+                                // launch the shared daily Classic match directly (queue
+                                // or already-played finished screen).
+                                if (unlimited) vsLobby = true
+                                else vsActive = com.wordocious.core.GameMode.DUEL to true
+                            } else {
                                 activeGame = card
                                 activeSeed = if (unlimited && card.engineMode != null)
                                     "unlimited-${card.engineMode.name}-${System.nanoTime()}" else null

@@ -30,7 +30,9 @@ struct VSLobbyView: View {
                 if !auth.isAuthenticated { guestPrompt }
                 else if isPro { proContent } else { freeContent }
             }
-            .padding(.horizontal, 16).padding(.bottom, 24)
+            // Generous bottom inset so the last create-match row clears the
+            // tab bar (the lobby is pushed inside the Home tab's nav stack).
+            .padding(.horizontal, 16).padding(.bottom, 100)
         }
         .sheet(isPresented: $showAuth) { AuthView() }
         .background(LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea())

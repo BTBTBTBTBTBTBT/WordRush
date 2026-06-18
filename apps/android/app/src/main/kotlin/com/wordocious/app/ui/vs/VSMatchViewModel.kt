@@ -71,6 +71,8 @@ class VSMatchViewModel(
     var rematch by mutableStateOf(RematchState.IDLE)
     var message by mutableStateOf<String?>(null)
     var dailyAnswer by mutableStateOf("")
+    // Today's daily VS outcome for the already-played screen (true=won, false=lost, null=unknown).
+    var dailyWon by mutableStateOf<Boolean?>(null)
     var xpResult by mutableStateOf<GameResultsService.XpResult?>(null)
 
     // ── VS experience upgrade state (web vs-game.tsx parity) ─────────────────────
@@ -119,7 +121,10 @@ class VSMatchViewModel(
     /** Live elapsed seconds for the in-match header clock (web vs-classic parity). */
     val matchElapsedSeconds: Int get() =
         if (matchStartMs > 0) (((System.currentTimeMillis() - matchStartMs) / 1000).toInt()).coerceAtLeast(0) else 0
-    private val dailyVsActive: Boolean get() = isDaily && !isPro && mode == GameMode.DUEL
+    // Daily VS is one shared Classic puzzle per day for EVERYONE (web parity:
+    // dropped the !isPro guard — Pro plays the same daily VS, then gets the
+    // already-played screen with a "Play Unlimited VS" prompt).
+    private val dailyVsActive: Boolean get() = isDaily && mode == GameMode.DUEL
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────────
     fun start() {
@@ -128,12 +133,27 @@ class VSMatchViewModel(
         if (!service.isConfigured) { screen = VSScreen.NOT_CONFIGURED; return }
 
         val dailySeed: String? = if (dailyVsActive) generateDailySeed(todayUTCDate(), "DUEL_VS") else null
-        if (dailyVsActive && VSPlayLimit.hasPlayedToday()) {
-            dailyAnswer = dailySeed?.let { generateSolutionsFromSeed(it, 1).firstOrNull() } ?: ""
-            screen = VSScreen.ALREADY_PLAYED_DAILY
+        if (dailyVsActive) {
+            // Already played (local play-limit OR a server daily_results row →
+            // correct cross-device)? Show the read-only finished screen for free
+            // AND Pro users, instead of queueing.
+            viewModelScope.launch {
+                var played = VSPlayLimit.hasPlayedToday()
+                if (!played) played = DailyResultsService.hasPlayedDailyVsToday()
+                if (played) {
+                    dailyAnswer = dailySeed?.let { generateSolutionsFromSeed(it, 1).firstOrNull() } ?: ""
+                    dailyWon = DailyResultsService.dailyVsResult()
+                    screen = VSScreen.ALREADY_PLAYED_DAILY
+                } else {
+                    connectAndQueue(dailySeed)
+                }
+            }
             return
         }
+        connectAndQueue(dailySeed)
+    }
 
+    private fun connectAndQueue(dailySeed: String?) {
         wireHandlers()
         service.connect(presenceId = AuthService.userId?.let { "u:$it" })
         service.joinQueue(mode = mode.name, dailySeed = dailySeed, inviteCode = inviteCode)

@@ -62,6 +62,20 @@ object DailyResultsService {
     @Serializable
     private data class IdOnlyRow(val id: String? = null)
 
+    /** Today's daily Classic VS outcome for the home card badge: true=won,
+     *  false=lost, null if not played yet. (One shared daily VS per day.) */
+    suspend fun dailyVsResult(): Boolean? {
+        val userId = AuthService.userId ?: return null
+        return runCatching {
+            client.postgrest["daily_results"]
+                .select(io.github.jan.supabase.postgrest.query.Columns.raw("id, vs_wins, vs_losses, vs_games")) {
+                    filter { eq("user_id", userId); eq("day", todayLocalDate()); eq("game_mode", GameMode.DUEL.name); eq("play_type", "vs") }
+                    limit(1)
+                }
+                .decodeSingleOrNull<VsRow>()?.let { it.vsWins > 0 }
+        }.getOrNull()
+    }
+
     suspend fun recordDailyVsResult(mode: GameMode, won: Boolean) {
         val userId = AuthService.userId ?: return
         val day = todayLocalDate()

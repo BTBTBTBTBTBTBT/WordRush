@@ -101,6 +101,9 @@ final class VSMatchViewModel: ObservableObject {
     @Published var rematch: RematchState = .idle
     @Published var message: String?
     @Published var dailyAnswer: String = ""
+    /// Today's daily VS result for the already-played screen badge (true=won,
+    /// false=lost, nil=unknown). Fetched when the already-played screen shows.
+    @Published var dailyWon: Bool? = nil
     /// XP/level-up earned for this match — surfaces the same post-game toast the
     /// solo flow shows (web shows XpToast on the VS result screen too).
     @Published var xpResult: GameResultsService.XpResult?
@@ -173,7 +176,10 @@ final class VSMatchViewModel: ObservableObject {
 
     var isPro: Bool { AuthService.shared.isProActive }
     /// Freemium gating mirrors the web: daily flow only bites for free users on DUEL.
-    private var dailyVsActive: Bool { isDaily && !isPro && mode == .duel }
+    // Daily VS is a single shared Classic puzzle per day for EVERYONE (web parity:
+    // dailyVsActive dropped the !isPro guard — Pro plays the same daily VS, then
+    // gets the already-played screen with a "Play Unlimited VS" prompt).
+    private var dailyVsActive: Bool { isDaily && mode == .duel }
 
     init(mode: GameMode, isDaily: Bool = false, inviteCode: String? = nil) {
         self.mode = mode
@@ -183,18 +189,27 @@ final class VSMatchViewModel: ObservableObject {
 
     // MARK: - Lifecycle
 
-    func start() {
+    func start() { Task { await startAsync() } }
+
+    private func startAsync() async {
         guard service.isConfigured else { screen = .notConfigured; return }
 
-        // Freemium: if the daily VS was already used today, show the read-only
-        // "already played" screen instead of queueing.
+        // Daily VS: a single shared Classic puzzle per day. If already played
+        // (local play-limit OR a server daily_results row, so it's correct
+        // cross-device), show the read-only "already played" screen instead of
+        // queueing — for free AND Pro users (web parity).
         let dailySeed: String? = dailyVsActive
             ? generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "DUEL_VS")
             : nil
-        if dailyVsActive, VSPlayLimit.hasPlayedToday() {
-            dailyAnswer = dailySeed.flatMap { generateSolutionsFromSeed($0, count: 1).first } ?? ""
-            screen = .alreadyPlayedDaily
-            return
+        if dailyVsActive {
+            var played = VSPlayLimit.hasPlayedToday()
+            if !played { played = await DailyResultsService.hasPlayedDailyVS() }
+            if played {
+                dailyAnswer = dailySeed.flatMap { generateSolutionsFromSeed($0, count: 1).first } ?? ""
+                dailyWon = await DailyResultsService.dailyVSResult()
+                screen = .alreadyPlayedDaily
+                return
+            }
         }
 
         wireHandlers()

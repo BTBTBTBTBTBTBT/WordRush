@@ -68,7 +68,7 @@ private fun vsModeLabel(mode: GameMode): String = when (mode) {
  * this increment.
  */
 @Composable
-fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? = null, onHome: () -> Unit, onGoPro: () -> Unit) {
+fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? = null, onHome: () -> Unit, onGoPro: () -> Unit, onPlayUnlimited: () -> Unit = {}) {
     val vm: VSMatchViewModel = viewModel(key = "vs-$mode-${inviteCode ?: "rand"}", factory = VSVMFactory(mode, isDaily, inviteCode))
     LaunchedEffect(Unit) { vm.start() }
     val gradient = modeTitleGradient(mode)
@@ -82,12 +82,12 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
     ) {
         when (vm.screen) {
             VSScreen.NOT_CONFIGURED -> NotConfigured(label, gradient, ::goHome)
-            VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.queueSize, vm.message, ::goHome)
+            VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.queueSize, vm.message, vm.inviteCode, ::goHome)
             VSScreen.MATCH -> MatchScreen(vm, label, gradient, ::goHome)
             VSScreen.WAITING -> WaitingScreen(vm, gradient, ::goHome)
             VSScreen.RESULT -> ResultScreen(vm, gradient, ::goHome, onGoPro)
             VSScreen.OPPONENT_LEFT -> OpponentLeft(::goHome)
-            VSScreen.ALREADY_PLAYED_DAILY -> AlreadyPlayedDaily(vm.dailyAnswer, gradient, ::goHome, onGoPro)
+            VSScreen.ALREADY_PLAYED_DAILY -> AlreadyPlayedDaily(vm.dailyAnswer, gradient, vm.isPro, vm.dailyWon, ::goHome, onGoPro, onPlayUnlimited)
         }
 
         vm.countdown?.let { CountdownOverlay(it, gradient) }
@@ -121,9 +121,34 @@ private fun VsTitle(label: String, gradient: List<Color>, size: Int) {
 }
 
 @Composable
-private fun QueueScreen(label: String, gradient: List<Color>, position: Int, queueSize: Int, message: String?, onHome: () -> Unit) {
+private fun QueueScreen(label: String, gradient: List<Color>, position: Int, queueSize: Int, message: String?, inviteCode: String?, onHome: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
         VsTitle(label, gradient, 36)
+        // Private match: surface the shareable code/link so the host can invite a
+        // friend (the matchmaker buckets both by the same code).
+        if (inviteCode != null) {
+            Column(
+                Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(16.dp))
+                    .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text("PRIVATE MATCH", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.textMuted)
+                Text(inviteCode, fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = 6.sp, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
+                Text("Share this code — the match starts when your friend joins.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center)
+                Box(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.primary)
+                        .clickableNoRipple {
+                            com.wordocious.app.data.ShareHelper.share(context, "Join my Wordocious VS match — code $inviteCode\nhttps://wordocious.com/vs/join/$inviteCode")
+                        }.padding(vertical = 12.dp),
+                    Alignment.Center,
+                ) {
+                    Text("Share invite", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
+            }
+        }
         CircularProgressIndicator(color = WTheme.primary)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             CyclingStatus()
@@ -499,11 +524,21 @@ private fun NotConfigured(label: String, gradient: List<Color>, onHome: () -> Un
 }
 
 @Composable
-private fun AlreadyPlayedDaily(answer: String, gradient: List<Color>, onHome: () -> Unit, onGoPro: () -> Unit) {
+private fun AlreadyPlayedDaily(answer: String, gradient: List<Color>, isPro: Boolean, won: Boolean?, onHome: () -> Unit, onGoPro: () -> Unit, onPlayUnlimited: () -> Unit) {
     Column(Modifier.padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("TODAY'S VS PUZZLE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.textMuted)
             Text("Already Played", fontSize = 32.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
+        }
+        // Today's daily VS outcome — W/L pill (the user asked for an explicit result here).
+        won?.let {
+            Text(
+                if (it) "YOU WON" else "YOU LOST",
+                fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White,
+                modifier = Modifier.clip(RoundedCornerShape(50))
+                    .background(Color(if (it) 0xFF7C3AED else 0xFFDC2626))
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+            )
         }
         if (answer.isNotEmpty()) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -526,15 +561,34 @@ private fun AlreadyPlayedDaily(answer: String, gradient: List<Color>, onHome: ()
                 .background(WTheme.primary.copy(alpha = 0.12f))
                 .padding(horizontal = 12.dp, vertical = 6.dp),
         )
-        Text("Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary, textAlign = TextAlign.Center)
-        // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
-        Box(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
-                .clickableNoRipple(onGoPro).padding(vertical = 13.dp),
-            Alignment.Center,
-        ) {
-            Text("Upgrade to Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+        Text(
+            if (isPro) "Want more? Jump into unlimited VS battles with fresh puzzles."
+            else "Upgrade to Pro for unlimited VS matches, rematches, and ad-free battles.",
+            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary, textAlign = TextAlign.Center,
+        )
+        if (isPro) {
+            // Pro: route to the VS lobby for unlimited (any-mode) battles (web parity).
+            Box(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
+                    .clickableNoRipple(onPlayUnlimited).padding(vertical = 13.dp),
+                Alignment.Center,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = Color.White, modifier = Modifier.size(16.dp))
+                    Text("Play Unlimited VS", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
+            }
+        } else {
+            // Gold "Upgrade to Pro" CTA (web parity — links to the Pro page).
+            Box(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                    .clickableNoRipple(onGoPro).padding(vertical = 13.dp),
+                Alignment.Center,
+            ) {
+                Text("Upgrade to Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+            }
         }
         Pill("Home") { onHome() }
     }
