@@ -106,6 +106,22 @@ httpServer.on('request', (req, res) => {
     res.end(JSON.stringify({ online: uniquePresence.size }));
     return;
   }
+  // TEMP diagnostic — live queue/connection snapshot (VS pairing debug 2026-06-18).
+  if (req.url.startsWith('/debug/queue')) {
+    const sockets: { id: string; presence: string | null }[] = [];
+    io.sockets.sockets.forEach((sock) => {
+      sockets.push({ id: sock.id, presence: (sock.data as { presenceId?: string }).presenceId ?? null });
+    });
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({
+      now: Date.now(),
+      connectedSockets: sockets,
+      queue: queue.snapshot(),
+      privateLobbies: [...privateLobbies.keys()],
+      activeMatches: matches.size,
+    }, null, 2));
+    return;
+  }
   // Unknown path — 404 cleanly rather than hanging.
   res.writeHead(404);
   res.end();

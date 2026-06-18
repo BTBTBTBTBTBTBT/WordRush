@@ -78,4 +78,13 @@ export class MatchmakingQueue {
   getQueueSize(mode: GameMode, dailySeed?: string): number {
     return this.bucket(mode, dailySeed).length;
   }
+
+  /** Temporary diagnostic: dump non-empty buckets and their waiting players. */
+  snapshot(): Record<string, { playerId: string; joinedAt: number }[]> {
+    const out: Record<string, { playerId: string; joinedAt: number }[]> = {};
+    for (const [k, q] of this.queues) {
+      if (q.length) out[k] = q.map(e => ({ playerId: e.player.id, joinedAt: e.joinedAt }));
+    }
+    return out;
+  }
 }
