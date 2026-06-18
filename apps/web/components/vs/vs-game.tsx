@@ -512,6 +512,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             player2Guesses: (data.opponentGuessLog ?? []).map((g) => g.guess),
             startedAt: new Date(Date.now() - data.playerTime).toISOString(),
             completedAt: new Date().toISOString(),
+            forfeit: (data as any).forfeit === true,
           });
         }
         // Refresh the head-to-head line so the result screen shows the

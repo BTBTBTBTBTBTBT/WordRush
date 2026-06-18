@@ -516,6 +516,7 @@ export async function recordMatch(data: {
   player2Guesses?: string[];
   startedAt: string;
   completedAt: string;
+  forfeit?: boolean;
 }) {
   await (supabase as any).from('matches').insert({
     game_mode: data.gameMode,
@@ -532,6 +533,9 @@ export async function recordMatch(data: {
     player2_guesses: data.player2Guesses ?? null,
     started_at: data.startedAt,
     completed_at: data.completedAt,
+    // Only included when true so normal-match inserts never reference the column
+    // (lets this ship before the migration; forfeit rows need it).
+    ...(data.forfeit ? { forfeit: true } : {}),
   });
 }
 

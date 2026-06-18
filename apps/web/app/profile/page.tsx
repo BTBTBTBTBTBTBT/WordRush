@@ -102,7 +102,7 @@ export default function ProfilePage() {
       const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes, sweepStatsRes, sweepPointsRes] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
         supabase.from('matches')
-          .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
+          .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit')
           .or(`player1_id.eq.${profile!.id},player2_id.eq.${profile!.id}`)
           .order('created_at', { ascending: false })
           .limit(5)
@@ -704,6 +704,11 @@ export default function ProfilePage() {
                       <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: match.player2_id ? '#ede9f6' : '#eff6ff', color: match.player2_id ? '#7c3aed' : '#2563eb' }}>
                         {match.player2_id ? 'VS' : 'Solo'}
                       </span>
+                      {(match as any).forfeit && (
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: '#fef3c7', color: '#b45309' }}>
+                          FORFEIT
+                        </span>
+                      )}
                     </div>
                     <div className="text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
                       {score} {score === 1 ? 'guess' : 'guesses'} · {playerTime > 0 ? formatDuration(playerTime) : '—'}
