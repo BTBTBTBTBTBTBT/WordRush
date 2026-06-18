@@ -131,7 +131,7 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
   const maxGuesses = state.boards[0]?.maxGuesses || 10;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col">
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
         <div className="flex justify-center gap-3 mt-1">

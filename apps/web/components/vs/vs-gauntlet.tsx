@@ -249,7 +249,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
   };
 
   return (
-    <div className="h-full flex flex-col relative">
+    <div className="flex-1 min-h-0 flex flex-col relative">
       {/* Progress Bar + Stage Header */}
       <div className="shrink-0">
         <GauntletProgress

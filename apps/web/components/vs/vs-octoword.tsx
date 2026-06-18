@@ -91,7 +91,7 @@ export function VsOctoword({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
   const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col">
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
         <div className="flex justify-center gap-3 mt-1">

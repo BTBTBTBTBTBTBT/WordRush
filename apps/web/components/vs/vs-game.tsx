@@ -275,6 +275,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   profileRef.current = profile;
   const seedRef = useRef(seed);
   seedRef.current = seed;
+  // Ref so the once-wired socket handlers can read the live screen.
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+  // Countdown seconds parked here in onMatchFound, started by the intro's onDone
+  // (after the splash) so it no longer ticks underneath the intro overlay.
+  const pendingCountdownRef = useRef(3);
   const [queuePosition, setQueuePosition] = useState(0);
   const [queueSize, setQueueSize] = useState(0);
   const [countdown, setCountdown] = useState(3);
@@ -291,6 +297,20 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
   // ── VS experience upgrade state ──
   const [showIntro, setShowIntro] = useState(false);
+
+  // Run the on-board countdown overlay. Called after the match-intro splash
+  // finishes (see MatchIntro onDone) so the two no longer overlap.
+  const startCountdown = useCallback((secs: number) => {
+    setShowCountdown(true);
+    setCountdown(secs);
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    setTimeout(() => setShowCountdown(false), secs * 1000);
+  }, []);
   const [opponentUserId, setOpponentUserId] = useState<string | null>(null);
   const [opponentInfo, setOpponentInfo] = useState<VsProfile | null>(null);
   const opponentNameRef = useRef('Opponent');
@@ -375,8 +395,8 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     });
 
     matchService.onMatchFound((data) => {
-      setShowCountdown(true);
-      setCountdown(data.countdownSeconds);
+      // Park the countdown length; it starts when the intro splash finishes.
+      pendingCountdownRef.current = Math.max(1, data.countdownSeconds);
 
       // Match-intro splash: resolve the opponent's public profile and the
       // all-time head-to-head record while the 2.5s intro plays.
@@ -409,19 +429,8 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         markInviteAcceptedByCode(inviteCode, data.matchId).catch(() => {});
       }
 
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      setTimeout(() => {
-        setShowCountdown(false);
-      }, data.countdownSeconds * 1000);
+      // The countdown overlay is started by MatchIntro's onDone (below), after
+      // the splash finishes — so it no longer ticks under the intro.
     });
 
     matchService.onMatchStart((data) => {
@@ -547,6 +556,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     });
 
     matchService.onOpponentLeft(() => {
+      // Only treat as a forfeit while actually mid-match or spectating; ignore
+      // stray disconnects on the queue/result screens (don't boot home).
+      if (screenRef.current !== 'match' && screenRef.current !== 'waiting') return;
       setMessage('Opponent left the match');
       setTimeout(() => {
         window.location.href = '/';
@@ -697,7 +709,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               level: opponentInfo?.level ?? null,
             } : null}
             headToHead={headToHead}
-            onDone={() => setShowIntro(false)}
+            onDone={() => { setShowIntro(false); startCountdown(pendingCountdownRef.current); }}
           />
         )}
         {/* Countdown overlay */}

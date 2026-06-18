@@ -92,7 +92,7 @@ export function VsDeliverance({ seed, mode, onBoardSolved, onCompleted, onGuessS
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex-1 min-h-0 flex flex-col">
       {/* Header */}
       <div className="text-center py-2 px-2 shrink-0">
         <div className="flex justify-center gap-3 mt-1">
