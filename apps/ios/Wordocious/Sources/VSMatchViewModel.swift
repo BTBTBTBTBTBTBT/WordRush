@@ -300,6 +300,7 @@ final class VSMatchViewModel: ObservableObject {
         result = nil
         rematch = .idle
         resultRecorded = false
+        matchCompletionHandled = false
         countdown = nil
         // Per-match VS-experience state (web resetPerMatchState).
         myGuessLog = []
@@ -442,7 +443,11 @@ final class VSMatchViewModel: ObservableObject {
         if let text = calloutText { showCallout(text) }
     }
 
+    private var matchCompletionHandled = false
     private func handleMatchEnded(_ data: VSMatchEnded) {
+        // Guard against a duplicate/replayed match_ended firing the transition twice.
+        guard !matchCompletionHandled else { return }
+        matchCompletionHandled = true
         result = data
         screen = .result
         recordResult(data)

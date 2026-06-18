@@ -159,6 +159,7 @@ struct VSGameView: View {
                     BoardLayout(vm: game, availableWidth: geo.size.width, fitHeight: geo.size.height)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
+                .frame(maxHeight: .infinity)
                 // Gauntlet: a cleared stage shows Continue (advance the run)
                 // instead of the keyboard, mirroring the solo GameScreen.
                 if game.stageCleared {
@@ -169,6 +170,7 @@ struct VSGameView: View {
                     KeyboardView(vm: game).padding(.bottom, 6)
                 }
             }
+            .frame(maxHeight: .infinity)
             if let t = game.toast { toastView(t) }
         }
     }
