@@ -641,6 +641,13 @@ function endMatch(matchId: string, forfeitBy?: string): void {
   const p2UserId = userIdFromSocket(match.player2.socketId);
   const log = guessLogByMatch.get(matchId) ?? { p1: [], p2: [] };
 
+  // Single writer = player1 by default. On a forfeit the player who LEFT can't
+  // write the match-history row, so the REMAINING player writes it — otherwise
+  // forfeited matches never appear in Recent Matches.
+  const remainingIsP1 = forfeitBy == null || forfeitBy !== match.player1.id;
+  const p1Records = remainingIsP1 && p1UserId !== null;
+  const p2Records = !remainingIsP1 && p2UserId !== null;
+
   io.to(match.player1.socketId).emit('match_ended', {
     winner: winner === 'opponent' ? 'opponent' : winner === 'player' ? 'player' : winner,
     playerGuesses: match.player1State.guesses,
@@ -650,7 +657,7 @@ function endMatch(matchId: string, forfeitBy?: string): void {
     playerScore: Math.round(p1ScoreDisplay * 100) / 100,
     opponentScore: Math.round(p2ScoreDisplay * 100) / 100,
     opponentId: p2UserId,
-    recordMatch: p1UserId !== null,
+    recordMatch: p1Records,
     opponentGuessLog: log.p2,
     solutions: match.solutions,
   });
@@ -664,7 +671,7 @@ function endMatch(matchId: string, forfeitBy?: string): void {
     playerScore: Math.round(p2ScoreDisplay * 100) / 100,
     opponentScore: Math.round(p1ScoreDisplay * 100) / 100,
     opponentId: p1UserId,
-    recordMatch: false,
+    recordMatch: p2Records,
     opponentGuessLog: log.p1,
     solutions: match.solutions,
   });
