@@ -90,6 +90,7 @@ enum GameResultsService {
         let player2_guesses: [String]
         let started_at: String
         let completed_at: String
+        let forfeit: Bool
     }
 
     /// Insert the VS match-history row. `won`/`isDraw` derive winner_id; on a
@@ -97,7 +98,8 @@ enum GameResultsService {
     static func recordVsMatch(
         gameMode: GameMode, opponentId: String, won: Bool, isDraw: Bool,
         playerGuesses: Int, opponentGuesses: Int, playerTimeSec: Int, opponentTimeSec: Int,
-        seed: String, solutions: [String] = [], myGuesses: [String] = [], theirGuesses: [String] = []
+        seed: String, solutions: [String] = [], myGuesses: [String] = [], theirGuesses: [String] = [],
+        forfeit: Bool = false
     ) async {
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return }
@@ -111,7 +113,7 @@ enum GameResultsService {
             player1_time: playerTimeSec, player2_time: opponentTimeSec,
             seed: seed, solutions: solutions, player1_guesses: myGuesses, player2_guesses: theirGuesses,
             started_at: iso.string(from: now.addingTimeInterval(-Double(playerTimeSec))),
-            completed_at: iso.string(from: now))
+            completed_at: iso.string(from: now), forfeit: forfeit)
         try? await client.from("matches").insert(row).execute()
     }
 

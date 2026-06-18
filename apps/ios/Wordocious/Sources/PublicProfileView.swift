@@ -341,6 +341,13 @@ struct RecentMatchRow: View {
                         .background(RoundedRectangle(cornerRadius: 5)
                             .fill(match.isSolo ? Color(hex: 0xEFF6FF) : Color(hex: 0xEDE9F6)))
                         .foregroundStyle(match.isSolo ? Color(hex: 0x2563EB) : Color(hex: 0x7C3AED))
+                    if match.forfeit == true {
+                        Text("FORFEIT")
+                            .font(Brand.font(9, .heavy))
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(RoundedRectangle(cornerRadius: 5).fill(Color(hex: 0xFEF3C7)))
+                            .foregroundStyle(Color(hex: 0xB45309))
+                    }
                     if !match.isSolo, let opponentName {
                         Text("· vs \(opponentName)")
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)

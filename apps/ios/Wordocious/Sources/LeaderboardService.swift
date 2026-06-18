@@ -51,6 +51,18 @@ enum LeaderboardService {
         return f.string(from: Date())
     }
 
+    /// UTC date string — used ONLY for daily-VS matchmaking so players in
+    /// different timezones share one queue bucket (mirrors web getTodayUTC).
+    /// Solo daily puzzles stay on the local date (todayLocal).
+    static func todayUTC() -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f.string(from: Date())
+    }
+
     static func yesterdayLocal() -> String {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
         return f.string(from: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date())

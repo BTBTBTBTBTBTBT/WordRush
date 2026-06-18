@@ -103,6 +103,9 @@ struct VSMatchEnded: Codable {
     /// True only for the designated single writer (player1) so exactly one row
     /// is created per match. Optional for backward-compat with older servers.
     let recordMatch: Bool?
+    /// True when the match ended by the opponent disconnecting/abandoning (a
+    /// forfeit win for the remaining player). Powers the "FORFEIT" Recent-Matches tag.
+    let forfeit: Bool?
     /// Opponent's full ordered guess words (+ board index) — letters are only
     /// revealed at match end so the result screen can render their final board.
     let opponentGuessLog: [VSGuessLogEntry]?

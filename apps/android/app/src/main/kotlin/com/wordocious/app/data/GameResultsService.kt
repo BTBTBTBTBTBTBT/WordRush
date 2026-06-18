@@ -308,6 +308,7 @@ object GameResultsService {
         @SerialName("player2_guesses") val player2Guesses: List<String>?,
         @SerialName("started_at") val startedAt: String,
         @SerialName("completed_at") val completedAt: String,
+        val forfeit: Boolean = false,
     )
 
     /**
@@ -325,6 +326,7 @@ object GameResultsService {
         solutions: List<String> = emptyList(),
         player1Guesses: List<String> = emptyList(),
         player2Guesses: List<String>? = null,
+        forfeit: Boolean = false,
     ) {
         val uid = AuthService.userId ?: return
         val winnerId: String? = if (isDraw) null else if (won) uid else opponentId
@@ -339,6 +341,7 @@ object GameResultsService {
                     player2Guesses = player2Guesses,
                     startedAt = now.minusSeconds(playerTimeSec.toLong()).toString(),
                     completedAt = now.toString(),
+                    forfeit = forfeit,
                 )
             )
         }

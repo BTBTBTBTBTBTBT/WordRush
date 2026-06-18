@@ -74,6 +74,11 @@ class MainActivity : ComponentActivity() {
 fun todayLocalDate(): String =
     SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getDefault() }.format(Date())
 
+/** UTC date — used ONLY for daily-VS matchmaking so all timezones share one
+ *  queue bucket (mirrors web getTodayUTC). Solo dailies stay on local date. */
+fun todayUTCDate(): String =
+    SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date())
+
 /** Yesterday's local date — for "Yesterday's Winners" (web `getYesterdayLocal()`). */
 fun yesterdayLocalDate(): String {
     val cal = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }

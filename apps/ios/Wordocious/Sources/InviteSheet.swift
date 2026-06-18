@@ -32,11 +32,25 @@ struct InviteSheet: View {
     private let pink = Color(hex: 0xEC4899), pinkDark = Color(hex: 0xDB2777)
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Invite a friend to a head-to-head match.")
-                        .font(Brand.font(13, .bold)).foregroundStyle(Theme.textSecondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Header — gradient title + subtitle + X close (matches web modal)
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Invite a friend")
+                            .font(Brand.font(24, .black))
+                            .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                        Text("Pick a mode, then send a link or a username invite.")
+                            .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    }
+                    Spacer()
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(Theme.surfaceHover))
+                    }.buttonStyle(.plain)
+                }
 
                     // Mode picker
                     VStack(alignment: .leading, spacing: 6) {
@@ -50,18 +64,18 @@ struct InviteSheet: View {
                                 Circle().fill(ModeStyle.accent(mode)).frame(width: 12, height: 12)
                                 Text(modeLabel).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
                                 Spacer()
-                                Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
+                                Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(ModeStyle.accent(mode))
                             }
                             .padding(.horizontal, 14).padding(.vertical, 12)
                             .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(ModeStyle.accent(mode), lineWidth: 1.5))
                         }
                     }
 
                     // Tabs
                     HStack(spacing: 0) {
-                        tabButton("Share Link", .link)
-                        tabButton("By Username", .username)
+                        tabButton("Share link", .link)
+                        tabButton("Username", .username)
                     }
                     .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1))
@@ -74,9 +88,6 @@ struct InviteSheet: View {
                 }
                 .padding(18)
             }
-            .navigationTitle("Invite to VS").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
-        }
     }
 
     // MARK: Tabs
@@ -113,8 +124,9 @@ struct InviteSheet: View {
                             .background(RoundedRectangle(cornerRadius: 10).fill(LinearGradient(colors: [pink, pinkDark], startPoint: .topLeading, endPoint: .bottomTrailing)))
                     }.buttonStyle(.plain)
                 }
-                Button("Create a different link") { reset() }
-                    .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                Text("Link expires in 24 hours.")
+                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         } else {
             Button { createLink() } label: {
@@ -131,13 +143,14 @@ struct InviteSheet: View {
             VStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill").font(.system(size: 32)).foregroundStyle(Color(hex: 0x22C55E))
                 Text("Invite sent to @\(sent)").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
-                Text("They'll see it in their pending invites.").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                Text("They'll see it the next time they open Wordocious.").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
                 Button("Send another") { reset() }.font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted).padding(.top, 4)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 8)
         } else {
-            VStack(spacing: 10) {
-                TextField("@username", text: $username)
+            VStack(alignment: .leading, spacing: 10) {
+                Text("USERNAME").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(Theme.textMuted)
+                TextField("e.g. wordmaster", text: $username)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
                     .padding(12).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1))

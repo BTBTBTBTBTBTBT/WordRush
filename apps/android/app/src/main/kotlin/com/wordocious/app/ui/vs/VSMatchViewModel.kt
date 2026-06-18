@@ -18,6 +18,7 @@ import com.wordocious.app.data.VSOpponentProgress
 import com.wordocious.app.data.VSPlayLimit
 import com.wordocious.app.data.tileStates
 import com.wordocious.app.todayLocalDate
+import com.wordocious.app.todayUTCDate
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameStatus
 import com.wordocious.core.TileState
@@ -126,7 +127,7 @@ class VSMatchViewModel(
         started = true
         if (!service.isConfigured) { screen = VSScreen.NOT_CONFIGURED; return }
 
-        val dailySeed: String? = if (dailyVsActive) generateDailySeed(todayLocalDate(), "DUEL_VS") else null
+        val dailySeed: String? = if (dailyVsActive) generateDailySeed(todayUTCDate(), "DUEL_VS") else null
         if (dailyVsActive && VSPlayLimit.hasPlayedToday()) {
             dailyAnswer = dailySeed?.let { generateSolutionsFromSeed(it, 1).firstOrNull() } ?: ""
             screen = VSScreen.ALREADY_PLAYED_DAILY
@@ -363,6 +364,7 @@ class VSMatchViewModel(
                     player1Guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses
                         ?: emptyList(),
                     player2Guesses = data.opponentGuessLog?.map { it.guess },
+                    forfeit = data.forfeit == true,
                 )
             }
         }

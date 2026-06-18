@@ -558,6 +558,14 @@ private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, oppon
                     modifier = Modifier.clip(RoundedCornerShape(4.dp))
                         .background(if (isVs) Color(0xFFEDE9F6) else Color(0xFFEFF6FF)).padding(horizontal = 6.dp, vertical = 2.dp),
                 )
+                // Web parity: amber "FORFEIT" chip when this row was a forfeit win.
+                if (m.forfeit == true) {
+                    Text(
+                        "FORFEIT", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFB45309),
+                        modifier = Modifier.clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFFFEF3C7)).padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
                 // Web parity: "· vs <username>" inline on VS rows.
                 if (isVs && opponentName != null) {
                     Text(

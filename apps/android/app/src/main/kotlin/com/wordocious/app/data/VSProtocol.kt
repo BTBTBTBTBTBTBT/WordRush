@@ -117,6 +117,8 @@ data class VSMatchEnded(
     val opponentGuessLog: List<VSGuessLogEntry>? = null,
     /** The match solutions, so the result screen can render both final boards. */
     val solutions: List<String>? = null,
+    /** True when the match ended by the opponent disconnecting/abandoning (forfeit win). */
+    val forfeit: Boolean? = null,
 )
 
 @Serializable

@@ -18,6 +18,8 @@ enum PublicProfileService {
         let player1_time: Double?
         let player2_time: Double?
         let created_at: String
+        /// True when this row was a forfeit win (opponent disconnected/abandoned).
+        let forfeit: Bool?
 
         var isSolo: Bool { player2_id == nil }
         func opponentId(_ uid: String) -> String? {
@@ -69,7 +71,7 @@ enum PublicProfileService {
     /// Last 10 matches (solo or VS) involving this player, newest first.
     static func recentMatches(id: String) async -> [RecentMatch] {
         (try? await AuthService.shared.client.from("matches")
-            .select("id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at")
+            .select("id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit")
             .or("player1_id.eq.\(id),player2_id.eq.\(id)")
             .order("created_at", ascending: false).limit(10)
             .execute().value) ?? []

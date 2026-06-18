@@ -189,7 +189,7 @@ final class VSMatchViewModel: ObservableObject {
         // Freemium: if the daily VS was already used today, show the read-only
         // "already played" screen instead of queueing.
         let dailySeed: String? = dailyVsActive
-            ? generateDailySeed(date: LeaderboardService.todayLocal(), gameMode: "DUEL_VS")
+            ? generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "DUEL_VS")
             : nil
         if dailyVsActive, VSPlayLimit.hasPlayedToday() {
             dailyAnswer = dailySeed.flatMap { generateSolutionsFromSeed($0, count: 1).first } ?? ""
@@ -486,7 +486,8 @@ final class VSMatchViewModel: ObservableObject {
                     playerTimeSec: secs, opponentTimeSec: opponentSecs, seed: theSeed,
                     solutions: data.solutions ?? [],
                     myGuesses: myGuessLog.map(\.guess),
-                    theirGuesses: (data.opponentGuessLog ?? []).map(\.guess))
+                    theirGuesses: (data.opponentGuessLog ?? []).map(\.guess),
+                    forfeit: data.forfeit == true)
             }
             if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
                 await AchievementService.checkAchievements(
