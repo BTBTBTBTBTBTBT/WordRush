@@ -156,6 +156,18 @@ export function getTodayLocal(): string {
   return toLocalDayString(new Date());
 }
 
+/**
+ * UTC date string (YYYY-MM-DD). Used ONLY for daily-VS *matchmaking* so players
+ * in different timezones land in the same queue bucket worldwide. Solo daily
+ * puzzles intentionally stay on the player's LOCAL date (getTodayLocal).
+ */
+export function getTodayUTC(): string {
+  const d = new Date();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${m}-${day}`;
+}
+
 export function getYesterdayLocal(): string {
   const d = new Date();
   d.setDate(d.getDate() - 1);

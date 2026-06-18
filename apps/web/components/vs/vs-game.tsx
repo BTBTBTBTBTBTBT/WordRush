@@ -32,7 +32,7 @@ import {
   formatCountdown,
 } from '@/lib/play-limit-service';
 import { VsLimitModal } from '@/components/modals/vs-limit-modal';
-import { getTodayLocal } from '@/lib/daily-service';
+import { getTodayUTC } from '@/lib/daily-service';
 
 import { VsClassic } from './vs-classic';
 import { VsQuadword } from './vs-quadword';
@@ -242,7 +242,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Classic word even though both are derived from the same solution
   // list via generateSolutionsFromSeed.
   const todayDailySeed = useMemo(
-    () => (dailyVsActive ? generateDailySeed(getTodayLocal(), 'DUEL_VS') : undefined),
+    () => (dailyVsActive ? generateDailySeed(getTodayUTC(), 'DUEL_VS') : undefined),
     [dailyVsActive],
   );
 
@@ -577,7 +577,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       // Re-derive at join time: the todayDailySeed memo only recomputes on
       // dailyVsActive, so a tab left open across midnight queued with
       // YESTERDAY'S seed and could only ever pair with other stale tabs.
-      const queueSeed = dailyVsActive ? generateDailySeed(getTodayLocal(), 'DUEL_VS') : undefined;
+      const queueSeed = dailyVsActive ? generateDailySeed(getTodayUTC(), 'DUEL_VS') : undefined;
       matchService.joinQueue(mode, queueSeed, inviteCode);
     }
 
