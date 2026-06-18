@@ -61,10 +61,10 @@ export default function TermsPage() {
               Wordocious is free to play. We also offer an optional <strong>Pro subscription</strong> that unlocks additional features and game modes.
             </p>
             <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Pro subscriptions are billed through <strong>Stripe</strong>, our payment processor. By subscribing, you agree to Stripe&apos;s terms of service.</span></li>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>You may <strong>cancel your subscription at any time</strong>. Upon cancellation, you will retain Pro access through the end of your current billing period.</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Pro subscriptions are purchased and billed through the app store you use &mdash; the <strong>Apple App Store</strong> or <strong>Google Play</strong> &mdash; via their in-app purchase systems, and are subject to that store&apos;s terms.</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>You may <strong>cancel at any time</strong> in your Apple App Store or Google Play account settings. You will retain Pro access through the end of your current billing period.</span></li>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Subscription prices may change with advance notice. Existing subscribers will be notified before any price change takes effect.</span></li>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Refund requests are handled on a case-by-case basis. Contact us if you believe you were charged in error.</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Refunds are handled by <strong>Apple</strong> or <strong>Google</strong> under their respective policies. Contact the relevant store to request a refund.</span></li>
             </ul>
           </div>
 

@@ -130,7 +130,7 @@ struct InfoPage: View {
             InfoSection("Eligibility", "You must be at least 13 years of age to use the Service."),
             InfoSection("Your Account", "You're responsible for your account and for activity under it."),
             InfoSection("Acceptable Use", bullets: ["No automated tools, bots, scripts, or cheating", "Don't exploit bugs — report them", "No harassment, threats, or abuse", "No offensive/hateful/inappropriate usernames", "Don't access others' accounts or private data", "Don't interfere with or disrupt the Service"]),
-            InfoSection("Free Tier & Pro Subscription", bullets: ["Pro is billed through Stripe (web) / the App Store (iOS)", "Cancel anytime — Pro access continues through the billing period", "Prices may change with advance notice", "Refunds handled case-by-case"]),
+            InfoSection("Free Tier & Pro Subscription", bullets: ["Pro is purchased through the App Store (or Google Play on Android) via in-app purchase, subject to that store's terms", "Cancel anytime in your App Store account settings — Pro access continues through the billing period", "Prices may change with advance notice", "Refunds are handled by Apple (or Google) under their policies"]),
             InfoSection("Intellectual Property", "Wordocious and its content are owned by us and protected by law."),
             InfoSection("Disclaimer & Limitation of Liability", "The Service is provided \"as is\" without warranties; liability is limited to the extent permitted by law."),
             InfoSection("Termination", "We may suspend or terminate accounts that violate these terms."),
