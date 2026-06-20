@@ -96,7 +96,10 @@ struct CompletedDailyCard: View {
                             .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         } else if mode != .gauntlet {
                             VStack(spacing: 8) {
-                                boards(d)
+                                // ProperNoundle's board (multi-word proper nouns) can't be
+                                // rebuilt by the generic reconstruction — it crashed. Skip the
+                                // grid; the answer + stats + score breakdown below still show.
+                                if mode != .propernoundle { boards(d) }
                                 if d.solutions.count == 1 {
                                     Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
                                 }

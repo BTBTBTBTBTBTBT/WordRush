@@ -88,7 +88,7 @@ struct VSMatchIntroView: View {
     private func playerCard(_ p: Player) -> some View {
         VStack(spacing: 8) {
             AvatarView(url: p.avatarUrl, username: p.username, size: 72)
-                .overlay(Circle().stroke(.white.opacity(0.4), lineWidth: 2))
+                .overlay(Circle().strokeBorder(.white.opacity(0.4), lineWidth: 2))
             Text(p.username)
                 .font(Brand.font(14, .black)).foregroundStyle(.white)
                 .lineLimit(1)
@@ -196,7 +196,7 @@ struct VSMatchHeaderBar: View {
 
     private func headerAvatar(_ p: PlayerBits) -> some View {
         AvatarView(url: p.avatarUrl, username: p.username, size: 28)
-            .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+            .overlay(Circle().strokeBorder(Theme.border, lineWidth: 1.5))
     }
 }
 

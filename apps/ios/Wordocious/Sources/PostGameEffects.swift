@@ -79,6 +79,9 @@ struct VictoryOverlay: View {
     let solution: String?
     /// Multi-board solutions (shown as a word grid); empty for single board.
     let solutions: [String]
+    /// ProperNoundle answers are proper nouns (not in the dictionary) — its
+    /// Wikipedia clue/photo stands in for the definition, so skip the card.
+    var showDefinition = true
     var onDismiss: () -> Void
 
     private var isMulti: Bool { totalBoards > 1 }
@@ -102,7 +105,7 @@ struct VictoryOverlay: View {
 
                     if let sol = solution {
                         Text(sol.uppercased()).font(Brand.font(22, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
-                        DefinitionCard(solution: sol, showWord: false)
+                        if showDefinition { DefinitionCard(solution: sol, showWord: false) }
                     } else if !solutions.isEmpty {
                         let cols = solutions.count > 4 ? 4 : 2
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: cols), spacing: 6) {

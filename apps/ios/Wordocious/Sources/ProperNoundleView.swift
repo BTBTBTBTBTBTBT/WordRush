@@ -339,6 +339,7 @@ struct ProperNoundleView: View {
                     won: vm.status == .won, guesses: vm.guesses.count, maxGuesses: vm.maxGuesses,
                     timeSeconds: vm.finalTimeSeconds ?? vm.elapsed, boardsSolved: vm.status == .won ? 1 : 0,
                     totalBoards: 1, solution: p.display, solutions: [],
+                    showDefinition: false,   // proper noun — no dictionary definition (the clue/photo stands in)
                     onDismiss: { withAnimation(Theme.animation(.easeOut(duration: 0.2))) { showVictory = false } })
                 .transition(.scale(scale: 0.8).combined(with: .opacity))   // web fade-in-scale 0.8→1.0
             }

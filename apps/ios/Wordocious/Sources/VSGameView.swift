@@ -41,7 +41,10 @@ struct VSGameView: View {
             case .alreadyPlayedDaily: DailyVsAlreadyPlayed(answer: vm.dailyAnswer, gradient: gradient, isPro: AuthService.shared.isProActive, won: vm.dailyWon, onHome: goHome)
             }
 
-            if vm.countdown != nil { countdownOverlay }
+            // Don't stack the countdown UNDER the intro splash — it ticked behind
+            // the dark overlay and then "popped" in color when the intro lifted.
+            // Show it only once the intro is gone (clean dark intro → colored count).
+            if vm.countdown != nil && !vm.showIntro { countdownOverlay }
 
             // Match-intro splash — sits above the countdown for 2.5s (or until
             // tapped), web parity: MatchIntro renders only on the queue screen.
@@ -79,6 +82,10 @@ struct VSGameView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        // Fullscreen like the solo games — hide the bottom tab bar (the VS game is
+        // pushed inside the Home tab's nav stack, so the tab bar was overlapping
+        // and clipping the keyboard's bottom row).
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             // Free users watch the game-start ad before matchmaking begins.
             if !adShown { adShown = true; AdsManager.shared.showGameStartInterstitial { vm.start() } }

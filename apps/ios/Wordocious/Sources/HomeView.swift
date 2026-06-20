@@ -139,7 +139,7 @@ struct HomeView: View {
             // Games present full-screen OVER the tab bar (like the web's
             // full-screen game route) so the bottom nav is never behind them —
             // not on the board and not on the results/victory screen.
-            .fullScreenCover(item: $pendingGame) { g in
+            .fullScreenCover(item: $pendingGame, onDismiss: { reloadDaily() }) { g in
                 NavigationStack {
                     GameScreen(seed: g.seed, mode: g.mode, title: g.title, onPlayAgain: {
                         // Mint a fresh Unlimited seed for the same mode and swap it in
@@ -150,7 +150,7 @@ struct HomeView: View {
                     })
                 }
             }
-            .fullScreenCover(item: $pnGame) { g in
+            .fullScreenCover(item: $pnGame, onDismiss: { reloadDaily() }) { g in
                 NavigationStack {
                     ProperNoundleView(seed: g.seed, onPlayAgain: { pnGame = PNGame(seed: freshPNSeed()) })
                 }
@@ -176,7 +176,10 @@ struct HomeView: View {
                 }
             }
             .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites(); vsDailyWon = await DailyResultsService.dailyVSResult(); checkStreakAtRisk(); checkSweepCelebration() }
-            .onAppear { livePlayers.start() }
+            // Refresh today's daily completions whenever Home reappears (returning
+            // from a daily push like ProperNoundle) so a just-finished game shows
+            // its completed state immediately — no longer needs a tab round-trip.
+            .onAppear { livePlayers.start(); reloadDaily() }
             .onChange(of: completions.byMode.count) { _ in checkSweepCelebration() }
             .fullScreenCover(isPresented: $showSweepCeleb) {
                 if #available(iOS 16.4, *) {
@@ -320,6 +323,13 @@ struct HomeView: View {
     }
 
     // MARK: - Incoming VS invites (ports PendingInvitesBanner)
+
+    /// Reload today's daily completions + the daily-VS result (cheap; the store
+    /// seeds from cache so there's no flicker). Called on Home reappear and game
+    /// dismissal so finished games show their completed state right away.
+    private func reloadDaily() {
+        Task { await completions.load(); vsDailyWon = await DailyResultsService.dailyVSResult() }
+    }
 
     private func loadPendingInvites() async {
         guard let uid = auth.profile?.id else { return }
