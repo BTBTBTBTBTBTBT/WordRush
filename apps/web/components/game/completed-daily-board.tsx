@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { fetchGauntletStages } from '@/lib/stats-service';
 import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
-import { normalizeString } from '@/components/propernoundle/game-logic';
+import { normalizeString, evaluateGuess as evaluatePNGuess, checkWin as pnCheckWin } from '@/components/propernoundle/game-logic';
 import type { Guess as ProperNoundleGuess, TileState as PNTileState } from '@/components/propernoundle/types';
 
 const MULTI_BOARD_MODES = new Set(['QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE']);
@@ -512,6 +512,11 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const session = localSession ?? serverSession;
   const pnSaved = useMemo(() => isProperNoundle ? loadCompletedProperNoundle() : null, [isProperNoundle]);
   const pnPuzzle = useMemo(() => isProperNoundle ? getDailyPuzzle() : null, [isProperNoundle]);
+  // ProperNoundle cross-device: a daily finished on the native app (or another
+  // browser) has no local save, so this card used to render nothing. Reconstruct
+  // the guesses from the recorded matches row — same fallback the standard modes
+  // already have — so "Completed Today" shows the real board everywhere.
+  const [pnServerGuesses, setPnServerGuesses] = useState<ProperNoundleGuess[] | null>(null);
 
   const boards = session?.state.boards ?? [];
   const solution = boards[0]?.solution || null;
@@ -582,6 +587,38 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     return () => { cancelled = true; };
   }, [isGauntlet, isProperNoundle, localSession, profile, recorded, modeId]);
 
+  // ProperNoundle cross-device fallback: no valid local save but a recorded daily
+  // result exists → pull player1_guesses from the matches row and re-derive the
+  // tiles against today's answer, so the card renders the real completed board.
+  useEffect(() => {
+    setPnServerGuesses(null);
+    const localValid = !!pnSaved && !!pnPuzzle && pnSaved.puzzleId === pnPuzzle.id;
+    if (!isProperNoundle || !pnPuzzle || localValid || !profile || !recorded) return;
+    let cancelled = false;
+    const seed = generateDailySeed(getTodayLocal(), 'PROPERNOUNDLE');
+    (async () => {
+      try {
+        const { data } = await (supabase as any)
+          .from('matches')
+          .select('player1_guesses')
+          .eq('player1_id', profile.id)
+          .eq('seed', seed)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        const row = data?.[0];
+        if (cancelled || !row) return;
+        const words: string[] = Array.isArray(row.player1_guesses) ? row.player1_guesses : [];
+        if (words.length === 0) return;
+        const rebuilt: ProperNoundleGuess[] = words.map((w) => ({
+          word: normalizeString(w),
+          tiles: evaluatePNGuess(w, pnPuzzle.answer),
+        }));
+        if (!cancelled) setPnServerGuesses(rebuilt);
+      } catch { /* offline / RLS — leave the card hidden, no worse than before */ }
+    })();
+    return () => { cancelled = true; };
+  }, [isProperNoundle, pnPuzzle, profile, recorded, pnSaved]);
+
   const formatTime = (s: number) => {
     if (s < 60) return `${s}s`;
     return `${Math.floor(s / 60)}m ${s % 60}s`;
@@ -610,21 +647,33 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
 
   // ProperNoundle path
   if (isProperNoundle) {
-    if (!pnSaved || !pnPuzzle) return null;
-    if (pnSaved.puzzleId !== pnPuzzle.id) return null;
+    if (!pnPuzzle) return null;
+    // Prefer the local save (full hint detail); fall back to the cross-device
+    // reconstruction from the matches row so the card shows everywhere.
+    const localValid = !!pnSaved && pnSaved.puzzleId === pnPuzzle.id;
+    const pnGuessRows: ProperNoundleGuess[] | null = localValid
+      ? pnSaved!.guesses
+      : pnServerGuesses;
+    if (!pnGuessRows || pnGuessRows.length === 0) return null;
 
-    const pnWon = pnSaved.gameStatus === 'won';
+    // Won = the final row is all-correct (works for both the local save and the
+    // reconstructed rows); the recorded daily_results.won wins when present.
+    const lastRow = pnGuessRows[pnGuessRows.length - 1];
+    const pnWon = localValid
+      ? pnSaved!.gameStatus === 'won'
+      : (recorded?.won ?? (lastRow ? pnCheckWin(lastRow.tiles) : false));
     // ProperNoundle has three independent hint actions (clue / vowel /
     // consonant); count whichever were used so the summary matches the
-    // leaderboard's hint column.
-    const pnHints =
-      (pnSaved.hintState?.hintUsed ? 1 : 0) +
-      (pnSaved.hintState?.vowelUsed ? 1 : 0) +
-      (pnSaved.hintState?.consonantUsed ? 1 : 0);
+    // leaderboard's hint column. Hint detail only exists in the local save.
+    const pnHints = localValid
+      ? (pnSaved!.hintState?.hintUsed ? 1 : 0) +
+        (pnSaved!.hintState?.vowelUsed ? 1 : 0) +
+        (pnSaved!.hintState?.consonantUsed ? 1 : 0)
+      : 0;
     const pnHintLabel = formatHintsLabel('PROPERNOUNDLE', pnHints);
     // Match the leaderboard row (recorded daily_results), not the local timer.
-    const pnTime = recorded?.timeSeconds ?? pnSaved.elapsedTime;
-    const pnGuesses = recorded?.guesses ?? pnSaved.guesses.length;
+    const pnTime = recorded?.timeSeconds ?? (localValid ? pnSaved!.elapsedTime : 0);
+    const pnGuesses = recorded?.guesses ?? pnGuessRows.length;
 
     return (
       <CollapsibleCompletedCard
@@ -634,7 +683,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         {/* Compact ProperNoundle board */}
         <div className="mx-auto" style={{ maxWidth: '240px' }}>
           <CompletedProperNoundleMiniBoard
-            guesses={pnSaved.guesses}
+            guesses={pnGuessRows}
             maxGuesses={6}
             answerDisplay={pnPuzzle.display}
           />
