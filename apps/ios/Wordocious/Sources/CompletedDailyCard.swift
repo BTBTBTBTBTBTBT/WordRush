@@ -96,12 +96,21 @@ struct CompletedDailyCard: View {
                             .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         } else if mode != .gauntlet {
                             VStack(spacing: 8) {
-                                // ProperNoundle's board (multi-word proper nouns) can't be
-                                // rebuilt by the generic reconstruction — it crashed. Skip the
-                                // grid; the answer + stats + score breakdown below still show.
-                                if mode != .propernoundle { boards(d) }
-                                if d.solutions.count == 1 {
-                                    Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                                if mode == .propernoundle {
+                                    // Reconstruct the real ProperNoundle board from the recorded
+                                    // guesses (matches row) — re-derive tiles against today's
+                                    // answer, lay out the multi-word groups. Matches the web card.
+                                    if let p = ProperNoundle.dailyPuzzle(), !d.guesses.isEmpty {
+                                        CompletedProperNoundleMiniBoard(guesses: d.guesses, puzzle: p)
+                                        Text(p.display.uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                                    } else if d.solutions.count == 1 {
+                                        Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                                    }
+                                } else {
+                                    boards(d)
+                                    if d.solutions.count == 1 {
+                                        Text(d.solutions[0].uppercased()).font(Brand.font(18, .black)).tracking(2).foregroundStyle(Theme.textPrimary)
+                                    }
                                 }
                                 HStack(spacing: 20) {
                                     stat("\(d.guessCount)", "GUESSES")
@@ -183,4 +192,54 @@ struct CompletedDailyCard: View {
     }
 
     private func timeString(_ s: Int) -> String { "\(s / 60):\(String(format: "%02d", s % 60))" }
+}
+
+/// Compact completed ProperNoundle board — reconstructs each row's tiles from the
+/// recorded guess words, laid out in the answer's multi-word groups (e.g.
+/// "Taylor Swift" → 6 + 5). Mirrors the web `CompletedProperNoundleMiniBoard`.
+struct CompletedProperNoundleMiniBoard: View {
+    let guesses: [String]   // raw recorded guess words (matches row)
+    let puzzle: NPuzzle
+    var maxGuesses: Int = 6
+
+    private var groups: [Int] { ProperNoundle.wordGroups(puzzle.display) }
+    private var totalLetters: Int { max(1, groups.reduce(0, +)) }
+    private var tileSize: CGFloat { min(18, max(10, 220 / CGFloat(totalLetters))) }
+
+    private func ranges() -> [Range<Int>] {
+        var out: [Range<Int>] = []
+        var start = 0
+        for len in groups { out.append(start..<(start + len)); start += len }
+        return out
+    }
+
+    private func mapTile(_ t: NTile) -> TileState {
+        switch t {
+        case .correct: return .correct
+        case .present: return .present
+        case .absent:  return .absent
+        default:       return .empty
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: tileSize * 0.16) {
+            ForEach(0..<maxGuesses, id: \.self) { r in
+                let isPast = r < guesses.count
+                let letters = isPast ? Array(ProperNoundle.normalize(guesses[r])) : []
+                let tiles = isPast ? ProperNoundle.evaluate(guess: guesses[r], answer: puzzle.answer) : []
+                HStack(spacing: 6) {
+                    ForEach(Array(ranges().enumerated()), id: \.offset) { _, range in
+                        HStack(spacing: tileSize * 0.12) {
+                            ForEach(range, id: \.self) { idx in
+                                let letter = (isPast && idx < letters.count) ? String(letters[idx]).uppercased() : ""
+                                let state = (isPast && idx < tiles.count) ? mapTile(tiles[idx]) : TileState.empty
+                                TileView(letter: letter, state: state, revealed: isPast, size: tileSize)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

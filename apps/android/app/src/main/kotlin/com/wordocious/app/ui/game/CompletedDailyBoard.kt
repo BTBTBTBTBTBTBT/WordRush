@@ -49,6 +49,7 @@ import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
 import com.wordocious.core.GauntletProgress
+import com.wordocious.core.TileState
 import com.wordocious.core.createInitialState
 import com.wordocious.core.gameReducer
 
@@ -75,7 +76,19 @@ fun CompletedDailyBoard(modeId: String) {
     // stage), so the cross-device card rebuilds from the persisted per-stage
     // breakdown (matches.gauntlet_stages) — iOS CompletedDailyCard parity.
     var serverGauntlet by remember(modeId) { mutableStateOf<com.wordocious.app.data.GameResultsService.GauntletStagesData?>(null) }
+    // ProperNoundle: the generic engine replay can't rebuild a multi-word proper-
+    // noun board, so capture the raw recorded guesses and render a dedicated card
+    // (tiles re-derived against today's answer, laid out in word groups).
+    var pnGuesses by remember(modeId) { mutableStateOf<List<String>?>(null) }
     LaunchedEffect(modeId) {
+        if (mode == GameMode.PROPERNOUNDLE) {
+            val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed)
+            if (row != null && row.player1Guesses.isNotEmpty()) {
+                pnGuesses = row.player1Guesses
+                serverTime = row.player1Time
+            }
+            return@LaunchedEffect
+        }
         if (localState != null) return@LaunchedEffect
         if (mode == GameMode.GAUNTLET) {
             serverGauntlet = com.wordocious.app.data.GameResultsService.fetchGauntletStages(seed)
@@ -111,6 +124,16 @@ fun CompletedDailyBoard(modeId: String) {
         } ?: return
         val gTime = if (localState != null) (GamePersistence.loadElapsed(seed, mode) ?: 0) else serverTime
         GauntletCompletedDailyCard(g = g, elapsedSeconds = gTime)
+        return
+    }
+
+    // ProperNoundle: dedicated card — real board reconstructed from the recorded
+    // guesses, tiles re-derived against today's answer, multi-word layout.
+    if (mode == GameMode.PROPERNOUNDLE) {
+        val pg = pnGuesses ?: return
+        if (pg.isEmpty()) return
+        val pnPuzzle = com.wordocious.core.ProperNoundle.dailyPuzzle(com.wordocious.app.todayLocalDate()) ?: return
+        ProperNoundleCompletedDailyCard(guesses = pg, puzzle = pnPuzzle, timeSeconds = serverTime)
         return
     }
 
@@ -354,6 +377,96 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
                     mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = totalSecs,
                     boardsSolved = cumBoards, totalBoards = cumTotal, hintsUsed = 0,
                 )
+            }
+        }
+    }
+}
+
+/// Completed ProperNoundle card — real board reconstructed from recorded guesses,
+/// tiles re-derived against today's answer, laid out in the answer's word groups.
+/// Mirrors the web `CompletedProperNoundleMiniBoard` + the single-board card chrome.
+@Composable
+private fun ProperNoundleCompletedDailyCard(
+    guesses: List<String>,
+    puzzle: com.wordocious.core.NPuzzle,
+    timeSeconds: Int,
+) {
+    val lastTiles = guesses.lastOrNull()
+        ?.let { com.wordocious.core.ProperNoundle.evaluate(it, puzzle.answer) } ?: emptyList()
+    val won = com.wordocious.core.ProperNoundle.isWin(lastTiles)
+    val guessCount = guesses.size
+    val summary = "$guessCount/6 · ${fmt(timeSeconds)}"
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
+            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(4.dp).background(
+                Brush.horizontalGradient(
+                    if (won) listOf(Color(0xFF7C3AED), Color(0xFFA78BFA))
+                    else listOf(Color(0xFF9CA3AF), Color(0xFFD1D5DB)),
+                ),
+            ),
+        )
+        Row(
+            Modifier.fillMaxWidth().clickableNoRipple { expanded = !expanded }.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(16.dp).clip(CircleShape).background(if (won) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
+                Text(if (won) "✓" else "✗", fontSize = 9.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
+            }
+            Spacer(Modifier.width(8.dp))
+            Text(
+                if (won) "COMPLETED TODAY" else "ATTEMPTED TODAY",
+                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
+                color = if (won) Color(0xFF7C3AED) else WTheme.textMuted,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(summary, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Spacer(Modifier.width(6.dp))
+            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp).rotate(if (expanded) 180f else 0f))
+        }
+        AnimatedVisibility(visible = expanded) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                ProperNoundleMiniBoard(guesses = guesses, puzzle = puzzle)
+                Spacer(Modifier.height(12.dp))
+                Text(puzzle.display.uppercase(), fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.text)
+                Spacer(Modifier.height(12.dp))
+                StatsRow(listOf("$guessCount/6" to "Guesses", fmt(timeSeconds) to "Time"))
+                Spacer(Modifier.height(12.dp))
+                ScoreBreakdownCard(
+                    mode = GameMode.PROPERNOUNDLE, won = won, guessCount = guessCount, elapsedSeconds = timeSeconds,
+                    boardsSolved = if (won) 1 else 0, totalBoards = 1, hintsUsed = 0,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProperNoundleMiniBoard(guesses: List<String>, puzzle: com.wordocious.core.NPuzzle) {
+    val groups = com.wordocious.core.ProperNoundle.wordGroups(puzzle.display)
+    val starts = groups.runningFold(0) { acc, len -> acc + len }   // start offset per group
+    val total = groups.sum().coerceAtLeast(1)
+    val tileSize = (220f / total).coerceIn(10f, 18f).dp
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        for (r in 0 until 6) {
+            val isPast = r < guesses.size
+            val letters = if (isPast) com.wordocious.core.ProperNoundle.normalize(guesses[r]) else ""
+            val tiles = if (isPast) com.wordocious.core.ProperNoundle.evaluate(guesses[r], puzzle.answer) else emptyList()
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                groups.forEachIndexed { gi, len ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        for (k in 0 until len) {
+                            val i = starts[gi] + k
+                            val letter = if (isPast && i < letters.length) letters[i].toString().uppercase() else ""
+                            val state = if (isPast && i < tiles.size) tiles[i] else TileState.EMPTY
+                            TileView(letter = letter, state = state, cornerRadius = 3.dp, fontSize = 8f, square = true, modifier = Modifier.size(tileSize))
+                        }
+                    }
+                }
             }
         }
     }
