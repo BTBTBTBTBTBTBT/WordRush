@@ -150,7 +150,7 @@ fun HomeScreen(
             if (isPro) PlayModeToggle(playMode) { playMode = it }
             if (unlimitedMode) UnlimitedHero()
             else DailyHero(completions) { com.wordocious.app.data.DailySweepShare.share(context, completions) }
-            WordOfTheDayCard(onClick = { onNavigate("words") })
+            WordOfTheDayCard(onClick = { onNavigate("pastwords") })
 
             Text(
                 "GAME MODES",

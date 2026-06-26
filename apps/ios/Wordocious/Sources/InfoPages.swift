@@ -21,11 +21,14 @@ struct InfoPage: View {
     @StateObject private var content = ContentService.shared
 
     var body: some View {
-        ZStack {
-            Theme.background.ignoresSafeArea()
+        // Same chrome as How to Play / the other menu screens: accent bar +
+        // wordmark-gradient title + Close. Works both presented as a sheet (from
+        // the "?" menu) and pushed from Settings — MenuScaffold's Close uses the
+        // environment dismiss, and we hide the system nav bar so there's no
+        // duplicate header in the pushed case.
+        MenuScaffold(title) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(title).font(Brand.title(30)).foregroundStyle(Theme.wordmarkGradient)
                     if let sub = subtitle { Text(sub).font(Brand.body(13)).foregroundStyle(Theme.textMuted) }
                     // About + Support are single-sourced via /api/content (ContentService);
                     // Privacy + Terms stay hardcoded for offline / pre-sign-in compliance.
@@ -44,7 +47,7 @@ struct InfoPage: View {
                 .padding(16)
             }
         }
-        .navigationTitle(navTitle).navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .task { if kind == .about || kind == .support { await content.load() } }
     }
 

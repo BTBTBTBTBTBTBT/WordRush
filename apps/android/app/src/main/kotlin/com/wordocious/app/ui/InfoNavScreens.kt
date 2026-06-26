@@ -238,7 +238,7 @@ fun StrategyScreen(onDone: () -> Unit) {
 // ── Words (Word of the Day archive) ───────────────────────────────────────────
 
 @Composable
-fun WordsScreen(onDone: () -> Unit) {
+fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
     val words by produceState(initialValue = emptyList<WordsService.Entry>()) { value = WordsService.words() }
     var selected by remember { mutableStateOf<WordsService.Entry?>(null) }
 
@@ -248,7 +248,7 @@ fun WordsScreen(onDone: () -> Unit) {
         return
     }
 
-    OverlayScaffold("Words", onDone) {
+    OverlayScaffold(navTitle, onDone) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (words.isEmpty()) {

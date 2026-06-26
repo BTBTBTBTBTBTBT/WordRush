@@ -160,8 +160,10 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
     ) { if (fromApi) value = com.wordocious.app.data.ContentService.load() }
     val contentSections = if (kind == "about") content?.about else content?.support
 
-    Column(Modifier.fillMaxSize().background(WTheme.bg)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.fillMaxSize().background(WTheme.surface)) {
+        // Accent bar — matches How to Play / the other menu screens.
+        Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(title, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
         }

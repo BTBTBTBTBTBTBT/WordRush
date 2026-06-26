@@ -73,9 +73,9 @@ func infoMenuDestinationView(_ dest: InfoMenuDestination) -> some View {
     case .guides:    GuidesIndexView()
     case .strategy:  StrategyView()
     case .words:     WordsView()
-    case .about:     InfoSheet(.about)
-    case .privacy:   InfoSheet(.privacy)
-    case .terms:     InfoSheet(.terms)
+    case .about:     InfoPage(.about)
+    case .privacy:   InfoPage(.privacy)
+    case .terms:     InfoPage(.terms)
     }
 }
 
@@ -106,7 +106,7 @@ struct MenuScaffold<Content: View>: View {
                         Image(systemName: "chevron.left").font(.system(size: 16, weight: .black)).foregroundStyle(Theme.textMuted)
                     }
                 }
-                Text(title).font(Brand.font(22, .black)).foregroundStyle(Theme.wordmarkGradient).lineLimit(1)
+                Text(title).font(Brand.font(22, .black)).foregroundStyle(Theme.wordmarkGradient).lineLimit(1).minimumScaleFactor(0.6)
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark").font(.system(size: 14, weight: .black)).foregroundStyle(Theme.textMuted)
@@ -123,20 +123,6 @@ struct MenuScaffold<Content: View>: View {
 private var infoCard: some View {
     RoundedRectangle(cornerRadius: 16).fill(Theme.surface)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-}
-
-/// Wraps a pushed `InfoPage` (which sets its own navigationTitle) so it presents
-/// cleanly as a sheet. About/Privacy/Terms already match the app aesthetic.
-private struct InfoSheet: View {
-    let kind: InfoKind
-    @Environment(\.dismiss) private var dismiss
-    init(_ kind: InfoKind) { self.kind = kind }
-    var body: some View {
-        NavigationStack {
-            InfoPage(kind)
-                .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
-        }
-    }
 }
 
 // MARK: - Styled menu (replaces the plain system dropdown)
@@ -354,6 +340,8 @@ final class WordsService: ObservableObject {
 }
 
 struct WordsView: View {
+    /// "Words" from the menu; "Past words" when opened from the Word-of-the-Day card.
+    var navTitle: String = "Words"
     @ObservedObject private var service = WordsService.shared
     @State private var selected: WordArchiveEntry?
 
@@ -362,7 +350,7 @@ struct WordsView: View {
             if let w = selected {
                 MenuScaffold(w.word.uppercased(), onBack: { selected = nil }) { WordDetailBody(entry: w) }
             } else {
-                MenuScaffold("Words") { list }
+                MenuScaffold(navTitle) { list }
             }
         }
         .task { await service.load() }
