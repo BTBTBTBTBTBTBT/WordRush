@@ -68,7 +68,7 @@ enum InfoMenuDestination: String, Identifiable, CaseIterable {
 @ViewBuilder
 func infoMenuDestinationView(_ dest: InfoMenuDestination) -> some View {
     switch dest {
-    case .howToPlay: HelpView(initialTab: .howToPlay)
+    case .howToPlay: HowToPlayView()
     case .faq:       HelpView(initialTab: .faq)
     case .guides:    GuidesIndexView()
     case .strategy:  StrategyView()
