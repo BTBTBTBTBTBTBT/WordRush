@@ -52,7 +52,7 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
         // Top accent bar (purple → pink → amber)
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(tabs[tab], fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Text(tabs[tab].uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
         }
         // Tab chips — hidden when opened for a single section (e.g. FAQ from the
@@ -167,7 +167,7 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
         // Accent bar — matches How to Play / the other menu screens.
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Text(title.uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
         }
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

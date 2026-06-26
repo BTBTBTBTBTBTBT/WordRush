@@ -110,7 +110,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    Text("Settings").font(Brand.font(17, .black)).foregroundStyle(Theme.wordmarkGradient)
+                    Text("SETTINGS").font(Brand.font(17, .black)).foregroundStyle(Theme.wordmarkGradient)
                 }
                 ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
             }

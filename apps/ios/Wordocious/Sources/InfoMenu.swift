@@ -106,7 +106,7 @@ struct MenuScaffold<Content: View>: View {
                         Image(systemName: "chevron.left").font(.system(size: 16, weight: .black)).foregroundStyle(Theme.textMuted)
                     }
                 }
-                Text(title).font(Brand.font(22, .black)).foregroundStyle(Theme.wordmarkGradient).lineLimit(1).minimumScaleFactor(0.6)
+                Text(title).font(Brand.font(22, .black)).textCase(.uppercase).foregroundStyle(Theme.wordmarkGradient).lineLimit(1).minimumScaleFactor(0.6)
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark").font(.system(size: 14, weight: .black)).foregroundStyle(Theme.textMuted)
@@ -152,7 +152,7 @@ struct MenuSheet: View {
                 .frame(width: 40, height: 40)
                 .background(RoundedRectangle(cornerRadius: 11).fill(d.accent.opacity(0.14)))
             VStack(alignment: .leading, spacing: 1) {
-                Text(d.title).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
+                Text(d.title).font(Brand.font(15, .black)).textCase(.uppercase).foregroundStyle(Theme.textPrimary)
                 Text(d.subtitle).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
             }
             Spacer()
@@ -486,7 +486,7 @@ struct InfoFooterLinks: View {
         HStack(spacing: 14) {
             ForEach(row) { d in
                 Button { dest = d } label: {
-                    Text(d.title).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                    Text(d.title).font(Brand.font(11, .bold)).textCase(.uppercase).foregroundStyle(Theme.textMuted)
                 }.buttonStyle(.plain)
             }
         }

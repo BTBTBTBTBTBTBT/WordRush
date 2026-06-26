@@ -28,7 +28,7 @@ struct HelpView: View {
                 .frame(height: 6)
 
             HStack {
-                Text(tab.rawValue).font(Brand.font(20, .black)).foregroundStyle(Theme.wordmarkGradient)
+                Text(tab.rawValue).font(Brand.font(20, .black)).textCase(.uppercase).foregroundStyle(Theme.wordmarkGradient)
                 Spacer()
                 Button { dismiss() } label: {
                     Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))

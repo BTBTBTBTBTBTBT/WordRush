@@ -94,7 +94,7 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Menu", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Text("MENU", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDismiss))
         }
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -104,7 +104,7 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
                         Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(20.dp))
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(item.label, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                        Text(item.label.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         Text(item.subtitle, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     }
                     Icon(Icons.Filled.ChevronRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
@@ -174,7 +174,7 @@ private fun OverlayScaffold(title: String, onDone: () -> Unit, leading: (@Compos
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (leading != null) { leading(); Spacer(Modifier.size(8.dp)) }
-            Text(title, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Text(title.uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
         }
         content()
@@ -370,7 +370,7 @@ fun InfoFooter(onNav: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         INFO_NAV.forEach { item ->
-            Text(item.label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            Text(item.label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                 modifier = Modifier.clickableNoRipple { onNav(item.route) })
         }
     }
