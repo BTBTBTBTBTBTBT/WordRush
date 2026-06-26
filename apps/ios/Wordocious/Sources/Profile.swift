@@ -28,9 +28,19 @@ struct Profile: Codable, Identifiable, Equatable {
     /// Server-persisted "Pro prompt dismissed" flag — web reads/writes this so
     /// the one-time streak upsell never re-shows across devices.
     var proPromptShown: Bool?
+    // Personalization (migration 20260626000001) — all optional.
+    var bio: String?
+    var featuredAchievement: String?
+    var accentColor: String?
+    var favoriteMode: String?
+    var avatarEmoji: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, username, level, xp
+        case id, username, level, xp, bio
+        case featuredAchievement = "featured_achievement"
+        case accentColor = "accent_color"
+        case favoriteMode = "favorite_mode"
+        case avatarEmoji = "avatar_emoji"
         case avatarUrl = "avatar_url"
         case isPro = "is_pro"
         case proExpiresAt = "pro_expires_at"
@@ -54,7 +64,7 @@ struct Profile: Codable, Identifiable, Equatable {
 
     /// Columns to request from the profiles table. (social_links is fetched
     /// separately/optionally so a missing column never breaks profile loading.)
-    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,gold_medals,silver_medals,bronze_medals,created_at,pro_prompt_shown"
+    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,gold_medals,silver_medals,bronze_medals,created_at,pro_prompt_shown,bio,featured_achievement,accent_color,favorite_mode,avatar_emoji"
 }
 
 /// Expiry-aware Pro check — 1:1 with apps/web/lib/pro.ts isProActive().

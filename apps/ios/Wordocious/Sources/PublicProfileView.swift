@@ -94,9 +94,14 @@ struct PublicProfileView: View {
                 }.buttonStyle(.plain)
                 Spacer()
             }
-            AvatarView(url: p.avatarUrl, username: p.username, size: 96)
-            Text(p.username).font(Brand.title(30))
-                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
+            AvatarView(url: p.avatarUrl, username: p.username, size: 96, accentHex: p.accentColor, emoji: p.avatarEmoji)
+            if ProfileAccent.isCustom(p.accentColor) {
+                Text(p.username).font(Brand.title(30)).foregroundStyle(ProfileAccent.color(p.accentColor))
+            } else {
+                Text(p.username).font(Brand.title(30))
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
+            }
+            ProfilePersonalizationRow(profile: p)
             HStack(spacing: 6) {
                 Image(systemName: "star.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xD97706))
                 Text("Level \(p.level)").font(Brand.caption(12)).foregroundStyle(Color(hex: 0x92400E))

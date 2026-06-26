@@ -11,6 +11,10 @@ struct AvatarView: View {
     let url: String?
     let username: String
     var size: CGFloat = 96
+    /// Personalization (optional): when there's no photo, tint the fallback with
+    /// the player's accent and show their chosen emoji instead of the initial.
+    var accentHex: String? = nil
+    var emoji: String? = nil
 
     // Web parity: two-character initials fallback (avatar-upload.tsx slice(0, 2)).
     private var initial: String { String(username.prefix(2)).uppercased() }
@@ -33,8 +37,13 @@ struct AvatarView: View {
     }
 
     private var fallback: some View {
-        Circle().fill(Theme.wordmarkGradient)
-            .overlay(Text(initial).font(Brand.title(size * 0.4)).foregroundStyle(.white))
+        let emo = emoji?.trimmingCharacters(in: .whitespaces)
+        return Circle()
+            .fill(accentHex != nil
+                  ? AnyShapeStyle(LinearGradient(colors: [ProfileAccent.color(accentHex), Color(hex: ProfileAccent.darker(ProfileAccent.hex(accentHex)))], startPoint: .topLeading, endPoint: .bottomTrailing))
+                  : AnyShapeStyle(Theme.wordmarkGradient))
+            .overlay(Text(emo?.isEmpty == false ? emo! : initial)
+                .font(Brand.title(size * 0.4)).foregroundStyle(.white))
     }
 }
 
