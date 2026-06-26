@@ -526,19 +526,17 @@ private struct SweepStatsCard: View {
             if stats.sweepCount > 0 {
                 ChartCard(title: "DAILY SWEEPS") {
                     VStack(spacing: 12) {
-                        HStack(alignment: .top) {
-                            iconStat("sparkles", Color(hex: 0x7C3AED), "\(stats.sweepCount)", "Sweeps")
-                            Spacer()
-                            iconStat("trophy.fill", Color(hex: 0xD97706), "\(stats.flawlessCount)", "Flawless")
-                            Spacer()
-                            iconStat("flame.fill", Color(hex: 0xEF4444), "\(stats.currentSweepStreak)", "Streak")
+                        // Three equal-width centered columns (was item·Spacer·item,
+                        // which shoved the outer two to the card edges).
+                        HStack(alignment: .top, spacing: 0) {
+                            iconStat("sparkles", Color(hex: 0x7C3AED), "\(stats.sweepCount)", "Sweeps").frame(maxWidth: .infinity)
+                            iconStat("trophy.fill", Color(hex: 0xD97706), "\(stats.flawlessCount)", "Flawless").frame(maxWidth: .infinity)
+                            iconStat("flame.fill", Color(hex: 0xEF4444), "\(stats.currentSweepStreak)", "Streak").frame(maxWidth: .infinity)
                         }
-                        HStack {
-                            timeStat("Avg Sweep", stats.avgSweepSecs)
-                            Spacer()
-                            timeStat("Best Sweep", stats.bestSweepSecs)
-                            Spacer()
-                            timeStat("Best Flawless", stats.bestFlawlessSecs)
+                        HStack(alignment: .top, spacing: 0) {
+                            timeStat("Avg Sweep", stats.avgSweepSecs).frame(maxWidth: .infinity)
+                            timeStat("Best Sweep", stats.bestSweepSecs).frame(maxWidth: .infinity)
+                            timeStat("Best Flawless", stats.bestFlawlessSecs).frame(maxWidth: .infinity)
                         }
                         if points.count >= 2 {
                             Text("DAILY POINTS · LAST 30 DAYS")
