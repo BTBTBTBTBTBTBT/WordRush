@@ -89,10 +89,26 @@ fun EditProfileScreen(onDone: () -> Unit) {
     var saving by remember { mutableStateOf(false) }
     var uploading by remember { mutableStateOf(false) }
     var avatarOverride by remember { mutableStateOf<String?>(null) }
+    var bio by remember { mutableStateOf("") }
+    var accent by remember { mutableStateOf<String?>(null) }
+    var favoriteMode by remember { mutableStateOf<String?>(null) }
+    var featured by remember { mutableStateOf<String?>(null) }
+    var avatarEmoji by remember { mutableStateOf("") }
+    var unlocked by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val catalog by androidx.compose.runtime.produceState(com.wordocious.app.data.AchievementCatalog.cached()) {
+        value = com.wordocious.app.data.AchievementCatalog.load()
+    }
+    val dailyModes = remember { MODE_CARDS.filter { it.engineMode != null && it.id != "vs" } }
 
     LaunchedEffect(profile?.id) {
         username = profile?.username ?: ""
+        bio = profile?.bio ?: ""
+        accent = profile?.accentColor
+        favoriteMode = profile?.favoriteMode
+        featured = profile?.featuredAchievement
+        avatarEmoji = profile?.avatarEmoji ?: ""
         val uid = profile?.id ?: return@LaunchedEffect
+        unlocked = com.wordocious.app.data.AchievementService.fetchUnlocked(uid)
         runCatching {
             SupabaseConfig.client.postgrest["profiles"]
                 .select(io.github.jan.supabase.postgrest.query.Columns.raw("social_links")) { filter { eq("id", uid) }; limit(1) }
@@ -167,10 +183,12 @@ fun EditProfileScreen(onDone: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize().background(WTheme.bg)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Cancel", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onDone))
             Spacer(Modifier.weight(1f))
-            Text("Edit Profile", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text("EDIT PROFILE", fontSize = 18.sp, fontWeight = FontWeight.Black,
+                style = androidx.compose.ui.text.TextStyle(brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))))
             Spacer(Modifier.weight(1f))
             Text(
                 if (saving) "Saving…" else "Save", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
@@ -185,9 +203,17 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     saving = true; error = null
                     scope.launch {
                         val ok = runCatching {
+                            val bioVal = bio.trim().take(80).ifBlank { null }
+                            val emojiVal = avatarEmoji.trim().ifBlank { null }
+                            val titleVal = featured?.takeIf { unlocked.contains(it) }
                             SupabaseConfig.client.postgrest["profiles"].update({
                                 set("username", t)
                                 set("social_links", buildJsonObject { cleaned.forEach { (k, v) -> put(k, JsonPrimitive(v)) } })
+                                set("bio", bioVal)
+                                set("accent_color", accent)
+                                set("favorite_mode", favoriteMode)
+                                set("featured_achievement", titleVal)
+                                set("avatar_emoji", emojiVal)
                             }) { filter { eq("id", uid) } }
                         }
                         if (ok.isSuccess) { AuthService.refreshProfile(); onDone() }
@@ -203,22 +229,56 @@ fun EditProfileScreen(onDone: () -> Unit) {
         }
 
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            // Avatar + Change Photo
             val avatarUrl = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
+            val accentColor = ProfileAccent.color(accent)
+            val favCard = favoriteMode?.let { dk -> dailyModes.firstOrNull { it.engineMode?.name == dk } }
+            val featuredName = featured?.let { key -> catalog.firstOrNull { it.key == key }?.name }
+
+            // Live preview
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Box(Modifier.size(64.dp).clip(CircleShape).background(if (avatarUrl != null) Brush.linearGradient(listOf(WTheme.surface, WTheme.surface)) else ProfileAccent.avatarBrush(accent)), contentAlignment = Alignment.Center) {
+                    if (avatarUrl != null) coil.compose.AsyncImage(model = avatarUrl, contentDescription = null, modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                    else Text(avatarEmoji.ifBlank { (username.take(1).ifBlank { "?" }).uppercase() }, fontSize = if (avatarEmoji.isBlank()) 26.sp else 28.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
+                Text(username.trim().ifBlank { "username" }, fontSize = 18.sp, fontWeight = FontWeight.Black, color = accentColor)
+                if (featuredName != null) Row(Modifier.background(accentColor.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("★", fontSize = 10.sp, color = accentColor); Text(featuredName.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, color = accentColor)
+                }
+                if (bio.trim().isNotEmpty()) Text(bio.trim(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                if (favCard != null) Row(Modifier.background(favCard.accent.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    ModeGlyph(favCard, tint = favCard.accent, glyphSize = 11.sp, iconSize = 14.dp); Text(favCard.title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = favCard.accent)
+                }
+            }
+
+            // Avatar + Change Photo
             Box(
-                Modifier.size(84.dp).clip(CircleShape).background(Brush.linearGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd))),
+                Modifier.size(72.dp).clip(CircleShape).background(if (avatarUrl != null) Brush.linearGradient(listOf(WTheme.surface, WTheme.surface)) else ProfileAccent.avatarBrush(accent)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (avatarUrl != null) {
                     coil.compose.AsyncImage(model = avatarUrl, contentDescription = "Avatar", modifier = Modifier.fillMaxSize().clip(CircleShape), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
                 } else {
-                    Text((profile?.username?.take(2) ?: "P").uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text(avatarEmoji.ifBlank { (profile?.username?.take(2) ?: "P").uppercase() }, fontSize = 28.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             }
             Text(
                 if (uploading) "Uploading…" else "Change Photo", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
                 modifier = Modifier.clickableNoRipple { if (!uploading) showPhotoChoice = true },
             )
+            // Avatar emoji
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Avatar emoji", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                OutlinedTextField(
+                    value = avatarEmoji, onValueChange = { avatarEmoji = it.take(2) }, singleLine = true,
+                    modifier = Modifier.width(72.dp),
+                    placeholder = { Text("🎯", fontSize = 13.sp) },
+                    colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
+                )
+            }
 
             // Username
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -229,6 +289,69 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
                 )
                 error?.let { Text(it, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
+            }
+
+            // Bio
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("BIO  ·  ${bio.length}/80", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                OutlinedTextField(
+                    value = bio, onValueChange = { if (it.length <= 80) bio = it },
+                    placeholder = { Text("A short tagline…", fontSize = 13.sp, color = WTheme.textMuted) },
+                    modifier = Modifier.fillMaxWidth(), maxLines = 3,
+                    colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
+                )
+            }
+
+            // Accent color
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("ACCENT COLOR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ProfileAccent.palette.forEach { (id, hex) ->
+                        val selected = ProfileAccent.hex(accent).equals(hex, true)
+                        Box(
+                            Modifier.size(30.dp).clip(CircleShape)
+                                .background(ProfileAccent.color(hex))
+                                .border(if (selected) 2.5.dp else 0.dp, if (selected) ProfileAccent.color(hex) else Color.Transparent, CircleShape)
+                                .clickableNoRipple { accent = if (id == "purple") null else hex },
+                        )
+                    }
+                }
+            }
+
+            // Featured title
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("FEATURED TITLE", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                val unlockedDefs = catalog.filter { unlocked.contains(it.key) }
+                if (unlockedDefs.isEmpty()) {
+                    Text("Unlock achievements to wear one as a title.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                } else {
+                    androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        item { EditChip("None", featured == null, ProfileAccent.color(accent)) { featured = null } }
+                        items(unlockedDefs.size) { i ->
+                            val def = unlockedDefs[i]
+                            EditChip("★ ${def.name}", featured == def.key, ProfileAccent.color(accent)) { featured = def.key }
+                        }
+                    }
+                }
+            }
+
+            // Favorite mode
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("FAVORITE MODE", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item { EditChip("None", favoriteMode == null, ProfileAccent.color(accent)) { favoriteMode = null } }
+                    items(dailyModes.size) { i ->
+                        val m = dailyModes[i]
+                        val sel = favoriteMode == m.engineMode?.name
+                        Box(
+                            Modifier.size(40.dp).clip(RoundedCornerShape(10.dp))
+                                .background(m.accent.copy(alpha = if (sel) 0.22f else 0.08f))
+                                .border(if (sel) 2.dp else 0.dp, if (sel) m.accent else Color.Transparent, RoundedCornerShape(10.dp))
+                                .clickableNoRipple { favoriteMode = m.engineMode?.name },
+                            contentAlignment = Alignment.Center,
+                        ) { ModeGlyph(m, tint = m.accent, glyphSize = 14.sp, iconSize = 18.dp) }
+                    }
+                }
             }
 
             // Social Links
@@ -250,6 +373,17 @@ fun EditProfileScreen(onDone: () -> Unit) {
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+@Composable
+private fun EditChip(label: String, selected: Boolean, accent: Color, onClick: () -> Unit) {
+    Text(
+        label, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1,
+        color = if (selected) Color.White else WTheme.text,
+        modifier = Modifier.clip(RoundedCornerShape(50))
+            .background(if (selected) accent else WTheme.surfaceAlt)
+            .clickableNoRipple(onClick).padding(horizontal = 10.dp, vertical = 6.dp),
+    )
 }
 
 private fun validate(name: String): String? {

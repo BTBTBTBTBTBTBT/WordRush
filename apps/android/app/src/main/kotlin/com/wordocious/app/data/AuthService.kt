@@ -43,6 +43,12 @@ data class Profile(
     @SerialName("pro_prompt_shown") val proPromptShown: Boolean = false,
     @SerialName("last_played_at") val lastPlayedAt: String? = null,
     @SerialName("is_admin") val isAdmin: Boolean = false,
+    // Personalization (migration 20260626000001) — all optional.
+    val bio: String? = null,
+    @SerialName("featured_achievement") val featuredAchievement: String? = null,
+    @SerialName("accent_color") val accentColor: String? = null,
+    @SerialName("favorite_mode") val favoriteMode: String? = null,
+    @SerialName("avatar_emoji") val avatarEmoji: String? = null,
 )
 
 /**

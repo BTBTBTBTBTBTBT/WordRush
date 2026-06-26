@@ -75,6 +75,11 @@ data class PublicProfile(
     @SerialName("daily_login_streak") val dailyLoginStreak: Int = 0,
     @SerialName("best_daily_login_streak") val bestDailyLoginStreak: Int = 0,
     @SerialName("social_links") val socialLinks: Map<String, String>? = null,
+    val bio: String? = null,
+    @SerialName("featured_achievement") val featuredAchievement: String? = null,
+    @SerialName("accent_color") val accentColor: String? = null,
+    @SerialName("favorite_mode") val favoriteMode: String? = null,
+    @SerialName("avatar_emoji") val avatarEmoji: String? = null,
 )
 
 private suspend fun fetchPublicProfile(id: String): PublicProfile? = runCatching {
@@ -142,8 +147,9 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         // ── Header: avatar / gradient username / level badge / XP bar / socials ──
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }
+            val customAccent = ProfileAccent.isCustom(p.accentColor)
             Box(
-                Modifier.size(96.dp).clip(CircleShape).background(WTheme.surfaceAlt),
+                Modifier.size(96.dp).clip(CircleShape).background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else Brush.linearGradient(listOf(WTheme.surfaceAlt, WTheme.surfaceAlt))),
                 contentAlignment = Alignment.Center,
             ) {
                 if (avatarUrl != null) {
@@ -154,20 +160,25 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                     )
                 } else {
                     Text(
-                        (p.username?.take(2) ?: "P").uppercase(),
-                        fontSize = 30.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted,
+                        p.avatarEmoji?.takeIf { it.isNotBlank() } ?: (p.username?.take(2) ?: "P").uppercase(),
+                        fontSize = 30.sp, fontWeight = FontWeight.Black, color = if (customAccent) Color.White else WTheme.textMuted,
                     )
                 }
             }
-            Text(
-                p.username ?: "Player",
-                fontSize = 34.sp, fontWeight = FontWeight.Black,
-                style = TextStyle(
-                    brush = Brush.horizontalGradient(
-                        listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA)),
+            if (customAccent) {
+                Text(p.username ?: "Player", fontSize = 34.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(p.accentColor))
+            } else {
+                Text(
+                    p.username ?: "Player",
+                    fontSize = 34.sp, fontWeight = FontWeight.Black,
+                    style = TextStyle(
+                        brush = Brush.horizontalGradient(
+                            listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA)),
+                        ),
                     ),
-                ),
-            )
+                )
+            }
+            ProfilePersonalizationRow(p.accentColor, p.bio, p.featuredAchievement, p.favoriteMode)
             // Level badge (web: star + "Level N", gold bg/border)
             Row(
                 Modifier

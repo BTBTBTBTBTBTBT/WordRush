@@ -359,7 +359,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
         val avatarUrl = profile?.avatarUrl?.takeIf { it.isNotBlank() }
         Box(
             Modifier.size(96.dp).clip(CircleShape)
-                .background(Brush.linearGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd))),
+                .background(if (ProfileAccent.isCustom(profile?.accentColor)) ProfileAccent.avatarBrush(profile?.accentColor) else Brush.linearGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd))),
             contentAlignment = Alignment.Center,
         ) {
             if (avatarUrl != null) {
@@ -369,17 +369,21 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                 )
             } else {
-                Text(initial, fontSize = 40.sp, fontWeight = FontWeight.Black, color = Color.White)
+                Text(profile?.avatarEmoji?.takeIf { it.isNotBlank() } ?: initial, fontSize = 40.sp, fontWeight = FontWeight.Black, color = Color.White)
             }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black,
-                style = androidx.compose.ui.text.TextStyle(
-                    brush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA))),
-                ),
-            )
+            if (ProfileAccent.isCustom(profile?.accentColor)) {
+                Text(profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(profile?.accentColor))
+            } else {
+                Text(
+                    profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                    style = androidx.compose.ui.text.TextStyle(
+                        brush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA))),
+                    ),
+                )
+            }
             if (profile?.isPro == true) {
                 Text(
                     "PRO", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
@@ -389,6 +393,8 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
                 )
             }
         }
+
+        ProfilePersonalizationRow(profile)
 
         // Level-tier pill
         Row(
