@@ -272,7 +272,11 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     }
 
     val multiBoard = state.boards.size > 1
-    val isSequential = mode == GameMode.SEQUENCE
+    // Sequence standalone OR the Gauntlet "Succession" stage (a sequential stage
+    // whose mode is GAUNTLET, not SEQUENCE) — web keys this off the stage's
+    // `sequential` flag, not the mode, so we must too (else it plays as QuadWord).
+    val isSequential = mode == GameMode.SEQUENCE ||
+        state.gauntlet?.let { it.stages.getOrNull(it.currentStage)?.sequential } == true
     // Quadrant keyboard for parallel multi-board modes (Quad/Octo/Deliverance); NOT Sequence.
     val useQuadrant = multiBoard && !isSequential
     val letterStates = if (isSequential) {

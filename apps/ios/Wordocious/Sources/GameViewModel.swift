@@ -124,7 +124,10 @@ final class GameViewModel: ObservableObject {
     /// Sequence (Succession) is played one board at a time: the first still-
     /// playing board is "active" (shows colors + takes input); later playing
     /// boards are locked (dimmed, letters masked). Web parity: sequence-game.tsx.
-    var isSequence: Bool { mode == .sequence }
+    /// Also true for the Gauntlet "Succession" stage (a sequential stage whose
+    /// `mode` is `.gauntlet`, not `.sequence`) — web keys this off the stage's
+    /// `sequential` flag, not the mode, so we must too (else it plays as QuadWord).
+    var isSequence: Bool { mode == .sequence || (currentGauntletStage?.sequential ?? false) }
     var sequenceActiveIndex: Int { state.boards.firstIndex { $0.status == .playing } ?? -1 }
     var status: GameStatus { state.status }
     var isFinished: Bool { status != .playing }
@@ -132,6 +135,13 @@ final class GameViewModel: ObservableObject {
     // MARK: - Gauntlet
 
     var isGauntlet: Bool { mode == .gauntlet }
+
+    /// The currently-active Gauntlet stage config (nil outside Gauntlet). Drives
+    /// per-stage behavior like `sequential` (the Succession stage).
+    var currentGauntletStage: GauntletStageConfig? {
+        guard let g = state.gauntlet else { return nil }
+        return g.stages[safe: g.currentStage]
+    }
 
     /// All boards in the current stage solved, but the run isn't over yet —
     /// the player taps Continue to advance (or finish) via NEXT_STAGE.
@@ -498,7 +508,7 @@ final class GameViewModel: ObservableObject {
     /// (QuadWord / OctoWord / Deliverance) — but NOT Sequence, which is played
     /// one active board at a time (web: only quordle/octordle/rescue pass
     /// boardLetterStates; sequence uses the active board's single states).
-    var useQuadrantKeyboard: Bool { mode != .sequence && boardCount > 1 }
+    var useQuadrantKeyboard: Bool { !isSequence && boardCount > 1 }
 
     /// Per-board keyboard letter states for the quadrant keyboard. Mirrors web
     /// computePerBoardLetterStates: a non-playing (solved/lost) board returns an
