@@ -612,14 +612,14 @@ export default function HomePage() {
 
         {/* Footer links for SEO */}
         <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 pt-2 pb-4">
-          <Link href="/how-to-play" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>How to Play</Link>
-          <Link href="/guides" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Guides</Link>
-          <Link href="/strategy" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Strategy</Link>
-          <Link href="/words" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Words</Link>
-          <Link href="/about" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>About</Link>
-          <Link href="/faq" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>FAQ</Link>
-          <Link href="/privacy" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Privacy</Link>
-          <Link href="/terms" className="text-[10px] font-bold hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Terms</Link>
+          <Link href="/how-to-play" className="text-[10px] font-bold uppercase tracking-wide hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>How to Play</Link>
+          <Link href="/guides" className="text-[10px] font-bold uppercase tracking-wide hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Guides</Link>
+          <Link href="/strategy" className="text-[10px] font-bold uppercase tracking-wide hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Strategy</Link>
+          <Link href="/words" className="text-[10px] font-bold uppercase tracking-wide hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Words</Link>
+          <Link href="/about" className="text-[10px] font-bold uppercase tracking-wide hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>About</Link>
+          <Link href="/faq" className="text-[10px] font-bold uppercase tracking-wide hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>FAQ</Link>
+          <Link href="/privacy" className="text-[10px] font-bold uppercase tracking-wide hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Privacy</Link>
+          <Link href="/terms" className="text-[10px] font-bold uppercase tracking-wide hover:opacity-70" style={{ color: 'var(--color-text-muted)' }}>Terms</Link>
         </div>
       </div>
 

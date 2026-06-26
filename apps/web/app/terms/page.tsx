@@ -12,7 +12,7 @@ export default function TermsPage() {
           Back to Wordocious
         </Link>
 
-        <h1 className="text-3xl font-black mb-1 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Terms of Service</h1>
+        <h1 className="text-3xl font-black uppercase mb-1 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Terms of Service</h1>
         <p className="text-xs font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Effective April 10, 2026</p>
 
         <div className="space-y-4">

@@ -40,7 +40,7 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
           <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${guide.accent}15` }}>
             <GuideIcon slug={guide.slug} accent={guide.accent} className="w-5 h-5" />
           </span>
-          <h1 className="text-3xl font-black" style={{ color: 'var(--color-text)' }}>{guide.title}</h1>
+          <h1 className="text-3xl font-black uppercase" style={{ color: 'var(--color-text)' }}>{guide.title}</h1>
         </div>
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>{guide.tagline}</p>
 

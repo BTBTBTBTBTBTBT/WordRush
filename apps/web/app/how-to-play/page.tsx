@@ -34,7 +34,7 @@ export default function HowToPlayPage() {
           Back to Wordocious
         </Link>
 
-        <h1 className="text-3xl font-black mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>How to Play</h1>
+        <h1 className="text-3xl font-black uppercase mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>How to Play</h1>
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Everything you need to know to get started</p>
 
         <div className="space-y-4">
