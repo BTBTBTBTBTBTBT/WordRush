@@ -61,11 +61,12 @@ fun StageTransitionOverlay(
     onComplete: () -> Unit,
 ) {
     // Between stages: auto-advance after 2.5s (web StageTransition). After the
-    // FINAL stage (next == null): no auto-advance — the player taps to move on
-    // to the results screen so the run's finish isn't rushed.
+    // FINAL stage (next == null): a longer 4s pause so the cleared run isn't
+    // rushed — but it MUST still auto-advance (was: wait forever for a tap). The
+    // win only records on advance, so leaving the screen first dropped the daily
+    // result → a real Flawless showed as an 8/9 Sweep.
     LaunchedEffect(completed.stageIndex) {
-        if (next == null) return@LaunchedEffect
-        delay(2500)
+        delay(if (next == null) 4000 else 2500)
         onComplete()
     }
     Box(

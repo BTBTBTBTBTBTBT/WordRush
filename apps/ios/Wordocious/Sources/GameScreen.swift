@@ -164,6 +164,10 @@ struct GameScreen: View {
         .hidesBottomNav()
         // Left-edge swipe → back to Home (parity with the web back gesture).
         .swipeToGoBack { dismiss() }
+        // Safety net: if the player leaves a fully-cleared Gauntlet run before
+        // the final overlay auto-advances, record the win on the way out so the
+        // daily result (and a Flawless sweep) isn't lost.
+        .onDisappear { vm.finalizeGauntletIfCleared() }
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.status) { newValue in
             // Haptics fire instantly; the jingle waits for the overlay (below).
@@ -482,10 +486,11 @@ private struct StageTransitionOverlay: View {
         .onTapGesture { onAdvance() }
         .task {
             // Between stages: auto-advance after 2.5s (web StageTransition).
-            // After the FINAL stage: no auto-advance — the player taps to move
-            // on to the results screen so the run's finish isn't rushed.
-            guard next != nil else { return }
-            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            // After the FINAL stage: a longer 4s pause so the cleared run isn't
+            // rushed — but it MUST still auto-advance (was: wait forever for a
+            // tap). The win only records on advance, so leaving the screen first
+            // dropped the daily result → a real Flawless showed as an 8/9 Sweep.
+            try? await Task.sleep(nanoseconds: next == nil ? 4_000_000_000 : 2_500_000_000)
             onAdvance()
         }
     }

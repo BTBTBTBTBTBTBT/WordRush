@@ -197,6 +197,17 @@ final class GameViewModel: ObservableObject {
         if isFinished { recordResultIfNeeded() }   // last stage → WON
     }
 
+    /// Finalize a fully-cleared Gauntlet run even if the player leaves before
+    /// tapping through the final "results" overlay. The win was otherwise ONLY
+    /// recorded on that tap (`nextStage` → record), so leaving the screen first
+    /// dropped the daily result — which then made a real Flawless show as an
+    /// 8/9 Sweep. Idempotent: `nextStage`'s `stageCleared` guard no-ops once the
+    /// run has advanced/recorded. Safe to call repeatedly (overlay + onDisappear).
+    func finalizeGauntletIfCleared() {
+        guard isGauntlet, stageCleared, gauntletNextStageInfo == nil else { return }
+        nextStage()
+    }
+
     /// Max rows to render = the largest maxGuesses across boards (multi-board
     /// modes share a guess budget; single boards use their own).
     var maxGuesses: Int { state.boards.map(\.maxGuesses).max() ?? 6 }
