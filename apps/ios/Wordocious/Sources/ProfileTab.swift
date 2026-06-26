@@ -840,7 +840,10 @@ struct LeaderboardTab: View {
                 header
                 HModePicker(selected: $mode)
                 playCtaCard
-                CompletedDailyCard(mode: mode)
+                // .id(mode) → a fresh card per mode so switching away from one mode
+                // can't render the previous mode's board data (which trapped when a
+                // board mode rendered stale ProperNoundle data mid-transition).
+                CompletedDailyCard(mode: mode).id(mode)
                 if let r = userRank { rankBanner(r) }
 
                 Text("LEADERBOARD").font(Brand.font(10, .black)).tracking(0.8)

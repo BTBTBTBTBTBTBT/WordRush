@@ -374,15 +374,21 @@ struct CompletedMiniBoardView: View {
         VStack(spacing: tileSize * 0.1) {
             ForEach(0..<rowCount, id: \.self) { r in
                 HStack(spacing: tileSize * 0.1) {
-                    if r < board.guesses.count {
-                        let g = board.guesses[r]
+                    if r < board.guesses.count, let stored = board.hintEvaluations?[String(r)] {
                         // Hint rows (Six/Seven) carry a stored evaluation keyed by row index.
-                        let tiles = (board.hintEvaluations?[String(r)] ?? evaluateGuess(solution: board.solution, guess: g)).tiles
+                        ForEach(stored.tiles.indices, id: \.self) { c in
+                            TileView(letter: stored.tiles[c].letter, state: stored.tiles[c].state, revealed: true, size: tileSize)
+                        }
+                    } else if r < board.guesses.count, board.guesses[r].count == width {
+                        let tiles = evaluateGuess(solution: board.solution, guess: board.guesses[r]).tiles
                         ForEach(tiles.indices, id: \.self) { c in
                             TileView(letter: tiles[c].letter, state: tiles[c].state, revealed: true, size: tileSize)
                         }
                     } else {
-                        ForEach(0..<width, id: \.self) { _ in
+                        // Padding row OR a guess whose length doesn't match the solution
+                        // (e.g. stale cross-mode / ProperNoundle data mid-transition) —
+                        // render empty rather than evaluating a mismatch (which trapped).
+                        ForEach(0..<max(1, width), id: \.self) { _ in
                             TileView(letter: "", state: .empty, revealed: false, size: tileSize)
                         }
                     }
