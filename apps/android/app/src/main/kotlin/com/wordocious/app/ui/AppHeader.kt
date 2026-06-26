@@ -15,8 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -75,16 +73,12 @@ fun AppHeader(
         }
         Spacer(Modifier.weight(1f))
 
-        Box {
-            var menuOpen by remember { mutableStateOf(false) }
-            CircleIconButton(onClick = { menuOpen = true }) {
-                Icon(Icons.AutoMirrored.Filled.HelpOutline, "Menu", tint = WTheme.textMuted, modifier = Modifier.size(17.dp))
-            }
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                INFO_NAV.forEach { item ->
-                    DropdownMenuItem(text = { Text(item.label) }, onClick = { menuOpen = false; onNav(item.route) })
-                }
-            }
+        var menuOpen by remember { mutableStateOf(false) }
+        CircleIconButton(onClick = { menuOpen = true }) {
+            Icon(Icons.AutoMirrored.Filled.HelpOutline, "Menu", tint = WTheme.textMuted, modifier = Modifier.size(17.dp))
+        }
+        if (menuOpen) {
+            InfoMenuSheet(onNav = { menuOpen = false; onNav(it) }, onDismiss = { menuOpen = false })
         }
         CircleIconButton(onClick = onSettings) {
             Icon(Icons.Filled.Settings, "Settings", tint = WTheme.textMuted, modifier = Modifier.size(17.dp))

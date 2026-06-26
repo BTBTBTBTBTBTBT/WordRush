@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -146,7 +147,7 @@ fun HomeScreen(
             if (isPro) PlayModeToggle(playMode) { playMode = it }
             if (unlimitedMode) UnlimitedHero()
             else DailyHero(completions) { com.wordocious.app.data.DailySweepShare.share(context, completions) }
-            WordOfTheDayCard()
+            WordOfTheDayCard(onClick = { onNavigate("words") })
 
             Text(
                 "GAME MODES",
@@ -345,7 +346,7 @@ private fun DailyHero(
 }
 
 @Composable
-private fun WordOfTheDayCard() {
+private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
     val word by produceState<String?>(initialValue = null) {
         DictionaryLoader.ensureLoaded()
         val sols = GameDictionary.allSolutions()
@@ -361,11 +362,16 @@ private fun WordOfTheDayCard() {
             .clip(RoundedCornerShape(14.dp))
             .background(WTheme.surface)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
+            .clickableNoRipple(onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_book_open), null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+            Spacer(Modifier.width(6.dp))
             Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            Spacer(Modifier.weight(1f))
+            Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
+            Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
         }
         val w = word   // local capture: produceState delegate can't smart-cast
         if (w == null) {

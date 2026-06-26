@@ -19,11 +19,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -53,19 +65,51 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 
-/** The site-nav items in the header "?" dropdown and the home footer (web parity). */
-data class InfoNavItem(val route: String, val label: String)
+/** The site-nav items in the header "?" menu and the home footer (web parity). */
+data class InfoNavItem(
+    val route: String, val label: String, val subtitle: String,
+    val icon: ImageVector, val accent: Color,
+)
 
 val INFO_NAV = listOf(
-    InfoNavItem("help", "How to Play"),
-    InfoNavItem("guides", "Guides"),
-    InfoNavItem("strategy", "Strategy"),
-    InfoNavItem("words", "Words"),
-    InfoNavItem("about", "About"),
-    InfoNavItem("faq", "FAQ"),
-    InfoNavItem("privacy", "Privacy"),
-    InfoNavItem("terms", "Terms"),
+    InfoNavItem("help", "How to Play", "Rules, tiles & scoring", Icons.AutoMirrored.Filled.HelpOutline, Color(0xFF7C3AED)),
+    InfoNavItem("guides", "Guides", "Strategy for all 9 modes", Icons.Filled.MenuBook, Color(0xFF3B82F6)),
+    InfoNavItem("strategy", "Strategy", "Solve faster, in fewer guesses", Icons.Filled.Lightbulb, Color(0xFFF59E0B)),
+    InfoNavItem("words", "Words", "Every Word of the Day", Icons.Filled.CalendarMonth, Color(0xFFEC4899)),
+    InfoNavItem("about", "About", "What is Wordocious?", Icons.Filled.Info, Color(0xFF14B8A6)),
+    InfoNavItem("faq", "FAQ", "Common questions", Icons.Filled.QuestionAnswer, Color(0xFF8B5CF6)),
+    InfoNavItem("privacy", "Privacy", "How we handle your data", Icons.Filled.Lock, Color(0xFF10B981)),
+    InfoNavItem("terms", "Terms", "Terms of service", Icons.Filled.Description, Color(0xFF6B7280)),
 )
+
+/** Styled "?" menu — a welcoming, on-brand list (colour-accented icon tiles +
+ *  title + subtitle) instead of the flat grey system dropdown. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
+        Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Menu", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDismiss))
+        }
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            INFO_NAV.forEach { item ->
+                Row(infoCardMod().clickableNoRipple { onNav(item.route) }.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(item.accent.copy(alpha = 0.14f)), Alignment.Center) {
+                        Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(20.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(item.label, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                        Text(item.subtitle, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    }
+                    Icon(Icons.Filled.ChevronRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
+                }
+            }
+        }
+    }
+}
 
 // ── Services (mirror GuideService: fetch web JSON, memory-cache) ───────────────
 
@@ -172,10 +216,15 @@ fun StrategyScreen(onDone: () -> Unit) {
             if (articles.isEmpty()) {
                 CircularProgressIndicator(color = WTheme.primary, modifier = Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
             } else articles.forEach { a ->
-                Column(infoCardMod().clickableNoRipple { selected = a }.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("${a.minutes} MIN READ", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = WTheme.primary)
-                    Text(a.title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                    Text(a.dek, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Row(infoCardMod().clickableNoRipple { selected = a }.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFFF59E0B).copy(alpha = 0.14f)), Alignment.Center) {
+                        Icon(Icons.Filled.Lightbulb, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text("${a.minutes} MIN READ", fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = Color(0xFFF59E0B))
+                        Text(a.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                        Text(a.dek, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    }
                 }
             }
             Spacer(Modifier.height(24.dp))
@@ -224,37 +273,54 @@ private fun WordDetail(w: WordsService.Entry, onDone: () -> Unit, onBack: () -> 
     OverlayScaffold(word, onDone = onDone, leading = {
         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onBack))
     }) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("WORD OF THE DAY · ${prettyDate(w.date)}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                word.forEach { c ->
-                    Box(Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)).background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)))), Alignment.Center) {
-                        Text(c.toString(), fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            // Gradient hero band — white tiles on a purple→pink panel.
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFFEC4899)))).padding(vertical = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text("WORD OF THE DAY · ${prettyDate(w.date)}", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color.White.copy(alpha = 0.9f))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    word.forEach { c ->
+                        Box(Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(Color.White), Alignment.Center) {
+                            Text(c.toString(), fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9))
+                        }
+                    }
+                }
+                if (w.phonetic.isNotEmpty() || w.partOfSpeech.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (w.phonetic.isNotEmpty()) Text(w.phonetic, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.95f))
+                        if (w.partOfSpeech.isNotEmpty()) Text(w.partOfSpeech, fontSize = 11.sp, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic, color = Color.White)
                     }
                 }
             }
-            Column {
-                Text(word, fontSize = 30.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (w.phonetic.isNotEmpty()) Text(w.phonetic, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    if (w.partOfSpeech.isNotEmpty()) Text(w.partOfSpeech, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.primary)
-                }
-            }
             if (w.definition.isNotEmpty()) {
-                Column(infoCardMod().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("MEANING", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = WTheme.text)
+                WordSectionCard("Meaning", Icons.Filled.MenuBook, Color(0xFF7C3AED)) {
                     Text(w.definition, fontSize = 13.sp, color = WTheme.text, lineHeight = 18.sp)
                     if (w.example.isNotEmpty()) Text("“${w.example}”", fontSize = 12.sp, fontStyle = FontStyle.Italic, color = WTheme.textMuted)
                     w.extraSenses.forEach { Text("${it.partOfSpeech}  ${it.definition}", fontSize = 12.sp, color = WTheme.textMuted) }
                 }
             }
-            Column(infoCardMod().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("$word AS A WORD-PUZZLE ANSWER", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = WTheme.text)
+            WordSectionCard("$word as a puzzle answer", Icons.Filled.Lightbulb, Color(0xFFF59E0B)) {
                 Text(w.analysisSummary, fontSize = 13.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
                 Text(w.analysisStrategy, fontSize = 13.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+private fun WordSectionCard(title: String, icon: ImageVector, tint: Color, content: @Composable () -> Unit) {
+    Column(infoCardMod().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            Box(Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(tint.copy(alpha = 0.14f)), Alignment.Center) {
+                Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
+            }
+            Text(title.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp, color = WTheme.text)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) { content() }
     }
 }
 
