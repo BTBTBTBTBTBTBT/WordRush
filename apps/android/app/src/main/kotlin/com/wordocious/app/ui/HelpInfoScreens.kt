@@ -40,8 +40,8 @@ import com.wordocious.app.ui.theme.WTheme
  * (How to Play / Game Modes / FAQ) with identical copy, examples, and mode list.
  */
 @Composable
-fun HelpScreen(onDone: () -> Unit) {
-    var tab by remember { mutableStateOf(0) }
+fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0) {
+    var tab by remember { mutableStateOf(initialTab) }
     val tabs = listOf("How to Play", "Game Modes", "FAQ")
     // Game-mode descriptions + FAQ are single-sourced via /api/content.
     val content by androidx.compose.runtime.produceState(

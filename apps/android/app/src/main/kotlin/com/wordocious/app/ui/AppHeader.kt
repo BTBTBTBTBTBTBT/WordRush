@@ -15,11 +15,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +47,7 @@ import com.wordocious.app.ui.theme.WTheme
  */
 @Composable
 fun AppHeader(
-    onHelp: () -> Unit = {},
+    onNav: (String) -> Unit = {},
     onSettings: () -> Unit = {},
 ) {
     val profile by AuthService.profile.collectAsState()
@@ -70,8 +75,16 @@ fun AppHeader(
         }
         Spacer(Modifier.weight(1f))
 
-        CircleIconButton(onClick = onHelp) {
-            Icon(Icons.AutoMirrored.Filled.HelpOutline, "Help", tint = WTheme.textMuted, modifier = Modifier.size(17.dp))
+        Box {
+            var menuOpen by remember { mutableStateOf(false) }
+            CircleIconButton(onClick = { menuOpen = true }) {
+                Icon(Icons.AutoMirrored.Filled.HelpOutline, "Menu", tint = WTheme.textMuted, modifier = Modifier.size(17.dp))
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                INFO_NAV.forEach { item ->
+                    DropdownMenuItem(text = { Text(item.label) }, onClick = { menuOpen = false; onNav(item.route) })
+                }
+            }
         }
         CircleIconButton(onClick = onSettings) {
             Icon(Icons.Filled.Settings, "Settings", tint = WTheme.textMuted, modifier = Modifier.size(17.dp))

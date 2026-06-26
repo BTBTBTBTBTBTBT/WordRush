@@ -621,16 +621,9 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
 
 @Composable
 private fun FooterLinks(onNavigate: (String) -> Unit = {}) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-    ) {
-        // label → InfoScreen/Help route (web /about, /how-to-play, /privacy, /terms).
-        listOf("About" to "about", "How to Play" to "help", "Privacy" to "privacy", "Terms" to "terms").forEach { (label, route) ->
-            Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                modifier = Modifier.clickable { onNavigate(route) })
-        }
-    }
+    // Full site-nav footer (How to Play / Guides / Strategy / Words / About / FAQ
+    // / Privacy / Terms) — parity with the web home footer + the header dropdown.
+    InfoFooter(onNav = onNavigate)
 }
 
 @Composable

@@ -139,6 +139,10 @@ fun MainScreen() {
         androidx.activity.compose.BackHandler { infoRoute = null }
         when (route) {
             "help" -> HelpScreen(onDone = { infoRoute = null })
+            "faq" -> HelpScreen(onDone = { infoRoute = null }, initialTab = 2)
+            "guides" -> GuidesIndexScreen(onDone = { infoRoute = null })
+            "strategy" -> StrategyScreen(onDone = { infoRoute = null })
+            "words" -> WordsScreen(onDone = { infoRoute = null })
             "pro" -> ProScreen(onDone = { infoRoute = null })
             "edit" -> EditProfileScreen(onDone = { infoRoute = null })
             else -> InfoScreen(kind = route, onDone = { infoRoute = null })
@@ -186,7 +190,7 @@ fun MainScreen() {
     ) { innerPadding ->
         androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield)
-            AppHeader(onSettings = { showSettings = true }, onHelp = { infoRoute = "help" })
+            AppHeader(onSettings = { showSettings = true }, onNav = { infoRoute = it })
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 when (selectedTab) {
                     0 -> HomeScreen(
