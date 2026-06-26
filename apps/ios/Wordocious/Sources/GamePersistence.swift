@@ -44,6 +44,23 @@ final class GamePersistence {
         try? FileManager.default.removeItem(at: url(seed: seed, mode: mode))
     }
 
+    /// Wipe ALL on-device game saves (every mode/seed) plus the elapsed/hint
+    /// keys. Called on sign-out so the next session — a guest, or a different
+    /// account — never inherits the previous user's in-progress or finished
+    /// boards (which the completed-daily card reads from local persistence).
+    func clearAllSaves() {
+        let fm = FileManager.default
+        if let files = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
+            for f in files { try? fm.removeItem(at: f) }
+        }
+        let defaults = UserDefaults.standard
+        for key in defaults.dictionaryRepresentation().keys
+        where key.hasPrefix("wordocious-elapsed-") || key.hasPrefix("wordocious-hints-")
+            || key.hasPrefix("pn-save-") {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
     // MARK: - Active-play elapsed (milliseconds), persisted per seed+mode
 
     private func elapsedKey(seed: String, mode: GameMode) -> String {

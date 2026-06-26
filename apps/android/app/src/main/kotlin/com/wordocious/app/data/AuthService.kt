@@ -196,6 +196,11 @@ object AuthService {
         try {
             client.auth.signOut()
         } catch (_: Exception) {}
+        // Purge per-account local state so the next session (guest or another
+        // account) never inherits this user's daily results — the home grid seeds
+        // from the completions cache and the completed-daily card reads local saves.
+        runCatching { DailyCompletionsService.clearCache() }
+        runCatching { GamePersistence.clearAll() }
         _profile.value = null
         _isAuthenticated.value = false
         _isGuest.value = false

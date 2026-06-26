@@ -36,6 +36,13 @@ object GamePersistence {
         prefs.edit().remove(key(seed, mode)).apply()
     }
 
+    /** Wipe ALL on-device game saves (every mode/seed, plus elapsed/hint keys).
+     *  Called on sign-out so the next session never inherits the previous user's
+     *  boards — the completed-daily card reads from this local store. */
+    fun clearAll() {
+        prefs.edit().clear().apply()
+    }
+
     // Elapsed-at-finish: frozen when the game ends so a re-opened finished game
     // shows the recorded time (not a value that keeps growing from startTime).
     private fun elapsedKey(seed: String, mode: GameMode) = "elapsed-${mode.name}-$seed"

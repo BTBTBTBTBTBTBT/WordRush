@@ -101,6 +101,12 @@ object DailyCompletionsService {
         }.getOrElse { emptyMap() }
     }
 
+    /** Drop the cached completions — called on sign-out so a guest (or a
+     *  different account) never seeds the home grid from the prior user's data. */
+    fun clearCache() {
+        runCatching { prefs.edit().remove(CACHE_KEY).remove(CACHE_DAY_KEY).apply() }
+    }
+
     private fun writeCache(map: Map<String, Completion>) {
         runCatching {
             prefs.edit()

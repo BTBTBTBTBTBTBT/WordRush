@@ -200,6 +200,10 @@ final class AuthService: ObservableObject {
 
     func signOut() async {
         try? await client.auth.signOut()
+        // Purge on-device game saves so the next session (guest or another
+        // account) never inherits this user's daily results — the completed-daily
+        // card reads from local persistence, which otherwise leaked across users.
+        GamePersistence.shared.clearAllSaves()
         profile = nil
         isAuthenticated = false
         isGuest = false
