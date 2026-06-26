@@ -18,7 +18,7 @@ export default function StrategyIndexPage() {
           <ArrowLeft className="w-4 h-4" /> Home
         </Link>
 
-        <h1 className="text-3xl font-black mb-2" style={{ color: 'var(--color-text)' }}>Word Puzzle Strategy</h1>
+        <h1 className="text-3xl font-black mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Word Puzzle Strategy</h1>
         <p className="text-base leading-relaxed mb-6" style={{ color: 'var(--color-text-muted)' }}>
           Practical, original strategy for solving daily word puzzles faster and in fewer guesses — the thinking behind a
           good opening word, how to read every tile, and what each Wordocious mode actually asks of you. Pair these with our{' '}

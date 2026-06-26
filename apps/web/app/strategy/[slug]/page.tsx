@@ -32,7 +32,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         <p className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{ color: '#7c3aed' }}>
           Strategy · {a.minutes} min read
         </p>
-        <h1 className="text-3xl font-black mb-2 leading-tight" style={{ color: 'var(--color-text)' }}>{a.title}</h1>
+        <h1 className="text-3xl font-black mb-2 leading-tight text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>{a.title}</h1>
         <p className="text-lg font-bold leading-snug mb-8" style={{ color: 'var(--color-text-muted)' }}>{a.dek}</p>
 
         {a.sections.map((s, i) => (
