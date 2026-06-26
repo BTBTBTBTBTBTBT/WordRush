@@ -101,9 +101,9 @@ function WordOfTheDay() {
             Word of the Day
           </span>
         </div>
-        <span className="text-[10px] font-bold" style={{ color: '#c4b5fd' }}>
-          A new word every day
-        </span>
+        <Link href="/words" className="text-[10px] font-bold hover:underline" style={{ color: '#c4b5fd' }}>
+          Past words →
+        </Link>
       </div>
 
       <div className="flex items-baseline gap-2">
