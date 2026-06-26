@@ -40,7 +40,7 @@ import com.wordocious.app.ui.theme.WTheme
  * (How to Play / Game Modes / FAQ) with identical copy, examples, and mode list.
  */
 @Composable
-fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0) {
+fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true) {
     var tab by remember { mutableStateOf(initialTab) }
     val tabs = listOf("How to Play", "Game Modes", "FAQ")
     // Game-mode descriptions + FAQ are single-sourced via /api/content.
@@ -55,15 +55,18 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0) {
             Text(tabs[tab], fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
         }
-        // Tab chips
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            tabs.forEachIndexed { i, t ->
-                Text(
-                    t, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                    color = if (tab == i) WTheme.surface else WTheme.textSecondary,
-                    modifier = Modifier.clip(RoundedCornerShape(50)).background(if (tab == i) WTheme.text else WTheme.surfaceAlt)
-                        .clickableNoRipple { tab = i }.padding(horizontal = 12.dp, vertical = 6.dp),
-                )
+        // Tab chips — hidden when opened for a single section (e.g. FAQ from the
+        // menu / footer), where the pill switcher makes no sense.
+        if (showTabs) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                tabs.forEachIndexed { i, t ->
+                    Text(
+                        t, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        color = if (tab == i) WTheme.surface else WTheme.textSecondary,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(if (tab == i) WTheme.text else WTheme.surfaceAlt)
+                            .clickableNoRipple { tab = i }.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
             }
         }
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -6,9 +6,13 @@ import WordociousCore
 struct HelpView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var tab: Tab
+    private let showTabs: Bool
     @StateObject private var content = ContentService.shared
 
-    init(initialTab: Tab = .howToPlay) { _tab = State(initialValue: initialTab) }
+    init(initialTab: Tab = .howToPlay, showTabs: Bool = true) {
+        _tab = State(initialValue: initialTab)
+        self.showTabs = showTabs
+    }
 
     enum Tab: String, CaseIterable {
         case howToPlay = "How to Play"
@@ -33,20 +37,25 @@ struct HelpView: View {
             }
             .padding(.horizontal, 20).padding(.top, 16)
 
-            // Tabs
-            HStack(spacing: 4) {
-                ForEach(Tab.allCases, id: \.self) { t in
-                    Button { tab = t } label: {
-                        Text(t.rawValue).font(Brand.font(12, .bold))
-                            .foregroundStyle(tab == t ? Theme.surface : Theme.textSecondary)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Capsule().fill(tab == t ? Theme.textPrimary : Theme.surfaceAlt))
+            // Tabs — hidden when the view is opened for a single section (e.g. FAQ
+            // from the menu / footer), where the pill switcher makes no sense.
+            if showTabs {
+                HStack(spacing: 4) {
+                    ForEach(Tab.allCases, id: \.self) { t in
+                        Button { tab = t } label: {
+                            Text(t.rawValue).font(Brand.font(12, .bold))
+                                .foregroundStyle(tab == t ? Theme.surface : Theme.textSecondary)
+                                .padding(.horizontal, 12).padding(.vertical, 6)
+                                .background(Capsule().fill(tab == t ? Theme.textPrimary : Theme.surfaceAlt))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                    Spacer()
                 }
-                Spacer()
+                .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
+            } else {
+                Spacer().frame(height: 8)
             }
-            .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
 
             ScrollView {
                 Group {

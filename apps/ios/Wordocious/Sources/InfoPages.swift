@@ -4,7 +4,7 @@ import SwiftUI
 /// app/<page>/page.tsx content. NOTE: the legal prose (Privacy/Terms) is
 /// summarized to the canonical sections + key points; the authoritative
 /// full text lives on the web and these should be kept in sync with it.
-enum InfoKind { case about, privacy, terms, support }
+enum InfoKind: Identifiable { case about, privacy, terms, support; var id: Self { self } }
 
 struct InfoSection {
     let heading: String

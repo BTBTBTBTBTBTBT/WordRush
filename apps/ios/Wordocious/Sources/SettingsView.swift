@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var showDeleteConfirm = false
     @State private var deleting = false
     @State private var deleteError = false
+    @State private var infoKind: InfoKind?
     // Colorblind + reduced-motion are owned by ThemeManager so changes publish
     // and apply app-wide (tile palette / animation gating).
 
@@ -65,13 +66,16 @@ struct SettingsView: View {
                         }
                         section("ABOUT") {
                             VStack(spacing: 0) {
-                                NavigationLink { InfoPage(.about) } label: { linkRow("About Wordocious") }
+                                // Present as sheets (same as the "?" menu) rather than pushing —
+                                // InfoPage hides the nav bar, so pushing it animated the bar
+                                // in/out on back (the flicker). Sheets have no nav bar.
+                                Button { infoKind = .about } label: { linkRow("About Wordocious") }.buttonStyle(.plain)
                                 Divider().overlay(Theme.border)
-                                NavigationLink { InfoPage(.support) } label: { linkRow("Help & Support") }
+                                Button { infoKind = .support } label: { linkRow("Help & Support") }.buttonStyle(.plain)
                                 Divider().overlay(Theme.border)
-                                NavigationLink { InfoPage(.privacy) } label: { linkRow("Privacy Policy") }
+                                Button { infoKind = .privacy } label: { linkRow("Privacy Policy") }.buttonStyle(.plain)
                                 Divider().overlay(Theme.border)
-                                NavigationLink { InfoPage(.terms) } label: { linkRow("Terms of Service") }
+                                Button { infoKind = .terms } label: { linkRow("Terms of Service") }.buttonStyle(.plain)
                             }
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
@@ -143,6 +147,7 @@ struct SettingsView: View {
             } message: {
                 Text("Please try again or contact support@wordocious.com.")
             }
+            .sheet(item: $infoKind) { InfoPage($0).presentationDetents([.large]) }
         }
     }
 
