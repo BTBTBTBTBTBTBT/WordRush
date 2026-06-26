@@ -242,6 +242,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     try { localStorage.removeItem('wordocious-guest'); } catch {}
+    // Purge per-account game state so the next session (a guest, or a different
+    // account) never inherits this user's daily results. Without this, the
+    // signed-out user's completions leaked into guest mode.
+    try {
+      sessionStorage.removeItem('wordocious-daily-completions');
+      localStorage.removeItem('wordocious-propernoundle-daily');
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('wordocious-session-')) localStorage.removeItem(k);
+      }
+    } catch {}
     setIsGuest(false);
     setUser(null);
     setProfile(null);

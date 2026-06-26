@@ -45,7 +45,7 @@ function writeCache(map: Map<string, DailyCompletion>) {
 }
 
 export function DailyCompletionsProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   // Initialise from sessionStorage so the very first render already has data
   const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(() => readCache());
   const fetchedRef = useRef<string | null>(null);
@@ -74,9 +74,15 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
   // and just mark the user as fetched so we don't re-fetch on navigation.
   useEffect(() => {
     if (!user) {
-      // Don't clear cache on null user during auth loading — the cache
-      // is keyed by day so stale data auto-expires.
       fetchedRef.current = null;
+      // Auth has RESOLVED to "no user" (real sign-out or guest bypass) — clear any
+      // completions that were cached while a previous account was signed in, so a
+      // guest never sees the prior user's daily results. During auth loading `user`
+      // is also null but `loading` is true, so we keep the cache then (no flicker).
+      if (!loading) {
+        setTodayDailies((prev) => (prev.size > 0 ? new Map() : prev));
+        try { sessionStorage.removeItem(CACHE_KEY); } catch {}
+      }
       return;
     }
     if (fetchedRef.current === user.id) return;
@@ -93,7 +99,7 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
     } else {
       refreshDailies().catch(() => {});
     }
-  }, [user, refreshDailies, setAndCache]);
+  }, [user, loading, refreshDailies, setAndCache]);
 
   const addCompletion = useCallback((gameMode: string, result: DailyCompletion) => {
     setAndCache((prev) => {
