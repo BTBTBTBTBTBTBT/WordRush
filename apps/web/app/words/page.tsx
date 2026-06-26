@@ -29,7 +29,7 @@ export default async function WordsArchivePage() {
           <ArrowLeft className="w-4 h-4" /> Home
         </Link>
 
-        <h1 className="text-3xl font-black uppercase mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Word of the Day Archive</h1>
+        <h1 className="text-3xl font-black uppercase mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Past Words</h1>
         <p className="text-base leading-relaxed mb-6" style={{ color: 'var(--color-text-muted)' }}>
           Every day Wordocious surfaces a Word of the Day — the shared answer that thousands of players race to solve. Each
           entry below links to its meaning, pronunciation, and an original letter-by-letter breakdown showing what makes the
