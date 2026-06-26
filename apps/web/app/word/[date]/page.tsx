@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen, Lightbulb } from 'lucide-react';
 import { wordOfDay, parseDateKey, dateKey, daysSinceEpoch, wordPlayAnalysis } from '@/lib/word-of-day';
 
 export const revalidate = 86400;
@@ -54,35 +54,40 @@ export default async function WordOfDayPage({ params }: Props) {
           <ArrowLeft className="w-4 h-4" /> All words
         </Link>
 
-        <p className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--color-text-muted)' }}>
-          Word of the Day · {prettyDate(date)}
-        </p>
-
-        {/* Tiles */}
-        <div className="flex gap-1.5 mb-4">
-          {w.split('').map((ch, i) => (
-            <div
-              key={i}
-              className="w-12 h-12 rounded-md flex items-center justify-center text-xl font-black text-white"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 3px 0 #5b21b6' }}
-            >
-              {ch}
-            </div>
-          ))}
-        </div>
-
-        <h1 className="text-4xl font-black mb-1" style={{ color: 'var(--color-text)' }}>{w}</h1>
-        {(entry.phonetic || entry.partOfSpeech) && (
-          <p className="text-sm font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
-            {entry.phonetic && <span className="mr-2">{entry.phonetic}</span>}
-            {entry.partOfSpeech && <span style={{ color: '#7c3aed' }}>{entry.partOfSpeech}</span>}
+        {/* Hero band — white tiles on a purple→pink gradient (matches native). */}
+        <div className="rounded-2xl px-6 py-7 mb-6 text-center" style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}>
+          <p className="text-[11px] font-extrabold uppercase tracking-widest mb-3" style={{ color: 'rgba(255,255,255,0.9)' }}>
+            Word of the Day · {prettyDate(date)}
           </p>
-        )}
+          <div className="flex gap-1.5 justify-center mb-3">
+            {w.split('').map((ch, i) => (
+              <div
+                key={i}
+                className="w-12 h-12 rounded-md flex items-center justify-center text-xl font-black"
+                style={{ background: '#fff', color: '#6d28d9', boxShadow: '0 3px 0 rgba(0,0,0,0.12)' }}
+              >
+                {ch}
+              </div>
+            ))}
+          </div>
+          <h1 className="text-3xl font-black text-white">{w}</h1>
+          {(entry.phonetic || entry.partOfSpeech) && (
+            <p className="text-sm font-bold mt-1" style={{ color: 'rgba(255,255,255,0.95)' }}>
+              {entry.phonetic && <span className="mr-2">{entry.phonetic}</span>}
+              {entry.partOfSpeech && <span className="italic">{entry.partOfSpeech}</span>}
+            </p>
+          )}
+        </div>
 
         {/* Definition (dictionary) */}
         {entry.definition && (
-          <section className="rounded-xl p-4 mb-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-            <h2 className="text-sm font-black uppercase tracking-wide mb-2" style={{ color: 'var(--color-text)' }}>Meaning</h2>
+          <section className="rounded-2xl p-5 mb-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+            <h2 className="text-sm font-black uppercase tracking-wide mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+              <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.14)' }}>
+                <BookOpen className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+              </span>
+              Meaning
+            </h2>
             <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>{entry.definition}</p>
             {entry.example && (
               <p className="text-sm italic mt-2" style={{ color: 'var(--color-text-muted)' }}>“{entry.example}”</p>
@@ -101,8 +106,11 @@ export default async function WordOfDayPage({ params }: Props) {
         )}
 
         {/* ORIGINAL: letter analysis — unique, factual, useful for word-puzzle players */}
-        <section className="rounded-xl p-4 mb-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-          <h2 className="text-sm font-black uppercase tracking-wide mb-3" style={{ color: 'var(--color-text)' }}>
+        <section className="rounded-2xl p-5 mb-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+          <h2 className="text-sm font-black uppercase tracking-wide mb-3 flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+            <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.16)' }}>
+              <Lightbulb className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />
+            </span>
             {w} as a word-puzzle answer
           </h2>
           <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--color-text)' }}>{analysis.summary}</p>
