@@ -31,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,8 +73,10 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     val userId = AuthService.profile.value?.id
 
     var playerCount by remember { mutableStateOf(0) }
-    // Reload when mode changes
-    LaunchedEffect(selectedMode) {
+    // Reload when mode changes OR the instant a daily is recorded (completionTick)
+    // so a just-finished puzzle shows on the board without a tab round-trip.
+    val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
+    LaunchedEffect(selectedMode, tick) {
         loading = true
         entries = LeaderboardService.fetchDailyLeaderboard(selectedMode)
         loading = false

@@ -138,7 +138,7 @@ fun MainScreen() {
     infoRoute?.let { route ->
         androidx.activity.compose.BackHandler { infoRoute = null }
         when (route) {
-            "help" -> HelpScreen(onDone = { infoRoute = null })
+            "help" -> HowToPlayScreen(onDone = { infoRoute = null })
             "faq" -> HelpScreen(onDone = { infoRoute = null }, initialTab = 2)
             "guides" -> GuidesIndexScreen(onDone = { infoRoute = null })
             "strategy" -> StrategyScreen(onDone = { infoRoute = null })

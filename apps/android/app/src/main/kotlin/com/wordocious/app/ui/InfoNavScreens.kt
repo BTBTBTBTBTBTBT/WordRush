@@ -47,6 +47,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -370,5 +373,111 @@ fun InfoFooter(onNav: (String) -> Unit) {
             Text(item.label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                 modifier = Modifier.clickableNoRipple { onNav(item.route) })
         }
+    }
+}
+
+// ── How to Play (renders the web /how-to-play doc, fed from /api/howtoplay) ────
+
+object HowToPlayService {
+    private val json = Json { ignoreUnknownKeys = true }
+    @Serializable data class Section(
+        val title: String, val intro: String? = null, val bullets: List<Bullet>? = null,
+        val tilesHeading: String? = null, val tiles: List<TileRow>? = null,
+        val modes: List<ModeItem>? = null, val outro: String? = null,
+    )
+    @Serializable data class Bullet(val strong: String? = null, val text: String = "")
+    @Serializable data class ModeItem(val name: String, val accent: String, val body: String)
+    @Serializable data class Letter(val ch: String, val color: String)
+    @Serializable data class TileRow(val letters: List<Letter>, val strong: String, val strongColor: String, val rest: String)
+    @Serializable private data class Payload(val sections: List<Section> = emptyList())
+    private var cache: List<Section>? = null
+
+    suspend fun sections(): List<Section> = withContext(Dispatchers.IO) {
+        cache ?: runCatching {
+            val conn = (URL("https://wordocious.com/api/howtoplay").openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"; connectTimeout = 8000; readTimeout = 8000
+            }
+            val out = if (conn.responseCode in 200..299)
+                json.decodeFromString(Payload.serializer(), conn.inputStream.bufferedReader().use { it.readText() }).sections
+            else emptyList()
+            conn.disconnect(); cache = out; out
+        }.getOrDefault(emptyList())
+    }
+}
+
+private fun htpColor(hex: String): Color =
+    runCatching { Color(("FF" + hex.removePrefix("#")).toLong(16)) }.getOrDefault(Color(0xFF7C3AED))
+
+@Composable
+fun HowToPlayScreen(onDone: () -> Unit) {
+    val sections by produceState(initialValue = emptyList<HowToPlayService.Section>()) { value = HowToPlayService.sections() }
+    OverlayScaffold("How to Play", onDone) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("Everything you need to know to get started", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            if (sections.isEmpty()) {
+                CircularProgressIndicator(color = WTheme.primary, modifier = Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
+            } else sections.forEach { HtpSectionCard(it) }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun HtpSectionCard(s: HowToPlayService.Section) {
+    Column(infoCardMod().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(s.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        s.intro?.let { Text(it, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp) }
+        s.bullets?.let { bullets ->
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                bullets.forEach { b ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("•", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.primary)
+                        Text(buildAnnotatedString {
+                            b.strong?.let { withStyle(SpanStyle(fontWeight = FontWeight.Black, color = WTheme.text)) { append(it) } }
+                            append(b.text)
+                        }, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
+                    }
+                }
+            }
+        }
+        s.tilesHeading?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text) }
+        s.tiles?.let { tiles ->
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                tiles.forEach { row ->
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            row.letters.forEach { HtpTile(it) }
+                        }
+                        Text(buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.Black, color = htpColor(row.strongColor))) { append(row.strong) }
+                            append(row.rest)
+                        }, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
+                    }
+                }
+            }
+        }
+        s.modes?.let { modes ->
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                modes.forEach { m ->
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(m.name, fontSize = 12.sp, fontWeight = FontWeight.Black, color = htpColor(m.accent))
+                        Text(m.body, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp)
+                    }
+                }
+            }
+        }
+        s.outro?.let { Text(it, fontSize = 12.sp, color = WTheme.textSecondary, lineHeight = 18.sp) }
+    }
+}
+
+@Composable
+private fun HtpTile(l: HowToPlayService.Letter) {
+    val filled = l.color != "empty"
+    val fill = when (l.color) {
+        "green" -> Color(0xFF7C3AED); "yellow" -> Color(0xFFF59E0B); "gray" -> Color(0xFF64748B); else -> WTheme.surface
+    }
+    val border = if (filled) fill else WTheme.border
+    Box(Modifier.size(34.dp).clip(RoundedCornerShape(5.dp)).background(fill).border(2.dp, border, RoundedCornerShape(5.dp)), Alignment.Center) {
+        Text(l.ch, fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (filled) Color.White else WTheme.text)
     }
 }

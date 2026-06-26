@@ -120,7 +120,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     ) { granted -> if (granted) com.wordocious.app.data.NotificationService.schedule(context) }
 
     val userId = profile?.id
-    LaunchedEffect(userId) {
+    // Re-run the instant a daily is recorded (completionTick) so Today's Dailies
+    // + stats update immediately, without a tab round-trip.
+    val tick by DailyCompletionsService.completionTick.collectAsState()
+    LaunchedEffect(userId, tick) {
         if (userId != null) {
             stats = ProfileService.fetchUserStats(userId)
             recentMatches = ProfileService.fetchRecentMatches(userId)

@@ -34,6 +34,7 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -119,7 +120,10 @@ private fun DailyRecordsTab() {
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
-    LaunchedEffect(selectedMode, playType) {
+    // Re-fetch the instant a daily is recorded (completionTick) so a finished
+    // puzzle appears here immediately, without a tab round-trip.
+    val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
+    LaunchedEffect(selectedMode, playType, tick) {
         loading = true
         entries = LeaderboardService.fetchDailyLeaderboard(selectedMode, playType)
         loading = false

@@ -19,6 +19,13 @@ object DailyCompletionsService {
     private const val CACHE_KEY = "daily-completions-cache"
     private const val CACHE_DAY_KEY = "daily-completions-cache-day"
 
+    /** Bumped the instant a daily is recorded (noteCompletion) — the Android
+     *  analogue of the iOS completionPosted notification. Completed-state screens
+     *  (home, leaderboard, profile, records) key their fetches on this so a
+     *  finished puzzle shows immediately, without a tab round-trip. */
+    private val _completionTick = kotlinx.coroutines.flow.MutableStateFlow(0)
+    val completionTick: kotlinx.coroutines.flow.StateFlow<Int> = _completionTick
+
     @Serializable
     data class Completion(
         @SerialName("game_mode") val gameMode: String,
@@ -91,6 +98,7 @@ object DailyCompletionsService {
         if (existing != null && existing.completed && !completed) return
         current[gameMode] = Completion(gameMode = gameMode, completed = completed, guessCount = guessCount, timeSeconds = timeSeconds, score = score)
         writeCache(current)
+        _completionTick.value++
     }
 
     fun readCache(): Map<String, Completion> {

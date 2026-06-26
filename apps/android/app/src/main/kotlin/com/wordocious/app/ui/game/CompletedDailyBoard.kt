@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +66,10 @@ import com.wordocious.core.gameReducer
 fun CompletedDailyBoard(modeId: String) {
     val mode = remember(modeId) { runCatching { GameMode.valueOf(modeId) }.getOrNull() } ?: return
     val seed = remember(modeId) { todayLocalSeed(modeId) }
-    val localState = remember(modeId) { GamePersistence.load(seed, mode) }
+    // Refresh the instant a daily is recorded (no tab round-trip) — re-read the
+    // local save + re-run the server replay when completionTick bumps.
+    val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
+    val localState = remember(modeId, tick) { GamePersistence.load(seed, mode) }
     // Cross-device: a daily finished on another device (native/web) has no local
     // save, so this card used to render nothing. Replay the recorded matches row
     // through the engine (same loop GameScreen uses) so "Completed Today" shows
@@ -80,7 +84,7 @@ fun CompletedDailyBoard(modeId: String) {
     // noun board, so capture the raw recorded guesses and render a dedicated card
     // (tiles re-derived against today's answer, laid out in word groups).
     var pnGuesses by remember(modeId) { mutableStateOf<List<String>?>(null) }
-    LaunchedEffect(modeId) {
+    LaunchedEffect(modeId, tick) {
         if (mode == GameMode.PROPERNOUNDLE) {
             val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed)
             if (row != null && row.player1Guesses.isNotEmpty()) {

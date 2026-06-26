@@ -83,14 +83,17 @@ fun HomeScreen(
     // Today's daily completions (W/L per mode) — keyed by DB game_mode (DUEL/QUORDLE/…)
     // Seed from the day-keyed cache so cold launches don't flash unbadged
     // cards while the network fetch runs (web sessionStorage parity).
+    // Re-fetch the instant a daily is recorded (completionTick) so a just-finished
+    // game's badge/tint shows immediately on return — no tab round-trip.
+    val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
     val completions by androidx.compose.runtime.produceState(
-        initialValue = com.wordocious.app.data.DailyCompletionsService.readCache()
+        initialValue = com.wordocious.app.data.DailyCompletionsService.readCache(), key1 = tick
     ) {
         value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
     }
     // Today's daily VS outcome (true=won, false=lost, null=not played) → drives
     // the VS card's W/L badge + tint, since VS has no solo daily_results row.
-    val vsDailyWon by androidx.compose.runtime.produceState<Boolean?>(initialValue = null) {
+    val vsDailyWon by androidx.compose.runtime.produceState<Boolean?>(initialValue = null, key1 = tick) {
         value = com.wordocious.app.data.DailyResultsService.dailyVsResult()
     }
     // Pro/Unlimited dimension (web parity): free users get one daily play per
