@@ -3,19 +3,12 @@ import { MetadataRoute } from 'next';
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://wordocious.com';
 
+  // ONLY crawlable, unique-content pages. The game routes (/six, /quordle, /daily,
+  // …) are login-gated and serve the SAME Landing to logged-out crawlers — listing
+  // them created ~10 duplicate pages, which reads as "low value content" to AdSense.
   const routes = [
-    '/',
-    '/daily',
-    '/practice',
-    '/quordle',
-    '/octordle',
-    '/sequence',
-    '/rescue',
-    '/six',
-    '/seven',
-    '/gauntlet',
-    '/propernoundle',
-    '/pro',
+    '/',                       // Landing (marketing content for logged-out crawlers)
+    '/pro',                    // Pro feature overview (now public — see auth-gate PUBLIC_PATHS)
     '/how-to-play',
     '/guides',
     '/guides/classic',

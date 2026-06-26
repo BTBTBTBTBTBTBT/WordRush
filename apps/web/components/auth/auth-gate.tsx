@@ -8,7 +8,7 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
 // Public (no login) so AdSense / search crawlers can index real content —
 // not just the login wall. These are static content pages.
-const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about', '/faq', '/guides'];
+const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about', '/faq', '/guides', '/pro'];
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading, isGuest } = useAuth();
