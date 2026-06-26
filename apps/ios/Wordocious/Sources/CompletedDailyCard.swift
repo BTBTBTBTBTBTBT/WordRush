@@ -15,6 +15,7 @@ struct CompletedDailyCard: View {
     @State private var localBoards: [BoardState]?
     @State private var gauntlet: GauntletProgress?
     @State private var elapsedMs = 0
+    @State private var reloadToken = 0
 
     private var boardCount: Int { localBoards?.count ?? data?.solutions.count ?? 1 }
 
@@ -131,7 +132,8 @@ struct CompletedDailyCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
         }
-        .task(id: mode.rawValue) {
+        .onDailyCompletion { reloadToken += 1 }
+        .task(id: "\(mode.rawValue)-\(reloadToken)") {
             // Reset per-mode state up front — otherwise a previously-viewed mode's
             // data (notably the Gauntlet stage breakdown) leaks into this mode when
             // its own local save isn't reloaded, rendering e.g. Gauntlet's stages

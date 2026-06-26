@@ -20,6 +20,7 @@ struct ProfileTab: View {
     @State private var medals: [MedalRow] = []
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
+    @State private var reloadToken = 0
     @State private var opponentNames: [String: String] = [:]
     @State private var recentLoading = true
     @State private var showEditProfile = false
@@ -50,7 +51,8 @@ struct ProfileTab: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .task(id: auth.profile?.id) {
+            .onDailyCompletion { reloadToken += 1 }
+            .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
                 await completions.load()
                 await achievementCatalog.load()
                 if let uid = auth.profile?.id {
@@ -728,6 +730,7 @@ struct LeaderboardTab: View {
     @State private var mode: GameMode = .duel
     @State private var entries: [LeaderboardEntry] = []
     @State private var yesterday: [LeaderboardEntry] = []
+    @State private var reloadToken = 0
     @State private var userRank: (rank: Int, total: Int)?
     @State private var playerCount = 0
     @State private var loading = false
@@ -897,7 +900,8 @@ struct LeaderboardTab: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
         }
-        .task(id: mode) { await load() }
+        .task(id: "\(mode.rawValue)-\(reloadToken)") { await load() }
+        .onDailyCompletion { reloadToken += 1 }
         .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
     }
 
@@ -1186,6 +1190,7 @@ struct DailyRecordsView: View {
     @State private var entries: [LeaderboardEntry] = []
     @State private var userRank: (rank: Int, total: Int)?
     @State private var loading = false
+    @State private var reloadToken = 0
 
     private var accent: Color { homeModes.first { $0.dbKey == mode.rawValue }?.accent ?? Theme.primary }
 
@@ -1272,7 +1277,8 @@ struct DailyRecordsView: View {
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        .task(id: "\(mode.rawValue)-\(playType)") { await load() }
+        .task(id: "\(mode.rawValue)-\(playType)-\(reloadToken)") { await load() }
+        .onDailyCompletion { reloadToken += 1 }
     }
 
     @ViewBuilder private func rankIcon(_ rank: Int) -> some View {

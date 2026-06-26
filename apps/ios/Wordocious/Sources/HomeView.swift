@@ -180,6 +180,10 @@ struct HomeView: View {
             // from a daily push like ProperNoundle) so a just-finished game shows
             // its completed state immediately — no longer needs a tab round-trip.
             .onAppear { livePlayers.start(); reloadDaily() }
+            // The moment a daily is recorded (even mid-game-over, before the user
+            // taps Home) refresh the word card + VS state. The completion badges
+            // already react via the shared DailyCompletionsStore.
+            .onDailyCompletion { reloadDaily(); Task { await completions.load() } }
             .onChange(of: completions.byMode.count) { _ in checkSweepCelebration() }
             .fullScreenCover(isPresented: $showSweepCeleb) {
                 if #available(iOS 16.4, *) {

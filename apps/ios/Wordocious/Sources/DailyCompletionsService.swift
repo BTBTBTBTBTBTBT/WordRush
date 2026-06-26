@@ -148,3 +148,17 @@ func secondsUntilLocalMidnight() -> Int {
     }
     return max(0, Int(next.timeIntervalSinceNow))
 }
+
+import SwiftUI
+
+extension View {
+    /// Re-run `action` the instant a daily game is recorded (the
+    /// `DailyCompletionsStore.completionPosted` notification), so completed-state
+    /// surfaces — leaderboard, profile, records, home — refresh immediately
+    /// instead of only on the next tab switch / re-navigation. The notification
+    /// fires even when the view is in a backgrounded tab (its body stays alive),
+    /// so by the time the user navigates over, the data is already current.
+    func onDailyCompletion(_ action: @escaping () -> Void) -> some View {
+        onReceive(NotificationCenter.default.publisher(for: DailyCompletionsStore.completionPosted)) { _ in action() }
+    }
+}
