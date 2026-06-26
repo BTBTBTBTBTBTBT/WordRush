@@ -42,6 +42,7 @@ import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { GlobalSummaryRow } from '@/components/profile/global-summary-row';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
+import { resolveAccent } from '@/lib/profile-personalization';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import { CollapsibleSection } from '@/components/profile/collapsible-section';
 import type { Database } from '@/lib/database.types';
@@ -291,9 +292,37 @@ export default function ProfilePage() {
         <div className="flex flex-col items-center gap-3">
           <AvatarUpload size={96} editable={false} />
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">{profile.username}</h1>
+            {(profile as any).accent_color ? (
+              <h1 className="text-3xl font-black" style={{ color: resolveAccent((profile as any).accent_color) }}>{profile.username}</h1>
+            ) : (
+              <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400">{profile.username}</h1>
+            )}
             {isProActive && <ProBadge size="md" />}
           </div>
+          {/* Personalization: featured title, bio, favorite-mode chip */}
+          {(() => {
+            const accentHex = resolveAccent((profile as any).accent_color);
+            const featuredName = (profile as any).featured_achievement
+              ? ACHIEVEMENTS.find((a) => a.key === (profile as any).featured_achievement)?.name : null;
+            const bioText = ((profile as any).bio as string | null)?.trim();
+            const favMode = (profile as any).favorite_mode
+              ? PROFILE_MODES.find((m) => m.dbKey === (profile as any).favorite_mode) : null;
+            return (
+              <div className="flex flex-col items-center gap-1.5">
+                {featuredName && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wide px-2.5 py-0.5 rounded-full" style={{ background: `${accentHex}1a`, color: accentHex }}>
+                    <Star className="w-3 h-3" fill="currentColor" /> {featuredName}
+                  </span>
+                )}
+                {bioText && <p className="text-xs font-bold text-center max-w-xs" style={{ color: 'var(--color-text-muted)' }}>{bioText}</p>}
+                {favMode && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
+                    {favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} {favMode.shortTitle}
+                  </span>
+                )}
+              </div>
+            );
+          })()}
           <div className="flex flex-col items-center gap-1.5">
             <div
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold"

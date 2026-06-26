@@ -22,6 +22,8 @@ import { AvatarUpload } from '@/components/profile/avatar-upload';
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
+import { ACHIEVEMENTS } from '@/lib/achievement-service';
+import { resolveAccent } from '@/lib/profile-personalization';
 import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchTopWords } from '@/lib/stats-service';
 import { WIN_FG } from '@/lib/tile-theme';
@@ -150,9 +152,37 @@ export default function PublicProfilePage() {
           />
 
           <div className="text-center">
-            <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-lg">
-              {profile.username}
-            </h1>
+            {(profile as any).accent_color ? (
+              <h1 className="text-5xl font-black drop-shadow-lg" style={{ color: resolveAccent((profile as any).accent_color) }}>{profile.username}</h1>
+            ) : (
+              <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 drop-shadow-lg">
+                {profile.username}
+              </h1>
+            )}
+            {/* Personalization: featured title, bio, favorite-mode chip */}
+            {(() => {
+              const accentHex = resolveAccent((profile as any).accent_color);
+              const featuredName = (profile as any).featured_achievement
+                ? ACHIEVEMENTS.find((a) => a.key === (profile as any).featured_achievement)?.name : null;
+              const bioText = ((profile as any).bio as string | null)?.trim();
+              const favMode = (profile as any).favorite_mode
+                ? PROFILE_MODES.find((m) => m.dbKey === (profile as any).favorite_mode) : null;
+              return (
+                <div className="mt-2 flex flex-col items-center gap-1.5">
+                  {featuredName && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wide px-3 py-0.5 rounded-full" style={{ background: `${accentHex}1a`, color: accentHex }}>
+                      <Star className="w-3 h-3" fill="currentColor" /> {featuredName}
+                    </span>
+                  )}
+                  {bioText && <p className="text-sm font-bold max-w-xs" style={{ color: 'var(--color-text-muted)' }}>{bioText}</p>}
+                  {favMode && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-0.5 rounded-full" style={{ background: `${favMode.accentColor}1a`, color: favMode.accentColor }}>
+                      {favMode.icon ? <favMode.icon className="w-3 h-3" /> : null} {favMode.shortTitle}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Level Badge & XP Bar */}
             <div className="mt-3 flex flex-col items-center gap-2">
