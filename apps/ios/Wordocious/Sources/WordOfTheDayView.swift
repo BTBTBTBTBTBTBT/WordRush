@@ -8,6 +8,7 @@ import WordociousCore
 struct WordOfTheDayView: View {
     @State private var info: WordInfo?
     @State private var fetchedDay: Int?
+    @State private var showWords = false
     @Environment(\.scenePhase) private var scenePhase
 
     /// UTC day index — matches the web's `Math.floor(Date.now()/86400000)`.
@@ -38,6 +39,11 @@ struct WordOfTheDayView: View {
                 fetchedDay = todayIndex
             }
         }
+        // Tappable → the full Word of the Day archive (web parity: the card links
+        // to /words). presentationDetents large so the list has room.
+        .contentShape(Rectangle())
+        .onTapGesture { showWords = true }
+        .sheet(isPresented: $showWords) { WordsView().presentationDetents([.large]) }
     }
 
     private func content(_ info: WordInfo) -> some View {
@@ -50,8 +56,10 @@ struct WordOfTheDayView: View {
                         .foregroundStyle(Theme.textMuted)
                 }
                 Spacer()
-                Text("A new word every day").font(Brand.font(10, .bold))
-                    .foregroundStyle(Color(hex: 0xC4B5FD))
+                HStack(spacing: 2) {
+                    Text("Past words").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xC4B5FD))
+                    Image(systemName: "chevron.right").font(.system(size: 8, weight: .black)).foregroundStyle(Color(hex: 0xC4B5FD))
+                }
             }
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(info.word.prefix(1).uppercased() + info.word.dropFirst().lowercased())

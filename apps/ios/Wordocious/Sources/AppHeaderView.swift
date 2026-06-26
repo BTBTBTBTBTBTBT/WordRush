@@ -7,6 +7,8 @@ import SwiftUI
 /// real profile values and open an explanatory popover on tap.
 struct AppHeaderView: View {
     @ObservedObject private var auth = AuthService.shared
+    @State private var showMenu = false
+    @State private var menuSelection: InfoMenuDestination?
     @State private var menuDest: InfoMenuDestination?
     @State private var showSettings = false
     @State private var showStreak = false
@@ -30,13 +32,7 @@ struct AppHeaderView: View {
             }
             Spacer(minLength: 6)
 
-            Menu {
-                ForEach(InfoMenuDestination.allCases) { d in
-                    Button { menuDest = d } label: { Label(d.title, systemImage: d.icon) }
-                }
-            } label: {
-                circleLabel("questionmark")
-            }
+            circleButton("questionmark") { showMenu = true }
             circleButton("gearshape.fill") { showSettings = true }
 
             // Guest — prominent Sign In entry (account tabs also prompt, but the
@@ -71,6 +67,9 @@ struct AppHeaderView: View {
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
+        .sheet(isPresented: $showMenu, onDismiss: { if let s = menuSelection { menuDest = s; menuSelection = nil } }) {
+            MenuSheet(selection: $menuSelection).presentationDetents([.large])
+        }
         .sheet(item: $menuDest) { infoMenuDestinationView($0).presentationDetents([.large]) }
         .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(isPresented: $showAuth) { AuthView() }
