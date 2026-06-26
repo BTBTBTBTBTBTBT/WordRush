@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
-import { wordOfDay, parseDateKey, dateKey, daysSinceEpoch } from '@/lib/word-of-day';
+import { wordOfDay, parseDateKey, dateKey, daysSinceEpoch, wordPlayAnalysis } from '@/lib/word-of-day';
 
 export const revalidate = 86400;
 export const dynamicParams = true;
@@ -13,23 +13,6 @@ interface Props {
 
 function prettyDate(d: Date): string {
   return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-}
-
-const VOWELS = new Set(['A', 'E', 'I', 'O', 'U']);
-// Rough English letter-frequency tiers for original "how common is this letter" notes.
-const COMMON = new Set(['E', 'A', 'R', 'I', 'O', 'T', 'N', 'S']);
-const RARE = new Set(['J', 'Q', 'X', 'Z', 'V', 'K', 'W']);
-
-function letterAnalysis(word: string) {
-  const up = word.toUpperCase();
-  const letters = up.split('');
-  const vowels = letters.filter((c) => VOWELS.has(c));
-  const consonants = letters.filter((c) => !VOWELS.has(c));
-  const unique = new Set(letters);
-  const repeats = letters.length - unique.size;
-  const rares = [...unique].filter((c) => RARE.has(c));
-  const commons = [...unique].filter((c) => COMMON.has(c));
-  return { letters, vowels, consonants, repeats, rares, commons, uniqueCount: unique.size };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -57,7 +40,7 @@ export default async function WordOfDayPage({ params }: Props) {
 
   const entry = await wordOfDay(date);
   const w = entry.word.toUpperCase();
-  const a = letterAnalysis(entry.word);
+  const analysis = wordPlayAnalysis(entry.word);
 
   const prev = dateKey(new Date(date.getTime() - 86400000));
   const nextDate = new Date(date.getTime() + 86400000);
@@ -122,21 +105,8 @@ export default async function WordOfDayPage({ params }: Props) {
           <h2 className="text-sm font-black uppercase tracking-wide mb-3" style={{ color: 'var(--color-text)' }}>
             {w} as a word-puzzle answer
           </h2>
-          <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--color-text)' }}>
-            {w} is a {a.letters.length}-letter word with {a.vowels.length} vowel{a.vowels.length === 1 ? '' : 's'} ({a.vowels.join(', ') || 'none'}) and{' '}
-            {a.consonants.length} consonant{a.consonants.length === 1 ? '' : 's'} ({a.consonants.join(', ') || 'none'}).{' '}
-            {a.repeats > 0
-              ? `It repeats ${a.repeats} letter${a.repeats === 1 ? '' : 's'}, which is a classic trap — guessers who assume five distinct letters get stuck.`
-              : 'Every letter is distinct, so it rarely punishes a clean opening guess.'}
-          </p>
-          <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            {a.commons.length > 0 && (
-              <>It leans on high-frequency letters ({a.commons.join(', ')}), so a strong vowel-and-common-consonant opener tends to light up quickly. </>
-            )}
-            {a.rares.length > 0
-              ? `Watch for the less-common letter${a.rares.length === 1 ? '' : 's'} ${a.rares.join(', ')} — saving a guess to test ${a.rares.length === 1 ? 'it' : 'them'} once the vowels are placed is usually the fastest route.`
-              : 'There are no rare letters here, so it is a fair, mid-difficulty answer for the daily Classic puzzle.'}
-          </p>
+          <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--color-text)' }}>{analysis.summary}</p>
+          <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>{analysis.strategy}</p>
         </section>
 
         {/* CTA + cross-links (original copy) */}

@@ -86,3 +86,40 @@ export function recentDates(count: number, today: Date = new Date()): Date[] {
   const base = daysSinceEpoch(today);
   return Array.from({ length: count }, (_, i) => new Date((base - i) * 86400000));
 }
+
+// ── Original per-word "as a puzzle answer" analysis ───────────────────────────
+// Two plain-text paragraphs, deterministic from the word. Shared by the web
+// /word/[date] page AND the /api/words endpoint so native renders the exact
+// same prose (single source of truth).
+const VOWELS = new Set(['A', 'E', 'I', 'O', 'U']);
+const COMMON = new Set(['E', 'A', 'R', 'I', 'O', 'T', 'N', 'S']);
+const RARE = new Set(['J', 'Q', 'X', 'Z', 'V', 'K', 'W']);
+
+export function wordPlayAnalysis(word: string): { summary: string; strategy: string } {
+  const w = word.toUpperCase();
+  const letters = w.split('');
+  const vowels = letters.filter((c) => VOWELS.has(c));
+  const consonants = letters.filter((c) => !VOWELS.has(c));
+  const unique = new Set(letters);
+  const repeats = letters.length - unique.size;
+  const commons = [...unique].filter((c) => COMMON.has(c));
+  const rares = [...unique].filter((c) => RARE.has(c));
+
+  const summary =
+    `${w} is a ${letters.length}-letter word with ${vowels.length} vowel${vowels.length === 1 ? '' : 's'} ` +
+    `(${vowels.join(', ') || 'none'}) and ${consonants.length} consonant${consonants.length === 1 ? '' : 's'} ` +
+    `(${consonants.join(', ') || 'none'}). ` +
+    (repeats > 0
+      ? `It repeats ${repeats} letter${repeats === 1 ? '' : 's'}, which is a classic trap — guessers who assume five distinct letters get stuck.`
+      : 'Every letter is distinct, so it rarely punishes a clean opening guess.');
+
+  const strategy =
+    (commons.length > 0
+      ? `It leans on high-frequency letters (${commons.join(', ')}), so a strong vowel-and-common-consonant opener tends to light up quickly. `
+      : '') +
+    (rares.length > 0
+      ? `Watch for the less-common letter${rares.length === 1 ? '' : 's'} ${rares.join(', ')} — saving a guess to test ${rares.length === 1 ? 'it' : 'them'} once the vowels are placed is usually the fastest route.`
+      : 'There are no rare letters here, so it is a fair, mid-difficulty answer for the daily Classic puzzle.');
+
+  return { summary, strategy };
+}
