@@ -7,7 +7,7 @@ import SwiftUI
 /// real profile values and open an explanatory popover on tap.
 struct AppHeaderView: View {
     @ObservedObject private var auth = AuthService.shared
-    @State private var showHelp = false
+    @State private var menuDest: InfoMenuDestination?
     @State private var showSettings = false
     @State private var showStreak = false
     @State private var showShield = false
@@ -30,7 +30,13 @@ struct AppHeaderView: View {
             }
             Spacer(minLength: 6)
 
-            circleButton("questionmark") { showHelp = true }
+            Menu {
+                ForEach(InfoMenuDestination.allCases) { d in
+                    Button { menuDest = d } label: { Label(d.title, systemImage: d.icon) }
+                }
+            } label: {
+                circleLabel("questionmark")
+            }
             circleButton("gearshape.fill") { showSettings = true }
 
             // Guest — prominent Sign In entry (account tabs also prompt, but the
@@ -65,7 +71,7 @@ struct AppHeaderView: View {
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
-        .sheet(isPresented: $showHelp) { HelpView().presentationDetents([.large]) }
+        .sheet(item: $menuDest) { infoMenuDestinationView($0).presentationDetents([.large]) }
         .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(isPresented: $showAuth) { AuthView() }
     }
@@ -73,14 +79,17 @@ struct AppHeaderView: View {
     // MARK: - Pieces
 
     private func circleButton(_ system: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: system)
-                .font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.textMuted)
-                .frame(width: 32, height: 32)
-                .background(Circle().fill(Theme.surfaceAlt))
-                .overlay(Circle().stroke(Theme.borderAlt, lineWidth: 1.5))
-        }
-        .buttonStyle(.plain)
+        Button(action: action) { circleLabel(system) }
+            .buttonStyle(.plain)
+    }
+
+    /// The circle-icon visual on its own (for use as a Menu label).
+    private func circleLabel(_ system: String) -> some View {
+        Image(systemName: system)
+            .font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.textMuted)
+            .frame(width: 32, height: 32)
+            .background(Circle().fill(Theme.surfaceAlt))
+            .overlay(Circle().stroke(Theme.borderAlt, lineWidth: 1.5))
     }
 
     private func pill(asset: String, iconColor: Color, text: String, textColor: Color,

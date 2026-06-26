@@ -5,8 +5,10 @@ import WordociousCore
 /// (How to Play / Game Modes / FAQ), same copy, examples, and mode list.
 struct HelpView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var tab: Tab = .howToPlay
+    @State private var tab: Tab
     @StateObject private var content = ContentService.shared
+
+    init(initialTab: Tab = .howToPlay) { _tab = State(initialValue: initialTab) }
 
     enum Tab: String, CaseIterable {
         case howToPlay = "How to Play"

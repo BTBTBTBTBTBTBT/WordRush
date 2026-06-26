@@ -427,14 +427,11 @@ struct HomeView: View {
 
     /// About · How to Play · Privacy · Terms — same destinations as Settings, so
     /// the content is the single source of truth and stays aligned with the web.
+    // Full site-nav footer (How to Play / Guides / Strategy / Words / About /
+    // FAQ / Privacy / Terms) — parity with the web home footer. Same destinations
+    // as the header "?" dropdown.
     private var footerLinks: some View {
-        HStack(spacing: 12) {
-            NavigationLink { InfoPage(.about) } label: { footerLink("About") }
-            NavigationLink { HelpView() } label: { footerLink("How to Play") }
-            NavigationLink { InfoPage(.privacy) } label: { footerLink("Privacy") }
-            NavigationLink { InfoPage(.terms) } label: { footerLink("Terms") }
-        }
-        .padding(.top, 2)
+        InfoFooterLinks().padding(.top, 2)
     }
 
     private func footerLink(_ t: String) -> some View {
