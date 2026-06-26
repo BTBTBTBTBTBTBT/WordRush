@@ -66,9 +66,15 @@ struct SweepCelebrationView: View {
                     LazyVGrid(columns: cols, spacing: 6) {
                         ForEach(rows) { r in
                             HStack(spacing: 5) {
-                                Text(r.glyph).font(Brand.font(r.glyph.count >= 3 ? 9 : 12, .black)).foregroundStyle(.white)
-                                    .frame(width: 22, height: 22)
-                                    .background(RoundedRectangle(cornerRadius: 7).fill(r.accent))
+                                // Real game icon (same as the home cards), mapped by dbKey;
+                                // falls back to the letter glyph if a mode isn't found.
+                                if let m = homeModes.first(where: { $0.dbKey == r.dbKey }) {
+                                    ModeIconView(icon: m.icon, accent: r.accent, box: 22)
+                                } else {
+                                    Text(r.glyph).font(Brand.font(r.glyph.count >= 3 ? 9 : 12, .black)).foregroundStyle(.white)
+                                        .frame(width: 22, height: 22)
+                                        .background(RoundedRectangle(cornerRadius: 7).fill(r.accent))
+                                }
                                 Text(r.modeLabel).font(Brand.font(11, .bold)).foregroundStyle(Theme.textPrimary).lineLimit(1)
                                 Spacer(minLength: 0)
                                 Text(r.won ? "✓" : "✗").font(Brand.font(12, .black))

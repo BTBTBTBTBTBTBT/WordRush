@@ -124,9 +124,13 @@ fun SweepCelebration(
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             triple.forEach { r ->
                                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                                    Box(Modifier.size(22.dp).clip(RoundedCornerShape(7.dp)).background(Color(r.accent)),
+                                    // Real game icon (same as the home cards) in an accent box;
+                                    // falls back to the letter glyph if the mode can't be resolved.
+                                    Box(Modifier.size(22.dp).clip(RoundedCornerShape(7.dp)).background(Color(r.accent).copy(alpha = 0.10f)),
                                         contentAlignment = Alignment.Center) {
-                                        Text(r.glyph, fontSize = if (r.glyph.length >= 3) 9.sp else 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+                                        val card = runCatching { com.wordocious.core.GameMode.valueOf(r.dbKey) }.getOrNull()?.let { modeCardFor(it) }
+                                        if (card != null) ModeGlyph(card, tint = Color(r.accent), glyphSize = 12.sp, iconSize = 12.dp)
+                                        else Text(r.glyph, fontSize = if (r.glyph.length >= 3) 9.sp else 12.sp, fontWeight = FontWeight.Black, color = Color(r.accent))
                                     }
                                     Text(r.label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text, maxLines = 1)
                                     Spacer(Modifier.weight(1f))

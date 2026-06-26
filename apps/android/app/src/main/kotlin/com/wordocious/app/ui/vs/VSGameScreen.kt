@@ -90,7 +90,9 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
             VSScreen.ALREADY_PLAYED_DAILY -> AlreadyPlayedDaily(vm.dailyAnswer, gradient, vm.isPro, vm.dailyWon, ::goHome, onGoPro, onPlayUnlimited)
         }
 
-        vm.countdown?.let { CountdownOverlay(it, gradient) }
+        // Don't stack the countdown under the dark intro splash (it ticked behind
+        // it and then popped in color); show it only once the intro is gone.
+        vm.countdown?.let { if (!vm.showIntro) CountdownOverlay(it, gradient) }
         // Match-intro splash — sits above the countdown for 2.5s (or until tapped).
         if (vm.showIntro) {
             val profile by com.wordocious.app.data.AuthService.profile.collectAsState()

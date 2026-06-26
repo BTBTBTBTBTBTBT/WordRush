@@ -1074,15 +1074,17 @@ private fun SweepStatsCard(
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                IconStat(Icons.Filled.AutoAwesome, Color(0xFF7C3AED), "${stats.sweepCount}", "Sweeps")
-                IconStat(Icons.Filled.EmojiEvents, Color(0xFFD97706), "${stats.flawlessCount}", "Flawless")
-                IconStat(Icons.Filled.LocalFireDepartment, Color(0xFFEF4444), "${stats.currentSweepStreak}", "Streak")
+            // Equal-width centered thirds (was SpaceEvenly/SpaceBetween, which
+            // didn't line the columns up cleanly).
+            Row(Modifier.fillMaxWidth()) {
+                Box(Modifier.weight(1f), Alignment.Center) { IconStat(Icons.Filled.AutoAwesome, Color(0xFF7C3AED), "${stats.sweepCount}", "Sweeps") }
+                Box(Modifier.weight(1f), Alignment.Center) { IconStat(Icons.Filled.EmojiEvents, Color(0xFFD97706), "${stats.flawlessCount}", "Flawless") }
+                Box(Modifier.weight(1f), Alignment.Center) { IconStat(Icons.Filled.LocalFireDepartment, Color(0xFFEF4444), "${stats.currentSweepStreak}", "Streak") }
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                TimeStat("Avg Sweep", stats.avgSweepSecs, WTheme.text)
-                TimeStat("Best Sweep", stats.bestSweepSecs, WTheme.correct)
-                TimeStat("Best Flawless", stats.bestFlawlessSecs, Color(0xFFD97706))
+            Row(Modifier.fillMaxWidth()) {
+                Box(Modifier.weight(1f), Alignment.Center) { TimeStat("Avg Sweep", stats.avgSweepSecs, WTheme.text) }
+                Box(Modifier.weight(1f), Alignment.Center) { TimeStat("Best Sweep", stats.bestSweepSecs, WTheme.correct) }
+                Box(Modifier.weight(1f), Alignment.Center) { TimeStat("Best Flawless", stats.bestFlawlessSecs, Color(0xFFD97706)) }
             }
             if (points.size >= 2) {
                 Text("DAILY POINTS · LAST 30 DAYS", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
