@@ -668,6 +668,98 @@ function drawGauntlet(
 const SWEEP_VIOLET: [string, string] = ['#a78bfa', '#ec4899'];
 const SWEEP_GOLD: [string, string] = ['#d97706', '#b45309'];
 
+/**
+ * Draws a mode's real game icon (WHITE) centered at (cx, cy) inside its accent
+ * badge on the all-dailies share card — the same lucide art the home cards use
+ * (Classic=grid, Succession=trending-up, Deliverance=shield, Gauntlet=skull,
+ * ProperNoundle=crown). Returns false for the numeral modes (QuadWord/OctoWord/
+ * Six/Seven) so the caller draws the glyph instead. Paths copied verbatim from
+ * lucide-react@0.446 so they match the on-screen icons exactly.
+ */
+function drawSweepBadgeIcon(
+  ctx: CanvasRenderingContext2D,
+  mode: string,
+  cx: number,
+  cy: number,
+  size: number,
+): boolean {
+  ctx.save();
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // lucide icons share a 24×24 viewBox + 2px stroke; scale into `size`.
+  const lucide = (draw: () => void) => {
+    const s = size / 24;
+    ctx.translate(cx - size / 2, cy - size / 2);
+    ctx.scale(s, s);
+    ctx.lineWidth = 2;
+    draw();
+  };
+  const strokePath = (d: string) => ctx.stroke(new Path2D(d));
+  const strokePolyline = (pts: number[][]) => {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+    ctx.stroke();
+  };
+  const strokeCircle = (x: number, y: number, r: number) => {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.stroke();
+  };
+
+  let drew = true;
+  switch (mode) {
+    case 'Classic': {
+      // 5×6 grid of rounded squares (viewBox 20×24), white, like WordleGridIcon.
+      const s = size / 24;
+      ctx.translate(cx - (20 * s) / 2, cy - (24 * s) / 2);
+      ctx.scale(s, s);
+      ctx.fillStyle = '#ffffff';
+      ctx.globalAlpha = 0.92;
+      for (let row = 0; row < 6; row++)
+        for (let col = 0; col < 5; col++) {
+          drawRoundRect(ctx, col * 4, row * 4, 3.2, 3.2, 0.6);
+          ctx.fill();
+        }
+      break;
+    }
+    case 'Succession':
+      lucide(() => {
+        strokePolyline([[22, 7], [13.5, 15.5], [8.5, 10.5], [2, 17]]);
+        strokePolyline([[16, 7], [22, 7], [22, 13]]);
+      });
+      break;
+    case 'Deliverance':
+      lucide(() =>
+        strokePath(
+          'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z',
+        ),
+      );
+      break;
+    case 'Gauntlet':
+      lucide(() => {
+        strokePath('m12.5 17-.5-1-.5 1h1z');
+        strokePath('M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z');
+        strokeCircle(15, 12, 1);
+        strokeCircle(9, 12, 1);
+      });
+      break;
+    case 'ProperNoundle':
+      lucide(() => {
+        strokePath(
+          'M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z',
+        );
+        strokePath('M5 21h14');
+      });
+      break;
+    default:
+      drew = false;
+  }
+  ctx.restore();
+  return drew;
+}
+
 function drawDailySweepCard(
   ctx: CanvasRenderingContext2D,
   input: ShareDailySweepInput,
@@ -742,11 +834,15 @@ function drawDailySweepCard(
     drawRoundRect(ctx, badgeX, badgeY, badge, badge, 16);
     ctx.fillStyle = accent;
     ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `900 ${MODE_SHARE_GLYPH[g.mode].length >= 3 ? 24 : 30}px "Nunito", system-ui, -apple-system, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(MODE_SHARE_GLYPH[g.mode], badgeX + badge / 2, badgeY + badge / 2 + 1);
+    // Real game icon (white) where the mode has one; numeral modes fall back to
+    // the glyph — same treatment as the home cards + the native share cards.
+    if (!drawSweepBadgeIcon(ctx, g.mode, badgeX + badge / 2, badgeY + badge / 2, badge * 0.56)) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `900 ${MODE_SHARE_GLYPH[g.mode].length >= 3 ? 24 : 30}px "Nunito", system-ui, -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(MODE_SHARE_GLYPH[g.mode], badgeX + badge / 2, badgeY + badge / 2 + 1);
+    }
 
     const textX = badgeX + badge + 22;
     // Mode name
