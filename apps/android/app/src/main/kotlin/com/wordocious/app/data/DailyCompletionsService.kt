@@ -77,8 +77,15 @@ object DailyCompletionsService {
                 }
                 .decodeList<Completion>()
                 .associateBy { it.gameMode }
-            writeCache(map)
-            map
+            // Read-after-write race: a fetch fired the instant a daily finishes
+            // (completionTick) may not see the row we just INSERTed — a blind
+            // replace would drop the just-finished mode, making a real Flawless
+            // show as an N-1/9 Sweep. Keep any optimistic noteCompletion entry
+            // (in the day-keyed cache) the server response is still missing.
+            val merged = map.toMutableMap()
+            for ((k, v) in readCache()) if (k !in merged) merged[k] = v
+            writeCache(merged)
+            merged
         }.getOrElse { readCache() }   // transient failure → keep cached state
     }
 

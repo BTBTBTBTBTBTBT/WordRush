@@ -351,7 +351,7 @@ export default function HomePage() {
             return (
               <button
                 onClick={() => { shareDailySweep(todayDailies); }}
-                className="w-full btn-3d flex flex-col items-center py-2.5 font-black relative overflow-hidden"
+                className="w-full shrink-0 btn-3d flex flex-col items-center py-2.5 font-black relative overflow-hidden"
                 style={{ background: bg, border, borderRadius: '14px' }}
               >
                 {/* Subtle foil shimmer sweep */}

@@ -107,7 +107,16 @@ final class DailyCompletionsStore: ObservableObject {
                 .eq("day", value: LeaderboardService.todayLocal())
                 .eq("play_type", value: "solo")
                 .execute().value
-            byMode = Dictionary(rows.map { ($0.gameMode, $0) }, uniquingKeysWith: { a, _ in a })
+            var merged = Dictionary(rows.map { ($0.gameMode, $0) }, uniquingKeysWith: { a, _ in a })
+            // Read-after-write race: `.onDailyCompletion` calls load() the instant
+            // a daily finishes, but the row we just INSERTed may not be queryable
+            // yet — a blind replace would drop the just-finished mode, making a
+            // real Flawless show as an N-1/9 Sweep with that mode missing. Keep any
+            // locally-known finish (from the optimistic completionPosted note) the
+            // server response is still missing — won OR lost, since the all-9 count
+            // needs losses too; daily rows are permanent once written.
+            for (k, v) in byMode where merged[k] == nil { merged[k] = v }
+            byMode = merged
             Self.writeCache(byMode)
         } catch {
             // Keep the cached state on a transient failure instead of blanking.

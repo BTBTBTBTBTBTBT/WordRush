@@ -148,6 +148,11 @@ struct HomeView: View {
                         UserDefaults.standard.set(fresh, forKey: "unlimited-current-\(g.mode.rawValue)")
                         pendingGame = ActiveGame(seed: fresh, mode: g.mode, title: g.title)
                     })
+                    // Swapping `pendingGame` to a new seed while the cover is already
+                    // up does NOT rebuild GameScreen's @StateObject (created once from
+                    // the old seed) — so Play Again showed the old finished board.
+                    // Keying on the seed forces a fresh view + a fresh game VM.
+                    .id(g.seed)
                 }
             }
             .fullScreenCover(item: $pnGame, onDismiss: { reloadDaily() }) { g in
