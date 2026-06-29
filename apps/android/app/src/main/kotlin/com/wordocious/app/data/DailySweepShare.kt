@@ -127,9 +127,25 @@ object DailySweepShare {
             val by = rect.centerY() - badge / 2
             val badgeRect = RectF(bx, by, bx + badge, by + badge)
             c.drawRoundRect(badgeRect, 16f, 16f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = r.accent })
-            p.typeface = black; p.isFakeBoldText = true
-            p.textSize = if (r.glyph.length >= 3) 24f else 30f; p.color = Color.WHITE
-            c.drawText(r.glyph, badgeRect.centerX(), badgeRect.centerY() + p.textSize * 0.35f, p)
+            // Real game icon (lucide vector, drawn WHITE) for the icon modes
+            // (Classic/Succession/Deliverance/Gauntlet/Proper); the numeral modes
+            // (IV/VIII/6/7) keep their glyph — same as the home cards.
+            val lucide = com.wordocious.app.ui.MODE_CARDS.firstOrNull { it.engineMode?.name == r.dbKey }?.lucide
+            val iconRes = com.wordocious.app.ui.modeIconRes(lucide)
+            val iconDrawable = iconRes?.let { androidx.core.content.ContextCompat.getDrawable(context, it) }
+            if (iconDrawable != null) {
+                val inset = badge * 0.28f
+                iconDrawable.setTint(Color.WHITE)
+                iconDrawable.setBounds(
+                    (badgeRect.left + inset).toInt(), (badgeRect.top + inset).toInt(),
+                    (badgeRect.right - inset).toInt(), (badgeRect.bottom - inset).toInt(),
+                )
+                iconDrawable.draw(c)
+            } else {
+                p.typeface = black; p.isFakeBoldText = true
+                p.textSize = if (r.glyph.length >= 3) 24f else 30f; p.color = Color.WHITE
+                c.drawText(r.glyph, badgeRect.centerX(), badgeRect.centerY() + p.textSize * 0.35f, p)
+            }
 
             val textX = bx + badge + 22f
             p.textAlign = Paint.Align.LEFT

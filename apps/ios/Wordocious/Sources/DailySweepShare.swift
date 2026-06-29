@@ -103,11 +103,10 @@ struct DailySweepCardView: View {
 
     private func rowView(_ r: DailySweepRow) -> some View {
         HStack(spacing: 22) {
-            Text(r.glyph)
-                .font(.custom("Nunito", size: r.glyph.count >= 3 ? 24 : 30).weight(.black))
-                .foregroundStyle(.white)
-                .frame(width: 72, height: 72)
-                .background(RoundedRectangle(cornerRadius: 16).fill(r.accent))
+            ZStack {
+                RoundedRectangle(cornerRadius: 16).fill(r.accent).frame(width: 72, height: 72)
+                shareGlyph(r)
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text(r.modeLabel).font(.custom("Nunito", size: 30).weight(.black)).foregroundStyle(textDark)
                 Text("\(r.won ? "\(r.guesses)g" : "X") · \(fmt(r.timeSeconds)) · \(r.score) pts")
@@ -121,6 +120,32 @@ struct DailySweepCardView: View {
         .frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 20).fill(r.won ? winBG : lossBG))
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(r.won ? winFG : lossFG, lineWidth: 3))
+    }
+
+    /// The mode's real game icon (lucide / hand / roman numeral — same source as
+    /// the home cards + celebration modal), drawn in WHITE on the accent badge so
+    /// the shared card shows recognizable game icons, not bare letter glyphs.
+    /// Falls back to the glyph text if the mode isn't found.
+    @ViewBuilder
+    private func shareGlyph(_ r: DailySweepRow) -> some View {
+        if let icon = homeModes.first(where: { $0.dbKey == r.dbKey })?.icon {
+            switch icon {
+            case .asset(let name), .original(let name):
+                Image(name).renderingMode(.template).resizable().scaledToFit()
+                    .frame(width: 38, height: 38).foregroundStyle(.white)
+            case .roman(let text):
+                Text(text).font(.custom("Nunito", size: text.count >= 3 ? 26 : 32).weight(.black)).foregroundStyle(.white)
+            case .hand(let name, let number):
+                ZStack(alignment: .center) {
+                    Image(name).renderingMode(.template).resizable().scaledToFit()
+                        .frame(width: 44, height: 46).foregroundStyle(.white)
+                    Text(number).font(.custom("Nunito", size: 22).weight(.black)).foregroundStyle(r.accent)
+                        .offset(y: 9)
+                }
+            }
+        } else {
+            Text(r.glyph).font(.custom("Nunito", size: r.glyph.count >= 3 ? 24 : 30).weight(.black)).foregroundStyle(.white)
+        }
     }
 
     private func fmt(_ s: Int) -> String { "\(s / 60):\(String(format: "%02d", s % 60))" }
