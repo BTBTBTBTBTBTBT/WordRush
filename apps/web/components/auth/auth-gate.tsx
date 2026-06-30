@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import { Landing } from './landing';
@@ -10,11 +10,35 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 // not just the login wall. These are static content pages.
 const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about', '/faq', '/guides', '/pro', '/word', '/strategy'];
 
+/**
+ * Returning-user heuristic: a persisted Supabase session token (`sb-*-auth-token`)
+ * or a prior "Play without an account" choice in localStorage means we can render
+ * the app shell immediately while auth resolves in the background — so returning
+ * users land straight on the menu instead of watching the skeleton. Mirrors the
+ * native optimistic home render (AuthService.hadPersistedSession).
+ */
+function hasPersistedSession(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (localStorage.getItem('wordocious-guest') === '1') return true;
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) return true;
+    }
+  } catch {}
+  return false;
+}
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading, isGuest } = useAuth();
   const pathname = usePathname();
+  // Gate the localStorage read behind mount so server + first client render
+  // agree (both skeleton) — avoids a hydration mismatch. After mount, returning
+  // users swap to the app within a frame, long before auth actually resolves.
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     ensureDictionaryInitialized();
   }, []);
 
@@ -23,9 +47,13 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // Seamless loading screen — matches the real app layout so the
-  // transition from loading → authenticated is invisible.
+  // While auth resolves: returning users (persisted session/guest) skip the
+  // skeleton and get the real app immediately; everyone else sees the
+  // layout-matched skeleton until we know who they are.
   if (loading) {
+    if (mounted && hasPersistedSession()) {
+      return <>{children}</>;
+    }
     return (
       <div
         className="fixed inset-0 flex flex-col"
