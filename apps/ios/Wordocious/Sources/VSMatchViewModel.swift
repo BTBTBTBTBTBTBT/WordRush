@@ -393,11 +393,15 @@ final class VSMatchViewModel: ObservableObject {
         }
 
         let vm = GameViewModel(seed: seed, mode: mode, isVersus: true)
-        vm.onGuessCommitted = { [weak self] guess in
-            self?.service.submitGuess(guess, boardIndex: 0)
+        vm.onGuessCommitted = { [weak self] guess, boardIndex in
+            // Relay the ACTUAL board this guess landed on (not a hardcoded 0) so
+            // the server evaluates it against the right solution and the
+            // opponent's per-board mini-board populates the correct board. For
+            // single-board / quordle-style applyToAll modes this is 0 as before.
+            self?.service.submitGuess(guess, boardIndex: boardIndex)
             // Mirror my own guess locally so the result screen can render my
             // final board with letters (web myGuessLog).
-            self?.myGuessLog.append(VSGuessLogEntry(boardIndex: 0, guess: guess.uppercased()))
+            self?.myGuessLog.append(VSGuessLogEntry(boardIndex: boardIndex, guess: guess.uppercased()))
         }
         vm.onBoardSolved = { [weak self] idx in
             self?.service.boardSolved(boardIndex: idx)

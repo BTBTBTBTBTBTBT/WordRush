@@ -110,7 +110,7 @@ final class GameViewModel: ObservableObject {
     /// solo daily-result recording, and instead fires the relay callbacks so the
     /// VSMatchViewModel can emit submit_guess / board_solved / player_completed.
     let isVersus: Bool
-    var onGuessCommitted: ((_ guess: String) -> Void)?
+    var onGuessCommitted: ((_ guess: String, _ boardIndex: Int) -> Void)?
     var onBoardSolved: ((_ boardIndex: Int) -> Void)?
     var onCompleted: ((_ status: GameStatus, _ totalGuesses: Int) -> Void)?
     /// Gauntlet VS: fires with the index of the stage just cleared so the
@@ -340,6 +340,12 @@ final class GameViewModel: ObservableObject {
         }
 
         let beforeGuessCount = totalGuesses
+        // Capture which board this guess lands on BEFORE the reducer runs — for
+        // SEQUENCE the active board advances once it's solved, so reading the
+        // active index afterward would report the NEXT board. The VS relay needs
+        // the board the guess was actually applied to so the opponent's
+        // mini-board (and the server's evaluation) target the right board.
+        let committedBoardIndex = isSequence ? max(0, sequenceActiveIndex) : 0
         let action: GameAction = isMultiBoard
             ? .submitGuess(guess: guess, boardIndex: nil, applyToAll: true)
             : .submitGuess(guess: guess, boardIndex: 0, applyToAll: false)
@@ -353,7 +359,7 @@ final class GameViewModel: ObservableObject {
             else if state.status == .lost { flash(lossMessage) }
 
             if isVersus {
-                onGuessCommitted?(guess)
+                onGuessCommitted?(guess, committedBoardIndex)
                 for (i, b) in state.boards.enumerated() where b.status == .won && !reportedSolvedBoards.contains(i) {
                     reportedSolvedBoards.insert(i)
                     onBoardSolved?(i)
