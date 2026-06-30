@@ -106,6 +106,17 @@ httpServer.on('request', (req, res) => {
     res.end(JSON.stringify({ online: uniquePresence.size }));
     return;
   }
+  // Deployed-build marker so we can confirm from outside WHICH commit Railway
+  // is running (Railway injects RAILWAY_GIT_COMMIT_SHA at build time).
+  if (req.url.startsWith('/version')) {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({
+      commit: process.env.RAILWAY_GIT_COMMIT_SHA ?? null,
+      branch: process.env.RAILWAY_GIT_BRANCH ?? null,
+      deployedAt: process.env.RAILWAY_DEPLOYMENT_ID ?? null,
+    }));
+    return;
+  }
   // TEMP diagnostic — live queue/connection snapshot (VS pairing debug 2026-06-18).
   if (req.url.startsWith('/debug/queue')) {
     const sockets: { id: string; presence: string | null }[] = [];
