@@ -856,8 +856,13 @@ struct LeaderboardTab: View {
     @State private var showAuth = false
     @State private var secondsLeft = secondsUntilLocalMidnight()
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    /// Today's completed dailies (seeded instantly from the on-device cache) so
+    /// the Play CTA knows "View vs Play" with zero flash, before the per-mode
+    /// leaderboard rank loads.
+    @StateObject private var completions = DailyCompletionsStore()
     // Play CTA → launch the selected mode's daily (GameScreen, or ProperNoundle).
     @State private var lbGame: LbGame?
+    @State private var lbSolved: LbGame?   // already-finished daily → read-only solved board
     @State private var showPNDaily = false
     struct LbGame: Identifiable { let id = UUID(); let mode: GameMode; let title: String }
 
@@ -881,6 +886,11 @@ struct LeaderboardTab: View {
             .adBanner()
             .fullScreenCover(item: $lbGame) { g in
                 NavigationStack { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
+            }
+            .fullScreenCover(item: $lbSolved) { g in
+                // Read-only reconstruction (matches the home "View Solved Puzzle"),
+                // so a finished daily never reopens as a fresh playable board.
+                NavigationStack { SolvedPuzzleView(mode: g.mode, title: g.title) }
             }
             .fullScreenCover(isPresented: $showPNDaily) {
                 NavigationStack { ProperNoundleView() }
@@ -906,13 +916,19 @@ struct LeaderboardTab: View {
                     }.foregroundStyle(Theme.textMuted)
                 }
                 Spacer()
+                // Already finished today's daily for this mode → open the read-only
+                // solved board, matching the home cards. The cached completions
+                // answer instantly; userRank confirms once the leaderboard loads.
+                let played = completions.byMode[mode.rawValue] != nil || userRank != nil
                 Button {
-                    if mode == .propernoundle { showPNDaily = true }
-                    else { lbGame = LbGame(mode: mode, title: m?.title ?? mode.rawValue) }
+                    let title = m?.title ?? mode.rawValue
+                    if played { lbSolved = LbGame(mode: mode, title: title) }
+                    else if mode == .propernoundle { showPNDaily = true }
+                    else { lbGame = LbGame(mode: mode, title: title) }
                 } label: {
                     HStack(spacing: 5) {
-                        Image(systemName: "play.fill").font(.system(size: 11))
-                        Text("Play").font(Brand.font(13, .black))
+                        Image(systemName: played ? "eye.fill" : "play.fill").font(.system(size: 11))
+                        Text(played ? "View" : "Play").font(Brand.font(13, .black))
                     }
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16).padding(.vertical, 9)
@@ -1019,6 +1035,8 @@ struct LeaderboardTab: View {
             .padding(.horizontal, 12).padding(.vertical, 8)
         }
         .task(id: "\(mode.rawValue)-\(reloadToken)") { await load() }
+        .task { await completions.load() }
+        .onDailyCompletion { Task { await completions.load() } }
         .onDailyCompletion { reloadToken += 1 }
         .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
     }
