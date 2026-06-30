@@ -1637,9 +1637,9 @@ struct YourRecordsView: View {
             .frame(maxWidth: .infinity, alignment: .leading).padding(14)
             .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("GLOBAL RECORDS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                Label("\(recordsHeld.count)", systemImage: "star.fill").font(Brand.font(24, .black))
+                Label("\(recordsHeld.count)", systemImage: "star.fill").font(Brand.font(13, .black))
                     .foregroundStyle(recordsHeld.isEmpty ? Theme.textMuted : Color(hex: 0xD97706)).labelStyle(.titleAndIcon)
                 Text("all-time record\(recordsHeld.count == 1 ? "" : "s") held").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
