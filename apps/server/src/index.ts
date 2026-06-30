@@ -473,6 +473,12 @@ io.on('connection', (socket) => {
       matches.delete(matchId);
       submittedWordsByMatch.delete(matchId);
       submittedWordsByMatch.set(newMatchId, { p1: new Set(), p2: new Set() });
+      // Seed a fresh guess log for the rematch — createMatch does this, but the
+      // rematch path didn't, so guessLogByMatch.get(newMatchId) was undefined and
+      // submit_guess silently skipped logging → both result screens showed
+      // "No guesses" for the opponent. Clean up the old match's log too.
+      guessLogByMatch.delete(matchId);
+      guessLogByMatch.set(newMatchId, { p1: [], p2: [] });
 
       io.to(match.player1.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata });
       io.to(match.player2.socketId).emit('rematch_start', { matchId: newMatchId, seed: newSeed, puzzleMetadata: newPuzzleMetadata });
