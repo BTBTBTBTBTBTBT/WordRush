@@ -107,7 +107,7 @@ export default function ProfilePage() {
           .order('created_at', { ascending: false })
           .limit(5)
           .then(r => r.data || []),
-        fetchUserMedals(profile!.id, 10),
+        fetchUserMedals(profile!.id, 120),
         fetchUserAchievements(profile!.id),
         fetchTodayDailyCompletions(profile!.id),
         fetchActivityByDay(profile!.id, 7),
@@ -172,6 +172,7 @@ export default function ProfilePage() {
   // Solo/VS toggle (mirrors the public profile) — filters user_stats by play_type.
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
   const [editOpen, setEditOpen] = useState(false);
+  const [showAllMedals, setShowAllMedals] = useState(false);
 
   // Stats filtered to the active Solo/VS tab.
   const filteredStats = stats.filter((s) => s.play_type === activeTab);
@@ -679,8 +680,9 @@ export default function ProfilePage() {
                 })}
               </div>
               {medals.length > 0 ? (
-                <div className="space-y-1.5">
-                  {medals.slice(0, 5).map((medal) => {
+                <>
+                <div className={`space-y-1.5 ${showAllMedals ? 'max-h-80 overflow-y-auto pr-1' : ''}`}>
+                  {(showAllMedals ? medals : medals.slice(0, 5)).map((medal) => {
                     const medalConfig: Record<string, { icon: typeof Crown; color: string; label: string }> = {
                       gold: { icon: Crown, color: '#d97706', label: '1st' },
                       silver: { icon: Medal, color: 'var(--color-text-muted)', label: '2nd' },
@@ -706,6 +708,12 @@ export default function ProfilePage() {
                     );
                   })}
                 </div>
+                {medals.length > 5 && (
+                  <button onClick={() => setShowAllMedals((v) => !v)} className="w-full mt-2 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
+                    {showAllMedals ? 'Show less' : `View all ${medals.length} medals →`}
+                  </button>
+                )}
+                </>
               ) : (
                 <p className="text-center text-xs font-bold py-3" style={{ color: 'var(--color-text-muted)' }}>Play daily challenges to earn medals!</p>
               )}
