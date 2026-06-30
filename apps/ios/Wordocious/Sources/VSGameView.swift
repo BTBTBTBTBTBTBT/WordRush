@@ -86,10 +86,25 @@ struct VSGameView: View {
         // pushed inside the Home tab's nav stack, so the tab bar was overlapping
         // and clipping the keyboard's bottom row).
         .toolbar(.hidden, for: .tabBar)
+        // The VS game is pushed inside the Home tab's nav stack, so the custom
+        // BottomNav (Home/Leaderboard/Profile/Records) renders over it and eats
+        // the bottom safe area — pushing the keyboard's bottom row off-screen.
+        // Solo games hide it via fullScreenCover; mirror that here.
+        .hidesBottomNav()
         .onAppear {
             // Free users watch the game-start ad before matchmaking begins.
             if !adShown { adShown = true; AdsManager.shared.showGameStartInterstitial { vm.start() } }
             else { vm.start() }
+        }
+        // The game-start interstitial ad can leave a web-view text input as the
+        // first responder, so iOS keeps the SYSTEM keyboard up over our custom
+        // on-screen KeyboardView (the board uses no UITextField). Resign it the
+        // moment the playable match screen appears so only KeyboardView shows.
+        .onChange(of: vm.screen) { screen in
+            if screen == .match {
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
         .onDisappear { vm.leave() }
         .confirmationDialog("Forfeit match?", isPresented: $confirmForfeit, titleVisibility: .visible) {
