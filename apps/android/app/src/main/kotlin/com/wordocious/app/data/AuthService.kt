@@ -102,7 +102,7 @@ object AuthService {
                 val user = runCatching { client.auth.currentUserOrNull() }.getOrNull()
                 if (user != null) {
                     loadProfile(user.id)
-                    _isAuthenticated.value = true; _isGuest.value = false
+                    _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
                 }
             } catch (_: Exception) {
                 // No session — stay unauthenticated
@@ -143,7 +143,7 @@ object AuthService {
             }
             val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
             loadProfile(user.id)
-            _isAuthenticated.value = true; _isGuest.value = false
+            _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
             null
         } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
             null // user dismissed the sheet — not an error
@@ -160,7 +160,7 @@ object AuthService {
             }
             val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
             loadProfile(user.id)
-            _isAuthenticated.value = true; _isGuest.value = false
+            _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
             null
         } catch (e: Exception) {
             e.message?.take(120) ?: "Sign in failed"
@@ -186,7 +186,7 @@ object AuthService {
             when {
                 user != null -> {
                     loadProfile(user.id)
-                    _isAuthenticated.value = true; _isGuest.value = false
+                    _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
                     null
                 }
                 result != null -> "Check your email to confirm your account, then sign in."
@@ -210,7 +210,14 @@ object AuthService {
         _profile.value = null
         _isAuthenticated.value = false
         _isGuest.value = false
+        SettingsPref.set(HAD_SESSION, false)
     }
+
+    /** Persisted hint that the LAST run had a real session — lets MainActivity
+     *  render the home immediately on the next launch (while the session quietly
+     *  restores) instead of flashing the loading spinner. Cleared on sign-out. */
+    const val HAD_SESSION = "had-session"
+    fun hadPersistedSession(): Boolean = SettingsPref.get(HAD_SESSION, false)
 
     /**
      * Delete the account via the web's service-role endpoint (same as iOS):

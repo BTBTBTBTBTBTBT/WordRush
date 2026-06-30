@@ -11,11 +11,13 @@ struct ContentView: View {
     @EnvironmentObject private var auth: AuthService
 
     var body: some View {
-        if auth.isLoading {
-            LoadingSkeleton()
-        } else if !auth.isAuthenticated && !auth.isGuest {
-            AuthView(showsCloseButton: false)
-        } else {
+        // Show the app immediately when signed in/guest — OR optimistically while
+        // the session is still restoring on launch IF the last run was signed in
+        // (the common case), so returning players land straight on the home
+        // instead of the loading skeleton. The home renders from cached/static
+        // data and fills in as the session + profile load. If the restore turns
+        // out to have no session (expired), the condition drops to AuthView.
+        if auth.isAuthenticated || auth.isGuest || (auth.isLoading && AuthService.hadPersistedSession) {
             RootTabView()
                 // First-run onboarding (ports the web WelcomeModal): shown once
                 // when a new account hasn't onboarded yet.
@@ -24,6 +26,10 @@ struct ContentView: View {
                     set: { _ in })) {
                     WelcomeView()
                 }
+        } else if auth.isLoading {
+            LoadingSkeleton()
+        } else {
+            AuthView(showsCloseButton: false)
         }
     }
 }

@@ -207,6 +207,7 @@ final class AuthService: ObservableObject {
         profile = nil
         isAuthenticated = false
         isGuest = false
+        AuthService.hadPersistedSession = false
     }
 
     /// Permanently delete the account. The native client only holds the anon
@@ -284,8 +285,17 @@ final class AuthService: ObservableObject {
         await handleSignedIn(userId: userId)
     }
 
+    /// Persisted hint that the LAST run had a real session — lets ContentView
+    /// render the home immediately on the next launch (while the session quietly
+    /// restores) instead of flashing the loading skeleton. Cleared on sign-out.
+    static var hadPersistedSession: Bool {
+        get { UserDefaults.standard.bool(forKey: "wordocious.had-session") }
+        set { UserDefaults.standard.set(newValue, forKey: "wordocious.had-session") }
+    }
+
     private func handleSignedIn(userId: String) async {
         isAuthenticated = true
+        AuthService.hadPersistedSession = true
         isGuest = false  // a real session supersedes guest mode
         if let row = await fetchProfileRow(userId: userId) {
             if row.isBanned { await signOut(); return }

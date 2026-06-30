@@ -9,6 +9,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.wordocious.app.data.AuthService
@@ -42,13 +43,14 @@ class MainActivity : ComponentActivity() {
                     val isLoading by AuthService.isLoading.collectAsState()
                     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
                     val isGuest by AuthService.isGuest.collectAsState()
+                    // Render the home immediately on launch if the last run was
+                    // signed in (common case), while the session quietly restores —
+                    // no loading-spinner flash. Falls back to AuthScreen if the
+                    // restore reveals no session.
+                    val hadSession = remember { AuthService.hadPersistedSession() }
 
                     when {
-                        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = WTheme.primary)
-                        }
-                        !isAuthenticated && !isGuest -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
-                        else -> {
+                        isAuthenticated || isGuest || (isLoading && hadSession) -> {
                             val profile by AuthService.profile.collectAsState()
                             Box(Modifier.fillMaxSize()) {
                                 MainScreen()
@@ -58,6 +60,10 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                        isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = WTheme.primary)
+                        }
+                        else -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
                     }
                 }
             }
