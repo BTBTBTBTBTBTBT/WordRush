@@ -417,7 +417,12 @@ io.on('connection', (socket) => {
     playerState.status = GameStatus.ABANDONED;
     playerState.completedAt = Date.now();
 
-    endMatch(matchId);
+    // Pass forfeitBy so the REMAINING player is credited the win. Without it,
+    // endMatch derives the winner purely from board state — and since the
+    // abandoner is ABANDONED (not WON) and the opponent is still PLAYING (not
+    // WON), no win condition matches and winner stays null, so BOTH players
+    // recorded a loss. Mirrors the disconnect handler's endMatch(matchId, playerId).
+    endMatch(matchId, playerId);
   });
 
   socket.on('offer_rematch', () => {
