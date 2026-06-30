@@ -140,7 +140,12 @@ const guessLogByMatch = new Map<string, { p1: { boardIndex: number; guess: strin
 // Private-match lobbies keyed by invite_code. First arrival is parked
 // here; the second arrival with the same code pairs up with them
 // immediately, bypassing the public matchmaking queue.
-const privateLobbies = new Map<string, { entry: QueueEntry; expiresAt: number }>();
+// `presence` is the parker's stable per-user id (`u:<userId>`) from the
+// handshake. We dedupe lobbies by it — NOT by the per-socket playerId, which
+// changes on every reconnect — so a creator who reconnects (e.g. the iOS share
+// sheet briefly backgrounds the app) recognizes its OWN parked lobby instead of
+// pairing against itself.
+const privateLobbies = new Map<string, { entry: QueueEntry; expiresAt: number; presence?: string }>();
 const PRIVATE_LOBBY_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MATCH_COUNTDOWN = 3;
 const REMATCH_TIMEOUT = 30000;
@@ -168,14 +173,26 @@ io.on('connection', (socket) => {
     // Private match via invite: pair the two clients who arrive with the
     // same invite_code regardless of the public queue.
     if (inviteCode) {
-      // Purge any stale lobby the caller may have previously parked.
+      // Purge any stale lobby the caller may have previously parked — match by
+      // the STABLE presence id too, so a reconnect (new socket.id → new
+      // playerId) still clears its own old lobby instead of leaving a ghost it
+      // can then pair against.
       for (const [code, lobby] of privateLobbies) {
-        if (lobby.entry.player.id === playerId) privateLobbies.delete(code);
+        const sameUser = presenceId != null && lobby.presence === presenceId;
+        if (lobby.entry.player.id === playerId || sameUser) privateLobbies.delete(code);
         else if (lobby.expiresAt < Date.now()) privateLobbies.delete(code);
       }
 
       const existing = privateLobbies.get(inviteCode);
-      if (existing && existing.entry.player.id !== playerId) {
+      // Self-match guard: never pair a lobby with the same socket OR the same
+      // signed-in user. Before the presence check, a creator whose socket
+      // reconnected joined its own code under a new playerId and got matched
+      // against itself the instant it shared the code.
+      const isSelf = existing != null && (
+        existing.entry.player.id === playerId ||
+        (presenceId != null && existing.presence === presenceId)
+      );
+      if (existing && !isSelf) {
         privateLobbies.delete(inviteCode);
         const preferredSeed = existing.entry.dailySeed || dailySeed;
         createMatch(existing.entry.player, player, mode, preferredSeed);
@@ -183,6 +200,7 @@ io.on('connection', (socket) => {
         privateLobbies.set(inviteCode, {
           entry: { player, mode, joinedAt: Date.now(), dailySeed, inviteCode },
           expiresAt: Date.now() + PRIVATE_LOBBY_TTL_MS,
+          presence: presenceId,
         });
         socket.emit('queue_status', { position: 0, mode });
       }
