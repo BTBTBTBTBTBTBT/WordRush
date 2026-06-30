@@ -61,7 +61,7 @@ import com.wordocious.app.ui.theme.WTheme
 @Composable
 fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
     var tab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Daily", "All-Time")
+    val tabs = listOf("Daily", "All-Time", "You")
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         // (Shared AppHeader is above.) Page title per spec: RECORDS gradient.
@@ -106,17 +106,20 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
         }
 
         when (tab) {
-            0 -> DailyRecordsTab()
+            0 -> DailyRecordsTab(onOpenProfile)
             1 -> AllTimeTab(onOpenProfile)
+            2 -> YourRecordsTab()
         }
     }
 }
 
 @Composable
-private fun DailyRecordsTab() {
+private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     var selectedMode by remember { mutableStateOf("DUEL") }
     var playType by remember { mutableStateOf("solo") }
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
+    var playerCount by remember { mutableIntStateOf(0) }
+    var userRank by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
@@ -125,13 +128,38 @@ private fun DailyRecordsTab() {
     val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
     LaunchedEffect(selectedMode, playType, tick) {
         loading = true
+        userRank = null
         entries = LeaderboardService.fetchDailyLeaderboard(selectedMode, playType)
+        playerCount = LeaderboardService.playerCount(selectedMode)
+        if (userId != null) userRank = LeaderboardService.userRankAndTotal(userId, selectedMode, playType)
         loading = false
     }
 
     Column {
         ModePickerRow(selectedMode) { selectedMode = it }
         SoloVsToggle(playType) { playType = it }
+
+        // Player count + your rank/percentile (web/iOS parity — was missing on Android).
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(14.dp))
+                Text("$playerCount player${if (playerCount == 1) "" else "s"} today", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            }
+            Spacer(Modifier.weight(1f))
+            userRank?.let { (rank, total) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("Your rank:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("#$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+                    Text(
+                        if (total > 1) "of $total · top ${maxOf(1, Math.round(rank.toDouble() / total * 100).toInt())}%" else "of $total",
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    )
+                }
+            }
+        }
 
         if (loading) {
             // Web parity: animate-pulse skeleton rows, not a spinner.
@@ -151,7 +179,46 @@ private fun DailyRecordsTab() {
                     LeaderboardRow(rank = rank, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, playType = playType)
                     Spacer(Modifier.height(4.dp))
                 }
+                item { YesterdayPodium(selectedMode, playType, onOpenProfile) }
                 item { Spacer(Modifier.height(24.dp)) }
+            }
+        }
+    }
+}
+
+/** Yesterday's top-3 for the mode (collapsible). */
+@Composable
+private fun YesterdayPodium(mode: String, playType: String, onOpenProfile: (String) -> Unit) {
+    var top3 by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
+    var open by remember { mutableStateOf(false) }
+    val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(mode)) }.getOrDefault(WTheme.primary)
+    val medalColors = listOf(Color(0xFFD97706), Color(0xFF9CA3AF), Color(0xFFB45309))
+    LaunchedEffect(mode, playType) { top3 = LeaderboardService.fetchYesterdayWinners(mode, playType) }
+    if (top3.isEmpty()) return
+    Column(
+        Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(16.dp))
+            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(14.dp))
+            Spacer(Modifier.size(5.dp))
+            Text("YESTERDAY'S PODIUM", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, letterSpacing = 0.5.sp)
+            Spacer(Modifier.weight(1f))
+            Text(if (open) "▲" else "▼", fontSize = 10.sp, color = WTheme.textMuted)
+        }
+        if (open) {
+            top3.forEachIndexed { i, e ->
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Filled.EmojiEvents, null, tint = medalColors[minOf(i, 2)], modifier = Modifier.size(18.dp))
+                    Text(e.username ?: "", modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(e.userId) }, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
+                    Text("${e.compositeScore.toInt()}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = accent)
+                }
             }
         }
     }
@@ -296,6 +363,178 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+private val STREAK_MILESTONES = listOf(7, 30, 100)
+private fun recModeTitle(key: String) = MODE_OPTIONS.firstOrNull { it.first == key }?.second ?: key
+private fun fmtSecs(v: Int) = if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s"
+
+/** "You" tab — the player's own records: milestone progress, sweep totals,
+ *  per-mode personal bests, medals + global-records-held. Mirrors web YourRecordsView. */
+@Composable
+private fun YourRecordsTab() {
+    val profile by AuthService.profile.collectAsState()
+    val userId = profile?.id
+    var stats by remember { mutableStateOf<List<com.wordocious.app.data.ProfileService.UserStat>>(emptyList()) }
+    var sweep by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.DailySweepStats()) }
+    var recordsHeld by remember { mutableIntStateOf(0) }
+    var closest by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var selectedMode by remember { mutableStateOf("DUEL") }
+    var loading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(userId) {
+        if (userId == null) { loading = false; return@LaunchedEffect }
+        val s = com.wordocious.app.data.ProfileService.fetchUserStats(userId)
+        sweep = com.wordocious.app.data.MatchStatsService.dailySweepStats()
+        val recs = LeaderboardService.fetchAllTimeRecords()
+        stats = s
+        recordsHeld = recs.count { it.holderId == userId }
+        var bestGap = Double.MAX_VALUE
+        var best: Pair<String, String>? = null
+        for (r in recs) {
+            if (r.holderId == userId || r.gameMode == null || r.playType != "solo") continue
+            val mine = s.find { it.gameMode == r.gameMode && it.playType == "solo" } ?: continue
+            val ft = mine.fastestTime ?: 0
+            val bs = mine.bestScore ?: 0.0
+            if (r.recordType == "fastest_win" && ft > 0 && ft.toDouble() > r.recordValue) {
+                val gap = ft - r.recordValue; if (gap < bestGap) { bestGap = gap; best = "${recModeTitle(r.gameMode!!)} fastest win" to "${gap.toInt()}s away" }
+            } else if (r.recordType == "fewest_guesses" && bs > 0 && bs > r.recordValue) {
+                val gap = bs - r.recordValue; if (gap < bestGap) { bestGap = gap; best = "${recModeTitle(r.gameMode!!)} fewest guesses" to "${gap.toInt()} away" }
+            }
+        }
+        closest = best
+        loading = false
+    }
+
+    if (userId == null) {
+        Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
+            Spacer(Modifier.height(8.dp)); Text("Sign in to see your personal records.", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+        return
+    }
+    if (loading) { Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { CardsSkeleton() }; return }
+
+    val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
+    val streak = profile?.dailyLoginStreak ?: 0
+    val nextMilestone = STREAK_MILESTONES.firstOrNull { it > streak }
+    val my = stats.find { it.gameMode == selectedMode && it.playType == "solo" }
+
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        item { Spacer(Modifier.height(8.dp)) }
+        // Milestone
+        if (nextMilestone != null || closest != null) item {
+            CardShell(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))) {
+                Text("NEXT UP", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                if (nextMilestone != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.size(4.dp))
+                        Text("$nextMilestone-day streak shield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+                        Spacer(Modifier.weight(1f))
+                        Text("$streak/$nextMilestone", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
+                        Box(Modifier.fillMaxWidth((streak.toFloat() / nextMilestone).coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(50)).background(Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24)))))
+                    }
+                }
+                closest?.let { (label, gap) ->
+                    Spacer(Modifier.height(8.dp))
+                    Text("You're $gap from the $label record", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+        // Sweep totals
+        if (sweep.hasData) item {
+            CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706)))) {
+                Text("DAILY SWEEPS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                Spacer(Modifier.height(4.dp))
+                Row(Modifier.fillMaxWidth()) {
+                    Box(Modifier.weight(1f)) { MeCell("${sweep.sweepCount}", "Daily Sweeps") }
+                    Box(Modifier.weight(1f)) { MeCell("${sweep.flawlessCount}", "Flawless Wins") }
+                }
+                Row(Modifier.fillMaxWidth()) {
+                    Box(Modifier.weight(1f)) { MeCell("${sweep.currentSweepStreak}", "Sweep Streak") }
+                    Box(Modifier.weight(1f)) { MeCell(if (sweep.bestSweepSecs > 0) fmtSecs(sweep.bestSweepSecs) else "—", "Best Sweep Time", dim = sweep.bestSweepSecs == 0) }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+        // Bests by mode
+        item {
+            Text("YOUR BESTS BY MODE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            Spacer(Modifier.height(8.dp))
+            ModePickerRow(selectedMode) { selectedMode = it }
+            Spacer(Modifier.height(8.dp))
+            CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f)))) {
+                Text(recModeTitle(selectedMode), fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Spacer(Modifier.height(2.dp))
+                Row(Modifier.fillMaxWidth()) {
+                    Box(Modifier.weight(1f)) { MeCell(if ((my?.fastestTime ?: 0) > 0) fmtSecs(my!!.fastestTime!!) else "—", "Fastest Win", dim = (my?.fastestTime ?: 0) == 0) }
+                    Box(Modifier.weight(1f)) { MeCell(if ((my?.bestScore ?: 0.0) > 0) "${my!!.bestScore!!.toInt()} guesses" else "—", "Fewest Guesses", dim = (my?.bestScore ?: 0.0) == 0.0) }
+                }
+                Row(Modifier.fillMaxWidth()) {
+                    Box(Modifier.weight(1f)) { MeCell(if (my != null) "${my.totalGames} games" else "—", "Games Played", dim = my == null) }
+                    Box(Modifier.weight(1f)) { MeCell(if (my != null) "${my.wins}–${my.losses}" else "—", "Win–Loss", dim = my == null) }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+        // Medals + records held
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                ) {
+                    Text("MEDALS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MedalCount(com.wordocious.app.R.drawable.ic_crown, Color(0xFFD97706), profile?.goldMedals ?: 0)
+                        MedalCount(com.wordocious.app.R.drawable.ic_crown, Color(0xFF9CA3AF), profile?.silverMedals ?: 0)
+                        MedalCount(com.wordocious.app.R.drawable.ic_crown, Color(0xFFB45309), profile?.bronzeMedals ?: 0)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text("Daily top-3 finishes", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                ) {
+                    Text("GLOBAL RECORDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                    Spacer(Modifier.height(2.dp))
+                    Text("★ $recordsHeld", fontSize = 24.sp, fontWeight = FontWeight.Black, color = if (recordsHeld == 0) WTheme.textMuted else Color(0xFFD97706))
+                    Text("all-time record${if (recordsHeld == 1) "" else "s"} held", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun CardShell(barBrush: Brush, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))) {
+        Box(Modifier.fillMaxWidth().height(3.dp).background(barBrush))
+        Column(Modifier.padding(14.dp), content = content)
+    }
+}
+
+@Composable
+private fun MeCell(value: String, label: String, dim: Boolean = false) {
+    Column(Modifier.padding(vertical = 6.dp)) {
+        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (dim) WTheme.textMuted else WTheme.text)
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+    }
+}
+
+@Composable
+private fun MedalCount(res: Int, tint: Color, n: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        Icon(androidx.compose.ui.res.painterResource(res), null, tint = tint, modifier = Modifier.size(14.dp))
+        Text("$n", fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
     }
 }
 
