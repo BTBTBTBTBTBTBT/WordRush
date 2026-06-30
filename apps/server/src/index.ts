@@ -133,6 +133,14 @@ httpServer.on('request', (req, res) => {
     }, null, 2));
     return;
   }
+  // TEMP diagnostic — recent VS match-event log (Sequence/Succession relay debug
+  // 2026-06-30). Ring buffer of the last 300 events so we can see exactly which
+  // submit_guess / board_solved / player_completed events reach the server.
+  if (req.url.startsWith('/debug/vslog')) {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ now: Date.now(), count: vsLog.length, events: vsLog }, null, 2));
+    return;
+  }
   // Unknown path — 404 cleanly rather than hanging.
   res.writeHead(404);
   res.end();
@@ -148,6 +156,15 @@ const submittedWordsByMatch = new Map<string, { p1: Set<string>; p2: Set<string>
 // Ordered per-player guess log (word + board) — revealed to the OPPONENT only
 // at match end so the result screen can show both final boards with letters.
 const guessLogByMatch = new Map<string, { p1: { boardIndex: number; guess: string }[]; p2: { boardIndex: number; guess: string }[] }>();
+
+// TEMP diagnostic ring buffer (Sequence/Succession VS relay debug 2026-06-30).
+// Records the last 300 VS match events so /debug/vslog can show exactly which
+// submit_guess / board_solved / player_completed events the server received.
+const vsLog: { t: number; ev: string; who: string | null; detail: Record<string, unknown> }[] = [];
+function logVS(ev: string, who: string | null, detail: Record<string, unknown>): void {
+  vsLog.push({ t: Date.now(), ev, who, detail });
+  if (vsLog.length > 300) vsLog.splice(0, vsLog.length - 300);
+}
 // Private-match lobbies keyed by invite_code. First arrival is parked
 // here; the second arrival with the same code pairs up with them
 // immediately, bypassing the public matchmaking queue.
@@ -257,12 +274,14 @@ io.on('connection', (socket) => {
   socket.on('submit_guess', ({ guess, boardIndex = 0 }) => {
     const matchId = playerToMatch.get(playerId);
     if (!matchId) {
+      logVS('submit_guess_REJECT', presenceId ?? socket.id, { guess, reason: 'not in a match' });
       socket.emit('error', { message: 'Not in a match' });
       return;
     }
 
     const match = matches.get(matchId);
     if (!match) {
+      logVS('submit_guess_REJECT', presenceId ?? socket.id, { guess, reason: 'match not found' });
       socket.emit('error', { message: 'Match not found' });
       return;
     }
@@ -299,6 +318,7 @@ io.on('connection', (socket) => {
     const history = submittedWordsByMatch.get(matchId);
     const playerHistory = history ? (isPlayer1 ? history.p1 : history.p2) : null;
     if (playerHistory?.has(dedupeKey)) {
+      logVS('submit_guess_REJECT', presenceId ?? socket.id, { guess, reason: 'already guessed' });
       socket.emit('guess_result', {
         boardIndex,
         isValid: false,
@@ -316,6 +336,7 @@ io.on('connection', (socket) => {
     const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
 
     if (playerState.status !== GameStatus.PLAYING) {
+      logVS('submit_guess_REJECT', presenceId ?? socket.id, { guess, reason: 'game already completed', status: playerState.status });
       socket.emit('error', { message: 'Game already completed' });
       return;
     }
@@ -330,6 +351,10 @@ io.on('connection', (socket) => {
     const isCorrect = normalizedGuess === normalizedSolution;
 
     playerState.guesses++;
+    logVS('submit_guess', presenceId ?? socket.id, {
+      mode: match.mode, guess, boardIndex, isCorrect,
+      guesses: playerState.guesses, status: playerState.status,
+    });
 
     socket.emit('guess_result', {
       boardIndex,
@@ -387,6 +412,9 @@ io.on('connection', (socket) => {
     const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
 
     playerState.boardsSolved++;
+    logVS('board_solved', presenceId ?? socket.id, {
+      mode: match.mode, boardIndex, boardsSolved: playerState.boardsSolved, totalBoards: playerState.totalBoards,
+    });
 
     io.to(opponentSocket).emit('opponent_progress', {
       attempts: playerState.guesses,
@@ -398,10 +426,10 @@ io.on('connection', (socket) => {
 
   socket.on('player_completed', ({ status, totalGuesses, timeMs }) => {
     const matchId = playerToMatch.get(playerId);
-    if (!matchId) return;
+    if (!matchId) { logVS('player_completed_DROP', presenceId ?? socket.id, { status, reason: 'no matchId mapping' }); return; }
 
     const match = matches.get(matchId);
-    if (!match) return;
+    if (!match) { logVS('player_completed_DROP', presenceId ?? socket.id, { status, reason: 'match not found' }); return; }
 
     const isPlayer1 = match.player1.id === playerId;
     const playerState = isPlayer1 ? match.player1State : match.player2State;
@@ -410,6 +438,10 @@ io.on('connection', (socket) => {
     playerState.status = status === 'won' ? GameStatus.WON : GameStatus.LOST;
     playerState.completedAt = Date.now();
     playerState.guesses = totalGuesses;
+    logVS('player_completed', presenceId ?? socket.id, {
+      mode: match.mode, status, totalGuesses, opponentStatus: opponentState.status,
+      willEnd: opponentState.status !== GameStatus.PLAYING,
+    });
 
     // Both players must be done (playerState was just set to WON/LOST above)
     if (opponentState.status !== GameStatus.PLAYING) {
@@ -445,6 +477,7 @@ io.on('connection', (socket) => {
 
     playerState.status = GameStatus.ABANDONED;
     playerState.completedAt = Date.now();
+    logVS('abandon_match', presenceId ?? socket.id, { mode: match.mode });
 
     // Pass forfeitBy so the REMAINING player is credited the win. Without it,
     // endMatch derives the winner purely from board state — and since the
@@ -547,6 +580,10 @@ io.on('connection', (socket) => {
         const isPlayer1 = match.player1.id === playerId;
         const playerState = isPlayer1 ? match.player1State : match.player2State;
         const opponentState = isPlayer1 ? match.player2State : match.player1State;
+        logVS('disconnect_midmatch', presenceId ?? socket.id, {
+          mode: match.mode, myStatus: playerState.status, oppStatus: opponentState.status,
+          myGuesses: playerState.guesses, myBoardsSolved: playerState.boardsSolved,
+        });
         // Mid-match disconnect = forfeit: end the match so the remaining player
         // gets a recorded WIN + result screen, instead of just `opponent_left`
         // (which booted them home with no stats logged). If both already
@@ -642,6 +679,12 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
 function endMatch(matchId: string, forfeitBy?: string): void {
   const match = matches.get(matchId);
   if (!match) return;
+  logVS('endMatch', forfeitBy ?? null, {
+    mode: match.mode,
+    p1Status: match.player1State.status, p2Status: match.player2State.status,
+    p1Boards: match.player1State.boardsSolved, p2Boards: match.player2State.boardsSolved,
+    forfeit: forfeitBy != null,
+  });
 
   const player1Time = match.player1State.completedAt ? match.player1State.completedAt - match.serverStartAt : Date.now() - match.serverStartAt;
   const player2Time = match.player2State.completedAt ? match.player2State.completedAt - match.serverStartAt : Date.now() - match.serverStartAt;
