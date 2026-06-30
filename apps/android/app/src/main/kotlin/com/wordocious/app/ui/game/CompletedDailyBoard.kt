@@ -223,9 +223,16 @@ fun CompletedDailyBoard(modeId: String) {
                     StatsRow(listOf("$guesses/$maxGuesses" to "Guesses", fmt(timeSeconds) to "Time"))
                 }
                 Spacer(Modifier.height(12.dp))
+                // Single-board near-miss credit from the reconstructed board (best
+                // green count, hint rows excluded). nil for multi-board (ignored).
+                val bestCorrect = if (totalBoards == 1) boards[0].guesses.fold(0) { best, gw ->
+                    if (boards[0].hintEvaluations?.containsKey(gw) == true) best
+                    else maxOf(best, com.wordocious.core.evaluateGuess(boards[0].solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
+                } else null
                 ScoreBreakdownCard(
                     mode = mode, won = won, guessCount = guesses, elapsedSeconds = timeSeconds,
                     boardsSolved = boardsSolved, totalBoards = totalBoards, hintsUsed = hints,
+                    bestCorrectLetters = bestCorrect,
                 )
             }
         }
@@ -380,6 +387,7 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
                 ScoreBreakdownCard(
                     mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = totalSecs,
                     boardsSolved = cumBoards, totalBoards = cumTotal, hintsUsed = 0,
+                    stagesCompleted = cleared,
                 )
             }
         }
@@ -443,6 +451,9 @@ private fun ProperNoundleCompletedDailyCard(
                 ScoreBreakdownCard(
                     mode = GameMode.PROPERNOUNDLE, won = won, guessCount = guessCount, elapsedSeconds = timeSeconds,
                     boardsSolved = if (won) 1 else 0, totalBoards = 1, hintsUsed = 0,
+                    bestCorrectLetters = guesses.fold(0) { best, gw ->
+                        maxOf(best, com.wordocious.core.ProperNoundle.evaluate(gw, puzzle.answer).count { it == com.wordocious.core.TileState.CORRECT })
+                    },
                 )
             }
         }

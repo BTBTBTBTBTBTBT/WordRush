@@ -70,7 +70,9 @@ struct GameScreen: View {
                             ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
                                                guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
                                                boardsSolved: vm.boards.filter { $0.status == .won }.count,
-                                               totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed)
+                                               totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
+                                               stagesCompleted: vm.stagesCompletedForScore,
+                                               bestCorrectLetters: vm.bestCorrectLettersForScore)
                             if vm.boardCount == 1 {
                                 DefinitionCard(solution: vm.boards[0].solution, showWord: false)
                             }

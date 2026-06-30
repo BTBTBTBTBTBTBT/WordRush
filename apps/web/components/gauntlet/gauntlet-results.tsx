@@ -74,6 +74,10 @@ export function GauntletResults({
       // count from the snapshot we capture at stage end instead of
       // falling back to 0, which misrepresented the run and showed
       // "0/4 boards" on a stage where the player actually beat 3.
+      // The leaderboard score mirrors this: a Gauntlet loss earns a
+      // stage-depth ladder for each fully-cleared stage plus a small
+      // per-board credit for boards solved in the failed stage
+      // (see computeScoreBreakdown in lib/daily-service.ts).
       const boardsSolved = result?.status === GameStatus.WON
         ? stage.boardCount
         : result?.boardsSnapshot?.filter(b => b.status === GameStatus.WON).length ?? 0;
@@ -182,6 +186,7 @@ export function GauntletResults({
             timeSeconds={Math.floor(totalTimeMs / 1000)}
             boardsSolved={cumulativeBoardsSolved}
             totalBoards={cumulativeTotalBoards}
+            stagesCompleted={stagesCompleted}
           />
         </div>
 

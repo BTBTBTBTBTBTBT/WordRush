@@ -316,6 +316,10 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
     hasRecordedRef.current = true;
     const timeMs = elapsedTime * 1000;
     const seed = mode === 'daily' ? generateDailySeed(getTodayLocal(), 'PROPERNOUNDLE') : undefined;
+    // Near-miss credit on a loss: most green tiles in any guess. Hint-revealed
+    // tiles are 'hint-used' (not 'correct'), so they don't inflate it.
+    const bestCorrectLetters = guesses.reduce(
+      (best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0);
     recordGameResult(
       profile.id,
       'PROPERNOUNDLE',
@@ -327,6 +331,8 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       gameStatus === 'won' ? 1 : 0,
       1,
       hintsUsed,
+      undefined,
+      bestCorrectLetters,
     ).then(xp => { if (xp) setXpResult(xp); });
     if (puzzle) {
       recordSoloMatch({
@@ -855,6 +861,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
                 boardsSolved={gameStatus === 'won' ? 1 : 0}
                 totalBoards={1}
                 hintsUsed={hintsUsed}
+                bestCorrectLetters={guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)}
               />
             </div>
           </div>

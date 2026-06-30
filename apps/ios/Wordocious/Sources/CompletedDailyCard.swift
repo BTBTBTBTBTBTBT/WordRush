@@ -92,7 +92,8 @@ struct CompletedDailyCard: View {
                                 GauntletCompletedView(progress: g, totalTimeMs: totalMs)
                                 // Score breakdown underneath, matching every other completed screen.
                                 ScoreBreakdownView(gameMode: "GAUNTLET", completed: won, guessCount: totalGuesses,
-                                                   timeSeconds: totalMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal)
+                                                   timeSeconds: totalMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal,
+                                                   stagesCompleted: g.stageResults.filter { $0.status == .won }.count)
                             }
                             .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         } else if mode != .gauntlet {
@@ -118,10 +119,27 @@ struct CompletedDailyCard: View {
                                     stat(timeString(d.timeSeconds), "TIME")
                                 }
                                 // Full score breakdown (same card as post-game) below the stats.
+                                // Single-board near-miss credit: recompute best green count from the
+                                // reconstructed guesses (position match works for Classic/Six/Seven and
+                                // ProperNoundle's normalized answer). nil for multi-board (ignored).
+                                let bestCorrect: Int? = {
+                                    guard boardCount == 1 else { return nil }
+                                    let solRaw = mode == .propernoundle
+                                        ? (ProperNoundle.dailyPuzzle().map { ProperNoundle.normalize($0.answer) } ?? "")
+                                        : (d.solutions.first ?? "")
+                                    let s = Array(solRaw.uppercased())
+                                    guard !s.isEmpty else { return 0 }
+                                    return d.guesses.reduce(0) { best, gw in
+                                        let raw = mode == .propernoundle ? ProperNoundle.normalize(gw) : gw
+                                        let g = Array(raw.uppercased())
+                                        return max(best, zip(g, s).filter { $0 == $1 }.count)
+                                    }
+                                }()
                                 ScoreBreakdownView(gameMode: mode.rawValue, completed: won,
                                                    guessCount: d.guessCount, timeSeconds: d.timeSeconds,
                                                    boardsSolved: won ? boardCount : 0, totalBoards: boardCount,
-                                                   hintsUsed: d.hintsUsed)
+                                                   hintsUsed: d.hintsUsed,
+                                                   bestCorrectLetters: bestCorrect)
                             }
                             .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         }

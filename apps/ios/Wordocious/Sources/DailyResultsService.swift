@@ -142,7 +142,9 @@ enum DailyResultsService {
         boardsSolved: Int,
         totalBoards: Int,
         hintsUsed: Int = 0,
-        seed: String? = nil
+        seed: String? = nil,
+        stagesCompleted: Int? = nil,
+        bestCorrectLetters: Int? = nil
     ) async -> Double? {
         guard DailyScoring.config[gameMode.rawValue] != nil else { return nil }
         // The puzzle's calendar day comes from the seed, NOT the finish time.
@@ -150,7 +152,8 @@ enum DailyResultsService {
         let composite = DailyScoring.compositeScore(
             gameMode: gameMode.rawValue, completed: completed, guessCount: guessCount,
             timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
-            hintsUsed: hintsUsed
+            hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
+            bestCorrectLetters: bestCorrectLetters
         )
         // Optimistic local update FIRST (before any network) so the home grid's
         // completed state flips the instant the game ends (web parity: the

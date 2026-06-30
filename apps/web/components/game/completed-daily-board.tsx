@@ -465,6 +465,7 @@ function GauntletCompletedCard({
           timeSeconds={Math.floor(totalTimeMs / 1000)}
           boardsSolved={cumulativeBoardsSolved}
           totalBoards={cumulativeTotalBoards}
+          stagesCompleted={stagesCleared}
         />
       </div>
     </CollapsibleCompletedCard>
@@ -674,6 +675,9 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     // Match the leaderboard row (recorded daily_results), not the local timer.
     const pnTime = recorded?.timeSeconds ?? (localValid ? pnSaved!.elapsedTime : 0);
     const pnGuesses = recorded?.guesses ?? pnGuessRows.length;
+    // Near-miss credit on a loss: most green tiles in any guess ('hint-used'
+    // tiles are not 'correct', so they don't inflate it).
+    const pnBestCorrect = pnGuessRows.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0);
 
     return (
       <CollapsibleCompletedCard
@@ -723,6 +727,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           boardsSolved={pnWon ? 1 : 0}
           totalBoards={1}
           hintsUsed={pnHints}
+          bestCorrectLetters={pnBestCorrect}
         />
       </CollapsibleCompletedCard>
     );
@@ -896,6 +901,10 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         boardsSolved={boardsSolved}
         totalBoards={totalBoards}
         hintsUsed={singleHints}
+        // Single-board near-miss credit on a loss: best green count from the
+        // reconstructed grid (empty / 0 for multi-board modes, which ignore it).
+        bestCorrectLetters={evaluations.reduce((best, e, i) =>
+          boards[0]?.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)}
       />
     </CollapsibleCompletedCard>
   );

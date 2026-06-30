@@ -136,6 +136,16 @@ final class GameViewModel: ObservableObject {
 
     var isGauntlet: Bool { mode == .gauntlet }
 
+    /// Loss-progress score inputs (web parity), shared by the record call and the
+    /// post-game ScoreBreakdownView so the displayed total matches the leaderboard.
+    var stagesCompletedForScore: Int? {
+        isGauntlet ? (state.gauntlet?.stageResults.filter { $0.status == .won }.count) : nil
+    }
+    var bestCorrectLettersForScore: Int? {
+        guard !isGauntlet, boardCount == 1 else { return nil }
+        return (evaluations.first ?? []).reduce(0) { max($0, $1.tiles.filter { $0.state == .correct }.count) }
+    }
+
     /// The currently-active Gauntlet stage config (nil outside Gauntlet). Drives
     /// per-stage behavior like `sequential` (the Succession stage).
     var currentGauntletStage: GauntletStageConfig? {
@@ -431,11 +441,16 @@ final class GameViewModel: ObservableObject {
             : state.boards.max(by: { $0.guesses.count < $1.guesses.count })?.guesses ?? []
         let solutionWords = state.boards.map(\.solution)
         let hintsCount = hintsUsed   // Six/Seven hint penalty (0 for non-hint modes)
+        // Loss-progress inputs (web parity) — see stagesCompletedForScore /
+        // bestCorrectLettersForScore. Both nil for the modes that ignore them.
+        let stagesCompletedCount = stagesCompletedForScore
+        let bestCorrect = bestCorrectLettersForScore
         Task {
             let xp = await GameResultsService.record(
                 gameMode: modeRaw, won: completed, guessCount: guesses,
                 timeSeconds: secs, boardsSolved: solved, totalBoards: total,
-                seed: theSeed, hintsUsed: hintsCount
+                seed: theSeed, hintsUsed: hintsCount,
+                stagesCompleted: stagesCompletedCount, bestCorrectLetters: bestCorrect
             )
             self.xpResult = xp
             await GameResultsService.recordSoloMatch(

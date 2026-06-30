@@ -33,6 +33,14 @@ object DailyScoring {
         "TOURNAMENT" to Config(6, 100, 300, 1),
     )
 
+    // Loss-credit tuning — identical to lib/daily-service.ts + DailyScoring.swift.
+    // GAUNTLET losses use a stage-depth ladder + per-board tiebreak; single-board
+    // losses use a near-miss credit per green letter. Other multi-board losses
+    // keep the proportional boards bonus.
+    private val GAUNTLET_STAGE_LADDER = intArrayOf(0, 25, 55, 95, 150) // index = stages fully cleared (0–4)
+    private val GAUNTLET_STAGE_BOARDS = intArrayOf(1, 4, 4, 4, 8)
+    private const val SINGLE_BOARD_GREEN_VALUE = 12
+
     data class Breakdown(
         val basePoints: Double, val guessBonus: Double, val timeBonus: Double,
         val completionBonus: Double, val hintPenalty: Double, val total: Double,
@@ -43,6 +51,10 @@ object DailyScoring {
     fun breakdown(
         gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Int,
         boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0,
+        // Loss-only progress inputs (optional — fall back to the legacy
+        // proportional boards bonus when omitted).
+        stagesCompleted: Int? = null,    // GAUNTLET: fully-cleared stage count
+        bestCorrectLetters: Int? = null, // single-board: best green-letter count
     ): Breakdown {
         val c = config[gameMode] ?: return Breakdown(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, false, 0, 0, 0, 0)
         val hasHints = c.hintCost != null
@@ -51,8 +63,20 @@ object DailyScoring {
         val guessBonus = if (completed && hasHints) (max(0, c.maxGuesses - guessCount) * c.guessWeight).toDouble() else 0.0
         // Time bonus = seconds under the cap (NOT divided — full credit per second).
         val timeBonus = if (completed) max(0, c.timeCap - timeSeconds).toDouble() else 0.0
-        // Completion bonus ALWAYS applies (single board solved → bs/tb = 1 → +200).
-        val completionBonus = (boardsSolved.toDouble() / max(1, totalBoards)) * 200.0
+        // Completion / progress bonus. Wins (and non-Gauntlet multi-board losses)
+        // use the proportional boards bonus; Gauntlet + single-board losses use
+        // the progress-aware credit.
+        val completionBonus: Double = when {
+            completed -> (boardsSolved.toDouble() / max(1, totalBoards)) * 200.0
+            gameMode == "GAUNTLET" -> {
+                val sc = (stagesCompleted ?: 0).coerceIn(0, GAUNTLET_STAGE_LADDER.size - 1)
+                val clearedBoards = GAUNTLET_STAGE_BOARDS.take(sc).sum()
+                val failedStageBoards = max(0, boardsSolved - clearedBoards)
+                (GAUNTLET_STAGE_LADDER[sc] + 6 * failedStageBoards).toDouble()
+            }
+            totalBoards == 1 -> (SINGLE_BOARD_GREEN_VALUE * max(0, bestCorrectLetters ?: 0)).toDouble()
+            else -> (boardsSolved.toDouble() / max(1, totalBoards)) * 200.0
+        }
         val hintPenalty = if (hasHints) (hintsUsed * (c.hintCost ?: 0)).toDouble() else 0.0
         val total = round(max(0.0, basePoints + guessBonus + timeBonus + completionBonus - hintPenalty) * 100) / 100
         return Breakdown(
@@ -64,5 +88,7 @@ object DailyScoring {
     fun compositeScore(
         gameMode: String, completed: Boolean, guessCount: Int, timeSeconds: Int,
         boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0,
-    ): Double = breakdown(gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed).total
+        stagesCompleted: Int? = null, bestCorrectLetters: Int? = null,
+    ): Double = breakdown(gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards,
+        hintsUsed, stagesCompleted, bestCorrectLetters).total
 }

@@ -83,6 +83,25 @@ fun PostGameScreen(
     val boardsSolved = state.boards.count { it.status == GameStatus.WON }
     val totalBoards = state.boards.size
     val multiBoard = totalBoards > 1
+    // Loss-credit breakdown inputs. Gauntlet: use the WHOLE-run cumulative
+    // boards/total + stages-cleared so the displayed total equals the recorded
+    // leaderboard score (state.boards holds only the final stage). Single-board:
+    // best green (correct-position) count across the player's own guesses (hint
+    // rows excluded).
+    val gauntletProgress = state.gauntlet?.takeIf { mode == GameMode.GAUNTLET }
+    val cardBoardsSolved = if (gauntletProgress != null) gauntletProgress.stageResults.sumOf { r ->
+        if (r.status == GameStatus.WON) (gauntletProgress.stages.getOrNull(r.stageIndex)?.boardCount ?: 0)
+        else (r.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0)
+    } else (if (won) boardsSolved else 0)
+    val cardTotalBoards = if (gauntletProgress != null) (gauntletProgress.stages.sumOf { it.boardCount }.takeIf { it > 0 } ?: 21) else totalBoards
+    val stagesCompleted = gauntletProgress?.stageResults?.count { it.status == GameStatus.WON }
+    val bestCorrectLetters = if (mode != GameMode.GAUNTLET && totalBoards == 1) {
+        val b0 = state.boards[0]
+        b0.guesses.fold(0) { best, gw ->
+            if (b0.hintEvaluations?.containsKey(gw) == true) best
+            else maxOf(best, com.wordocious.core.evaluateGuess(b0.solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
+        }
+    } else null
 
     // NOTE: the daily_results row is written exclusively by GameScreen's record
     // pipeline (GameResultsService.record → recordDailyResult) with run-correct
@@ -200,7 +219,8 @@ fun PostGameScreen(
 
             ScoreBreakdownCard(
                 mode = mode, won = won, guessCount = guessCount, elapsedSeconds = elapsedSeconds,
-                boardsSolved = if (won) boardsSolved else 0, totalBoards = totalBoards, hintsUsed = hintsUsed,
+                boardsSolved = cardBoardsSolved, totalBoards = cardTotalBoards, hintsUsed = hintsUsed,
+                stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
             )
 
             // Single-board modes: word definition (with "No definition" fallback).
@@ -333,8 +353,9 @@ private fun DailyRankBadge(mode: GameMode) {
 internal fun ScoreBreakdownCard(
     mode: GameMode, won: Boolean, guessCount: Int, elapsedSeconds: Int,
     boardsSolved: Int, totalBoards: Int, hintsUsed: Int,
+    stagesCompleted: Int? = null, bestCorrectLetters: Int? = null,
 ) {
-    val b = DailyScoring.breakdown(mode.name, won, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
+    val b = DailyScoring.breakdown(mode.name, won, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters)
     val guessesLeft = max(0, b.maxGuesses - guessCount)
     val timeUnder = max(0, b.timeCap - elapsedSeconds)
 
@@ -351,9 +372,18 @@ internal fun ScoreBreakdownCard(
         ScoreRow(if (won) "Win bonus" else "Did not finish", if (won) "" else "no win bonus", b.basePoints)
         if (won && b.hasHints) ScoreRow("Guess bonus", "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
         if (won) ScoreRow("Time bonus", "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
-        if (won && b.completionBonus > 0) ScoreRow(
-            "Completion bonus", if (totalBoards > 1) "$boardsSolved/$totalBoards boards" else "puzzle solved", b.completionBonus,
-        )
+        if (b.completionBonus > 0) {
+            val (compLabel, compDetail) = when {
+                won -> "Completion bonus" to (if (totalBoards > 1) "$boardsSolved/$totalBoards boards" else "puzzle solved")
+                mode == GameMode.GAUNTLET -> "Stage progress" to "${stagesCompleted ?: 0}/5 stages cleared"
+                totalBoards == 1 -> {
+                    val n = bestCorrectLetters ?: 0
+                    "Near miss" to "$n correct letter${if (n == 1) "" else "s"}"
+                }
+                else -> "Completion bonus" to "$boardsSolved/$totalBoards boards"
+            }
+            ScoreRow(compLabel, compDetail, b.completionBonus)
+        }
         if (b.hasHints) {
             val detail = if (hintsUsed > 0) "$hintsUsed hint${if (hintsUsed == 1) "" else "s"} × ${b.hintCost}" else "no hints — full credit"
             ScoreRow("Hint penalty", detail, -b.hintPenalty, pure = won && hintsUsed == 0)

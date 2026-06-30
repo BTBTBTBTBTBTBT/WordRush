@@ -155,11 +155,13 @@ object DailyResultsService {
          *  keyed to the seed's date — a game finished after midnight records on
          *  the day it was DEALT, not on tomorrow. Falls back to today's date. */
         seed: String? = null,
+        stagesCompleted: Int? = null,
+        bestCorrectLetters: Int? = null,
     ) {
         val userId = AuthService.userId ?: return
         val day = seed?.let { com.wordocious.core.getDailySeedDate(it) } ?: todayLocalDate()
         val gameModeStr = mode.name
-        val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
+        val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters)
         // Optimistic local update FIRST so the home card flips to completed the
         // instant the game ends (web 'daily-completion' event parity).
         DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds, score)
@@ -210,5 +212,7 @@ object DailyResultsService {
         boardsSolved: Int,
         totalBoards: Int,
         hintsUsed: Int,
-    ): Double = DailyScoring.compositeScore(gameMode, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed)
+        stagesCompleted: Int? = null,
+        bestCorrectLetters: Int? = null,
+    ): Double = DailyScoring.compositeScore(gameMode, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters)
 }

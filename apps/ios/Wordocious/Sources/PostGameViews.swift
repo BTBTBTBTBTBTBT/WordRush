@@ -160,11 +160,14 @@ struct ScoreBreakdownView: View {
     let boardsSolved: Int
     let totalBoards: Int
     var hintsUsed: Int = 0
+    var stagesCompleted: Int? = nil
+    var bestCorrectLetters: Int? = nil
 
     var body: some View {
         let b = DailyScoring.breakdown(gameMode: gameMode, completed: completed, guessCount: guessCount,
                                        timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
-                                       hintsUsed: hintsUsed)
+                                       hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
+                                       bestCorrectLetters: bestCorrectLetters)
         let guessesLeft = max(0, b.maxGuesses - guessCount)
         let timeUnder = max(0, b.timeCap - timeSeconds)
         return VStack(spacing: 2) {
@@ -177,9 +180,7 @@ struct ScoreBreakdownView: View {
             row(completed ? "Win bonus" : "Did not finish", completed ? "" : "no win bonus", b.basePoints)
             if completed && b.hasHints { row("Guess bonus", "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
             if completed { row("Time bonus", "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
-            if completed && b.completionBonus > 0 {
-                row("Completion bonus", totalBoards > 1 ? "\(boardsSolved)/\(totalBoards) boards" : "puzzle solved", b.completionBonus)
-            }
+            if b.completionBonus > 0 { completionRow(b.completionBonus) }
             if b.hasHints {
                 let detail = hintsUsed > 0 ? "\(hintsUsed) hint\(hintsUsed == 1 ? "" : "s") × \(Int(b.hintPenalty) / max(1, hintsUsed))" : "no hints — full credit"
                 row("Hint penalty", detail, -b.hintPenalty, pure: completed && hintsUsed == 0)
@@ -189,6 +190,28 @@ struct ScoreBreakdownView: View {
         .frame(maxWidth: 400)
         .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1))
+    }
+
+    /// Completion / progress row — relabels on a loss (Gauntlet stage progress,
+    /// single-board near-miss) to match the new loss-credit scoring.
+    private func completionRow(_ bonus: Double) -> some View {
+        let label: String
+        let detail: String
+        if completed {
+            label = "Completion bonus"
+            detail = totalBoards > 1 ? "\(boardsSolved)/\(totalBoards) boards" : "puzzle solved"
+        } else if gameMode == "GAUNTLET" {
+            label = "Stage progress"
+            detail = "\(stagesCompleted ?? 0)/5 stages cleared"
+        } else if totalBoards == 1 {
+            let n = bestCorrectLetters ?? 0
+            label = "Near miss"
+            detail = "\(n) correct letter\(n == 1 ? "" : "s")"
+        } else {
+            label = "Completion bonus"
+            detail = "\(boardsSolved)/\(totalBoards) boards"
+        }
+        return row(label, detail, bonus)
     }
 
     private func row(_ label: String, _ detail: String, _ value: Double, pure: Bool = false) -> some View {

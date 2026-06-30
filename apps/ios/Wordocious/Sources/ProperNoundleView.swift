@@ -269,10 +269,14 @@ final class ProperNoundleVM: ObservableObject {
         let won = status == .won, secs = elapsed, gc = guesses.count, used = hintsUsed
         let answer = puzzle.map { ProperNoundle.normalize($0.answer) } ?? ""
         let guessWords = guesses.map { $0.word }
+        // Near-miss credit on a loss: best green count in any guess (.hintUsed
+        // tiles are not .correct, so they don't inflate it).
+        let bestCorrect = guesses.reduce(0) { max($0, $1.tiles.filter { $0 == .correct }.count) }
         Task {
             let xp = await GameResultsService.record(gameMode: .propernoundle, won: won, guessCount: gc,
                                                      timeSeconds: secs, boardsSolved: won ? 1 : 0, totalBoards: 1,
-                                                     seed: seed, hintsUsed: used)
+                                                     seed: seed, hintsUsed: used,
+                                                     bestCorrectLetters: bestCorrect)
             await MainActor.run { self.xpResult = xp }   // post-game XP toast (web parity)
             // Match-history row (powers charts + the pure_proper hintless ladder).
             await GameResultsService.recordSoloMatch(gameMode: .propernoundle, won: won, score: gc,
@@ -460,7 +464,8 @@ struct ProperNoundleView: View {
             DailyRankBadge(gameMode: .propernoundle)
             ScoreBreakdownView(gameMode: GameMode.propernoundle.rawValue, completed: vm.status == .won,
                                guessCount: vm.guesses.count, timeSeconds: secs,
-                               boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed)
+                               boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,
+                               bestCorrectLetters: vm.guesses.reduce(0) { max($0, $1.tiles.filter { $0 == .correct }.count) })
         }
         .padding(.vertical, 12)
         .task { await vm.loadWikiImage(); await vm.loadResultClue() }

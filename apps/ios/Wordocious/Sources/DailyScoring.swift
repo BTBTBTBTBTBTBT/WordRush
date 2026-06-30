@@ -25,6 +25,14 @@ enum DailyScoring {
         "DUEL_7":        Config(maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1, hintCost: 150),
     ]
 
+    // Loss-credit tuning — identical to lib/daily-service.ts. GAUNTLET losses
+    // use a stage-depth ladder + per-board tiebreak; single-board losses use a
+    // near-miss credit per green letter. Other multi-board losses keep the
+    // proportional boards bonus.
+    static let gauntletStageLadder = [0, 25, 55, 95, 150] // index = stages fully cleared (0–4)
+    static let gauntletStageBoards = [1, 4, 4, 4, 8]
+    static let singleBoardGreenValue = 12
+
     /// Full per-component breakdown — 1:1 with computeScoreBreakdown in
     /// lib/daily-service.ts. Drives both the leaderboard score and the
     /// post-game ScoreBreakdown card (so they can never drift).
@@ -37,7 +45,11 @@ enum DailyScoring {
 
     static func breakdown(
         gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Int,
-        boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0
+        boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0,
+        // Loss-only progress inputs (optional — fall back to the legacy
+        // proportional boards bonus when omitted).
+        stagesCompleted: Int? = nil,    // GAUNTLET: fully-cleared stage count
+        bestCorrectLetters: Int? = nil  // single-board: best green-letter count
     ) -> Breakdown {
         guard let c = config[gameMode] else {
             return Breakdown(basePoints: 0, guessBonus: 0, timeBonus: 0, completionBonus: 0,
@@ -50,7 +62,22 @@ enum DailyScoring {
         // ProperNoundle) — matches lib/daily-service.ts.
         let guessBonus = (completed && hasHints) ? Double(max(0, c.maxGuesses - guessCount) * c.guessWeight) : 0.0
         let timeBonus = completed ? Double(max(0, c.timeCap - timeSeconds)) : 0.0
-        let completionBonus = (Double(boardsSolved) / Double(max(1, totalBoards))) * 200.0
+        // Completion / progress bonus — wins (and non-Gauntlet multi-board
+        // losses) use the proportional boards bonus; Gauntlet + single-board
+        // losses use the progress-aware credit.
+        let completionBonus: Double
+        if completed {
+            completionBonus = (Double(boardsSolved) / Double(max(1, totalBoards))) * 200.0
+        } else if gameMode == "GAUNTLET" {
+            let sc = max(0, min(gauntletStageLadder.count - 1, stagesCompleted ?? 0))
+            let clearedBoards = gauntletStageBoards.prefix(sc).reduce(0, +)
+            let failedStageBoards = max(0, boardsSolved - clearedBoards)
+            completionBonus = Double(gauntletStageLadder[sc] + 6 * failedStageBoards)
+        } else if totalBoards == 1 {
+            completionBonus = Double(singleBoardGreenValue * max(0, bestCorrectLetters ?? 0))
+        } else {
+            completionBonus = (Double(boardsSolved) / Double(max(1, totalBoards))) * 200.0
+        }
         let hintPenalty = hasHints ? Double(hintsUsed * (c.hintCost ?? 0)) : 0.0
         let total = ((max(0, basePoints + guessBonus + timeBonus + completionBonus - hintPenalty)) * 100).rounded() / 100
         return Breakdown(basePoints: basePoints, guessBonus: guessBonus, timeBonus: timeBonus,
@@ -61,10 +88,12 @@ enum DailyScoring {
 
     static func compositeScore(
         gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Int,
-        boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0
+        boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0,
+        stagesCompleted: Int? = nil, bestCorrectLetters: Int? = nil
     ) -> Double {
         breakdown(gameMode: gameMode, completed: completed, guessCount: guessCount,
                   timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
-                  hintsUsed: hintsUsed).total
+                  hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
+                  bestCorrectLetters: bestCorrectLetters).total
     }
 }

@@ -30,6 +30,17 @@ const MODE_SCORE_CONFIG: Record<string, ScoreConfig> = {
   DUEL_7:        { maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1, hintCost: 150 },
 };
 
+// Loss-credit tuning. A loss never approaches a win (wins are 1,200+); these
+// just let progress show through on the leaderboard among players who lost.
+//   • GAUNTLET: a depth ladder for each fully-cleared stage + a small per-board
+//     tiebreak for boards solved inside the failed stage.
+//   • Single-board modes (totalBoards === 1): a near-miss credit per green
+//     (correct-position) letter in the player's best guess.
+// Other multi-board losses keep the existing (boardsSolved / totalBoards) × 200.
+const GAUNTLET_STAGE_LADDER = [0, 25, 55, 95, 150]; // index = stages fully cleared (0–4)
+const GAUNTLET_STAGE_BOARDS = [1, 4, 4, 4, 8];      // boards per Gauntlet stage
+const SINGLE_BOARD_GREEN_VALUE = 12;                // points per green letter on a single-board loss
+
 export interface ScoreBreakdown {
   basePoints: number;
   guessBonus: number;
@@ -60,6 +71,11 @@ export function computeScoreBreakdown(
   boardsSolved: number,
   totalBoards: number,
   hintsUsed: number = 0,
+  // Loss-only progress inputs (optional — when omitted the loss falls back to
+  // the legacy (boardsSolved / totalBoards) × 200 so VS / replay / legacy
+  // callers never regress).
+  stagesCompleted?: number,    // GAUNTLET: count of fully-cleared stages
+  bestCorrectLetters?: number, // single-board: max green letters in any guess
 ): ScoreBreakdown {
   const config = MODE_SCORE_CONFIG[gameMode];
   if (!config) {
@@ -80,7 +96,22 @@ export function computeScoreBreakdown(
   const timeBonus = completed
     ? Math.max(0, config.timeCap - timeSeconds)
     : 0;
-  const completionBonus = (boardsSolved / Math.max(1, totalBoards)) * 200;
+  // Completion / progress bonus. Wins (and all non-Gauntlet multi-board losses)
+  // use the proportional boards bonus. Losses in Gauntlet and single-board modes
+  // use the new progress-aware credit.
+  let completionBonus: number;
+  if (completed) {
+    completionBonus = (boardsSolved / Math.max(1, totalBoards)) * 200;
+  } else if (gameMode === 'GAUNTLET') {
+    const sc = Math.max(0, Math.min(GAUNTLET_STAGE_LADDER.length - 1, stagesCompleted ?? 0));
+    const clearedBoards = GAUNTLET_STAGE_BOARDS.slice(0, sc).reduce((a, b) => a + b, 0);
+    const failedStageBoards = Math.max(0, boardsSolved - clearedBoards);
+    completionBonus = GAUNTLET_STAGE_LADDER[sc] + 6 * failedStageBoards;
+  } else if (totalBoards === 1) {
+    completionBonus = SINGLE_BOARD_GREEN_VALUE * Math.max(0, bestCorrectLetters ?? 0);
+  } else {
+    completionBonus = (boardsSolved / Math.max(1, totalBoards)) * 200;
+  }
   const hintPenalty = hasHints ? hintsUsed * (config.hintCost ?? 0) : 0;
   // Floor at 0 so a winning game with a heavy hint stack can't dip
   // negative on the leaderboard — the leaderboard sort still places
@@ -121,9 +152,12 @@ export function calculateCompositeScore(
   boardsSolved: number,
   totalBoards: number,
   hintsUsed: number = 0,
+  stagesCompleted?: number,
+  bestCorrectLetters?: number,
 ): number {
   return computeScoreBreakdown(
     gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
+    stagesCompleted, bestCorrectLetters,
   ).total;
 }
 
@@ -251,10 +285,13 @@ export async function recordDailyResult(
   totalBoards: number,
   hintsUsed: number = 0,
   day?: string,
+  stagesCompleted?: number,
+  bestCorrectLetters?: number,
 ) {
   const targetDay = day || getTodayLocal();
   const compositeScore = calculateCompositeScore(
     gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
+    stagesCompleted, bestCorrectLetters,
   );
 
   try {

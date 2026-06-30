@@ -434,6 +434,18 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 mode == GameMode.SEQUENCE -> state.boards.flatMap { it.guesses } // web shape: per-board concatenation (its replayer feeds first-PLAYING board)
                 else -> state.boards.maxByOrNull { it.guesses.size }?.guesses ?: emptyList() // longest board = full shared history
             }
+            // Loss-progress score inputs (web parity). Gauntlet: fully-cleared
+            // stage count drives the stage-depth ladder. Single-board: best green
+            // (correct-position) count across the player's OWN guesses (hint rows
+            // excluded so revealed letters don't inflate it).
+            val stagesCompleted = if (isGauntletRun) g!!.stageResults.count { it.status == GameStatus.WON } else null
+            val board0 = state.boards.firstOrNull()
+            val bestCorrectLetters = if (!isGauntletRun && runTotal == 1 && board0 != null) {
+                board0.guesses.fold(0) { best, gw ->
+                    if (board0.hintEvaluations?.containsKey(gw) == true) best
+                    else maxOf(best, com.wordocious.core.evaluateGuess(board0.solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
+                }
+            } else null
             xpResult = com.wordocious.app.data.GameResultsService.record(
                 gameMode = mode,
                 won = won,
@@ -446,6 +458,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     else state.boards.map { it.solution },
                 guesses = runGuessList,
                 hintsUsed = vm.hintsUsed,
+                stagesCompleted = stagesCompleted,
+                bestCorrectLetters = bestCorrectLetters,
             )
             // Persist the Gauntlet stage breakdown onto the just-inserted matches
             // row so the results screen renders cross-device (iOS/web parity).

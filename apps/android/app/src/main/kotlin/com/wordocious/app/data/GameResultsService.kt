@@ -363,6 +363,8 @@ object GameResultsService {
         guesses: List<String>,
         hintsUsed: Int = 0,
         playType: String = "solo",
+        stagesCompleted: Int? = null,
+        bestCorrectLetters: Int? = null,
     ): XpResult? {
         val userId = AuthService.userId ?: return null
         updateUserStats(userId, gameMode.name, playType, won, guessCount, timeSeconds)
@@ -381,6 +383,7 @@ object GameResultsService {
                 mode = gameMode, completed = won, guessCount = guessCount,
                 elapsedSeconds = timeSeconds, boardsSolved = boardsSolved,
                 totalBoards = totalBoards, hintsUsed = hintsUsed, seed = seed,
+                stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
             )
             val today = com.wordocious.app.todayLocalDate()
             MedalService.awardStreakMedals(userId, today)

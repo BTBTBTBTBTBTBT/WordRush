@@ -187,7 +187,14 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       // VictoryAnimation, and PostGameSummary at the moment of completion.
       const timeMs = elapsedTime * 1000;
       const guesses = currentBoard.guesses.length;
-      recordGameResult(profile.id, mode, 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed)
+      // Near-miss credit on a loss: the most green (correct-position) letters in
+      // any of the player's OWN guesses (hint rows excluded so revealed letters
+      // don't inflate it).
+      const bestCorrectLetters = evaluations.reduce((best, e, i) =>
+        currentBoard.hintEvaluations?.[i]
+          ? best
+          : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0);
+      recordGameResult(profile.id, mode, 'solo', state.status === GameStatus.WON, guesses, timeMs, gameSeed, state.status === GameStatus.WON ? 1 : 0, 1, hintsUsed, undefined, bestCorrectLetters)
         .then(xp => { if (xp) setXpResult(xp); });
       recordSoloMatch({
         userId: profile.id,
@@ -406,6 +413,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
                 boardsSolved={state.status === GameStatus.WON ? 1 : 0}
                 totalBoards={1}
                 hintsUsed={hintsUsed}
+                bestCorrectLetters={evaluations.reduce((best, e, i) =>
+                  currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)}
               />
               <PostGameSummary solution={currentBoard.solution} />
             </>

@@ -130,7 +130,8 @@ export function Landing() {
           </p>
           <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
             Multi-board modes apply each guess to every board at once, so you have to juggle several words in parallel.
-            Finish faster and in fewer guesses to score higher on the daily leaderboard.
+            Finish faster and in fewer guesses to score higher on the daily leaderboard — and even a loss banks partial
+            credit for how far you got, so getting close still counts.
           </p>
           <Link href="/how-to-play" className="inline-block text-sm font-extrabold pt-1" style={{ color: '#7c3aed' }}>
             Read the full guide →

@@ -53,6 +53,8 @@ interface PendingGameResultArgs {
   boardsSolved?: number;
   totalBoards?: number;
   hintsUsed: number;
+  stagesCompleted?: number;
+  bestCorrectLetters?: number;
 }
 
 interface PendingSoloMatchArgs {
@@ -188,6 +190,7 @@ export async function drainPendingRecords(userId: string): Promise<void> {
         userId, p.gameMode, 'solo', p.gameResult.won, p.gameResult.guessCount,
         p.gameResult.timeMs, p.seed, p.gameResult.boardsSolved,
         p.gameResult.totalBoards, p.gameResult.hintsUsed ?? 0,
+        p.gameResult.stagesCompleted, p.gameResult.bestCorrectLetters,
       );
     }
     if (p.soloMatch && !p.soloMatchDone) {
@@ -223,6 +226,9 @@ export async function recordGameResult(
   boardsSolved?: number,
   totalBoards?: number,
   hintsUsed: number = 0,
+  // Loss-only progress inputs forwarded to the composite-score calc.
+  stagesCompleted?: number,    // GAUNTLET: fully-cleared stage count
+  bestCorrectLetters?: number, // single-board: best green-letter count
 ): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
 
@@ -232,7 +238,7 @@ export async function recordGameResult(
   const trackPending = playType === 'solo' && !!seed && typeof window !== 'undefined';
   if (trackPending) {
     mergePendingRecord(userId, gameMode, seed!, {
-      gameResult: { won, guessCount, timeMs, boardsSolved, totalBoards, hintsUsed },
+      gameResult: { won, guessCount, timeMs, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters },
       gameResultDone: false,
     });
   }
@@ -373,6 +379,7 @@ export async function recordGameResult(
       // Day comes from the SEED, not the wall clock: a daily started 23:58
       // and finished 00:02 must land on the day its puzzle was issued for.
       getDailySeedDate(seed) ?? undefined,
+      stagesCompleted, bestCorrectLetters,
     );
     // Notify the DailyCompletionsProvider so the sweep banner updates
     // instantly when navigating back to the home screen.

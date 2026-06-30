@@ -10,6 +10,10 @@ interface ScoreBreakdownCardProps {
   boardsSolved: number;
   totalBoards: number;
   hintsUsed?: number;
+  /** GAUNTLET loss: stages fully cleared (drives the stage-depth ladder). */
+  stagesCompleted?: number;
+  /** Single-board loss: best green-letter count (drives near-miss credit). */
+  bestCorrectLetters?: number;
 }
 
 const fmtTime = (s: number) => {
@@ -30,9 +34,11 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
   const {
     gameMode, completed, guessCount, timeSeconds,
     boardsSolved, totalBoards, hintsUsed = 0,
+    stagesCompleted, bestCorrectLetters,
   } = props;
   const b = computeScoreBreakdown(
     gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
+    stagesCompleted, bestCorrectLetters,
   );
 
   const guessesLeft = Math.max(0, b.maxGuesses - guessCount);
@@ -75,10 +81,23 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
           value={b.timeBonus}
         />
       )}
-      {completed && b.completionBonus > 0 && (
+      {b.completionBonus > 0 && (
         <Row
-          label="Completion bonus"
-          detail={totalBoards > 1 ? `${boardsSolved}/${totalBoards} boards` : 'puzzle solved'}
+          label={
+            completed ? 'Completion bonus'
+            : gameMode === 'GAUNTLET' ? 'Stage progress'
+            : totalBoards > 1 ? 'Completion bonus'
+            : 'Near miss'
+          }
+          detail={
+            completed
+              ? (totalBoards > 1 ? `${boardsSolved}/${totalBoards} boards` : 'puzzle solved')
+              : gameMode === 'GAUNTLET'
+                ? `${stagesCompleted ?? 0}/5 stages cleared`
+                : totalBoards > 1
+                  ? `${boardsSolved}/${totalBoards} boards`
+                  : `${bestCorrectLetters ?? 0} correct letter${(bestCorrectLetters ?? 0) === 1 ? '' : 's'}`
+          }
           value={Math.round(b.completionBonus * 100) / 100}
         />
       )}

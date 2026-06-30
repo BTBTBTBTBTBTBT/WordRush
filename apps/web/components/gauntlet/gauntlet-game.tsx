@@ -213,7 +213,9 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
         return sum + snapshot.filter(b => b.status === GameStatus.WON).length;
       }, 0);
       const cumulativeTotalBoards = stageCfgs.reduce((sum, s) => sum + s.boardCount, 0) || 21;
-      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, cumulativeBoardsSolved, cumulativeTotalBoards).then(xp => { if (xp) setXpResult(xp); });
+      // Fully-cleared stage count drives the loss stage-depth ladder.
+      const stagesCompleted = (state.gauntlet?.stageResults ?? []).filter(r => r.status === GameStatus.WON).length;
+      recordGameResult(profile.id, 'GAUNTLET', 'solo', state.status === GameStatus.WON, totalGuesses, timeMs, seed, cumulativeBoardsSolved, cumulativeTotalBoards, 0, stagesCompleted).then(xp => { if (xp) setXpResult(xp); });
       recordSoloMatch({
         userId: profile.id,
         gameMode: 'GAUNTLET',

@@ -185,7 +185,9 @@ enum GameResultsService {
         boardsSolved: Int,
         totalBoards: Int,
         seed: String,
-        hintsUsed: Int = 0
+        hintsUsed: Int = 0,
+        stagesCompleted: Int? = nil,
+        bestCorrectLetters: Int? = nil
     ) async -> XpResult? {
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return nil }
@@ -208,7 +210,8 @@ enum GameResultsService {
             await DailyResultsService.record(
                 gameMode: gameMode, completed: won, guessCount: guessCount,
                 timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
-                hintsUsed: hintsUsed, seed: seed
+                hintsUsed: hintsUsed, seed: seed,
+                stagesCompleted: stagesCompleted, bestCorrectLetters: bestCorrectLetters
             )
             // Daily Sweep / Flawless bonus once all 9 dailies are in (web parity).
             // Kept SPLIT from dailyBonus so the toast shows distinct

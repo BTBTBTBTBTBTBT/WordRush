@@ -236,7 +236,8 @@ struct GauntletResultsView: View {
                 .modifier(RiseIn(appeared: appeared, delay: 0.4))
 
                 ScoreBreakdownView(gameMode: "GAUNTLET", completed: won, guessCount: totalGuesses,
-                                   timeSeconds: totalTimeMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal)
+                                   timeSeconds: totalTimeMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal,
+                                   stagesCompleted: cleared)
                     .modifier(RiseIn(appeared: appeared, delay: 0.5))
 
                 GauntletCompletedView(progress: progress, totalTimeMs: totalTimeMs, showSummary: false, showStageHeader: true)
