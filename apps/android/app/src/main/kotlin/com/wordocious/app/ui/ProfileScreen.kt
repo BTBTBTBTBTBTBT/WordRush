@@ -37,7 +37,9 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -188,7 +190,25 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         item { Spacer(Modifier.height(8.dp)) }
 
         // ── A. Header ─────────────────────────────────────────────
-        item { ProfileHeader(profile, onGoPro, onEditProfile) }
+        item {
+            ProfileHeader(profile, onGoPro, onEditProfile, onShare = {
+                profile?.let { pr ->
+                    val total = pr.totalWins + pr.totalLosses
+                    val achTotal = com.wordocious.app.data.AchievementCatalog.cached().size
+                    com.wordocious.app.data.ProfileShare.share(context, com.wordocious.app.data.ProfileShare.ProfileInput(
+                        username = pr.username ?: "Player",
+                        level = pr.level, tier = levelTier(pr.level).label,
+                        accent = ProfileAccent.color(pr.accentColor).toArgb(),
+                        totalWins = pr.totalWins,
+                        winRate = if (total > 0) Math.round(pr.totalWins * 100f / total) else 0,
+                        currentStreak = pr.currentStreak, dailyStreak = pr.dailyLoginStreak,
+                        gold = pr.goldMedals, silver = pr.silverMedals, bronze = pr.bronzeMedals,
+                        achievementsUnlocked = unlockedAchievements.size,
+                        achievementsTotal = if (achTotal > 0) achTotal else 72,
+                    ))
+                }
+            })
+        }
 
         // ── B. Today's Dailies ────────────────────────────────────
         item { TodaysDailies(todayDailies, onPlayDaily) }
@@ -352,7 +372,7 @@ private fun memberSince(createdAt: String?): String? {
 }
 
 @Composable
-private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}) {
+private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onShare: () -> Unit = {}) {
     val level = profile?.level ?: 1
     val xp = profile?.xp ?: 0
     val tier = levelTier(level)
@@ -432,15 +452,26 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
             Text("Member since $it", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
 
-        // Edit profile — pill (web EditProfileButton): surface-hover bg + pencil + "Edit profile".
-        Row(
-            modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                .clickableNoRipple(onEditProfile).padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(Icons.Filled.Edit, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
-            Text("Edit profile", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
+        // Edit profile + Share — pills (web EditProfileButton + Share).
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
+                    .clickableNoRipple(onEditProfile).padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(Icons.Filled.Edit, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
+                Text("Edit profile", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
+            }
+            Row(
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
+                    .clickableNoRipple(onShare).padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(Icons.Filled.Share, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
+                Text("Share", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
+            }
         }
 
         // Go Pro (non-Pro) + Simulate/Disable Pro (admin) — side by side (web `flex gap-2`).

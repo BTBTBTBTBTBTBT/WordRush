@@ -182,6 +182,49 @@ extension ShareService {
         #endif
     }
 
+    // MARK: - Profile stats share card (Wave B P4) ────────────────────────────
+
+    /// Render + share the profile stats card. Mirrors web lib/share-image.ts
+    /// drawProfileCard + the /s OG page m=Profile params.
+    @MainActor
+    static func shareProfile(_ input: ProfileShareInput) {
+        #if canImport(UIKit)
+        let card = ProfileShareCardView(input: input)
+        let renderer = ImageRenderer(content: card)
+        renderer.proposedSize = .init(card.size)
+        renderer.scale = 1
+        guard let image = renderer.uiImage, let png = image.pngData() else { return }
+        Task {
+            let url = await uploadProfileURL(png: png, input: input)
+            await MainActor.run {
+                var items: [Any] = [image]
+                if let url { items.append(url) }
+                present(items: items)
+            }
+        }
+        #endif
+    }
+
+    private static func uploadProfileURL(png: Data, input: ProfileShareInput) async -> URL? {
+        let client = AuthService.shared.client
+        guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
+        let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
+        let dateStr = f.string(from: Date())
+        let key = "\(uid)/Profile-\(dateStr)"
+        do {
+            try await client.storage.from("share-images").upload(
+                "\(key).png", data: png, options: FileOptions(contentType: "image/png", upsert: true))
+        } catch { return nil }
+        let q: [String: String] = [
+            "m": "Profile", "w": "1080", "h": "1080",
+            "v": "p\(input.totalWins)-\(input.currentStreak)-\(input.achievementsUnlocked)",
+        ]
+        var comps = URLComponents(string: "https://wordocious.com/s/\(key)")
+        comps?.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }
+        return comps?.url
+    }
+
     private static func uploadDailySweepURL(png: Data, totals: DailyTotals) async -> URL? {
         let client = AuthService.shared.client
         guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
@@ -207,5 +250,91 @@ extension ShareService {
         var comps = URLComponents(string: "https://wordocious.com/s/\(key)")
         comps?.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }
         return comps?.url
+    }
+}
+
+/// Payload for the profile stats share card.
+struct ProfileShareInput {
+    let username: String
+    let level: Int
+    let tier: String
+    let accentHex: UInt
+    let totalWins: Int
+    let winRate: Int
+    let currentStreak: Int
+    let dailyStreak: Int
+    let gold: Int
+    let silver: Int
+    let bronze: Int
+    let achievementsUnlocked: Int
+    let achievementsTotal: Int
+}
+
+/// 1080×1080 profile stats PNG matching web drawProfileCard (wordmark, accent
+/// username, Level·Tier, a 2×3 grid of stat tiles).
+struct ProfileShareCardView: View {
+    let input: ProfileShareInput
+    var size: CGSize { CGSize(width: 1080, height: 1080) }
+
+    private let bg = Color(hex: 0xF8F7FF)
+    private let textMuted = Color(hex: 0x6B7280)
+    private let textDark = Color(hex: 0x1A1A2E)
+    private var accent: Color { Color(hex: input.accentHex) }
+
+    private var tiles: [(String, String)] {
+        [
+            ("\(input.totalWins)", "Total Wins"),
+            ("\(input.winRate)%", "Win Rate"),
+            ("\(input.currentStreak)", "Win Streak"),
+            ("\(input.dailyStreak)", "Daily Streak"),
+            ("\(input.gold)·\(input.silver)·\(input.bronze)", "Medals G·S·B"),
+            ("\(input.achievementsUnlocked)/\(input.achievementsTotal)", "Achievements"),
+        ]
+    }
+
+    var body: some View {
+        ZStack {
+            bg
+            VStack(spacing: 0) {
+                Text("WORDOCIOUS")
+                    .font(.custom("Nunito", size: 50).weight(.black))
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
+                                                    startPoint: .leading, endPoint: .trailing))
+                    .padding(.top, 64)
+                Text(input.username)
+                    .font(.custom("Nunito", size: 76).weight(.black)).foregroundStyle(accent)
+                    .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 80).padding(.top, 18)
+                Text("Level \(input.level) · \(input.tier)")
+                    .font(.custom("Nunito", size: 30).weight(.bold)).foregroundStyle(textMuted)
+                    .padding(.top, 8)
+
+                Spacer(minLength: 40)
+                VStack(spacing: 24) {
+                    ForEach(0..<3, id: \.self) { r in
+                        HStack(spacing: 24) {
+                            statTile(tiles[r * 2].0, tiles[r * 2].1)
+                            statTile(tiles[r * 2 + 1].0, tiles[r * 2 + 1].1)
+                        }
+                    }
+                }
+                .padding(.horizontal, 80)
+                Spacer(minLength: 30)
+
+                Text("wordocious.com").font(.custom("Nunito", size: 24).weight(.bold))
+                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 48)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+
+    private func statTile(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 8) {
+            Text(value).font(.custom("Nunito", size: 60).weight(.black))
+                .foregroundStyle(accent).lineLimit(1).minimumScaleFactor(0.5)
+            Text(label).font(.custom("Nunito", size: 26).weight(.bold)).foregroundStyle(textMuted)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 40)
+        .background(RoundedRectangle(cornerRadius: 28).fill(.white))
+        .overlay(RoundedRectangle(cornerRadius: 28).stroke(Color(hex: 0xE5E7EB), lineWidth: 3))
     }
 }

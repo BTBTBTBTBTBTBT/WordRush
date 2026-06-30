@@ -284,6 +284,23 @@ struct ProfileTab: View {
             }
             .padding(.top, 2)
             .sheet(isPresented: $showEditProfile) { EditProfileView() }
+            Button {
+                let total = p.totalWins + p.totalLosses
+                ShareService.shareProfile(ProfileShareInput(
+                    username: p.username, level: p.level, tier: levelTier(p.level).label,
+                    accentHex: ProfileAccent.hex(p.accentColor),
+                    totalWins: p.totalWins,
+                    winRate: total > 0 ? Int((Double(p.totalWins) / Double(total) * 100).rounded()) : 0,
+                    currentStreak: p.currentStreak, dailyStreak: p.dailyLoginStreak,
+                    gold: p.goldMedals, silver: p.silverMedals, bronze: p.bronzeMedals,
+                    achievementsUnlocked: unlockedAchievements.count, achievementsTotal: achievementCatalog.all.count))
+            } label: {
+                Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
+                    .padding(.horizontal, 14).padding(.vertical, 6)
+                    .background(Capsule().fill(Theme.surfaceHover))
+                    .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+            }
+            .padding(.top, 2)
             socialLinksRow()
             if !auth.isProActive {
                 Button { showPro = true } label: {

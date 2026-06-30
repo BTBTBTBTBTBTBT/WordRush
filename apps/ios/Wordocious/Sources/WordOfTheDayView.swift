@@ -36,7 +36,14 @@ struct WordOfTheDayView: View {
             if fetchedDay != todayIndex {
                 let fresh = await fetch()
                 info = fresh
-                fetchedDay = todayIndex
+                // Only cache the day once we actually got a definition. If every
+                // dictionaryapi.dev lookup failed (transient network / 429 from the
+                // rapid burst), leave fetchedDay unset so the next foreground or day
+                // re-check retries — otherwise a momentary failure leaves the bare
+                // word (e.g. "Baton") definition-less until midnight.
+                if let def = fresh.definition, !def.isEmpty {
+                    fetchedDay = todayIndex
+                }
             }
         }
         // Tappable → the full Word of the Day archive (web parity: the card links

@@ -221,3 +221,125 @@ object DailySweepShare {
         "https://wordocious.com/s/$key?" + q.entries.joinToString("&") { "${it.key}=${android.net.Uri.encode(it.value)}" }
     }.getOrNull()
 }
+
+/** Profile stats share card (Wave B P4) — 1080² PNG matching web drawProfileCard:
+ *  wordmark, accent username, Level·Tier, a 2×3 grid of stat tiles. */
+object ProfileShare {
+    private const val S = 1080
+    private const val BG = 0xFFF8F7FF.toInt()
+    private const val TEXT_MUTED = 0xFF6B7280.toInt()
+    private const val FOOT = 0xFF9CA3AF.toInt()
+    private const val TILE_BORDER = 0xFFE5E7EB.toInt()
+
+    data class ProfileInput(
+        val username: String, val level: Int, val tier: String, val accent: Int,
+        val totalWins: Int, val winRate: Int, val currentStreak: Int, val dailyStreak: Int,
+        val gold: Int, val silver: Int, val bronze: Int,
+        val achievementsUnlocked: Int, val achievementsTotal: Int,
+    )
+
+    private fun nunito(context: Context, black: Boolean): Typeface {
+        val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
+        return Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
+    }
+
+    fun render(context: Context, input: ProfileInput): Bitmap {
+        val bmp = Bitmap.createBitmap(S, S, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = S / 2f
+
+        // Wordmark
+        p.typeface = black; p.isFakeBoldText = true; p.textSize = 50f
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 110f, p)
+        p.shader = null
+
+        // Username (accent)
+        p.textSize = 76f; p.color = input.accent
+        c.drawText(input.username, cx, 210f, p)
+
+        // Level · Tier
+        p.typeface = bold; p.textSize = 30f; p.color = TEXT_MUTED
+        c.drawText("Level ${input.level} · ${input.tier}", cx, 262f, p)
+
+        // 2×3 stat tiles
+        val tiles = listOf(
+            "${input.totalWins}" to "Total Wins",
+            "${input.winRate}%" to "Win Rate",
+            "${input.currentStreak}" to "Win Streak",
+            "${input.dailyStreak}" to "Daily Streak",
+            "${input.gold}·${input.silver}·${input.bronze}" to "Medals G·S·B",
+            "${input.achievementsUnlocked}/${input.achievementsTotal}" to "Achievements",
+        )
+        val padH = 80f; val gap = 24f
+        val tileW = (S - padH * 2 - gap) / 2
+        val areaTop = 340f; val areaBottom = (S - 90).toFloat()
+        val tileH = (areaBottom - areaTop - gap * 2) / 3
+        for (i in tiles.indices) {
+            val col = i % 2; val rowIdx = i / 2
+            val left = padH + col * (tileW + gap)
+            val top = areaTop + rowIdx * (tileH + gap)
+            val rect = RectF(left, top, left + tileW, top + tileH)
+            c.drawRoundRect(rect, 28f, 28f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE })
+            c.drawRoundRect(rect, 28f, 28f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; strokeWidth = 3f; color = TILE_BORDER
+            })
+            p.typeface = black; p.isFakeBoldText = true; p.textSize = 60f; p.color = input.accent
+            c.drawText(tiles[i].first, rect.centerX(), rect.centerY() + 6f, p)
+            p.typeface = bold; p.textSize = 26f; p.color = TEXT_MUTED
+            c.drawText(tiles[i].second, rect.centerX(), rect.centerY() + 56f, p)
+        }
+
+        // Footer
+        p.typeface = bold; p.isFakeBoldText = true; p.textSize = 24f; p.color = FOOT
+        c.drawText("wordocious.com", cx, S - 44f, p)
+        return bmp
+    }
+
+    fun share(context: Context, input: ProfileInput) {
+        val bitmap = render(context, input)
+        val text = "My Wordocious stats — Level ${input.level} ${input.tier}, ${input.totalWins} wins."
+        val uri = runCatching {
+            val dir = File(context.cacheDir, "share").apply { mkdirs() }
+            val file = File(dir, "wordocious-profile.png")
+            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        }.getOrNull()
+        if (uri == null) { ShareHelper.share(context, text); return }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val url = uploadUrl(bitmap, input)
+            val finalText = if (url != null) "$text\n$url" else text
+            withContext(Dispatchers.Main) {
+                runCatching {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(Intent.EXTRA_TEXT, finalText)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share your stats").apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+                }.onFailure { ShareHelper.share(context, finalText) }
+            }
+        }
+    }
+
+    private suspend fun uploadUrl(bitmap: Bitmap, input: ProfileInput): String? = runCatching {
+        val uid = AuthService.userId?.lowercase() ?: return null
+        val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        val key = "$uid/Profile-$dateStr"
+        val png = ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it); it.toByteArray() }
+        SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
+        val q = linkedMapOf(
+            "m" to "Profile", "w" to "1080", "h" to "1080",
+            "v" to "p${input.totalWins}-${input.currentStreak}-${input.achievementsUnlocked}",
+        )
+        "https://wordocious.com/s/$key?" + q.entries.joinToString("&") { "${it.key}=${android.net.Uri.encode(it.value)}" }
+    }.getOrNull()
+}
