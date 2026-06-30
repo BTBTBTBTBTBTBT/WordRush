@@ -18,6 +18,8 @@ struct ProfileTab: View {
     @State private var unlockedAchievements: Set<String> = []
     @StateObject private var achievementCatalog = AchievementCatalog.shared
     @State private var medals: [MedalRow] = []
+    @State private var showAllMedals = false
+    @State private var gamesThisWeek = 0
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
     @State private var reloadToken = 0
@@ -58,7 +60,8 @@ struct ProfileTab: View {
                 if let uid = auth.profile?.id {
                     statRows = await UserStatsService.fetch(userId: uid)
                     unlockedAchievements = await AchievementService.fetchUnlocked(userId: uid)
-                    medals = await MedalsService.recent(userId: uid)
+                    medals = await MedalsService.recent(userId: uid, limit: 120)
+                    gamesThisWeek = await MatchStatsService.activityCalendar(days: 7).reduce(0) { $0 + $1.played }
                     socialLinks = await ProfileExtras.socialLinks(userId: uid)
                     recentMatches = await PublicProfileService.recentMatches(id: uid)
                     let oppIds = Array(Set(recentMatches.compactMap { $0.opponentId(uid) }))
@@ -101,6 +104,7 @@ struct ProfileTab: View {
                 header(p)
                 todaysDailies
                 globalSummary(p)
+                recapCard(p)
                 soloVsToggle
                 if activeTab == "vs" { vsRecordCard }
                 ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(filteredStats), selected: $selectedMode)
@@ -117,8 +121,8 @@ struct ProfileTab: View {
                     medalsSection(p)
                     ProStatsCard(statRows: statRows)
                 }
-                recentMatchesSection(p)
                 achievementsSection
+                recentMatchesSection(p)
             }
             .padding(.horizontal, 12).padding(.top, 8)
             // Generous bottom clearance so the last section always sits above the
@@ -503,7 +507,17 @@ struct ProfileTab: View {
                     medalCount("medal.fill", p.bronzeMedals, "Bronze", Color(hex: 0xB45309))
                 }
                 if !medals.isEmpty {
-                    VStack(spacing: 6) { ForEach(medals) { m in medalRow(m) } }
+                    if showAllMedals {
+                        ScrollView { VStack(spacing: 6) { ForEach(medals) { m in medalRow(m) } } }.frame(maxHeight: 320)
+                    } else {
+                        VStack(spacing: 6) { ForEach(Array(medals.prefix(5))) { m in medalRow(m) } }
+                    }
+                    if medals.count > 5 {
+                        Button { showAllMedals.toggle() } label: {
+                            Text(showAllMedals ? "Show less" : "View all \(medals.count) medals ›")
+                                .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
+                        }.buttonStyle(.plain).padding(.top, 2)
+                    }
                 }
             }
             .padding(12).frame(maxWidth: .infinity)
@@ -561,24 +575,106 @@ struct ProfileTab: View {
 
     // MARK: Achievements (collapsible grid)
 
-    private var achievementsSection: some View {
-        CollapsibleSection(title: "ACHIEVEMENTS", badge: "\(unlockedAchievements.count)/\(achievementCatalog.all.count)") {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                ForEach(achievementCatalog.all) { a in
-                    let on = unlockedAchievements.contains(a.key)
-                    VStack(spacing: 2) {
-                        Text(on ? "✓" : "?").font(Brand.font(18, .black)).foregroundStyle(on ? Theme.primary : Theme.textMuted)
-                        Text(a.name).font(Brand.font(10, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                        Text(a.description).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-                            .multilineTextAlignment(.center).lineLimit(3)
+    /// "This Week" recap hero card (web parity) — games this week, win streak,
+    /// XP to next, + a Pro upsell line for free users.
+    private func recapCard(_ p: Profile) -> some View {
+        let xpToNext = 1000 - (p.xp % 1000)
+        let cells: [(icon: String, value: String, label: String, color: UInt)] = [
+            ("bolt.fill", "\(gamesThisWeek)", "Games", 0x7C3AED),
+            ("flame.fill", "\(p.currentStreak)", "Win Streak", 0xF97316),
+            ("chart.line.uptrend.xyaxis", "\(xpToNext)", "XP to Lvl \(p.level + 1)", 0x2563EB),
+        ]
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 5) {
+                Image(systemName: "sparkles").font(.system(size: 13)).foregroundStyle(Color(hex: 0x7C3AED))
+                Text("THIS WEEK").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(Color(hex: 0x6D28D9))
+            }
+            HStack(spacing: 8) {
+                ForEach(0..<cells.count, id: \.self) { i in
+                    let c = cells[i]
+                    HStack(spacing: 6) {
+                        Image(systemName: c.icon).font(.system(size: 14)).foregroundStyle(Color(hex: c.color))
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(c.value).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
+                            Text(c.label).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+                        }
+                        Spacer(minLength: 0)
+                    }.frame(maxWidth: .infinity)
+                }
+            }
+            if !auth.isProActive {
+                Button { showPro = true } label: {
+                    HStack {
+                        Text("Unlock your full insights with Pro").font(Brand.font(11, .heavy))
+                        Spacer()
+                        Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold))
                     }
-                    .padding(10).frame(maxWidth: .infinity, minHeight: 84, alignment: .top)
-                    .background(RoundedRectangle(cornerRadius: 12).fill(on ? Color(hex: 0xF3F0FF) : Color(hex: 0xFAFAFA)))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(on ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
-                    .opacity(on ? 1 : 0.4)
+                    .foregroundStyle(Color(hex: 0x7C3AED))
+                    .padding(.top, 8)
+                    .overlay(alignment: .top) { Rectangle().fill(Color(hex: 0xE9D5FF)).frame(height: 1) }
+                }.buttonStyle(.plain)
+            }
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 16).fill(LinearGradient(colors: [Color(hex: 0xFAF5FF), Color(hex: 0xFCE7F3)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(hex: 0xE9D5FF), lineWidth: 1.5))
+    }
+
+    private let achCategories: [(key: String, label: String, color: UInt)] = [
+        ("beginner", "Getting Started", 0x7C3AED), ("consistency", "Consistency", 0xF97316),
+        ("skill", "Skill", 0x2563EB), ("social", "Social", 0x0D9488), ("collection", "Collection", 0xD97706),
+    ]
+
+    private var achievementsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("ACHIEVEMENTS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                Spacer()
+                Text("\(unlockedAchievements.count)/\(achievementCatalog.all.count)").font(Brand.font(10, .black)).foregroundStyle(Theme.primary)
+                    .padding(.horizontal, 8).padding(.vertical, 2).background(Capsule().fill(Color(hex: 0xF3F0FF)))
+            }
+            ForEach(achCategories, id: \.key) { cat in
+                let items = achievementCatalog.all.filter { $0.category == cat.key }
+                if !items.isEmpty {
+                    let n = items.filter { unlockedAchievements.contains($0.key) }.count
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Text(cat.label.uppercased()).font(Brand.font(11, .black)).tracking(0.4).foregroundStyle(Color(hex: cat.color))
+                            Text("\(n)/\(items.count)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        }
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                            ForEach(items) { achievementCell($0) }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    @ViewBuilder private func achievementCell(_ a: AchievementDef) -> some View {
+        let on = unlockedAchievements.contains(a.key)
+        let prog = on ? nil : achievementProgress(a.key)
+        VStack(spacing: 2) {
+            Text(on ? "✓" : "?").font(Brand.font(18, .black)).foregroundStyle(on ? Theme.primary : Theme.textMuted)
+            Text(a.name).font(Brand.font(10, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            Text(a.description).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center).lineLimit(2)
+            if let prog {
+                GeometryReader { g in ZStack(alignment: .leading) { Capsule().fill(Theme.border); Capsule().fill(Theme.primary).frame(width: g.size.width * min(1, Double(prog.c) / Double(prog.t))) } }.frame(height: 4).padding(.top, 1)
+                Text("\(prog.c)/\(prog.t)").font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
+            }
+        }
+        .padding(10).frame(maxWidth: .infinity, minHeight: 84, alignment: .top)
+        .background(RoundedRectangle(cornerRadius: 12).fill(on ? Color(hex: 0xF3F0FF) : Color(hex: 0xFAFAFA)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(on ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
+        .opacity(on ? 1 : (prog != nil ? 0.8 : 0.4))
+    }
+
+    private func achievementProgress(_ key: String) -> (c: Int, t: Int)? {
+        guard let p = auth.profile else { return nil }
+        let medalsTotal = p.goldMedals + p.silverMedals + p.bronzeMedals
+        let map: [String: (Int, Int)] = ["streak_7": (p.dailyLoginStreak, 7), "streak_30": (p.dailyLoginStreak, 30), "medal_10": (medalsTotal, 10), "medal_50": (medalsTotal, 50)]
+        if let m = map[key], m.0 < m.1 { return (m.0, m.1) }
+        return nil
     }
 
     // MARK: Solo/VS toggle + VS RECORD card (ports profile/page.tsx section D)
