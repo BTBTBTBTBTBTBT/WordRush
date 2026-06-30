@@ -72,6 +72,7 @@ enum AchievementService {
         if gameMode == "GAUNTLET" && won { await tryUnlock("gauntlet_master") }
         if gameMode == "DUEL" && won && guessCount <= 2 { await tryUnlock("no_sweat") }
         if won && timeSeconds < 15 { await tryUnlock("blitz") }
+        if won && timeSeconds < 10 { await tryUnlock("quick_draw") }
 
         // Close Call (win on final guess)
         let finalGuess = ["DUEL": 6, "DUEL_6": 7, "DUEL_7": 8, "PROPERNOUNDLE": 6, "QUORDLE": 9, "OCTORDLE": 13]
@@ -88,6 +89,7 @@ enum AchievementService {
             if won && p.current_streak >= 5 { await tryUnlock("unstoppable") }
             if won && (p.current_streak >= 25 || p.best_streak >= 25) { await tryUnlock("unbreakable") }
             if p.daily_login_streak >= 7 { await tryUnlock("streak_7") }
+            if p.daily_login_streak >= 14 { await tryUnlock("streak_14") }
             if p.daily_login_streak >= 30 { await tryUnlock("streak_30") }
             if p.daily_login_streak >= 50 { await tryUnlock("streak_master") }
             if p.daily_login_streak >= 365 { await tryUnlock("year_one") }
@@ -128,7 +130,9 @@ enum AchievementService {
             let vs = stats.filter { $0.play_type == "vs" }
             if playType == "vs" {
                 if vs.reduce(0, { $0 + $1.total_games }) >= 50 { await tryUnlock("rival") }
+                if vs.reduce(0, { $0 + $1.total_games }) >= 100 { await tryUnlock("vs_marathoner") }
                 if vs.reduce(0, { $0 + $1.wins }) >= 50 { await tryUnlock("dominant") }
+                if vs.reduce(0, { $0 + $1.wins }) >= 100 { await tryUnlock("vs_centurion") }
                 if vs.filter({ $0.wins > 0 }).count >= 5 { await tryUnlock("versatile_victor") }
             }
         }
@@ -151,6 +155,7 @@ enum AchievementService {
             let flawlessDays = bonuses.filter { $0.flawless_awarded }.map { $0.day }
             let flawlessCount = flawlessDays.count
             if flawlessCount >= 5 { await tryUnlock("flawless_5") }
+            if flawlessCount >= 10 { await tryUnlock("flawless_10") }
             if flawlessCount >= 25 { await tryUnlock("flawless_25") }
             let flawlessRun = consecutiveRun(flawlessDays)
             if flawlessRun >= 3 { await tryUnlock("flawless_streak") }
@@ -174,8 +179,10 @@ enum AchievementService {
         }
 
         // Lifetime daily_results counts.
-        if won && guessCount == 1 && !has("eagle_eye") {
-            if await count("daily_results", { $0.eq("user_id", value: userId).eq("guess_count", value: 1).eq("completed", value: true) }) >= 10 { await tryUnlock("eagle_eye") }
+        if won && guessCount == 1 && (!has("eagle_eye") || !has("sharpshooter")) {
+            let oneGuessWins = await count("daily_results", { $0.eq("user_id", value: userId).eq("guess_count", value: 1).eq("completed", value: true) })
+            if oneGuessWins >= 10 { await tryUnlock("eagle_eye") }
+            if oneGuessWins >= 25 { await tryUnlock("sharpshooter") }
         }
         if won && timeSeconds < 30 && !has("the_natural") {
             if await count("daily_results", { $0.eq("user_id", value: userId).eq("completed", value: true).lt("time_seconds", value: 30).gt("boards_solved", value: 0) }) >= 10 { await tryUnlock("the_natural") }

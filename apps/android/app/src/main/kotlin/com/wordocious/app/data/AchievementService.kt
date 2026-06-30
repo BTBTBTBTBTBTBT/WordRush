@@ -209,12 +209,13 @@ object AchievementService {
         }
 
         // Streak achievements
-        if ("streak_7" !in alreadyUnlocked || "streak_30" !in alreadyUnlocked) {
+        if ("streak_7" !in alreadyUnlocked || "streak_14" !in alreadyUnlocked || "streak_30" !in alreadyUnlocked) {
             val profile = client.postgrest["profiles"]
                 .select(Columns.raw("daily_login_streak")) { filter { eq("id", userId) }; limit(1) }
                 .decodeSingleOrNull<LoginStreakRow>()
             if (profile != null) {
                 if (profile.dailyLoginStreak >= 7) tryUnlock("streak_7")
+                if (profile.dailyLoginStreak >= 14) tryUnlock("streak_14")
                 if (profile.dailyLoginStreak >= 30) tryUnlock("streak_30")
             }
         }
@@ -349,7 +350,7 @@ object AchievementService {
         }
 
         // Rival (50 VS played) / Dominant (50 VS wins) / Versatile Victor (5 modes)
-        if (playType == "vs" && ("rival" !in alreadyUnlocked || "dominant" !in alreadyUnlocked || "versatile_victor" !in alreadyUnlocked)) {
+        if (playType == "vs" && ("rival" !in alreadyUnlocked || "dominant" !in alreadyUnlocked || "versatile_victor" !in alreadyUnlocked || "vs_marathoner" !in alreadyUnlocked || "vs_centurion" !in alreadyUnlocked)) {
             val vsStats = client.postgrest["user_stats"]
                 .select(Columns.raw("total_games, wins, game_mode")) {
                     filter { eq("user_id", userId); eq("play_type", "vs") }
@@ -358,7 +359,9 @@ object AchievementService {
             val totalGames = vsStats.sumOf { it.totalGames ?: 0 }
             val totalWins = vsStats.sumOf { it.wins ?: 0 }
             if (totalGames >= 50) tryUnlock("rival")
+            if (totalGames >= 100) tryUnlock("vs_marathoner")
             if (totalWins >= 50) tryUnlock("dominant")
+            if (totalWins >= 100) tryUnlock("vs_centurion")
             // Versatile Victor: won in 5+ different modes
             val modesWon = vsStats.count { (it.wins ?: 0) > 0 }
             if (modesWon >= 5) tryUnlock("versatile_victor")
@@ -376,6 +379,7 @@ object AchievementService {
 
         // Blitz (win any game in under 15 seconds)
         if (won && timeSeconds < 15) tryUnlock("blitz")
+        if (won && timeSeconds < 10) tryUnlock("quick_draw")
 
         // Close Call (win on final guess)
         if (won) {
@@ -387,7 +391,7 @@ object AchievementService {
         }
 
         // Eagle Eye (10 lifetime 1-guess wins)
-        if (won && guessCount == 1 && "eagle_eye" !in alreadyUnlocked) {
+        if (won && guessCount == 1 && ("eagle_eye" !in alreadyUnlocked || "sharpshooter" !in alreadyUnlocked)) {
             val count = client.postgrest["daily_results"]
                 .select(Columns.raw("id")) {
                     count(Count.EXACT); limit(1)
@@ -395,6 +399,7 @@ object AchievementService {
                 }
                 .countOrNull() ?: 0L
             if (count >= 10) tryUnlock("eagle_eye")
+            if (count >= 25) tryUnlock("sharpshooter")
         }
 
         // Extended Vocabulary (win both Six and Seven daily in same day)
@@ -436,7 +441,7 @@ object AchievementService {
         }
 
         // High Five (5 flawless) / Flawless 25 (25 flawless) — flawless-day count.
-        if ("flawless_5" !in alreadyUnlocked || "flawless_25" !in alreadyUnlocked) {
+        if ("flawless_5" !in alreadyUnlocked || "flawless_10" !in alreadyUnlocked || "flawless_25" !in alreadyUnlocked) {
             val flawlessCount = client.postgrest["daily_bonuses"]
                 .select(Columns.raw("id")) {
                     count(Count.EXACT); limit(1)
@@ -444,6 +449,7 @@ object AchievementService {
                 }
                 .countOrNull() ?: 0L
             if (flawlessCount >= 5) tryUnlock("flawless_5")
+            if (flawlessCount >= 10) tryUnlock("flawless_10")
             if (flawlessCount >= 25) tryUnlock("flawless_25")
         }
 

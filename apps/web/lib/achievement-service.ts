@@ -154,6 +154,19 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: 'flawless_streak_5', name: 'Flawless Streak 5', description: 'Achieve Flawless Victory 5 days in a row', category: 'skill', icon: 'trophy' },
   { key: 'sweep_streak_60', name: 'Sweep Streak 60', description: 'Complete the daily sweep 60 days in a row', category: 'consistency', icon: 'flame' },
   { key: 'flawless_speed', name: 'Flawless Blitz', description: 'Win all 9 dailies with total time under 18 minutes', category: 'skill', icon: 'zap' },
+
+  // ────────────────────────────────────────────────────────────
+  // Round-out additions (6) — fill each grouped column to a clean
+  // multiple of 3: consistency→21, skill→39, social→9. All
+  // non-duplicative of existing keys and cheaply detectable by
+  // extending the existing query blocks below.
+  // ────────────────────────────────────────────────────────────
+  { key: 'streak_14', name: 'Fortnight', description: 'Play 14 consecutive days', category: 'consistency', icon: 'flame' },
+  { key: 'flawless_10', name: 'Flawless Ten', description: 'Achieve Flawless Victory 10 times', category: 'consistency', icon: 'trophy' },
+  { key: 'quick_draw', name: 'Quick Draw', description: 'Win any game in under 10 seconds', category: 'skill', icon: 'zap' },
+  { key: 'sharpshooter', name: 'Sharpshooter', description: 'Solve 25 games in 1 guess lifetime', category: 'skill', icon: 'crown' },
+  { key: 'vs_centurion', name: 'VS Centurion', description: 'Win 100 VS matches', category: 'social', icon: 'trophy' },
+  { key: 'vs_marathoner', name: 'VS Marathoner', description: 'Play 100 VS matches', category: 'social', icon: 'swords' },
 ];
 
 // ============================================================
@@ -254,7 +267,7 @@ export async function checkAchievements(
   }
 
   // Streak achievements
-  if (!alreadyUnlocked.has('streak_7') || !alreadyUnlocked.has('streak_30')) {
+  if (!alreadyUnlocked.has('streak_7') || !alreadyUnlocked.has('streak_14') || !alreadyUnlocked.has('streak_30')) {
     const { data: profile } = await (supabase as any)
       .from('profiles')
       .select('daily_login_streak')
@@ -262,6 +275,7 @@ export async function checkAchievements(
       .single();
     if (profile) {
       if (profile.daily_login_streak >= 7) await tryUnlock('streak_7');
+      if (profile.daily_login_streak >= 14) await tryUnlock('streak_14');
       if (profile.daily_login_streak >= 30) await tryUnlock('streak_30');
     }
   }
@@ -426,7 +440,7 @@ export async function checkAchievements(
   }
 
   // Rival (50 VS matches played) / Dominant (50 VS wins) / Versatile Victor (5 modes)
-  if (playType === 'vs' && (!alreadyUnlocked.has('rival') || !alreadyUnlocked.has('dominant') || !alreadyUnlocked.has('versatile_victor'))) {
+  if (playType === 'vs' && (!alreadyUnlocked.has('rival') || !alreadyUnlocked.has('dominant') || !alreadyUnlocked.has('versatile_victor') || !alreadyUnlocked.has('vs_marathoner') || !alreadyUnlocked.has('vs_centurion'))) {
     const { data: vsStats } = await (supabase as any)
       .from('user_stats')
       .select('total_games, wins, game_mode')
@@ -436,7 +450,9 @@ export async function checkAchievements(
       const totalGames = vsStats.reduce((s: number, r: any) => s + (r.total_games || 0), 0);
       const totalWins = vsStats.reduce((s: number, r: any) => s + (r.wins || 0), 0);
       if (totalGames >= 50) await tryUnlock('rival');
+      if (totalGames >= 100) await tryUnlock('vs_marathoner');
       if (totalWins >= 50) await tryUnlock('dominant');
+      if (totalWins >= 100) await tryUnlock('vs_centurion');
       // Versatile Victor: won in 5+ different modes
       const modesWon = vsStats.filter((r: any) => (r.wins || 0) > 0).length;
       if (modesWon >= 5) await tryUnlock('versatile_victor');
@@ -457,9 +473,12 @@ export async function checkAchievements(
     }
   }
 
-  // Blitz (win any game in under 15 seconds)
+  // Blitz (win any game in under 15 seconds) / Quick Draw (under 10s)
   if (won && timeSeconds < 15) {
     await tryUnlock('blitz');
+  }
+  if (won && timeSeconds < 10) {
+    await tryUnlock('quick_draw');
   }
 
   // Close Call (win on final guess)
@@ -473,8 +492,8 @@ export async function checkAchievements(
     }
   }
 
-  // Eagle Eye (10 lifetime 1-guess wins)
-  if (won && guessCount === 1 && !alreadyUnlocked.has('eagle_eye')) {
+  // Eagle Eye (10 lifetime 1-guess wins) / Sharpshooter (25)
+  if (won && guessCount === 1 && (!alreadyUnlocked.has('eagle_eye') || !alreadyUnlocked.has('sharpshooter'))) {
     const { count } = await (supabase as any)
       .from('daily_results')
       .select('*', { count: 'exact', head: true })
@@ -482,6 +501,7 @@ export async function checkAchievements(
       .eq('guess_count', 1)
       .eq('completed', true);
     if ((count || 0) >= 10) await tryUnlock('eagle_eye');
+    if ((count || 0) >= 25) await tryUnlock('sharpshooter');
   }
 
   // Extended Vocabulary (win both Six and Seven daily in same day)
@@ -526,14 +546,15 @@ export async function checkAchievements(
     if ((sweepCount || 0) >= 100) await tryUnlock('centurion');
   }
 
-  // High Five (5 flawless) / Flawless 25 (25 flawless) — flawless-day count.
-  if (!alreadyUnlocked.has('flawless_5') || !alreadyUnlocked.has('flawless_25')) {
+  // High Five (5 flawless) / Flawless Ten (10) / Flawless 25 (25) — flawless-day count.
+  if (!alreadyUnlocked.has('flawless_5') || !alreadyUnlocked.has('flawless_10') || !alreadyUnlocked.has('flawless_25')) {
     const { count: flawlessCount } = await (supabase as any)
       .from('daily_bonuses')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('flawless_awarded', true);
     if ((flawlessCount || 0) >= 5) await tryUnlock('flawless_5');
+    if ((flawlessCount || 0) >= 10) await tryUnlock('flawless_10');
     if ((flawlessCount || 0) >= 25) await tryUnlock('flawless_25');
   }
 

@@ -1173,7 +1173,7 @@ struct RecordsTab: View {
                     case .you:     YourRecordsView()
                     }
                 }
-                .padding(.horizontal, 12).padding(.bottom, 16)
+                .padding(.horizontal, 12).padding(.bottom, 80)
             }
         }
     }
@@ -1650,15 +1650,16 @@ struct YourRecordsView: View {
     }
 
     private func meCell(_ icon: String, _ value: String, _ label: String, _ color: Color, dim: Bool = false) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(dim ? Theme.textMuted : color).frame(width: 16)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(value).font(Brand.font(15, .black)).foregroundStyle(dim ? Theme.textMuted : Theme.textPrimary)
-                Text(label).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-            }
-            Spacer(minLength: 0)
+        // Centered tile (mirrors the profile global-summary cards) so each cell
+        // sits balanced in its grid column instead of hugging the left edge.
+        VStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(dim ? Theme.textMuted : color)
+            Text(value).font(Brand.font(15, .black)).foregroundStyle(dim ? Theme.textMuted : Theme.textPrimary)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            Text(label).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                .multilineTextAlignment(.center).lineLimit(2)
         }
-        .padding(6)
+        .frame(maxWidth: .infinity).padding(.vertical, 10).padding(.horizontal, 4)
     }
 
     private func load() async {
