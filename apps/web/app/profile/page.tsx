@@ -44,7 +44,6 @@ import { GlobalSummaryRow } from '@/components/profile/global-summary-row';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
-import { CollapsibleSection } from '@/components/profile/collapsible-section';
 import type { Database } from '@/lib/database.types';
 
 type UserStats = Database['public']['Tables']['user_stats']['Row'];
@@ -469,6 +468,50 @@ export default function ProfilePage() {
           bestDailyStreak={(profile as any).best_daily_login_streak ?? 0}
         />
 
+        {/* ── C2. "This Week" recap hero ── */}
+        {(() => {
+          const gamesThisWeek = activity.reduce((s, a) => s + a.count, 0);
+          const xp = (profile as any).xp ?? 0;
+          const level = (profile as any).level ?? 1;
+          const xpToNext = 1000 - (xp % 1000);
+          const curStreak = (profile as any).current_streak ?? 0;
+          const cells: { icon: typeof Zap; value: string; label: string; color: string }[] = [
+            { icon: Zap, value: `${gamesThisWeek}`, label: 'Games', color: '#7c3aed' },
+            { icon: Flame, value: `${curStreak}`, label: 'Win Streak', color: '#f97316' },
+            { icon: TrendingUp, value: `${xpToNext}`, label: `XP to Lvl ${level + 1}`, color: '#2563eb' },
+          ];
+          return (
+            <div className="overflow-hidden" style={{ background: 'linear-gradient(135deg, #faf5ff, #fce7f3)', border: '1.5px solid #e9d5ff', borderRadius: '16px' }}>
+              <div className="px-4 py-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
+                  <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: '#6d28d9' }}>This Week</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {cells.map((c, i) => {
+                    const CIcon = c.icon;
+                    return (
+                      <div key={i} className="flex items-center gap-2">
+                        <CIcon className="w-4 h-4 shrink-0" style={{ color: c.color }} />
+                        <div className="min-w-0">
+                          <div className="text-base font-black leading-tight" style={{ color: 'var(--color-text)' }}>{c.value}</div>
+                          <div className="text-[9px] font-bold leading-tight truncate" style={{ color: 'var(--color-text-muted)' }}>{c.label}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {!isProActive && (
+                  <Link href="/pro" className="flex items-center justify-between mt-2.5 pt-2.5 text-[11px] font-extrabold" style={{ borderTop: '1px solid #e9d5ff', color: '#7c3aed' }}>
+                    <span>Unlock your full insights with Pro</span>
+                    <span>→</span>
+                  </Link>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── D. Solo/VS toggle + Mode Picker ── */}
         <div className="flex gap-2">
           {(['solo', 'vs'] as const).map((t) => (
@@ -686,6 +729,63 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* ── Achievements (grouped by category, expanded, moved above Recent Matches) ── */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="section-header">ACHIEVEMENTS</div>
+          <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: '#f3f0ff', color: '#7c3aed' }}>{userAchievements.size}/{ACHIEVEMENTS.length}</span>
+        </div>
+        <div className="space-y-3 mb-2">
+          {([
+            ['beginner', 'Getting Started', '#7c3aed'],
+            ['consistency', 'Consistency', '#f97316'],
+            ['skill', 'Skill', '#2563eb'],
+            ['social', 'Social', '#0d9488'],
+            ['collection', 'Collection', '#d97706'],
+          ] as const).map(([catKey, catLabel, catColor]) => {
+            const items = ACHIEVEMENTS.filter((a) => a.category === catKey);
+            if (items.length === 0) return null;
+            const unlockedN = items.filter((a) => userAchievements.has(a.key)).length;
+            const medals = ((profile as any).gold_medals || 0) + ((profile as any).silver_medals || 0) + ((profile as any).bronze_medals || 0);
+            // Progress hints for a few cheaply-derivable locked achievements.
+            const progressMap: Record<string, { c: number; t: number }> = {
+              streak_7: { c: profile.daily_login_streak || 0, t: 7 },
+              streak_30: { c: profile.daily_login_streak || 0, t: 30 },
+              medal_10: { c: medals, t: 10 },
+              medal_50: { c: medals, t: 50 },
+            };
+            return (
+              <div key={catKey}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: catColor }}>{catLabel}</span>
+                  <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{unlockedN}/{items.length}</span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {items.map((a) => {
+                    const isUnlocked = userAchievements.has(a.key);
+                    const prog = !isUnlocked ? progressMap[a.key] : undefined;
+                    const showProg = !!prog && prog.c < prog.t;
+                    return (
+                      <div key={a.key} className="text-center p-2.5" style={{ background: isUnlocked ? '#f3f0ff' : '#fafafa', border: isUnlocked ? '1.5px solid #c4b5fd' : '1.5px solid var(--color-border)', borderRadius: '12px', opacity: isUnlocked ? 1 : (showProg ? 0.8 : 0.4) }}>
+                        <div className="text-lg mb-0.5">{isUnlocked ? '✓' : '?'}</div>
+                        <div className="text-[10px] font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{a.name}</div>
+                        <div className="text-[9px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>{a.description}</div>
+                        {showProg && (
+                          <div className="mt-1">
+                            <div className="h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                              <div className="h-full rounded-full" style={{ width: `${Math.min(100, (prog!.c / prog!.t) * 100)}%`, background: '#7c3aed' }} />
+                            </div>
+                            <div className="text-[8px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{prog!.c}/{prog!.t}</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         {/* ── F. Recent Matches ── */}
         <div className="section-header mb-2">RECENT MATCHES</div>
         {loadingStats ? (
@@ -755,31 +855,6 @@ export default function ProfilePage() {
             })}
           </div>
         )}
-
-        {/* ── G. Achievements (collapsible, below recent games) ── */}
-        <CollapsibleSection title="ACHIEVEMENTS" badge={`${userAchievements.size}/${ACHIEVEMENTS.length}`}>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
-            {ACHIEVEMENTS.map((achievement) => {
-              const isUnlocked = userAchievements.has(achievement.key);
-              return (
-                <div
-                  key={achievement.key}
-                  className="text-center p-2.5 transition-all"
-                  style={{
-                    background: isUnlocked ? '#f3f0ff' : '#fafafa',
-                    border: isUnlocked ? '1.5px solid #c4b5fd' : '1.5px solid var(--color-border)',
-                    borderRadius: '12px',
-                    opacity: isUnlocked ? 1 : 0.4,
-                  }}
-                >
-                  <div className="text-lg mb-0.5">{isUnlocked ? '✓' : '?'}</div>
-                  <div className="text-[10px] font-extrabold truncate" style={{ color: 'var(--color-text)' }}>{achievement.name}</div>
-                  <div className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{achievement.description}</div>
-                </div>
-              );
-            })}
-          </div>
-        </CollapsibleSection>
 
       </div>
 
