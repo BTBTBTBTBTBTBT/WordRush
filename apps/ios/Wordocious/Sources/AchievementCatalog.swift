@@ -10,7 +10,7 @@ final class AchievementCatalog: ObservableObject {
     static let shared = AchievementCatalog()
 
     @Published private(set) var all: [AchievementDef] = []
-    private static let cacheKey = "achievements-catalog-v1"
+    private static let cacheKey = "achievements-catalog-v2"
     private var loaded = false
 
     struct Payload: Decodable { let achievements: [AchievementDef] }
@@ -20,7 +20,12 @@ final class AchievementCatalog: ObservableObject {
     func load() async {
         if loaded { return }
         guard let url = URL(string: "https://wordocious.com/api/achievements") else { return }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
+        // Bypass URLCache: the endpoint sends max-age=3600, so the default policy
+        // would keep serving a stale catalog for up to an hour after new
+        // achievements ship. Fetch fresh once per session.
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         loaded = true
         all = payload.achievements

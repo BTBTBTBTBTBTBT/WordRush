@@ -21,7 +21,7 @@ object AchievementCatalog {
     private val prefs by lazy {
         App.instance.getSharedPreferences("wordocious_prefs", Context.MODE_PRIVATE)
     }
-    private const val CACHE_KEY = "achievements-catalog-v1"
+    private const val CACHE_KEY = "achievements-catalog-v2"
 
     @Serializable
     private data class Payload(val achievements: List<AchievementService.AchievementDef> = emptyList())
@@ -38,7 +38,7 @@ object AchievementCatalog {
     suspend fun load(): List<AchievementService.AchievementDef> = withContext(Dispatchers.IO) {
         runCatching {
             val conn = (URL("https://wordocious.com/api/achievements").openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"; connectTimeout = 8000; readTimeout = 8000
+                requestMethod = "GET"; connectTimeout = 8000; readTimeout = 8000; useCaches = false
             }
             val result = if (conn.responseCode in 200..299) {
                 val body = conn.inputStream.bufferedReader().use { it.readText() }
