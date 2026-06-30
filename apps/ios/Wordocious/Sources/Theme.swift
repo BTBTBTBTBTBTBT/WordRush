@@ -102,12 +102,44 @@ enum Theme {
     }
 }
 
-/// Nunito typography. Registered via UIAppFonts (Nunito.ttf, a variable font
-/// covering ExtraLight→Black). Falls back to the system rounded font if the
-/// bundle font ever fails to load.
+/// Nunito typography. Registered via UIAppFonts (Nunito.ttf, a VARIABLE font
+/// whose default named instance is ExtraLight). SwiftUI's `.custom().weight()`
+/// does NOT reliably drive a variable font's `wght` axis — it rendered most
+/// "bold/black" text near ExtraLight, so the app looked far lighter than the web
+/// (true Nunito 900). We instead build a UIFont with the `wght` variation axis
+/// set explicitly so weights actually apply (matching the web's boldness).
 enum Brand {
+    /// Four-char code 'wght' as the variable-axis identifier.
+    private static let wghtAxisID = 0x77676874
+    private static var fontCache: [String: UIFont] = [:]
+
+    private static func numericWeight(_ w: Font.Weight) -> CGFloat {
+        switch w {
+        case .ultraLight: return 200
+        case .thin:       return 250
+        case .light:      return 300
+        case .medium:     return 500
+        case .semibold:   return 600
+        case .bold:       return 700
+        case .heavy:      return 800
+        case .black:      return 900
+        default:          return 400   // .regular and anything unmapped
+        }
+    }
+
     static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .custom("Nunito", size: size).weight(weight)
+        let wght = numericWeight(weight)
+        let key = "\(size)-\(Int(wght))"
+        if let cached = fontCache[key] { return Font(cached) }
+        guard let base = UIFont(name: "Nunito", size: size) else {
+            return .system(size: size, weight: weight, design: .rounded)
+        }
+        let desc = base.fontDescriptor.addingAttributes([
+            UIFontDescriptor.AttributeName(rawValue: "NSCTFontVariationAttribute"): [wghtAxisID: wght],
+        ])
+        let uiFont = UIFont(descriptor: desc, size: size)
+        fontCache[key] = uiFont
+        return Font(uiFont)
     }
     // Convenience matched to web usage
     static func wordmark(_ size: CGFloat = 20) -> Font { font(size, .black) }

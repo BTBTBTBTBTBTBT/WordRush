@@ -42,8 +42,8 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="flex items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-1.5">
+      <header className="flex items-center justify-between gap-2 px-4 py-3">
+        <Link href="/" className="flex items-center gap-1.5 min-w-0 shrink">
           <span
             className="text-xl font-black"
             style={{
@@ -59,7 +59,7 @@ export function AppHeader() {
           {isPro && <ProBadge size="sm" />}
         </Link>
 
-        <div className="flex items-center gap-2 relative">
+        <div className="flex items-center gap-2 relative shrink-0">
           {/* Help button — always visible */}
           <button
             onClick={() => setHelpOpen(true)}
