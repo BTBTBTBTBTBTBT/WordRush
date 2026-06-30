@@ -110,11 +110,33 @@ export interface ShareDailySweepInput {
   date?: Date;
 }
 
+/** Shareable profile / stats card (1080×1080). */
+export interface ShareProfileInput {
+  layout: 'profile';
+  /** 'Classic' — present only to satisfy callers that read `.mode`. */
+  mode: ShareMode;
+  username: string;
+  level: number;
+  tier: string;
+  accentHex: string;
+  totalWins: number;
+  winRate: number;
+  currentStreak: number;
+  dailyStreak: number;
+  gold: number;
+  silver: number;
+  bronze: number;
+  achievementsUnlocked: number;
+  achievementsTotal: number;
+  date?: Date;
+}
+
 export type ShareImageInput =
   | ShareSingleInput
   | ShareMultiInput
   | ShareGauntletInput
-  | ShareDailySweepInput;
+  | ShareDailySweepInput
+  | ShareProfileInput;
 
 /**
  * Short per-mode glyph drawn inside the accent badge on the all-dailies share
@@ -760,6 +782,74 @@ function drawSweepBadgeIcon(
   return drew;
 }
 
+function drawProfileCard(
+  ctx: CanvasRenderingContext2D,
+  input: ShareProfileInput,
+  width: number,
+): void {
+  const cx = width / 2;
+  const accent = input.accentHex;
+
+  // Wordmark
+  ctx.save();
+  ctx.font = '900 52px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const wm = ctx.createLinearGradient(cx - 200, 50, cx + 200, 100);
+  wm.addColorStop(0, WORDMARK_GRADIENT[0]);
+  wm.addColorStop(1, WORDMARK_GRADIENT[1]);
+  ctx.fillStyle = wm;
+  ctx.fillText('WORDOCIOUS', cx, 96);
+  ctx.restore();
+
+  // Username (accent)
+  ctx.font = '900 76px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = accent;
+  ctx.fillText(input.username, cx, 220);
+
+  // Level · tier
+  ctx.font = '700 30px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = TEXT_MUTED;
+  ctx.fillText(`Level ${input.level} · ${input.tier}`, cx, 270);
+
+  // Stat tiles (2 × 3)
+  const tiles: Array<{ v: string; l: string }> = [
+    { v: `${input.totalWins}`, l: 'Total Wins' },
+    { v: `${Math.round(input.winRate)}%`, l: 'Win Rate' },
+    { v: `${input.currentStreak}`, l: 'Win Streak' },
+    { v: `${input.dailyStreak}`, l: 'Daily Streak' },
+    { v: `${input.gold} · ${input.silver} · ${input.bronze}`, l: 'Medals (G·S·B)' },
+    { v: `${input.achievementsUnlocked}/${input.achievementsTotal}`, l: 'Achievements' },
+  ];
+  const padH = 80;
+  const gap = 24;
+  const tileW = (width - padH * 2 - gap) / 2;
+  const tileH = 150;
+  const top = 330;
+  tiles.forEach((t, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = padH + col * (tileW + gap);
+    const y = top + row * (tileH + gap);
+    drawRoundRect(ctx, x, y, tileW, tileH, 24);
+    ctx.fillStyle = accent + '14';
+    ctx.fill();
+    ctx.strokeStyle = accent + '40';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = '900 56px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#1A1A2E';
+    ctx.fillText(t.v, x + 28, y + 82);
+    ctx.font = '700 24px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_MUTED;
+    ctx.fillText(t.l, x + 28, y + 118);
+  });
+}
+
 function drawDailySweepCard(
   ctx: CanvasRenderingContext2D,
   input: ShareDailySweepInput,
@@ -893,6 +983,15 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   // The all-dailies card renders its own multi-mode header + rows + footer.
   if (input.layout === 'daily-sweep') {
     drawDailySweepCard(ctx, input, width, height);
+    drawFooter(ctx, width, height);
+    return new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
+    });
+  }
+
+  // The profile/stats card renders its own header + tiles + footer (1080²).
+  if (input.layout === 'profile') {
+    drawProfileCard(ctx, input, width);
     drawFooter(ctx, width, height);
     return new Promise<Blob | null>((resolve) => {
       canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);

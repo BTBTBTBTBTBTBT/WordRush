@@ -117,7 +117,7 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
     // days on distinct URLs so social scrapers never serve a stale image.
     // The all-dailies card is keyed by a synthetic mode so it never collides
     // with a single-mode share on the same day.
-    const keyMode = input.layout === 'daily-sweep' ? 'DailySweep' : input.mode;
+    const keyMode = input.layout === 'daily-sweep' ? 'DailySweep' : input.layout === 'profile' ? 'Profile' : input.mode;
     const key = `${user.id}/${keyMode}-${dateStr}`;
     const path = `${key}.png`;
 
@@ -137,6 +137,14 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
       params.set('w', '1080');
       params.set('h', '1350');
       params.set('v', `${input.flawless ? 'f' : 's'}${input.won}-${input.totalTimeSeconds}-${input.totalScore}`);
+      return `https://wordocious.com/s/${key}?${params.toString()}`;
+    }
+
+    if (input.layout === 'profile') {
+      params.set('m', 'Profile');
+      params.set('w', '1080');
+      params.set('h', '1080');
+      params.set('v', `p${input.totalWins}-${input.currentStreak}-${input.achievementsUnlocked}`);
       return `https://wordocious.com/s/${key}?${params.toString()}`;
     }
 

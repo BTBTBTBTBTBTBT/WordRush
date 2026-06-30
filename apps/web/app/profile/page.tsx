@@ -43,6 +43,7 @@ import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { GlobalSummaryRow } from '@/components/profile/global-summary-row';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
+import { shareResult } from '@/lib/share-utils';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import type { Database } from '@/lib/database.types';
 
@@ -344,7 +345,34 @@ export default function ProfilePage() {
             )}
           </div>
           <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
-          <EditProfileButton onClick={() => setEditOpen(true)} />
+          <div className="flex items-center gap-2">
+            <EditProfileButton onClick={() => setEditOpen(true)} />
+            <button
+              onClick={() => {
+                const tw = profile.total_wins, tl = profile.total_losses;
+                void shareResult({
+                  layout: 'profile', mode: 'Classic',
+                  username: profile.username || 'Player',
+                  level: (profile as any).level ?? 1,
+                  tier: levelTier.label,
+                  accentHex: resolveAccent((profile as any).accent_color),
+                  totalWins: tw,
+                  winRate: tw + tl > 0 ? Math.round((tw / (tw + tl)) * 100) : 0,
+                  currentStreak: (profile as any).current_streak ?? 0,
+                  dailyStreak: profile.daily_login_streak ?? 0,
+                  gold: (profile as any).gold_medals ?? 0,
+                  silver: (profile as any).silver_medals ?? 0,
+                  bronze: (profile as any).bronze_medals ?? 0,
+                  achievementsUnlocked: userAchievements.size,
+                  achievementsTotal: ACHIEVEMENTS.length,
+                });
+              }}
+              className="flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1.5 rounded-lg transition-colors"
+              style={{ background: 'var(--color-surface-hover)', color: 'var(--color-text-muted)', border: '1.5px solid var(--color-border)' }}
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Share
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             {!isProActive && (
               <Link href="/pro">
