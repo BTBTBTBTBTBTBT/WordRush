@@ -178,6 +178,18 @@ const PRIVATE_LOBBY_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const MATCH_COUNTDOWN = 3;
 const REMATCH_TIMEOUT = 30000;
 
+// Reconnect grace: a mid-match disconnect (phone call, notification, screen
+// lock — anything that backgrounds the app and drops the socket) does NOT
+// instantly forfeit. We hold the match open for this window and, if the same
+// signed-in player reconnects (same presence id in the handshake), re-bind their
+// new socket and resume. Only when the window expires does it become a forfeit.
+const RECONNECT_GRACE_MS = 60000;
+// Keyed by the stable presence id (`u:<userId>`) of a player who dropped
+// mid-match. Holds the match + the pending forfeit timer so a reconnect can
+// cancel it and re-attach. Anonymous players (no presence id) skip the grace
+// and forfeit immediately, as before.
+const pendingReconnects = new Map<string, { matchId: string; oldPlayerId: string; timer: ReturnType<typeof setTimeout> }>();
+
 io.on('connection', (socket) => {
   // Stash the presenceId from the handshake so /presence can dedupe
   // distinct sockets belonging to the same person. Not required — clients
@@ -194,6 +206,32 @@ io.on('connection', (socket) => {
     socketId: socket.id,
     rating: 1000
   };
+
+  // Reconnect-into-match: if this signed-in player dropped mid-match within the
+  // grace window, re-bind their NEW socket to the existing match and resume —
+  // instead of leaving the match stranded (and them forfeited). Socket.IO auto-
+  // reconnects with the same presence id in the handshake, so this fires
+  // automatically when the app returns to the foreground.
+  if (presenceId && pendingReconnects.has(presenceId)) {
+    const pending = pendingReconnects.get(presenceId)!;
+    clearTimeout(pending.timer);
+    pendingReconnects.delete(presenceId);
+    const match = matches.get(pending.matchId);
+    if (match) {
+      const isP1 = match.player1.id === pending.oldPlayerId;
+      const slot = isP1 ? match.player1 : match.player2;
+      const oppSocket = isP1 ? match.player2.socketId : match.player1.socketId;
+      // Re-point the match's player slot at the new socket, and re-key the
+      // playerId→match lookup so this socket's guesses resolve to the match.
+      playerToMatch.delete(pending.oldPlayerId);
+      slot.id = playerId;
+      slot.socketId = socket.id;
+      playerToMatch.set(playerId, pending.matchId);
+      logVS('reconnect', presenceId, { mode: match.mode, matchId: pending.matchId });
+      io.to(oppSocket).emit('opponent_reconnected', {});
+      socket.emit('match_resumed', { matchId: pending.matchId });
+    }
+  }
 
   socket.on('join_queue', ({ mode, dailySeed, inviteCode }) => {
     queue.removeFromQueue(playerId);
@@ -580,15 +618,46 @@ io.on('connection', (socket) => {
         const isPlayer1 = match.player1.id === playerId;
         const playerState = isPlayer1 ? match.player1State : match.player2State;
         const opponentState = isPlayer1 ? match.player2State : match.player1State;
+        const stillLive = playerState.status === GameStatus.PLAYING || opponentState.status === GameStatus.PLAYING;
         logVS('disconnect_midmatch', presenceId ?? socket.id, {
           mode: match.mode, myStatus: playerState.status, oppStatus: opponentState.status,
-          myGuesses: playerState.guesses, myBoardsSolved: playerState.boardsSolved,
+          myGuesses: playerState.guesses, myBoardsSolved: playerState.boardsSolved, stillLive,
         });
-        // Mid-match disconnect = forfeit: end the match so the remaining player
-        // gets a recorded WIN + result screen, instead of just `opponent_left`
-        // (which booted them home with no stats logged). If both already
-        // finished, the match has already ended via the normal path.
-        if (playerState.status === GameStatus.PLAYING || opponentState.status === GameStatus.PLAYING) {
+
+        // Signed-in player dropping a still-live match → GRACE, don't forfeit
+        // yet. Hold the match open; if they reconnect (same presence id) within
+        // the window we re-bind and resume. Only on timeout does it forfeit.
+        // Anonymous players (no presence id) can't be re-identified on reconnect,
+        // so they forfeit immediately as before.
+        if (stillLive && presenceId && playerState.status !== GameStatus.ABANDONED) {
+          io.to(isPlayer1 ? match.player2.socketId : match.player1.socketId).emit('opponent_disconnected', {});
+          const timer = setTimeout(() => {
+            pendingReconnects.delete(presenceId);
+            const m = matches.get(matchId);
+            if (!m) return;
+            const stillP1 = m.player1.id === playerId;
+            const pState = stillP1 ? m.player1State : m.player2State;
+            const oState = stillP1 ? m.player2State : m.player1State;
+            if (pState.status === GameStatus.PLAYING || oState.status === GameStatus.PLAYING) {
+              pState.status = GameStatus.ABANDONED;
+              pState.completedAt = pState.completedAt ?? Date.now();
+              logVS('reconnect_grace_expired', presenceId, { mode: m.mode, matchId });
+              endMatch(matchId, playerId);
+            }
+            playerToMatch.delete(m.player1.id);
+            playerToMatch.delete(m.player2.id);
+            matches.delete(matchId);
+            submittedWordsByMatch.delete(matchId);
+            guessLogByMatch.delete(matchId);
+          }, RECONNECT_GRACE_MS);
+          pendingReconnects.set(presenceId, { matchId, oldPlayerId: playerId, timer });
+          // Leave the match + lookups intact so the reconnect can re-bind. The
+          // disconnected socket's playerToMatch entry is harmless (its id is gone).
+          return;
+        }
+
+        // No grace (anonymous, or match already finished): forfeit/clean up now.
+        if (stillLive) {
           playerState.status = GameStatus.ABANDONED;
           playerState.completedAt = playerState.completedAt ?? Date.now();
           endMatch(matchId, playerId);

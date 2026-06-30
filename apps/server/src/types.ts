@@ -121,5 +121,11 @@ export interface ServerToClientEvents {
   rematch_declined: () => void;
   rematch_start: (data: { matchId: string; seed: string; puzzleMetadata?: any }) => void;
   opponent_left: () => void;
+  /** Opponent dropped mid-match but is within the reconnect grace window. */
+  opponent_disconnected: (data: Record<string, never>) => void;
+  /** A previously-disconnected opponent re-bound their socket and resumed. */
+  opponent_reconnected: (data: Record<string, never>) => void;
+  /** Sent to a reconnecting player whose match was held open and re-bound. */
+  match_resumed: (data: { matchId: string }) => void;
   error: (data: { message: string }) => void;
 }
