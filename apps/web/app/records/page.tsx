@@ -1,20 +1,23 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords } from 'lucide-react';
+import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
-import { RankDeltaBadge, saveRank } from '@/components/ui/rank-delta';
+import { RankDeltaBadge } from '@/components/ui/rank-delta';
+import { supabase } from '@/lib/supabase-client';
+import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import {
   fetchAllTimeRecords,
   fetchDailyLeaderboard,
   getDailyPlayerCount,
   getUserDailyRank,
   getTodayLocal,
+  getYesterdayLocal,
   type AllTimeRecord,
   type LeaderboardEntry,
 } from '@/lib/daily-service';
@@ -255,7 +258,10 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Your rank:</span>
                 <span className="font-black text-xs" style={{ color: '#d97706' }}>#{userRank.rank}</span>
                 <RankDeltaBadge mode={selectedMode} playType={playType} pageKey="records-daily" currentRank={userRank.rank} />
-                <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>of {userRank.totalPlayers}</span>
+                <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  of {userRank.totalPlayers}
+                  {userRank.totalPlayers > 1 && ` · top ${Math.max(1, Math.round((userRank.rank / userRank.totalPlayers) * 100))}%`}
+                </span>
               </div>
             )}
           </div>
@@ -324,7 +330,57 @@ function DailyRecordsView({ userId }: { userId?: string }) {
           </div>
         )}
       </div>
+
+      {/* Yesterday's podium */}
+      <YesterdayPodium mode={selectedMode} playType={playType} color={color} />
       </PullToRefresh>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   YESTERDAY'S PODIUM (collapsible)
+   ═══════════════════════════════════════════════════════ */
+function YesterdayPodium({ mode, playType, color }: { mode: string; playType: 'solo' | 'vs'; color: string }) {
+  const [top3, setTop3] = useState<LeaderboardEntry[]>([]);
+  const [open, setOpen] = useState(false);
+  const yesterday = getYesterdayLocal();
+
+  useEffect(() => {
+    let active = true;
+    fetchDailyLeaderboard(mode, playType, yesterday, 3).then((r) => { if (active) setTop3(r); });
+    return () => { active = false; };
+  }, [mode, playType, yesterday]);
+
+  if (top3.length === 0) return null;
+  const medalColor = ['#d97706', '#9ca3af', '#b45309'];
+
+  return (
+    <div
+      className="overflow-hidden mt-3"
+      style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+    >
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-4 py-2.5"
+      >
+        <div className="flex items-center gap-1.5">
+          <Crown className="w-3.5 h-3.5" style={{ color: '#d97706' }} />
+          <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--color-text)' }}>Yesterday&apos;s Podium</span>
+        </div>
+        <ChevronDown className="w-4 h-4 transition-transform" style={{ color: 'var(--color-text-muted)', transform: open ? 'rotate(180deg)' : 'none' }} />
+      </button>
+      {open && (
+        <div style={{ borderTop: '1px solid var(--color-border)' }}>
+          {top3.map((e, i) => (
+            <div key={e.user_id} className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: i < top3.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+              <Medal className="w-4 h-4 shrink-0" style={{ color: medalColor[i] }} />
+              <Link href={`/profile/${e.user_id}`} className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80" style={{ color: 'var(--color-text)' }}>{e.username}</Link>
+              <span className="font-black text-xs" style={{ color }}>{e.composite_score}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -501,11 +557,191 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   YOUR RECORDS VIEW
+   ═══════════════════════════════════════════════════════ */
+type UserStatRow = { game_mode: string; play_type: string; wins: number; losses: number; total_games: number; best_score: number | null; fastest_time: number | null };
+
+const STREAK_MILESTONES = [7, 30, 100];
+
+function MyStatCell({ icon: Icon, value, label, color, dim }: { icon: typeof Trophy; value: string; label: string; color: string; dim?: boolean }) {
+  return (
+    <div className="flex items-start gap-2.5 p-2">
+      <Icon className="w-4 h-4 shrink-0 mt-0.5" style={{ color: dim ? 'var(--color-text-muted)' : color }} />
+      <div className="min-w-0 flex-1">
+        <div className="font-black text-base leading-tight" style={{ color: dim ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{value}</div>
+        <div className="text-[10px] font-bold leading-tight mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function YourRecordsView({ userId }: { userId?: string }) {
+  const { profile } = useAuth();
+  const [stats, setStats] = useState<UserStatRow[]>([]);
+  const [sweep, setSweep] = useState<DailySweepStats | null>(null);
+  const [recordsHeld, setRecordsHeld] = useState<AllTimeRecord[]>([]);
+  const [closest, setClosest] = useState<{ label: string; gap: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedMode, setSelectedMode] = useState('DUEL');
+
+  useEffect(() => {
+    if (!userId) { setLoading(false); return; }
+    let active = true;
+    (async () => {
+      const [statsRes, sweepRes, recs] = await Promise.all([
+        supabase.from('user_stats').select('game_mode, play_type, wins, losses, total_games, best_score, fastest_time').eq('user_id', userId),
+        fetchDailySweepStats(userId),
+        fetchAllTimeRecords(),
+      ]);
+      if (!active) return;
+      const rows = (statsRes.data || []) as UserStatRow[];
+      setStats(rows);
+      setSweep(sweepRes);
+      setRecordsHeld(recs.filter((r) => r.holder_id === userId));
+
+      // Closest all-time record the player is near beating (lower-is-better
+      // types: fastest_win / fewest_guesses). Smallest positive gap wins.
+      let best: { label: string; gap: string } | null = null;
+      let bestGap = Infinity;
+      for (const r of recs) {
+        if (r.holder_id === userId || !r.game_mode || r.play_type !== 'solo') continue;
+        const mine = rows.find((s) => s.game_mode === r.game_mode && s.play_type === 'solo');
+        if (!mine) continue;
+        if (r.record_type === 'fastest_win' && mine.fastest_time && mine.fastest_time > r.record_value) {
+          const gap = mine.fastest_time - r.record_value;
+          if (gap < bestGap) { bestGap = gap; best = { label: `${getMode(r.game_mode).title} fastest win`, gap: `${gap}s away` }; }
+        } else if (r.record_type === 'fewest_guesses' && mine.best_score && mine.best_score > r.record_value) {
+          const gap = mine.best_score - r.record_value;
+          if (gap < bestGap) { bestGap = gap; best = { label: `${getMode(r.game_mode).title} fewest guesses`, gap: `${gap} away` }; }
+        }
+      }
+      setClosest(best);
+      setLoading(false);
+    })();
+    return () => { active = false; };
+  }, [userId]);
+
+  if (!userId) {
+    return (
+      <div className="animate-fade-in-up p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+        <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+        <p className="text-xs font-bold">Sign in to see your personal records.</p>
+      </div>
+    );
+  }
+  if (loading) return <div className="animate-fade-in-up"><AllTimeSkeleton /></div>;
+
+  const dailyStreak = profile?.daily_login_streak ?? 0;
+  const nextMilestone = STREAK_MILESTONES.find((m) => m > dailyStreak);
+  const mode = getMode(selectedMode);
+  const color = mode.accentColor;
+  const Icon = mode.icon;
+  const my = stats.find((s) => s.game_mode === selectedMode && s.play_type === 'solo');
+
+  const fmtRecord = (rt: string, v: number | null | undefined) =>
+    v == null || v === 0 ? '—' : RECORD_LABELS[rt].format(v);
+
+  return (
+    <div className="animate-fade-in-up space-y-5">
+      {/* Milestone progress */}
+      {(nextMilestone || closest) && (
+        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899)' }} />
+          <div className="px-4 pt-3 pb-4">
+            <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Next Up</div>
+            {nextMilestone && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-[11px] font-extrabold mb-1">
+                  <span className="flex items-center gap-1.5" style={{ color: 'var(--color-text)' }}><Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />{nextMilestone}-day streak shield</span>
+                  <span style={{ color: 'var(--color-text-muted)' }}>{dailyStreak}/{nextMilestone}</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, (dailyStreak / nextMilestone) * 100)}%`, background: 'linear-gradient(90deg, #f97316, #fbbf24)' }} />
+                </div>
+              </div>
+            )}
+            {closest && (
+              <div className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                <TrendingUp className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                <span>You&apos;re <b style={{ color: 'var(--color-text)' }}>{closest.gap}</b> from the {closest.label} record</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Sweep & Flawless */}
+      {sweep && (sweep.sweepCount > 0 || sweep.flawlessCount > 0) && (
+        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #fbbf24, #d97706)' }} />
+          <div className="px-4 pt-2 pb-3">
+            <div className="text-[10px] font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Daily Sweeps</div>
+            <div className="grid grid-cols-2 gap-1">
+              <MyStatCell icon={Sparkles} value={`${sweep.sweepCount}`} label="Daily Sweeps" color="#7c3aed" />
+              <MyStatCell icon={Trophy} value={`${sweep.flawlessCount}`} label="Flawless Victories" color="#d97706" />
+              <MyStatCell icon={Flame} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
+              <MyStatCell icon={Clock} value={sweep.bestSweepSecs ? formatTime(Math.round(sweep.bestSweepSecs)) : '—'} label="Best Sweep Time" color="#2563eb" dim={!sweep.bestSweepSecs} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Personal bests by mode */}
+      <div>
+        <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Your Bests By Mode</div>
+        <div className="mb-3">
+          <ModePicker grid showAll={false} selectedMode={selectedMode} onSelectMode={(m) => setSelectedMode(m || 'DUEL')} />
+        </div>
+        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
+          <div className="flex items-center gap-2.5 px-4 pt-3 pb-1">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+              {mode.romanNumeral ? <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span> : Icon ? <Icon className="w-4 h-4" style={{ color }} /> : null}
+            </div>
+            <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>{mode.title}</div>
+          </div>
+          <div className="px-4 pb-3 grid grid-cols-2 gap-1">
+            <MyStatCell icon={Clock} value={fmtRecord('fastest_win', my?.fastest_time)} label="Fastest Win" color={color} dim={!my?.fastest_time} />
+            <MyStatCell icon={Target} value={fmtRecord('fewest_guesses', my?.best_score)} label="Fewest Guesses" color={color} dim={!my?.best_score} />
+            <MyStatCell icon={Zap} value={my ? `${my.total_games} games` : '—'} label="Games Played" color={color} dim={!my} />
+            <MyStatCell icon={Trophy} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
+          </div>
+        </div>
+      </div>
+
+      {/* Medals + global records held */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/profile" className="overflow-hidden block" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="px-4 py-3">
+            <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Medals</div>
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#d97706' }}><Crown className="w-3.5 h-3.5" />{profile?.gold_medals ?? 0}</span>
+              <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#9ca3af' }}><Medal className="w-3.5 h-3.5" />{profile?.silver_medals ?? 0}</span>
+              <span className="flex items-center gap-1 font-black text-sm" style={{ color: '#b45309' }}><Medal className="w-3.5 h-3.5" />{profile?.bronze_medals ?? 0}</span>
+            </div>
+            <div className="text-[10px] font-bold mt-1.5" style={{ color: '#7c3aed' }}>View all →</div>
+          </div>
+        </Link>
+        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="px-4 py-3">
+            <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Global Records</div>
+            <div className="flex items-center gap-1.5 font-black text-2xl" style={{ color: recordsHeld.length ? '#d97706' : 'var(--color-text-muted)' }}>
+              <Star className="w-5 h-5" />{recordsHeld.length}
+            </div>
+            <div className="text-[10px] font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>all-time record{recordsHeld.length !== 1 ? 's' : ''} held</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
    MAIN PAGE
    ═══════════════════════════════════════════════════════ */
 export default function RecordsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'daily' | 'alltime'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'alltime' | 'you'>('daily');
 
   return (
     <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -527,37 +763,31 @@ export default function RecordsPage() {
           </p>
         </div>
 
-        {/* Daily / All-Time Toggle */}
+        {/* Daily / All-Time / You Toggle */}
         <div className="flex gap-2 mb-5">
-          <button
-            onClick={() => setActiveTab('daily')}
-            className="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all"
-            style={{
-              background: activeTab === 'daily' ? 'var(--color-surface)' : 'var(--color-surface-hover)',
-              border: activeTab === 'daily' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-              color: activeTab === 'daily' ? '#7c3aed' : 'var(--color-text-muted)',
-            }}
-          >
-            Daily
-          </button>
-          <button
-            onClick={() => setActiveTab('alltime')}
-            className="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all"
-            style={{
-              background: activeTab === 'alltime' ? 'var(--color-surface)' : 'var(--color-surface-hover)',
-              border: activeTab === 'alltime' ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
-              color: activeTab === 'alltime' ? '#7c3aed' : 'var(--color-text-muted)',
-            }}
-          >
-            All-Time
-          </button>
+          {([['daily', 'Daily'], ['alltime', 'All-Time'], ['you', 'You']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all"
+              style={{
+                background: activeTab === key ? 'var(--color-surface)' : 'var(--color-surface-hover)',
+                border: activeTab === key ? '1.5px solid #7c3aed' : '1.5px solid var(--color-border)',
+                color: activeTab === key ? '#7c3aed' : 'var(--color-text-muted)',
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         {/* Tab Content */}
         {activeTab === 'daily' ? (
           <DailyRecordsView key="daily" userId={user?.id} />
-        ) : (
+        ) : activeTab === 'alltime' ? (
           <AllTimeRecordsView key="alltime" userId={user?.id} />
+        ) : (
+          <YourRecordsView key="you" userId={user?.id} />
         )}
       </div>
 
