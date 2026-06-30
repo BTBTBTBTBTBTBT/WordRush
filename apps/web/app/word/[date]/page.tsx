@@ -117,26 +117,6 @@ export default async function WordOfDayPage({ params }: Props) {
           <p className="text-base leading-relaxed" style={{ color: 'var(--color-text)' }}>{analysis.strategy}</p>
         </section>
 
-        {/* CTA + cross-links (original copy) */}
-        <section className="rounded-xl p-4 mb-6" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-          <p className="text-base leading-relaxed mb-3" style={{ color: 'var(--color-text)' }}>
-            Wordocious is a daily word game with nine modes — guess a hidden word in six tries (Classic), juggle four or eight
-            boards at once (QuadWord, OctoWord), race a live opponent in VS Battle, or chain five modes into one run in the
-            Gauntlet. Every player gets the same word each day, so {w} was today&apos;s shared challenge.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Link href="/" className="px-4 py-2 rounded-lg text-white font-black text-sm" style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)' }}>
-              Play today&apos;s puzzle
-            </Link>
-            <Link href="/how-to-play" className="px-4 py-2 rounded-lg font-black text-sm" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
-              How to play
-            </Link>
-            <Link href="/words" className="px-4 py-2 rounded-lg font-black text-sm" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
-              Past words
-            </Link>
-          </div>
-        </section>
-
         {/* Prev / next day */}
         <div className="flex items-center justify-between">
           <Link href={`/word/${prev}`} className="inline-flex items-center gap-1 text-sm font-bold" style={{ color: 'var(--color-text-muted)' }}>
