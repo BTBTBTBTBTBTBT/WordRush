@@ -11,6 +11,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.os.Build
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import com.wordocious.app.R
@@ -70,7 +71,12 @@ object DailySweepShare {
 
     private fun nunito(context: Context, black: Boolean): Typeface {
         val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
-        return Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
+        // Nunito.ttf is a variable font whose default instance is ExtraLight; the
+        // weighted create (API 28+) drives the real `wght` axis so the share card
+        // renders true Bold/Black instead of faux-bolded thin glyphs.
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            Typeface.create(base, if (black) 900 else 700, false)
+        else Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
     }
 
     private fun fmt(s: Int): String = "%d:%02d".format(s / 60, s % 60)
@@ -87,7 +93,7 @@ object DailySweepShare {
         val cx = W / 2f
 
         // Wordmark
-        p.typeface = black; p.isFakeBoldText = true; p.textSize = 56f
+        p.typeface = black; p.isFakeBoldText = false; p.textSize = 56f
         p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
@@ -102,7 +108,7 @@ object DailySweepShare {
 
         // Stats line
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
-        p.typeface = bold; p.isFakeBoldText = true; p.textSize = 26f; p.color = TEXT_MUTED
+        p.typeface = bold; p.isFakeBoldText = false; p.textSize = 26f; p.color = TEXT_MUTED
         c.drawText("${totals.won}/${totals.total} won · ${fmt(totals.totalTimeSeconds)} · ${totals.totalScore} pts · $date", cx, 206f, p)
 
         // Rows
@@ -142,7 +148,7 @@ object DailySweepShare {
                 )
                 iconDrawable.draw(c)
             } else {
-                p.typeface = black; p.isFakeBoldText = true
+                p.typeface = black; p.isFakeBoldText = false
                 p.textSize = if (r.glyph.length >= 3) 24f else 30f; p.color = Color.WHITE
                 c.drawText(r.glyph, badgeRect.centerX(), badgeRect.centerY() + p.textSize * 0.35f, p)
             }
@@ -162,7 +168,7 @@ object DailySweepShare {
         }
 
         // Footer
-        p.typeface = bold; p.isFakeBoldText = true; p.textSize = 22f; p.color = FOOT
+        p.typeface = bold; p.isFakeBoldText = false; p.textSize = 22f; p.color = FOOT
         c.drawText("wordocious.com", cx, H - 40f, p)
         return bmp
     }
@@ -240,7 +246,12 @@ object ProfileShare {
 
     private fun nunito(context: Context, black: Boolean): Typeface {
         val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
-        return Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
+        // Nunito.ttf is a variable font whose default instance is ExtraLight; the
+        // weighted create (API 28+) drives the real `wght` axis so the share card
+        // renders true Bold/Black instead of faux-bolded thin glyphs.
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            Typeface.create(base, if (black) 900 else 700, false)
+        else Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
     }
 
     fun render(context: Context, input: ProfileInput): Bitmap {
@@ -253,7 +264,7 @@ object ProfileShare {
         val cx = S / 2f
 
         // Wordmark
-        p.typeface = black; p.isFakeBoldText = true; p.textSize = 50f
+        p.typeface = black; p.isFakeBoldText = false; p.textSize = 50f
         p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
         c.drawText("WORDOCIOUS", cx, 110f, p)
         p.shader = null
@@ -288,14 +299,14 @@ object ProfileShare {
             c.drawRoundRect(rect, 28f, 28f, Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE; strokeWidth = 3f; color = TILE_BORDER
             })
-            p.typeface = black; p.isFakeBoldText = true; p.textSize = 60f; p.color = input.accent
+            p.typeface = black; p.isFakeBoldText = false; p.textSize = 60f; p.color = input.accent
             c.drawText(tiles[i].first, rect.centerX(), rect.centerY() + 6f, p)
             p.typeface = bold; p.textSize = 26f; p.color = TEXT_MUTED
             c.drawText(tiles[i].second, rect.centerX(), rect.centerY() + 56f, p)
         }
 
         // Footer
-        p.typeface = bold; p.isFakeBoldText = true; p.textSize = 24f; p.color = FOOT
+        p.typeface = bold; p.isFakeBoldText = false; p.textSize = 24f; p.color = FOOT
         c.drawText("wordocious.com", cx, S - 44f, p)
         return bmp
     }

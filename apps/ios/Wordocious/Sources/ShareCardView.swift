@@ -45,21 +45,21 @@ struct ShareCardView: View {
             bg
             VStack(spacing: 0) {
                 Text("WORDOCIOUS")
-                    .font(.custom("Nunito", size: 56).weight(.black))
+                    .font(Brand.font(56, .black))
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                     startPoint: .leading, endPoint: .trailing))
                     .padding(.top, 44)
-                Text(modeLabel).font(.custom("Nunito", size: 38).weight(.black)).foregroundStyle(accent).padding(.top, 10)
+                Text(modeLabel).font(Brand.font(38, .black)).foregroundStyle(accent).padding(.top, 10)
                 HStack(spacing: 12) {
-                    Text(statsText).font(.custom("Nunito", size: 24).weight(.bold)).foregroundStyle(textMuted)
+                    Text(statsText).font(Brand.font(24, .bold)).foregroundStyle(textMuted)
                     // ProperNoundle category pill (web drawCategoryPill — accent
                     // capsule, white 18px label, between stats and Win/Loss).
                     if let category {
-                        Text(category).font(.custom("Nunito", size: 18).weight(.bold)).foregroundStyle(.white)
+                        Text(category).font(Brand.font(18, .bold)).foregroundStyle(.white)
                             .padding(.horizontal, 12).frame(height: 30)
                             .background(RoundedRectangle(cornerRadius: 14).fill(accent))
                     }
-                    Text(won ? "Win" : "Loss").font(.custom("Nunito", size: 22).weight(.bold))
+                    Text(won ? "Win" : "Loss").font(Brand.font(22, .bold))
                         .foregroundStyle(won ? winFG : lossFG)
                         .padding(.horizontal, 16).padding(.vertical, 8)
                         .background(RoundedRectangle(cornerRadius: 10).fill(won ? winBG : lossBG))
@@ -70,7 +70,7 @@ struct ShareCardView: View {
                 body(for: kind)
                 Spacer()
 
-                Text("wordocious.com").font(.custom("Nunito", size: 22).weight(.bold))
+                Text("wordocious.com").font(Brand.font(22, .bold))
                     .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 40)
             }
         }
@@ -154,14 +154,14 @@ struct ShareCardView: View {
 
     private func gauntletChip(_ index: Int, _ s: GauntletStageShare) -> some View {
         HStack(spacing: 16) {
-            Text("\(index)").font(.custom("Nunito", size: 32).weight(.black)).foregroundStyle(s.won ? winFG : lossFG)
+            Text("\(index)").font(Brand.font(32, .black)).foregroundStyle(s.won ? winFG : lossFG)
             VStack(alignment: .leading, spacing: 2) {
-                Text(s.name).font(.custom("Nunito", size: 30).weight(.black)).foregroundStyle(Color(hex: 0x1A1A2E))
+                Text(s.name).font(Brand.font(30, .black)).foregroundStyle(Color(hex: 0x1A1A2E))
                 Text("\(s.boardsSolved)/\(s.totalBoards) boards · \(s.guesses) guesses")
-                    .font(.custom("Nunito", size: 20).weight(.bold)).foregroundStyle(textMuted)
+                    .font(Brand.font(20, .bold)).foregroundStyle(textMuted)
             }
             Spacer()
-            Text(s.won ? "✓" : "✗").font(.custom("Nunito", size: 48).weight(.black)).foregroundStyle(s.won ? winFG : lossFG)
+            Text(s.won ? "✓" : "✗").font(Brand.font(48, .black)).foregroundStyle(s.won ? winFG : lossFG)
         }
         .padding(.horizontal, 24).padding(.vertical, 18)
         .background(RoundedRectangle(cornerRadius: 16).fill(s.won ? boardWinTint : boardLossTint))

@@ -75,16 +75,16 @@ struct DailySweepCardView: View {
             bg
             VStack(spacing: 0) {
                 Text("WORDOCIOUS")
-                    .font(.custom("Nunito", size: 56).weight(.black))
+                    .font(Brand.font(56, .black))
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                     startPoint: .leading, endPoint: .trailing))
                     .padding(.top, 44)
                 Text(flawless ? "FLAWLESS VICTORY" : "DAILY SWEEP")
-                    .font(.custom("Nunito", size: 52).weight(.black))
+                    .font(Brand.font(52, .black))
                     .foregroundStyle(LinearGradient(colors: titleColors, startPoint: .leading, endPoint: .trailing))
                     .padding(.top, 12)
                 Text("\(won)/\(total) won · \(fmt(totalTimeSeconds)) · \(totalScore) pts · \(dateStr)")
-                    .font(.custom("Nunito", size: 26).weight(.bold)).foregroundStyle(textMuted)
+                    .font(Brand.font(26, .bold)).foregroundStyle(textMuted)
                     .padding(.top, 14)
 
                 Spacer(minLength: 28)
@@ -94,7 +94,7 @@ struct DailySweepCardView: View {
                 .padding(.horizontal, 90)
                 Spacer(minLength: 20)
 
-                Text("wordocious.com").font(.custom("Nunito", size: 22).weight(.bold))
+                Text("wordocious.com").font(Brand.font(22, .bold))
                     .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 40)
             }
         }
@@ -108,12 +108,12 @@ struct DailySweepCardView: View {
                 shareGlyph(r)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(r.modeLabel).font(.custom("Nunito", size: 30).weight(.black)).foregroundStyle(textDark)
+                Text(r.modeLabel).font(Brand.font(30, .black)).foregroundStyle(textDark)
                 Text("\(r.won ? "\(r.guesses)g" : "X") · \(fmt(r.timeSeconds)) · \(r.score) pts")
-                    .font(.custom("Nunito", size: 21).weight(.bold)).foregroundStyle(textMuted)
+                    .font(Brand.font(21, .bold)).foregroundStyle(textMuted)
             }
             Spacer()
-            Text(r.won ? "✓" : "✗").font(.custom("Nunito", size: 48).weight(.black))
+            Text(r.won ? "✓" : "✗").font(Brand.font(48, .black))
                 .foregroundStyle(r.won ? winFG : lossFG)
         }
         .padding(.horizontal, 24).padding(.vertical, 16)
@@ -134,17 +134,17 @@ struct DailySweepCardView: View {
                 Image(name).renderingMode(.template).resizable().scaledToFit()
                     .frame(width: 38, height: 38).foregroundStyle(.white)
             case .roman(let text):
-                Text(text).font(.custom("Nunito", size: text.count >= 3 ? 26 : 32).weight(.black)).foregroundStyle(.white)
+                Text(text).font(Brand.font(CGFloat(text.count >= 3 ? 26 : 32), .black)).foregroundStyle(.white)
             case .hand(let name, let number):
                 ZStack(alignment: .center) {
                     Image(name).renderingMode(.template).resizable().scaledToFit()
                         .frame(width: 44, height: 46).foregroundStyle(.white)
-                    Text(number).font(.custom("Nunito", size: 22).weight(.black)).foregroundStyle(r.accent)
+                    Text(number).font(Brand.font(22, .black)).foregroundStyle(r.accent)
                         .offset(y: 9)
                 }
             }
         } else {
-            Text(r.glyph).font(.custom("Nunito", size: r.glyph.count >= 3 ? 24 : 30).weight(.black)).foregroundStyle(.white)
+            Text(r.glyph).font(Brand.font(CGFloat(r.glyph.count >= 3 ? 24 : 30), .black)).foregroundStyle(.white)
         }
     }
 
@@ -297,15 +297,15 @@ struct ProfileShareCardView: View {
             bg
             VStack(spacing: 0) {
                 Text("WORDOCIOUS")
-                    .font(.custom("Nunito", size: 50).weight(.black))
+                    .font(Brand.font(50, .black))
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                     startPoint: .leading, endPoint: .trailing))
                     .padding(.top, 64)
                 Text(input.username)
-                    .font(.custom("Nunito", size: 76).weight(.black)).foregroundStyle(accent)
+                    .font(Brand.font(76, .black)).foregroundStyle(accent)
                     .lineLimit(1).minimumScaleFactor(0.5).padding(.horizontal, 80).padding(.top, 18)
                 Text("Level \(input.level) · \(input.tier)")
-                    .font(.custom("Nunito", size: 30).weight(.bold)).foregroundStyle(textMuted)
+                    .font(Brand.font(30, .bold)).foregroundStyle(textMuted)
                     .padding(.top, 8)
 
                 Spacer(minLength: 40)
@@ -320,7 +320,7 @@ struct ProfileShareCardView: View {
                 .padding(.horizontal, 80)
                 Spacer(minLength: 30)
 
-                Text("wordocious.com").font(.custom("Nunito", size: 24).weight(.bold))
+                Text("wordocious.com").font(Brand.font(24, .bold))
                     .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 48)
             }
         }
@@ -329,9 +329,9 @@ struct ProfileShareCardView: View {
 
     private func statTile(_ value: String, _ label: String) -> some View {
         VStack(spacing: 8) {
-            Text(value).font(.custom("Nunito", size: 60).weight(.black))
+            Text(value).font(Brand.font(60, .black))
                 .foregroundStyle(accent).lineLimit(1).minimumScaleFactor(0.5)
-            Text(label).font(.custom("Nunito", size: 26).weight(.bold)).foregroundStyle(textMuted)
+            Text(label).font(Brand.font(26, .bold)).foregroundStyle(textMuted)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 40)
         .background(RoundedRectangle(cornerRadius: 28).fill(.white))
