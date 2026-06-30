@@ -205,6 +205,16 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             )
         }
 
+        // ── C2. "This Week" recap hero ─────────────────────────────
+        item {
+            ProfileRecapCard(
+                gamesThisWeek = activity7.sumOf { it.played },
+                currentStreak = profile?.currentStreak ?: 0,
+                xp = profile?.xp ?: 0, level = profile?.level ?: 1,
+                isPro = isProActive, onGoPro = onGoPro,
+            )
+        }
+
         // ── Solo/VS toggle (web profile/page.tsx §D) ────────────────
         item { SoloVsToggle(activeTab) { activeTab = it } }
 
@@ -266,8 +276,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // ── D. Daily Medals ───────────────────────────────────────
         item { DailyMedals(profile, medals) }
 
-        // ── Achievements (collapsible 72-item grid) ───────────────
-        item { AchievementsSection(unlockedAchievements) }
+        // ── Achievements (grouped by category, expanded) ──────────
+        item { AchievementsSection(unlockedAchievements, profile) }
 
         // ── E. Stats by mode (active Solo/VS tab only) ────────────
         val tabStats = stats.filter { it.playType == activeTab }
@@ -648,18 +658,66 @@ private fun DailyMedals(profile: com.wordocious.app.data.Profile?, medals: List<
     val bronze = profile?.bronzeMedals?.takeIf { it > 0 } ?: medals.count { it.medalType == "bronze" }
     if (gold == 0 && silver == 0 && bronze == 0 && medals.isEmpty()) return
 
+    var showAll by remember { mutableStateOf(false) }
     SectionLabel("DAILY MEDALS")
     Spacer(Modifier.height(8.dp))
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MedalCard(crown = true, count = gold, label = "Gold", color = Color(0xFFD97706), modifier = Modifier.weight(1f))
             MedalCard(crown = false, count = silver, label = "Silver", color = WTheme.textMuted, modifier = Modifier.weight(1f))
             MedalCard(crown = false, count = bronze, label = "Bronze", color = Color(0xFFB45309), modifier = Modifier.weight(1f))
         }
+        if (medals.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                (if (showAll) medals else medals.take(5)).forEach { MedalHistoryRow(it) }
+            }
+            if (medals.size > 5) {
+                Text(
+                    if (showAll) "Show less" else "View all ${medals.size} medals ›",
+                    fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clickableNoRipple { showAll = !showAll },
+                )
+            }
+        }
     }
 }
+
+@Composable
+private fun MedalHistoryRow(m: ProfileService.UserMedal) {
+    val color = when (m.medalType) {
+        "gold" -> Color(0xFFD97706); "silver" -> WTheme.textMuted; "bronze" -> Color(0xFFB45309)
+        "streak_7" -> Color(0xFFEA580C); "streak_30" -> Color(0xFFDC2626); "streak_100" -> Color(0xFF7C3AED)
+        "perfect" -> Color(0xFF7C3AED); else -> WTheme.textMuted
+    }
+    val label = when (m.medalType) {
+        "streak_7" -> "7-Day Streak"; "streak_30" -> "30-Day Streak"; "streak_100" -> "100-Day Streak"
+        "perfect" -> "Perfect!"
+        else -> MODE_OPTIONS.firstOrNull { it.first == m.gameMode }?.second ?: (m.gameMode ?: "")
+    }
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg).padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        when (m.medalType) {
+            "gold" -> Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = color, modifier = Modifier.size(14.dp))
+            "streak_7", "streak_30", "streak_100" -> Icon(Icons.Filled.LocalFireDepartment, null, tint = color, modifier = Modifier.size(14.dp))
+            "perfect" -> Icon(Icons.Filled.Star, null, tint = color, modifier = Modifier.size(14.dp))
+            else -> Icon(Icons.Filled.MilitaryTech, null, tint = color, modifier = Modifier.size(14.dp))
+        }
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+        Spacer(Modifier.weight(1f))
+        Text(shortMedalDate(m.day), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+    }
+}
+
+private fun shortMedalDate(day: String): String = runCatching {
+    val d = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).parse(day)!!
+    java.text.SimpleDateFormat("MMM d", java.util.Locale.US).format(d)
+}.getOrDefault(day)
 
 @Composable
 private fun MedalCard(crown: Boolean, count: Int, label: String, color: Color, modifier: Modifier = Modifier) {
@@ -838,49 +896,114 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
 }
 
 // ── Achievements ──────────────────────────────────────────────────────────────
+private val ACH_CATEGORIES = listOf(
+    Triple("beginner", "Getting Started", 0xFF7C3AEDL),
+    Triple("consistency", "Consistency", 0xFFF97316L),
+    Triple("skill", "Skill", 0xFF2563EBL),
+    Triple("social", "Social", 0xFF0D9488L),
+    Triple("collection", "Collection", 0xFFD97706L),
+)
+
 @Composable
-private fun AchievementsSection(unlocked: Set<String>) {
+private fun ProfileRecapCard(gamesThisWeek: Int, currentStreak: Int, xp: Int, level: Int, isPro: Boolean, onGoPro: () -> Unit) {
+    val xpToNext = 1000 - (xp % 1000)
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFFFAF5FF), Color(0xFFFCE7F3))))
+            .border(1.5.dp, Color(0xFFE9D5FF), RoundedCornerShape(16.dp)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp))
+            Text("THIS WEEK", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9), letterSpacing = 0.5.sp)
+        }
+        Row(Modifier.fillMaxWidth()) {
+            RecapStat(Icons.Filled.Bolt, "$gamesThisWeek", "Games", Color(0xFF7C3AED), Modifier.weight(1f))
+            RecapStat(Icons.Filled.LocalFireDepartment, "$currentStreak", "Win Streak", Color(0xFFF97316), Modifier.weight(1f))
+            RecapStat(Icons.Filled.BarChart, "$xpToNext", "XP to Lvl ${level + 1}", Color(0xFF2563EB), Modifier.weight(1f))
+        }
+        if (!isPro) {
+            Row(Modifier.fillMaxWidth().clickableNoRipple(onGoPro).padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Unlock your full insights with Pro", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
+                Spacer(Modifier.weight(1f))
+                Text("→", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecapStat(icon: ImageVector, value: String, label: String, color: Color, modifier: Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
+        Column {
+            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun AchievementsSection(unlocked: Set<String>, profile: com.wordocious.app.data.Profile?) {
     // Single-sourced via /api/achievements (cached); detection stays per-platform.
     val all by androidx.compose.runtime.produceState(
         initialValue = com.wordocious.app.data.AchievementCatalog.cached()
     ) { value = com.wordocious.app.data.AchievementCatalog.load() }
-    var open by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth().clickableNoRipple { open = !open }.padding(vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text("ACHIEVEMENTS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-            Text(
-                "${unlocked.size}/${all.size}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted,
-                modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceAlt).padding(horizontal = 6.dp, vertical = 2.dp),
-            )
+    val medalsTotal = (profile?.goldMedals ?: 0) + (profile?.silverMedals ?: 0) + (profile?.bronzeMedals ?: 0)
+    val dailyStreak = profile?.dailyLoginStreak ?: 0
+    fun prog(key: String): Pair<Int, Int>? {
+        val m = when (key) {
+            "streak_7" -> dailyStreak to 7; "streak_30" -> dailyStreak to 30
+            "medal_10" -> medalsTotal to 10; "medal_50" -> medalsTotal to 50
+            else -> null
+        }
+        return m?.takeIf { it.first < it.second }
+    }
+
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("ACHIEVEMENTS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
             Spacer(Modifier.weight(1f))
-            Icon(
-                if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp),
+            Text(
+                "${unlocked.size}/${all.size}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(Color(0xFFF3F0FF)).padding(horizontal = 8.dp, vertical = 2.dp),
             )
         }
-        if (open) {
-            Spacer(Modifier.height(8.dp))
-            all.chunked(3).forEach { row ->
-                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { a ->
-                        val on = unlocked.contains(a.key)
-                        Column(
-                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
-                                .background(if (on) Color(0xFFF3F0FF) else Color(0xFFFAFAFA))
-                                .border(1.5.dp, if (on) Color(0xFFC4B5FD) else WTheme.border, RoundedCornerShape(12.dp))
-                                .padding(10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            Text(if (on) "✓" else "?", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (on) WTheme.primary else WTheme.textMuted)
-                            Text(a.name, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                            Text(a.description, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 3, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        ACH_CATEGORIES.forEach { (catKey, catLabel, catColor) ->
+            val items = all.filter { it.category == catKey }
+            if (items.isNotEmpty()) {
+                val n = items.count { unlocked.contains(it.key) }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(catLabel.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(catColor), letterSpacing = 0.4.sp)
+                        Text("$n/${items.size}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    }
+                    items.chunked(3).forEach { row ->
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            row.forEach { a ->
+                                val on = unlocked.contains(a.key)
+                                val p = if (on) null else prog(a.key)
+                                Column(
+                                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                                        .background(if (on) Color(0xFFF3F0FF) else Color(0xFFFAFAFA))
+                                        .border(1.5.dp, if (on) Color(0xFFC4B5FD) else WTheme.border, RoundedCornerShape(12.dp))
+                                        .padding(10.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    Text(if (on) "✓" else "?", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (on) WTheme.primary else WTheme.textMuted)
+                                    Text(a.name, fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    Text(a.description, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 2, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                    if (p != null) {
+                                        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
+                                            Box(Modifier.fillMaxWidth((p.first.toFloat() / p.second).coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(50)).background(WTheme.primary))
+                                        }
+                                        Text("${p.first}/${p.second}", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                    }
+                                }
+                            }
+                            repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                         }
                     }
-                    // pad incomplete final row so cells keep equal width
-                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
