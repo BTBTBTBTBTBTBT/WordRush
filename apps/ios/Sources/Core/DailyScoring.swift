@@ -1,11 +1,13 @@
 import Foundation
-import WordociousCore
 
-/// Composite-score formula ported 1:1 from apps/web/lib/daily-service.ts
-/// (MODE_SCORE_CONFIG + computeScoreBreakdown). Must stay identical to web so
-/// iOS results rank correctly on the shared leaderboard.
-enum DailyScoring {
-    struct Config {
+/// Composite-score formula ported 1:1 from apps/web/lib/composite-scoring.ts
+/// (MODE_SCORE_CONFIG + computeScoreBreakdown). Must stay identical to web +
+/// Android (DailyScoring.kt) so results rank correctly on the shared
+/// leaderboard. Lives in WordociousCore (not the app target) so the
+/// cross-platform fixture guard (Tests/CompositeScoringFixtureTests) can assert
+/// it against the shared composite-scoring-fixtures.json.
+public enum DailyScoring {
+    public struct Config {
         let maxGuesses: Int
         let guessWeight: Int
         let timeCap: Int
@@ -13,7 +15,7 @@ enum DailyScoring {
         let hintCost: Int?
     }
 
-    static let config: [String: Config] = [
+    public static let config: [String: Config] = [
         "DUEL":          Config(maxGuesses: 6,  guessWeight: 100, timeCap: 300,  totalBoards: 1, hintCost: nil),
         "QUORDLE":       Config(maxGuesses: 9,  guessWeight: 50,  timeCap: 600,  totalBoards: 4, hintCost: nil),
         "OCTORDLE":      Config(maxGuesses: 13, guessWeight: 30,  timeCap: 900,  totalBoards: 8, hintCost: nil),
@@ -25,7 +27,7 @@ enum DailyScoring {
         "DUEL_7":        Config(maxGuesses: 8,  guessWeight: 80,  timeCap: 420,  totalBoards: 1, hintCost: 150),
     ]
 
-    // Loss-credit tuning — identical to lib/daily-service.ts. GAUNTLET losses
+    // Loss-credit tuning — identical to lib/composite-scoring.ts. GAUNTLET losses
     // use a stage-depth ladder + per-board tiebreak; single-board losses use a
     // near-miss credit per green letter. Other multi-board losses keep the
     // proportional boards bonus.
@@ -34,16 +36,16 @@ enum DailyScoring {
     static let singleBoardGreenValue = 12
 
     /// Full per-component breakdown — 1:1 with computeScoreBreakdown in
-    /// lib/daily-service.ts. Drives both the leaderboard score and the
+    /// lib/composite-scoring.ts. Drives both the leaderboard score and the
     /// post-game ScoreBreakdown card (so they can never drift).
-    struct Breakdown {
-        let basePoints: Double, guessBonus: Double, timeBonus: Double
-        let completionBonus: Double, hintPenalty: Double, total: Double
-        let hasHints: Bool
-        let maxGuesses: Int, timeCap: Int, guessWeight: Int, hintCost: Int
+    public struct Breakdown {
+        public let basePoints: Double, guessBonus: Double, timeBonus: Double
+        public let completionBonus: Double, hintPenalty: Double, total: Double
+        public let hasHints: Bool
+        public let maxGuesses: Int, timeCap: Int, guessWeight: Int, hintCost: Int
     }
 
-    static func breakdown(
+    public static func breakdown(
         gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Int,
         boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0,
         // Loss-only progress inputs (optional — fall back to the legacy
@@ -59,7 +61,7 @@ enum DailyScoring {
         let hasHints = c.hintCost != nil
         let basePoints = completed ? 1000.0 : 0.0
         // Guess bonus applies ONLY to hint-bearing modes (Six/Seven/
-        // ProperNoundle) — matches lib/daily-service.ts.
+        // ProperNoundle) — matches lib/composite-scoring.ts.
         let guessBonus = (completed && hasHints) ? Double(max(0, c.maxGuesses - guessCount) * c.guessWeight) : 0.0
         let timeBonus = completed ? Double(max(0, c.timeCap - timeSeconds)) : 0.0
         // Completion / progress bonus — wins (and non-Gauntlet multi-board
@@ -86,7 +88,7 @@ enum DailyScoring {
                          guessWeight: c.guessWeight, hintCost: c.hintCost ?? 0)
     }
 
-    static func compositeScore(
+    public static func compositeScore(
         gameMode: String, completed: Bool, guessCount: Int, timeSeconds: Int,
         boardsSolved: Int, totalBoards: Int, hintsUsed: Int = 0,
         stagesCompleted: Int? = nil, bestCorrectLetters: Int? = nil

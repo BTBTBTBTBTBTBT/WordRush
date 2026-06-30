@@ -1,0 +1,332 @@
+[
+  {
+    "name": "classic win, 27s",
+    "input": {
+      "gameMode": "DUEL",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 27,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 1473
+  },
+  {
+    "name": "quadword win",
+    "input": {
+      "gameMode": "QUORDLE",
+      "completed": true,
+      "guessCount": 6,
+      "timeSeconds": 120,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 1680
+  },
+  {
+    "name": "octoword win",
+    "input": {
+      "gameMode": "OCTORDLE",
+      "completed": true,
+      "guessCount": 9,
+      "timeSeconds": 300,
+      "boardsSolved": 8,
+      "totalBoards": 8,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 1800
+  },
+  {
+    "name": "deliverance win",
+    "input": {
+      "gameMode": "RESCUE",
+      "completed": true,
+      "guessCount": 5,
+      "timeSeconds": 100,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 1580
+  },
+  {
+    "name": "six win, no hints",
+    "input": {
+      "gameMode": "DUEL_6",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 60,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 1770
+  },
+  {
+    "name": "six win, one hint penalty",
+    "input": {
+      "gameMode": "DUEL_6",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 60,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 1620
+  },
+  {
+    "name": "gauntlet win (sweep run)",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": true,
+      "guessCount": 30,
+      "timeSeconds": 600,
+      "boardsSolved": 21,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 5,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 2400
+  },
+  {
+    "name": "quadword loss 2/4",
+    "input": {
+      "gameMode": "QUORDLE",
+      "completed": false,
+      "guessCount": 9,
+      "timeSeconds": 300,
+      "boardsSolved": 2,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 100
+  },
+  {
+    "name": "quadword loss 3/4",
+    "input": {
+      "gameMode": "QUORDLE",
+      "completed": false,
+      "guessCount": 9,
+      "timeSeconds": 300,
+      "boardsSolved": 3,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 150
+  },
+  {
+    "name": "octoword loss 4/8",
+    "input": {
+      "gameMode": "OCTORDLE",
+      "completed": false,
+      "guessCount": 13,
+      "timeSeconds": 600,
+      "boardsSolved": 4,
+      "totalBoards": 8,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 100
+  },
+  {
+    "name": "octoword loss 6/8",
+    "input": {
+      "gameMode": "OCTORDLE",
+      "completed": false,
+      "guessCount": 13,
+      "timeSeconds": 600,
+      "boardsSolved": 6,
+      "totalBoards": 8,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 150
+  },
+  {
+    "name": "succession loss 1/4",
+    "input": {
+      "gameMode": "SEQUENCE",
+      "completed": false,
+      "guessCount": 10,
+      "timeSeconds": 300,
+      "boardsSolved": 1,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 50
+  },
+  {
+    "name": "classic loss, whiff",
+    "input": {
+      "gameMode": "DUEL",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 120,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 0
+    },
+    "expectedTotal": 0
+  },
+  {
+    "name": "classic loss, 2 greens",
+    "input": {
+      "gameMode": "DUEL",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 120,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 2
+    },
+    "expectedTotal": 24
+  },
+  {
+    "name": "classic loss, one away (4)",
+    "input": {
+      "gameMode": "DUEL",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 200,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 4
+    },
+    "expectedTotal": 48
+  },
+  {
+    "name": "six loss, 3 greens",
+    "input": {
+      "gameMode": "DUEL_6",
+      "completed": false,
+      "guessCount": 7,
+      "timeSeconds": 200,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 3
+    },
+    "expectedTotal": 36
+  },
+  {
+    "name": "proper loss, 2 greens",
+    "input": {
+      "gameMode": "PROPERNOUNDLE",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 200,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 2
+    },
+    "expectedTotal": 24
+  },
+  {
+    "name": "gauntlet loss, fail stage 1",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 4,
+      "timeSeconds": 60,
+      "boardsSolved": 0,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 0,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 0
+  },
+  {
+    "name": "gauntlet loss, reach stage 2",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 14,
+      "timeSeconds": 300,
+      "boardsSolved": 5,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 2,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 55
+  },
+  {
+    "name": "gauntlet loss, stage 2 w/ 3 boards",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 18,
+      "timeSeconds": 400,
+      "boardsSolved": 8,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 2,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 73
+  },
+  {
+    "name": "gauntlet loss, reach stage 4",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 30,
+      "timeSeconds": 700,
+      "boardsSolved": 13,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 4,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 150
+  },
+  {
+    "name": "gauntlet loss, stage 4 w/ 6 boards",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 40,
+      "timeSeconds": 900,
+      "boardsSolved": 19,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 4,
+      "bestCorrectLetters": null
+    },
+    "expectedTotal": 186
+  }
+]
