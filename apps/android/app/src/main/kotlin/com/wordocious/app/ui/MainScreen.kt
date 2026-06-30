@@ -143,7 +143,7 @@ fun MainScreen() {
             "guides" -> GuidesIndexScreen(onDone = { infoRoute = null })
             "strategy" -> StrategyScreen(onDone = { infoRoute = null })
             "words" -> WordsScreen(onDone = { infoRoute = null })
-            "pastwords" -> WordsScreen(onDone = { infoRoute = null }, navTitle = "Past words")
+            "pastwords" -> WordsScreen(onDone = { infoRoute = null }, navTitle = "Word of the Day")
             "pro" -> ProScreen(onDone = { infoRoute = null })
             "edit" -> EditProfileScreen(onDone = { infoRoute = null })
             else -> InfoScreen(kind = route, onDone = { infoRoute = null })

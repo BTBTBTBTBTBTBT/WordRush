@@ -43,7 +43,7 @@ struct WordOfTheDayView: View {
         // to /words). presentationDetents large so the list has room.
         .contentShape(Rectangle())
         .onTapGesture { showWords = true }
-        .sheet(isPresented: $showWords) { WordsView(navTitle: "Past words").presentationDetents([.large]) }
+        .sheet(isPresented: $showWords) { WordsView(navTitle: "Word of the Day").presentationDetents([.large]) }
     }
 
     private func content(_ info: WordInfo) -> some View {
