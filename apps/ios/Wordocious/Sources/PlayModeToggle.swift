@@ -82,11 +82,6 @@ struct UnlimitedHero: View {
                 Image(systemName: "infinity").font(.system(size: 18, weight: .bold)).foregroundStyle(Color(hex: 0xEC4899))
             }
             Text("Infinite puzzles · All stats count").font(Brand.font(10, .bold)).foregroundStyle(Theme.primary)
-            HStack(spacing: 4) {
-                Text("Tap").font(Brand.font(10, .bold)).foregroundStyle(Theme.primary)
-                Image("swords").renderingMode(.template).resizable().scaledToFit().frame(width: 12, height: 12).foregroundStyle(Theme.primary)
-                Text("on any game for VS").font(Brand.font(10, .bold)).foregroundStyle(Theme.primary)
-            }
         }
         .frame(maxWidth: .infinity).frame(height: heroHeight)
         .background(RoundedRectangle(cornerRadius: 14).fill(

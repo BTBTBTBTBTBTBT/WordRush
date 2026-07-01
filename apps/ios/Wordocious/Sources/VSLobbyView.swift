@@ -17,6 +17,12 @@ struct VSLobbyView: View {
     @State private var showVSLimit = false
     @State private var showAuth = false
 
+    /// Live per-mode activity (waiting in queue + in an active match), polled
+    /// from the server's /vs/counts, so each mode row shows how busy it is.
+    struct VSCount { let waiting: Int; let playing: Int }
+    private struct VSCountsResponse: Codable { let waiting: [String: Int]?; let playing: [String: Int]? }
+    @State private var counts: [String: VSCount] = [:]
+
     /// All VS-capable modes (matches the web VS mode list). Gauntlet runs through
     /// the shared board engine; ProperNoundle uses its own VS flow.
     private let modes: [GameMode] = [.duel, .duel6, .duel7, .quordle, .octordle, .sequence, .rescue, .gauntlet, .propernoundle]
@@ -43,14 +49,34 @@ struct VSLobbyView: View {
             NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }
         }
         .task(id: auth.profile?.id) { if !isPro { dailyVSUsed = await DailyResultsService.hasPlayedDailyVS() } }
+        .task { await pollCounts() }
         .overlay { if showVSLimit { VSLimitModal { showVSLimit = false } } }
+    }
+
+    /// Poll live per-mode counts every 5s while the lobby is on screen.
+    private func pollCounts() async {
+        guard let url = VSConfig.serverURL?.appendingPathComponent("vs/counts") else { return }
+        while !Task.isCancelled {
+            if let (data, _) = try? await URLSession.shared.data(from: url),
+               let obj = try? JSONDecoder().decode(VSCountsResponse.self, from: data) {
+                let keys = Set((obj.waiting ?? [:]).keys).union((obj.playing ?? [:]).keys)
+                counts = Dictionary(uniqueKeysWithValues: keys.map {
+                    ($0, VSCount(waiting: obj.waiting?[$0] ?? 0, playing: obj.playing?[$0] ?? 0))
+                })
+            }
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+        }
     }
 
     private var header: some View {
         VStack(spacing: 6) {
             Image("swords").renderingMode(.template).resizable().scaledToFit()
                 .frame(width: 40, height: 40).foregroundStyle(Color(hex: 0x0D9488))
-            Text("VS Battle").font(Brand.title(30)).foregroundStyle(Theme.textPrimary)
+            // Uppercase + teal gradient to match the colored menu-title aesthetic
+            // of the mode rows below (user request).
+            Text("VS BATTLE").font(Brand.title(30))
+                .foregroundStyle(LinearGradient(colors: [Color(hex: 0x14B8A6), Color(hex: 0x0D9488)],
+                                                startPoint: .leading, endPoint: .trailing))
             Text("Race a live opponent on the same puzzle").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
         }
         .padding(.top, 8).padding(.bottom, 4)
@@ -257,8 +283,18 @@ struct VSLobbyView: View {
 
     private func modeRow(_ m: GameMode) -> some View {
         HStack {
-            Text(ModeStyle.title(m)).font(Brand.font(16, .black))
-                .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(m), startPoint: .leading, endPoint: .trailing))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(ModeStyle.title(m)).font(Brand.font(16, .black))
+                    .foregroundStyle(LinearGradient(colors: ModeStyle.gradient(m), startPoint: .leading, endPoint: .trailing))
+                // Live activity for this mode (green dot when anyone's around).
+                if let c = counts[m.rawValue], c.waiting + c.playing > 0 {
+                    HStack(spacing: 5) {
+                        Circle().fill(Color(hex: 0x22C55E)).frame(width: 6, height: 6)
+                        Text("\(c.playing) playing · \(c.waiting) waiting")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    }
+                }
+            }
             Spacer()
             Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.textMuted)
         }

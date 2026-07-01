@@ -9,7 +9,6 @@ struct HomeView: View {
     @State private var solvedMode: HomeMode?      // "View Solved Puzzle"
     @State private var showProSheet = false
     @AppStorage("pref-play-mode") private var playMode: PlayMode = .daily
-    @State private var showVSLobby = false
     @State private var vsDailyWon: Bool? = nil     // today's daily VS outcome (nil = not played) → card W/L badge
     @State private var pendingGame: ActiveGame?    // tap-time-resolved Unlimited game
     @State private var showInvite = false
@@ -135,7 +134,6 @@ struct HomeView: View {
             .animation(Theme.animation(.easeInOut(duration: 0.15)), value: limitModal != nil)
             .animation(Theme.animation(.easeInOut(duration: 0.2)), value: showProPrompt)
             .sheet(isPresented: $showProSheet) { ProView() }
-            .navigationDestination(isPresented: $showVSLobby) { VSLobbyView() }
             // Games present full-screen OVER the tab bar (like the web's
             // full-screen game route) so the bottom nav is never behind them —
             // not on the board and not on the results/victory screen.
@@ -463,22 +461,9 @@ struct HomeView: View {
 
     @ViewBuilder
     private func card(_ mode: HomeMode) -> some View {
-        // In Unlimited mode the VS swords button overlays each standard mode card
-        // (Pro-only), matching the web. The card itself still navigates to play.
-        ZStack(alignment: .bottomTrailing) {
-            cardLink(mode)
-            if showsVS(mode) {
-                Button { showVSLobby = true } label: {
-                    Image("swords").renderingMode(.template).resizable().scaledToFit()
-                        .frame(width: 15, height: 15).foregroundStyle(mode.accent)
-                        .frame(width: 28, height: 28)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(mode.accent.opacity(0.12)))
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .padding(10)
-            }
-        }
+        // VS is reachable ONLY from the dedicated "VS Battle" card — the per-card
+        // swords shortcut was removed as redundant (user request, all platforms).
+        cardLink(mode)
     }
 
     /// A daily this user has already finished (in Daily mode). Revisiting it
@@ -563,14 +548,6 @@ struct HomeView: View {
         let fresh = "unlimited-\(gameMode.rawValue)-\(Int(Date().timeIntervalSince1970))"
         UserDefaults.standard.set(fresh, forKey: key)
         return fresh
-    }
-
-    /// VS swords overlay: Pro + Unlimited, for every VS-capable mode (all but
-    /// the VS card itself). ProperNoundle has no GameMode on its HomeMode, so
-    /// it's allowed through explicitly.
-    private func showsVS(_ mode: HomeMode) -> Bool {
-        auth.isProActive && effectiveMode == .unlimited && mode.id != "vs"
-            && (mode.mode != nil || mode.id == "propernoundle")
     }
 
     private func cardBody(_ mode: HomeMode, locked: Bool) -> some View {

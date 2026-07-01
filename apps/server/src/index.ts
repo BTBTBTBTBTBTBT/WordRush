@@ -140,6 +140,26 @@ httpServer.on('request', (req, res) => {
     }, null, 2));
     return;
   }
+  // Live VS activity per mode — players WAITING in queue + players PLAYING an
+  // active match, so the lobby can show "N waiting · M playing" on each mode row.
+  if (req.url.startsWith('/vs/counts')) {
+    const origin = req.headers.origin ?? '';
+    const allowed = clientOrigins.includes(origin) ? origin : clientOrigins[0] ?? '*';
+    const waiting: Record<string, number> = {};
+    for (const [k, arr] of Object.entries(queue.snapshot())) {
+      const mode = k.split(':')[0]; // bucket key is `${mode}:${dailySeed|random}`
+      waiting[mode] = (waiting[mode] ?? 0) + arr.length;
+    }
+    const playing: Record<string, number> = {};
+    for (const m of matches.values()) playing[m.mode] = (playing[m.mode] ?? 0) + 2; // 2 players/match
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': allowed,
+      'Cache-Control': 'no-store',
+    });
+    res.end(JSON.stringify({ waiting, playing }));
+    return;
+  }
   // TEMP diagnostic — recent VS match-event log (Sequence/Succession relay debug
   // 2026-06-30). Ring buffer of the last 300 events so we can see exactly which
   // submit_guess / board_solved / player_completed events reach the server.
