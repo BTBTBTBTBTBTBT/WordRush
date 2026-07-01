@@ -347,7 +347,7 @@ object MatchStatsService {
     }.getOrElse { WordResult(null, 0, null, 0.0, 0) }
 
     /** Current + best win streak over the most-recent 200 games. */
-    private suspend fun modeWinStreak(userId: String, mode: String): Pair<Int, Int> = runCatching {
+    suspend fun modeWinStreak(userId: String, mode: String): Pair<Int, Int> = runCatching {
         val rows = client.postgrest["matches"]
             .select(Columns.raw("winner_id")) {
                 filter { or { eq("player1_id", userId); eq("player2_id", userId) }; eq("game_mode", mode) }

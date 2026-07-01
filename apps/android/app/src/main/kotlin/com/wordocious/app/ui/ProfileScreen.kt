@@ -107,6 +107,10 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var selectedMode by remember { mutableStateOf<String?>(null) }
     // Solo/VS toggle (web profile/page.tsx) — filters user_stats by play_type.
     var activeTab by remember { mutableStateOf("solo") }
+    // Per-mode win streak (current, best) from match history — mirrors web
+    // mode-stats-card / iOS mode-detail streak. Not play_type-scoped, so the
+    // same value shows on both Solo and VS tabs.
+    var modeStreaks by remember { mutableStateOf<Map<String, Pair<Int, Int>>>(emptyMap()) }
     var loading by remember { mutableStateOf(true) }
     // Account section (web §H) — Delete Account inline confirm + error/in-flight state.
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -128,6 +132,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     LaunchedEffect(userId, tick) {
         if (userId != null) {
             stats = ProfileService.fetchUserStats(userId)
+            // Per-mode win streak for each mode the player has stats in.
+            modeStreaks = stats.map { it.gameMode }.distinct()
+                .associateWith { com.wordocious.app.data.MatchStatsService.modeWinStreak(userId, it) }
             recentMatches = ProfileService.fetchRecentMatches(userId)
             val oppIds = recentMatches.filter { it.player2Id != null }
                 .map { if (it.player1Id == userId) it.player2Id!! else it.player1Id }
@@ -312,8 +319,11 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                     horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(modeLabel(s.gameMode), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("${s.wins}W ${s.losses}L", fontSize = 12.sp, color = WTheme.textSecondary, fontWeight = FontWeight.Bold)
+                        modeStreaks[s.gameMode]?.let { (cur, best) ->
+                            if (best > 0) Text("🔥 $cur · best $best", fontSize = 11.sp, color = Color(0xFFF97316), fontWeight = FontWeight.Bold)
+                        }
                         if (s.bestScore != null) Text("Best: ${s.bestScore.toInt()}", fontSize = 11.sp, color = WTheme.primary, fontWeight = FontWeight.Bold)
                     }
                 }
