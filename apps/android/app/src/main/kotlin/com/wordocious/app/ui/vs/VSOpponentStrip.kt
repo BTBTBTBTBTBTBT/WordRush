@@ -63,8 +63,11 @@ fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: 
         // visible the whole match and never flickers in on the opponent's first guess.
         if (opponent.totalBoards <= 4) {
             val boards = if (opponent.totalBoards > 1) (0 until opponent.totalBoards).toList() else listOf(0)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                boards.forEach { i -> OpponentMiniBoard(opponent.tiles[i] ?: emptyList(), maxGuesses, wordLength, 8.dp) }
+            // Bigger cells so the opponent board uses the space around it and the
+            // live flip-in reveal is easy to follow (single gets the most room).
+            val cell = if (opponent.totalBoards > 1) 10.dp else 14.dp
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                boards.forEach { i -> OpponentMiniBoard(opponent.tiles[i] ?: emptyList(), maxGuesses, wordLength, cell) }
             }
         }
     }
@@ -79,29 +82,25 @@ fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: 
 @Composable
 fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength: Int, cell: androidx.compose.ui.unit.Dp) {
     val gap = if (cell >= 12.dp) 2.dp else 1.dp
+    val radius = maxOf(2.dp, (cell.value * 0.16f).dp)
     Column(verticalArrangement = Arrangement.spacedBy(gap)) {
         repeat(maxOf(maxGuesses, 1)) { r ->
             val isNew = r == tiles.size - 1 && tiles.getOrNull(r) != null
-            // Pop-in for the newest row: fade + scale 0.8→1 over 200ms.
-            val pop = androidx.compose.runtime.remember(r, tiles.size) {
-                androidx.compose.animation.core.Animatable(if (isNew && !WTheme.reducedMotion) 0f else 1f)
-            }
-            if (isNew && !WTheme.reducedMotion) {
-                LaunchedEffect(r, tiles.size) {
-                    pop.animateTo(1f, androidx.compose.animation.core.tween(200))
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(gap),
-                modifier = Modifier.graphicsLayer {
-                    val v = pop.value
-                    alpha = v
-                    scaleX = 0.8f + 0.2f * v
-                    scaleY = 0.8f + 0.2f * v
-                },
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                 repeat(maxOf(wordLength, 1)) { c ->
                     val st = tiles.getOrNull(r)?.getOrNull(c)
+                    val filled = st != null && st != TileState.EMPTY
+                    // Newest row flips in tile-by-tile (staggered 3D reveal) for a
+                    // fluid opponent-guess reveal; empty tiles stay static.
+                    val flip = androidx.compose.runtime.remember(r, tiles.size, c) {
+                        androidx.compose.animation.core.Animatable(if (isNew && filled && !WTheme.reducedMotion) 0f else 1f)
+                    }
+                    if (isNew && filled && !WTheme.reducedMotion) {
+                        LaunchedEffect(r, tiles.size, c) {
+                            delay((c * 55).toLong())
+                            flip.animateTo(1f, androidx.compose.animation.core.tween(300))
+                        }
+                    }
                     val color = when (st) {
                         TileState.CORRECT -> Color(0xFF7C3AED)
                         TileState.PRESENT -> Color(0xFFF59E0B)
@@ -109,8 +108,17 @@ fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength:
                         else -> Color.Transparent
                     }
                     Box(
-                        Modifier.size(cell).clip(RoundedCornerShape(2.dp)).background(color)
-                            .then(if (st == null || st == TileState.EMPTY) Modifier.border(1.dp, Color(0xFFD1D5DB), RoundedCornerShape(2.dp)) else Modifier),
+                        Modifier.size(cell)
+                            .graphicsLayer {
+                                val v = flip.value
+                                alpha = v
+                                val s = 0.5f + 0.5f * v
+                                scaleX = s; scaleY = s
+                                rotationX = -85f * (1f - v)
+                                cameraDistance = 12f * density
+                            }
+                            .clip(RoundedCornerShape(radius)).background(color)
+                            .then(if (st == null || st == TileState.EMPTY) Modifier.border(1.dp, Color(0xFFD1D5DB), RoundedCornerShape(radius)) else Modifier),
                     )
                 }
             }

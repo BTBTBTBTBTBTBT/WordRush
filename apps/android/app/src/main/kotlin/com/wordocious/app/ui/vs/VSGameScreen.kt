@@ -105,7 +105,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
 
         // Don't stack the countdown under the dark intro splash (it ticked behind
         // it and then popped in color); show it only once the intro is gone.
-        vm.countdown?.let { if (!vm.showIntro) CountdownOverlay(it, gradient) }
+        vm.countdown?.let { if (!vm.showIntro) CountdownOverlay(it, gradient, vm.countdownIsRematch) }
         // Match-intro splash — sits above the countdown for 2.5s (or until tapped).
         if (vm.showIntro) {
             val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
@@ -138,6 +138,19 @@ private fun VsTitle(label: String, gradient: List<Color>, size: Int) {
 @Composable
 private fun QueueScreen(label: String, gradient: List<Color>, position: Int, queueSize: Int, message: String?, inviteCode: String?, vm: VSMatchViewModel, onGoPro: () -> Unit, onHome: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
+    // CPU: no human matchmaking queue — a brief branded warmup while the bot
+    // spins up (the intro splash covers it a beat later).
+    if (vm.isCpu) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
+            VsTitle(label, gradient, 36)
+            CircularProgressIndicator(color = WTheme.primary)
+            Text(
+                vm.cpuPersona?.let { "Matching you with ${it.name} ${it.avatar}…" } ?: "Setting up your match…",
+                fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, textAlign = TextAlign.Center,
+            )
+        }
+        return
+    }
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
         VsTitle(label, gradient, 36)
         // Private match: surface the shareable code/link so the host can invite a
@@ -341,10 +354,10 @@ private fun CpuSpecial(title: String, color: Long, modifier: Modifier, onClick: 
 }
 
 @Composable
-private fun CountdownOverlay(count: Int, gradient: List<Color>) {
+private fun CountdownOverlay(count: Int, gradient: List<Color>, isRematch: Boolean = false) {
     Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)), Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
+            Text(if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
             Text("$count", fontSize = 96.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
         }
     }
@@ -585,8 +598,29 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
         }
         // Opponent identity + live counters (+ typing dots while pings arrive).
         item {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 40.dp, borderColor = WTheme.border)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Breathing "live" ring signals an active opponent while you wait.
+                Box(contentAlignment = Alignment.Center) {
+                    if (!WTheme.reducedMotion) {
+                        val inf = androidx.compose.animation.core.rememberInfiniteTransition(label = "pulse")
+                        val s by inf.animateFloat(
+                            0.9f, 1.45f,
+                            androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1500), androidx.compose.animation.core.RepeatMode.Restart),
+                            label = "s",
+                        )
+                        val a by inf.animateFloat(
+                            0.7f, 0f,
+                            androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1500), androidx.compose.animation.core.RepeatMode.Restart),
+                            label = "a",
+                        )
+                        Box(
+                            Modifier.size(52.dp)
+                                .graphicsLayer { scaleX = s; scaleY = s; alpha = a }
+                                .border(2.dp, gradient.firstOrNull() ?: WTheme.primary, androidx.compose.foundation.shape.CircleShape),
+                        )
+                    }
+                    VsAvatar(oppName, vm.opponentInfo?.avatarUrl, size = 48.dp, borderColor = WTheme.border)
+                }
                 Column {
                     Text(oppName, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
                     val attempts = vm.opponent.attempts
@@ -613,23 +647,24 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
                 )
             }
         }
-        // Opponent live board — scaled-up mini board(s), colors only (16dp tiles).
+        // Opponent live board — bigger now so it fills the space and the flip-in
+        // reveal reads clearly while you watch.
         item {
+            val specCell = if (liveTotalBoards <= 1) 34.dp else if (liveTotalBoards <= 4) 24.dp else 14.dp
             Box(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(18.dp)).padding(20.dp),
                 Alignment.Center,
             ) {
                 if (liveTotalBoards <= 1) {
-                    OpponentMiniBoard(vm.opponent.tiles[0] ?: emptyList(), spectatorRows, vm.wordLen, 16.dp)
+                    OpponentMiniBoard(vm.opponent.tiles[0] ?: emptyList(), spectatorRows, vm.wordLen, specCell)
                 } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // Show up to 4 boards per row at 16dp; wrap via chunking.
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             (0 until liveTotalBoards).chunked(4).forEach { rowBoards ->
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     rowBoards.forEach { i ->
-                                        OpponentMiniBoard(vm.opponent.tiles[i] ?: emptyList(), spectatorRows, vm.wordLen, 16.dp)
+                                        OpponentMiniBoard(vm.opponent.tiles[i] ?: emptyList(), spectatorRows, vm.wordLen, specCell)
                                     }
                                 }
                             }

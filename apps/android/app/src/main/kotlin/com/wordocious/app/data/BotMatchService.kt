@@ -220,11 +220,13 @@ class LocalBotMatchService(
     override fun offerRematch() {
         ended = false; clearTimers()
         val seed = config.fixedSeed ?: generateMatchSeed()
-        serverStartAt = System.currentTimeMillis().toDouble()
+        // Start the bot's clock after the 3s rematch countdown so its guesses land
+        // relative to the same start the player sees (parity with the initial match).
+        serverStartAt = System.currentTimeMillis().toDouble() + countdownMs
         plan = BotEngine.buildPlan(seed, mode, difficulty, planOpts())
         botDone = false; playerDone = false; playerBoardsSolved = 0; playerResult = null
         onRematchStart?.invoke(VSRematchStart(matchId = "bot-${serverStartAt.toLong()}", seed = seed))
-        schedule(50.0) { runPlan() }
+        schedule(countdownMs) { runPlan() }
     }
     override fun declineRematch() {}
 }

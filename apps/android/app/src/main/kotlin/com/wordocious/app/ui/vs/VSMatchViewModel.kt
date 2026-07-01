@@ -75,6 +75,7 @@ class VSMatchViewModel(
     var queuePosition by mutableStateOf(0)
     var queueSize by mutableStateOf(0)
     var countdown by mutableStateOf<Int?>(null)     // non-null → "Match Found" overlay
+    var countdownIsRematch by mutableStateOf(false) // relabels the overlay for a rematch
     var game by mutableStateOf<GameViewModel?>(null)
     val opponent = OpponentProgressState()
     var result by mutableStateOf<VSMatchEnded?>(null)
@@ -302,7 +303,7 @@ class VSMatchViewModel(
         service.onMatchEnded = { handleMatchEnded(it) }
         service.onRematchOffered = { rematch = RematchState.RECEIVED }
         service.onRematchDeclined = { rematch = RematchState.DECLINED }
-        service.onRematchStart = { beginMatch(it.seed, null) }
+        service.onRematchStart = { beginRematch(it.seed) }
         service.onOpponentLeft = { message = "Opponent left the match"; screen = VSScreen.OPPONENT_LEFT }
         service.onServerError = { message = it.message }
     }
@@ -346,9 +347,28 @@ class VSMatchViewModel(
         }
     }
 
+    /** Rematch start — no match-intro splash, so run a 3-2-1 countdown (mirrors
+     *  the initial MATCH_COUNTDOWN) before the board resets instead of snapping
+     *  straight into a new game. The bot is delayed the same 3s to stay aligned. */
+    private fun beginRematch(newSeed: String) {
+        rematch = RematchState.IDLE
+        showIntro = false
+        countdownIsRematch = true
+        val start = System.currentTimeMillis().toDouble() + 3000
+        countdown = 3
+        countdownJob?.cancel()
+        countdownJob = viewModelScope.launch {
+            var c = 3
+            while (c > 1) { delay(1000); c -= 1; countdown = c }
+            delay(1000)
+            beginMatch(newSeed, start)
+        }
+    }
+
     private fun beginMatch(newSeed: String, startMs: Double?) {
         seed = newSeed
         matchStartMs = startMs ?: (System.currentTimeMillis().toDouble())
+        countdownIsRematch = false
         opponent.attempts = 0; opponent.solved = false
         opponent.boardsSolved = 0; opponent.totalBoards = 0
         opponent.stagesCleared = 0; opponent.tiles = emptyMap()

@@ -248,6 +248,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // VS RECORD summary card (VS tab only) — aggregated across all modes.
         if (activeTab == "vs") {
             item { VsRecordCard(stats) }
+        }
+        if (activeTab == "vs_cpu") {
             item { CpuRecordCard(stats) }
         }
 
@@ -1056,34 +1058,27 @@ private fun AchievementsSection(unlocked: Set<String>, profile: com.wordocious.a
 @Composable
 private fun SoloVsToggle(active: String, onSelect: (String) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf("solo" to "Solo", "vs" to "VS").forEach { (key, label) ->
+        listOf("solo" to "Solo", "vs" to "VS", "vs_cpu" to "VS CPU").forEach { (key, label) ->
             val isActive = active == key
+            val accent = if (isActive) Color(0xFF7C3AED) else WTheme.textMuted
             Row(
                 Modifier.clip(RoundedCornerShape(12.dp))
                     .background(if (isActive) WTheme.surface else WTheme.surfaceHover)
                     .border(1.5.dp, if (isActive) Color(0xFF7C3AED) else WTheme.border, RoundedCornerShape(12.dp))
                     .clickableNoRipple { onSelect(key) }
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                if (key == "solo") {
-                    Icon(
-                        Icons.Filled.Person, null,
-                        tint = if (isActive) Color(0xFF7C3AED) else WTheme.textMuted,
-                        modifier = Modifier.size(14.dp),
-                    )
-                } else {
-                    Icon(
+                when (key) {
+                    "solo" -> Icon(Icons.Filled.Person, null, tint = accent, modifier = Modifier.size(14.dp))
+                    "vs" -> Icon(
                         androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
-                        tint = if (isActive) Color(0xFF7C3AED) else WTheme.textMuted,
-                        modifier = Modifier.size(14.dp),
+                        tint = accent, modifier = Modifier.size(14.dp),
                     )
+                    else -> Text("🤖", fontSize = 12.sp)
                 }
-                Text(
-                    label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold,
-                    color = if (isActive) Color(0xFF7C3AED) else WTheme.textMuted,
-                )
+                Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = accent)
             }
         }
     }
@@ -1109,7 +1104,7 @@ private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
             Text("🤖", fontSize = 18.sp)
         }
         Column(Modifier.weight(1f)) {
-            Text("VS CPU · PRACTICE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF64748B))
+            Text("VS CPU", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF64748B))
             Text("$wins–$losses", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             if (total == 0) Text("Beat a bot to start your record", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
             else if (bestStreak > 0) Text("🔥 Best streak: $bestStreak", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF97316))
