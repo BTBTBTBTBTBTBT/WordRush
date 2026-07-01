@@ -54,7 +54,10 @@ function PlayerCard({ player, side }: { player: IntroPlayer; side: 'left' | 'rig
   return (
     <div
       className="flex flex-col items-center gap-2 w-32"
-      style={{ animation: `${side === 'left' ? 'vs-slam-left' : 'vs-slam-right'} 0.5s cubic-bezier(0.22, 1.4, 0.36, 1) both` }}
+      // Softer, slower slam than before (0.5s → 0.7s, gentler overshoot) with the
+      // opponent card landing a beat later (+0.12s) for a staggered duel clash —
+      // mirrors the iOS build-68 match-intro timing.
+      style={{ animation: `${side === 'left' ? 'vs-slam-left' : 'vs-slam-right'} 0.7s cubic-bezier(0.3, 1.3, 0.4, 1) ${side === 'left' ? '0s' : '0.12s'} both` }}
     >
       <IntroAvatar player={player} />
       <div className="text-white font-black text-sm text-center truncate w-full">{player.username}</div>
@@ -98,17 +101,17 @@ export function MatchIntro({ me, opponent, headToHead, onDone }: MatchIntroProps
       <style>{`
         @keyframes vs-slam-left {
           0% { transform: translateX(-130%); opacity: 0; }
-          70% { transform: translateX(10%); opacity: 1; }
+          72% { transform: translateX(6%); opacity: 1; }
           100% { transform: translateX(0); opacity: 1; }
         }
         @keyframes vs-slam-right {
           0% { transform: translateX(130%); opacity: 0; }
-          70% { transform: translateX(-10%); opacity: 1; }
+          72% { transform: translateX(-6%); opacity: 1; }
           100% { transform: translateX(0); opacity: 1; }
         }
         @keyframes vs-pop {
           0% { transform: scale(0) rotate(-12deg); opacity: 0; }
-          60% { transform: scale(1.35) rotate(-12deg); opacity: 1; }
+          60% { transform: scale(1.25) rotate(-12deg); opacity: 1; }
           100% { transform: scale(1) rotate(-12deg); opacity: 1; }
         }
         @keyframes vs-h2h-in {
@@ -122,7 +125,7 @@ export function MatchIntro({ me, opponent, headToHead, onDone }: MatchIntroProps
           <PlayerCard player={me} side="left" />
           <div
             className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-400 via-pink-500 to-purple-500 px-1"
-            style={{ animation: 'vs-pop 0.55s cubic-bezier(0.22, 1.4, 0.36, 1) 0.25s both' }}
+            style={{ animation: 'vs-pop 0.55s cubic-bezier(0.3, 1.3, 0.4, 1) 0.5s both' }}
           >
             VS
           </div>
@@ -132,7 +135,7 @@ export function MatchIntro({ me, opponent, headToHead, onDone }: MatchIntroProps
         {opponent && headToHead && (
           <div
             className="text-sm font-extrabold text-white/90"
-            style={{ animation: 'vs-h2h-in 0.4s ease-out 0.6s both' }}
+            style={{ animation: 'vs-h2h-in 0.45s ease-out 0.85s both' }}
           >
             {headToHeadLine(opp.username, headToHead)}
           </div>
