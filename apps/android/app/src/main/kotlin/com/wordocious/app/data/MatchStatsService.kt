@@ -347,6 +347,29 @@ object MatchStatsService {
     }.getOrElse { WordResult(null, 0, null, 0.0, 0) }
 
     /** Current + best win streak over the most-recent 200 games. */
+    @Serializable
+    private data class GhostRow(
+        @SerialName("player1_score") val player1Score: Int = 0,
+        @SerialName("player1_time") val player1Time: Int = 0,
+    )
+
+    /** Fewest-guesses, then fastest winning solo run for (user, mode) — powers the
+     *  "Beat Your Best" ghost race. Returns (guesses, timeMs) or null. */
+    suspend fun ghostBestRun(userId: String, mode: String): Pair<Int, Double>? = runCatching {
+        val row = client.postgrest["matches"]
+            .select(Columns.raw("player1_score,player1_time")) {
+                filter {
+                    eq("player1_id", userId); eq("game_mode", mode); eq("winner_id", userId)
+                    gt("player1_time", 0); gt("player1_score", 0)
+                }
+                order("player1_score", Order.ASCENDING)
+                order("player1_time", Order.ASCENDING)
+                limit(1)
+            }
+            .decodeList<GhostRow>().firstOrNull() ?: return@runCatching null
+        row.player1Score to row.player1Time * 1000.0
+    }.getOrNull()
+
     suspend fun modeWinStreak(userId: String, mode: String): Pair<Int, Int> = runCatching {
         val rows = client.postgrest["matches"]
             .select(Columns.raw("winner_id")) {

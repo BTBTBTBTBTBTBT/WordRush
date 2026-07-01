@@ -166,6 +166,13 @@ class LocalBotMatchService(
                 if (ev.typing) onOpponentTyping?.invoke() else ev.progress?.let { onOpponentProgress?.invoke(it) }
             }
         }
+        // Gauntlet: advance the opponent's 5-node stepper at each stage clear.
+        for ((atMs, stageIndex) in p.stageEvents) {
+            schedule(atMs) {
+                if (ended) return@schedule
+                onOpponentStageCompleted?.invoke(VSStageEvent(stageIndex))
+            }
+        }
         schedule(p.finishAtMs) {
             if (ended) return@schedule
             botDone = true; botTimeMs = p.finishAtMs; maybeEnd()

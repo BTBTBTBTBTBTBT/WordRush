@@ -4,6 +4,9 @@ import com.wordocious.core.GameDictionary
 import com.wordocious.core.GameMode
 import com.wordocious.core.createInitialState
 import com.wordocious.core.evaluateGuess
+import com.wordocious.core.gauntletStages
+import com.wordocious.core.gauntletTotalSolutions
+import com.wordocious.core.generateSolutionsFromSeed
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -21,9 +24,15 @@ object BotEngine {
     private val MODE_BOARD_COUNT = mapOf(
         GameMode.DUEL to 1, GameMode.DUEL_6 to 1, GameMode.DUEL_7 to 1, GameMode.PROPERNOUNDLE to 1,
         GameMode.QUORDLE to 4, GameMode.SEQUENCE to 4, GameMode.RESCUE to 4, GameMode.OCTORDLE to 8,
-        GameMode.MULTI_DUEL to 2,
+        GameMode.MULTI_DUEL to 2, GameMode.GAUNTLET to gauntletTotalSolutions,
     )
     fun boardCount(mode: GameMode): Int = MODE_BOARD_COUNT[mode] ?: 1
+
+    /** Board index that COMPLETES each Gauntlet stage (last board of the stage). */
+    private val gauntletStageLastBoard: List<Int> = buildList {
+        var cum = 0
+        for (s in gauntletStages) { cum += s.boardCount; add(cum - 1) } // [0,4,8,12,20]
+    }
 
     data class AdaptiveHint(val winRate: Double = 0.5, val avgGuesses: Int? = null)
 
@@ -43,6 +52,8 @@ object BotEngine {
         val finishAtMs: Double,
         val totalGuesses: Int,
         val events: List<Event>,
+        /** Gauntlet: (atMs, stageIndex) when the opponent clears each stage. */
+        val stageEvents: List<Pair<Double, Int>>,
         val guessLog: List<VSGuessLogEntry>,
         val solutions: List<String>,
     )
@@ -129,10 +140,15 @@ object BotEngine {
         val state = createInitialState(seed, mode)
         val totalBoards = boardCount(mode)
         val p = resolveParams(difficulty, opts.adaptive)
-        val solutions = state.boards.map { it.solution.uppercase() }
+        // Gauntlet's createInitialState boards hold only the current stage; the
+        // full 21-board run comes from the seed directly (reducer parity).
+        val solutions = if (mode == GameMode.GAUNTLET)
+            generateSolutionsFromSeed(seed, gauntletTotalSolutions).map { it.uppercase() }
+        else state.boards.map { it.solution.uppercase() }
         val willSolveAll = if (opts.forceSolve) true else Random.nextDouble() > p.failChance
 
         val events = ArrayList<Event>()
+        val stageEvents = ArrayList<Pair<Double, Int>>()
         val guessLog = ArrayList<VSGuessLogEntry>()
         var cumulativeAttempts = 0
         var boardsSolved = 0
@@ -151,6 +167,10 @@ object BotEngine {
                 cumulativeAttempts += 1
                 val isSolvingRow = boardSolves && i == path.size - 1
                 if (isSolvingRow) boardsSolved += 1
+                if (isSolvingRow && mode == GameMode.GAUNTLET) {
+                    val stageIndex = gauntletStageLastBoard.indexOf(bi)
+                    if (stageIndex >= 0) stageEvents.add(atMs to stageIndex)
+                }
                 events.add(Event(max(0.0, atMs - 1100), true, null))
                 events.add(Event(atMs, false, VSOpponentProgress(
                     attempts = cumulativeAttempts,
@@ -164,14 +184,16 @@ object BotEngine {
             lastAtMs = atMs
         }
 
+        var stageEventsOut: List<Pair<Double, Int>> = stageEvents
         if (opts.targetSolveMs != null && lastAtMs > 0) {
             val scale = opts.targetSolveMs / lastAtMs
             for (idx in events.indices) events[idx] = events[idx].copy(atMs = max(0.0, events[idx].atMs * scale))
+            stageEventsOut = stageEvents.map { (at, si) -> max(0.0, at * scale) to si }
             lastAtMs = opts.targetSolveMs
         }
 
         events.sortBy { it.atMs }
         return Plan(totalBoards, boardsSolved >= totalBoards, boardsSolved, lastAtMs, cumulativeAttempts,
-            events, guessLog, solutions)
+            events, stageEventsOut, guessLog, solutions)
     }
 }

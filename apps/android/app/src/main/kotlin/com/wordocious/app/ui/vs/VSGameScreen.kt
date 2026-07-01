@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
 import com.wordocious.app.data.BotPersonas
 import com.wordocious.app.data.BotTier
 import com.wordocious.app.data.CpuKind
@@ -168,7 +170,7 @@ private fun QueueScreen(label: String, gradient: List<Color>, position: Int, que
             }
         }
         // Play the CPU — explicit choice + auto-offer once the queue is quiet.
-        if (!vm.isCpu && vm.mode != com.wordocious.core.GameMode.GAUNTLET) {
+        if (!vm.isCpu) {
             CpuChooser(vm, onGoPro)
         }
         Pill("Cancel") { onHome() }
@@ -180,7 +182,12 @@ private fun QueueScreen(label: String, gradient: List<Color>, position: Int, que
 private fun CpuChooser(vm: VSMatchViewModel, onGoPro: () -> Unit) {
     var showChooser by remember { mutableStateOf(false) }
     var autoOffer by remember { mutableStateOf(false) }
+    var ghostRun by remember { mutableStateOf<Pair<Int, Double>?>(null) }
     LaunchedEffect(Unit) { kotlinx.coroutines.delay(15_000); if (!vm.isCpu) autoOffer = true }
+    LaunchedEffect(vm.mode) {
+        val uid = com.wordocious.app.data.AuthService.userId
+        if (vm.isPro && uid != null) ghostRun = com.wordocious.app.data.MatchStatsService.ghostBestRun(uid, vm.mode.name)
+    }
 
     if (showChooser || autoOffer) {
         Column(
@@ -206,8 +213,12 @@ private fun CpuChooser(vm: VSMatchViewModel, onGoPro: () -> Unit) {
                         }
                     }
                 }
+                CpuSpecial("⚖️ Adaptive — matched to your form", 0xFF7C3AED, Modifier.fillMaxWidth()) { vm.startCpu(CpuKind.ADAPTIVE) }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CpuSpecial("⚖️ Adaptive", 0xFF7C3AED, Modifier.weight(1f)) { vm.startCpu(CpuKind.ADAPTIVE) }
+                    CpuSpecial(
+                        if (ghostRun == null) "👻 Beat Your Best (win first)" else "👻 Beat Your Best",
+                        0xFF64748B, Modifier.weight(1f).then(if (ghostRun == null) Modifier.alpha(0.45f) else Modifier),
+                    ) { ghostRun?.let { (g, t) -> vm.startCpu(CpuKind.GHOST, ghostGuesses = g, ghostTimeMs = t) } }
                     CpuSpecial("📅 Bot of the Day", 0xFFF59E0B, Modifier.weight(1f)) {
                         vm.startCpu(CpuKind.DAILY, fixedSeed = com.wordocious.core.generateDailySeed(CpuProgressionStore.todayUtc(), "${vm.mode.name}_CPU"))
                     }
@@ -226,6 +237,25 @@ private fun CpuChooser(vm: VSMatchViewModel, onGoPro: () -> Unit) {
         Text("Play the CPU instead", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
             modifier = Modifier.clickableNoRipple { showChooser = true })
     }
+}
+
+/** Photo-finish flourish — a spring-in stamp for a CPU close/last-guess win,
+ *  distinct from the normal win overlay. Animates on appear. */
+@Composable
+private fun PhotoFinishStamp(clutch: Boolean) {
+    var shown by remember { mutableStateOf(false) }
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (shown) 1f else 0.3f,
+        animationSpec = androidx.compose.animation.core.spring(dampingRatio = 0.55f, stiffness = 260f),
+        label = "pf",
+    )
+    LaunchedEffect(Unit) { shown = true }
+    Text(
+        if (clutch) "CLUTCH!" else "PHOTO FINISH!",
+        fontSize = 30.sp, fontWeight = FontWeight.Black,
+        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF97316), Color(0xFFEC4899)))),
+        modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale; rotationZ = -6f; alpha = if (shown) 1f else 0f },
+    )
 }
 
 @Composable
@@ -555,10 +585,7 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
         if (vm.isCpu) {
             item {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(top = 6.dp)) {
-                    vm.photoFinish?.let { pf ->
-                        Text(if (pf == "clutch") "CLUTCH!" else "PHOTO FINISH!", fontSize = 28.sp, fontWeight = FontWeight.Black,
-                            style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF97316), Color(0xFFEC4899)))))
-                    }
+                    vm.photoFinish?.let { pf -> PhotoFinishStamp(pf == "clutch") }
                     vm.cpuMilestone?.let { m -> Text("🔥 $m-win CPU streak!", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFF97316)) }
                         ?: run { if (vm.cpuStreak > 0) Text("CPU win streak: ${vm.cpuStreak}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted) }
                     vm.cpuUnlock?.let {
