@@ -241,6 +241,19 @@ enum GameResultsService {
         return result
     }
 
+    /// Record a CPU / bot VS result into its OWN bucket (play_type='vs_cpu').
+    /// Pure practice: writes ONLY user_stats — no profiles/XP, no matches row,
+    /// no daily_results, no achievements. So CPU games never reach the daily
+    /// leaderboard, head-to-head, per-mode streaks, or all-time records, and
+    /// never fire a VS achievement. Best-effort.
+    static func recordCpuResult(gameMode: GameMode, won: Bool, guessCount: Int, timeSeconds: Int) async {
+        let client = AuthService.shared.client
+        guard let session = try? await client.auth.session else { return }
+        let userId = session.user.id.uuidString
+        await updateUserStats(client, userId: userId, mode: gameMode.rawValue, playType: "vs_cpu",
+                              won: won, guessCount: guessCount, timeSeconds: timeSeconds)
+    }
+
     private static func updateUserStats(
         _ client: SupabaseClient, userId: String, mode: String, playType: String,
         won: Bool, guessCount: Int, timeSeconds: Int
