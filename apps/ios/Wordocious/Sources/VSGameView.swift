@@ -63,7 +63,7 @@ struct VSGameView: View {
                                                                avatarUrl: vm.opponentInfo?.avatarUrl,
                                                                level: vm.opponentInfo?.level) : nil,
                     headToHead: vm.headToHead,
-                    onDone: { vm.showIntro = false })
+                    onDone: { vm.showIntro = false; vm.startCountdownTick() })
             }
 
             // Gauntlet stage-transition overlay — same auto-advancing overlay as
@@ -577,27 +577,33 @@ struct VSGameView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
                 }
 
-                // Opponent live board — bigger now, so it fills the space and the
-                // flip-in reveal reads clearly while you watch.
-                let specCell: CGFloat = liveTotalBoards <= 1 ? 34 : (liveTotalBoards <= 4 ? 24 : 14)
-                Group {
-                    if liveTotalBoards <= 1 {
-                        OpponentMiniBoard(tiles: vm.opponent.tiles[0] ?? [],
-                                          maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: specCell)
-                    } else {
-                        let columns = Array(repeating: GridItem(.flexible(), spacing: 10),
-                                            count: min(liveTotalBoards, 4))
-                        LazyVGrid(columns: columns, spacing: 12) {
-                            ForEach(0..<liveTotalBoards, id: \.self) { i in
-                                OpponentMiniBoard(tiles: vm.opponent.tiles[i] ?? [],
-                                                  maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: specCell)
+                // Gauntlet spectates by STAGE (its 21 boards are meaningless as a
+                // flat wall) — a card per stage with its name, status, and boards.
+                if mode == .gauntlet {
+                    GauntletSpectatorView(opponent: vm.opponent, wordLength: vm.wordLen)
+                } else {
+                    // Opponent live board — bigger now, so it fills the space and the
+                    // flip-in reveal reads clearly while you watch.
+                    let specCell: CGFloat = liveTotalBoards <= 1 ? 34 : (liveTotalBoards <= 4 ? 24 : 14)
+                    Group {
+                        if liveTotalBoards <= 1 {
+                            OpponentMiniBoard(tiles: vm.opponent.tiles[0] ?? [],
+                                              maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: specCell)
+                        } else {
+                            let columns = Array(repeating: GridItem(.flexible(), spacing: 10),
+                                                count: min(liveTotalBoards, 4))
+                            LazyVGrid(columns: columns, spacing: 12) {
+                                ForEach(0..<liveTotalBoards, id: \.self) { i in
+                                    OpponentMiniBoard(tiles: vm.opponent.tiles[i] ?? [],
+                                                      maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: specCell)
+                                }
                             }
                         }
                     }
+                    .padding(20).frame(maxWidth: .infinity)
+                    .background(RoundedRectangle(cornerRadius: 18).fill(Theme.surface))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.border, lineWidth: 1.5))
                 }
-                .padding(20).frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 18).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.border, lineWidth: 1.5))
 
                 // Your stats
                 if let guesses = vm.myFinalGuesses {
@@ -607,13 +613,22 @@ struct VSGameView: View {
                     ])
                 }
 
-                // CPU only: once the bot can't beat you, skip watching its timer.
-                if vm.isCpu && cpuWinLocked {
+                // CPU only: the bot's outcome is already fixed by its plan, so let
+                // the player skip watching it grind out its remaining boards.
+                // Win-locked → celebratory "Claim your win"; otherwise a neutral
+                // "Skip to result" fast-forward (which may be a win OR a loss —
+                // whatever the bot's plan resolves to).
+                if vm.isCpu {
                     Button { Haptics.success(); vm.finishCpuNow() } label: {
-                        Label("Claim your win", systemImage: "flag.checkered")
-                            .font(Brand.font(15, .black)).foregroundStyle(.white)
+                        Label(cpuWinLocked ? "Claim your win" : "Skip to result",
+                              systemImage: cpuWinLocked ? "flag.checkered" : "forward.fill")
+                            .font(Brand.font(15, .black))
+                            .foregroundStyle(cpuWinLocked ? .white : Theme.primary)
                             .frame(maxWidth: .infinity).padding(.vertical, 13)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(cpuWinLocked
+                                ? AnyShapeStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
+                                : AnyShapeStyle(Theme.surfaceHover)))
+                            .overlay(cpuWinLocked ? nil : RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
                     }.buttonStyle(.plain)
                 }
 
@@ -926,6 +941,92 @@ private struct GauntletStepperBar: View {
                 Image(systemName: "play.fill").font(.system(size: 8)).foregroundStyle(fg).offset(x: 1)
             } else {
                 Text("\(i + 1)").font(.system(size: 10, weight: .bold)).foregroundStyle(fg)
+            }
+        }
+    }
+}
+
+/// Gauntlet spectator — the opponent's 21 boards broken down by stage (name,
+/// status, boards), instead of a meaningless flat wall. Cleared stages collapse
+/// to their solved rows; the active stage shows live (with the flip-in reveal);
+/// locked stages dim out.
+private struct GauntletSpectatorView: View {
+    let opponent: VSMatchViewModel.OpponentProgress
+    let wordLength: Int
+
+    private enum StageStatus { case cleared, active, locked }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            ForEach(Array(gauntletStages.enumerated()), id: \.offset) { idx, stage in
+                stageCard(idx, stage)
+            }
+        }
+    }
+
+    private func boardOffset(_ idx: Int) -> Int {
+        gauntletStages.prefix(idx).reduce(0) { $0 + $1.boardCount }
+    }
+    private func status(_ idx: Int) -> StageStatus {
+        idx < opponent.stagesCleared ? .cleared : (idx == opponent.stagesCleared ? .active : .locked)
+    }
+
+    @ViewBuilder private func stageCard(_ idx: Int, _ stage: GauntletStageConfig) -> some View {
+        let st = status(idx)
+        let accent = GameScreen.gauntletStageGradient(stage.name)
+        let offset = boardOffset(idx)
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle().fill((accent.first ?? Theme.primary).opacity(st == .locked ? 0.10 : 0.18)).frame(width: 26, height: 26)
+                    if st == .cleared {
+                        Image(systemName: "checkmark").font(.system(size: 11, weight: .black)).foregroundStyle(accent.first ?? Theme.primary)
+                    } else {
+                        Text("\(idx + 1)").font(Brand.font(12, .black))
+                            .foregroundStyle(st == .locked ? Theme.textMuted : (accent.first ?? Theme.primary))
+                    }
+                }
+                Text(stage.name).font(Brand.font(15, .black))
+                    .foregroundStyle(st == .locked
+                                     ? AnyShapeStyle(Theme.textMuted)
+                                     : AnyShapeStyle(LinearGradient(colors: accent, startPoint: .leading, endPoint: .trailing)))
+                Spacer()
+                statusChip(st)
+            }
+            if st != .locked { boardsGrid(stage, offset: offset, active: st == .active) }
+        }
+        .padding(14).frame(maxWidth: .infinity)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(st == .active ? (accent.first ?? Theme.border) : Theme.border,
+                                                           lineWidth: st == .active ? 1.8 : 1.5))
+        .opacity(st == .locked ? 0.55 : 1)
+    }
+
+    @ViewBuilder private func statusChip(_ st: StageStatus) -> some View {
+        switch st {
+        case .cleared:
+            Label("Cleared", systemImage: "checkmark.seal.fill")
+                .font(Brand.font(10, .heavy)).foregroundStyle(Color(hex: 0x16A34A))
+        case .active:
+            HStack(spacing: 5) {
+                Text("PLAYING").font(Brand.font(10, .heavy)).foregroundStyle(Theme.primary)
+                TypingDots(dotSize: 5)
+            }
+        case .locked:
+            Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(Theme.textMuted)
+        }
+    }
+
+    @ViewBuilder private func boardsGrid(_ stage: GauntletStageConfig, offset: Int, active: Bool) -> some View {
+        // Cap rows to what's actually used (+1 while active) so a cleared OctoWord
+        // stage doesn't render 8 towers of empty rows.
+        let used = (0..<stage.boardCount).map { opponent.tiles[offset + $0]?.count ?? 0 }.max() ?? 0
+        let rows = min(stage.maxGuesses, max(1, used + (active ? 1 : 0)))
+        let cell: CGFloat = stage.boardCount == 1 ? 22 : stage.boardCount <= 4 ? 16 : 11
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: min(stage.boardCount, 4))
+        LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(0..<stage.boardCount, id: \.self) { b in
+                OpponentMiniBoard(tiles: opponent.tiles[offset + b] ?? [], maxGuesses: rows, wordLength: wordLength, cell: cell)
             }
         }
     }

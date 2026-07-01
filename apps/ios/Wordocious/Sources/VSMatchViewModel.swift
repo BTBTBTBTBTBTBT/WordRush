@@ -94,6 +94,7 @@ final class VSMatchViewModel: ObservableObject {
     @Published var queueSize = 0           // total players waiting (queue_status.queueSize)
     @Published var countdown: Int?         // non-nil → show "Match Found" overlay
     @Published var countdownIsRematch = false  // relabels the overlay for a rematch
+    private var pendingCountdownSecs = 3        // held until the intro finishes
     @Published var game: GameViewModel?    // built on match_start (board modes)
     @Published var proper: ProperNoundleVM?  // built on match_start (ProperNoundle VS)
     @Published var opponent = OpponentProgress()
@@ -407,8 +408,18 @@ final class VSMatchViewModel: ObservableObject {
         if let code = inviteCode {
             Task { await InviteService.markAccepted(code: code, matchId: data.matchId) }
         }
-        let secs = max(1, Int(data.countdownSeconds))
-        countdown = secs
+        // Don't tick the countdown WHILE the intro clash is on screen — otherwise
+        // it counts down behind the splash and only a stale "1" flashes when the
+        // intro lifts. Hold it and start ticking when the intro finishes (below).
+        pendingCountdownSecs = max(1, Int(data.countdownSeconds))
+    }
+
+    /// Start the visible match-start countdown — called when the match-intro
+    /// splash finishes, so the "3-2-1" reads smoothly instead of flashing a
+    /// leftover number. beginMatch (match_start) clears it when the board loads.
+    func startCountdownTick() {
+        guard countdown == nil, screen == .queue else { return }
+        countdown = pendingCountdownSecs
         countdownTimer?.invalidate()
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] t in
             Task { @MainActor in
