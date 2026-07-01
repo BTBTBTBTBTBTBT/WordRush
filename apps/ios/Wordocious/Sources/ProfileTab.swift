@@ -110,7 +110,8 @@ struct ProfileTab: View {
                 globalSummary(p)
                 recapCard(p)
                 soloVsToggle
-                if activeTab == "vs" { vsRecordCard; cpuRecordCard }
+                if activeTab == "vs" { vsRecordCard }
+                if activeTab == "vs_cpu" { cpuRecordCard }
                 ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(filteredStats), selected: $selectedMode)
                 if let mode = selectedMode {
                     // Mode-detail view.
@@ -705,20 +706,22 @@ struct ProfileTab: View {
 
     private var soloVsToggle: some View {
         HStack(spacing: 8) {
-            ForEach(["solo", "vs"], id: \.self) { t in
+            ForEach(["solo", "vs", "vs_cpu"], id: \.self) { t in
                 let active = activeTab == t
                 Button { activeTab = t } label: {
                     HStack(spacing: 6) {
                         if t == "solo" {
                             Image(systemName: "person.fill").font(.system(size: 12, weight: .bold))
-                        } else {
+                        } else if t == "vs" {
                             Image("swords").renderingMode(.template).resizable().scaledToFit()
                                 .frame(width: 14, height: 14)
+                        } else {
+                            Image(systemName: "cpu").font(.system(size: 12, weight: .bold))
                         }
-                        Text(t == "solo" ? "Solo" : "VS").font(Brand.font(12, .heavy))
+                        Text(t == "solo" ? "Solo" : t == "vs" ? "VS" : "VS CPU").font(Brand.font(12, .heavy))
                     }
                     .foregroundStyle(active ? Theme.primary : Theme.textMuted)
-                    .padding(.horizontal, 16).padding(.vertical, 8)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
                     .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
                 }.buttonStyle(.plain)
@@ -741,7 +744,7 @@ struct ProfileTab: View {
                 Image(systemName: "cpu").font(.system(size: 18)).foregroundStyle(Color(hex: 0x64748B))
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text("VS CPU · PRACTICE").font(Brand.font(10, .heavy)).tracking(0.8).foregroundStyle(Color(hex: 0x64748B))
+                Text("VS CPU").font(Brand.font(10, .heavy)).tracking(0.8).foregroundStyle(Color(hex: 0x64748B))
                 Text("\(rec.wins)–\(rec.losses)").font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary)
                 if rec.total == 0 {
                     Text("Beat a bot to start your record").font(Brand.font(10, .heavy)).foregroundStyle(Theme.textMuted)

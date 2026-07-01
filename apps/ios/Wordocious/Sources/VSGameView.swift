@@ -132,31 +132,41 @@ struct VSGameView: View {
 
     private var queueScreen: some View {
         VStack(spacing: 22) {
-            vsTitle(36)
-            // Private match: surface the shareable code/link so the host can
-            // actually invite a friend (the matchmaker buckets both by code).
-            if let code = vm.inviteCode { invitePanel(code) }
-            ProgressView().controlSize(.large).tint(Theme.primary)
-            VStack(spacing: 6) {
-                CyclingStatus()
-                Text("Position in queue: \(vm.queuePosition + 1)")
-                    .font(Brand.body(13)).foregroundStyle(Theme.textMuted)
-                if vm.queueSize > 1 {
-                    Text("\(vm.queueSize) players waiting")
-                        .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            // CPU: no human matchmaking queue — show a brief branded warmup while
+            // the bot spins up (the intro splash covers it a beat later).
+            if vm.isCpu {
+                vsTitle(36)
+                ProgressView().controlSize(.large).tint(Theme.primary)
+                Text(vm.cpuPersona.map { "Matching you with \($0.name) \($0.avatar)…" } ?? "Setting up your match…")
+                    .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textMuted)
+                    .multilineTextAlignment(.center)
+            } else {
+                vsTitle(36)
+                // Private match: surface the shareable code/link so the host can
+                // actually invite a friend (the matchmaker buckets both by code).
+                if let code = vm.inviteCode { invitePanel(code) }
+                ProgressView().controlSize(.large).tint(Theme.primary)
+                VStack(spacing: 6) {
+                    CyclingStatus()
+                    Text("Position in queue: \(vm.queuePosition + 1)")
+                        .font(Brand.body(13)).foregroundStyle(Theme.textMuted)
+                    if vm.queueSize > 1 {
+                        Text("\(vm.queueSize) players waiting")
+                            .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                    }
                 }
+                // Auto-offer the CPU once the human queue sits quiet.
+                if vm.countdown == nil && !vm.showIntro {
+                    cpuChooserPanel
+                }
+                Button(action: goHome) {
+                    Label("Cancel", systemImage: "xmark")
+                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
+                        .padding(.horizontal, 20).padding(.vertical, 10)
+                        .background(Capsule().fill(Theme.surface)).overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
+                }.buttonStyle(.plain)
+                if let m = vm.message { errorPill(m) }
             }
-            // Play the CPU — explicit choice + auto-offer once the queue is quiet.
-            if !vm.isCpu && vm.countdown == nil && !vm.showIntro {
-                cpuChooserPanel
-            }
-            Button(action: goHome) {
-                Label("Cancel", systemImage: "xmark")
-                    .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
-                    .padding(.horizontal, 20).padding(.vertical, 10)
-                    .background(Capsule().fill(Theme.surface)).overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
-            }.buttonStyle(.plain)
-            if let m = vm.message { errorPill(m) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $showCpuPro) { ProView() }
