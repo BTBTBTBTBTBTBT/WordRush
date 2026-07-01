@@ -34,7 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.InviteService
 import com.wordocious.app.data.VSPlayLimit
+import kotlinx.coroutines.launch
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.modeTitle
 import com.wordocious.app.ui.modeTitleGradient
@@ -43,9 +45,9 @@ import com.wordocious.core.GameMode
 
 /**
  * VS Battle lobby — entry from the Home "VS Battle" card. Free users get one
- * daily Classic VS; Pro unlocks all board modes (unlimited). Ports iOS
- * VSLobbyView. Private-match invites + Gauntlet/ProperNoundle VS are deferred to
- * a follow-up (no InviteService / ProperNoundleVM on Android yet).
+ * daily Classic VS; Pro unlocks all modes (unlimited) incl. Gauntlet +
+ * ProperNoundle, plus private-match invites (create a code / join by code).
+ * Ports iOS VSLobbyView.
  */
 private val VS_MODES = listOf(
     GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7,
@@ -54,7 +56,7 @@ private val VS_MODES = listOf(
 )
 
 @Composable
-fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onGoPro: () -> Unit, onClose: () -> Unit) {
+fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode, String) -> Unit, onGoPro: () -> Unit, onClose: () -> Unit) {
     val profile by AuthService.profile.collectAsState()
     val isPro = AuthService.isProActive
 
@@ -80,6 +82,7 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onGoPro: () -> Unit, onCl
             } else if (isPro) {
                 SectionLabel("QUICK MATCH")
                 VS_MODES.forEach { m -> ModeRow(m) { onPlay(m, false) } }
+                PrivateMatchSection(onEnterInvite)
             } else {
                 // Local flag OR server row — the SharedPreferences flag alone
                 // was evadable by clearing app data / using a second device.
@@ -126,6 +129,71 @@ private fun CtaCard(title: String, subtitle: String, gradient: List<Color>, onCl
         Text(title, fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
         Text(subtitle, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.85f))
     }
+}
+
+@Composable
+private fun PrivateMatchSection(onEnterInvite: (GameMode, String) -> Unit) {
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var error by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var joinCode by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+
+    Spacer(Modifier.height(4.dp))
+    SectionLabel("PRIVATE MATCH")
+    Text(
+        "Create a code to share, or enter a friend's code.",
+        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    // Create — pick a mode; we generate a shareable code and drop you into the
+    // waiting lobby (2-column grid, matching iOS createInvite).
+    VS_MODES.chunked(2).forEach { pair ->
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            pair.forEach { m ->
+                Row(
+                    Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
+                        .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp))
+                        .clickableNoRipple {
+                            if (busy) return@clickableNoRipple
+                            busy = true; error = null
+                            scope.launch {
+                                val res = InviteService.createInvite(m.name, null)
+                                busy = false
+                                if (res.code != null) onEnterInvite(m, res.code) else error = res.error ?: "Couldn't create an invite."
+                            }
+                        }.padding(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(modeTitle(m), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                }
+            }
+            if (pair.size == 1) Spacer(Modifier.weight(1f))
+        }
+    }
+    // Join — enter a friend's code.
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.material3.OutlinedTextField(
+            value = joinCode, onValueChange = { joinCode = it.uppercase().take(8) },
+            placeholder = { Text("Enter code") }, singleLine = true,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            Modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.primary)
+                .clickableNoRipple {
+                    val code = joinCode.trim()
+                    if (code.isEmpty() || busy) return@clickableNoRipple
+                    busy = true; error = null
+                    scope.launch {
+                        val modeStr = InviteService.lookupMode(code)
+                        busy = false
+                        val gm = modeStr?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
+                        if (gm != null) onEnterInvite(gm, code) else error = "No match found for that code."
+                    }
+                }.padding(horizontal = 18.dp, vertical = 14.dp),
+            Alignment.Center,
+        ) { Text("Join", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
+    }
+    error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
 }
 
 @Composable

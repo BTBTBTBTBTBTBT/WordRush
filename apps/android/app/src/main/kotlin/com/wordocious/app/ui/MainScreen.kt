@@ -105,6 +105,7 @@ fun MainScreen() {
         androidx.activity.compose.BackHandler { vsLobby = false }
         com.wordocious.app.ui.vs.VSLobbyScreen(
             onPlay = { m, daily -> vsActive = m to daily },
+            onEnterInvite = { m, code -> vsLobby = false; vsInvite = m to code },
             onGoPro = { vsLobby = false; infoRoute = "pro" },
             onClose = { vsLobby = false },
         )

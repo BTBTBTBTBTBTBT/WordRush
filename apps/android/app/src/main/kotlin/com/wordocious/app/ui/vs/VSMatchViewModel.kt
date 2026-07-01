@@ -37,10 +37,10 @@ import kotlin.math.roundToInt
  * (the player's board, engine-driven from the match seed), relays the player's
  * guesses/solves/completion, and renders opponent progress from server events.
  *
- * This increment supports the board modes (DUEL, DUEL_6/7, QUORDLE, OCTORDLE,
- * SEQUENCE, RESCUE). ProperNoundle VS + private invites + AchievementService
- * writes are deferred (no ProperNoundleVM / InviteService / checkAchievements on
- * Android yet) — see the VS bible note.
+ * Supports ALL VS modes (board modes + Gauntlet + ProperNoundle — the latter two
+ * ride the same shared GameViewModel path). Private-match invites (InviteService)
+ * and achievement writes (checkAchievements via GameResultsService.record) are
+ * wired too. Nothing VS is deferred on Android now.
  */
 enum class VSScreen { QUEUE, MATCH, WAITING, RESULT, OPPONENT_LEFT, ALREADY_PLAYED_DAILY, NOT_CONFIGURED }
 enum class RematchState { IDLE, OFFERED, RECEIVED, DECLINED }
@@ -248,6 +248,13 @@ class VSMatchViewModel(
     }
 
     private fun handleMatchFound(data: VSMatchFound) {
+        // Private match: flip the invite to accepted now that the server paired us
+        // (parity with iOS handleMatchFound → InviteService.markAccepted).
+        inviteCode?.let { code ->
+            viewModelScope.launch {
+                com.wordocious.app.data.InviteService.markInviteAccepted(code, data.matchId.ifEmpty { null })
+            }
+        }
         // Match-intro splash: resolve the opponent's public profile and the
         // all-time head-to-head record while the 2.5s intro plays.
         showIntro = true

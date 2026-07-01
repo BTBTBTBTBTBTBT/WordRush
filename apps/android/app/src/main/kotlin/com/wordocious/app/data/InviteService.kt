@@ -56,6 +56,34 @@ object InviteService {
         }
     }
 
+    @Serializable
+    private data class GameModeRow(@SerialName("game_mode") val gameMode: String)
+
+    /**
+     * Which mode a shared invite code is for (joiner side) — web/iOS lookupMode.
+     * Returns the game_mode string, or null if the code is unknown/expired.
+     */
+    suspend fun lookupMode(code: String): String? = runCatching {
+        client.postgrest["match_invites"]
+            .select(Columns.raw("game_mode")) {
+                filter { eq("invite_code", code); eq("status", "pending") }
+                limit(1)
+            }
+            .decodeSingleOrNull<GameModeRow>()?.gameMode
+    }.getOrNull()
+
+    /** Flip an invite to accepted once the server has paired both players. */
+    suspend fun markInviteAccepted(code: String, matchId: String?) {
+        runCatching {
+            client.postgrest["match_invites"].update({
+                set("status", "accepted")
+                if (matchId != null) set("match_id", matchId)
+            }) {
+                filter { eq("invite_code", code); eq("status", "pending") }
+            }
+        }
+    }
+
     // MARK: Outgoing invites (home Invite modal — web lib/invite-service.ts createInvite)
 
     /** Result of the home Invite modal — a shareable code or a user-facing error. */
