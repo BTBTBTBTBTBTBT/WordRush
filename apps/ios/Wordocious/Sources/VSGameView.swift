@@ -706,8 +706,6 @@ private struct OpponentStrip: View {
     var maxGuesses: Int = 6
     var wordLength: Int = 5
 
-    private var hasTiles: Bool { opponent.tiles.values.contains { !$0.isEmpty } }
-
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 10) {
@@ -733,7 +731,9 @@ private struct OpponentStrip: View {
             // steal space, so those stay summary-only (the count line above);
             // the spectator "still playing" screen renders all boards larger.
             // Gauntlet (21 boards) also falls out here — it shows Stage N.
-            if hasTiles, opponent.totalBoards <= 4 {
+            // Render the EMPTY grid from the start (no hasTiles gate) so the board
+            // is visible the whole match and never flickers in on the first guess.
+            if opponent.totalBoards <= 4 {
                 let boards = opponent.totalBoards > 1 ? Array(0..<opponent.totalBoards) : [0]
                 HStack(spacing: 6) {
                     ForEach(boards, id: \.self) { i in

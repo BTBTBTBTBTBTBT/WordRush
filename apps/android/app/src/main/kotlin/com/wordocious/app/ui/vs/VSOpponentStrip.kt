@@ -38,7 +38,6 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: Int, modifier: Modifier = Modifier) {
-    val hasTiles = opponent.tiles.values.any { it.isNotEmpty() }
     Column(
         modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -60,7 +59,9 @@ fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: 
         // space, so those stay summary-only (the count line above); the spectator
         // "still playing" screen renders all boards larger. Gauntlet (21 boards)
         // also falls out here — it shows Stage N.
-        if (hasTiles && opponent.totalBoards <= 4) {
+        // Render the EMPTY grid from the start (no hasTiles gate) so the board is
+        // visible the whole match and never flickers in on the opponent's first guess.
+        if (opponent.totalBoards <= 4) {
             val boards = if (opponent.totalBoards > 1) (0 until opponent.totalBoards).toList() else listOf(0)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 boards.forEach { i -> OpponentMiniBoard(opponent.tiles[i] ?: emptyList(), maxGuesses, wordLength, 8.dp) }

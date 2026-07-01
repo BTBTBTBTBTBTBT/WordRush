@@ -14,7 +14,6 @@ interface OpponentHUDProps {
 
 export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage, opponentTiles, maxGuesses = 6, wordLength = 5 }: OpponentHUDProps) {
   const allSolved = boardsSolved >= totalBoards && totalBoards > 0;
-  const hasTiles = opponentTiles && Object.keys(opponentTiles).length > 0;
 
   return (
     <div
@@ -50,18 +49,20 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
           illegible and steal space, so those stay summary-only (the count line
           above); the spectator "still playing" screen renders all boards larger.
           Gauntlet's 21-board count also falls out here (it shows Stage N/5). */}
-      {hasTiles && totalBoards <= 4 && (
+      {/* Render the EMPTY grid from the start (no hasTiles gate) so the board is
+          visible the whole match and never flickers in on the opponent's first guess. */}
+      {totalBoards <= 4 && (
         <>
           <div className="h-4 w-px bg-gray-200" />
           {totalBoards === 1 ? (
             <OpponentMiniBoard
-              tiles={opponentTiles[0] || []}
+              tiles={opponentTiles?.[0] || []}
               maxGuesses={maxGuesses}
               wordLength={wordLength}
             />
           ) : (
             <OpponentMultiMiniBoard
-              opponentTiles={opponentTiles}
+              opponentTiles={opponentTiles ?? {}}
               totalBoards={totalBoards}
               maxGuesses={maxGuesses}
               wordLength={wordLength}
