@@ -95,14 +95,16 @@ object ProperNoundle {
         return all.firstOrNull { normalize(it.answer) == n }
     }
 
-    /** Deterministic puzzle from a VS seed (FNV-1a 64-bit → index). */
+    /**
+     * Deterministic puzzle from a VS seed. MUST use the SAME ×31 djb2 hash as the
+     * server's selectProperNoundlePuzzle (and the shared simpleHash) — was FNV-1a,
+     * which diverged from the server/web/iOS so an Android VS player raced a
+     * DIFFERENT proper noun. The puzzle JSON is byte-identical across platforms,
+     * so matching the hash yields the same index. Mirrors iOS ProperNoundleEngine.
+     */
     fun puzzleForSeed(seed: String): NPuzzle? {
         if (all.isEmpty()) return null
-        var h = 1469598103934665603uL
-        for (b in seed.toByteArray(Charsets.UTF_8)) {
-            h = (h xor (b.toInt() and 0xFF).toULong()) * 1099511628211uL
-        }
-        return all[(h % all.size.toULong()).toInt()]
+        return all[simpleHash(seed) % all.size]
     }
 
     private fun daysSinceEpoch(dateString: String): Int {

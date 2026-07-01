@@ -557,6 +557,11 @@ final class VSMatchViewModel: ObservableObject {
                     userId: uid, gameMode: mode.rawValue, playType: "vs", won: won,
                     guessCount: data.playerGuesses, timeSeconds: secs, seed: theSeed, hintsUsed: 0)
             }
+            // Daily VS: write the daily_results row (play_type='vs') so the daily
+            // VS leaderboard, the "already played" server check, and the 3-wins-a-day
+            // achievement all see it — web (stats-service) and Android
+            // (VSMatchViewModel) both record this; iOS only did it on forfeit.
+            if dailyVsActive { await DailyResultsService.recordVs(gameMode: mode, won: won) }
         }
     }
 }
