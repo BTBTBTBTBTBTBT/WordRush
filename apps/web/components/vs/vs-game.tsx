@@ -11,15 +11,17 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SocketIOMatchService, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
+import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, tierFromCpuId } from '@/lib/adapters/bot-match-service';
+import { BOT_PERSONAS, tierLabel, botLine, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
 import { usePresenceId } from '@/lib/presence-id';
 import { useAuth } from '@/lib/auth-context';
-import { recordGameResult, recordMatch, type XpResult } from '@/lib/stats-service';
+import { recordGameResult, recordMatch, recordCpuResult, type XpResult } from '@/lib/stats-service';
 import { fetchHeadToHead, fetchVsProfile, type HeadToHeadRecord, type VsProfile } from '@/lib/head-to-head';
 import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
 import { playOpponentThunk } from '@/lib/sounds';
-import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords } from 'lucide-react';
+import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords, Bot, Lock } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine } from './match-intro';
@@ -262,7 +264,17 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Shown if a freemium user tries to rematch after their daily game.
   const [vsLimitOpen, setVsLimitOpen] = useState(false);
   const [screen, setScreen] = useState<VsScreen>('queue');
-  const [matchService] = useState(() => new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'));
+  // Stable facade over the transport: starts on the socket, can hot-swap to a
+  // client-side CPU bot (Pro-only practice) without re-wiring any handlers.
+  const [matchService] = useState(() => new SwappableMatchService(new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001')));
+  // CPU-vs state. cpuDifficulty !== null once the player picks a bot opponent.
+  const [cpuDifficulty, setCpuDifficulty] = useState<BotDifficulty | null>(null);
+  const isCpu = cpuDifficulty !== null;
+  const isCpuRef = useRef(isCpu);
+  isCpuRef.current = isCpu;
+  const [cpuPersona, setCpuPersona] = useState<{ tier: BotTier; name: string; avatar: string; color: string } | null>(null);
+  const [showCpuChooser, setShowCpuChooser] = useState(false);
+  const [cpuAutoOffer, setCpuAutoOffer] = useState(false);
   const presenceId = usePresenceId();
   const router = useRouter();
   const [seed, setSeed] = useState('');
@@ -408,7 +420,14 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       opponentNameRef.current = 'Opponent';
       const oppId = data.opponentUserId ?? null;
       setOpponentUserId(oppId);
-      if (oppId) {
+      if (oppId && oppId.startsWith(CPU_OPPONENT_PREFIX)) {
+        // CPU opponent: use the persona identity locally — no profile / H2H fetch.
+        const tier = tierFromCpuId(oppId);
+        const persona = BOT_PERSONAS[tier];
+        setOpponentInfo({ username: persona.name, avatarUrl: null, level: 0 });
+        opponentNameRef.current = persona.name;
+        setHeadToHead(null);
+      } else if (oppId) {
         fetchVsProfile(oppId)
           .then((p) => {
             if (p) {
@@ -504,6 +523,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       if (me && !resultRecordedRef.current) {
         resultRecordedRef.current = true;
         const won = data.winner === 'player';
+        if (isCpuRef.current) {
+          // Pure practice: record ONLY the separate vs_cpu bucket — no XP, no
+          // matches row, no head-to-head, no achievements, no daily lock.
+          recordCpuResult(me.id, mode, won, data.playerGuesses, Math.round(data.playerTime / 1000));
+          return;
+        }
         recordGameResult(me.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seedRef.current)
           .then(xp => { if (xp) setXpResult(xp); });
         // Persist a match-history row so this VS battle shows in Recent Matches.
@@ -657,6 +682,29 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     matchService.emitTyping();
   }, [matchService]);
 
+  // Swap the live socket transport for a client-side CPU bot and start a match.
+  // Pro-gated in the UI (non-Pro never reaches here).
+  const startCpu = useCallback((difficulty: BotDifficulty) => {
+    const tier: BotTier = difficulty === 'adaptive' ? 'medium' : difficulty;
+    const persona = BOT_PERSONAS[tier];
+    setCpuPersona({ tier, name: persona.name, avatar: persona.avatar, color: persona.color });
+    setCpuDifficulty(difficulty);
+    setShowCpuChooser(false);
+    setCpuAutoOffer(false);
+    setMessage('');
+    matchService.swap(new LocalBotMatchService(difficulty), { mode });
+  }, [matchService, mode]);
+
+  // Auto-offer the CPU after the queue sits empty for a bit (fallback path).
+  useEffect(() => {
+    if (screen !== 'queue' || isCpu || showIntro) {
+      setCpuAutoOffer(false);
+      return;
+    }
+    const t = setTimeout(() => setCpuAutoOffer(true), 15000);
+    return () => clearTimeout(t);
+  }, [screen, isCpu, showIntro]);
+
   const handleCancel = useCallback(() => {
     matchService.leaveQueue();
     matchService.disconnect();
@@ -723,9 +771,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               level: (profile as any)?.level ?? null,
             }}
             opponent={opponentUserId ? {
-              username: opponentInfo?.username ?? '…',
+              username: isCpu ? `${opponentInfo?.username ?? 'CPU'} · ${cpuPersona ? tierLabel(cpuPersona.tier) : 'CPU'}` : (opponentInfo?.username ?? '…'),
               avatarUrl: opponentInfo?.avatarUrl ?? null,
-              level: opponentInfo?.level ?? null,
+              level: isCpu ? null : (opponentInfo?.level ?? null),
             } : null}
             headToHead={headToHead}
             onDone={() => { setShowIntro(false); startCountdown(pendingCountdownRef.current); }}
@@ -766,6 +814,65 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               <p className="text-gray-400 text-xs font-bold">{queueSize} players waiting</p>
             )}
           </div>
+
+          {/* Play the CPU — explicit choice + auto-offer once the queue is quiet. */}
+          {!showIntro && !showCountdown && !isCpu && (
+            <div className="w-full max-w-xs mx-auto">
+              {showCpuChooser || cpuAutoOffer ? (
+                <div
+                  className="rounded-2xl border p-4 space-y-3"
+                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+                >
+                  <div className="flex items-center justify-center gap-2 text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+                    <Bot className="w-4 h-4" />
+                    {cpuAutoOffer && !showCpuChooser ? 'No players right now — play the CPU?' : 'Play the CPU'}
+                  </div>
+                  {isPro ? (
+                    <>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(['easy', 'medium', 'hard'] as BotTier[]).map((tier) => {
+                          const p = BOT_PERSONAS[tier];
+                          return (
+                            <button
+                              key={tier}
+                              onClick={() => startCpu(tier)}
+                              className="flex flex-col items-center gap-1 rounded-xl border px-2 py-3 transition-transform hover:-translate-y-0.5"
+                              style={{ borderColor: p.color, background: 'var(--color-surface-hover)' }}
+                            >
+                              <span className="text-xl">{p.avatar}</span>
+                              <span className="text-xs font-black" style={{ color: p.color }}>{tierLabel(tier)}</span>
+                              <span className="text-[10px] font-bold text-gray-400">{p.name}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-center text-[10px] font-bold text-gray-400">Practice only — doesn’t affect your ranked stats</p>
+                    </>
+                  ) : (
+                    <div className="text-center space-y-2">
+                      <div className="flex items-center justify-center gap-1 text-xs font-bold text-gray-400">
+                        <Lock className="w-3.5 h-3.5" /> Practice vs CPU is a Pro feature
+                      </div>
+                      <button
+                        onClick={() => router.push('/pro')}
+                        className="w-full rounded-xl px-4 py-2 text-sm font-black text-white"
+                        style={{ background: 'linear-gradient(135deg,#a78bfa,#ec4899)' }}
+                      >
+                        Unlock with Pro
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowCpuChooser(true)}
+                  className="mx-auto flex items-center gap-1.5 text-sm font-bold text-purple-400 hover:text-purple-500"
+                >
+                  <Bot className="w-4 h-4" /> Play the CPU instead
+                </button>
+              )}
+            </div>
+          )}
 
           <button
             onClick={handleCancel}
@@ -1114,7 +1221,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           progress: computeVsProgress(myBoardsSolved, totalBoards, bestRowGreens(myTiles), wordLen),
         }}
         opponent={{
-          username: opponentInfo?.username || 'Opponent',
+          username: isCpu ? `${opponentInfo?.username || 'CPU'} 🤖` : (opponentInfo?.username || 'Opponent'),
           avatarUrl: opponentInfo?.avatarUrl ?? null,
           guesses: opponentProgress.attempts,
           progress: computeVsProgress(opponentProgress.boardsSolved, totalBoards, bestRowGreens(opponentTiles), wordLen),

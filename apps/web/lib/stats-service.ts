@@ -1248,3 +1248,68 @@ export async function fetchDailyPointsOverTime(userId: string, days = 30): Promi
     .map(([day, totalPoints]) => ({ day, totalPoints, swept: sweptSet.has(day), flawless: flawlessSet.has(day) }))
     .sort((a, b) => a.day.localeCompare(b.day));
 }
+
+/**
+ * Record a CPU / bot VS result into its OWN bucket (play_type='vs_cpu').
+ *
+ * Pure practice: this ONLY touches user_stats. It never writes profiles (no
+ * XP / no streak), never inserts a `matches` row, never writes daily_results,
+ * and never calls checkAchievements. So CPU games can't reach the daily
+ * leaderboard, head-to-head, per-mode win streaks, or all-time records, and
+ * never fire a VS achievement. Best-effort — failures are swallowed so a
+ * post-game flow never breaks on a practice write.
+ */
+export async function recordCpuResult(
+  userId: string,
+  gameMode: string,
+  won: boolean,
+  guessCount: number,
+  timeSeconds: number,
+): Promise<void> {
+  try {
+    const mode = String(gameMode);
+    const { data: existing } = await (supabase as any)
+      .from('user_stats')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('game_mode', mode)
+      .eq('play_type', 'vs_cpu')
+      .maybeSingle();
+
+    if (existing) {
+      const newTotalGames = existing.total_games + 1;
+      const newAvgTime = existing.average_time > 0
+        ? Math.round((existing.average_time * existing.total_games + timeSeconds) / newTotalGames)
+        : timeSeconds;
+      await (supabase as any)
+        .from('user_stats')
+        .update({
+          wins: existing.wins + (won ? 1 : 0),
+          losses: existing.losses + (won ? 0 : 1),
+          total_games: newTotalGames,
+          best_score: guessCount > 0 && (existing.best_score === 0 || guessCount < existing.best_score)
+            ? guessCount : existing.best_score,
+          average_time: newAvgTime,
+          fastest_time: timeSeconds > 0 && (existing.fastest_time === 0 || timeSeconds < existing.fastest_time)
+            ? timeSeconds : existing.fastest_time,
+        })
+        .eq('id', existing.id);
+    } else {
+      await (supabase as any)
+        .from('user_stats')
+        .insert({
+          user_id: userId,
+          game_mode: mode,
+          play_type: 'vs_cpu',
+          wins: won ? 1 : 0,
+          losses: won ? 0 : 1,
+          total_games: 1,
+          best_score: guessCount,
+          average_time: timeSeconds,
+          fastest_time: timeSeconds,
+        });
+    }
+  } catch {
+    /* best-effort practice write */
+  }
+}

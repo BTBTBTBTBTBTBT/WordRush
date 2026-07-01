@@ -17,6 +17,7 @@ import {
   Skull,
   Sparkles,
   TrendingUp,
+  Bot,
 } from 'lucide-react';
 import Link from 'next/link';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
@@ -189,6 +190,16 @@ export default function ProfilePage() {
     const vsStats = stats.filter((s) => s.play_type === 'vs');
     const wins = vsStats.reduce((sum, s) => sum + (s.wins || 0), 0);
     const losses = vsStats.reduce((sum, s) => sum + (s.losses || 0), 0);
+    const total = wins + losses;
+    return { wins, losses, total, winRate: total > 0 ? Math.round((wins / total) * 100) : 0 };
+  })();
+
+  // Separate practice record vs the CPU (play_type='vs_cpu') — never ranked,
+  // never on the leaderboard. Shown as its own box on the VS tab.
+  const cpuRecord = (() => {
+    const cpuStats = stats.filter((s) => s.play_type === 'vs_cpu');
+    const wins = cpuStats.reduce((sum, s) => sum + (s.wins || 0), 0);
+    const losses = cpuStats.reduce((sum, s) => sum + (s.losses || 0), 0);
     const total = wins + losses;
     return { wins, losses, total, winRate: total > 0 ? Math.round((wins / total) * 100) : 0 };
   })();
@@ -579,6 +590,31 @@ export default function ProfilePage() {
               <div className="text-xl font-black" style={{ color: '#7c3aed' }}>{vsRecord.winRate}%</div>
               <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
                 Win rate · {vsRecord.total} {vsRecord.total === 1 ? 'match' : 'matches'}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* vs CPU practice record (VS tab, only once they've played a bot) —
+            clearly separate from ranked VS: no leaderboard, no XP, no streak. */}
+        {activeTab === 'vs' && cpuRecord.total > 0 && (
+          <div
+            className="p-4 flex items-center gap-4"
+            style={{ background: 'var(--color-surface)', border: '1.5px dashed var(--color-border)', borderRadius: '16px' }}
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#64748b15' }}>
+              <Bot className="w-5 h-5" style={{ color: '#64748b' }} />
+            </div>
+            <div className="flex-1">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748b' }}>vs CPU · Practice</div>
+              <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                {cpuRecord.wins}–{cpuRecord.losses}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-black" style={{ color: '#64748b' }}>{cpuRecord.winRate}%</div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Win rate · {cpuRecord.total} {cpuRecord.total === 1 ? 'match' : 'matches'}
               </div>
             </div>
           </div>
