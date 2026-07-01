@@ -228,6 +228,16 @@ enum GameResultsService {
         }
         // Refresh the in-memory profile so XP/streak/Pro reflect immediately.
         await AuthService.shared.refreshProfile()
+
+        // All-time "hall of records" writes (web stats-service.ts parity —
+        // previously deferred). Fire-and-forget after stats/profile are updated
+        // so the fresh totals (total_games, best_streak, xp, gold_medals) read
+        // back correctly. Never blocks the post-game flow.
+        Task {
+            await RecordsService.updateAfterGame(
+                userId: userId, gameMode: mode, playType: playType,
+                won: won, guessCount: guessCount, timeSeconds: timeSeconds, seed: seed)
+        }
         return result
     }
 

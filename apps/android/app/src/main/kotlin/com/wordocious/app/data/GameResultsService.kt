@@ -412,6 +412,15 @@ object GameResultsService {
         // Refresh in-memory profile so XP/streak/level reflect immediately on Profile/Home.
         AuthService.refreshProfile()
 
+        // All-time "hall of records" writes (web stats-service.ts parity —
+        // previously deferred). Run AFTER stats/profile updates so the fresh
+        // totals (total_games, best_streak, xp, gold_medals) read back. Never throws.
+        runCatching {
+            RecordsService.updateAfterGame(
+                userId, gameMode.name, playType, won, guessCount, timeSeconds, seed,
+            )
+        }
+
         // Achievement unlock detection — matches web stats-service.ts calling
         // checkAchievements after recordGameResult. Never throws.
         runCatching {
