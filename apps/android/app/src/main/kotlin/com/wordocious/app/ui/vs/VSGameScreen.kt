@@ -5,6 +5,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.widthIn
+import com.wordocious.app.data.BotPersonas
+import com.wordocious.app.data.BotTier
+import com.wordocious.app.data.CpuKind
+import com.wordocious.app.data.CpuProgressionStore
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -85,7 +90,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
     ) {
         when (vm.screen) {
             VSScreen.NOT_CONFIGURED -> NotConfigured(label, gradient, ::goHome)
-            VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.queueSize, vm.message, vm.inviteCode, ::goHome)
+            VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.queueSize, vm.message, vm.inviteCode, vm, onGoPro, ::goHome)
             VSScreen.MATCH -> MatchScreen(vm, label, gradient, ::goHome)
             VSScreen.WAITING -> WaitingScreen(vm, gradient, ::goHome)
             VSScreen.RESULT -> ResultScreen(vm, gradient, ::goHome, onGoPro)
@@ -126,7 +131,7 @@ private fun VsTitle(label: String, gradient: List<Color>, size: Int) {
 }
 
 @Composable
-private fun QueueScreen(label: String, gradient: List<Color>, position: Int, queueSize: Int, message: String?, inviteCode: String?, onHome: () -> Unit) {
+private fun QueueScreen(label: String, gradient: List<Color>, position: Int, queueSize: Int, message: String?, inviteCode: String?, vm: VSMatchViewModel, onGoPro: () -> Unit, onHome: () -> Unit) {
     val context = androidx.compose.ui.platform.LocalContext.current
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(22.dp)) {
         VsTitle(label, gradient, 36)
@@ -162,9 +167,74 @@ private fun QueueScreen(label: String, gradient: List<Color>, position: Int, que
                 Text("$queueSize players waiting", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
         }
+        // Play the CPU — explicit choice + auto-offer once the queue is quiet.
+        if (!vm.isCpu && vm.mode != com.wordocious.core.GameMode.GAUNTLET) {
+            CpuChooser(vm, onGoPro)
+        }
         Pill("Cancel") { onHome() }
         message?.let { Text(it, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.text.copy(alpha = 0.9f)).padding(horizontal = 16.dp, vertical = 8.dp)) }
     }
+}
+
+@Composable
+private fun CpuChooser(vm: VSMatchViewModel, onGoPro: () -> Unit) {
+    var showChooser by remember { mutableStateOf(false) }
+    var autoOffer by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { kotlinx.coroutines.delay(15_000); if (!vm.isCpu) autoOffer = true }
+
+    if (showChooser || autoOffer) {
+        Column(
+            Modifier.widthIn(max = 340.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(if (autoOffer && !showChooser) "No players right now — play the CPU?" else "Play the CPU",
+                fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            if (vm.isPro) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(BotTier.EASY, BotTier.MEDIUM, BotTier.HARD).forEach { tier ->
+                        val p = BotPersonas.persona(tier)
+                        Column(
+                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
+                                .border(1.5.dp, Color(p.color), RoundedCornerShape(12.dp))
+                                .clickableNoRipple { vm.startCpu(CpuKind.valueOf(tier.name)) }.padding(vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(p.avatar, fontSize = 20.sp)
+                            Text(BotPersonas.tierLabel(tier), fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(p.color))
+                            Text(p.name, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                        }
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CpuSpecial("⚖️ Adaptive", 0xFF7C3AED, Modifier.weight(1f)) { vm.startCpu(CpuKind.ADAPTIVE) }
+                    CpuSpecial("📅 Bot of the Day", 0xFFF59E0B, Modifier.weight(1f)) {
+                        vm.startCpu(CpuKind.DAILY, fixedSeed = com.wordocious.core.generateDailySeed(CpuProgressionStore.todayUtc(), "${vm.mode.name}_CPU"))
+                    }
+                }
+                Text("Practice only — doesn’t affect your ranked stats", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            } else {
+                Box(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                        .background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))))
+                        .clickableNoRipple { onGoPro() }.padding(vertical = 10.dp),
+                    Alignment.Center,
+                ) { Text("🔒 Unlock with Pro", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White) }
+            }
+        }
+    } else {
+        Text("Play the CPU instead", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
+            modifier = Modifier.clickableNoRipple { showChooser = true })
+    }
+}
+
+@Composable
+private fun CpuSpecial(title: String, color: Long, modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
+            .border(1.5.dp, Color(color), RoundedCornerShape(12.dp)).clickableNoRipple { onClick() }.padding(vertical = 9.dp),
+        Alignment.Center,
+    ) { Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(color)) }
 }
 
 @Composable
@@ -480,8 +550,29 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         item { Spacer(Modifier.height(40.dp)) }
         item { Text(headline, fontSize = 56.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(colors))) }
+        // CPU practice: photo-finish flourish + streak / milestone / cosmetic /
+        // run-it-back session tally.
+        if (vm.isCpu) {
+            item {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(top = 6.dp)) {
+                    vm.photoFinish?.let { pf ->
+                        Text(if (pf == "clutch") "CLUTCH!" else "PHOTO FINISH!", fontSize = 28.sp, fontWeight = FontWeight.Black,
+                            style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF97316), Color(0xFFEC4899)))))
+                    }
+                    vm.cpuMilestone?.let { m -> Text("🔥 $m-win CPU streak!", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFF97316)) }
+                        ?: run { if (vm.cpuStreak > 0) Text("CPU win streak: ${vm.cpuStreak}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted) }
+                    vm.cpuUnlock?.let {
+                        Text("🏅 Unlocked ${BotPersonas.persona(vm.cpuPersona?.tier ?: BotTier.HARD).name}’s badge!", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(vm.cpuPersona?.color ?: 0xFFEF4444))
+                    }
+                    if (vm.cpuSessionWins + vm.cpuSessionLosses > 0) {
+                        Text("This session — You ${vm.cpuSessionWins} · CPU ${vm.cpuSessionLosses}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                    }
+                    Text("Practice — not counted in ranked stats", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+            }
+        }
         // Updated all-time head-to-head (refetched ~1.2s after the match was recorded).
-        if (vm.opponentUserId != null) {
+        if (vm.opponentUserId != null && !vm.isCpu) {
             vm.headToHead?.let { h2h ->
                 item {
                     Text(

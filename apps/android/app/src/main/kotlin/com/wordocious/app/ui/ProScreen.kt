@@ -59,6 +59,7 @@ private val BENEFITS = listOf(
     Benefit(Icons.Filled.VisibilityOff, null, "Ad-free experience — no interruptions, ever"),
     Benefit(null, R.drawable.ic_wordle_grid, "Unlimited replays of all 9 game modes, any time"),
     Benefit(null, R.drawable.ic_swords, "VS mode on every game — challenge friends in all 9 modes"),
+    Benefit(Icons.Filled.Bolt, null, "Practice against the CPU — Easy, Medium & Hard bots, anytime"),
     Benefit(Icons.Filled.Mail, null, "Invite friends to private matches by link or username"),
     Benefit(null, R.drawable.ic_shield, "4 streak shields credited each billing period"),
     Benefit(Icons.Filled.Star, null, "Pro badge on profile & leaderboards"),

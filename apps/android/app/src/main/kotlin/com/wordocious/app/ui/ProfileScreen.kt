@@ -248,6 +248,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // VS RECORD summary card (VS tab only) — aggregated across all modes.
         if (activeTab == "vs") {
             item { VsRecordCard(stats) }
+            item { CpuRecordCard(stats) }
         }
 
         // ── Dashboard: per-mode picker + charts ────────────────────
@@ -1089,6 +1090,35 @@ private fun SoloVsToggle(active: String, onSelect: (String) -> Unit) {
 }
 
 /** VS RECORD summary card — W–L, win rate, total VS games (all modes). */
+@Composable
+private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
+    val cpuStats = stats.filter { it.playType == "vs_cpu" }
+    val wins = cpuStats.sumOf { it.wins }
+    val losses = cpuStats.sumOf { it.losses }
+    val total = wins + losses
+    if (total == 0) return
+    val winRate = if (total > 0) Math.round(wins.toFloat() / total * 100) else 0
+    val bestStreak = com.wordocious.app.data.CpuProgressionStore.load().bestStreak
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF64748B).copy(alpha = 0.10f)), Alignment.Center) {
+            Text("🤖", fontSize = 18.sp)
+        }
+        Column(Modifier.weight(1f)) {
+            Text("VS CPU · PRACTICE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF64748B))
+            Text("$wins–$losses", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            if (bestStreak > 0) Text("🔥 Best streak: $bestStreak", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF97316))
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text("$winRate%", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF64748B))
+            Text("Win rate · $total ${if (total == 1) "match" else "matches"}", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+        }
+    }
+}
+
 @Composable
 private fun VsRecordCard(stats: List<ProfileService.UserStat>) {
     val vsStats = stats.filter { it.playType == "vs" }
