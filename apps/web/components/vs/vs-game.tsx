@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import { SocketIOMatchService, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
 import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, tierFromCpuId } from '@/lib/adapters/bot-match-service';
 import { BOT_PERSONAS, tierLabel, botLine, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
+import { recordCpuGame, loadCpuProgression } from '@/lib/bot/cpu-progression';
+import { PhotoFinish, type PhotoFinishKind } from '@/components/effects/photo-finish';
 import { usePresenceId } from '@/lib/presence-id';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordMatch, recordCpuResult, type XpResult } from '@/lib/stats-service';
@@ -273,8 +275,17 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const isCpuRef = useRef(isCpu);
   isCpuRef.current = isCpu;
   const [cpuPersona, setCpuPersona] = useState<{ tier: BotTier; name: string; avatar: string; color: string } | null>(null);
+  const cpuPersonaRef = useRef(cpuPersona);
+  cpuPersonaRef.current = cpuPersona;
   const [showCpuChooser, setShowCpuChooser] = useState(false);
   const [cpuAutoOffer, setCpuAutoOffer] = useState(false);
+  // Fun layer: photo-finish flourish, streak milestone, cosmetic unlock, and a
+  // per-session run-it-back tally — all CPU-only.
+  const [photoFinish, setPhotoFinish] = useState<PhotoFinishKind | null>(null);
+  const [cpuMilestone, setCpuMilestone] = useState<number | null>(null);
+  const [cpuUnlock, setCpuUnlock] = useState<string | null>(null);
+  const [cpuStreak, setCpuStreak] = useState(0);
+  const [cpuSession, setCpuSession] = useState({ wins: 0, losses: 0 });
   const presenceId = usePresenceId();
   const router = useRouter();
   const [seed, setSeed] = useState('');
@@ -385,6 +396,10 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     setOpponentTyping(false);
     prevOppBoardsSolvedRef.current = 0;
     lastCalloutRef.current = '';
+    // CPU fun-layer overlays don't carry into the next match.
+    setPhotoFinish(null);
+    setCpuMilestone(null);
+    setCpuUnlock(null);
   }, []);
 
   const formatTime = (ms: number) => {
@@ -527,6 +542,19 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           // Pure practice: record ONLY the separate vs_cpu bucket — no XP, no
           // matches row, no head-to-head, no achievements, no daily lock.
           recordCpuResult(me.id, mode, won, data.playerGuesses, Math.round(data.playerTime / 1000));
+          // Fun layer: progression (streak / ladder / cosmetics / milestone),
+          // session tally, and the photo-finish flourish on a close/last win.
+          const tier: BotTier = cpuPersonaRef.current?.tier ?? 'medium';
+          const outcome = recordCpuGame(won, tier, BOT_PERSONAS[tier].id);
+          setCpuStreak(outcome.progression.streak);
+          setCpuMilestone(outcome.milestone);
+          setCpuUnlock(outcome.unlockedPersona);
+          setCpuSession((s) => (won ? { ...s, wins: s.wins + 1 } : { ...s, losses: s.losses + 1 }));
+          if (won) {
+            const margin = Math.abs(data.playerTime - data.opponentTime);
+            if (margin < 2000) setPhotoFinish('photo');
+            else if (data.playerGuesses >= modeMaxGuesses) setPhotoFinish('clutch');
+          }
           return;
         }
         recordGameResult(me.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seedRef.current)
@@ -692,7 +720,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     setShowCpuChooser(false);
     setCpuAutoOffer(false);
     setMessage('');
-    matchService.swap(new LocalBotMatchService(difficulty), { mode });
+    // Adaptive: shadow the player's recent form — the higher their current CPU
+    // streak, the tougher the bot (keeps games neck-and-neck).
+    const adaptive = difficulty === 'adaptive'
+      ? { winRate: Math.min(0.9, 0.4 + loadCpuProgression().streak * 0.05) }
+      : undefined;
+    matchService.swap(new LocalBotMatchService(difficulty, adaptive), { mode });
   }, [matchService, mode]);
 
   // Auto-offer the CPU after the queue sits empty for a bit (fallback path).
@@ -846,6 +879,13 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                           );
                         })}
                       </div>
+                      <button
+                        onClick={() => startCpu('adaptive')}
+                        className="w-full rounded-xl border px-3 py-2 text-xs font-black transition-transform hover:-translate-y-0.5"
+                        style={{ borderColor: '#7c3aed', background: 'var(--color-surface-hover)', color: '#7c3aed' }}
+                      >
+                        ⚖️ Adaptive — matched to your form
+                      </button>
                       <p className="text-center text-[10px] font-bold text-gray-400">Practice only — doesn’t affect your ranked stats</p>
                     </>
                   ) : (
@@ -928,8 +968,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
     return (
       <div className="min-h-screen overflow-y-auto relative" style={{ backgroundColor: 'var(--color-bg)' }}>
-        {/* Confetti for wins only */}
-        {isWin && <Confetti />}
+        {/* Photo-finish flourish (CPU close/last-guess win) — plays FIRST and is
+            visually distinct from the win confetti; confetti follows once it
+            dismisses so the two never overlap. */}
+        {photoFinish && <PhotoFinish kind={photoFinish} onDone={() => setPhotoFinish(null)} />}
+        {/* Confetti for wins only (held back while the photo-finish plays) */}
+        {isWin && !photoFinish && <Confetti />}
         {/* Rematch upsell for freemium — handleRematch sets this open */}
         <VsLimitModal open={vsLimitOpen} onClose={() => setVsLimitOpen(false)} />
         <div className="max-w-md w-full mx-auto px-6 py-10 space-y-5">
@@ -939,10 +983,26 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               {headlineText}
             </h1>
             {/* Updated all-time head-to-head (refetched after the match was recorded) */}
-            {opponentUserId && headToHead && (
+            {opponentUserId && headToHead && !isCpu && (
               <p className="text-sm font-extrabold mt-2" style={{ color: 'var(--color-text-secondary)' }}>
                 {headToHeadLine(oppName, headToHead)}
               </p>
+            )}
+            {/* CPU practice: streak + milestone + cosmetic unlock (no ranked H2H) */}
+            {isCpu && (
+              <div className="mt-2 space-y-1">
+                {cpuMilestone ? (
+                  <p className="text-sm font-black" style={{ color: '#f97316' }}>🔥 {cpuMilestone}-win CPU streak!</p>
+                ) : cpuStreak > 0 ? (
+                  <p className="text-xs font-extrabold text-gray-400">CPU win streak: {cpuStreak}</p>
+                ) : null}
+                {cpuUnlock && (
+                  <p className="text-xs font-black" style={{ color: BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].color }}>
+                    🏅 Unlocked {BOT_PERSONAS[cpuPersona?.tier ?? 'hard'].name}’s badge!
+                  </p>
+                )}
+                <p className="text-[10px] font-bold text-gray-400">Practice — not counted in ranked stats</p>
+              </div>
             )}
           </div>
 
@@ -974,6 +1034,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
           {/* Actions — prominent Rematch on top, Home/Share below */}
           <div className="space-y-2 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+            {/* Run-it-back session tally (CPU only) */}
+            {isCpu && (cpuSession.wins + cpuSession.losses) > 0 && (
+              <p className="text-center text-xs font-extrabold text-gray-400">
+                This session — You {cpuSession.wins} · CPU {cpuSession.losses}
+              </p>
+            )}
             {rematchState === 'declined' ? (
               <div className="w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2">
                 <X className="w-4 h-4" /> No Rematch
@@ -987,7 +1053,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 onClick={handleRematch}
                 className={`w-full bg-gradient-to-r ${titleGradient} text-white font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg btn-3d`}
               >
-                <RotateCcw className="w-4 h-4" /> Rematch
+                <RotateCcw className="w-4 h-4" /> {isCpu ? 'Run it back' : 'Rematch'}
               </button>
             ) : null}
             <div className="flex gap-3">

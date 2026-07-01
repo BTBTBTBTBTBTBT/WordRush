@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/lib/auth-context';
+import { loadCpuProgression } from '@/lib/bot/cpu-progression';
 import { supabase } from '@/lib/supabase-client';
 import {
   Trophy,
@@ -195,7 +196,8 @@ export default function ProfilePage() {
   })();
 
   // Separate practice record vs the CPU (play_type='vs_cpu') — never ranked,
-  // never on the leaderboard. Shown as its own box on the VS tab.
+  // never on the leaderboard. Shown as its own box on the VS tab. The best CPU
+  // win streak comes from the client-side progression store (not user_stats).
   const cpuRecord = (() => {
     const cpuStats = stats.filter((s) => s.play_type === 'vs_cpu');
     const wins = cpuStats.reduce((sum, s) => sum + (s.wins || 0), 0);
@@ -203,6 +205,7 @@ export default function ProfilePage() {
     const total = wins + losses;
     return { wins, losses, total, winRate: total > 0 ? Math.round((wins / total) * 100) : 0 };
   })();
+  const cpuBestStreak = useMemo(() => loadCpuProgression().bestStreak, []);
 
   // Get stats for selected mode (active tab only)
   const getStatsForMode = (dbKey: string) => {
@@ -610,6 +613,9 @@ export default function ProfilePage() {
               <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                 {cpuRecord.wins}–{cpuRecord.losses}
               </div>
+              {cpuBestStreak > 0 && (
+                <div className="text-[10px] font-extrabold" style={{ color: '#f97316' }}>🔥 Best streak: {cpuBestStreak}</div>
+              )}
             </div>
             <div className="text-right">
               <div className="text-xl font-black" style={{ color: '#64748b' }}>{cpuRecord.winRate}%</div>

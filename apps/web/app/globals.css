@@ -446,6 +446,40 @@
     animation: glow-pulse 2s ease-in-out infinite;
   }
 
+  /* ── Photo-finish flourish (CPU close-win) — deliberately NOT the win
+     confetti: a camera flash + checkered-flag sweep + speed lines + stamp. ── */
+  @keyframes pf-flash {
+    0% { opacity: 0; }
+    12% { opacity: 0.85; }
+    100% { opacity: 0; }
+  }
+  @keyframes pf-sweep {
+    0% { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+    18% { opacity: 1; }
+    100% { transform: translateX(120%) skewX(-12deg); opacity: 0; }
+  }
+  @keyframes pf-speed {
+    0% { transform: translateX(120%); opacity: 0; }
+    20% { opacity: 0.9; }
+    100% { transform: translateX(-120%); opacity: 0; }
+  }
+  @keyframes pf-stamp {
+    0% { transform: scale(0.3) rotate(-14deg); opacity: 0; }
+    35% { transform: scale(1.18) rotate(-8deg); opacity: 1; }
+    55% { transform: scale(0.96) rotate(-6deg); }
+    70% { transform: scale(1.04) rotate(-7deg); }
+    85% { transform: scale(1) rotate(-6deg); opacity: 1; }
+    100% { transform: scale(1) rotate(-6deg); opacity: 0; }
+  }
+  .animate-pf-flash { animation: pf-flash 0.5s ease-out forwards; }
+  .animate-pf-sweep { animation: pf-sweep 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+  .animate-pf-speed { animation: pf-speed 0.7s ease-out forwards; }
+  .animate-pf-stamp { animation: pf-stamp 1.8s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-pf-flash, .animate-pf-sweep, .animate-pf-speed { display: none; }
+    .animate-pf-stamp { animation: none; opacity: 1; transform: rotate(-6deg); }
+  }
+
   @keyframes blob {
     0%, 100% {
       transform: scale(1) translate(0, 0);
