@@ -41,7 +41,7 @@ export interface IMatchService {
   onMatchFound(callback: (data: { matchId: string; mode: GameMode; serverStartAt: number; countdownSeconds: number; opponentUserId?: string | null }) => void): void;
   onMatchStart(callback: (data: { seed: string; startTime: number; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void): void;
   onGuessResult(callback: (data: { boardIndex: number; isValid: boolean; isCorrect: boolean; reason?: string }) => void): void;
-  onOpponentProgress(callback: (data: { attempts: number; solved: boolean; boardsSolved: number; totalBoards: number; latestGuess?: { boardIndex: number; tiles: string[] } }) => void): void;
+  onOpponentProgress(callback: (data: { attempts: number; solved: boolean; boardsSolved: number; totalBoards: number; latestGuess?: { boardIndex: number; tiles: string[] }; latestGuesses?: { boardIndex: number; tiles: string[] }[] }) => void): void;
   onOpponentTyping(callback: () => void): void;
   onMatchEnded(callback: (data: MatchEndedData) => void): void;
   onOpponentStageCompleted(callback: (data: { stageIndex: number }) => void): void;
@@ -130,7 +130,7 @@ export class SocketIOMatchService implements IMatchService {
     this.socket?.on('guess_result', callback);
   }
 
-  onOpponentProgress(callback: (data: { attempts: number; solved: boolean; boardsSolved: number; totalBoards: number; latestGuess?: { boardIndex: number; tiles: string[] } }) => void): void {
+  onOpponentProgress(callback: (data: { attempts: number; solved: boolean; boardsSolved: number; totalBoards: number; latestGuess?: { boardIndex: number; tiles: string[] }; latestGuesses?: { boardIndex: number; tiles: string[] }[] }) => void): void {
     this.socket?.on('opponent_progress', callback);
   }
 
