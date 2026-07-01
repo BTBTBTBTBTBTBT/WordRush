@@ -700,10 +700,14 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   }, [matchService]);
 
   const handleCompleted = useCallback((status: 'won' | 'lost', totalGuesses: number, timeMs: number) => {
-    matchService.reportCompletion(status, totalGuesses, timeMs);
     setPlayerStats({ guesses: totalGuesses, timeMs });
     setMyStatus(status);
+    // 'waiting' BEFORE reportCompletion: for a CPU, reportCompletion can end the
+    // match synchronously (onMatchEnded → setScreen('result')); with both setState
+    // calls batched, whichever runs LAST wins — so 'waiting' must come first or it
+    // clobbers 'result' and strands the match on the spectator screen.
     setScreen('waiting');
+    matchService.reportCompletion(status, totalGuesses, timeMs);
   }, [matchService]);
 
   const handleStageCompleted = useCallback((stageIndex: number) => {

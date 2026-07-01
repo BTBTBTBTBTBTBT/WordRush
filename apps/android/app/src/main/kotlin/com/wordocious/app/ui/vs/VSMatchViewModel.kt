@@ -413,8 +413,11 @@ class VSMatchViewModel(
             val timeMs = max(0, (System.currentTimeMillis() - matchStartMs).toInt())
             playerTimeMs = timeMs
             myStatus = status
-            service.playerCompleted(if (status == GameStatus.WON) "won" else "lost", guesses, timeMs)
+            // .WAITING BEFORE playerCompleted: a fast CPU can end the match
+            // synchronously here (screen=RESULT); setting WAITING after would
+            // clobber it and strand the match on the spectator screen.
             screen = VSScreen.WAITING
+            service.playerCompleted(if (status == GameStatus.WON) "won" else "lost", guesses, timeMs)
         }
         game = vm
         screen = VSScreen.MATCH

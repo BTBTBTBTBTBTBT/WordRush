@@ -488,9 +488,11 @@ final class VSMatchViewModel: ObservableObject {
                 if status == .won { self.myBoardsSolved = 1 }
                 self.myStatus = status
                 self.myFinalGuesses = guesses
+                // .waiting BEFORE playerCompleted — see the board-mode note above:
+                // a fast CPU can end the match synchronously here (screen=.result).
+                self.screen = .waiting
                 self.service.playerCompleted(status: status == .won ? "won" : "lost",
                                              totalGuesses: guesses, timeMs: timeMs)
-                self.screen = .waiting
             }
             // Throttled typing relay while letters are in the current row.
             pvm.$input.dropFirst()
@@ -523,9 +525,13 @@ final class VSMatchViewModel: ObservableObject {
             self.playerTimeMs = timeMs
             self.myStatus = status
             self.myFinalGuesses = guesses
+            // Go to the spectator screen FIRST: playerCompleted can end the match
+            // synchronously (when a fast CPU already finished), which sets
+            // screen=.result — setting .waiting after would clobber it back and
+            // strand the match (ended internally, stuck on the spectator screen).
+            self.screen = .waiting
             self.service.playerCompleted(status: status == .won ? "won" : "lost",
                                          totalGuesses: guesses, timeMs: timeMs)
-            self.screen = .waiting
         }
         // Throttled typing relay while letters are in the current row.
         vm.$currentInput.dropFirst()
