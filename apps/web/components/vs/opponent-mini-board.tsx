@@ -25,24 +25,23 @@ export function OpponentMiniBoard({ tiles, maxGuesses, wordLength, tileSize = 8 
         const isNew = rowIndex === tiles.length - 1;
 
         return (
-          <div
-            key={rowIndex}
-            className={`flex ${isNew && row ? 'animate-fade-in-scale' : ''}`}
-            style={{ gap: `${gap}px` }}
-          >
+          <div key={rowIndex} className="flex" style={{ gap: `${gap}px` }}>
             {Array.from({ length: wordLength }).map((_, colIndex) => {
               const tileState = row?.[colIndex];
               const color = tileState ? TILE_COLORS[tileState] || 'transparent' : undefined;
+              // Newest row flips in tile-by-tile (staggered) for a fluid reveal.
+              const animate = isNew && !!color;
 
               return (
                 <div
                   key={colIndex}
-                  className="rounded-[2px]"
+                  className={`rounded-[2px] ${animate ? 'opp-tile-flip' : ''}`}
                   style={{
                     width: `${tileSize}px`,
                     height: `${tileSize}px`,
                     backgroundColor: color || 'transparent',
                     border: color ? 'none' : '1px solid #d1d5db',
+                    animationDelay: animate ? `${colIndex * 55}ms` : undefined,
                   }}
                 />
               );

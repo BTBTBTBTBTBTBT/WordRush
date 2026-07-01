@@ -323,14 +323,16 @@ export class LocalBotMatchService implements IMatchService {
     this.ended = false;
     this.clearTimers();
     const seed = this.config.fixedSeed ?? generateMatchSeed();
-    this.serverStartAt = Date.now();
+    // Start the bot's clock after the 3s rematch countdown so its guesses land
+    // relative to the same start the player sees (parity with the initial match).
+    this.serverStartAt = Date.now() + MATCH_COUNTDOWN_MS;
     this.plan = buildBotPlan(seed, this.mode, this.difficulty, this.planOpts());
     this.botDone = false;
     this.playerDone = false;
     this.playerBoardsSolved = 0;
     this.playerResult = null;
     this.cbRematchStart?.({ matchId: `bot-${Date.now()}`, seed });
-    this.schedule(() => this.runPlan(), 50);
+    this.schedule(() => this.runPlan(), MATCH_COUNTDOWN_MS);
   }
   declineRematch(): void {
     /* no-op for CPU */

@@ -323,6 +323,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const [queueSize, setQueueSize] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownIsRematch, setCountdownIsRematch] = useState(false);
   const [opponentProgress, setOpponentProgress] = useState({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
   const [opponentTiles, setOpponentTiles] = useState<Record<number, string[][]>>({});
   const [puzzleMetadata, setPuzzleMetadata] = useState<{ display: string; category: string; answerLength: number; themeCategory?: string } | undefined>();
@@ -624,17 +625,27 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     });
 
     matchService.onRematchStart((data) => {
-      setSeed(data.seed);
-      setStartTime(Date.now());
-      setPuzzleMetadata((data as any).puzzleMetadata);
-      setScreen('match');
-      setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
-      setOpponentTiles({});
-      setMatchResult(null);
+      // Unlike the initial match there's no match-intro splash on a rematch, so
+      // run a 3-2-1 "Rematch starting in" countdown before the board resets
+      // (instead of snapping straight into a new game). The bot's engine is
+      // delayed by the same 3s so pacing stays aligned.
       setRematchState('idle');
+      setMatchResult(null);
       setPlayerStats(null);
-      resultRecordedRef.current = false;
-      resetPerMatchState();
+      setCountdownIsRematch(true);
+      startCountdown(3);
+      const start = Date.now() + 3000;
+      setTimeout(() => {
+        setSeed(data.seed);
+        setStartTime(start);
+        setPuzzleMetadata((data as any).puzzleMetadata);
+        setScreen('match');
+        setOpponentProgress({ attempts: 0, boardsSolved: 0, totalBoards: 0 });
+        setOpponentTiles({});
+        resultRecordedRef.current = false;
+        resetPerMatchState();
+        setCountdownIsRematch(false);
+      }, 3000);
     });
 
     matchService.onOpponentLeft(() => {
@@ -827,6 +838,25 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   }
 
   // Queue screen
+  // Countdown overlay — shown on the queue screen for the initial match, and on
+  // the result screen for a rematch (relabeled). Kept as one element so both
+  // reuse the exact styling.
+  const countdownOverlayEl = showCountdown ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="text-center space-y-4">
+        <div className="text-gray-400 text-lg font-bold uppercase tracking-widest animate-fade-in-scale">
+          {countdownIsRematch ? 'Rematch starting in' : 'Match Found'}
+        </div>
+        <div
+          key={countdown}
+          className={`text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient} animate-fade-in-scale`}
+        >
+          {countdown}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // Shared CPU opponent picker (difficulty grid + adaptive + ghost/daily), used
   // by both the entry chooser's "Bot Match" and the queue-screen auto-offer.
   // Pro-gated: non-Pro sees an unlock CTA instead of the grid.
@@ -1002,23 +1032,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           />
         )}
         {/* Countdown overlay */}
-        {showCountdown && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in"
-          >
-            <div className="text-center space-y-4">
-              <div className="text-gray-400 text-lg font-bold uppercase tracking-widest animate-fade-in-scale">
-                Match Found
-              </div>
-              <div
-                key={countdown}
-                className={`text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient} animate-fade-in-scale`}
-              >
-                {countdown}
-              </div>
-            </div>
-          </div>
-        )}
+        {countdownOverlayEl}
 
         <div className="text-center space-y-6">
           <h1 className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
@@ -1107,6 +1121,8 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
     return (
       <div className="min-h-screen overflow-y-auto relative" style={{ backgroundColor: 'var(--color-bg)' }}>
+        {/* Rematch countdown plays over the result screen before the new game. */}
+        {countdownOverlayEl}
         {/* Photo-finish flourish (CPU close/last-guess win) — plays FIRST and is
             visually distinct from the win confetti; confetti follows once it
             dismisses so the two never overlap. */}
@@ -1241,6 +1257,8 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     const oppRowsUsed = Math.max(0, ...Object.values(opponentTiles).map((rows) => rows.length));
     // Cap rendered empty rows so Gauntlet's 50-guess budget doesn't blow up the layout.
     const spectatorRows = Math.min(modeMaxGuesses, Math.max(6, oppRowsUsed + 1));
+    // Bigger board so it fills the space and the flip-in reveal reads clearly.
+    const specTile = liveTotalBoards <= 1 ? 34 : liveTotalBoards <= 4 ? 24 : 14;
     const clockStr = `${Math.floor(waitingClock / 60)}:${(waitingClock % 60).toString().padStart(2, '0')}`;
 
     // STAKES copy. The real win rule is: solve, then tie-break on
@@ -1277,14 +1295,18 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
           {/* Opponent identity + live counters */}
           <div className="flex items-center justify-center gap-3">
-            {opponentInfo?.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={opponentInfo.avatarUrl} alt={oppName} className="w-10 h-10 rounded-full object-cover" style={{ border: '1.5px solid var(--color-border)' }} />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                <span className="text-white font-black text-xs">{oppName.slice(0, 2).toUpperCase()}</span>
-              </div>
-            )}
+            {/* Breathing "live" ring signals an active opponent while you wait. */}
+            <div className="relative w-12 h-12 flex items-center justify-center">
+              <span className="absolute inset-0 rounded-full animate-ping" style={{ border: '2px solid #a78bfa', opacity: 0.5 }} />
+              {opponentInfo?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={opponentInfo.avatarUrl} alt={oppName} className="relative w-12 h-12 rounded-full object-cover" style={{ border: '1.5px solid var(--color-border)' }} />
+              ) : (
+                <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <span className="text-white font-black text-xs">{oppName.slice(0, 2).toUpperCase()}</span>
+                </div>
+              )}
+            </div>
             <div className="text-left">
               <div className="text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>{oppName}</div>
               <div className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
@@ -1321,7 +1343,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 tiles={opponentTiles[0] || []}
                 maxGuesses={spectatorRows}
                 wordLength={wordLen}
-                tileSize={16}
+                tileSize={specTile}
               />
             ) : (
               <OpponentMultiMiniBoard
@@ -1329,7 +1351,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 totalBoards={liveTotalBoards}
                 maxGuesses={spectatorRows}
                 wordLength={wordLen}
-                tileSize={16}
+                tileSize={specTile}
               />
             )}
           </div>
