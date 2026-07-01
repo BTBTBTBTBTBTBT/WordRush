@@ -174,7 +174,9 @@ fun HomeScreen(
                         val vsWon = if (!unlimitedMode && isVsCard) vsDailyWon else null
                         // Free user who used today's daily VS → locked like other modes.
                         val isLocked = !isPro && (completion != null || (isVsCard && vsDailyWon != null))
-                        val showVs = unlimitedMode && !isVsCard
+                        // Per-card VS swords shortcut removed (redundant) — VS is
+                        // reachable only from the dedicated VS Battle card.
+                        val showVs = false
                         // The VS card needs the unlimited flag too (no engineMode) so the
                         // handler can choose lobby (unlimited) vs daily match.
                         val unlimited = unlimitedMode && (card.engineMode != null || isVsCard)

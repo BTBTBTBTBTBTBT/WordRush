@@ -78,10 +78,5 @@ fun UnlimitedHero() {
             Icon(Icons.Filled.AllInclusive, null, tint = Color(0xFFEC4899), modifier = Modifier.size(20.dp))
         }
         Text("Infinite puzzles · All stats count", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED), modifier = Modifier.padding(top = 2.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
-            Text("Tap ", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
-            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
-            Text(" on any game for VS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
-        }
     }
 }

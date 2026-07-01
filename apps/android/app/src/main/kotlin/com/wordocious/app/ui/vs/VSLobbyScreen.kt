@@ -60,6 +60,16 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode,
     val profile by AuthService.profile.collectAsState()
     val isPro = AuthService.isProActive
 
+    // Live per-mode activity, polled from the server every 5s while the lobby is
+    // open, so each mode row shows how busy it is.
+    var counts by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(emptyMap<String, com.wordocious.app.data.VSCountsService.Count>()) }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        while (true) {
+            counts = com.wordocious.app.data.VSCountsService.fetch()
+            kotlinx.coroutines.delay(5000)
+        }
+    }
+
     Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover)))) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Back", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onClose))
@@ -68,7 +78,12 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode,
             // Header
             Column(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(painterResource(R.drawable.ic_swords), null, tint = Color(0xFF0D9488), modifier = Modifier.size(40.dp))
-                Text("VS Battle", fontSize = 30.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                // Uppercase + teal gradient to match the colored menu-title
+                // aesthetic of the mode rows below (user request).
+                Text(
+                    "VS BATTLE", fontSize = 30.sp, fontWeight = FontWeight.Black,
+                    style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFF14B8A6), Color(0xFF0D9488)))),
+                )
                 Text("Race a live opponent on the same puzzle", fontSize = 13.sp, color = WTheme.textMuted)
             }
 
@@ -81,7 +96,7 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode,
                 ) { AuthService.exitGuest() }
             } else if (isPro) {
                 SectionLabel("QUICK MATCH")
-                VS_MODES.forEach { m -> ModeRow(m) { onPlay(m, false) } }
+                VS_MODES.forEach { m -> ModeRow(m, counts[m.name]) { onPlay(m, false) } }
                 PrivateMatchSection(onEnterInvite)
             } else {
                 // Local flag OR server row — the SharedPreferences flag alone
@@ -109,12 +124,21 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun ModeRow(mode: GameMode, onClick: () -> Unit) {
+private fun ModeRow(mode: GameMode, count: com.wordocious.app.data.VSCountsService.Count? = null, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)).clickableNoRipple(onClick).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(modeTitle(mode), fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode))))
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(modeTitle(mode), fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode))))
+            // Live activity for this mode (green dot when anyone's around).
+            if (count != null && count.waiting + count.playing > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Box(Modifier.size(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFF22C55E)))
+                    Text("${count.playing} playing · ${count.waiting} waiting", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+            }
+        }
         Spacer(Modifier.weight(1f))
         Text("›", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
