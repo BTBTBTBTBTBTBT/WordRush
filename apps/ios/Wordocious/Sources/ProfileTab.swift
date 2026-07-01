@@ -13,6 +13,10 @@ struct ProfileTab: View {
     @State private var showPro = false
     @State private var statRows: [UserStatRow] = []
     @State private var selectedMode: GameMode? = nil   // nil == "All" (global view)
+    // Per-mode win streak for the mode-detail grid (computed from match history,
+    // mirrors web mode-detail-panel's fetchModeWinStreak). Not stored in
+    // user_stats, so it's fetched when the selected mode changes.
+    @State private var modeWinStreak: (current: Int, best: Int) = (0, 0)
     // Solo/VS toggle (mirrors the web personal profile) — filters user_stats by play_type.
     @State private var activeTab = "solo"
     @State private var unlockedAchievements: Set<String> = []
@@ -759,7 +763,7 @@ struct ProfileTab: View {
         let cells: [(String, String)] = [
             ("Wins", "\(s.wins)"), ("Losses", "\(s.losses)"), ("Games", "\(s.totalGames)"), ("Win Rate", "\(winRate)%"),
             ("Best", s.bestScore > 0 ? "\(s.bestScore)" : "-"), ("Fastest", fmtTime(s.fastestTime)),
-            ("Streak", "\(s.winStreakCurrent)"), ("Best Streak", "\(s.winStreakBest)"),
+            ("Streak", "\(modeWinStreak.current)"), ("Best Streak", "\(modeWinStreak.best)"),
         ]
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
             ForEach(cells, id: \.0) { c in
@@ -773,6 +777,15 @@ struct ProfileTab: View {
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        // Fetch the per-mode win streak from match history whenever the selected
+        // mode changes (web mode-detail-panel parity). Reset first so a stale
+        // value from the previous mode never flashes.
+        .task(id: mode.rawValue) {
+            modeWinStreak = (0, 0)
+            if let uid = auth.profile?.id {
+                modeWinStreak = await MatchStatsService.modeWinStreak(uid: uid, mode: mode)
+            }
+        }
     }
 
     private func fmtTime(_ s: Int) -> String {

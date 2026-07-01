@@ -311,7 +311,7 @@ enum MatchStatsService {
     }
 
     /// Current + best win streak over the most-recent 200 games — ports fetchModeWinStreak.
-    private static func modeWinStreak(uid: String, mode: GameMode) async -> (current: Int, best: Int) {
+    static func modeWinStreak(uid: String, mode: GameMode) async -> (current: Int, best: Int) {
         struct Row: Decodable { let winner_id: String? }
         let rows: [Row] = (try? await AuthService.shared.client.from("matches")
             .select("winner_id")
