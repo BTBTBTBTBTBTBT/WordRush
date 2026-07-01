@@ -586,6 +586,16 @@ struct VSGameView: View {
                     ])
                 }
 
+                // CPU only: once the bot can't beat you, skip watching its timer.
+                if vm.isCpu && cpuWinLocked {
+                    Button { Haptics.success(); vm.finishCpuNow() } label: {
+                        Label("Claim your win", systemImage: "flag.checkered")
+                            .font(Brand.font(15, .black)).foregroundStyle(.white)
+                            .frame(maxWidth: .infinity).padding(.vertical, 13)
+                            .background(RoundedRectangle(cornerRadius: 14).fill(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing)))
+                    }.buttonStyle(.plain)
+                }
+
                 Button(action: goHome) {
                     Label("Leave", systemImage: "xmark")
                         .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
@@ -603,6 +613,19 @@ struct VSGameView: View {
     /// opponent is still playing, so they're almost always behind on time and
     /// need strictly FEWER guesses; if they're somehow still ahead of your
     /// clock, matching your guess count could win on time.
+    /// True once the (CPU) opponent can no longer beat the player — mirrors the
+    /// "can no longer beat your score!" branch of stakesCopy. Gates the
+    /// "Claim your win" shortcut so it only appears when the result is locked.
+    private var cpuWinLocked: Bool {
+        guard let myGuesses = vm.myFinalGuesses, vm.myStatus != .lost else { return false }
+        let liveTotalBoards = vm.opponent.totalBoards > 0 ? vm.opponent.totalBoards : vm.totalBoards
+        let boardsLeft = liveTotalBoards - vm.opponent.boardsSolved
+        if liveTotalBoards > 1, boardsLeft > 1 { return false }
+        let opponentTimeBehind = Date().timeIntervalSince1970 * 1000 - vm.startTimeMs > Double(vm.playerTimeMs)
+        let target = opponentTimeBehind ? myGuesses - 1 : myGuesses
+        return target <= 0 || vm.opponent.attempts >= target
+    }
+
     private var stakesCopy: String? {
         guard let myGuesses = vm.myFinalGuesses else { return nil }
         let oppName = vm.opponentName

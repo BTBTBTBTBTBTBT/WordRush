@@ -264,6 +264,12 @@ final class VSMatchViewModel: ObservableObject {
         service.connect(presenceId: presenceId)
     }
 
+    /// CPU spectator shortcut: end the match now instead of watching the bot's
+    /// timer run down, once its result can no longer beat the player. The bot's
+    /// outcome is already fixed by its plan, and the player's time was captured
+    /// at their completion — so this just skips the wait.
+    func finishCpuNow() { guard isCpu else { return }; service.resolveNow() }
+
     func leave() {
         countdownTimer?.invalidate()
         typingHideTask?.cancel()

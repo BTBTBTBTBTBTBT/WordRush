@@ -33,6 +33,14 @@ protocol VSTransport: AnyObject {
     func abandonMatch()
     func offerRematch()
     func declineRematch()
+    /// CPU-only: skip watching the bot run out its clock once the result is
+    /// already decided. No-op for the socket transport (a real opponent can't
+    /// be fast-forwarded).
+    func resolveNow()
+}
+
+extension VSTransport {
+    func resolveNow() {}
 }
 
 /// The socket transport already exposes the whole surface.
@@ -224,6 +232,18 @@ final class LocalBotMatchService: VSTransport {
     func leaveQueue() { clearTimers() }
     func submitGuess(_ guess: String, boardIndex: Int) {}
     func boardSolved(boardIndex: Int) { playerBoardsSolved += 1 }
+
+    /// End the match right now using the bot's already-decided plan, instead of
+    /// making the player watch the bot's timer run down. The outcome (and the
+    /// player's recorded time, captured at their completion) is identical to
+    /// letting it play out — only the wait is skipped. Only call once the result
+    /// is locked (the player can no longer be beaten).
+    func resolveNow() {
+        guard !ended, playerDone, let plan else { return }
+        botDone = true
+        botTimeMs = plan.finishAtMs
+        maybeEnd()
+    }
     func playerCompleted(status: String, totalGuesses: Int, timeMs: Int) {
         playerResult = (status, totalGuesses, Double(timeMs))
         playerDone = true
