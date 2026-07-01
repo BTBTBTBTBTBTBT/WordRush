@@ -103,7 +103,12 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
         return;
       }
 
-      onGuessSubmitted(currentGuess, 0);
+      // Relay the ACTIVE board (not a hardcoded 0): Succession is sequential, so
+      // the guess lands on the current still-playing board. Sending 0 made the
+      // server score it against board 0's answer and told the opponent the tiles
+      // belonged to board 0 — so the opponent's board 1+ never populated and
+      // post-board-0 colors were wrong (matches the native fix in build 66).
+      onGuessSubmitted(currentGuess, Math.max(0, activeBoardIndex));
       dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, applyToAll: true });
       setCurrentGuess('');
     } else if (key === 'BACK' || key === 'BACKSPACE') {

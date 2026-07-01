@@ -10,6 +10,7 @@ import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
 import com.wordocious.core.createInitialState
 import com.wordocious.core.gameReducer
+import com.wordocious.core.gauntletStages
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -221,8 +222,12 @@ class GameViewModel(
         // SEQUENCE the active board advances once it's solved, so reading the
         // active index afterward would report the NEXT board. The VS relay needs
         // the board the guess actually hit so the opponent's mini-board (and the
-        // server's evaluation) target the right board.
-        val committedBoardIndex = if (mode == GameMode.SEQUENCE)
+        // server's evaluation) target the right board. Also covers the Gauntlet
+        // "Succession" stage (a sequential stage inside GAUNTLET mode) — mirrors
+        // iOS's isSequence = mode == .sequence || currentGauntletStage.sequential.
+        val sequentialStage = mode == GameMode.SEQUENCE ||
+            (before.gauntlet?.let { gauntletStages.getOrNull(it.currentStage)?.sequential } == true)
+        val committedBoardIndex = if (sequentialStage)
             before.boards.indexOfFirst { it.status == GameStatus.PLAYING }.coerceAtLeast(0)
         else 0
         val after = gameReducer(before, GameAction.SubmitGuess(guess, applyToAll = applyToAll))
