@@ -12,14 +12,14 @@ struct InviteSheet: View {
 
     enum Tab { case link, username }
 
-    /// Same modes + labels as the web MODES list (mixed-case display).
-    private let modes: [(mode: GameMode, label: String)] = [
-        (.duel, "Classic"), (.quordle, "QuadWord"), (.octordle, "OctoWord"),
-        (.sequence, "Succession"), (.rescue, "Deliverance"), (.duel6, "Six"),
-        (.duel7, "Seven"), (.gauntlet, "Gauntlet"), (.propernoundle, "ProperNoundle"),
-    ]
+    /// The 9 VS-capable modes, single-sourced from the home catalog so each row
+    /// carries its real brand icon + accent (excludes the VS card, which has no
+    /// dbKey). Order matches the home grid.
+    private var inviteModes: [HomeMode] { homeModes.filter { $0.dbKey != nil } }
+    private var selectedHome: HomeMode { inviteModes.first { $0.dbKey == mode.rawValue } ?? inviteModes[0] }
 
     @State private var mode: GameMode = .duel
+    @State private var modeOpen = false
     @State private var tab: Tab = .link
     @State private var username = ""
     @State private var busy = false
@@ -28,7 +28,7 @@ struct InviteSheet: View {
     @State private var sentTo: String?
     @State private var copied = false
 
-    private var modeLabel: String { modes.first { $0.mode == mode }?.label ?? "Classic" }
+    private var modeLabel: String { selectedHome.title }
     private let pink = Color(hex: 0xEC4899), pinkDark = Color(hex: 0xDB2777)
 
     var body: some View {
@@ -37,7 +37,7 @@ struct InviteSheet: View {
                 // Header — gradient title + subtitle + X close (matches web modal)
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Invite a friend")
+                        Text("INVITE A FRIEND")
                             .font(Brand.font(24, .black))
                             .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
                         Text("Pick a mode, then send a link or a username invite.")
@@ -52,24 +52,40 @@ struct InviteSheet: View {
                     }.buttonStyle(.plain)
                 }
 
-                    // Mode picker
+                    // Mode picker — a custom inline dropdown (styled with each
+                    // mode's brand icon + accent). Expands in place and pushes the
+                    // content down, instead of a floating menu that overlapped and
+                    // hid the buttons underneath.
                     VStack(alignment: .leading, spacing: 6) {
                         Text("GAME MODE").font(Brand.font(10, .black)).tracking(0.6).foregroundStyle(Theme.textMuted)
-                        Menu {
-                            ForEach(modes, id: \.mode) { m in
-                                Button(m.label) { mode = m.mode; reset() }
+                        VStack(spacing: 0) {
+                            // Trigger row (shows the selected mode).
+                            Button {
+                                withAnimation(Theme.animation(.easeInOut(duration: 0.22))) { modeOpen.toggle() }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    ModeIconView(icon: selectedHome.icon, accent: selectedHome.accent, box: 30)
+                                    Text(modeLabel).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
+                                    Spacer()
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 12, weight: .bold)).foregroundStyle(selectedHome.accent)
+                                        .rotationEffect(.degrees(modeOpen ? 180 : 0))
+                                }
+                                .padding(.horizontal, 12).padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }.buttonStyle(.plain)
+
+                            // Expanded list — one styled row per mode.
+                            if modeOpen {
+                                Divider().overlay(Theme.border).padding(.horizontal, 8)
+                                VStack(spacing: 2) {
+                                    ForEach(inviteModes) { hm in modeRow(hm) }
+                                }
+                                .padding(.horizontal, 6).padding(.top, 4).padding(.bottom, 6)
                             }
-                        } label: {
-                            HStack {
-                                Circle().fill(ModeStyle.accent(mode)).frame(width: 12, height: 12)
-                                Text(modeLabel).font(Brand.font(15, .black)).foregroundStyle(Theme.textPrimary)
-                                Spacer()
-                                Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(ModeStyle.accent(mode))
-                            }
-                            .padding(.horizontal, 14).padding(.vertical, 12)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(ModeStyle.accent(mode), lineWidth: 1.5))
                         }
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Theme.background))
+                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(modeOpen ? selectedHome.accent : Theme.border, lineWidth: 1.5))
                     }
 
                     // Tabs
@@ -88,6 +104,29 @@ struct InviteSheet: View {
                 }
                 .padding(18)
             }
+    }
+
+    // MARK: Mode picker row
+
+    private func modeRow(_ hm: HomeMode) -> some View {
+        let selected = hm.dbKey == mode.rawValue
+        return Button {
+            if let m = hm.dbKey.flatMap({ GameMode(rawValue: $0) }) { mode = m; reset() }
+            withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { modeOpen = false }
+        } label: {
+            HStack(spacing: 10) {
+                ModeIconView(icon: hm.icon, accent: hm.accent, box: 28)
+                Text(hm.title).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                Spacer()
+                if selected {
+                    Image(systemName: "checkmark").font(.system(size: 12, weight: .black)).foregroundStyle(hm.accent)
+                }
+            }
+            .padding(.horizontal, 8).padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 10).fill(selected ? hm.accent.opacity(0.10) : Color.clear))
+            .contentShape(Rectangle())
+        }.buttonStyle(.plain)
     }
 
     // MARK: Tabs
