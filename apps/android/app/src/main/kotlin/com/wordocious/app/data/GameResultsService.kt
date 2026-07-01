@@ -188,6 +188,14 @@ object GameResultsService {
         @SerialName("fastest_time") val fastestTime: Int,
     )
 
+    /** Record a CPU / bot VS result into its OWN bucket (play_type='vs_cpu').
+     *  Pure practice: writes ONLY user_stats — no profiles/XP, no matches row,
+     *  no daily_results, no achievements. Best-effort. */
+    suspend fun recordCpuResult(gameMode: GameMode, won: Boolean, guessCount: Int, timeSeconds: Int) {
+        val userId = AuthService.userId ?: return
+        updateUserStats(userId, gameMode.name, "vs_cpu", won, guessCount, timeSeconds)
+    }
+
     private suspend fun updateUserStats(
         userId: String, mode: String, playType: String, won: Boolean, guessCount: Int, timeSeconds: Int,
     ) {

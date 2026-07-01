@@ -13,32 +13,32 @@ import org.json.JSONObject
  * inbound-event callbacks. The VS state machine lives in VSMatchViewModel. All
  * inbound callbacks are marshalled to the main thread so the UI can update directly.
  */
-class VSMatchService {
+class VSMatchService : VSTransport {
     private var socket: Socket? = null
     private val main = Handler(Looper.getMainLooper())
     private val json = Json { ignoreUnknownKeys = true; coerceInputValues = true }
 
     // Inbound callbacks (set by the view model)
-    var onConnect: (() -> Unit)? = null
-    var onDisconnect: (() -> Unit)? = null
-    var onQueueStatus: ((VSQueueStatus) -> Unit)? = null
-    var onMatchFound: ((VSMatchFound) -> Unit)? = null
-    var onMatchStart: ((VSMatchStart) -> Unit)? = null
-    var onGuessResult: ((VSGuessResult) -> Unit)? = null
-    var onOpponentProgress: ((VSOpponentProgress) -> Unit)? = null
-    var onMatchEnded: ((VSMatchEnded) -> Unit)? = null
-    var onOpponentStageCompleted: ((VSStageEvent) -> Unit)? = null
-    var onRematchOffered: (() -> Unit)? = null
-    var onRematchDeclined: (() -> Unit)? = null
-    var onRematchStart: ((VSRematchStart) -> Unit)? = null
-    var onOpponentLeft: (() -> Unit)? = null
-    var onServerError: ((VSServerError) -> Unit)? = null
-    var onOpponentTyping: (() -> Unit)? = null
+    override var onConnect: (() -> Unit)? = null
+    override var onDisconnect: (() -> Unit)? = null
+    override var onQueueStatus: ((VSQueueStatus) -> Unit)? = null
+    override var onMatchFound: ((VSMatchFound) -> Unit)? = null
+    override var onMatchStart: ((VSMatchStart) -> Unit)? = null
+    override var onGuessResult: ((VSGuessResult) -> Unit)? = null
+    override var onOpponentProgress: ((VSOpponentProgress) -> Unit)? = null
+    override var onMatchEnded: ((VSMatchEnded) -> Unit)? = null
+    override var onOpponentStageCompleted: ((VSStageEvent) -> Unit)? = null
+    override var onRematchOffered: (() -> Unit)? = null
+    override var onRematchDeclined: (() -> Unit)? = null
+    override var onRematchStart: ((VSRematchStart) -> Unit)? = null
+    override var onOpponentLeft: (() -> Unit)? = null
+    override var onServerError: ((VSServerError) -> Unit)? = null
+    override var onOpponentTyping: (() -> Unit)? = null
 
-    val isConfigured: Boolean get() = VSConfig.isConfigured
+    override val isConfigured: Boolean get() = VSConfig.isConfigured
 
     // ── Connection ──────────────────────────────────────────────────────────────
-    fun connect(presenceId: String?) {
+    override fun connect(presenceId: String?) {
         val opts = IO.Options().apply {
             forceNew = true
             reconnection = true
@@ -52,43 +52,43 @@ class VSMatchService {
         s.connect()
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         socket?.let { it.off(); it.disconnect() }
         socket = null
     }
 
     // ── Outbound (client → server) ────────────────────────────────────────────────
-    fun joinQueue(mode: String, dailySeed: String?, inviteCode: String?) {
+    override fun joinQueue(mode: String, dailySeed: String?, inviteCode: String?) {
         val payload = JSONObject().put("mode", mode)
         dailySeed?.let { payload.put("dailySeed", it) }
         inviteCode?.let { payload.put("inviteCode", it) }
         socket?.emit(VSEvent.JOIN_QUEUE, payload)
     }
 
-    fun leaveQueue() { socket?.emit(VSEvent.LEAVE_QUEUE) }
+    override fun leaveQueue() { socket?.emit(VSEvent.LEAVE_QUEUE) }
 
-    fun submitGuess(guess: String, boardIndex: Int = 0) {
+    override fun submitGuess(guess: String, boardIndex: Int) {
         socket?.emit(VSEvent.SUBMIT_GUESS, JSONObject().put("guess", guess).put("boardIndex", boardIndex))
     }
 
-    fun boardSolved(boardIndex: Int) {
+    override fun boardSolved(boardIndex: Int) {
         socket?.emit(VSEvent.BOARD_SOLVED, JSONObject().put("boardIndex", boardIndex))
     }
 
-    fun playerCompleted(status: String, totalGuesses: Int, timeMs: Int) {
+    override fun playerCompleted(status: String, totalGuesses: Int, timeMs: Int) {
         socket?.emit(VSEvent.PLAYER_COMPLETED, JSONObject().put("status", status).put("totalGuesses", totalGuesses).put("timeMs", timeMs))
     }
 
-    fun stageCompleted(stageIndex: Int) {
+    override fun stageCompleted(stageIndex: Int) {
         socket?.emit(VSEvent.STAGE_COMPLETED, JSONObject().put("stageIndex", stageIndex))
     }
 
     /** Throttle upstream (VSMatchViewModel) — at most one ping per 1.5s. */
-    fun emitTyping() { socket?.emit(VSEvent.TYPING) }
+    override fun emitTyping() { socket?.emit(VSEvent.TYPING) }
 
-    fun abandonMatch() { socket?.emit(VSEvent.ABANDON_MATCH) }
-    fun offerRematch() { socket?.emit(VSEvent.OFFER_REMATCH) }
-    fun declineRematch() { socket?.emit(VSEvent.DECLINE_REMATCH) }
+    override fun abandonMatch() { socket?.emit(VSEvent.ABANDON_MATCH) }
+    override fun offerRematch() { socket?.emit(VSEvent.OFFER_REMATCH) }
+    override fun declineRematch() { socket?.emit(VSEvent.DECLINE_REMATCH) }
 
     // ── Handler registration ────────────────────────────────────────────────────
     private fun register(s: Socket) {

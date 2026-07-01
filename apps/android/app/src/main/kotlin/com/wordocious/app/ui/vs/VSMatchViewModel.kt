@@ -7,6 +7,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wordocious.app.GameViewModel
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.BotConfig
+import com.wordocious.app.data.BotDifficulty
+import com.wordocious.app.data.BotEngine
+import com.wordocious.app.data.BotPersonas
+import com.wordocious.app.data.BotTier
+import com.wordocious.app.data.CpuIdentity
+import com.wordocious.app.data.CpuKind
+import com.wordocious.app.data.CpuOpponent
+import com.wordocious.app.data.CpuProgressionStore
+import com.wordocious.app.data.LocalBotMatchService
+import com.wordocious.app.data.VSTransport
 import com.wordocious.app.data.DailyResultsService
 import com.wordocious.app.data.GameResultsService
 import com.wordocious.app.data.HeadToHeadService
@@ -110,7 +121,21 @@ class VSMatchViewModel(
     /** Word length for the tug-of-war/mini boards — web MODE_WORD_LEN. */
     val wordLen: Int = when (mode) { GameMode.DUEL_6 -> 6; GameMode.DUEL_7 -> 7; else -> 5 }
 
-    private val service = VSMatchService()
+    // Swappable transport: socket by default, hot-swapped to a client-side CPU
+    // bot when the player picks "Play the CPU" (Pro-only practice).
+    private var service: VSTransport = VSMatchService()
+
+    // ── CPU-vs state ──
+    var isCpu by mutableStateOf(false)
+    var cpuPersona by mutableStateOf<CpuIdentity?>(null)
+    private var cpuKind: CpuKind? = null
+    var photoFinish by mutableStateOf<String?>(null)     // "photo" | "clutch"
+    var cpuMilestone by mutableStateOf<Int?>(null)
+    var cpuUnlock by mutableStateOf<String?>(null)
+    var cpuStreak by mutableStateOf(0)
+    var cpuSessionWins by mutableStateOf(0)
+    var cpuSessionLosses by mutableStateOf(0)
+
     private var seed = ""
     private var matchStartMs = 0.0
     private var resultRecorded = false
@@ -167,6 +192,31 @@ class VSMatchViewModel(
             }
         }
         service.connect(presenceId = AuthService.userId?.let { "u:$it" })
+    }
+
+    /** Swap the socket transport for a client-side CPU bot and start a match.
+     *  Pro-gated in the UI. `ghost` supplies Beat-Your-Best pace; `fixedSeed` is
+     *  the Bot-of-the-Day daily seed. */
+    fun startCpu(kind: CpuKind, ghostGuesses: Int? = null, ghostTimeMs: Double? = null, fixedSeed: String? = null) {
+        val oppId = CpuOpponent.opponentId(kind)
+        val id = CpuOpponent.identity(oppId)
+        cpuKind = kind
+        cpuPersona = id
+        isCpu = true
+        countdownJob?.cancel()
+        service.disconnect()
+        var config = BotConfig(opponentId = oppId, ghostGuesses = ghostGuesses, ghostTimeMs = ghostTimeMs, fixedSeed = fixedSeed)
+        if (kind == CpuKind.ADAPTIVE) {
+            config = config.copy(adaptive = BotEngine.AdaptiveHint(winRate = minOf(0.9, 0.4 + CpuProgressionStore.load().streak * 0.05)))
+        }
+        val engineDifficulty = if (kind == CpuKind.ADAPTIVE) BotDifficulty.ADAPTIVE
+        else runCatching { BotDifficulty.valueOf(id.tier.name) }.getOrDefault(BotDifficulty.MEDIUM)
+        service = LocalBotMatchService(engineDifficulty, config)
+        screen = VSScreen.QUEUE
+        resultRecorded = false
+        wireHandlers()
+        service.onConnect = { if (screen == VSScreen.QUEUE) service.joinQueue(mode.name, null, null) }
+        service.connect(null)
     }
 
     fun leave() {
@@ -261,7 +311,11 @@ class VSMatchViewModel(
         opponentInfo = null
         headToHead = null
         opponentUserId = data.opponentUserId
-        data.opponentUserId?.let { oppId ->
+        if (CpuOpponent.isCpu(data.opponentUserId)) {
+            // CPU opponent: use the persona identity locally — no profile / H2H fetch.
+            val id = CpuOpponent.identity(data.opponentUserId!!)
+            opponentInfo = HeadToHeadService.VsProfile(username = "${id.name} 🤖", avatarUrl = null, level = 0)
+        } else data.opponentUserId?.let { oppId ->
             viewModelScope.launch {
                 HeadToHeadService.fetchVsProfile(oppId)?.let { opponentInfo = it }
             }
@@ -403,8 +457,8 @@ class VSMatchViewModel(
                 headToHead = HeadToHeadService.fetchHeadToHead(myId, oppId)
             }
         }
-        // The freemium one-per-day lock stays gated on the daily flow.
-        if (dailyVsActive) {
+        // The freemium one-per-day lock stays gated on the daily flow (never CPU).
+        if (dailyVsActive && !isCpu) {
             VSPlayLimit.markPlayedToday()
         }
     }
@@ -413,6 +467,26 @@ class VSMatchViewModel(
         if (resultRecorded || AuthService.profile.value == null) return
         resultRecorded = true
         val won = data.winner == "player"
+
+        if (isCpu) {
+            // Pure practice: record ONLY the separate vs_cpu bucket — no XP, no
+            // matches row, no head-to-head, no achievements, no daily lock.
+            val secs = (data.playerTime / 1000).roundToInt()
+            viewModelScope.launch { GameResultsService.recordCpuResult(mode, won, data.playerGuesses, secs) }
+            val tier = cpuPersona?.tier ?: BotTier.MEDIUM
+            val outcome = CpuProgressionStore.recordGame(won, tier, BotPersonas.persona(tier).id)
+            if (cpuKind == CpuKind.DAILY) CpuProgressionStore.recordBotOfDay(won, CpuProgressionStore.todayUtc())
+            cpuStreak = outcome.progression.streak
+            cpuMilestone = outcome.milestone
+            cpuUnlock = outcome.unlockedPersona
+            if (won) cpuSessionWins += 1 else cpuSessionLosses += 1
+            if (won) {
+                val margin = kotlin.math.abs(data.playerTime - data.opponentTime)
+                val maxG = game?.state?.value?.boards?.firstOrNull()?.maxGuesses ?: 6
+                photoFinish = if (margin < 2000) "photo" else if (data.playerGuesses >= maxG) "clutch" else null
+            }
+            return
+        }
         // Web parity (stats-service): EVERY VS match lands on the daily VS
         // leaderboard (play_type='vs'). Inside the guard — a duplicate
         // match_ended event must not double-accumulate vs_wins/vs_games.
