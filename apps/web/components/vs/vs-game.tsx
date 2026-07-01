@@ -23,8 +23,9 @@ import { fetchHeadToHead, fetchVsProfile, type HeadToHeadRecord, type VsProfile 
 import { XpToast } from '@/components/effects/xp-toast';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { markInviteAcceptedByCode } from '@/lib/invite-service';
+import { InviteModal } from '@/components/invites/invite-modal';
 import { playOpponentThunk } from '@/lib/sounds';
-import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords, Bot, Lock } from 'lucide-react';
+import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords, Bot, Lock, Users, ChevronLeft } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine } from './match-intro';
@@ -117,7 +118,7 @@ interface VsGameProps {
   isDaily?: boolean;
 }
 
-type VsScreen = 'queue' | 'warmup' | 'match' | 'waiting' | 'result';
+type VsScreen = 'entry' | 'queue' | 'warmup' | 'match' | 'waiting' | 'result';
 
 const MODE_LABELS: Record<string, string> = {
   [GameMode.DUEL]: 'CLASSIC',
@@ -266,7 +267,13 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   );
   // Shown if a freemium user tries to rematch after their daily game.
   const [vsLimitOpen, setVsLimitOpen] = useState(false);
-  const [screen, setScreen] = useState<VsScreen>('queue');
+  // Standard "tap a VS mode" flow now opens an entry chooser (Quick Match / Bot
+  // Match / Invite a Friend) instead of silently joining the queue. Specific
+  // intents — daily VS and accepting a private invite link — skip straight to
+  // matchmaking (autoJoin below).
+  const autoJoin = dailyVsActive || !!inviteCode;
+  const [screen, setScreen] = useState<VsScreen>(autoJoin ? 'queue' : 'entry');
+  const [showInvite, setShowInvite] = useState(false);
   // Stable facade over the transport: starts on the socket, can hot-swap to a
   // client-side CPU bot (Pro-only practice) without re-wiring any handlers.
   const [matchService] = useState(() => new SwappableMatchService(new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001')));
@@ -648,7 +655,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // VS — we're rendering the "already played" screen instead. Pro
     // users (and freemium who haven't played yet) join the queue
     // normally, passing the daily seed only when this is the daily flow.
-    if (!alreadyPlayedDaily) {
+    // Only auto-join for specific intents (daily VS / accepted invite). The
+    // standard flow waits on the entry chooser and joins via handleQuickMatch.
+    if (!alreadyPlayedDaily && autoJoin) {
       // Re-derive at join time: the todayDailySeed memo only recomputes on
       // dailyVsActive, so a tab left open across midnight queued with
       // YESTERDAY'S seed and could only ever pair with other stale tabs.
@@ -716,6 +725,17 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     lastTypingSentRef.current = now;
     matchService.emitTyping();
   }, [matchService]);
+
+  // Quick Match: join the live human matchmaking queue (deferred from mount so
+  // the entry chooser can offer Bot Match / Invite first without silently
+  // queuing the player).
+  const handleQuickMatch = useCallback(() => {
+    const queueSeed = dailyVsActive ? generateDailySeed(getTodayUTC(), 'DUEL_VS') : undefined;
+    matchService.joinQueue(mode, queueSeed, inviteCode);
+    setMessage('');
+    setScreen('queue');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchService, mode, dailyVsActive, inviteCode]);
 
   // Swap the live socket transport for a client-side CPU bot and start a match.
   // Pro-gated in the UI (non-Pro never reaches here).
@@ -807,6 +827,159 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   }
 
   // Queue screen
+  // Shared CPU opponent picker (difficulty grid + adaptive + ghost/daily), used
+  // by both the entry chooser's "Bot Match" and the queue-screen auto-offer.
+  // Pro-gated: non-Pro sees an unlock CTA instead of the grid.
+  const cpuChooserContent = () => (
+    isPro ? (
+      <>
+        <div className="grid grid-cols-3 gap-2">
+          {(['easy', 'medium', 'hard'] as BotTier[]).map((tier) => {
+            const p = BOT_PERSONAS[tier];
+            return (
+              <button
+                key={tier}
+                onClick={() => startCpu(tier)}
+                className="flex flex-col items-center gap-1 rounded-xl border px-2 py-3 transition-transform hover:-translate-y-0.5"
+                style={{ borderColor: p.color, background: 'var(--color-surface-hover)' }}
+              >
+                <span className="text-xl">{p.avatar}</span>
+                <span className="text-xs font-black" style={{ color: p.color }}>{tierLabel(tier)}</span>
+                <span className="text-[10px] font-bold text-gray-400">{p.name}</span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => startCpu('adaptive')}
+          className="w-full rounded-xl border px-3 py-2 text-xs font-black transition-transform hover:-translate-y-0.5"
+          style={{ borderColor: '#7c3aed', background: 'var(--color-surface-hover)', color: '#7c3aed' }}
+        >
+          ⚖️ Adaptive — matched to your form
+        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => ghostRun && startCpu('ghost', { ghost: ghostRun })}
+            disabled={!ghostRun}
+            className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-40"
+            style={{ borderColor: '#64748b', background: 'var(--color-surface-hover)', color: '#475569' }}
+            title={ghostRun ? 'Race a replay of your best run' : 'Win this mode once to unlock'}
+          >
+            👻 Beat Your Best
+          </button>
+          <button
+            onClick={() => startCpu('daily', { fixedSeed: generateDailySeed(getTodayUTC(), `${mode}_CPU`) })}
+            className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform hover:-translate-y-0.5"
+            style={{ borderColor: '#f59e0b', background: 'var(--color-surface-hover)', color: '#b45309' }}
+          >
+            📅 Bot of the Day
+          </button>
+        </div>
+        <p className="text-center text-[10px] font-bold text-gray-400">Practice only — doesn’t affect your ranked stats</p>
+      </>
+    ) : (
+      <div className="text-center space-y-2">
+        <div className="flex items-center justify-center gap-1 text-xs font-bold text-gray-400">
+          <Lock className="w-3.5 h-3.5" /> Practice vs CPU is a Pro feature
+        </div>
+        <button
+          onClick={() => router.push('/pro')}
+          className="w-full rounded-xl px-4 py-2 text-sm font-black text-white"
+          style={{ background: 'linear-gradient(135deg,#a78bfa,#ec4899)' }}
+        >
+          Unlock with Pro
+        </button>
+      </div>
+    )
+  );
+
+  // Entry chooser — the first thing you see when you tap a VS mode: pick Quick
+  // Match (live queue), Bot Match (CPU practice), or Invite a Friend (private
+  // match). Replaces the old flow that silently queued AND offered the CPU at
+  // the same time.
+  if (screen === 'entry') {
+    return (
+      <div className="h-screen-stable flex flex-col items-center justify-center relative px-6" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <VsLimitModal open={vsLimitOpen} onClose={() => { setVsLimitOpen(false); router.push('/'); }} />
+        <InviteModal open={showInvite} onClose={() => setShowInvite(false)} />
+        <div className="w-full max-w-sm space-y-6">
+          <h1 className={`text-center text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
+            VS {label}
+          </h1>
+
+          {!showCpuChooser ? (
+            <div className="space-y-3">
+              {/* Quick Match */}
+              <button
+                onClick={handleQuickMatch}
+                className="w-full flex items-center gap-4 rounded-2xl border p-4 text-left transition-transform hover:-translate-y-0.5"
+                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#a78bfa,#ec4899)' }}>
+                  <Swords className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-base font-black" style={{ color: 'var(--color-text)' }}>Quick Match</div>
+                  <div className="text-xs font-bold text-gray-400">Get matched with a live opponent</div>
+                </div>
+              </button>
+
+              {/* Bot Match */}
+              <button
+                onClick={() => (isPro ? setShowCpuChooser(true) : router.push('/pro'))}
+                className="w-full flex items-center gap-4 rounded-2xl border p-4 text-left transition-transform hover:-translate-y-0.5"
+                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#64748b15' }}>
+                  <Bot className="w-6 h-6" style={{ color: '#64748b' }} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 text-base font-black" style={{ color: 'var(--color-text)' }}>
+                    Bot Match {!isPro && <Lock className="w-3.5 h-3.5 text-gray-400" />}
+                  </div>
+                  <div className="text-xs font-bold text-gray-400">Practice vs the CPU — pick a difficulty</div>
+                </div>
+              </button>
+
+              {/* Invite a Friend */}
+              <button
+                onClick={() => setShowInvite(true)}
+                className="w-full flex items-center gap-4 rounded-2xl border p-4 text-left transition-transform hover:-translate-y-0.5"
+                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+              >
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#7c3aed15' }}>
+                  <Users className="w-6 h-6" style={{ color: '#7c3aed' }} />
+                </div>
+                <div className="flex-1">
+                  <div className="text-base font-black" style={{ color: 'var(--color-text)' }}>Invite a Friend</div>
+                  <div className="text-xs font-bold text-gray-400">Send a private match link or @username</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => router.push('/')}
+                className="mx-auto flex items-center gap-2 text-gray-400 hover:text-gray-500 font-bold text-sm pt-2"
+              >
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </div>
+          ) : (
+            /* Bot Match → difficulty/options picker */
+            <div className="rounded-2xl border p-4 space-y-3" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
+              <div className="flex items-center gap-2 text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+                <button onClick={() => setShowCpuChooser(false)} className="text-gray-400 hover:text-gray-500">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <Bot className="w-4 h-4" /> Choose your opponent
+              </div>
+              {cpuChooserContent()}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (screen === 'queue') {
     return (
       <div className="h-screen-stable flex flex-col items-center justify-center relative" style={{ backgroundColor: 'var(--color-bg)' }}>
@@ -864,87 +1037,19 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             )}
           </div>
 
-          {/* Play the CPU — explicit choice + auto-offer once the queue is quiet. */}
-          {!showIntro && !showCountdown && !isCpu && cpuSupported && (
+          {/* Auto-offer the CPU once the human queue has sat quiet for a bit.
+              The explicit Bot Match choice now lives on the entry chooser. */}
+          {!showIntro && !showCountdown && !isCpu && cpuSupported && cpuAutoOffer && (
             <div className="w-full max-w-xs mx-auto">
-              {showCpuChooser || cpuAutoOffer ? (
-                <div
-                  className="rounded-2xl border p-4 space-y-3"
-                  style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
-                >
-                  <div className="flex items-center justify-center gap-2 text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
-                    <Bot className="w-4 h-4" />
-                    {cpuAutoOffer && !showCpuChooser ? 'No players right now — play the CPU?' : 'Play the CPU'}
-                  </div>
-                  {isPro ? (
-                    <>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(['easy', 'medium', 'hard'] as BotTier[]).map((tier) => {
-                          const p = BOT_PERSONAS[tier];
-                          return (
-                            <button
-                              key={tier}
-                              onClick={() => startCpu(tier)}
-                              className="flex flex-col items-center gap-1 rounded-xl border px-2 py-3 transition-transform hover:-translate-y-0.5"
-                              style={{ borderColor: p.color, background: 'var(--color-surface-hover)' }}
-                            >
-                              <span className="text-xl">{p.avatar}</span>
-                              <span className="text-xs font-black" style={{ color: p.color }}>{tierLabel(tier)}</span>
-                              <span className="text-[10px] font-bold text-gray-400">{p.name}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <button
-                        onClick={() => startCpu('adaptive')}
-                        className="w-full rounded-xl border px-3 py-2 text-xs font-black transition-transform hover:-translate-y-0.5"
-                        style={{ borderColor: '#7c3aed', background: 'var(--color-surface-hover)', color: '#7c3aed' }}
-                      >
-                        ⚖️ Adaptive — matched to your form
-                      </button>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => ghostRun && startCpu('ghost', { ghost: ghostRun })}
-                          disabled={!ghostRun}
-                          className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-40"
-                          style={{ borderColor: '#64748b', background: 'var(--color-surface-hover)', color: '#475569' }}
-                          title={ghostRun ? 'Race a replay of your best run' : 'Win this mode once to unlock'}
-                        >
-                          👻 Beat Your Best
-                        </button>
-                        <button
-                          onClick={() => startCpu('daily', { fixedSeed: generateDailySeed(getTodayUTC(), `${mode}_CPU`) })}
-                          className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform hover:-translate-y-0.5"
-                          style={{ borderColor: '#f59e0b', background: 'var(--color-surface-hover)', color: '#b45309' }}
-                        >
-                          📅 Bot of the Day
-                        </button>
-                      </div>
-                      <p className="text-center text-[10px] font-bold text-gray-400">Practice only — doesn’t affect your ranked stats</p>
-                    </>
-                  ) : (
-                    <div className="text-center space-y-2">
-                      <div className="flex items-center justify-center gap-1 text-xs font-bold text-gray-400">
-                        <Lock className="w-3.5 h-3.5" /> Practice vs CPU is a Pro feature
-                      </div>
-                      <button
-                        onClick={() => router.push('/pro')}
-                        className="w-full rounded-xl px-4 py-2 text-sm font-black text-white"
-                        style={{ background: 'linear-gradient(135deg,#a78bfa,#ec4899)' }}
-                      >
-                        Unlock with Pro
-                      </button>
-                    </div>
-                  )}
+              <div
+                className="rounded-2xl border p-4 space-y-3"
+                style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
+              >
+                <div className="flex items-center justify-center gap-2 text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+                  <Bot className="w-4 h-4" /> No players right now — play the CPU?
                 </div>
-              ) : (
-                <button
-                  onClick={() => setShowCpuChooser(true)}
-                  className="mx-auto flex items-center gap-1.5 text-sm font-bold text-purple-400 hover:text-purple-500"
-                >
-                  <Bot className="w-4 h-4" /> Play the CPU instead
-                </button>
-              )}
+                {cpuChooserContent()}
+              </div>
             </div>
           )}
 
