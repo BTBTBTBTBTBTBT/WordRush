@@ -32,6 +32,10 @@ export interface IMatchService {
   abandonMatch(): void;
   offerRematch(): void;
   declineRematch(): void;
+  /** CPU-only: end the match now using the bot's already-decided plan, instead
+   *  of watching its timer run down once it can no longer beat the player.
+   *  Optional — the socket transport (real opponent) doesn't implement it. */
+  resolveNow?(): void;
   reportBoardSolved(boardIndex: number): void;
   reportCompletion(status: string, totalGuesses: number, timeMs: number): void;
   reportStageCompleted(stageIndex: number): void;

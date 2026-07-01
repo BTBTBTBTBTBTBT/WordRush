@@ -87,6 +87,7 @@ export class SwappableMatchService implements IMatchService {
   abandonMatch(): void { this.delegate.abandonMatch(); }
   offerRematch(): void { this.delegate.offerRematch(); }
   declineRematch(): void { this.delegate.declineRematch(); }
+  resolveNow(): void { this.delegate.resolveNow?.(); }
   reportBoardSolved(boardIndex: number): void { this.delegate.reportBoardSolved(boardIndex); }
   reportCompletion(status: string, totalGuesses: number, timeMs: number): void { this.delegate.reportCompletion(status, totalGuesses, timeMs); }
   reportStageCompleted(stageIndex: number): void { this.delegate.reportStageCompleted(stageIndex); }
@@ -300,6 +301,16 @@ export class LocalBotMatchService implements IMatchService {
   reportCompletion(status: string, totalGuesses: number, timeMs: number): void {
     this.playerResult = { status, guesses: totalGuesses, timeMs };
     this.playerDone = true;
+    this.maybeEnd();
+  }
+
+  /** End now using the bot's already-decided plan, instead of waiting out its
+   *  timer. Only meaningful once the player has finished and can't be beaten;
+   *  the winner/result computed here is identical to letting the clock run. */
+  resolveNow(): void {
+    if (this.ended || !this.plan || !this.playerDone) return;
+    this.botDone = true;
+    this.botTimeMs = this.plan.finishAtMs;
     this.maybeEnd();
   }
   reportStageCompleted(_stageIndex: number): void {

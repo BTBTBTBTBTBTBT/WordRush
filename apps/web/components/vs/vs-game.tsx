@@ -1286,6 +1286,16 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       return `${oppName} must solve in ${target} or fewer to beat you`;
     })();
 
+    // CPU only: once the bot can no longer beat you, offer to end now instead of
+    // watching its timer run down (mirrors the win-locked branch of `stakes`).
+    const cpuWinLocked = isCpu && !!playerStats && myStatus !== 'lost' && (() => {
+      const boardsLeft = liveTotalBoards - opponentProgress.boardsSolved;
+      if (liveTotalBoards > 1 && boardsLeft > 1) return false;
+      const opponentTimeBehind = Date.now() - startTime > playerStats.timeMs;
+      const target = opponentTimeBehind ? playerStats.guesses - 1 : playerStats.guesses;
+      return target <= 0 || opponentProgress.attempts >= target;
+    })();
+
     return (
       <div className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto" style={{ backgroundColor: 'var(--color-bg)' }}>
         <div className="text-center space-y-5 max-w-md w-full px-6 py-6">
@@ -1369,6 +1379,15 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 <span className="text-gray-800">{formatTime(playerStats.timeMs)}</span>
               </div>
             </div>
+          )}
+
+          {cpuWinLocked && (
+            <button
+              onClick={() => matchService.resolveNow?.()}
+              className={`text-white font-black px-6 py-3 rounded-xl transition-transform hover:-translate-y-0.5 flex items-center gap-2 mx-auto bg-gradient-to-r ${titleGradient}`}
+            >
+              🏁 Claim your win
+            </button>
           )}
 
           <button
