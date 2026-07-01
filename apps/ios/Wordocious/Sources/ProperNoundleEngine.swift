@@ -77,13 +77,21 @@ enum ProperNoundle {
         daysSinceEpoch(date) + 1
     }
 
-    /// Deterministic puzzle from a VS match seed (stable FNV-1a hash → index)
-    /// so both players in a match get the same puzzle, independent of date.
+    /// Deterministic puzzle from a VS match seed so both players in a match get
+    /// the same proper noun, independent of date.
+    ///
+    /// CRITICAL: this must use the SAME hash as the server's
+    /// `selectProperNoundlePuzzle` (and the shared word-seed `simpleHash`):
+    /// JS `hash = ((hash << 5) - hash + charCode) | 0`, then `abs(hash) % count`.
+    /// It previously used FNV-1a, which diverged from the server — so the iOS
+    /// player and the web/server opponent were handed DIFFERENT puzzles and
+    /// raced different words. The puzzle JSON is byte-identical across platforms,
+    /// so matching the hash yields the same index → the same puzzle.
     static func puzzle(forSeed seed: String) -> NPuzzle? {
         guard !all.isEmpty else { return nil }
-        var h: UInt64 = 1469598103934665603
-        for b in seed.utf8 { h = (h ^ UInt64(b)) &* 1099511628211 }
-        return all[Int(h % UInt64(all.count))]
+        var hash: Int32 = 0
+        for scalar in seed.unicodeScalars { hash = (hash &<< 5) &- hash &+ Int32(scalar.value) }
+        return all[Int(abs(hash)) % all.count]
     }
 
     private static func daysSinceEpoch(_ dateString: String) -> Int {
