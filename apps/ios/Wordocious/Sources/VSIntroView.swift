@@ -20,7 +20,10 @@ struct VSMatchIntroView: View {
     let headToHead: HeadToHeadRecord?
     let onDone: () -> Void
 
-    @State private var slammed = false
+    // Staggered slam — the two cards clash a beat apart rather than landing
+    // simultaneously, which reads more fluid than a single hard snap.
+    @State private var meSlammed = false
+    @State private var oppSlammed = false
     @State private var vsPopped = false
     @State private var h2hShown = false
     @State private var finished = false
@@ -34,8 +37,8 @@ struct VSMatchIntroView: View {
             VStack(spacing: 24) {
                 HStack(spacing: 12) {
                     playerCard(me)
-                        .offset(x: slammed ? 0 : -320)
-                        .opacity(slammed ? 1 : 0)
+                        .offset(x: meSlammed ? 0 : -320)
+                        .opacity(meSlammed ? 1 : 0)
                     Text("VS")
                         .font(Brand.font(48, .black))
                         .foregroundStyle(LinearGradient(
@@ -45,8 +48,8 @@ struct VSMatchIntroView: View {
                         .scaleEffect(vsPopped ? 1 : 0.01)
                         .opacity(vsPopped ? 1 : 0)
                     playerCard(opp)
-                        .offset(x: slammed ? 0 : 320)
-                        .opacity(slammed ? 1 : 0)
+                        .offset(x: oppSlammed ? 0 : 320)
+                        .opacity(oppSlammed ? 1 : 0)
                 }
 
                 // Head-to-head line (known opponents only).
@@ -68,13 +71,17 @@ struct VSMatchIntroView: View {
         .onTapGesture { finish() }
         .onAppear {
             SoundManager.shared.playVsStinger()
-            // Slam-in with overshoot (web vs-slam keyframes, 0.5s).
-            withAnimation(Theme.animation(.spring(response: 0.5, dampingFraction: 0.6))) { slammed = true }
-            // "VS" pop, delayed 0.25s (web vs-pop).
-            withAnimation(Theme.animation(.spring(response: 0.55, dampingFraction: 0.5).delay(0.25))) { vsPopped = true }
-            // Head-to-head fade-up, delayed 0.6s (web vs-h2h-in).
-            withAnimation(Theme.animation(.easeOut(duration: 0.4).delay(0.6))) { h2hShown = true }
-            // Auto-finish after 2.5s.
+            // Slam-in with a softer, slower overshoot than before (response .5 →
+            // .72, damping .6 → .72) so the clash glides in instead of snapping.
+            // The two cards land a beat apart (opponent +0.12s) for a duel feel.
+            let slam = Animation.spring(response: 0.72, dampingFraction: 0.72)
+            withAnimation(Theme.animation(slam)) { meSlammed = true }
+            withAnimation(Theme.animation(slam.delay(0.12))) { oppSlammed = true }
+            // "VS" pops once both cards have mostly landed (0.5s), gentler bounce.
+            withAnimation(Theme.animation(.spring(response: 0.5, dampingFraction: 0.58).delay(0.5))) { vsPopped = true }
+            // Head-to-head fades up after the VS settles.
+            withAnimation(Theme.animation(.easeOut(duration: 0.45).delay(0.85))) { h2hShown = true }
+            // Auto-finish after 2.5s (keeps the countdown beat before match start).
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { finish() }
         }
     }
@@ -89,6 +96,10 @@ struct VSMatchIntroView: View {
         VStack(spacing: 8) {
             AvatarView(url: p.avatarUrl, username: p.username, size: 72)
                 .overlay(Circle().strokeBorder(.white.opacity(0.4), lineWidth: 2))
+                // Flatten the async avatar image + its ring into ONE layer so the
+                // border can't visually detach from the photo during the fast
+                // spring slam (they were compositing as separate GPU layers).
+                .compositingGroup()
             Text(p.username)
                 .font(Brand.font(14, .black)).foregroundStyle(.white)
                 .lineLimit(1)
