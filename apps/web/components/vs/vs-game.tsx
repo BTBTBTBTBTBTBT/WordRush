@@ -455,15 +455,27 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       }
       prevOppBoardsSolvedRef.current = data.boardsSolved;
 
-      if (data.latestGuess) {
+      // applyToAll modes (quordle/octordle/rescue) send `latestGuesses` — the
+      // guess evaluated against every unsolved board — so all the opponent's
+      // per-board mini-boards populate, not just board 0. Single-board / sequence
+      // still send a single `latestGuess`.
+      const perBoard: { boardIndex: number; tiles: string[] }[] =
+        data.latestGuesses ?? (data.latestGuess ? [data.latestGuess] : []);
+      if (perBoard.length > 0) {
         playOpponentThunk();
         setOpponentTiles(prev => {
-          const boardIdx = data.latestGuess.boardIndex ?? 0;
-          const boardTiles = prev[boardIdx] || [];
-          return { ...prev, [boardIdx]: [...boardTiles, data.latestGuess.tiles] };
+          const next = { ...prev };
+          for (const g of perBoard) {
+            const idx = g.boardIndex ?? 0;
+            next[idx] = [...(next[idx] || []), g.tiles];
+          }
+          return next;
         });
-        const greens = data.latestGuess.tiles.filter((t: string) => t === 'CORRECT').length;
-        const len = data.latestGuess.tiles.length;
+        // "N greens!" callout keys off the board the player is focused on (the
+        // single latestGuess when present, else the first fanned-out board).
+        const primary = data.latestGuess ?? perBoard[0];
+        const greens = primary.tiles.filter((t: string) => t === 'CORRECT').length;
+        const len = primary.tiles.length;
         if (!calloutText && len >= 2 && greens === len - 1) {
           calloutText = `${name} got ${greens} greens! 😱`;
         }

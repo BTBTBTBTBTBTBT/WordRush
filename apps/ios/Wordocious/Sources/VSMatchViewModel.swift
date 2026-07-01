@@ -478,14 +478,24 @@ final class VSMatchViewModel: ObservableObject {
         }
         prevOppBoardsSolved = p.boardsSolved
 
-        if let latest = p.latestGuess {
+        // applyToAll modes (quordle/octordle/rescue) send `latestGuesses` — the
+        // guess against every unsolved board — so all the opponent's per-board
+        // mini-boards populate, not just board 0. Single-board / sequence use the
+        // single `latestGuess`.
+        let perBoard = p.latestGuesses ?? p.latestGuess.map { [$0] } ?? []
+        if !perBoard.isEmpty {
             SoundManager.shared.playOpponentThunk()
             Haptics.tap()
-            var rows = opponent.tiles[latest.boardIndex] ?? []
-            rows.append(latest.tileStates)
-            opponent.tiles[latest.boardIndex] = rows
-            let greens = latest.tiles.filter { $0 == "CORRECT" }.count
-            let len = latest.tiles.count
+            for g in perBoard {
+                var rows = opponent.tiles[g.boardIndex] ?? []
+                rows.append(g.tileStates)
+                opponent.tiles[g.boardIndex] = rows
+            }
+            // "N greens!" keys off the focused board (single latestGuess) or the
+            // first fanned-out board.
+            let primary = p.latestGuess ?? perBoard[0]
+            let greens = primary.tiles.filter { $0 == "CORRECT" }.count
+            let len = primary.tiles.count
             if calloutText == nil, len >= 2, greens == len - 1 {
                 calloutText = "\(name) got \(greens) greens! 😱"
             }

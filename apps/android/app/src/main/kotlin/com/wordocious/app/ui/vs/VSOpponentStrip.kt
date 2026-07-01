@@ -55,11 +55,15 @@ fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: 
             Text("${opponent.attempts} guesses", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             if (opponent.solved) Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
         }
-        if (hasTiles) {
+        // During your own play only render per-board grids for <=4 boards — 8
+        // tiny OctoWord grids over your own 8 boards are illegible and steal
+        // space, so those stay summary-only (the count line above); the spectator
+        // "still playing" screen renders all boards larger. Gauntlet (21 boards)
+        // also falls out here — it shows Stage N.
+        if (hasTiles && opponent.totalBoards <= 4) {
             val boards = if (opponent.totalBoards > 1) (0 until opponent.totalBoards).toList() else listOf(0)
-            val cell = if (opponent.totalBoards > 4) 5.dp else 8.dp
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                boards.forEach { i -> OpponentMiniBoard(opponent.tiles[i] ?: emptyList(), maxGuesses, wordLength, cell) }
+                boards.forEach { i -> OpponentMiniBoard(opponent.tiles[i] ?: emptyList(), maxGuesses, wordLength, 8.dp) }
             }
         }
     }

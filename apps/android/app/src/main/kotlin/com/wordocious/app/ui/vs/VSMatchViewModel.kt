@@ -326,13 +326,24 @@ class VSMatchViewModel(
         }
         prevOppBoardsSolved = p.boardsSolved
 
-        p.latestGuess?.let { latest ->
+        // applyToAll modes (quordle/octordle/rescue) send latestGuesses — the
+        // guess against every unsolved board — so all the opponent's per-board
+        // mini-boards populate, not just board 0. Single-board / sequence use the
+        // single latestGuess.
+        val perBoard = p.latestGuesses ?: p.latestGuess?.let { listOf(it) } ?: emptyList()
+        if (perBoard.isNotEmpty()) {
             SoundManager.playOpponentThunk()
             opponentGuessTick += 1
-            val rows = (opponent.tiles[latest.boardIndex] ?: emptyList()) + listOf(latest.tileStates())
-            opponent.tiles = opponent.tiles + (latest.boardIndex to rows)
-            val greens = latest.tiles.count { it == "CORRECT" }
-            val len = latest.tiles.size
+            var tiles = opponent.tiles
+            for (g in perBoard) {
+                tiles = tiles + (g.boardIndex to ((tiles[g.boardIndex] ?: emptyList()) + listOf(g.tileStates())))
+            }
+            opponent.tiles = tiles
+            // "N greens!" keys off the focused board (single latestGuess) or the
+            // first fanned-out board.
+            val primary = p.latestGuess ?: perBoard[0]
+            val greens = primary.tiles.count { it == "CORRECT" }
+            val len = primary.tiles.size
             if (calloutText == null && len >= 2 && greens == len - 1) {
                 calloutText = "$name got $greens greens! 😱"
             }

@@ -96,6 +96,10 @@ data class VSOpponentProgress(
     val boardsSolved: Int = 0,
     val totalBoards: Int = 0,
     val latestGuess: VSOpponentLatestGuess? = null,
+    // applyToAll modes (quordle/octordle/rescue): the guess evaluated against
+    // every still-unsolved board, so all the opponent's per-board mini-boards
+    // populate. null for single-board / sequence (they use latestGuess).
+    val latestGuesses: List<VSOpponentLatestGuess>? = null,
 )
 
 /** One opponent guess word (letters only revealed at match end). */

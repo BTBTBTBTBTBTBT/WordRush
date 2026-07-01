@@ -45,8 +45,12 @@ export function OpponentHUD({ attempts, boardsSolved, totalBoards, currentStage,
         </span>
       )}
 
-      {/* Live opponent tiles */}
-      {hasTiles && (
+      {/* Live opponent tiles. During your own play only render per-board grids
+          for <=4 boards — 8 tiny OctoWord grids over your own 8 boards are
+          illegible and steal space, so those stay summary-only (the count line
+          above); the spectator "still playing" screen renders all boards larger.
+          Gauntlet's 21-board count also falls out here (it shows Stage N/5). */}
+      {hasTiles && totalBoards <= 4 && (
         <>
           <div className="h-4 w-px bg-gray-200" />
           {totalBoards === 1 ? (

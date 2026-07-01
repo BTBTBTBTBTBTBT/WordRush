@@ -619,12 +619,16 @@ private struct OpponentStrip: View {
             }
             // Live opponent tile preview (colors only, no letters) — ports the
             // web OpponentMiniBoard / OpponentMultiMiniBoard.
-            if hasTiles {
+            // During your own play only render per-board grids for <=4 boards —
+            // 8 tiny OctoWord grids over your own 8 boards are illegible and
+            // steal space, so those stay summary-only (the count line above);
+            // the spectator "still playing" screen renders all boards larger.
+            // Gauntlet (21 boards) also falls out here — it shows Stage N.
+            if hasTiles, opponent.totalBoards <= 4 {
                 let boards = opponent.totalBoards > 1 ? Array(0..<opponent.totalBoards) : [0]
-                let cell: CGFloat = opponent.totalBoards > 4 ? 5 : 8
                 HStack(spacing: 6) {
                     ForEach(boards, id: \.self) { i in
-                        OpponentMiniBoard(tiles: opponent.tiles[i] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: cell)
+                        OpponentMiniBoard(tiles: opponent.tiles[i] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: 8)
                     }
                 }
             }

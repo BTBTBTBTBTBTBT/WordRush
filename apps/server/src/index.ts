@@ -46,6 +46,13 @@ const MODE_BOARD_COUNT: Record<string, number> = {
   [GameMode.PROPERNOUNDLE]: 1
 };
 
+// Modes where one guess applies to ALL boards at once (not one active board).
+// For these we fan the guess out against every still-unsolved board so the
+// opponent's per-board mini-boards all populate — not just board 0. Sequence is
+// NOT here (it's one active board at a time); Gauntlet is NOT here (its opponent
+// view is a stage tracker, and its board count spans all 21 stage boards).
+const APPLY_TO_ALL_MODES = new Set<string>([GameMode.QUORDLE, GameMode.OCTORDLE, GameMode.RESCUE]);
+
 const MODE_MAX_GUESSES: Record<string, number> = {
   [GameMode.DUEL]: 6,
   [GameMode.QUORDLE]: 9,
@@ -425,12 +432,30 @@ io.on('connection', (socket) => {
       // ProperNoundle or variable-length words may fail evaluation
     }
 
+    // applyToAll modes (quordle/octordle/rescue): the one guess hit EVERY board,
+    // so evaluate it against each still-unsolved board and send them all — the
+    // opponent's per-board mini-boards populate, not just board 0. Solved boards
+    // are skipped (their winning row already showed via the board_solved guess).
+    let latestGuesses: { boardIndex: number; tiles: string[] }[] | undefined;
+    if (APPLY_TO_ALL_MODES.has(match.mode)) {
+      const solved = playerState.solvedBoardSet;
+      latestGuesses = [];
+      for (let i = 0; i < match.solutions.length; i++) {
+        if (solved?.has(i)) continue;
+        try {
+          const ev = evaluateGuess(match.solutions[i].toUpperCase(), normalizedGuess);
+          latestGuesses.push({ boardIndex: i, tiles: ev.tiles.map((t: any) => t.state) });
+        } catch { /* skip unevaluable board */ }
+      }
+    }
+
     io.to(opponentSocket).emit('opponent_progress', {
       attempts: playerState.guesses,
       solved: playerState.status === GameStatus.WON,
       boardsSolved: playerState.boardsSolved,
       totalBoards: playerState.totalBoards,
       ...(latestGuess ? { latestGuess } : {}),
+      ...(latestGuesses && latestGuesses.length ? { latestGuesses } : {}),
     });
 
     if (playerState.status !== GameStatus.PLAYING && opponentState.status !== GameStatus.PLAYING) {
@@ -450,6 +475,8 @@ io.on('connection', (socket) => {
     const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
 
     playerState.boardsSolved++;
+    // Remember which board this player solved so applyToAll fan-out skips it.
+    (playerState.solvedBoardSet ??= new Set<number>()).add(boardIndex);
     logVS('board_solved', presenceId ?? socket.id, {
       mode: match.mode, boardIndex, boardsSolved: playerState.boardsSolved, totalBoards: playerState.totalBoards,
     });

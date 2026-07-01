@@ -87,6 +87,10 @@ struct VSOpponentProgress: Codable {
     let boardsSolved: Int
     let totalBoards: Int
     let latestGuess: VSOpponentLatestGuess?
+    /// applyToAll modes (quordle/octordle/rescue): the guess evaluated against
+    /// every still-unsolved board, so all the opponent's per-board mini-boards
+    /// populate. nil for single-board / sequence (they use `latestGuess`).
+    let latestGuesses: [VSOpponentLatestGuess]?
 }
 
 struct VSMatchEnded: Codable {

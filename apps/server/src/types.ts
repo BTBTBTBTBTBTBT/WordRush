@@ -33,6 +33,9 @@ export interface PlayerMatchState {
   boardsSolved: number;
   totalBoards: number;
   currentStage?: number;
+  /** Board indices this player has already solved (from board_solved). Used to
+   *  skip solved boards when fanning out an applyToAll guess to the opponent. */
+  solvedBoardSet?: Set<number>;
 }
 
 export interface Match {
@@ -86,6 +89,10 @@ export interface ServerToClientEvents {
     boardsSolved: number;
     totalBoards: number;
     latestGuess?: { boardIndex: number; tiles: string[] };
+    /** applyToAll modes (quordle/octordle/rescue): the guess evaluated against
+     *  every still-unsolved board, so the opponent's per-board mini-boards all
+     *  populate. Single-board / sequence keep using `latestGuess`. */
+    latestGuesses?: { boardIndex: number; tiles: string[] }[];
   }) => void;
   match_ended: (data: {
     winner: 'player' | 'opponent' | 'draw' | null;
