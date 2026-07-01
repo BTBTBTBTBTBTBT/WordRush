@@ -365,7 +365,7 @@ final class VSMatchViewModel: ObservableObject {
         if let oppId = data.opponentUserId, CpuOpponent.isCpu(oppId) {
             // CPU opponent: use the persona identity locally — no profile / H2H fetch.
             let id = CpuOpponent.identity(oppId)
-            opponentInfo = VsProfile(username: id.name, avatarUrl: nil, level: 0)
+            opponentInfo = VsProfile(username: "\(id.name) 🤖", avatarUrl: nil, level: 0)
         } else if let oppId = data.opponentUserId {
             Task { [weak self] in
                 if let p = await HeadToHeadService.fetchVsProfile(userId: oppId) {

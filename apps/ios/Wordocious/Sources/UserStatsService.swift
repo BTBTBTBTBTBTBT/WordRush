@@ -75,6 +75,15 @@ enum UserStatsService {
         return (wins, losses, total, total > 0 ? Int((Double(wins) / Double(total) * 100).rounded()) : 0)
     }
 
+    /// Practice record vs the CPU (play_type='vs_cpu') — separate, unranked.
+    static func cpuRecord(_ rows: [UserStatRow]) -> (wins: Int, losses: Int, total: Int, winRate: Int) {
+        let cpuRows = rows.filter { $0.playType == "vs_cpu" }
+        let wins = cpuRows.reduce(0) { $0 + $1.wins }
+        let losses = cpuRows.reduce(0) { $0 + $1.losses }
+        let total = wins + losses
+        return (wins, losses, total, total > 0 ? Int((Double(wins) / Double(total) * 100).rounded()) : 0)
+    }
+
     /// Games played per mode (dbKey → count) for the mode-picker badges.
     static func gamesPerMode(_ rows: [UserStatRow]) -> [String: Int] {
         var out: [String: Int] = [:]

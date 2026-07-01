@@ -501,6 +501,33 @@ struct VSGameView: View {
                     }
                     .padding(.top, 40)
 
+                    // CPU practice: photo-finish flourish + streak / milestone /
+                    // cosmetic unlock / run-it-back session tally.
+                    if vm.isCpu {
+                        VStack(spacing: 4) {
+                            if let pf = vm.photoFinish {
+                                Text(pf == "clutch" ? "CLUTCH!" : "PHOTO FINISH!")
+                                    .font(Brand.font(28, .black))
+                                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF97316), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                                    .rotationEffect(.degrees(-6))
+                            }
+                            if let m = vm.cpuMilestone {
+                                Text("🔥 \(m)-win CPU streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xF97316))
+                            } else if vm.cpuStreak > 0 {
+                                Text("CPU win streak: \(vm.cpuStreak)").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+                            }
+                            if vm.cpuUnlock != nil {
+                                Text("🏅 Unlocked \(BotPersonas.persona(vm.cpuPersona?.tier ?? .hard).name)’s badge!")
+                                    .font(Brand.font(12, .black)).foregroundStyle(Color(hex: UInt(vm.cpuPersona?.color ?? 0xEF4444)))
+                            }
+                            if vm.cpuSessionWins + vm.cpuSessionLosses > 0 {
+                                Text("This session — You \(vm.cpuSessionWins) · CPU \(vm.cpuSessionLosses)")
+                                    .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted)
+                            }
+                            Text("Practice — not counted in ranked stats").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                        }
+                    }
+
                     // Comparison bars: you (purple) vs them (pink), lower is better
                     if let r = vm.result {
                         VSComparisonBars(myName: myName, opponentName: oppName, metrics: [

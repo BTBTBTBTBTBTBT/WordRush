@@ -110,7 +110,7 @@ struct ProfileTab: View {
                 globalSummary(p)
                 recapCard(p)
                 soloVsToggle
-                if activeTab == "vs" { vsRecordCard }
+                if activeTab == "vs" { vsRecordCard; cpuRecordCard }
                 ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(filteredStats), selected: $selectedMode)
                 if let mode = selectedMode {
                     // Mode-detail view.
@@ -728,6 +728,37 @@ struct ProfileTab: View {
     }
 
     /// "VS RECORD" summary card (VS tab only): aggregate W–L, win rate, total.
+    /// Practice record vs the CPU — its own dashed box on the VS tab, clearly
+    /// unranked. Best CPU streak comes from the client-side progression store.
+    @ViewBuilder private var cpuRecordCard: some View {
+        let rec = UserStatsService.cpuRecord(statRows)
+        if rec.total > 0 {
+            let bestStreak = CpuProgressionStore.load().bestStreak
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0x64748B).opacity(0.10)).frame(width: 40, height: 40)
+                    Image(systemName: "cpu").font(.system(size: 18)).foregroundStyle(Color(hex: 0x64748B))
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("VS CPU · PRACTICE").font(Brand.font(10, .heavy)).tracking(0.8).foregroundStyle(Color(hex: 0x64748B))
+                    Text("\(rec.wins)–\(rec.losses)").font(Brand.font(20, .black)).foregroundStyle(Theme.textPrimary)
+                    if bestStreak > 0 {
+                        Text("🔥 Best streak: \(bestStreak)").font(Brand.font(10, .heavy)).foregroundStyle(Color(hex: 0xF97316))
+                    }
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text("\(rec.winRate)%").font(Brand.font(20, .black)).foregroundStyle(Color(hex: 0x64748B))
+                    Text("WIN RATE · \(rec.total) \(rec.total == 1 ? "MATCH" : "MATCHES")")
+                        .font(Brand.font(9, .heavy)).tracking(0.4).foregroundStyle(Theme.textMuted)
+                }
+            }
+            .padding(16).frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, style: StrokeStyle(lineWidth: 1.5, dash: [5])))
+        }
+    }
+
     private var vsRecordCard: some View {
         let rec = UserStatsService.vsRecord(statRows)
         return HStack(spacing: 14) {
