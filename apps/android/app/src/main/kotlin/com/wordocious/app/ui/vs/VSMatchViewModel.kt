@@ -295,7 +295,11 @@ class VSMatchViewModel(
 
         game?.stopTimer()
         val vm = GameViewModel(seed = newSeed, mode = mode, isVersus = true)
-        vm.onGuessCommitted = { guess -> myGuessCount += 1; service.submitGuess(guess, 0) }
+        // Relay the ACTUAL board this guess landed on (not a hardcoded 0) so the
+        // server evaluates it against the right solution and the opponent's
+        // per-board mini-board populates the correct board. Single-board /
+        // quordle-style applyToAll modes still resolve to 0.
+        vm.onGuessCommitted = { guess, boardIndex -> myGuessCount += 1; service.submitGuess(guess, boardIndex) }
         vm.onBoardSolved = { idx -> service.boardSolved(idx) }
         vm.onCompleted = { status, guesses ->
             val timeMs = max(0, (System.currentTimeMillis() - matchStartMs).toInt())

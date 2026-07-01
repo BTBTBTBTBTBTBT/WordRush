@@ -33,7 +33,7 @@ class GameViewModel(
 ) : ViewModel() {
 
     // ── VS relay callbacks (null in solo; set by VSMatchViewModel) ────────────────
-    var onGuessCommitted: ((String) -> Unit)? = null
+    var onGuessCommitted: ((String, Int) -> Unit)? = null
     var onBoardSolved: ((Int) -> Unit)? = null
     var onStageCompleted: ((Int) -> Unit)? = null
     var onCompleted: ((GameStatus, Int) -> Unit)? = null
@@ -217,6 +217,14 @@ class GameViewModel(
         else _state.value.boards[_state.value.currentBoardIndex]
         if (activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }) { reject("Already guessed"); return false }
         val before = _state.value
+        // Capture which board this guess lands on BEFORE the reducer runs — for
+        // SEQUENCE the active board advances once it's solved, so reading the
+        // active index afterward would report the NEXT board. The VS relay needs
+        // the board the guess actually hit so the opponent's mini-board (and the
+        // server's evaluation) target the right board.
+        val committedBoardIndex = if (mode == GameMode.SEQUENCE)
+            before.boards.indexOfFirst { it.status == GameStatus.PLAYING }.coerceAtLeast(0)
+        else 0
         val after = gameReducer(before, GameAction.SubmitGuess(guess, applyToAll = applyToAll))
         if (after === before || after == before) { reject("Not in word list"); return false } // dictionary-rejected
         _invalidWord.value = false
@@ -226,7 +234,7 @@ class GameViewModel(
         persist()
         // VS relay: report the guess, any newly-solved boards, and completion.
         if (isVersus) {
-            onGuessCommitted?.invoke(guess.uppercase())
+            onGuessCommitted?.invoke(guess.uppercase(), committedBoardIndex)
             after.boards.forEachIndexed { i, b ->
                 if (b.status == GameStatus.WON && before.boards.getOrNull(i)?.status != GameStatus.WON) {
                     onBoardSolved?.invoke(i)
