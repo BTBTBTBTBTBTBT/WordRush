@@ -70,7 +70,10 @@ fun MatchIntro(
     val opp = opponent ?: IntroPlayer("Anonymous", null, null)
 
     Box(
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f)).clickableNoRipple(onDone),
+        Modifier.fillMaxSize()
+            // Finished-looking deep radial vignette instead of flat black.
+            .background(androidx.compose.ui.graphics.Brush.radialGradient(
+                colors = listOf(Color(0xF51E1B3A), Color(0xEB000000)))).clickableNoRipple(onDone),
         contentAlignment = Alignment.Center,
     ) {
         Column(

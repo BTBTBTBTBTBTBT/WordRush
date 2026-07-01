@@ -32,7 +32,10 @@ struct VSMatchIntroView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.8).ignoresSafeArea()
+            // Finished-looking backdrop (a deep radial vignette) rather than flat black.
+            RadialGradient(colors: [Color(hex: 0x1E1B3A).opacity(0.96), Color.black.opacity(0.92)],
+                           center: .center, startRadius: 60, endRadius: 520)
+                .ignoresSafeArea()
 
             VStack(spacing: 24) {
                 HStack(spacing: 12) {
@@ -94,12 +97,16 @@ struct VSMatchIntroView: View {
 
     private func playerCard(_ p: Player) -> some View {
         VStack(spacing: 8) {
-            AvatarView(url: p.avatarUrl, username: p.username, size: 72)
-                .overlay(Circle().strokeBorder(.white.opacity(0.4), lineWidth: 2))
-                // Flatten the async avatar image + its ring into ONE layer so the
-                // border can't visually detach from the photo during the fast
-                // spring slam (they were compositing as separate GPU layers).
-                .compositingGroup()
+            // Avatar + ring share one 72×72 frame and are rasterized into a single
+            // layer, so the ring can never drift off the photo or lag behind it
+            // during the spring slam (they used to composite as separate GPU layers
+            // and visibly detached mid-animation).
+            ZStack {
+                AvatarView(url: p.avatarUrl, username: p.username, size: 72)
+                Circle().strokeBorder(.white.opacity(0.4), lineWidth: 2)
+            }
+            .frame(width: 72, height: 72)
+            .drawingGroup()
             Text(p.username)
                 .font(Brand.font(14, .black)).foregroundStyle(.white)
                 .lineLimit(1)

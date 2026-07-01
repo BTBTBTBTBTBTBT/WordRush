@@ -1096,7 +1096,8 @@ private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
     val wins = cpuStats.sumOf { it.wins }
     val losses = cpuStats.sumOf { it.losses }
     val total = wins + losses
-    if (total == 0) return
+    // Always shown on the VS tab (even at 0–0) so the practice record is
+    // discoverable before the first bot match; it fills in once you play one.
     val winRate = if (total > 0) Math.round(wins.toFloat() / total * 100) else 0
     val bestStreak = com.wordocious.app.data.CpuProgressionStore.load().bestStreak
     Row(
@@ -1110,11 +1111,12 @@ private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
         Column(Modifier.weight(1f)) {
             Text("VS CPU · PRACTICE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF64748B))
             Text("$wins–$losses", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            if (bestStreak > 0) Text("🔥 Best streak: $bestStreak", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF97316))
+            if (total == 0) Text("Beat a bot to start your record", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+            else if (bestStreak > 0) Text("🔥 Best streak: $bestStreak", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFF97316))
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text("$winRate%", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF64748B))
-            Text("Win rate · $total ${if (total == 1) "match" else "matches"}", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+            Text(if (total == 0) "—" else "$winRate%", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF64748B))
+            Text(if (total == 0) "No games yet" else "Win rate · $total ${if (total == 1) "match" else "matches"}", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
         }
     }
 }

@@ -95,7 +95,8 @@ export function MatchIntro({ me, opponent, headToHead, onDone }: MatchIntroProps
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in cursor-pointer"
+      className="fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-sm animate-fade-in cursor-pointer"
+      style={{ background: 'radial-gradient(circle at center, rgba(30,27,58,0.96), rgba(0,0,0,0.92))' }}
       onClick={finish}
     >
       <style>{`

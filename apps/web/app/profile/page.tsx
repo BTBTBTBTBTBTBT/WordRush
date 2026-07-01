@@ -598,9 +598,10 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* vs CPU practice record (VS tab, only once they've played a bot) —
-            clearly separate from ranked VS: no leaderboard, no XP, no streak. */}
-        {activeTab === 'vs' && cpuRecord.total > 0 && (
+        {/* vs CPU practice record (VS tab, always shown so it's discoverable
+            before the first bot match) — clearly separate from ranked VS: no
+            leaderboard, no XP, no streak. */}
+        {activeTab === 'vs' && (
           <div
             className="p-4 flex items-center gap-4"
             style={{ background: 'var(--color-surface)', border: '1.5px dashed var(--color-border)', borderRadius: '16px' }}
@@ -613,14 +614,16 @@ export default function ProfilePage() {
               <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                 {cpuRecord.wins}–{cpuRecord.losses}
               </div>
-              {cpuBestStreak > 0 && (
+              {cpuRecord.total === 0 ? (
+                <div className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>Beat a bot to start your record</div>
+              ) : cpuBestStreak > 0 && (
                 <div className="text-[10px] font-extrabold" style={{ color: '#f97316' }}>🔥 Best streak: {cpuBestStreak}</div>
               )}
             </div>
             <div className="text-right">
-              <div className="text-xl font-black" style={{ color: '#64748b' }}>{cpuRecord.winRate}%</div>
+              <div className="text-xl font-black" style={{ color: '#64748b' }}>{cpuRecord.total === 0 ? '—' : `${cpuRecord.winRate}%`}</div>
               <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                Win rate · {cpuRecord.total} {cpuRecord.total === 1 ? 'match' : 'matches'}
+                {cpuRecord.total === 0 ? 'No games yet' : `Win rate · ${cpuRecord.total} ${cpuRecord.total === 1 ? 'match' : 'matches'}`}
               </div>
             </div>
           </div>
