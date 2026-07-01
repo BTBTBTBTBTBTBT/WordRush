@@ -40,6 +40,9 @@ interface VSTransport {
     fun abandonMatch()
     fun offerRematch()
     fun declineRematch()
+    /** CPU-only: end the match now using the bot's already-decided plan, instead
+     *  of watching its timer run down. No-op for the socket transport. */
+    fun resolveNow() {}
 }
 
 // ── CPU opponent identity ──
@@ -211,6 +214,12 @@ class LocalBotMatchService(
     override fun leaveQueue() { clearTimers() }
     override fun submitGuess(guess: String, boardIndex: Int) {}
     override fun boardSolved(boardIndex: Int) { playerBoardsSolved += 1 }
+    override fun resolveNow() {
+        val p = plan ?: return
+        if (ended || !playerDone) return
+        botDone = true; botTimeMs = p.finishAtMs; maybeEnd()
+    }
+
     override fun playerCompleted(status: String, totalGuesses: Int, timeMs: Int) {
         playerResult = Triple(status, totalGuesses, timeMs.toDouble()); playerDone = true; maybeEnd()
     }

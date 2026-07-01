@@ -1381,13 +1381,23 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             </div>
           )}
 
-          {cpuWinLocked && (
-            <button
-              onClick={() => matchService.resolveNow?.()}
-              className={`text-white font-black px-6 py-3 rounded-xl transition-transform hover:-translate-y-0.5 flex items-center gap-2 mx-auto bg-gradient-to-r ${titleGradient}`}
-            >
-              🏁 Claim your win
-            </button>
+          {isCpu && (
+            cpuWinLocked ? (
+              <button
+                onClick={() => matchService.resolveNow?.()}
+                className={`text-white font-black px-6 py-3 rounded-xl transition-transform hover:-translate-y-0.5 flex items-center gap-2 mx-auto bg-gradient-to-r ${titleGradient}`}
+              >
+                🏁 Claim your win
+              </button>
+            ) : (
+              <button
+                onClick={() => matchService.resolveNow?.()}
+                className="font-black px-6 py-3 rounded-xl transition-transform hover:-translate-y-0.5 flex items-center gap-2 mx-auto"
+                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: '#7c3aed' }}
+              >
+                ⏩ Skip to result
+              </button>
+            )
           )}
 
           <button

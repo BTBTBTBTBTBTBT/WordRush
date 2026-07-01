@@ -76,6 +76,7 @@ class VSMatchViewModel(
     var queueSize by mutableStateOf(0)
     var countdown by mutableStateOf<Int?>(null)     // non-null → "Match Found" overlay
     var countdownIsRematch by mutableStateOf(false) // relabels the overlay for a rematch
+    private var pendingCountdownSecs = 3            // held until the intro finishes
     var game by mutableStateOf<GameViewModel?>(null)
     val opponent = OpponentProgressState()
     var result by mutableStateOf<VSMatchEnded?>(null)
@@ -237,6 +238,11 @@ class VSMatchViewModel(
         game?.stopTimer()
     }
 
+    /** CPU spectator: end the match now (bot's outcome is already fixed by its
+     *  plan; the player's time was captured at completion) instead of watching
+     *  the bot grind out its boards. */
+    fun finishCpuNow() { if (isCpu) service.resolveNow() }
+
     fun forfeit() {
         // Forfeiting an IN-PROGRESS match counts as a loss and (for daily VS)
         // consumes today's play — you can't replay. The server credits the
@@ -337,7 +343,15 @@ class VSMatchViewModel(
             }
         }
 
-        val secs = max(1, data.countdownSeconds.toInt())
+        // Hold the countdown until the intro clash finishes — otherwise it ticks
+        // hidden behind the splash and only a stale "1" flashes. startCountdownTick
+        // (called from the intro's onDone) begins the visible 3-2-1.
+        pendingCountdownSecs = max(1, data.countdownSeconds.toInt())
+    }
+
+    fun startCountdownTick() {
+        if (countdown != null || screen != VSScreen.QUEUE) return
+        val secs = pendingCountdownSecs
         countdown = secs
         countdownJob?.cancel()
         countdownJob = viewModelScope.launch {

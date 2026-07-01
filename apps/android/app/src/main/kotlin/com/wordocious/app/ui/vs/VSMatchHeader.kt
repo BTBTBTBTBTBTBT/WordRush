@@ -151,15 +151,15 @@ fun VsMatchHeader(me: HeaderPlayer, opponent: HeaderPlayer, opponentTyping: Bool
         }
 
         // Typing indicator — visible while opponent pings arrive.
-        if (opponentTyping) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-            ) {
-                Text("${opponent.username} is typing", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEC4899))
-                TypingDots()
-            }
+        // Reserve the typing row's height ALWAYS (content fades) so the header —
+        // and every board below it — never shift when the opponent starts/stops.
+        Row(
+            Modifier.fillMaxWidth().height(12.dp).graphicsLayer { alpha = if (opponentTyping) 1f else 0f },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+        ) {
+            Text("${opponent.username} is typing", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEC4899))
+            TypingDots()
         }
     }
 }

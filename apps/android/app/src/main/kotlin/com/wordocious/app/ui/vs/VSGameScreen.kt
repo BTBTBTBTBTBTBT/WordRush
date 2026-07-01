@@ -123,7 +123,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
                     )
                 },
                 headToHead = vm.headToHead,
-                onDone = { vm.showIntro = false },
+                onDone = { vm.showIntro = false; vm.startCountdownTick() },
             )
         }
         if (vm.screen == VSScreen.RESULT) vm.xpResult?.let { XpToast(it) { vm.xpResult = null } }
@@ -676,6 +676,35 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
         // Your stats
         item {
             StatCard("YOUR RESULT", listOf("Guesses" to "$myGuesses", "Time" to fmtTime(vm.playerTimeMs.toDouble())))
+        }
+        // CPU spectator: skip watching the bot grind out its boards — the outcome
+        // is already fixed by its plan. Win-locked → 'Claim your win'; else a
+        // neutral 'Skip to result' (may resolve to a win OR a loss).
+        if (vm.isCpu) {
+            item {
+                val boardsLeft = liveTotalBoards - vm.opponent.boardsSolved
+                val winLocked = vm.myStatus != GameStatus.LOST && !(liveTotalBoards > 1 && boardsLeft > 1) && run {
+                    val behind = vm.matchElapsedSeconds * 1000L > vm.playerTimeMs
+                    val target = if (behind) myGuesses - 1 else myGuesses
+                    target <= 0 || vm.opponent.attempts >= target
+                }
+                Box(
+                    Modifier.clip(RoundedCornerShape(14.dp))
+                        .then(
+                            if (winLocked) Modifier.background(Brush.horizontalGradient(gradient))
+                            else Modifier.background(WTheme.surfaceHover).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)),
+                        )
+                        .clickableNoRipple { vm.finishCpuNow() }
+                        .padding(horizontal = 22.dp, vertical = 12.dp),
+                    Alignment.Center,
+                ) {
+                    Text(
+                        if (winLocked) "🏁 Claim your win" else "⏩ Skip to result",
+                        fontSize = 15.sp, fontWeight = FontWeight.Black,
+                        color = if (winLocked) Color.White else WTheme.primary,
+                    )
+                }
+            }
         }
         item { Pill("Leave") { onHome() } }
         item { Spacer(Modifier.height(24.dp)) }
