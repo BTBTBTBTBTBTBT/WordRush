@@ -50,6 +50,7 @@ import com.wordocious.core.GameMode
 private val VS_MODES = listOf(
     GameMode.DUEL, GameMode.DUEL_6, GameMode.DUEL_7,
     GameMode.QUORDLE, GameMode.OCTORDLE, GameMode.SEQUENCE, GameMode.RESCUE,
+    GameMode.GAUNTLET, GameMode.PROPERNOUNDLE,
 )
 
 @Composable

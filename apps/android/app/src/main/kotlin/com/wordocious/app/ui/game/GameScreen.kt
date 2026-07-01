@@ -138,8 +138,10 @@ private fun HintPills(
  * Clue #9333EA/#D8B4FE/#FAF5FF (lightbulb→hourglass), Vowel #2563EB/#93C5FD/#EFF6FF
  * (eye), Consonant #16A34A/#86EFAC/#F0FDF4 (number). Used = grey + disabled.
  */
+// Non-private so the VS screen (ui.vs) can reuse the exact same pills for
+// ProperNoundle VS — parity by construction.
 @Composable
-private fun ProperNoundleHints(
+fun ProperNoundleHints(
     clueUsed: Boolean, loadingClue: Boolean,
     vowelRevealed: String?, consonantRevealed: String?,
     onClue: () -> Unit, onVowel: () -> Unit, onConsonant: () -> Unit,
@@ -216,7 +218,7 @@ private fun HintPill(accent: Color, used: Boolean, label: String, onClick: () ->
  * (glow), future = number; connectors between nodes (green up to active).
  */
 @Composable
-private fun GauntletStepper(current: Int, total: Int) {
+fun GauntletStepper(current: Int, total: Int) {
     val green = Color(0xFF6D28D9)
     val purple = Color(0xFFA855F7)
     val gray = Color(0xFFD1D5DB)

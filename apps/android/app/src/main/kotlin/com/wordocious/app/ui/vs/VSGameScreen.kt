@@ -40,9 +40,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wordocious.app.ui.clickableNoRipple
+import com.wordocious.app.ui.game.GauntletStepper
 import com.wordocious.app.ui.game.KeyboardView
 import com.wordocious.app.ui.game.MultiBoardLayout
+import com.wordocious.app.ui.game.ProperNoundleHints
 import com.wordocious.app.ui.game.SingleBoard
+import com.wordocious.app.ui.game.StageTransitionOverlay
 import com.wordocious.app.ui.game.computeCombinedLetterStates
 import com.wordocious.app.ui.game.computePerBoardLetterStates
 import com.wordocious.app.ui.game.XpToast
@@ -262,6 +265,25 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
         )
         OpponentStrip(vm.opponent, game.maxGuesses, game.wordLength, Modifier.padding(top = 6.dp))
 
+        // Gauntlet VS: the 5-node stage stepper (parity with the solo header).
+        if (vm.mode == GameMode.GAUNTLET) {
+            Spacer(Modifier.height(6.dp))
+            GauntletStepper(current = state.gauntlet?.currentStage ?: 0, total = state.gauntlet?.totalStages ?: 5)
+        }
+        // ProperNoundle VS: the Wikipedia clue (italic, centered) once revealed.
+        if (vm.mode == GameMode.PROPERNOUNDLE) {
+            val clueText by game.clue.collectAsState()
+            clueText?.let {
+                Text(
+                    it, color = WTheme.textSecondary, fontSize = 12.sp,
+                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+                )
+            }
+        }
+
         Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp)) {
             if (multiBoard) {
                 MultiBoardLayout(
@@ -273,6 +295,19 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
                 SingleBoard(state.boards[0], input, invalid, shakeKey, Modifier.fillMaxSize())
             }
         }
+        // ProperNoundle VS: Clue/Vowel/Consonant hint pills (parity with solo).
+        if (vm.mode == GameMode.PROPERNOUNDLE && game.hasHints) {
+            val clueText by game.clue.collectAsState()
+            val loadingClue by game.loadingClue.collectAsState()
+            val vRev by game.vowelRevealed.collectAsState()
+            val cRev by game.consonantRevealed.collectAsState()
+            ProperNoundleHints(
+                clueUsed = clueText != null || loadingClue, loadingClue = loadingClue,
+                vowelRevealed = vRev, consonantRevealed = cRev,
+                onClue = { game.revealClue() }, onVowel = { game.revealVowel() }, onConsonant = { game.revealConsonant() },
+            )
+            Spacer(Modifier.height(6.dp))
+        }
         KeyboardView(
             letterStates = letterStates,
             onKey = { game.typeLetter(it) },
@@ -281,6 +316,19 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
             perBoardStates = perBoardStates,
         )
         Spacer(Modifier.height(6.dp))
+    }
+
+    // Gauntlet VS stage-transition overlay — the same interstitial as solo, shown
+    // the moment every board in the current stage is won and the run is live.
+    val gauntlet = state.gauntlet
+    if (vm.mode == GameMode.GAUNTLET && gauntlet != null &&
+        state.status == GameStatus.PLAYING && state.boards.isNotEmpty() &&
+        state.boards.all { it.status == GameStatus.WON }
+    ) {
+        StageTransitionOverlay(
+            completed = gauntlet.stages[gauntlet.currentStage],
+            next = gauntlet.stages.getOrNull(gauntlet.currentStage + 1),
+        ) { game.advanceGauntletStage() }
     }
 
     // Moment callout — opponent milestones (greens / board solved / last guess).

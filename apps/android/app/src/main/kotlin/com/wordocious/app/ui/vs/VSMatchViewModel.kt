@@ -301,6 +301,9 @@ class VSMatchViewModel(
         // quordle-style applyToAll modes still resolve to 0.
         vm.onGuessCommitted = { guess, boardIndex -> myGuessCount += 1; service.submitGuess(guess, boardIndex) }
         vm.onBoardSolved = { idx -> service.boardSolved(idx) }
+        // Gauntlet VS: relay each cleared stage so the opponent's "Stage N" badge
+        // advances (mirrors iOS VSMatchViewModel onStageCompleted).
+        vm.onStageCompleted = { stage -> service.stageCompleted(stage) }
         vm.onCompleted = { status, guesses ->
             val timeMs = max(0, (System.currentTimeMillis() - matchStartMs).toInt())
             playerTimeMs = timeMs
