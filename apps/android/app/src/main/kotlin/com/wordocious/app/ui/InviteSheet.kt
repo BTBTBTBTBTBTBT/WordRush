@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -95,7 +96,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "Invite a friend",
+                        "INVITE A FRIEND",
                         fontSize = 24.sp, fontWeight = FontWeight.Black,
                         style = androidx.compose.ui.text.TextStyle(
                             brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))),
@@ -128,40 +129,49 @@ fun InviteSheet(onDismiss: () -> Unit) {
                 // Mode picker — brand-color dropdown with glyph.
                 Text("MODE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
                 Spacer(Modifier.size(4.dp))
-                Box {
+                // Inline dropdown (expands in place + pushes content down) instead
+                // of a floating menu that overlapped the buttons underneath.
+                Column(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(WTheme.bg)
+                        .border(1.5.dp, if (modeOpen) card.accent else WTheme.border, RoundedCornerShape(14.dp)),
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(WTheme.surface)
-                            .border(1.5.dp, card.accent, RoundedCornerShape(10.dp))
-                            .clickable { modeOpen = true }
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { modeOpen = !modeOpen }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
-                            Modifier.size(24.dp).clip(RoundedCornerShape(6.dp)).background(card.accent.copy(alpha = 0.10f)),
+                            Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(card.accent.copy(alpha = 0.10f)),
                             contentAlignment = Alignment.Center,
-                        ) { ModeGlyph(card, card.accent, 13.sp, 16.dp) }
-                        Spacer(Modifier.width(8.dp))
-                        Text(card.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = card.accent, modifier = Modifier.weight(1f))
-                        Icon(Icons.Filled.ExpandMore, null, tint = card.accent, modifier = Modifier.size(18.dp))
+                        ) { ModeGlyph(card, card.accent, 14.sp, 18.dp) }
+                        Spacer(Modifier.width(10.dp))
+                        Text(card.title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.weight(1f))
+                        Icon(
+                            Icons.Filled.ExpandMore, null, tint = card.accent,
+                            modifier = Modifier.size(18.dp).rotate(if (modeOpen) 180f else 0f),
+                        )
                     }
-                    DropdownMenu(expanded = modeOpen, onDismissRequest = { modeOpen = false }) {
-                        modes.forEach { m ->
-                            DropdownMenuItem(
-                                onClick = { card = m; modeOpen = false; reset() },
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            Modifier.size(24.dp).clip(RoundedCornerShape(6.dp)).background(m.accent.copy(alpha = 0.10f)),
-                                            contentAlignment = Alignment.Center,
-                                        ) { ModeGlyph(m, m.accent, 13.sp, 16.dp) }
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(m.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = m.accent, modifier = Modifier.weight(1f))
-                                        if (m.id == card.id) Icon(Icons.Filled.Check, null, tint = m.accent, modifier = Modifier.size(14.dp))
-                                    }
-                                },
-                            )
+                    if (modeOpen) {
+                        androidx.compose.material3.HorizontalDivider(color = WTheme.border, modifier = Modifier.padding(horizontal = 8.dp))
+                        Column(Modifier.padding(horizontal = 6.dp, vertical = 4.dp)) {
+                            modes.forEach { m ->
+                                val selected = m.id == card.id
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                        .background(if (selected) m.accent.copy(alpha = 0.10f) else Color.Transparent)
+                                        .clickable { card = m; modeOpen = false; reset() }
+                                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Box(
+                                        Modifier.size(26.dp).clip(RoundedCornerShape(7.dp)).background(m.accent.copy(alpha = 0.10f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) { ModeGlyph(m, m.accent, 13.sp, 16.dp) }
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(m.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.weight(1f))
+                                    if (selected) Icon(Icons.Filled.Check, null, tint = m.accent, modifier = Modifier.size(14.dp))
+                                }
+                            }
                         }
                     }
                 }
