@@ -115,6 +115,28 @@ enum RecordsService {
         } catch { /* best-effort */ }
     }
 
+    private struct MatchWinnerRow: Decodable { let winner_id: String? }
+
+    /// Best consecutive-win streak for one mode, from the newest 200 matches
+    /// (web stats-service.ts fetchModeWinStreak — same walk / limit / ordering).
+    private static func fetchModeBestWinStreak(_ client: SupabaseClient, userId: String, gameMode: String) async -> Int {
+        do {
+            let rows: [MatchWinnerRow] = try await client.from("matches")
+                .select("winner_id")
+                .or("player1_id.eq.\(userId),player2_id.eq.\(userId)")
+                .eq("game_mode", value: gameMode)
+                .order("created_at", ascending: false)
+                .limit(200)
+                .execute().value
+            var best = 0, streak = 0
+            for r in rows {
+                if r.winner_id == userId { streak += 1; best = max(best, streak) }
+                else { streak = 0 }
+            }
+            return best
+        } catch { return 0 }
+    }
+
     /// Run every post-game record check (web stats-service.ts parity). Call AFTER
     /// user_stats / profiles are updated so the fresh totals are readable.
     static func updateAfterGame(userId: String, gameMode: String, playType: String,
@@ -144,6 +166,16 @@ enum RecordsService {
             await checkAndUpdateRecord("highest_level", gameMode: nil, playType: nil, holderId: userId, newValue: p.xp / 1000 + 1)
             if let gm = p.gold_medals, gm > 0 {
                 await checkAndUpdateRecord("most_gold_medals", gameMode: nil, playType: nil, holderId: userId, newValue: gm)
+            }
+        }
+
+        // Per-mode longest win streak — walk this mode's match history (web
+        // stats-service.ts fetchModeWinStreak parity). Only on a win (a loss
+        // can't raise the best), keyed (longest_streak, gameMode, playType).
+        if won {
+            let best = await fetchModeBestWinStreak(client, userId: userId, gameMode: gameMode)
+            if best > 0 {
+                await checkAndUpdateRecord("longest_streak", gameMode: gameMode, playType: playType, holderId: userId, newValue: best)
             }
         }
 

@@ -91,6 +91,30 @@ object RecordsService {
     }
 
     @Serializable
+    private data class MatchWinnerRow(@SerialName("winner_id") val winnerId: String? = null)
+
+    /** Best consecutive-win streak for one mode, from the newest 200 matches
+     *  (web stats-service.ts fetchModeWinStreak — same walk / limit / ordering). */
+    private suspend fun fetchModeBestWinStreak(userId: String, gameMode: String): Int = runCatching {
+        val rows = client.postgrest["matches"]
+            .select(Columns.raw("winner_id")) {
+                filter {
+                    or { eq("player1_id", userId); eq("player2_id", userId) }
+                    eq("game_mode", gameMode)
+                }
+                order("created_at", Order.DESCENDING)
+                limit(200)
+            }
+            .decodeList<MatchWinnerRow>()
+        var best = 0
+        var streak = 0
+        for (r in rows) {
+            if (r.winnerId == userId) { streak++; best = maxOf(best, streak) } else streak = 0
+        }
+        best
+    }.getOrDefault(0)
+
+    @Serializable
     private data class TotalGamesRow(@SerialName("total_games") val totalGames: Int = 0)
 
     @Serializable
@@ -141,6 +165,16 @@ object RecordsService {
             checkAndUpdateRecord("highest_level", null, null, userId, profile.xp / 1000 + 1)
             if (profile.goldMedals > 0) {
                 checkAndUpdateRecord("most_gold_medals", null, null, userId, profile.goldMedals)
+            }
+        }
+
+        // Per-mode longest win streak — walk this mode's match history (web
+        // stats-service.ts fetchModeWinStreak parity). Only on a win, keyed
+        // (longest_streak, gameMode, playType).
+        if (won) {
+            val best = fetchModeBestWinStreak(userId, gameMode)
+            if (best > 0) {
+                checkAndUpdateRecord("longest_streak", gameMode, playType, userId, best)
             }
         }
 
