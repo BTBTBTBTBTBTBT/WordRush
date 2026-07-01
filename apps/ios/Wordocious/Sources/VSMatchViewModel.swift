@@ -93,6 +93,7 @@ final class VSMatchViewModel: ObservableObject {
     @Published var queuePosition = 0
     @Published var queueSize = 0           // total players waiting (queue_status.queueSize)
     @Published var countdown: Int?         // non-nil → show "Match Found" overlay
+    @Published var countdownIsRematch = false  // relabels the overlay for a rematch
     @Published var game: GameViewModel?    // built on match_start (board modes)
     @Published var proper: ProperNoundleVM?  // built on match_start (ProperNoundle VS)
     @Published var opponent = OpponentProgress()
@@ -364,7 +365,7 @@ final class VSMatchViewModel: ObservableObject {
         service.onMatchEnded = { [weak self] in self?.handleMatchEnded($0) }
         service.onRematchOffered = { [weak self] in self?.rematch = .received }
         service.onRematchDeclined = { [weak self] in self?.rematch = .declined }
-        service.onRematchStart = { [weak self] in self?.beginMatch(seed: $0.seed, startMs: nil) }
+        service.onRematchStart = { [weak self] in self?.beginRematch(seed: $0.seed) }
         service.onOpponentLeft = { [weak self] in
             self?.message = "Opponent left the match"
             self?.screen = .opponentLeft
@@ -412,9 +413,30 @@ final class VSMatchViewModel: ObservableObject {
         }
     }
 
+    /// Rematch start — unlike the initial match there's no match-intro splash, so
+    /// run a short 3-2-1 countdown (mirrors the initial MATCH_COUNTDOWN) before
+    /// the board resets, instead of snapping straight into a new game. The bot's
+    /// engine is likewise delayed by the same 3s so the pacing stays aligned.
+    private func beginRematch(seed: String) {
+        rematch = .idle
+        showIntro = false
+        countdownIsRematch = true
+        let start = Date().timeIntervalSince1970 * 1000 + 3000
+        countdown = 3
+        countdownTimer?.invalidate()
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] t in
+            Task { @MainActor in
+                guard let self else { t.invalidate(); return }
+                if let c = self.countdown, c > 1 { self.countdown = c - 1 }
+                else { t.invalidate(); self.beginMatch(seed: seed, startMs: start) }
+            }
+        }
+    }
+
     private func beginMatch(seed: String, startMs: Double?) {
         self.seed = seed
         matchStartMs = startMs ?? (Date().timeIntervalSince1970 * 1000)
+        countdownIsRematch = false
         opponent = OpponentProgress()
         result = nil
         rematch = .idle

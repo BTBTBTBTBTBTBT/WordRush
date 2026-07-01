@@ -237,11 +237,13 @@ final class LocalBotMatchService: VSTransport {
         ended = false
         clearTimers()
         let seed = config.fixedSeed ?? generateMatchSeed()
-        serverStartAt = Date().timeIntervalSince1970 * 1000
+        // Start the bot's clock after the 3s rematch countdown so its guesses
+        // land relative to the same start the player sees (parity with startMatch).
+        serverStartAt = Date().timeIntervalSince1970 * 1000 + countdownMs
         plan = BotEngine.buildPlan(seed: seed, mode: mode, difficulty: difficulty, opts: planOpts())
         botDone = false; playerDone = false; playerBoardsSolved = 0; playerResult = nil
         onRematchStart?(VSRematchStart(matchId: "bot-\(Int(serverStartAt))", seed: seed, puzzleMetadata: nil))
-        schedule(50) { [weak self] in self?.runPlan() }
+        schedule(countdownMs) { [weak self] in self?.runPlan() }
     }
     func declineRematch() {}
 }

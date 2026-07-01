@@ -351,15 +351,25 @@ struct VSGameView: View {
     private var countdownOverlay: some View {
         ZStack {
             Color.black.opacity(0.6).ignoresSafeArea()
-            VStack(spacing: 12) {
-                Text("MATCH FOUND").font(Brand.font(15, .heavy)).tracking(3).foregroundStyle(.white.opacity(0.7))
-                Text("\(vm.countdown ?? 0)")
-                    .font(Brand.font(96, .black))
-                    .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
-                    .id(vm.countdown)
-                    .transition(.scale.combined(with: .opacity))
+            VStack(spacing: 14) {
+                Text(vm.countdownIsRematch ? "REMATCH STARTING IN" : "MATCH FOUND")
+                    .font(Brand.font(15, .heavy)).tracking(3).foregroundStyle(.white.opacity(0.7))
+                ZStack {
+                    // A ring that expands + fades on each tick, so the number
+                    // pulses out of a burst instead of just swapping.
+                    Circle().stroke(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing), lineWidth: 3)
+                        .frame(width: 150, height: 150)
+                        .scaleEffect(1)
+                        .id(vm.countdown)
+                        .transition(.scale(scale: 0.4).combined(with: .opacity))
+                    Text("\(vm.countdown ?? 0)")
+                        .font(Brand.font(96, .black))
+                        .foregroundStyle(LinearGradient(colors: gradient, startPoint: .leading, endPoint: .trailing))
+                        .id(vm.countdown)
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
-            .animation(Theme.animation(.easeOut(duration: 0.25)), value: vm.countdown)
+            .animation(Theme.animation(.spring(response: 0.35, dampingFraction: 0.6)), value: vm.countdown)
         }
     }
 
@@ -513,9 +523,8 @@ struct VSGameView: View {
                     .padding(.top, 32)
 
                 // Opponent identity + live counters
-                HStack(spacing: 10) {
-                    AvatarView(url: vm.opponentInfo?.avatarUrl, username: oppName, size: 40)
-                        .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+                HStack(spacing: 12) {
+                    LivePulseAvatar(url: vm.opponentInfo?.avatarUrl, name: oppName, accent: gradient.first ?? Theme.primary)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(oppName).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
                         TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -537,25 +546,27 @@ struct VSGameView: View {
                         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
                 }
 
-                // Opponent live board — scaled-up mini board, colors only
+                // Opponent live board — bigger now, so it fills the space and the
+                // flip-in reveal reads clearly while you watch.
+                let specCell: CGFloat = liveTotalBoards <= 1 ? 34 : (liveTotalBoards <= 4 ? 24 : 14)
                 Group {
                     if liveTotalBoards <= 1 {
                         OpponentMiniBoard(tiles: vm.opponent.tiles[0] ?? [],
-                                          maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: 16)
+                                          maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: specCell)
                     } else {
-                        let columns = Array(repeating: GridItem(.flexible(), spacing: 8),
+                        let columns = Array(repeating: GridItem(.flexible(), spacing: 10),
                                             count: min(liveTotalBoards, 4))
-                        LazyVGrid(columns: columns, spacing: 8) {
+                        LazyVGrid(columns: columns, spacing: 12) {
                             ForEach(0..<liveTotalBoards, id: \.self) { i in
                                 OpponentMiniBoard(tiles: vm.opponent.tiles[i] ?? [],
-                                                  maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: 16)
+                                                  maxGuesses: spectatorRows, wordLength: vm.wordLen, cell: specCell)
                             }
                         }
                     }
                 }
-                .padding(16).frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                .padding(20).frame(maxWidth: .infinity)
+                .background(RoundedRectangle(cornerRadius: 18).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.border, lineWidth: 1.5))
 
                 // Your stats
                 if let guesses = vm.myFinalGuesses {
@@ -853,9 +864,13 @@ private struct OpponentStrip: View {
             // is visible the whole match and never flickers in on the first guess.
             if opponent.totalBoards <= 4 {
                 let boards = opponent.totalBoards > 1 ? Array(0..<opponent.totalBoards) : [0]
-                HStack(spacing: 6) {
+                // Bigger cells so the opponent board uses the space around it and
+                // the live flip-in reveal is easy to follow (single board gets the
+                // most room; multi-board stays compact so 4 grids still fit).
+                let cell: CGFloat = opponent.totalBoards > 1 ? 10 : 14
+                HStack(spacing: 8) {
                     ForEach(boards, id: \.self) { i in
-                        OpponentMiniBoard(tiles: opponent.tiles[i] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: 8)
+                        OpponentMiniBoard(tiles: opponent.tiles[i] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: cell)
                     }
                 }
             }
@@ -873,29 +888,83 @@ private struct OpponentMiniBoard: View {
     let wordLength: Int
     var cell: CGFloat = 8
 
+    private var gap: CGFloat { max(1, cell * 0.1) }
+
     var body: some View {
-        VStack(spacing: 1) {
+        VStack(spacing: gap) {
             ForEach(0..<max(maxGuesses, 1), id: \.self) { r in
-                HStack(spacing: 1) {
+                HStack(spacing: gap) {
                     ForEach(0..<max(wordLength, 1), id: \.self) { c in
                         let st: TileState? = (r < tiles.count && c < tiles[r].count) ? tiles[r][c] : nil
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(color(st))
-                            .frame(width: cell, height: cell)
-                            .overlay(st == nil || st == .empty
-                                     ? RoundedRectangle(cornerRadius: 2).stroke(Color(hex: 0xD1D5DB), lineWidth: 1) : nil)
+                        OpponentTile(state: st, cell: cell, delay: Double(c) * 0.05)
                     }
                 }
             }
         }
     }
+}
 
-    private func color(_ s: TileState?) -> Color {
-        switch s {
+/// A single opponent tile that flips in (3D rotate + scale + fade, staggered
+/// left-to-right) the moment it fills — so each opponent guess reveals with a
+/// fluid cascade instead of popping in flat. Empty tiles stay static.
+private struct OpponentTile: View {
+    let state: TileState?
+    let cell: CGFloat
+    let delay: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var revealed = false
+
+    private var filled: Bool { state != nil && state != .empty }
+    private var radius: CGFloat { max(2, cell * 0.16) }
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: radius)
+            .fill(color)
+            .frame(width: cell, height: cell)
+            .overlay(filled ? nil : RoundedRectangle(cornerRadius: radius).stroke(Color(hex: 0xD1D5DB), lineWidth: 1))
+            .scaleEffect(filled && !revealed ? 0.5 : 1)
+            .opacity(filled && !revealed ? 0 : 1)
+            .rotation3DEffect(.degrees(filled && !revealed ? -85 : 0), axis: (x: 1, y: 0, z: 0), perspective: 0.4)
+            .onAppear { revealed = true }
+            .onChange(of: filled) { now in
+                guard now else { return }
+                if reduceMotion { revealed = true; return }
+                revealed = false
+                DispatchQueue.main.async {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.68).delay(delay)) { revealed = true }
+                }
+            }
+    }
+
+    private var color: Color {
+        switch state {
         case .correct: return Color(hex: 0x7C3AED)
         case .present: return Color(hex: 0xF59E0B)
         case .absent:  return Theme.textMuted
         default:       return .clear
+        }
+    }
+}
+
+/// Opponent avatar with a breathing accent ring — signals a "live" opponent on
+/// the spectator screen so it doesn't feel static while you wait.
+private struct LivePulseAvatar: View {
+    let url: String?
+    let name: String
+    let accent: Color
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulse = false
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(accent, lineWidth: 2.5).frame(width: 56, height: 56)
+                .scaleEffect(pulse ? 1.45 : 0.95).opacity(pulse ? 0 : 0.7)
+            AvatarView(url: url, username: name, size: 52)
+                .overlay(Circle().stroke(Theme.border, lineWidth: 1.5))
+        }
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeOut(duration: 1.5).repeatForever(autoreverses: false)) { pulse = true }
         }
     }
 }
