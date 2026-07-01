@@ -67,7 +67,7 @@ enum VSModeInfo {
 /// from server events.
 @MainActor
 final class VSMatchViewModel: ObservableObject {
-    enum Screen { case queue, match, waiting, result, opponentLeft, alreadyPlayedDaily, notConfigured }
+    enum Screen { case entry, queue, match, waiting, result, opponentLeft, alreadyPlayedDaily, notConfigured }
     enum RematchState { case idle, offered, received, declined }
 
     struct OpponentProgress {
@@ -196,6 +196,10 @@ final class VSMatchViewModel: ObservableObject {
     // dailyVsActive dropped the !isPro guard — Pro plays the same daily VS, then
     // gets the already-played screen with a "Play Unlimited VS" prompt).
     private var dailyVsActive: Bool { isDaily && mode == .duel }
+    // Specific intents skip the entry chooser and join the human queue directly:
+    // the daily VS flow and accepting a private invite link. Everything else
+    // opens the entry chooser (Quick Match / Bot Match / Invite a Friend).
+    private var autoJoin: Bool { dailyVsActive || inviteCode != nil }
 
     init(mode: GameMode, isDaily: Bool = false, inviteCode: String? = nil) {
         self.mode = mode
@@ -228,6 +232,20 @@ final class VSMatchViewModel: ObservableObject {
             }
         }
 
+        // Standard flow: show the entry chooser first (Quick Match / Bot Match /
+        // Invite). Daily VS and invite-link intents auto-join the human queue.
+        if autoJoin {
+            joinHumanQueue(dailySeed: dailySeed)
+        } else {
+            screen = .entry
+        }
+    }
+
+    /// Join the live human matchmaking queue. Called on mount for daily/invite
+    /// intents, or from the entry chooser's Quick Match button.
+    func joinHumanQueue(dailySeed: String? = nil) {
+        let seed = dailySeed ?? (dailyVsActive ? generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "DUEL_VS") : nil)
+        screen = .queue
         wireHandlers()
         let presenceId = AuthService.shared.profile.map { "u:\($0.id)" }
         // Emit join_queue ONLY once the socket is actually connected. Emitting it
@@ -237,11 +255,10 @@ final class VSMatchViewModel: ObservableObject {
         // Re-fires on reconnect while still in the queue (server dedupes by player
         // id); the screen guard avoids re-queuing once a match has started.
         let joinMode = mode.rawValue
-        let joinSeed = dailySeed
         let joinInvite = inviteCode
         service.onConnect = { [weak self] in
             guard let self, self.screen == .queue else { return }
-            self.service.joinQueue(mode: joinMode, dailySeed: joinSeed, inviteCode: joinInvite)
+            self.service.joinQueue(mode: joinMode, dailySeed: seed, inviteCode: joinInvite)
         }
         service.connect(presenceId: presenceId)
     }

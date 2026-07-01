@@ -26,6 +26,7 @@ struct VSGameView: View {
     @State private var showCpuChooser = false
     @State private var cpuAutoOffer = false
     @State private var showCpuPro = false
+    @State private var showInvite = false
     @State private var ghostRun: (guesses: Int, timeMs: Double)?
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     @State private var confirmForfeit = false
@@ -37,6 +38,7 @@ struct VSGameView: View {
 
             switch vm.screen {
             case .notConfigured:     notConfigured
+            case .entry:             entryScreen
             case .queue:             queueScreen
             case .match:             matchScreen
             case .waiting:           waitingScreen
@@ -171,60 +173,145 @@ struct VSGameView: View {
         }
     }
 
-    @ViewBuilder private var cpuChooserPanel: some View {
-        if showCpuChooser || cpuAutoOffer {
-            VStack(spacing: 10) {
-                Label(cpuAutoOffer && !showCpuChooser ? "No players right now — play the CPU?" : "Play the CPU",
-                      systemImage: "cpu")
-                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
-                if vm.isPro {
-                    HStack(spacing: 8) {
-                        ForEach([BotTier.easy, .medium, .hard], id: \.rawValue) { tier in
-                            let p = BotPersonas.persona(tier)
-                            Button { vm.startCpu(CpuKind(rawValue: tier.rawValue) ?? .medium) } label: {
-                                VStack(spacing: 2) {
-                                    Text(p.avatar).font(.system(size: 20))
-                                    Text(BotPersonas.tierLabel(tier)).font(Brand.font(11, .black)).foregroundStyle(Color(hex: UInt(p.color)))
-                                    Text(p.name).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-                                }
-                                .frame(maxWidth: .infinity).padding(.vertical, 10)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
-                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: UInt(p.color)), lineWidth: 1.5))
-                            }.buttonStyle(.plain)
+    // Difficulty/opponent grid — shared by the entry chooser's Bot Match and the
+    // queue-screen auto-offer. Pro-gated (non-Pro sees an unlock CTA).
+    @ViewBuilder private var cpuChooserBody: some View {
+        if vm.isPro {
+            HStack(spacing: 8) {
+                ForEach([BotTier.easy, .medium, .hard], id: \.rawValue) { tier in
+                    let p = BotPersonas.persona(tier)
+                    Button { vm.startCpu(CpuKind(rawValue: tier.rawValue) ?? .medium) } label: {
+                        VStack(spacing: 2) {
+                            Text(p.avatar).font(.system(size: 20))
+                            Text(BotPersonas.tierLabel(tier)).font(Brand.font(11, .black)).foregroundStyle(Color(hex: UInt(p.color)))
+                            Text(p.name).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
                         }
-                    }
-                    cpuSpecialButton("⚖️ Adaptive — matched to your form", 0x7C3AED) { vm.startCpu(.adaptive) }
-                    HStack(spacing: 8) {
-                        cpuSpecialButton(ghostRun == nil ? "👻 Beat Your Best (win first)" : "👻 Beat Your Best", 0x64748B) {
-                            if let g = ghostRun { vm.startCpu(.ghost, ghost: g) }
-                        }
-                        .opacity(ghostRun == nil ? 0.45 : 1)
-                        .disabled(ghostRun == nil)
-                        cpuSpecialButton("📅 Bot of the Day", 0xF59E0B) {
-                            vm.startCpu(.daily, fixedSeed: generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "\(vm.mode.rawValue)_CPU"))
-                        }
-                    }
-                    Text("Practice only — doesn’t affect your ranked stats")
-                        .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
-                } else {
-                    Button { showCpuPro = true } label: {
-                        Label("Unlock with Pro", systemImage: "lock.fill")
-                            .font(Brand.font(13, .black)).foregroundStyle(.white)
-                            .frame(maxWidth: .infinity).padding(.vertical, 10)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing)))
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: UInt(p.color)), lineWidth: 1.5))
                     }.buttonStyle(.plain)
                 }
+            }
+            cpuSpecialButton("⚖️ Adaptive — matched to your form", 0x7C3AED) { vm.startCpu(.adaptive) }
+            HStack(spacing: 8) {
+                cpuSpecialButton(ghostRun == nil ? "👻 Beat Your Best (win first)" : "👻 Beat Your Best", 0x64748B) {
+                    if let g = ghostRun { vm.startCpu(.ghost, ghost: g) }
+                }
+                .opacity(ghostRun == nil ? 0.45 : 1)
+                .disabled(ghostRun == nil)
+                cpuSpecialButton("📅 Bot of the Day", 0xF59E0B) {
+                    vm.startCpu(.daily, fixedSeed: generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "\(vm.mode.rawValue)_CPU"))
+                }
+            }
+            Text("Practice only — doesn’t affect your ranked stats")
+                .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+        } else {
+            Button { showCpuPro = true } label: {
+                Label("Unlock with Pro", systemImage: "lock.fill")
+                    .font(Brand.font(13, .black)).foregroundStyle(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing)))
+            }.buttonStyle(.plain)
+        }
+    }
+
+    // Queue-screen auto-offer once the human queue sits quiet (the explicit Bot
+    // Match choice now lives on the entry chooser).
+    @ViewBuilder private var cpuChooserPanel: some View {
+        if cpuAutoOffer {
+            VStack(spacing: 10) {
+                Label("No players right now — play the CPU?", systemImage: "cpu")
+                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
+                cpuChooserBody
             }
             .padding(14)
             .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             .frame(maxWidth: 320)
-        } else {
-            Button { showCpuChooser = true } label: {
-                Label("Play the CPU instead", systemImage: "cpu")
-                    .font(Brand.font(13, .bold)).foregroundStyle(Theme.primary)
-            }.buttonStyle(.plain)
         }
+    }
+
+    // MARK: - Entry chooser (Quick Match / Bot Match / Invite a Friend)
+
+    private var entryScreen: some View {
+        VStack(spacing: 20) {
+            vsTitle(36)
+            if showCpuChooser {
+                VStack(spacing: 10) {
+                    HStack(spacing: 8) {
+                        Button { showCpuChooser = false } label: {
+                            Image(systemName: "chevron.left").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.textMuted)
+                        }.buttonStyle(.plain)
+                        Label("Choose your opponent", systemImage: "cpu")
+                            .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
+                        Spacer()
+                    }
+                    cpuChooserBody
+                }
+                .padding(14)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                .frame(maxWidth: 340)
+            } else {
+                VStack(spacing: 12) {
+                    entryOption(icon: "bolt.fill", iconBg: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
+                                title: "Quick Match", subtitle: "Get matched with a live opponent") {
+                        vm.joinHumanQueue()
+                    }
+                    entryOption(icon: "cpu", iconBg: [Color(hex: 0x64748B), Color(hex: 0x64748B)],
+                                title: "Bot Match", subtitle: "Practice vs the CPU — pick a difficulty", locked: !vm.isPro) {
+                        if vm.isPro { showCpuChooser = true } else { showCpuPro = true }
+                    }
+                    entryOption(icon: "person.2.fill", iconBg: [Color(hex: 0x7C3AED), Color(hex: 0x7C3AED)],
+                                title: "Invite a Friend", subtitle: "Send a private match link or @username") {
+                        showInvite = true
+                    }
+                }
+                .frame(maxWidth: 360)
+                Button { dismiss() } label: {
+                    Label("Cancel", systemImage: "xmark")
+                        .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
+                }.buttonStyle(.plain).padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 24)
+        .sheet(isPresented: $showCpuPro) { ProView() }
+        .sheet(isPresented: $showInvite) { InviteSheet() }
+        .task {
+            // Preload the best run so Beat Your Best is enabled in the chooser.
+            if vm.isPro, let uid = AuthService.shared.profile?.id {
+                ghostRun = await MatchStatsService.ghostBestRun(uid: uid, mode: vm.mode)
+            }
+        }
+    }
+
+    private func entryOption(icon: String, iconBg: [Color], title: String, subtitle: String, locked: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(iconBg.count > 1 && iconBg[0] != iconBg[1]
+                              ? AnyShapeStyle(LinearGradient(colors: iconBg, startPoint: .topLeading, endPoint: .bottomTrailing))
+                              : AnyShapeStyle((iconBg.first ?? Theme.primary).opacity(0.12)))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: icon).font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(iconBg.count > 1 && iconBg[0] != iconBg[1] ? .white : (iconBg.first ?? Theme.primary))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(title).font(Brand.font(16, .black)).foregroundStyle(Theme.textPrimary)
+                        if locked { Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(Theme.textMuted) }
+                    }
+                    Text(subtitle).font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+            }
+            .padding(16).frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        }.buttonStyle(.plain)
     }
 
     private func cpuSpecialButton(_ title: String, _ color: UInt, _ action: @escaping () -> Void) -> some View {
@@ -314,12 +401,43 @@ struct VSGameView: View {
                         .buttonStyle(.borderedProminent).tint(Theme.primary).controlSize(.large)
                         .padding(.bottom, 10)
                 } else {
+                    // Six/Seven expose the same vowel + consonant hints as solo (the
+                    // reveal is added as a board row → counts as a guess, the VS cost).
+                    if game.hasHints && !game.isFinished { vsHintButtons(game) }
                     KeyboardView(vm: game).padding(.bottom, 6).layoutPriority(1)
                 }
             }
             .frame(maxHeight: .infinity)
             if let t = game.toast { toastView(t) }
         }
+    }
+
+    // Six/Seven VS hint bar — same reveals + copy as solo GameScreen. Cyan for
+    // Six, lime for Seven (web mode accents).
+    private var hintAccent: Color { mode == .duel7 ? Color(hex: 0x84CC16) : Color(hex: 0x06B6D4) }
+
+    private func vsHintButtons(_ game: GameViewModel) -> some View {
+        HStack(spacing: 12) {
+            vsHintPill(label: game.vowelUsed ? (game.vowelRevealed == "—" ? "No vowels left" : "Vowel: \(game.vowelRevealed ?? "")") : "💡 Vowel",
+                       used: game.vowelUsed) { Haptics.success(); game.revealVowel() }
+            vsHintPill(label: game.consonantUsed ? (game.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(game.consonantRevealed ?? "")") : "💡 Consonant",
+                       used: game.consonantUsed) { Haptics.success(); game.revealConsonant() }
+        }
+        .padding(.horizontal, 16).padding(.bottom, 4)
+    }
+
+    private func vsHintPill(label: String, used: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(Brand.font(13, .heavy))
+                .foregroundStyle(used ? Theme.textMuted : hintAccent)
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background(RoundedRectangle(cornerRadius: 10).fill(used ? Color(hex: 0xF3F4F6) : hintAccent.opacity(0.08)))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(used ? Theme.border : hintAccent, lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+        .disabled(used)
     }
 
     private var matchHeader: some View {
