@@ -23,6 +23,9 @@ struct VSGameView: View {
 
     // Non-Pro Rematch tap shows the Pro upsell modal (web parity — VsLimitModal).
     @State private var showRematchUpsell = false
+    @State private var showCpuChooser = false
+    @State private var cpuAutoOffer = false
+    @State private var showCpuPro = false
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     @State private var confirmForfeit = false
 
@@ -140,6 +143,10 @@ struct VSGameView: View {
                         .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                 }
             }
+            // Play the CPU — explicit choice + auto-offer once the queue is quiet.
+            if !vm.isCpu && vm.countdown == nil && !vm.showIntro && vm.mode != .gauntlet {
+                cpuChooserPanel
+            }
             Button(action: goHome) {
                 Label("Cancel", systemImage: "xmark")
                     .font(Brand.font(14, .bold)).foregroundStyle(Theme.textMuted)
@@ -149,6 +156,72 @@ struct VSGameView: View {
             if let m = vm.message { errorPill(m) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .sheet(isPresented: $showCpuPro) { ProView() }
+        .task {
+            // Auto-offer the CPU after the queue sits empty for a bit.
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            if vm.screen == .queue && !vm.isCpu { cpuAutoOffer = true }
+        }
+    }
+
+    @ViewBuilder private var cpuChooserPanel: some View {
+        if showCpuChooser || cpuAutoOffer {
+            VStack(spacing: 10) {
+                Label(cpuAutoOffer && !showCpuChooser ? "No players right now — play the CPU?" : "Play the CPU",
+                      systemImage: "cpu")
+                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
+                if vm.isPro {
+                    HStack(spacing: 8) {
+                        ForEach([BotTier.easy, .medium, .hard], id: \.rawValue) { tier in
+                            let p = BotPersonas.persona(tier)
+                            Button { vm.startCpu(CpuKind(rawValue: tier.rawValue) ?? .medium) } label: {
+                                VStack(spacing: 2) {
+                                    Text(p.avatar).font(.system(size: 20))
+                                    Text(BotPersonas.tierLabel(tier)).font(Brand.font(11, .black)).foregroundStyle(Color(hex: UInt(p.color)))
+                                    Text(p.name).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                                }
+                                .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: UInt(p.color)), lineWidth: 1.5))
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                    HStack(spacing: 8) {
+                        cpuSpecialButton("⚖️ Adaptive", 0x7C3AED) { vm.startCpu(.adaptive) }
+                        cpuSpecialButton("📅 Bot of the Day", 0xF59E0B) {
+                            vm.startCpu(.daily, fixedSeed: generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "\(vm.mode.rawValue)_CPU"))
+                        }
+                    }
+                    Text("Practice only — doesn’t affect your ranked stats")
+                        .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                } else {
+                    Button { showCpuPro = true } label: {
+                        Label("Unlock with Pro", systemImage: "lock.fill")
+                            .font(Brand.font(13, .black)).foregroundStyle(.white)
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing)))
+                    }.buttonStyle(.plain)
+                }
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            .frame(maxWidth: 320)
+        } else {
+            Button { showCpuChooser = true } label: {
+                Label("Play the CPU instead", systemImage: "cpu")
+                    .font(Brand.font(13, .bold)).foregroundStyle(Theme.primary)
+            }.buttonStyle(.plain)
+        }
+    }
+
+    private func cpuSpecialButton(_ title: String, _ color: UInt, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).font(Brand.font(11, .black)).foregroundStyle(Color(hex: color))
+                .frame(maxWidth: .infinity).padding(.vertical, 9)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: color), lineWidth: 1.5))
+        }.buttonStyle(.plain)
     }
 
     /// Private-match invite panel shown on the queue screen — the code + a
