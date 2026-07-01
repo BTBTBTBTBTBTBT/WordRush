@@ -26,6 +26,7 @@ struct VSGameView: View {
     @State private var showCpuChooser = false
     @State private var cpuAutoOffer = false
     @State private var showCpuPro = false
+    @State private var ghostRun: (guesses: Int, timeMs: Double)?
     // Leaving an in-progress match forfeits it (a recorded loss) — confirm first.
     @State private var confirmForfeit = false
 
@@ -144,7 +145,7 @@ struct VSGameView: View {
                 }
             }
             // Play the CPU — explicit choice + auto-offer once the queue is quiet.
-            if !vm.isCpu && vm.countdown == nil && !vm.showIntro && vm.mode != .gauntlet {
+            if !vm.isCpu && vm.countdown == nil && !vm.showIntro {
                 cpuChooserPanel
             }
             Button(action: goHome) {
@@ -161,6 +162,12 @@ struct VSGameView: View {
             // Auto-offer the CPU after the queue sits empty for a bit.
             try? await Task.sleep(nanoseconds: 15_000_000_000)
             if vm.screen == .queue && !vm.isCpu { cpuAutoOffer = true }
+        }
+        .task {
+            // Best recorded run for this mode → enables the "Beat Your Best" ghost.
+            if vm.isPro, let uid = AuthService.shared.profile?.id {
+                ghostRun = await MatchStatsService.ghostBestRun(uid: uid, mode: vm.mode)
+            }
         }
     }
 
@@ -186,8 +193,13 @@ struct VSGameView: View {
                             }.buttonStyle(.plain)
                         }
                     }
+                    cpuSpecialButton("⚖️ Adaptive — matched to your form", 0x7C3AED) { vm.startCpu(.adaptive) }
                     HStack(spacing: 8) {
-                        cpuSpecialButton("⚖️ Adaptive", 0x7C3AED) { vm.startCpu(.adaptive) }
+                        cpuSpecialButton(ghostRun == nil ? "👻 Beat Your Best (win first)" : "👻 Beat Your Best", 0x64748B) {
+                            if let g = ghostRun { vm.startCpu(.ghost, ghost: g) }
+                        }
+                        .opacity(ghostRun == nil ? 0.45 : 1)
+                        .disabled(ghostRun == nil)
                         cpuSpecialButton("📅 Bot of the Day", 0xF59E0B) {
                             vm.startCpu(.daily, fixedSeed: generateDailySeed(date: LeaderboardService.todayUTC(), gameMode: "\(vm.mode.rawValue)_CPU"))
                         }
@@ -506,10 +518,7 @@ struct VSGameView: View {
                     if vm.isCpu {
                         VStack(spacing: 4) {
                             if let pf = vm.photoFinish {
-                                Text(pf == "clutch" ? "CLUTCH!" : "PHOTO FINISH!")
-                                    .font(Brand.font(28, .black))
-                                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF97316), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
-                                    .rotationEffect(.degrees(-6))
+                                PhotoFinishStamp(clutch: pf == "clutch")
                             }
                             if let m = vm.cpuMilestone {
                                 Text("🔥 \(m)-win CPU streak!").font(Brand.font(14, .black)).foregroundStyle(Color(hex: 0xF97316))
@@ -770,6 +779,24 @@ private struct OpponentMiniBoard: View {
         case .absent:  return Theme.textMuted
         default:       return .clear
         }
+    }
+}
+
+/// Photo-finish flourish — a spring-in stamp for a CPU close/last-guess win,
+/// distinct from the normal win overlay. Animates on appear.
+private struct PhotoFinishStamp: View {
+    let clutch: Bool
+    @State private var shown = false
+    var body: some View {
+        Text(clutch ? "CLUTCH!" : "PHOTO FINISH!")
+            .font(Brand.font(30, .black))
+            .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFACC15), Color(hex: 0xF97316), Color(hex: 0xEC4899)],
+                                            startPoint: .leading, endPoint: .trailing))
+            .rotationEffect(.degrees(-6))
+            .scaleEffect(shown ? 1 : 0.3)
+            .opacity(shown ? 1 : 0)
+            .shadow(color: .black.opacity(0.22), radius: 8, y: 3)
+            .onAppear { withAnimation(.spring(response: 0.45, dampingFraction: 0.55)) { shown = true } }
     }
 }
 

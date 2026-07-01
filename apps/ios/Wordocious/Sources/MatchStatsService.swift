@@ -311,6 +311,24 @@ enum MatchStatsService {
     }
 
     /// Current + best win streak over the most-recent 200 games — ports fetchModeWinStreak.
+    /// Fewest-guesses, then fastest winning solo run for (uid, mode) — powers the
+    /// "Beat Your Best" ghost race. nil if the player has no win in that mode.
+    static func ghostBestRun(uid: String, mode: GameMode) async -> (guesses: Int, timeMs: Double)? {
+        struct Row: Decodable { let player1_score: Int; let player1_time: Int }
+        let rows: [Row]? = try? await AuthService.shared.client.from("matches")
+            .select("player1_score, player1_time")
+            .eq("player1_id", value: uid)
+            .eq("game_mode", value: mode.rawValue)
+            .eq("winner_id", value: uid)
+            .gt("player1_time", value: 0)
+            .gt("player1_score", value: 0)
+            .order("player1_score", ascending: true)
+            .order("player1_time", ascending: true)
+            .limit(1).execute().value
+        guard let r = rows?.first else { return nil }
+        return (r.player1_score, Double(r.player1_time) * 1000)
+    }
+
     static func modeWinStreak(uid: String, mode: GameMode) async -> (current: Int, best: Int) {
         struct Row: Decodable { let winner_id: String? }
         let rows: [Row] = (try? await AuthService.shared.client.from("matches")

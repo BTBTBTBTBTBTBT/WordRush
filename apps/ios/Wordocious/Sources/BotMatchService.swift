@@ -178,6 +178,13 @@ final class LocalBotMatchService: VSTransport {
                 else if let p = ev.progress { self.onOpponentProgress?(p) }
             }
         }
+        // Gauntlet: advance the opponent's 5-node stepper at each stage clear.
+        for se in plan.stageEvents {
+            schedule(se.atMs) { [weak self] in
+                guard let self, !self.ended else { return }
+                self.onOpponentStageCompleted?(VSStageEvent(stageIndex: se.stageIndex))
+            }
+        }
         schedule(plan.finishAtMs) { [weak self] in
             guard let self, !self.ended else { return }
             self.botDone = true

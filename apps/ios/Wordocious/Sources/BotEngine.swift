@@ -34,9 +34,18 @@ enum BotEngine {
         var finishAtMs: Double
         var totalGuesses: Int
         var events: [Event]
+        /// Gauntlet: when the opponent clears each stage (drives the 5-node stepper).
+        var stageEvents: [(atMs: Double, stageIndex: Int)]
         var guessLog: [VSGuessLogEntry]
         var solutions: [String]
     }
+
+    /// Board index that COMPLETES each Gauntlet stage (last board of the stage).
+    private static let gauntletStageLastBoard: [Int] = {
+        var out: [Int] = []; var cum = 0
+        for s in gauntletStages { cum += s.boardCount; out.append(cum - 1) }
+        return out // [0, 4, 8, 12, 20]
+    }()
 
     private struct DiffParams {
         var perGuessMinMs: Double
@@ -128,10 +137,15 @@ enum BotEngine {
         let state = createInitialState(seed: seed, mode: mode)
         let totalBoards = VSModeInfo.totalBoards(mode)
         let p = resolveParams(difficulty, opts.adaptive)
-        let solutions = state.boards.map { $0.solution.uppercased() }
+        // Gauntlet's createInitialState boards hold only the current stage; the
+        // full 21-board run comes from the seed directly (reducer parity).
+        let solutions = mode == .gauntlet
+            ? generateSolutionsFromSeed(seed, count: gauntletTotalSolutions).map { $0.uppercased() }
+            : state.boards.map { $0.solution.uppercased() }
         let willSolveAll = opts.forceSolve ? true : Double.random(in: 0..<1) > p.failChance
 
         var events: [Event] = []
+        var stageEvents: [(atMs: Double, stageIndex: Int)] = []
         var guessLog: [VSGuessLogEntry] = []
         var cumulativeAttempts = 0
         var boardsSolved = 0
@@ -151,6 +165,9 @@ enum BotEngine {
                 cumulativeAttempts += 1
                 let isSolvingRow = boardSolves && i == path.count - 1
                 if isSolvingRow { boardsSolved += 1 }
+                if isSolvingRow && mode == .gauntlet, let stageIndex = gauntletStageLastBoard.firstIndex(of: bi) {
+                    stageEvents.append((atMs: atMs, stageIndex: stageIndex))
+                }
                 events.append(Event(atMs: max(0, atMs - 1100), typing: true, progress: nil))
                 let prog = VSOpponentProgress(
                     attempts: cumulativeAttempts,
@@ -170,12 +187,13 @@ enum BotEngine {
         if let target = opts.targetSolveMs, lastAtMs > 0 {
             let scale = target / lastAtMs
             for idx in events.indices { events[idx].atMs = max(0, events[idx].atMs * scale) }
+            for idx in stageEvents.indices { stageEvents[idx].atMs = max(0, stageEvents[idx].atMs * scale) }
             lastAtMs = target
         }
 
         events.sort { $0.atMs < $1.atMs }
         return Plan(totalBoards: totalBoards, solved: boardsSolved >= totalBoards, boardsSolved: boardsSolved,
                     finishAtMs: lastAtMs, totalGuesses: cumulativeAttempts, events: events,
-                    guessLog: guessLog, solutions: solutions)
+                    stageEvents: stageEvents, guessLog: guessLog, solutions: solutions)
     }
 }
