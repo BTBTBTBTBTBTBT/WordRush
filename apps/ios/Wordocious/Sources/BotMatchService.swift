@@ -128,6 +128,11 @@ final class LocalBotMatchService: VSTransport {
     private var playerResult: (status: String, guesses: Int, timeMs: Double)?
 
     private let countdownMs: Double = 3000 // mirror server MATCH_COUNTDOWN
+    // The match-intro clash auto-plays for ~2.5s BEFORE the numeric countdown
+    // ticks (the countdown starts on the intro's onDone). So the bot must hold
+    // match_start until intro + countdown have BOTH elapsed, otherwise the 3s
+    // window overlaps the intro and only a flash of the countdown is visible.
+    private let introMs: Double = 2500
 
     init(difficulty: BotDifficulty, config: BotConfig = BotConfig()) {
         self.difficulty = difficulty
@@ -161,16 +166,18 @@ final class LocalBotMatchService: VSTransport {
 
     private func startMatch(_ seed: String) {
         guard !ended else { return }
-        serverStartAt = Date().timeIntervalSince1970 * 1000 + countdownMs
+        // Board appears after the intro clash AND the numeric countdown.
+        let preMatchMs = introMs + countdownMs
+        serverStartAt = Date().timeIntervalSince1970 * 1000 + preMatchMs
         plan = BotEngine.buildPlan(seed: seed, mode: mode, difficulty: difficulty, opts: planOpts())
         botDone = false; playerDone = false; playerBoardsSolved = 0; playerResult = nil
 
         onMatchFound?(VSMatchFound(
             matchId: "bot-\(Int(serverStartAt))", mode: mode.rawValue,
-            serverStartAt: serverStartAt, countdownSeconds: countdownMs / 1000,
+            serverStartAt: serverStartAt, countdownSeconds: countdownMs / 1000, // numeric 3-2-1 (post-intro)
             opponentUserId: config.opponentId ?? CpuOpponent.opponentId(CpuKind(rawValue: difficulty.rawValue) ?? .medium)))
 
-        schedule(countdownMs) { [weak self] in
+        schedule(preMatchMs) { [weak self] in
             guard let self, !self.ended else { return }
             self.onMatchStart?(VSMatchStart(seed: seed, startTime: self.serverStartAt, puzzleMetadata: nil))
             self.runPlan()

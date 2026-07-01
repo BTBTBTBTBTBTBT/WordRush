@@ -115,6 +115,9 @@ class LocalBotMatchService(
     private var serverStartAt = 0.0
     private var ended = false
     private val countdownMs = 3000.0
+    // The intro clash auto-plays ~2.5s BEFORE the numeric countdown ticks, so hold
+    // match_start until intro + countdown elapse (else the countdown flashes).
+    private val introMs = 2500.0
 
     private var botDone = false
     private var botTimeMs = 0.0
@@ -146,15 +149,16 @@ class LocalBotMatchService(
 
     private fun startMatch(seed: String) {
         if (ended) return
-        serverStartAt = System.currentTimeMillis().toDouble() + countdownMs
+        val preMatchMs = introMs + countdownMs   // board appears after intro + countdown
+        serverStartAt = System.currentTimeMillis().toDouble() + preMatchMs
         plan = BotEngine.buildPlan(seed, mode, difficulty, planOpts())
         botDone = false; playerDone = false; playerBoardsSolved = 0; playerResult = null
         onMatchFound?.invoke(VSMatchFound(
             matchId = "bot-${serverStartAt.toLong()}", mode = mode.name,
-            serverStartAt = serverStartAt, countdownSeconds = countdownMs / 1000,
+            serverStartAt = serverStartAt, countdownSeconds = countdownMs / 1000, // numeric 3-2-1 (post-intro)
             opponentUserId = config.opponentId ?: CpuOpponent.opponentId(
                 runCatching { CpuKind.valueOf(difficulty.name) }.getOrDefault(CpuKind.MEDIUM))))
-        schedule(countdownMs) {
+        schedule(preMatchMs) {
             if (ended) return@schedule
             onMatchStart?.invoke(VSMatchStart(seed = seed, startTime = serverStartAt))
             runPlan()

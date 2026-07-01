@@ -124,6 +124,7 @@ export function tierFromCpuId(id: string): BotTier {
 }
 
 const MATCH_COUNTDOWN_MS = 3000; // mirror server MATCH_COUNTDOWN
+const INTRO_MS = 2500; // match-intro clash duration (countdown ticks after it)
 
 /**
  * A fully client-side opponent that satisfies `IMatchService` without any
@@ -202,7 +203,12 @@ export class LocalBotMatchService implements IMatchService {
   private startMatch(seed: string) {
     if (this.ended) return;
     this.seed = seed;
-    this.serverStartAt = Date.now() + MATCH_COUNTDOWN_MS;
+    // The intro clash plays ~2.5s BEFORE the numeric countdown ticks (the
+    // countdown starts on the intro's onDone), so hold match_start until intro +
+    // countdown have both elapsed — otherwise the 3s window overlaps the intro
+    // and only a flash of the countdown shows.
+    const preMatchMs = INTRO_MS + MATCH_COUNTDOWN_MS;
+    this.serverStartAt = Date.now() + preMatchMs;
     this.plan = buildBotPlan(seed, this.mode, this.difficulty, this.planOpts());
     this.botDone = false;
     this.playerDone = false;
@@ -213,16 +219,16 @@ export class LocalBotMatchService implements IMatchService {
       matchId: `bot-${this.serverStartAt}`,
       mode: this.mode,
       serverStartAt: this.serverStartAt,
-      countdownSeconds: MATCH_COUNTDOWN_MS / 1000,
+      countdownSeconds: MATCH_COUNTDOWN_MS / 1000, // numeric 3-2-1 (post-intro)
       opponentUserId: this.config.opponentId ?? cpuOpponentId(this.difficulty),
     });
 
-    // After the countdown, the board goes live and the bot starts playing.
+    // After intro + countdown, the board goes live and the bot starts playing.
     this.schedule(() => {
       if (this.ended) return;
       this.cbMatchStart?.({ seed, startTime: this.serverStartAt });
       this.runPlan();
-    }, MATCH_COUNTDOWN_MS);
+    }, preMatchMs);
   }
 
   private runPlan() {
