@@ -1,7 +1,36 @@
 import { GameMode, generateMatchSeed } from '@wordle-duel/core';
 import type { IMatchService, MatchEndedData } from './match-service';
 import { buildBotPlan, type BotPlan, type AdaptiveHint } from '@/lib/bot/bot-engine';
-import { type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
+import { BOT_PERSONAS, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
+import type { GhostRun } from '@/lib/bot/ghost-service';
+
+/** Every way to pick a CPU opponent from the chooser. */
+export type CpuKind = BotTier | 'adaptive' | 'ghost' | 'daily';
+
+/** Opponent id sentinel encoding the chosen kind, e.g. "cpu:ghost". */
+export function cpuOpponentIdForKind(kind: CpuKind): string {
+  return `${CPU_OPPONENT_PREFIX}${kind}`;
+}
+
+/** Display identity + underlying tier for any cpu opponent id. */
+export function cpuIdentity(oppId: string): { name: string; avatar: string; color: string; tier: BotTier } {
+  const raw = oppId.slice(CPU_OPPONENT_PREFIX.length);
+  if (raw === 'ghost') return { name: 'Your Ghost', avatar: '👻', color: '#64748b', tier: 'hard' };
+  if (raw === 'daily') return { name: 'Daily Bot', avatar: '📅', color: '#f59e0b', tier: 'medium' };
+  if (raw === 'adaptive') return { name: 'Adapt', avatar: '⚖️', color: '#7c3aed', tier: 'medium' };
+  const p = BOT_PERSONAS[(raw as BotTier)] ?? BOT_PERSONAS.medium;
+  return { name: p.name, avatar: p.avatar, color: p.color, tier: p.tier };
+}
+
+/** Extra config for special opponents (ghost pace / daily fixed seed). */
+export interface BotConfig {
+  adaptive?: AdaptiveHint;
+  ghost?: GhostRun;
+  /** Fixed puzzle seed (Bot of the Day) instead of a random one. */
+  fixedSeed?: string;
+  /** Opponent id sentinel — defaults to cpu:<difficulty>. */
+  opponentId?: string;
+}
 
 /** The on* handler names — stored so a swap can re-register them on a new transport. */
 const HANDLER_KEYS = [
@@ -128,9 +157,21 @@ export class LocalBotMatchService implements IMatchService {
   private cbMatchEnded?: (d: MatchEndedData) => void;
   private cbRematchStart?: (d: { matchId: string; seed: string }) => void;
 
-  constructor(difficulty: BotDifficulty, adaptive?: AdaptiveHint) {
+  private config: BotConfig;
+
+  constructor(difficulty: BotDifficulty, config: BotConfig = {}) {
     this.difficulty = difficulty;
-    this.adaptive = adaptive;
+    this.adaptive = config.adaptive;
+    this.config = config;
+  }
+
+  private planOpts() {
+    return {
+      adaptive: this.adaptive,
+      targetGuesses: this.config.ghost?.guessCount,
+      targetSolveMs: this.config.ghost?.timeMs,
+      forceSolve: this.config.ghost ? true : undefined,
+    };
   }
 
   private schedule(fn: () => void, ms: number) {
@@ -153,14 +194,14 @@ export class LocalBotMatchService implements IMatchService {
   joinQueue(mode: GameMode, _dailySeed?: string, _inviteCode?: string): void {
     this.mode = mode;
     // Short "searching…" beat so the transition feels natural, then found.
-    this.schedule(() => this.startMatch(generateMatchSeed()), 900);
+    this.schedule(() => this.startMatch(this.config.fixedSeed ?? generateMatchSeed()), 900);
   }
 
   private startMatch(seed: string) {
     if (this.ended) return;
     this.seed = seed;
     this.serverStartAt = Date.now() + MATCH_COUNTDOWN_MS;
-    this.plan = buildBotPlan(seed, this.mode, this.difficulty, { adaptive: this.adaptive });
+    this.plan = buildBotPlan(seed, this.mode, this.difficulty, this.planOpts());
     this.botDone = false;
     this.playerDone = false;
     this.playerBoardsSolved = 0;
@@ -171,7 +212,7 @@ export class LocalBotMatchService implements IMatchService {
       mode: this.mode,
       serverStartAt: this.serverStartAt,
       countdownSeconds: MATCH_COUNTDOWN_MS / 1000,
-      opponentUserId: cpuOpponentId(this.difficulty),
+      opponentUserId: this.config.opponentId ?? cpuOpponentId(this.difficulty),
     });
 
     // After the countdown, the board goes live and the bot starts playing.
@@ -269,12 +310,13 @@ export class LocalBotMatchService implements IMatchService {
   }
 
   offerRematch(): void {
-    // Unlimited local rematch: re-seed and replay immediately.
+    // Unlimited local rematch: re-seed and replay immediately. Bot-of-the-Day
+    // keeps its fixed seed; everything else re-seeds fresh.
     this.ended = false;
     this.clearTimers();
-    const seed = generateMatchSeed();
+    const seed = this.config.fixedSeed ?? generateMatchSeed();
     this.serverStartAt = Date.now();
-    this.plan = buildBotPlan(seed, this.mode, this.difficulty, { adaptive: this.adaptive });
+    this.plan = buildBotPlan(seed, this.mode, this.difficulty, this.planOpts());
     this.botDone = false;
     this.playerDone = false;
     this.playerBoardsSolved = 0;

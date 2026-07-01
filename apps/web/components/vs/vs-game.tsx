@@ -11,9 +11,10 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SocketIOMatchService, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
-import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, tierFromCpuId } from '@/lib/adapters/bot-match-service';
+import { SwappableMatchService, LocalBotMatchService, CPU_OPPONENT_PREFIX, cpuIdentity, cpuOpponentIdForKind, type CpuKind } from '@/lib/adapters/bot-match-service';
 import { BOT_PERSONAS, tierLabel, botLine, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
-import { recordCpuGame, loadCpuProgression } from '@/lib/bot/cpu-progression';
+import { recordCpuGame, recordBotOfDay, loadCpuProgression } from '@/lib/bot/cpu-progression';
+import { fetchBestGhostRun, type GhostRun } from '@/lib/bot/ghost-service';
 import { PhotoFinish, type PhotoFinishKind } from '@/components/effects/photo-finish';
 import { usePresenceId } from '@/lib/presence-id';
 import { useAuth } from '@/lib/auth-context';
@@ -274,11 +275,16 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const isCpu = cpuDifficulty !== null;
   const isCpuRef = useRef(isCpu);
   isCpuRef.current = isCpu;
+  // Gauntlet's staged/sequential 21-board run isn't modeled by the bot yet, so
+  // CPU practice is offered for every other mode.
+  const cpuSupported = mode !== GameMode.GAUNTLET;
   const [cpuPersona, setCpuPersona] = useState<{ tier: BotTier; name: string; avatar: string; color: string } | null>(null);
   const cpuPersonaRef = useRef(cpuPersona);
   cpuPersonaRef.current = cpuPersona;
   const [showCpuChooser, setShowCpuChooser] = useState(false);
   const [cpuAutoOffer, setCpuAutoOffer] = useState(false);
+  const cpuKindRef = useRef<CpuKind | null>(null);
+  const [ghostRun, setGhostRun] = useState<GhostRun | null>(null);
   // Fun layer: photo-finish flourish, streak milestone, cosmetic unlock, and a
   // per-session run-it-back tally — all CPU-only.
   const [photoFinish, setPhotoFinish] = useState<PhotoFinishKind | null>(null);
@@ -437,10 +443,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       setOpponentUserId(oppId);
       if (oppId && oppId.startsWith(CPU_OPPONENT_PREFIX)) {
         // CPU opponent: use the persona identity locally — no profile / H2H fetch.
-        const tier = tierFromCpuId(oppId);
-        const persona = BOT_PERSONAS[tier];
-        setOpponentInfo({ username: persona.name, avatarUrl: null, level: 0 });
-        opponentNameRef.current = persona.name;
+        const id = cpuIdentity(oppId);
+        setOpponentInfo({ username: id.name, avatarUrl: null, level: 0 });
+        opponentNameRef.current = id.name;
         setHeadToHead(null);
       } else if (oppId) {
         fetchVsProfile(oppId)
@@ -546,6 +551,8 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           // session tally, and the photo-finish flourish on a close/last win.
           const tier: BotTier = cpuPersonaRef.current?.tier ?? 'medium';
           const outcome = recordCpuGame(won, tier, BOT_PERSONAS[tier].id);
+          // Bot of the Day: track the personal "beat today's bot" day-streak.
+          if (cpuKindRef.current === 'daily') recordBotOfDay(won, getTodayUTC());
           setCpuStreak(outcome.progression.streak);
           setCpuMilestone(outcome.milestone);
           setCpuUnlock(outcome.unlockedPersona);
@@ -712,25 +719,34 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
   // Swap the live socket transport for a client-side CPU bot and start a match.
   // Pro-gated in the UI (non-Pro never reaches here).
-  const startCpu = useCallback((difficulty: BotDifficulty) => {
-    const tier: BotTier = difficulty === 'adaptive' ? 'medium' : difficulty;
-    const persona = BOT_PERSONAS[tier];
-    setCpuPersona({ tier, name: persona.name, avatar: persona.avatar, color: persona.color });
-    setCpuDifficulty(difficulty);
+  const startCpu = useCallback((kind: CpuKind, extra?: { ghost?: GhostRun; fixedSeed?: string }) => {
+    const oppId = cpuOpponentIdForKind(kind);
+    const id = cpuIdentity(oppId);
+    cpuKindRef.current = kind;
+    setCpuPersona({ tier: id.tier, name: id.name, avatar: id.avatar, color: id.color });
+    const engineDifficulty: BotDifficulty = kind === 'adaptive' ? 'adaptive' : id.tier;
+    setCpuDifficulty(engineDifficulty);
     setShowCpuChooser(false);
     setCpuAutoOffer(false);
     setMessage('');
-    // Adaptive: shadow the player's recent form — the higher their current CPU
-    // streak, the tougher the bot (keeps games neck-and-neck).
-    const adaptive = difficulty === 'adaptive'
-      ? { winRate: Math.min(0.9, 0.4 + loadCpuProgression().streak * 0.05) }
-      : undefined;
-    matchService.swap(new LocalBotMatchService(difficulty, adaptive), { mode });
+    // Adaptive: shadow the player's recent form (higher CPU streak → tougher).
+    const config: { opponentId: string; adaptive?: { winRate: number }; ghost?: GhostRun; fixedSeed?: string } = { opponentId: oppId };
+    if (kind === 'adaptive') config.adaptive = { winRate: Math.min(0.9, 0.4 + loadCpuProgression().streak * 0.05) };
+    if (extra?.ghost) config.ghost = extra.ghost;
+    if (extra?.fixedSeed) config.fixedSeed = extra.fixedSeed;
+    matchService.swap(new LocalBotMatchService(engineDifficulty, config), { mode });
   }, [matchService, mode]);
+
+  // Best recorded run for this mode → enables the "Beat Your Best" ghost.
+  useEffect(() => {
+    const me = profileRef.current;
+    if (!isPro || !me) return;
+    fetchBestGhostRun(me.id, mode).then(setGhostRun).catch(() => {});
+  }, [isPro, mode]);
 
   // Auto-offer the CPU after the queue sits empty for a bit (fallback path).
   useEffect(() => {
-    if (screen !== 'queue' || isCpu || showIntro) {
+    if (screen !== 'queue' || isCpu || showIntro || !cpuSupported) {
       setCpuAutoOffer(false);
       return;
     }
@@ -849,7 +865,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           </div>
 
           {/* Play the CPU — explicit choice + auto-offer once the queue is quiet. */}
-          {!showIntro && !showCountdown && !isCpu && (
+          {!showIntro && !showCountdown && !isCpu && cpuSupported && (
             <div className="w-full max-w-xs mx-auto">
               {showCpuChooser || cpuAutoOffer ? (
                 <div
@@ -886,6 +902,24 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                       >
                         ⚖️ Adaptive — matched to your form
                       </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => ghostRun && startCpu('ghost', { ghost: ghostRun })}
+                          disabled={!ghostRun}
+                          className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-40"
+                          style={{ borderColor: '#64748b', background: 'var(--color-surface-hover)', color: '#475569' }}
+                          title={ghostRun ? 'Race a replay of your best run' : 'Win this mode once to unlock'}
+                        >
+                          👻 Beat Your Best
+                        </button>
+                        <button
+                          onClick={() => startCpu('daily', { fixedSeed: generateDailySeed(getTodayUTC(), `${mode}_CPU`) })}
+                          className="rounded-xl border px-2 py-2 text-[11px] font-black transition-transform hover:-translate-y-0.5"
+                          style={{ borderColor: '#f59e0b', background: 'var(--color-surface-hover)', color: '#b45309' }}
+                        >
+                          📅 Bot of the Day
+                        </button>
+                      </div>
                       <p className="text-center text-[10px] font-bold text-gray-400">Practice only — doesn’t affect your ranked stats</p>
                     </>
                   ) : (

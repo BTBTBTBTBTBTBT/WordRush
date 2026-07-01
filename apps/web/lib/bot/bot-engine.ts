@@ -195,6 +195,8 @@ export interface BotPlan {
 
 export interface BuildOpts {
   targetGuesses?: number;
+  /** Pin the bot's total solve time (ms) — used by ghost races to replay a pace. */
+  targetSolveMs?: number;
   forceSolve?: boolean;
   adaptive?: AdaptiveHint;
 }
@@ -263,6 +265,13 @@ export function buildBotPlan(
       guessLog.push({ boardIndex: bi, guess: word });
     }
     lastAtMs = atMs;
+  }
+
+  // Ghost pacing: rescale the whole timeline to hit a target total solve time.
+  if (opts.targetSolveMs && lastAtMs > 0) {
+    const scale = opts.targetSolveMs / lastAtMs;
+    for (const ev of events) ev.atMs = Math.max(0, ev.atMs * scale);
+    lastAtMs = opts.targetSolveMs;
   }
 
   events.sort((a, b) => a.atMs - b.atMs);
