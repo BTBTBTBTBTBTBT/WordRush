@@ -9,6 +9,7 @@ import {
   evaluateGuess,
 } from '@wordle-duel/core';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SocketIOMatchService, type OpponentGuessLogEntry } from '@/lib/adapters/match-service';
 import { usePresenceId } from '@/lib/presence-id';
 import { useAuth } from '@/lib/auth-context';
@@ -263,6 +264,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const [screen, setScreen] = useState<VsScreen>('queue');
   const [matchService] = useState(() => new SocketIOMatchService(process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001'));
   const presenceId = usePresenceId();
+  const router = useRouter();
   const [seed, setSeed] = useState('');
   const [startTime, setStartTime] = useState(0);
   // Live refs so the socket connect effect can run ONCE per mount and read the
@@ -658,13 +660,16 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const handleCancel = useCallback(() => {
     matchService.leaveQueue();
     matchService.disconnect();
-    window.location.href = '/';
-  }, [matchService]);
+    // Client-side nav (not window.location.href) so home — and its footer —
+    // renders instantly. A hard reload re-downloads + re-hydrates the whole
+    // app, which is why the footer used to take a few seconds to reappear.
+    router.push('/');
+  }, [matchService, router]);
 
   const handleHome = useCallback(() => {
     matchService.disconnect();
-    window.location.href = '/';
-  }, [matchService]);
+    router.push('/');
+  }, [matchService, router]);
 
   const handleRematch = useCallback(() => {
     // Freemium: no rematch allowed after the daily VS game. Show the
