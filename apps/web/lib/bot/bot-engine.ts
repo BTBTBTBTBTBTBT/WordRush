@@ -17,6 +17,9 @@ import {
   createInitialState,
   evaluateGuess,
   getAllowedWords,
+  generateSolutionsFromSeed,
+  GAUNTLET_STAGES,
+  GAUNTLET_TOTAL_SOLUTIONS,
   TileState,
 } from '@wordle-duel/core';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
@@ -33,7 +36,16 @@ const MODE_BOARD_COUNT: Partial<Record<GameMode, number>> = {
   [GameMode.RESCUE]: 4,
   [GameMode.OCTORDLE]: 8,
   [GameMode.MULTI_DUEL]: 2,
+  [GameMode.GAUNTLET]: GAUNTLET_TOTAL_SOLUTIONS, // 21 boards across 5 stages
 };
+
+/** Board index that COMPLETES each Gauntlet stage (last board of the stage). */
+const GAUNTLET_STAGE_LAST_BOARD: number[] = (() => {
+  const out: number[] = [];
+  let cum = 0;
+  for (const s of GAUNTLET_STAGES) { cum += s.boardCount; out.push(cum - 1); }
+  return out; // e.g. [0, 4, 8, 12, 20]
+})();
 
 export function boardCountForMode(mode: GameMode): number {
   return MODE_BOARD_COUNT[mode] ?? 1;
@@ -188,6 +200,8 @@ export interface BotPlan {
   totalGuesses: number;
   /** Ordered progress/typing events to replay on timers. */
   events: BotProgressEvent[];
+  /** Gauntlet: when the opponent clears each stage (drives the 5-node stepper). */
+  stageEvents: { atMs: number; stageIndex: number }[];
   /** Opponent's ordered guess words, revealed only at match end. */
   guessLog: { boardIndex: number; guess: string }[];
   solutions: string[];
@@ -221,12 +235,17 @@ export function buildBotPlan(
   const state = createInitialState(seed, mode);
   const totalBoards = boardCountForMode(mode);
   const params = resolveParams(difficulty, opts.adaptive);
-  const solutions = state.boards.map((b) => b.solution.toUpperCase());
+  // Gauntlet's createInitialState boards hold only the CURRENT stage; the full
+  // 21-board run comes from the seed directly (reducer parity).
+  const solutions = mode === GameMode.GAUNTLET
+    ? generateSolutionsFromSeed(seed, GAUNTLET_TOTAL_SOLUTIONS).map((s) => s.toUpperCase())
+    : state.boards.map((b) => b.solution.toUpperCase());
 
   // Decide overall outcome + per-board guess budgets.
   const willSolveAll = opts.forceSolve ? true : Math.random() > params.failChance;
 
   const events: BotProgressEvent[] = [];
+  const stageEvents: { atMs: number; stageIndex: number }[] = [];
   const guessLog: { boardIndex: number; guess: string }[] = [];
   let cumulativeAttempts = 0;
   let boardsSolved = 0;
@@ -249,6 +268,12 @@ export function buildBotPlan(
       cumulativeAttempts += 1;
       const isSolvingRow = boardSolves && i === path.length - 1;
       if (isSolvingRow) boardsSolved += 1;
+      // Gauntlet: emit a stage-completed marker when the last board of a stage
+      // is solved, so the opponent's 5-node stepper advances.
+      if (isSolvingRow && mode === GameMode.GAUNTLET) {
+        const stageIndex = GAUNTLET_STAGE_LAST_BOARD.indexOf(bi);
+        if (stageIndex >= 0) stageEvents.push({ atMs, stageIndex });
+      }
 
       // Typing ping ~1.1s before the guess lands.
       events.push({ atMs: Math.max(0, atMs - 1100), typing: true });
@@ -271,6 +296,7 @@ export function buildBotPlan(
   if (opts.targetSolveMs && lastAtMs > 0) {
     const scale = opts.targetSolveMs / lastAtMs;
     for (const ev of events) ev.atMs = Math.max(0, ev.atMs * scale);
+    for (const ev of stageEvents) ev.atMs = Math.max(0, ev.atMs * scale);
     lastAtMs = opts.targetSolveMs;
   }
 
@@ -282,6 +308,7 @@ export function buildBotPlan(
     finishAtMs: lastAtMs,
     totalGuesses: cumulativeAttempts,
     events,
+    stageEvents,
     guessLog,
     solutions,
   };

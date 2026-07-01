@@ -153,6 +153,7 @@ export class LocalBotMatchService implements IMatchService {
   private cbMatchFound?: (d: { matchId: string; mode: GameMode; serverStartAt: number; countdownSeconds: number; opponentUserId?: string | null }) => void;
   private cbMatchStart?: (d: { seed: string; startTime: number }) => void;
   private cbOpponentProgress?: (d: any) => void;
+  private cbOpponentStageCompleted?: (d: { stageIndex: number }) => void;
   private cbOpponentTyping?: () => void;
   private cbMatchEnded?: (d: MatchEndedData) => void;
   private cbRematchStart?: (d: { matchId: string; seed: string }) => void;
@@ -232,6 +233,13 @@ export class LocalBotMatchService implements IMatchService {
         if (ev.typing) this.cbOpponentTyping?.();
         else if (ev.progress) this.cbOpponentProgress?.(ev.progress);
       }, ev.atMs);
+    }
+    // Gauntlet: advance the opponent's 5-node stepper at each stage clear.
+    for (const se of plan.stageEvents) {
+      this.schedule(() => {
+        if (this.ended) return;
+        this.cbOpponentStageCompleted?.({ stageIndex: se.stageIndex });
+      }, se.atMs);
     }
     // Bot finishes at the end of its plan.
     this.schedule(() => {
@@ -350,8 +358,8 @@ export class LocalBotMatchService implements IMatchService {
   onMatchEnded(cb: (d: MatchEndedData) => void): void {
     this.cbMatchEnded = cb;
   }
-  onOpponentStageCompleted(): void {
-    /* gauntlet CPU is a later phase */
+  onOpponentStageCompleted(cb: (d: { stageIndex: number }) => void): void {
+    this.cbOpponentStageCompleted = cb;
   }
   onRematchOffered(): void {
     /* CPU rematch is immediate */

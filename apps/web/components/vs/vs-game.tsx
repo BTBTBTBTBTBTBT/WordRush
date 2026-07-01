@@ -275,9 +275,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const isCpu = cpuDifficulty !== null;
   const isCpuRef = useRef(isCpu);
   isCpuRef.current = isCpu;
-  // Gauntlet's staged/sequential 21-board run isn't modeled by the bot yet, so
-  // CPU practice is offered for every other mode.
-  const cpuSupported = mode !== GameMode.GAUNTLET;
+  // CPU practice is available for every mode (Gauntlet's 21-board / 5-stage run
+  // is modeled by the bot engine, which also emits stage-completed events).
+  const cpuSupported = true;
   const [cpuPersona, setCpuPersona] = useState<{ tier: BotTier; name: string; avatar: string; color: string } | null>(null);
   const cpuPersonaRef = useRef(cpuPersona);
   cpuPersonaRef.current = cpuPersona;
