@@ -4,10 +4,11 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameMode } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
-import { Clock } from 'lucide-react';
+import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import NoundleBoard from '@/components/propernoundle/noundle-board';
-import { Guess, TileState } from '@/components/propernoundle/types';
+import { Guess, TileState, type Puzzle } from '@/components/propernoundle/types';
 import { normalizeString, evaluateGuess, checkWin } from '@/components/propernoundle/game-logic';
+import { useHints } from '@/components/propernoundle/use-hints';
 import type { VsGameComponentProps } from './vs-classic';
 
 const MAX_GUESSES = 6;
@@ -43,6 +44,52 @@ export function VsProperNoundle({
 
   const answerLength = puzzleMetadata?.answerLength || 10;
   const answerDisplay = puzzleMetadata?.display || '';
+
+  // Same clue / vowel / consonant hints as solo ProperNoundle. The hint hook
+  // only touches puzzle.answer/display/wikiTitle/hint, so a minimal puzzle-like
+  // object from the VS metadata is enough. Each reveal is added as a hint row
+  // (counts as a guess — the VS cost, mirroring solo's score penalty).
+  const hints = useHints();
+  const hintPuzzle = useMemo(
+    () => ({ id: seed, display: answerDisplay, answer: answerDisplay } as unknown as Puzzle),
+    [seed, answerDisplay],
+  );
+
+  const handleHintClue = useCallback(async () => {
+    if (gameStatus !== 'playing') return;
+    const hintGuess = await hints.fetchClue(hintPuzzle, answerLength);
+    if (hintGuess) {
+      setGuesses((prev) => {
+        const next = [...prev, hintGuess];
+        if (next.length >= MAX_GUESSES) setGameStatus('lost');
+        return next;
+      });
+    }
+  }, [gameStatus, hints, hintPuzzle, answerLength]);
+
+  const handleVowelReveal = useCallback(() => {
+    if (gameStatus !== 'playing') return;
+    const hintGuess = hints.revealVowel(hintPuzzle);
+    if (hintGuess) {
+      setGuesses((prev) => {
+        const next = [...prev, hintGuess];
+        if (next.length >= MAX_GUESSES) setGameStatus('lost');
+        return next;
+      });
+    }
+  }, [gameStatus, hints, hintPuzzle]);
+
+  const handleConsonantReveal = useCallback(() => {
+    if (gameStatus !== 'playing') return;
+    const hintGuess = hints.revealConsonant(hintPuzzle);
+    if (hintGuess) {
+      setGuesses((prev) => {
+        const next = [...prev, hintGuess];
+        if (next.length >= MAX_GUESSES) setGameStatus('lost');
+        return next;
+      });
+    }
+  }, [gameStatus, hints, hintPuzzle]);
 
   useEffect(() => {
     if (gameStatus === 'playing') {
@@ -165,6 +212,13 @@ export function VsProperNoundle({
         />
       </div>
 
+      {/* Hint clue text (once fetched) */}
+      {hints.hint && (
+        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
+          <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
+        </div>
+      )}
+
       {/* Board */}
       <div className="flex-1 min-h-0 flex items-center justify-center px-2 pb-2">
         <NoundleBoard
@@ -176,6 +230,42 @@ export function VsProperNoundle({
           shouldShake={false}
         />
       </div>
+
+      {/* Hint buttons — Clue / Vowel / Consonant, same as solo, hidden once done. */}
+      {gameStatus === 'playing' && (
+        <div className="shrink-0 flex justify-center gap-2 px-4 pb-1">
+          <button
+            onClick={handleHintClue}
+            disabled={hints.hintUsed || hints.loadingHint}
+            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+              hints.hintUsed ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-purple-300 text-purple-600 bg-purple-50 hover:bg-purple-100'
+            }`}
+          >
+            {hints.loadingHint ? <Loader2 className="w-3 h-3 animate-spin" /> : <Lightbulb className="w-3 h-3" />}
+            Clue
+          </button>
+          <button
+            onClick={handleVowelReveal}
+            disabled={hints.vowelUsed}
+            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+              hints.vowelUsed ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-blue-300 text-blue-600 bg-blue-50 hover:bg-blue-100'
+            }`}
+          >
+            <Eye className="w-3 h-3" />
+            {hints.vowelRevealed ? hints.vowelRevealed : 'Vowel'}
+          </button>
+          <button
+            onClick={handleConsonantReveal}
+            disabled={hints.consonantUsed}
+            className={`flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+              hints.consonantUsed ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-teal-300 text-teal-600 bg-teal-50 hover:bg-teal-100'
+            }`}
+          >
+            <Hash className="w-3 h-3" />
+            {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
+          </button>
+        </div>
+      )}
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2">

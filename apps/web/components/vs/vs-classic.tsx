@@ -7,6 +7,7 @@ import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
 import { Clock } from 'lucide-react';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { useClassicHints } from '@/hooks/use-classic-hints';
 
 export interface VsGameComponentProps {
   seed: string;
@@ -30,9 +31,19 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
 
   const currentBoard = state.boards[state.currentBoardIndex];
 
+  // Six/Seven expose the same vowel + consonant hints as solo. Each reveal is
+  // added as a board row (counts as a guess — the VS cost, mirroring solo's
+  // score penalty) and never relayed to the opponent's live board.
+  const hasHints = mode === GameMode.DUEL_6 || mode === GameMode.DUEL_7;
+  const hints = useClassicHints();
+
   const evaluations = useMemo(() => {
-    return currentBoard.guesses.map(g => evaluateGuess(currentBoard.solution, g));
-  }, [currentBoard.guesses, currentBoard.solution]);
+    // Hint rows carry a stored evaluation (revealed letter = CORRECT, rest
+    // HINT_USED); everything else is a normal guess.
+    return currentBoard.guesses.map((g, i) =>
+      currentBoard.hintEvaluations?.[i] ?? evaluateGuess(currentBoard.solution, g),
+    );
+  }, [currentBoard.guesses, currentBoard.solution, currentBoard.hintEvaluations]);
 
   const letterStates = useMemo(() => {
     const states: Record<string, 'correct' | 'present' | 'absent'> = {};
@@ -113,6 +124,18 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKey]);
 
+  const handleVowelHint = useCallback(() => {
+    if (!hasHints || currentBoard.status !== GameStatus.PLAYING) return;
+    const result = hints.revealVowel(currentBoard.solution, currentBoard.guesses);
+    if (result) dispatch({ type: 'SUBMIT_HINT', hintWord: result.hintWord, hintEvaluation: result.hintEvaluation });
+  }, [hasHints, currentBoard.status, currentBoard.solution, currentBoard.guesses, hints.revealVowel]);
+
+  const handleConsonantHint = useCallback(() => {
+    if (!hasHints || currentBoard.status !== GameStatus.PLAYING) return;
+    const result = hints.revealConsonant(currentBoard.solution, currentBoard.guesses);
+    if (result) dispatch({ type: 'SUBMIT_HINT', hintWord: result.hintWord, hintEvaluation: result.hintEvaluation });
+  }, [hasHints, currentBoard.status, currentBoard.solution, currentBoard.guesses, hints.revealConsonant]);
+
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
   const guessesUsed = currentBoard.guesses.length;
   const maxGuesses = currentBoard.maxGuesses;
@@ -157,6 +180,36 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           isInvalidWord={currentGuess.length === currentBoard.solution.length && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
       </div>
+
+      {/* Hint buttons — Six/Seven only, hidden once the board is finished. */}
+      {hasHints && currentBoard.status === GameStatus.PLAYING && (
+        <div className="shrink-0 flex justify-center gap-3 px-4 pb-1">
+          <button
+            onClick={handleVowelHint}
+            disabled={hints.vowelUsed}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
+            style={{
+              background: hints.vowelUsed ? 'var(--color-surface-alt)' : (mode === GameMode.DUEL_6 ? '#06b6d415' : '#84cc1615'),
+              border: `1.5px solid ${hints.vowelUsed ? 'var(--color-border)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16')}`,
+              color: hints.vowelUsed ? 'var(--color-text-muted)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16'),
+            }}
+          >
+            {hints.vowelUsed ? (hints.vowelRevealed === '—' ? 'No vowels left' : `Vowel: ${hints.vowelRevealed}`) : '💡 Vowel'}
+          </button>
+          <button
+            onClick={handleConsonantHint}
+            disabled={hints.consonantUsed}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black transition-all disabled:opacity-40"
+            style={{
+              background: hints.consonantUsed ? 'var(--color-surface-alt)' : (mode === GameMode.DUEL_6 ? '#06b6d415' : '#84cc1615'),
+              border: `1.5px solid ${hints.consonantUsed ? 'var(--color-border)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16')}`,
+              color: hints.consonantUsed ? 'var(--color-text-muted)' : (mode === GameMode.DUEL_6 ? '#06b6d4' : '#84cc16'),
+            }}
+          >
+            {hints.consonantUsed ? (hints.consonantRevealed === '—' ? 'No consonants left' : `Consonant: ${hints.consonantRevealed}`) : '💡 Consonant'}
+          </button>
+        </div>
+      )}
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2">
