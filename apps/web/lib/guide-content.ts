@@ -37,8 +37,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Time bonus cap', value: '5:00' },
     ],
     rules: [
-      'Guess the hidden five-letter word in six tries. Every guess must be a real word — random letter dumps are rejected. After each submission the tiles flip: purple means the letter is in the word and in the right position, amber means it is in the word but somewhere else, and gray means it is not in the word at all.',
-      'Repeated letters are judged individually. If you guess a word with two of the same letter and the answer only contains one, exactly one tile colors and the duplicate shows gray — that gray duplicate is a clue in itself, telling you the letter appears only once.',
+      'New to word games? Here is the whole idea. There is a hidden 5-letter word. You have six tries to find it. Type any real 5-letter word and press enter — then the five tiles change color to tell you how close you were. PURPLE means that letter is correct and in the right spot. AMBER means the letter is in the word but in a different spot. GRAY means the letter is not in the word at all. Use those colors to make a smarter next guess, and keep going until the whole row turns purple.',
+      'One handy detail: repeated letters are scored one at a time. If the answer has only one E but your guess has two, only one of your E tiles will color — the extra E shows gray. That gray duplicate is itself a clue: it tells you the letter appears just once.',
     ],
     scoring: [
       'A win is worth a 1,000-point base. You then earn one point for every second left under the five-minute cap — solve in 1:30 and the time bonus is 210. Completing the board adds a flat 200. There is no separate guess bonus in Classic; fewer guesses pay off indirectly because they make you faster.',
@@ -82,8 +82,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Hints', value: 'Vowel + consonant, −150 pts each' },
     ],
     rules: [
-      'Same color feedback as Classic, but the answers are six letters long and you get seven guesses. The sixth letter changes the texture of the puzzle more than you would expect: there are more candidate words, but they are also more structured — prefixes, suffixes, and double letters appear far more often.',
-      'Six introduces hints. You can reveal one vowel and one consonant from the answer; each reveal appears as its own row on the board showing the letter in its correct position, and each costs 150 points from your final score. A hint row also consumes nothing from your seven guesses — the price is purely in points.',
+      'Guess a hidden 6-letter word in seven tries. Type a real word and press enter, and each tile changes color to guide you: PURPLE means the letter is correct and in the right spot, AMBER means it is in the word but a different spot, and GRAY means it is not in the word. Keep guessing until the row is all purple. It is the same game as Classic, just with 6-letter words instead of 5.',
+      'Six also gives you two optional hints. You can reveal one vowel and one consonant from the answer — each shows up as an extra row with that letter already in its correct spot. Hints do not use up any of your seven guesses, but each one subtracts 150 points from your score, so only use them when you are truly stuck.',
     ],
     scoring: [
       'Win base 1,000, plus one point per second under the six-minute cap, plus 200 for completion. Six also pays a guess bonus that Classic does not: 90 points for every unused guess. Solve in four and you bank 270 on top of everything else.',
@@ -123,8 +123,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Hints', value: 'Vowel + consonant, −150 pts each' },
     ],
     rules: [
-      'The longest solo word in Wordocious: a seven-letter answer with eight guesses to find it. Color feedback works exactly like Classic, and the same vowel/consonant hint system from Six is available at 150 points per reveal.',
-      'At seven letters, almost every answer is built from recognizable parts — a root word wearing a prefix or suffix. The puzzle is less "which letters?" and more "which construction?"',
+      'Guess a hidden 7-letter word in eight tries — the longest solo word in Wordocious. Type a real word and press enter; each tile changes color to help you: PURPLE means the letter is correct and in the right spot, AMBER means it is in the word but a different spot, and GRAY means it is not in the word. Keep guessing until the row turns all purple.',
+      'Like Six, you get two optional hints — reveal one vowel and one consonant from the answer. Each appears as an extra row with the letter in place, does not cost you a guess, and subtracts 150 points from your score, so save them for when you are stuck.',
     ],
     scoring: [
       'Win base 1,000, one point per second under the seven-minute cap, 200 completion, and an 80-point bonus per unused guess. An efficient five-guess solve carries a 240-point guess bonus.',
@@ -164,8 +164,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Completion bonus', value: '50 pts per board' },
     ],
     rules: [
-      'Four hidden words, one shared keyboard. Every guess you submit is applied to all four boards simultaneously, each board coloring its own feedback. Solve a board and it locks with a checkmark; the rest keep accepting your guesses. Win by clearing all four within nine guesses.',
-      'A dedicated quadrant keyboard shows each key split four ways — one sub-cell per board — so you can see at a glance that R is placed on board two, present on board three, and dead on the others.',
+      'You are solving four hidden 5-letter words at the same time, with nine guesses total. Each of the four grids is a "board." When you type one word and press enter, that same guess is tried on all four boards at once, and every board colors its own tiles: PURPLE for a correct letter in the right spot, AMBER for a letter that is in that board\'s word but a different spot, and GRAY for a letter not in it. Solve a board and it locks with a checkmark; you keep guessing until all four are solved or you run out of guesses.',
+      'Because one guess feeds four boards, your on-screen keyboard shows what you have learned for each board separately — each key is split into four small parts, one per board, colored by what that letter did there. It looks busy at first, but it just lets you see all four boards\' clues at a glance.',
     ],
     scoring: [
       'Win base 1,000 plus one point per second under the ten-minute cap. The completion bonus scales: each solved board contributes 50 points (4/4 = 200), and you keep that partial credit even on a loss — solving three of four scores far better than solving one.',
@@ -205,8 +205,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Completion bonus', value: '25 pts per board' },
     ],
     rules: [
-      'QuadWord doubled: eight hidden words, thirteen shared guesses, every submission applied to all eight boards at once. Boards lock as they solve. The quadrant keyboard splits each key eight ways so per-board letter knowledge stays readable.',
-      'Thirteen guesses across eight words leaves an average of 1.6 rows per word after your information-gathering opening — OctoWord is won or lost in the first four rows.',
+      'You are solving eight hidden 5-letter words at the same time, with thirteen guesses total. Each grid is a "board." Type one word, press enter, and that guess is tried on all eight boards at once — each board colors its own tiles: PURPLE for a correct letter in the right spot, AMBER for a letter in that board\'s word but a different spot, and GRAY for a letter not in it. Each board locks with a checkmark once you solve it, and stops using up your guesses. Clear all eight before you run out.',
+      'Since one guess feeds eight boards, your keyboard shows what you have learned for each board separately (each key is split into eight small parts). With only thirteen guesses for eight words, your first few guesses matter a lot — use them to test many common letters before you start locking in answers.',
     ],
     scoring: [
       'Win base 1,000, one point per second under the fifteen-minute cap, and 25 points per solved board (8/8 = 200, partial credit on losses). Guess count still matters for the leaderboard and your records: it is measured as total rows used, not per-board.',
@@ -246,8 +246,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Completion bonus', value: '50 pts per board' },
     ],
     rules: [
-      'Four words, solved strictly left to right. Only the active board shows its colors; the upcoming boards are masked until it is their turn. Here is the twist that defines the mode: every guess you have ever made is applied to each new board the moment it unlocks — board four has silently absorbed all of your previous rows.',
-      'You have ten guesses for the whole chain. The keyboard colors track only the active board, so your eliminations reset visually with each unlock even though the guess history carries over.',
+      'You solve four hidden 5-letter words one at a time, in order, with ten guesses shared across all four. You only work on one board at a time; the next boards stay hidden until you reach them. As always, tiles color PURPLE for a correct letter in the right spot, AMBER for a letter in the word but a different spot, and GRAY for a letter not in it.',
+      'Here is the twist that makes Succession special: when you finish one word and move to the next, that next board already has all of your earlier guesses filled in for you. So the guesses you "spent" on board one keep working on boards two, three, and four. The keyboard colors only follow the board you are currently on, even though your guess history carries forward the whole way.',
     ],
     scoring: [
       'Win base 1,000, one point per second under the eight-minute cap, 50 points per solved board. The recorded guess count is the total rows the run consumed — board one solved in row six and board four solved in row ten records as a ten-guess game.',
@@ -287,8 +287,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Time bonus cap', value: '8:00' },
     ],
     rules: [
-      'Every board starts with the same three guesses already played for you, their tiles fully evaluated. Your job is to rescue all four boards with just six guesses of your own, applied to every board simultaneously like QuadWord.',
-      'The prefilled rows are deterministic per day — every player rescues the same situation, which makes the daily leaderboard a pure deduction contest. The keyboard is pre-colored from the prefills the moment the board loads.',
+      'Deliverance gives you a head start — and a challenge. There are four hidden 5-letter words, and each of the four boards opens with three guesses already played and colored for you (PURPLE = right letter, right spot; AMBER = in the word, wrong spot; GRAY = not in the word). Your job is to read those free clues and finish all four boards using only six guesses of your own. Like QuadWord, each guess you type is tried on all four boards at once.',
+      'Everyone gets the exact same starting position each day, so the daily leaderboard comes down to who reads the clues best. Your keyboard is already colored from those three opening guesses the moment the puzzle loads, so start by studying it before you type.',
     ],
     scoring: [
       'Win base 1,000, one point per second under the eight-minute cap, 50 points per solved board. The recorded guess count covers only YOUR guesses — the three prefilled rows are free.',
@@ -328,8 +328,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Fail condition', value: 'Bust any stage, lose the run' },
     ],
     rules: [
-      'The Gauntlet chains five stages of increasing board count into a single run — from a lone Classic board up through multi-board finales, 21 boards in total. Each stage has its own guess budget; run out of rows on any stage and the entire run ends there.',
-      'Between stages you get a review of what you cleared and what is coming. Your time and guess totals accumulate across the whole run — the Gauntlet is scored as one long game, not five small ones.',
+      'The Gauntlet is a five-stage marathon that gets harder as you go — 21 hidden words in total, all in one continuous run. Stage 1 is a single word (like Classic); later stages ask you to solve several words at once, up to eight in the finale. Each stage gives you a set number of guesses. Solve every word in a stage to advance; if you run out of guesses on any stage, the whole run ends right there. Tiles color the usual way: PURPLE for a right letter in the right spot, AMBER for a right letter in the wrong spot, GRAY for a letter that is not there.',
+      'Between stages you get a quick recap of what you cleared and what is coming next. Your guesses, time, and score add up across all five stages — the Gauntlet is scored as one long game, not five short ones — so pace yourself.',
     ],
     scoring: [
       'Win base 1,000, one point per second under the thirty-minute cap, and completion credit proportional to boards cleared across the entire run: each of the 21 boards is worth about 9.5 points of the 200-point completion pool, and partial runs keep partial credit.',
@@ -369,8 +369,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Hints', value: 'Clue / vowel / consonant, −120 pts each' },
     ],
     rules: [
-      'The answer is a proper noun — a person, place, brand, character, or title — and a category pill tells you which kind. Answers can be multi-word ("first last" names render with a visible gap), and unlike every other mode your guesses don’t need to be dictionary words: any letter string of the right length is accepted.',
-      'Three hints are available, each costing 120 points: a Wikipedia-derived clue sentence about the answer, a vowel reveal, and a consonant reveal. The clue consumes one of your six board rows — vowel and consonant reveals appear as rows showing the revealed letter in position.',
+      'Instead of an everyday word, the answer here is a famous name — a person, place, brand, character, or title (these are called proper nouns). A label at the top tells you which kind you are guessing. You have six tries, and the tiles color just like the other modes: PURPLE for a letter that is correct and in the right spot, AMBER for a letter in the name but a different spot, GRAY for a letter that is not in it. Two things are different: the answer can be more than one word (a "first last" name shows a gap), and your guesses do NOT have to be real dictionary words — any sequence of letters of the right length is allowed, since you are spelling a name.',
+      'Stuck? Three optional hints are available, each costing 120 points: a short clue sentence about the answer (drawn from Wikipedia), a revealed vowel, and a revealed consonant. Each hint shows up as an extra row on the board, so use them sparingly.',
     ],
     scoring: [
       'Win base 1,000, one point per second under the five-minute cap, 200 completion, plus a 100-point bonus per unused guess — the richest guess bonus in the game, because names can be genuinely hard.',
