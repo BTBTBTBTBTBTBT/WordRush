@@ -81,11 +81,6 @@ export function UnlimitedHero() {
       <div className="text-[10px] font-bold mt-0.5" style={{ color: '#7c3aed' }}>
         Infinite puzzles · All stats count
       </div>
-      <div className="text-[10px] font-bold mt-0.5 inline-flex items-center gap-1" style={{ color: '#7c3aed' }}>
-        Tap
-        <Swords className="w-3 h-3" />
-        on any game for VS
-      </div>
     </div>
   );
 }

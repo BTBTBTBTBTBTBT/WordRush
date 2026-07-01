@@ -537,23 +537,8 @@ export default function HomePage() {
                       : mode.desc}
                   </div>
 
-                  {/* VS button — Pro only AND only in Unlimited mode.
-                      Daily mode hides it so the card layout stays clean
-                      (VS daily has its own dedicated button below). */}
-                  {!isLocked && isPro && mode.id !== 'vs' && playMode === 'unlimited' && (
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleVsClick(mode.vsHref);
-                      }}
-                      className="absolute bottom-2.5 right-2.5 w-7 h-7 rounded-lg flex items-center justify-center active:scale-95"
-                      style={{ background: `${mode.accentColor}15` }}
-                      aria-label={`${mode.title} VS`}
-                    >
-                      <Swords className="w-3.5 h-3.5" style={{ color: mode.accentColor }} />
-                    </button>
-                  )}
+                  {/* Per-card VS swords shortcut removed (redundant) — VS is
+                      reachable only from the dedicated VS Battle card. */}
                 </div>
               </Link>
             );
