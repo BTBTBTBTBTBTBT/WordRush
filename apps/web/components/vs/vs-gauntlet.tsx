@@ -167,7 +167,11 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
         return;
       }
 
-      onGuessSubmitted(currentGuess, state.currentBoardIndex);
+      // On the sequential (Succession) stage the guess lands on the active
+      // still-playing board, not currentBoardIndex (which the reducer doesn't
+      // advance for sequence) — relay that so the opponent's board 1+ populates
+      // and the server scores against the right answer (matches native).
+      onGuessSubmitted(currentGuess, isSequential ? Math.max(0, sequenceActiveBoardIndex) : state.currentBoardIndex);
       if (isSingleBoard) {
         dispatch({ type: 'SUBMIT_GUESS', guess: currentGuess, boardIndex: state.currentBoardIndex });
       } else {
