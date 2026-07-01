@@ -162,7 +162,23 @@ final class VSMatchViewModel: ObservableObject {
     /// Unix-ms match start — drives the spectator clock.
     var startTimeMs: Double { matchStartMs }
 
-    private let service = VSMatchService()
+    // Swappable transport: socket by default, hot-swapped to a client-side CPU
+    // bot when the player picks "Play the CPU" (Pro-only practice).
+    private var service: VSTransport = VSMatchService()
+
+    // ── CPU-vs state ──
+    @Published var isCpu = false
+    @Published var cpuPersona: CpuIdentity?
+    private var cpuKind: CpuKind?
+    // Fun layer (CPU only): photo-finish ("photo"/"clutch"), streak milestone,
+    // cosmetic unlock, current streak, and a per-session run-it-back tally.
+    @Published var photoFinish: String?
+    @Published var cpuMilestone: Int?
+    @Published var cpuUnlock: String?
+    @Published var cpuStreak = 0
+    @Published var cpuSessionWins = 0
+    @Published var cpuSessionLosses = 0
+
     private var seed = ""
     private var matchStartMs: Double = 0
     private var resultRecorded = false
@@ -236,6 +252,39 @@ final class VSMatchViewModel: ObservableObject {
         calloutTask?.cancel()
         service.leaveQueue()
         service.disconnect()
+    }
+
+    /// Swap the socket transport for a client-side CPU bot and start a match.
+    /// Pro-gated in the UI. `ghost` supplies (guessCount, timeMs) for Beat Your
+    /// Best; `fixedSeed` is the Bot-of-the-Day daily seed.
+    func startCpu(_ kind: CpuKind, ghost: (guesses: Int, timeMs: Double)? = nil, fixedSeed: String? = nil) {
+        let oppId = CpuOpponent.opponentId(kind)
+        let id = CpuOpponent.identity(oppId)
+        cpuKind = kind
+        cpuPersona = id
+        isCpu = true
+        countdownTimer?.invalidate()
+        service.disconnect()
+
+        var config = BotConfig(opponentId: oppId)
+        if kind == .adaptive {
+            config.adaptive = BotEngine.AdaptiveHint(winRate: min(0.9, 0.4 + Double(CpuProgressionStore.load().streak) * 0.05))
+        }
+        if let ghost { config.ghostGuesses = ghost.guesses; config.ghostTimeMs = ghost.timeMs }
+        if let fixedSeed { config.fixedSeed = fixedSeed }
+        let engineDifficulty = BotDifficulty(rawValue: kind == .adaptive ? "adaptive" : id.tier.rawValue) ?? .medium
+
+        let bot = LocalBotMatchService(difficulty: engineDifficulty, config: config)
+        service = bot
+        screen = .queue
+        resultRecorded = false
+        matchCompletionHandled = false
+        wireHandlers()
+        service.onConnect = { [weak self] in
+            guard let self, self.screen == .queue else { return }
+            self.service.joinQueue(mode: self.mode.rawValue, dailySeed: nil, inviteCode: nil)
+        }
+        service.connect(presenceId: nil)
     }
 
     func forfeit() {
@@ -313,7 +362,11 @@ final class VSMatchViewModel: ObservableObject {
         headToHead = nil
         opponentInfo = nil
         opponentUserId = data.opponentUserId
-        if let oppId = data.opponentUserId {
+        if let oppId = data.opponentUserId, CpuOpponent.isCpu(oppId) {
+            // CPU opponent: use the persona identity locally — no profile / H2H fetch.
+            let id = CpuOpponent.identity(oppId)
+            opponentInfo = VsProfile(username: id.name, avatarUrl: nil, level: 0)
+        } else if let oppId = data.opponentUserId {
             Task { [weak self] in
                 if let p = await HeadToHeadService.fetchVsProfile(userId: oppId) {
                     self?.opponentInfo = p
@@ -514,7 +567,7 @@ final class VSMatchViewModel: ObservableObject {
         result = data
         screen = .result
         recordResult(data)
-        if dailyVsActive { VSPlayLimit.markPlayedToday() }
+        if dailyVsActive && !isCpu { VSPlayLimit.markPlayedToday() }
 
         // Refresh the head-to-head line so the result screen shows the UPDATED
         // record including this match. Small delay gives the single-writer
@@ -536,6 +589,30 @@ final class VSMatchViewModel: ObservableObject {
         let total = game?.boardCount ?? 1
         let theSeed = seed
         let opponentSecs = Int((data.opponentTime / 1000).rounded())
+
+        if isCpu {
+            // Pure practice: record ONLY the separate vs_cpu bucket — no XP, no
+            // matches row, no head-to-head, no achievements, no daily lock.
+            let m = mode
+            let g = data.playerGuesses
+            Task { await GameResultsService.recordCpuResult(gameMode: m, won: won, guessCount: g, timeSeconds: secs) }
+            // Fun layer: progression (streak / ladder / cosmetics / milestone),
+            // session tally, photo-finish on a close / last-guess win.
+            let tier = cpuPersona?.tier ?? .medium
+            let outcome = CpuProgressionStore.recordGame(won: won, tier: tier, personaId: BotPersonas.persona(tier).id)
+            if cpuKind == .daily { CpuProgressionStore.recordBotOfDay(won: won, todayUtc: LeaderboardService.todayUTC()) }
+            cpuStreak = outcome.progression.streak
+            cpuMilestone = outcome.milestone
+            cpuUnlock = outcome.unlockedPersona
+            if won { cpuSessionWins += 1 } else { cpuSessionLosses += 1 }
+            if won {
+                let margin = abs(data.playerTime - data.opponentTime)
+                if margin < 2000 { photoFinish = "photo" }
+                else if data.playerGuesses >= modeMaxGuesses { photoFinish = "clutch" }
+            }
+            return
+        }
+
         Task {
             xpResult = await GameResultsService.record(
                 gameMode: mode, playType: "vs", won: won, guessCount: data.playerGuesses,
