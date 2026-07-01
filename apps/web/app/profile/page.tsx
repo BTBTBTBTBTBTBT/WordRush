@@ -173,7 +173,7 @@ export default function ProfilePage() {
 
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   // Solo/VS toggle (mirrors the public profile) — filters user_stats by play_type.
-  const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
+  const [activeTab, setActiveTab] = useState<'solo' | 'vs' | 'vs_cpu'>('solo');
   const [editOpen, setEditOpen] = useState(false);
   const [showAllMedals, setShowAllMedals] = useState(false);
 
@@ -555,9 +555,9 @@ export default function ProfilePage() {
           );
         })()}
 
-        {/* ── D. Solo/VS toggle + Mode Picker ── */}
+        {/* ── D. Solo / VS / VS CPU toggle + Mode Picker ── */}
         <div className="flex gap-2">
-          {(['solo', 'vs'] as const).map((t) => (
+          {(['solo', 'vs', 'vs_cpu'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
@@ -568,8 +568,8 @@ export default function ProfilePage() {
                 color: activeTab === t ? '#7c3aed' : 'var(--color-text-muted)',
               }}
             >
-              {t === 'solo' ? <User className="w-3.5 h-3.5" /> : <Swords className="w-3.5 h-3.5" />}
-              {t === 'solo' ? 'Solo' : 'VS'}
+              {t === 'solo' ? <User className="w-3.5 h-3.5" /> : t === 'vs' ? <Swords className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+              {t === 'solo' ? 'Solo' : t === 'vs' ? 'VS' : 'VS CPU'}
             </button>
           ))}
         </div>
@@ -598,10 +598,10 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* vs CPU practice record (VS tab, always shown so it's discoverable
-            before the first bot match) — clearly separate from ranked VS: no
+        {/* vs CPU record — its own tab; the mode picker + per-mode scoring below
+            populate from vs_cpu stats just like Solo/VS. Unranked: no
             leaderboard, no XP, no streak. */}
-        {activeTab === 'vs' && (
+        {activeTab === 'vs_cpu' && (
           <div
             className="p-4 flex items-center gap-4"
             style={{ background: 'var(--color-surface)', border: '1.5px dashed var(--color-border)', borderRadius: '16px' }}
@@ -610,7 +610,7 @@ export default function ProfilePage() {
               <Bot className="w-5 h-5" style={{ color: '#64748b' }} />
             </div>
             <div className="flex-1">
-              <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748b' }}>vs CPU · Practice</div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: '#64748b' }}>vs CPU</div>
               <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
                 {cpuRecord.wins}–{cpuRecord.losses}
               </div>
