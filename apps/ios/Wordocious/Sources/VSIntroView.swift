@@ -192,15 +192,18 @@ struct VSMatchHeaderBar: View {
             }
             .frame(height: 8)
 
-            // Typing indicator — visible while opponent pings arrive.
-            if opponentTyping {
-                HStack(spacing: 4) {
-                    Spacer()
-                    Text("\(opponent.username) is typing")
-                        .font(Brand.font(9, .bold)).foregroundStyle(Color(hex: 0xEC4899))
-                    TypingDots()
-                }
+            // Typing indicator — the row's height is ALWAYS reserved (content just
+            // fades in/out) so the header, and every board below it, never shift
+            // when the opponent starts/stops typing.
+            HStack(spacing: 4) {
+                Spacer()
+                Text("\(opponent.username) is typing")
+                    .font(Brand.font(9, .bold)).foregroundStyle(Color(hex: 0xEC4899))
+                TypingDots()
             }
+            .frame(height: 12)
+            .opacity(opponentTyping ? 1 : 0)
+            .animation(Theme.animation(.easeInOut(duration: 0.2)), value: opponentTyping)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface))

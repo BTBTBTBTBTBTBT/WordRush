@@ -66,6 +66,17 @@ struct VSGameView: View {
                     onDone: { vm.showIntro = false })
             }
 
+            // Gauntlet stage-transition overlay — same auto-advancing overlay as
+            // the solo run; covers the board while it re-lays-out for the next
+            // stage so nothing visibly shifts (and no bare Continue button).
+            if vm.screen == .match, let game = vm.game, game.stageCleared {
+                StageTransitionOverlay(completedName: game.gauntletStageName,
+                                       next: game.gauntletNextStageInfo,
+                                       onAdvance: { game.nextStage() })
+                    .transition(.opacity)
+                    .zIndex(5)
+            }
+
             // Moment callout — opponent milestones (greens / board solved / last guess).
             if let c = vm.callout, vm.screen == .match {
                 VStack {
@@ -399,10 +410,17 @@ struct VSGameView: View {
         } else if let game = vm.game {
             VStack(spacing: 0) {
                 matchHeader
+                // Gauntlet: the same 5-node stage stepper as the solo run so you can
+                // always tell which stage you're on.
+                if mode == .gauntlet {
+                    GauntletStepperBar(game: game).padding(.top, 6)
+                }
                 tugOfWarHeader
                     .padding(.horizontal, 10).padding(.top, 6)
                 OpponentStrip(opponent: vm.opponent, gradient: gradient,
-                              maxGuesses: game.maxGuesses, wordLength: game.wordLength)
+                              maxGuesses: game.maxGuesses, wordLength: game.wordLength,
+                              stageName: mode == .gauntlet ? game.gauntletStageName(at: vm.opponent.stagesCleared) : nil,
+                              stageGradient: mode == .gauntlet ? GameScreen.gauntletStageGradient(game.gauntletStageName(at: vm.opponent.stagesCleared)) : [])
                     .padding(.horizontal, 10).padding(.top, 6)
 
                 // Board fills the slack BETWEEN header and keyboard. The keyboard
@@ -414,13 +432,11 @@ struct VSGameView: View {
                 }
                 .padding(.horizontal, 10).padding(.vertical, 4)
                 .layoutPriority(0)
-                // Gauntlet: a cleared stage shows Continue (advance the run)
-                // instead of the keyboard, mirroring the solo GameScreen.
-                if game.stageCleared {
-                    Button(game.isLastStage ? "Finish Gauntlet" : "Continue") { Haptics.success(); game.nextStage() }
-                        .buttonStyle(.borderedProminent).tint(Theme.primary).controlSize(.large)
-                        .padding(.bottom, 10)
-                } else {
+                // Gauntlet: a cleared stage hides the keyboard while the
+                // auto-advancing StageTransitionOverlay (rendered in the top-level
+                // body ZStack) covers the board — matching the solo run, instead of
+                // a bare Continue button.
+                if !game.stageCleared {
                     // Six/Seven expose the same vowel + consonant hints as solo (the
                     // reveal is added as a board row → counts as a guess, the VS cost).
                     if game.hasHints && !game.isFinished { vsHintButtons(game) }
@@ -475,7 +491,12 @@ struct VSGameView: View {
                 if let game = vm.game {
                     TimelineView(.periodic(from: .now, by: 1)) { _ in
                         HStack(spacing: 6) {
-                            Text("\(game.rowsUsed)/\(game.maxGuesses) guesses")
+                            // Gauntlet's per-stage "1/6" is confusing next to the
+                            // cumulative guess count in the tug-of-war, so show only
+                            // the clock there (the stepper conveys the stage).
+                            if mode != .gauntlet {
+                                Text("\(game.rowsUsed)/\(game.maxGuesses) guesses")
+                            }
                             HStack(spacing: 2) {
                                 Image(systemName: "clock").font(.system(size: 9))
                                 Text("\(game.elapsedSeconds / 60):\(String(format: "%02d", game.elapsedSeconds % 60))")
@@ -862,11 +883,62 @@ struct VSGameView: View {
 }
 
 /// Compact opponent progress strip shown above the player's board during a match.
+/// The 5-node Gauntlet stage stepper — a self-contained copy of the solo
+/// GameScreen's stepper so the VS match screen shows the player's stage.
+private struct GauntletStepperBar: View {
+    @ObservedObject var game: GameViewModel
+
+    var body: some View {
+        VStack(spacing: 3) {
+            HStack(spacing: 0) {
+                ForEach(0..<max(game.gauntletStageCount, 1), id: \.self) { i in
+                    if i > 0 {
+                        Rectangle().fill(connector(i)).frame(width: 16, height: 2).padding(.horizontal, 2)
+                    }
+                    node(i)
+                }
+            }
+            // Stage title (gradient) — parity with the solo Gauntlet header.
+            Text(game.gauntletStageName)
+                .font(Brand.font(17, .black))
+                .foregroundStyle(LinearGradient(colors: GameScreen.gauntletStageGradient(game.gauntletStageName),
+                                                startPoint: .leading, endPoint: .trailing))
+        }
+    }
+
+    private func connector(_ i: Int) -> Color {
+        if game.gauntletCompletedIndices.contains(i) { return Color(hex: 0x8B5CF6) }
+        if i == game.gauntletCurrentIndex { return Color(hex: 0xD8B4FE) }
+        return Color(hex: 0xE5E7EB)
+    }
+
+    @ViewBuilder private func node(_ i: Int) -> some View {
+        let completed = game.gauntletCompletedIndices.contains(i)
+        let active = i == game.gauntletCurrentIndex
+        let bg = completed ? Color(hex: 0xEDE9FE) : active ? Color(hex: 0xF3E8FF) : Color(hex: 0xF9FAFB)
+        let border = completed ? Color(hex: 0x8B5CF6) : active ? Color(hex: 0xC084FC) : Color(hex: 0xE5E7EB)
+        let fg = completed ? Color(hex: 0x6D28D9) : active ? Color(hex: 0x9333EA) : Color(hex: 0x9CA3AF)
+        ZStack {
+            Circle().fill(bg).overlay(Circle().stroke(border, lineWidth: 2)).frame(width: 20, height: 20)
+            if completed {
+                Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(fg)
+            } else if active {
+                Image(systemName: "play.fill").font(.system(size: 8)).foregroundStyle(fg).offset(x: 1)
+            } else {
+                Text("\(i + 1)").font(.system(size: 10, weight: .bold)).foregroundStyle(fg)
+            }
+        }
+    }
+}
+
 private struct OpponentStrip: View {
     let opponent: VSMatchViewModel.OpponentProgress
     let gradient: [Color]
     var maxGuesses: Int = 6
     var wordLength: Int = 5
+    /// Gauntlet VS: the opponent's current stage name + its accent gradient.
+    var stageName: String? = nil
+    var stageGradient: [Color] = []
 
     var body: some View {
         VStack(spacing: 8) {
@@ -874,10 +946,18 @@ private struct OpponentStrip: View {
                 Image(systemName: "person.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted)
                 Text("Opponent").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textSecondary)
                 Spacer()
-                // Gauntlet VS: show how many stages the opponent has cleared.
-                if opponent.stagesCleared > 0 {
-                    Label("Stage \(opponent.stagesCleared + 1)", systemImage: "flag.fill")
-                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                // Gauntlet VS: the opponent's current stage — number, flag (tinted
+                // to the stage accent), and the stage name in its gradient.
+                if let stageName {
+                    HStack(spacing: 5) {
+                        Image(systemName: "flag.fill").font(.system(size: 11))
+                            .foregroundStyle(stageGradient.first ?? Theme.textPrimary)
+                        Text("Stage \(opponent.stagesCleared + 1)").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                        Text(stageName).font(Brand.font(12, .black))
+                            .foregroundStyle(LinearGradient(colors: stageGradient.isEmpty ? gradient : stageGradient,
+                                                            startPoint: .leading, endPoint: .trailing))
+                            .lineLimit(1)
+                    }
                 } else if opponent.totalBoards > 1 {
                     Text("\(opponent.boardsSolved)/\(opponent.totalBoards) boards").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
                 }

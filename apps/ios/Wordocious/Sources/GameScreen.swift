@@ -440,7 +440,9 @@ struct GameScreen: View {
 
 /// Gauntlet stage-transition overlay — 1:1 with web stage-transition.tsx.
 /// Auto-advances to the next stage after 2.5s (or on tap).
-private struct StageTransitionOverlay: View {
+// Non-private so the VS Gauntlet screen can reuse the exact same auto-advancing
+// stage-transition overlay (parity with the solo run).
+struct StageTransitionOverlay: View {
     let completedName: String
     let next: (name: String, boards: Int, guesses: Int, sequential: Bool, prefill: Bool)?
     let onAdvance: () -> Void

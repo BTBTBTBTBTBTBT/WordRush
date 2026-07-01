@@ -179,6 +179,13 @@ final class GameViewModel: ObservableObject {
         return g.stages[safe: g.currentStage]?.name ?? "Stage \(g.currentStage + 1)"
     }
 
+    /// Stage name for an arbitrary index — used to label the opponent's current
+    /// stage in VS Gauntlet (both players run the same shared gauntlet).
+    func gauntletStageName(at index: Int) -> String {
+        guard let g = state.gauntlet else { return "" }
+        return g.stages[safe: index]?.name ?? "Stage \(index + 1)"
+    }
+
     var isLastStage: Bool {
         guard let g = state.gauntlet else { return false }
         return g.currentStage >= g.totalStages - 1
