@@ -107,8 +107,10 @@ internal fun Modifier.shakeOnReject(shakeKey: Int): Modifier {
  * bg + 1.5dp accent border; used = muted + #F3F4F6 + disabled. Label shows
  * "💡 Vowel" → "Vowel: X" or "No vowels left".
  */
+// Non-private so the VS screen (ui.vs) can reuse the exact same pills for
+// Six/Seven VS — parity by construction.
 @Composable
-private fun HintPills(
+fun HintPills(
     accent: Color,
     vowelUsed: Boolean, vowelRevealed: String?,
     consonantUsed: Boolean, consonantRevealed: String?,

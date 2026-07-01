@@ -46,8 +46,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.wordocious.app.ui.InviteSheet
 import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.game.GauntletStepper
+import com.wordocious.app.ui.game.HintPills
 import com.wordocious.app.ui.game.KeyboardView
 import com.wordocious.app.ui.game.MultiBoardLayout
 import com.wordocious.app.ui.game.ProperNoundleHints
@@ -92,6 +94,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
     ) {
         when (vm.screen) {
             VSScreen.NOT_CONFIGURED -> NotConfigured(label, gradient, ::goHome)
+            VSScreen.ENTRY -> EntryScreen(label, gradient, vm, onGoPro, ::goHome)
             VSScreen.QUEUE -> QueueScreen(label, gradient, vm.queuePosition, vm.queueSize, vm.message, vm.inviteCode, vm, onGoPro, ::goHome)
             VSScreen.MATCH -> MatchScreen(vm, label, gradient, ::goHome)
             VSScreen.WAITING -> WaitingScreen(vm, gradient, ::goHome)
@@ -178,9 +181,51 @@ private fun QueueScreen(label: String, gradient: List<Color>, position: Int, que
     }
 }
 
+// Difficulty/opponent grid — shared by the entry chooser's Bot Match and the
+// queue-screen auto-offer. Pro-gated (non-Pro sees an unlock CTA).
+@Composable
+private fun CpuChooserBody(vm: VSMatchViewModel, onGoPro: () -> Unit, ghostRun: Pair<Int, Double>?) {
+    if (vm.isPro) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(BotTier.EASY, BotTier.MEDIUM, BotTier.HARD).forEach { tier ->
+                val p = BotPersonas.persona(tier)
+                Column(
+                    Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
+                        .border(1.5.dp, Color(p.color), RoundedCornerShape(12.dp))
+                        .clickableNoRipple { vm.startCpu(CpuKind.valueOf(tier.name)) }.padding(vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(p.avatar, fontSize = 20.sp)
+                    Text(BotPersonas.tierLabel(tier), fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(p.color))
+                    Text(p.name, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+            }
+        }
+        CpuSpecial("⚖️ Adaptive — matched to your form", 0xFF7C3AED, Modifier.fillMaxWidth()) { vm.startCpu(CpuKind.ADAPTIVE) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CpuSpecial(
+                if (ghostRun == null) "👻 Beat Your Best (win first)" else "👻 Beat Your Best",
+                0xFF64748B, Modifier.weight(1f).then(if (ghostRun == null) Modifier.alpha(0.45f) else Modifier),
+            ) { ghostRun?.let { (g, t) -> vm.startCpu(CpuKind.GHOST, ghostGuesses = g, ghostTimeMs = t) } }
+            CpuSpecial("📅 Bot of the Day", 0xFFF59E0B, Modifier.weight(1f)) {
+                vm.startCpu(CpuKind.DAILY, fixedSeed = com.wordocious.core.generateDailySeed(CpuProgressionStore.todayUtc(), "${vm.mode.name}_CPU"))
+            }
+        }
+        Text("Practice only — doesn’t affect your ranked stats", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+    } else {
+        Box(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                .background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))))
+                .clickableNoRipple { onGoPro() }.padding(vertical = 10.dp),
+            Alignment.Center,
+        ) { Text("🔒 Unlock with Pro", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White) }
+    }
+}
+
+// Queue-screen auto-offer once the human queue sits quiet (the explicit Bot
+// Match choice now lives on the entry chooser).
 @Composable
 private fun CpuChooser(vm: VSMatchViewModel, onGoPro: () -> Unit) {
-    var showChooser by remember { mutableStateOf(false) }
     var autoOffer by remember { mutableStateOf(false) }
     var ghostRun by remember { mutableStateOf<Pair<Int, Double>?>(null) }
     LaunchedEffect(Unit) { kotlinx.coroutines.delay(15_000); if (!vm.isCpu) autoOffer = true }
@@ -188,54 +233,82 @@ private fun CpuChooser(vm: VSMatchViewModel, onGoPro: () -> Unit) {
         val uid = com.wordocious.app.data.AuthService.userId
         if (vm.isPro && uid != null) ghostRun = com.wordocious.app.data.MatchStatsService.ghostBestRun(uid, vm.mode.name)
     }
-
-    if (showChooser || autoOffer) {
+    if (autoOffer) {
         Column(
             Modifier.widthIn(max = 340.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(if (autoOffer && !showChooser) "No players right now — play the CPU?" else "Play the CPU",
-                fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            if (vm.isPro) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(BotTier.EASY, BotTier.MEDIUM, BotTier.HARD).forEach { tier ->
-                        val p = BotPersonas.persona(tier)
-                        Column(
-                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
-                                .border(1.5.dp, Color(p.color), RoundedCornerShape(12.dp))
-                                .clickableNoRipple { vm.startCpu(CpuKind.valueOf(tier.name)) }.padding(vertical = 10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(p.avatar, fontSize = 20.sp)
-                            Text(BotPersonas.tierLabel(tier), fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(p.color))
-                            Text(p.name, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                        }
-                    }
-                }
-                CpuSpecial("⚖️ Adaptive — matched to your form", 0xFF7C3AED, Modifier.fillMaxWidth()) { vm.startCpu(CpuKind.ADAPTIVE) }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CpuSpecial(
-                        if (ghostRun == null) "👻 Beat Your Best (win first)" else "👻 Beat Your Best",
-                        0xFF64748B, Modifier.weight(1f).then(if (ghostRun == null) Modifier.alpha(0.45f) else Modifier),
-                    ) { ghostRun?.let { (g, t) -> vm.startCpu(CpuKind.GHOST, ghostGuesses = g, ghostTimeMs = t) } }
-                    CpuSpecial("📅 Bot of the Day", 0xFFF59E0B, Modifier.weight(1f)) {
-                        vm.startCpu(CpuKind.DAILY, fixedSeed = com.wordocious.core.generateDailySeed(CpuProgressionStore.todayUtc(), "${vm.mode.name}_CPU"))
-                    }
-                }
-                Text("Practice only — doesn’t affect your ranked stats", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            } else {
-                Box(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))))
-                        .clickableNoRipple { onGoPro() }.padding(vertical = 10.dp),
-                    Alignment.Center,
-                ) { Text("🔒 Unlock with Pro", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White) }
-            }
+            Text("No players right now — play the CPU?", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            CpuChooserBody(vm, onGoPro, ghostRun)
         }
-    } else {
-        Text("Play the CPU instead", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
-            modifier = Modifier.clickableNoRipple { showChooser = true })
+    }
+}
+
+// Entry chooser — the first screen when tapping a VS mode: Quick Match (live
+// queue), Bot Match (CPU practice), or Invite a Friend (private match).
+@Composable
+private fun EntryScreen(label: String, gradient: List<Color>, vm: VSMatchViewModel, onGoPro: () -> Unit, onHome: () -> Unit) {
+    var showBot by remember { mutableStateOf(false) }
+    var showInvite by remember { mutableStateOf(false) }
+    var ghostRun by remember { mutableStateOf<Pair<Int, Double>?>(null) }
+    LaunchedEffect(vm.mode) {
+        val uid = com.wordocious.app.data.AuthService.userId
+        if (vm.isPro && uid != null) ghostRun = com.wordocious.app.data.MatchStatsService.ghostBestRun(uid, vm.mode.name)
+    }
+    if (showInvite) InviteSheet { showInvite = false }
+    Column(
+        Modifier.fillMaxSize().padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
+    ) {
+        VsTitle(label, gradient, 36)
+        if (showBot) {
+            Column(
+                Modifier.widthIn(max = 360.dp).clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted,
+                        modifier = Modifier.clickableNoRipple { showBot = false })
+                    Text("🤖 Choose your opponent", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                }
+                CpuChooserBody(vm, onGoPro, ghostRun)
+            }
+        } else {
+            Column(Modifier.widthIn(max = 380.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                EntryOption("⚡", listOf(Color(0xFFA78BFA), Color(0xFFEC4899)), "Quick Match", "Get matched with a live opponent") { vm.joinHumanQueue() }
+                EntryOption("🤖", null, "Bot Match", "Practice vs the CPU — pick a difficulty", locked = !vm.isPro) {
+                    if (vm.isPro) showBot = true else onGoPro()
+                }
+                EntryOption("👥", null, "Invite a Friend", "Send a private match link or @username") { showInvite = true }
+            }
+            Text("Cancel", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                modifier = Modifier.clickableNoRipple { onHome() })
+        }
+    }
+}
+
+@Composable
+private fun EntryOption(emoji: String, iconGradient: List<Color>?, title: String, subtitle: String, locked: Boolean = false, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).clickableNoRipple(onClick).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(
+            Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
+                .then(if (iconGradient != null) Modifier.background(Brush.linearGradient(iconGradient)) else Modifier.background(Color(0xFF64748B).copy(alpha = 0.12f))),
+            Alignment.Center,
+        ) { Text(emoji, fontSize = 22.sp) }
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                if (locked) Text("🔒", fontSize = 11.sp)
+            }
+            Text(subtitle, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
     }
 }
 
@@ -405,6 +478,20 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
                 clueUsed = clueText != null || loadingClue, loadingClue = loadingClue,
                 vowelRevealed = vRev, consonantRevealed = cRev,
                 onClue = { game.revealClue() }, onVowel = { game.revealVowel() }, onConsonant = { game.revealConsonant() },
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+        // Six/Seven VS: Vowel/Consonant hint pills (parity with solo — each reveal
+        // is a board row → counts as a guess, the VS cost). Cyan Six / lime Seven.
+        if ((vm.mode == GameMode.DUEL_6 || vm.mode == GameMode.DUEL_7) && game.hasHints) {
+            val vUsed by game.vowelUsed.collectAsState()
+            val cUsed by game.consonantUsed.collectAsState()
+            val vRev by game.vowelRevealed.collectAsState()
+            val cRev by game.consonantRevealed.collectAsState()
+            HintPills(
+                accent = if (vm.mode == GameMode.DUEL_7) Color(0xFF84CC16) else Color(0xFF06B6D4),
+                vowelUsed = vUsed, vowelRevealed = vRev, consonantUsed = cUsed, consonantRevealed = cRev,
+                onVowel = { game.revealVowel() }, onConsonant = { game.revealConsonant() },
             )
             Spacer(Modifier.height(6.dp))
         }

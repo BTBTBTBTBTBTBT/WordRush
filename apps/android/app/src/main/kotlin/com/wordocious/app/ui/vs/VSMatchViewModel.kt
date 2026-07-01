@@ -53,7 +53,7 @@ import kotlin.math.roundToInt
  * and achievement writes (checkAchievements via GameResultsService.record) are
  * wired too. Nothing VS is deferred on Android now.
  */
-enum class VSScreen { QUEUE, MATCH, WAITING, RESULT, OPPONENT_LEFT, ALREADY_PLAYED_DAILY, NOT_CONFIGURED }
+enum class VSScreen { ENTRY, QUEUE, MATCH, WAITING, RESULT, OPPONENT_LEFT, ALREADY_PLAYED_DAILY, NOT_CONFIGURED }
 enum class RematchState { IDLE, OFFERED, RECEIVED, DECLINED }
 
 class OpponentProgressState {
@@ -175,6 +175,16 @@ class VSMatchViewModel(
             }
             return
         }
+        // Standard flow: show the entry chooser (Quick Match / Bot Match / Invite)
+        // first. Accepting a private invite link auto-joins the human queue.
+        if (inviteCode != null) connectAndQueue(dailySeed) else screen = VSScreen.ENTRY
+    }
+
+    /** Quick Match — join the live human queue (deferred from mount so the entry
+     *  chooser can offer Bot Match / Invite first). */
+    fun joinHumanQueue() {
+        val dailySeed: String? = if (dailyVsActive) generateDailySeed(todayUTCDate(), "DUEL_VS") else null
+        screen = VSScreen.QUEUE
         connectAndQueue(dailySeed)
     }
 
