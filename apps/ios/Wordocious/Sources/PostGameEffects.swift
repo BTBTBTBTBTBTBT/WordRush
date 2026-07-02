@@ -129,6 +129,10 @@ struct VictoryOverlay: View {
                         statBlock(timeStr, "TIME")
                     }
                     .padding(.top, 4)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        (isMulti ? "\(boardsSolved) of \(totalBoards) boards solved. " : "")
+                        + "\(guesses)\(maxGuesses > 0 ? " of \(maxGuesses)" : "") guesses. Time \(timeStr)")
 
                     Text("Tap anywhere to continue").font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xC4B5FD)).padding(.top, 4)
                 }

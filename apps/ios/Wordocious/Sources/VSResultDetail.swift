@@ -241,6 +241,17 @@ struct VSScoreCard: View {
         .padding(16).frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(a11ySummary)
+    }
+
+    /// One spoken sentence for the whole score card.
+    private var a11ySummary: String {
+        func side(_ p: Player) -> String {
+            "\(p.name): score \(String(format: "%.2f", p.score)), \(p.guesses) guesses, \(Self.clock(p.timeMs)), \(p.solved ? "solved" : "not solved")"
+        }
+        let outcome = isDraw ? "Draw" : (me.isWinner ? "You won" : "\(opponent.name) won")
+        return "Final score. \(outcome). \(side(me)). Versus. \(side(opponent)). Lowest score wins, but solving always beats not solving."
     }
 
     private func column(_ p: Player, accent: Color) -> some View {

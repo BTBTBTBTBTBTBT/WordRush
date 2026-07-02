@@ -90,6 +90,27 @@ struct TileView: View {
     }
 }
 
+extension TileState {
+    /// VoiceOver name for a revealed tile's evaluation.
+    var a11yName: String {
+        switch self {
+        case .correct: return "correct"
+        case .present: return "wrong position"
+        case .absent: return "not in word"
+        case .hintUsed: return "revealed by hint"
+        default: return ""
+        }
+    }
+}
+
+/// One spoken sentence for a whole revealed row — VoiceOver reads the guess
+/// then each letter's result, instead of five separate unlabeled tiles.
+func a11yRowLabel(_ eval: GuessResult) -> String {
+    let word = eval.tiles.map(\.letter).joined()
+    let parts = eval.tiles.map { "\($0.letter), \($0.state.a11yName)" }
+    return "\(word). " + parts.joined(separator: ". ")
+}
+
 /// Renders one board (by index) from the view model: prefilled rows (Rescue),
 /// committed guesses, the shared current-input row, then empty filler.
 struct BoardView: View {
@@ -170,12 +191,16 @@ struct BoardView: View {
             }
             .modifier(ShakeEffect(animatableData: CGFloat(vm.shakeCount)))
             .animation(Theme.animation(.linear(duration: 0.4)), value: vm.shakeCount)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(letters.isEmpty ? "Current guess row, empty"
+                : "Current guess: \(letters.map(String.init).joined(separator: ", "))\(invalid ? ". Not a valid word" : "")")
         } else {
             HStack(spacing: spacing) {
                 ForEach(0..<vm.wordLength, id: \.self) { _ in
                     TileView(letter: "", state: .empty, revealed: false, size: tileSize, height: tileHeight)
                 }
             }
+            .accessibilityHidden(true)   // unused filler rows are noise to VoiceOver
         }
     }
 
@@ -204,6 +229,8 @@ struct BoardView: View {
                 }
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(a11yRowLabel(eval))
     }
 }
 

@@ -51,6 +51,8 @@ struct KeyboardView: View {
                 .background(RoundedRectangle(cornerRadius: 6).fill(bg))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(letter)
+        .accessibilityValue(state?.a11yName ?? "")
     }
 
     /// Per-board quadrant key (QuadWord/OctoWord/Deliverance) — mirrors web
@@ -92,6 +94,17 @@ struct KeyboardView: View {
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.border, lineWidth: 1.5))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(letter)
+        .accessibilityValue(quadrantA11yValue(states))
+    }
+
+    /// Spoken per-board summary for a quadrant key, e.g. "board 1 correct, board 3 not in word".
+    private func quadrantA11yValue(_ states: [TileState?]) -> String {
+        let parts = states.enumerated().compactMap { i, st -> String? in
+            guard let st, !st.a11yName.isEmpty else { return nil }
+            return "board \(i + 1) \(st.a11yName)"
+        }
+        return parts.joined(separator: ", ")
     }
 
     private func quadColor(_ st: TileState?) -> some View {
@@ -125,6 +138,7 @@ struct KeyboardView: View {
             .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label == "⌫" ? "Delete" : "Submit guess")
     }
 }
 

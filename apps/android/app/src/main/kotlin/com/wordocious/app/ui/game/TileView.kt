@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -30,6 +32,15 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.TileState
 import kotlinx.coroutines.delay
+
+/** Spoken name for a tile's evaluation (TalkBack). */
+fun tileStateName(state: TileState): String = when (state) {
+    TileState.CORRECT -> "correct"
+    TileState.PRESENT -> "wrong position"
+    TileState.ABSENT -> "not in word"
+    TileState.HINT_USED -> "revealed by hint"
+    else -> ""
+}
 
 /**
  * Single tile — matches the web Board's `Tile` component (border-2, tile colors,
@@ -108,7 +119,11 @@ fun TileView(
             }
             .clip(RoundedCornerShape(cornerRadius))
             .background(bgColor)
-            .then(if (showBorder) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier),
+            .then(if (showBorder) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier)
+            // TalkBack reads the letter plus its evaluation instead of a bare glyph.
+            .then(if (letter.isNotBlank() && !masked) Modifier.semantics {
+                contentDescription = if (filled) "$letter, ${tileStateName(state)}" else letter
+            } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Text(

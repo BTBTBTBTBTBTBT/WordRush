@@ -25,6 +25,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -81,7 +85,7 @@ fun KeyboardView(
                         QuadrantKey(ch.toString(), perBoardStates, tap)
                     } else {
                         val state = letterStates[ch.toString()] ?: TileState.EMPTY
-                        LetterKey(ch.toString(), WTheme.keyColor(state), tap)
+                        LetterKey(ch.toString(), WTheme.keyColor(state), state, tap)
                     }
                 }
                 if (rowIdx == 2) WideKey("ENTER") {
@@ -120,6 +124,14 @@ private fun RowScope.QuadrantKey(
             .clip(RoundedCornerShape(6.dp))
             .background(if (allAbsent) Color(0xFF9CA3AF) else WTheme.keyDefault)
             .border(1.5.dp, WTheme.borderAlt, RoundedCornerShape(6.dp))
+            .semantics {
+                role = Role.Button
+                // Spoken per-board summary, e.g. "A, board 1 correct, board 3 not in word".
+                val parts = cellStates.mapIndexedNotNull { i, st ->
+                    tileStateName(st).takeIf { it.isNotEmpty() }?.let { "board ${i + 1} $it" }
+                }
+                contentDescription = if (parts.isEmpty()) letter else "$letter, ${parts.joinToString(", ")}"
+            }
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -161,8 +173,9 @@ private fun quadColor(state: TileState): Color = when (state) {
 // unstated keys get a 1.5px border (web: `1.5px solid var(--color-border)`);
 // colored (stated) keys are borderless — exactly like keyboard.tsx.
 @Composable
-private fun RowScope.LetterKey(label: String, bg: Color, onClick: () -> Unit) {
+private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onClick: () -> Unit) {
     val unstated = bg == WTheme.keyDefault
+    val stateName = tileStateName(state)
     Box(
         modifier = Modifier
             .weight(1f)
@@ -170,6 +183,10 @@ private fun RowScope.LetterKey(label: String, bg: Color, onClick: () -> Unit) {
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
             .then(if (unstated) Modifier.border(1.5.dp, WTheme.borderAlt, RoundedCornerShape(6.dp)) else Modifier)
+            .semantics {
+                role = Role.Button
+                contentDescription = if (stateName.isEmpty()) label else "$label, $stateName"
+            }
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -192,6 +209,10 @@ private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
             .clip(RoundedCornerShape(6.dp))
             .background(WTheme.keyDefault)
             .border(1.5.dp, WTheme.borderAlt, RoundedCornerShape(6.dp))
+            .semantics {
+                role = Role.Button
+                contentDescription = if (label == "BACK") "Delete" else "Submit guess"
+            }
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
     ) {
