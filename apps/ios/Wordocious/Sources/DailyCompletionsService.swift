@@ -91,6 +91,7 @@ final class DailyCompletionsStore: ObservableObject {
             if let existing = self.byMode[c.gameMode], existing.completed && !c.completed { return }
             self.byMode[c.gameMode] = c
             Self.writeCache(self.byMode)
+            WidgetBridge.update(completions: self.byMode)
         }
     }
 
@@ -118,6 +119,7 @@ final class DailyCompletionsStore: ObservableObject {
             for (k, v) in byMode where merged[k] == nil { merged[k] = v }
             byMode = merged
             Self.writeCache(byMode)
+            WidgetBridge.update(completions: byMode)
         } catch {
             // Keep the cached state on a transient failure instead of blanking.
         }
