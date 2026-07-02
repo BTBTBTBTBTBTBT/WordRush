@@ -1313,3 +1313,114 @@ export async function recordCpuResult(
     /* best-effort practice write */
   }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Free-tier deep stats (restat R3) — all derived from data
+   already stored per game (matches.player1/2_guesses,
+   created_at, daily_results.composite_score).
+   ═══════════════════════════════════════════════════════ */
+
+export interface OpenerStat {
+  word: string;
+  count: number;
+  wins: number;
+  winRate: number; // 0–100
+}
+
+/**
+ * Opener Lab (basic): the user's most-used STARTING words and how often games
+ * that opened with them were won. First guess only — same source rows as
+ * fetchTopWordsAllTime.
+ */
+export async function fetchOpenerStats(userId: string, limit: number = 5): Promise<OpenerStat[]> {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('player1_id, player1_guesses, player2_guesses, winner_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .not('player1_guesses', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1000) as {
+    data: Array<{ player1_id: string; player1_guesses: string[]; player2_guesses: string[] | null; winner_id: string | null }> | null;
+  };
+
+  const map = new Map<string, { count: number; wins: number }>();
+  for (const row of data || []) {
+    const guesses = row.player1_id === userId ? row.player1_guesses : row.player2_guesses;
+    if (!Array.isArray(guesses) || guesses.length === 0) continue;
+    const opener = String(guesses[0]).toUpperCase();
+    const entry = map.get(opener) || { count: 0, wins: 0 };
+    entry.count++;
+    if (row.winner_id === userId) entry.wins++;
+    map.set(opener, entry);
+  }
+
+  return Array.from(map.entries())
+    .map(([word, s]) => ({ word, count: s.count, wins: s.wins, winRate: Math.round((s.wins / s.count) * 100) }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+export interface WeekdayFormDay {
+  dow: number;   // 0 = Sunday … 6 = Saturday, LOCAL time
+  played: number;
+  won: number;
+}
+
+/** Win rate by LOCAL day of week (last 500 games) — "your best day" card. */
+export async function fetchWeekdayForm(userId: string): Promise<WeekdayFormDay[]> {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('player1_id, winner_id, created_at')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .order('created_at', { ascending: false })
+    .limit(500) as { data: Array<{ winner_id: string | null; created_at: string }> | null };
+
+  const days: WeekdayFormDay[] = Array.from({ length: 7 }, (_, dow) => ({ dow, played: 0, won: 0 }));
+  for (const row of data || []) {
+    const d = new Date(row.created_at).getDay();
+    days[d].played++;
+    if (row.winner_id === userId) days[d].won++;
+  }
+  return days;
+}
+
+export interface DailyStanding {
+  /** Average top-percentile across today's played dailies (1 = top 1%). */
+  topPercent: number;
+  modesCounted: number;
+}
+
+/**
+ * Where the user's daily composite scores sit in today's field, averaged
+ * across the modes they've played today. One lightweight score-list query per
+ * played mode (≤9).
+ */
+export async function fetchTodayDailyStanding(userId: string): Promise<DailyStanding | null> {
+  const day = new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
+  const { data: mine } = await (supabase as any)
+    .from('daily_results')
+    .select('game_mode, composite_score')
+    .eq('user_id', userId)
+    .eq('day', day)
+    .eq('play_type', 'solo') as { data: Array<{ game_mode: string; composite_score: number }> | null };
+  if (!mine || mine.length === 0) return null;
+
+  const percentiles: number[] = [];
+  for (const row of mine) {
+    const { data: field } = await (supabase as any)
+      .from('daily_results')
+      .select('composite_score')
+      .eq('day', day)
+      .eq('game_mode', row.game_mode)
+      .eq('play_type', 'solo')
+      .limit(2000) as { data: Array<{ composite_score: number }> | null };
+    if (!field || field.length < 2) continue;
+    const better = field.filter((f) => f.composite_score > row.composite_score).length;
+    percentiles.push(Math.max(1, Math.round(((better + 1) / field.length) * 100)));
+  }
+  if (percentiles.length === 0) return null;
+  return {
+    topPercent: Math.round(percentiles.reduce((s, p) => s + p, 0) / percentiles.length),
+    modesCounted: percentiles.length,
+  };
+}

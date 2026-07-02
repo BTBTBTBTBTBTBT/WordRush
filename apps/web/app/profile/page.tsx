@@ -35,7 +35,7 @@ const ProStats = dynamic(() => import('@/components/profile/pro-stats').then(m =
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
-import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar, fetchTopWordsAllTime, fetchDailyPointsOverTime } from '@/lib/stats-service';
+import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar, fetchTopWordsAllTime, fetchDailyPointsOverTime, fetchOpenerStats, fetchWeekdayForm, fetchTodayDailyStanding } from '@/lib/stats-service';
 import { PointsChart } from '@/components/profile/sweep-stats';
 import { GuessDistribution } from '@/components/profile/guess-distribution';
 import { SolveTimeChart } from '@/components/profile/solve-time-chart';
@@ -103,7 +103,7 @@ export default function ProfilePage() {
   const { data: profileData, isLoading: loadingStats } = useSWR(
     profile ? ['profile-data', profile.id] : null,
     async () => {
-      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes, sweepPointsRes] = await Promise.all([
+      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes, sweepPointsRes, openersRes, weekdayRes, standingRes] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
         supabase.from('matches')
           .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit')
@@ -120,6 +120,9 @@ export default function ProfilePage() {
         fetchDailyCalendar(profile!.id, 90),
         fetchTopWordsAllTime(profile!.id, 5),
         fetchDailyPointsOverTime(profile!.id, 30),
+        fetchOpenerStats(profile!.id, 5),
+        fetchWeekdayForm(profile!.id),
+        fetchTodayDailyStanding(profile!.id),
       ]);
       // Resolve opponent usernames for VS rows in Recent Matches.
       const matchRows = matchesRes as Match[];
@@ -151,6 +154,9 @@ export default function ProfilePage() {
         calendar: calendarRes,
         topWordsAllTime: topWordsRes,
         sweepPoints: sweepPointsRes,
+        openers: openersRes,
+        weekdayForm: weekdayRes,
+        standing: standingRes,
       };
     },
     { revalidateOnFocus: true, onError: (err: any) => handleSupabaseError(err, 'profile-data') },
@@ -168,6 +174,9 @@ export default function ProfilePage() {
   const calendar = profileData?.calendar ?? [];
   const topWordsAllTime = profileData?.topWordsAllTime ?? [];
   const sweepPoints = profileData?.sweepPoints ?? [];
+  const openers = profileData?.openers ?? [];
+  const weekdayForm = profileData?.weekdayForm ?? [];
+  const standing = profileData?.standing ?? null;
 
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   // Solo/VS toggle (mirrors the public profile) — filters user_stats by play_type.
@@ -513,6 +522,17 @@ export default function ProfilePage() {
           isPro={isProActive}
         />
 
+        {/* Daily standing — where today's composite scores sit in the field. */}
+        {standing && (
+          <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: 'linear-gradient(135deg, #f5f3ff, #fce7f3)', border: '1.5px solid #e9d5ff', borderRadius: '14px' }}>
+            <TrendingUp className="w-4 h-4 shrink-0" style={{ color: '#7c3aed' }} />
+            <span className="text-[11px] font-extrabold" style={{ color: 'var(--color-text)' }}>
+              You&apos;re in the <b style={{ color: '#7c3aed' }}>top {standing.topPercent}%</b> today
+              <span style={{ color: 'var(--color-text-muted)' }}> · across {standing.modesCounted} {standing.modesCounted === 1 ? 'daily' : 'dailies'}</span>
+            </span>
+          </div>
+        )}
+
         {/* ── D. Solo / VS / VS CPU toggle + Mode Picker ── */}
         <div className="flex gap-2">
           {(['solo', 'vs', 'vs_cpu'] as const).map((t) => (
@@ -679,6 +699,69 @@ export default function ProfilePage() {
                 <TopWordsCard words={topWordsAllTime} accentColor="#7c3aed" />
               </>
             )}
+
+            {/* Opener Lab (basic): favorite starting words + how they convert. */}
+            {openers.length > 0 && (
+              <>
+                <SectionHeader label="Opener Lab" accent="#06b6d4" />
+                <KitCard>
+                  <div className="space-y-1.5">
+                    {openers.map((o, i) => (
+                      <div key={o.word} className="flex items-center gap-2.5 p-2" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
+                        <span className="text-[10px] font-black w-4 text-center" style={{ color: 'var(--color-text-muted)' }}>{i + 1}</span>
+                        <span className="text-sm font-black tracking-wider flex-1" style={{ color: 'var(--color-text)' }}>{o.word}</span>
+                        <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{o.count}×</span>
+                        <span className="text-xs font-black w-12 text-right" style={{ color: o.winRate >= 50 ? WIN_FG : '#dc2626' }}>{o.winRate}% W</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[9px] font-bold mt-2 text-center" style={{ color: 'var(--color-text-muted)' }}>Win rate of games opened with each word</p>
+                </KitCard>
+              </>
+            )}
+
+            {/* Weekday form: your best (and worst) day of the week. */}
+            {weekdayForm.some((d) => d.played > 0) && (() => {
+              const maxPlayed = Math.max(1, ...weekdayForm.map((d) => d.played));
+              const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+              const withRate = weekdayForm.filter((d) => d.played >= 3);
+              const best = withRate.length > 0 ? withRate.reduce((a, b) => (b.won / b.played > a.won / a.played ? b : a)) : null;
+              const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              return (
+                <>
+                  <SectionHeader label="Weekday Form" accent="#f97316" />
+                  <ChartCard
+                    title="Win rate by day"
+                    hint={best ? `Best: ${dayNames[best.dow]} (${Math.round((best.won / best.played) * 100)}%)` : undefined}
+                  >
+                    <div className="flex items-end justify-between gap-1.5 h-20">
+                      {weekdayForm.map((d) => {
+                        const rate = d.played > 0 ? d.won / d.played : 0;
+                        return (
+                          <div key={d.dow} className="flex-1 flex flex-col items-center gap-1">
+                            <span className="text-[8px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                              {d.played > 0 ? `${Math.round(rate * 100)}%` : ''}
+                            </span>
+                            <div className="w-full flex items-end" style={{ height: 44 }}>
+                              <div
+                                className="w-full rounded-t"
+                                style={{
+                                  height: `${d.played === 0 ? 4 : 10 + rate * 90}%`,
+                                  background: d.played === 0 ? 'var(--color-border)' : best && d.dow === best.dow ? 'linear-gradient(180deg, #fbbf24, #f97316)' : 'linear-gradient(180deg, #a78bfa, #7c3aed)',
+                                  opacity: d.played === 0 ? 1 : 0.5 + 0.5 * (d.played / maxPlayed),
+                                }}
+                                title={`${d.won}/${d.played} won`}
+                              />
+                            </div>
+                            <span className="text-[9px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{labels[d.dow]}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ChartCard>
+                </>
+              );
+            })()}
 
             {/* Insights */}
             {insights.length > 0 && (
