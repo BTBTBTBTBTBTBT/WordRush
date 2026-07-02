@@ -801,6 +801,7 @@ export default function ProfilePage() {
               gameMode={selectedMode}
               isPro={isProActive}
               stats={getStatsForMode(selectedMode)}
+              playType={activeTab}
             />
           </div>
         )}

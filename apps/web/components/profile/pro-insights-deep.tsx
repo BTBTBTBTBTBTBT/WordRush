@@ -25,7 +25,9 @@ const RADAR_AXES: Array<{ key: keyof SkillRadarData; label: string }> = [
 ];
 
 function RadarSvg({ data }: { data: SkillRadarData }) {
-  const size = 260, cx = size / 2, cy = size / 2 + 6, R = 88;
+  // Wide viewBox + edge-aware text anchors so side labels ("Versatility 97",
+  // "Accuracy 88") never clip at the card edge.
+  const W = 340, H = 240, cx = W / 2, cy = H / 2 + 8, R = 84;
   const pt = (i: number, r: number) => {
     const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
     return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
@@ -33,7 +35,7 @@ function RadarSvg({ data }: { data: SkillRadarData }) {
   const ring = (f: number) => RADAR_AXES.map((_, i) => pt(i, R * f).join(',')).join(' ');
   const shape = RADAR_AXES.map((ax, i) => pt(i, R * Math.max(0.04, data[ax.key] / 100)).join(',')).join(' ');
   return (
-    <svg viewBox={`0 0 ${size} ${size - 20}`} className="w-full max-w-[280px] mx-auto">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[340px] mx-auto">
       {[0.33, 0.66, 1].map((f) => (
         <polygon key={f} points={ring(f)} fill="none" stroke="var(--color-border)" strokeWidth={1} />
       ))}
@@ -43,9 +45,12 @@ function RadarSvg({ data }: { data: SkillRadarData }) {
       })}
       <polygon points={shape} fill="#7c3aed33" stroke="#7c3aed" strokeWidth={2} strokeLinejoin="round" />
       {RADAR_AXES.map((ax, i) => {
-        const [x, y] = pt(i, R + 20);
+        const [x, y] = pt(i, R + 16);
+        // Anchor side labels away from the edge: right-side points anchor at
+        // start (grow rightward has room in the wide box), left-side at end.
+        const anchor = x > cx + 8 ? 'start' : x < cx - 8 ? 'end' : 'middle';
         return (
-          <text key={ax.key} x={x} y={y} textAnchor="middle" dominantBaseline="middle"
+          <text key={ax.key} x={x} y={y} textAnchor={anchor} dominantBaseline="middle"
             style={{ fontSize: 10, fontWeight: 800, fill: 'var(--color-text-muted)' }}>
             {ax.label} {data[ax.key]}
           </text>

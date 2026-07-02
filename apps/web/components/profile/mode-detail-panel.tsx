@@ -51,11 +51,14 @@ interface ModeDetailPanelProps {
   gameMode: string;
   isPro: boolean;
   stats: { wins: number; losses: number; total_games: number; best_score: number; fastest_time: number } | null;
+  /** Driven by the page-level Solo/VS/VS CPU toggle — the panel has no toggle
+      of its own (the old inner Solo/VS pair was redundant and confusing). */
+  playType?: 'solo' | 'vs' | 'vs_cpu';
 }
 
-export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPanelProps) {
+export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'solo' }: ModeDetailPanelProps) {
   const { user } = useAuth();
-  const [tab, setTab] = useState<'solo' | 'vs'>('solo');
+  const tab = playType;
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
 
@@ -148,26 +151,14 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
             </button>
           )}
 
-          {/* Solo / VS toggle */}
-          <div
-            className="flex rounded-lg overflow-hidden"
-            style={{ border: '1.5px solid var(--color-border)' }}
+          {/* Play-type chip — reflects the page-level toggle (no inner toggle). */}
+          <span
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold"
+            style={{ background: `${accentColor}15`, color: accentColor }}
           >
-            {(['solo', 'vs'] as const).map((t) => (
-              <button
-                key={t}
-                className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold transition-all"
-                style={{
-                  background: tab === t ? `${accentColor}15` : 'var(--color-surface)',
-                  color: tab === t ? accentColor : 'var(--color-text-muted)',
-                }}
-                onClick={() => setTab(t)}
-              >
-                {t === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
-                {t === 'solo' ? 'Solo' : 'VS'}
-              </button>
-            ))}
-          </div>
+            {tab === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
+            {tab === 'solo' ? 'Solo' : tab === 'vs' ? 'VS' : 'VS CPU'}
+          </span>
         </div>
       </div>
 
@@ -261,7 +252,7 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
           style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
         >
           <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            No {tab} games played in this mode yet
+            No {tab === 'solo' ? 'solo' : tab === 'vs' ? 'VS' : 'VS CPU'} games played in this mode yet
           </p>
         </div>
       )}
