@@ -407,7 +407,13 @@ object ShareImage {
             c.drawText(label, cx, rect.centerY() + 8f, p)
         }
 
-        // Head-to-head sides.
+        // Head-to-head sides — both sides' boards share ONE grid size (max
+        // rows/cols across every shown board, short grids padded with empty
+        // tiles) so the two columns are pixel-identical.
+        val allShown = me.grids.take(2) + opp.grids.take(2)
+        val sharedRows = maxOf(1, allShown.maxOfOrNull { it.size } ?: 1)
+        val sharedCols = maxOf(1, allShown.maxOfOrNull { it.firstOrNull()?.size ?: 5 } ?: 5)
+        val multiBoard = me.grids.size > 1 || opp.grids.size > 1
         fun side(s: VsShareSide, sideAccent: Int, scx: Float) {
             val highlighted = s.won || isDraw
             var y = 340f
@@ -423,9 +429,9 @@ object ShareImage {
             c.drawText(if (s.solved) "✓ Solved" else "✗ Not solved", scx, y, p)
             y += 32f
             val shown = s.grids.take(2)
-            val maxSide = if (shown.size > 1) 250f else 380f
+            val maxSide = if (multiBoard) 250f else 380f
             for (grid in shown) {
-                y += drawVsBoard(c, grid, scx, y, maxSide, s.won) + 14f
+                y += drawVsBoard(c, grid, scx, y, maxSide, s.won, sharedRows, sharedCols) + 14f
             }
             if (s.grids.size > 2) {
                 p.typeface = bold; p.textSize = 18f; p.color = TEXT_MUTED
@@ -442,10 +448,10 @@ object ShareImage {
         return bmp
     }
 
-    /** Grid-only board card (tinted + bordered like the daily card). Returns height. */
-    private fun drawVsBoard(c: Canvas, grid: List<List<TileState>>, scx: Float, top: Float, maxSide: Float, won: Boolean): Float {
-        val cols = grid.firstOrNull()?.size ?: 5
-        val rows = maxOf(grid.size, 1)
+    /** Grid-only board card (tinted + bordered like the daily card). Returns height.
+     *  rows/cols are the SHARED dimensions across both players; short grids are
+     *  padded with empty tiles so every card renders at identical size. */
+    private fun drawVsBoard(c: Canvas, grid: List<List<TileState>>, scx: Float, top: Float, maxSide: Float, won: Boolean, rows: Int, cols: Int): Float {
         val gap = maxOf(3f, maxSide * 0.012f)
         val pad = maxSide * 0.04f
         val inner = maxSide - pad * 2
@@ -461,9 +467,9 @@ object ShareImage {
         c.drawRoundRect(RectF(x, top, x + cardW, top + cardH), 18f, 18f, fill)
         c.drawRoundRect(RectF(x, top, x + cardW, top + cardH), 18f, 18f, stroke)
         val tilePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        for (r in grid.indices) {
-            for (col in grid[r].indices) {
-                tilePaint.color = when (grid[r][col]) {
+        for (r in 0 until rows) {
+            for (col in 0 until cols) {
+                tilePaint.color = when (grid.getOrNull(r)?.getOrNull(col) ?: TileState.EMPTY) {
                     TileState.CORRECT -> 0xFF7C3AED.toInt()
                     TileState.PRESENT -> 0xFFF59E0B.toInt()
                     TileState.EMPTY -> 0xFFE5E7EB.toInt()

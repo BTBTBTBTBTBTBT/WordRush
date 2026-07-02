@@ -88,10 +88,14 @@ function font(weight: number, px: number) {
   return `${weight} ${px}px "Nunito", system-ui, -apple-system, sans-serif`;
 }
 
-/** Board card: tinted rounded card + tile grid, matching drawBoardCard's look. */
-function drawBoard(ctx: CanvasRenderingContext2D, grid: string[][], cx: number, top: number, maxSide: number, won: boolean): number {
-  const cols = grid[0]?.length ?? 5;
-  const rows = Math.max(grid.length, 1);
+/**
+ * Board card: tinted rounded card + tile grid, matching drawBoardCard's look.
+ * `rows`/`cols` are the SHARED dimensions across both players (short grids are
+ * padded with empty tiles) so the two sides' cards are pixel-identical — a
+ * 3-guess win next to a 6-guess loss used to render two differently-sized
+ * boards, which read as a layout bug.
+ */
+function drawBoard(ctx: CanvasRenderingContext2D, grid: string[][], cx: number, top: number, maxSide: number, won: boolean, rows: number, cols: number): number {
   const gap = Math.max(3, maxSide * 0.012);
   const pad = maxSide * 0.04;
   const inner = maxSide - pad * 2;
@@ -109,12 +113,12 @@ function drawBoard(ctx: CanvasRenderingContext2D, grid: string[][], cx: number, 
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  for (let r = 0; r < grid.length; r++) {
-    for (let c = 0; c < grid[r].length; c++) {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
       const tx = x + pad + c * (tile + gap);
       const ty = top + pad + r * (tile + gap);
       roundRect(ctx, tx, ty, tile, tile, Math.max(4, tile * 0.12));
-      ctx.fillStyle = TILE[grid[r][c]] || TILE.ABSENT;
+      ctx.fillStyle = TILE[grid[r]?.[c] ?? 'EMPTY'] || TILE.EMPTY;
       ctx.fill();
     }
   }
@@ -183,9 +187,13 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   ctx.textAlign = 'center';
   ctx.fillText(pillLabel, pillX + pillW / 2, metaY);
 
-  // Head-to-head columns
+  // Head-to-head columns — boards on BOTH sides share one grid size.
   const sideCX = [W * 0.28, W * 0.72];
   const topY = metaY + 80;
+  const allShown = [...input.me.grids.slice(0, 2), ...input.opponent.grids.slice(0, 2)];
+  const sharedRows = Math.max(1, ...allShown.map((g) => g.length));
+  const sharedCols = Math.max(1, ...allShown.map((g) => g[0]?.length ?? 5));
+  const multiBoard = input.me.grids.length > 1 || input.opponent.grids.length > 1;
   const drawSide = (side: VsShareSide, accent: string, cx: number) => {
     const highlighted = side.won || input.isDraw;
     let y = topY;
@@ -205,9 +213,9 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
     ctx.fillText(side.solved ? '✓ Solved' : '✗ Not solved', cx, y);
     y += 28;
     const shown = side.grids.slice(0, 2);
-    const maxSide = shown.length > 1 ? 250 : 380;
+    const maxSide = multiBoard ? 250 : 380;
     for (const grid of shown) {
-      const h = drawBoard(ctx, grid, cx, y, maxSide, side.won);
+      const h = drawBoard(ctx, grid, cx, y, maxSide, side.won, sharedRows, sharedCols);
       y += h + 14;
     }
     if (side.grids.length > 2) {

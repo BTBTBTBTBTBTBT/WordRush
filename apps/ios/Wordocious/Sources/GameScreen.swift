@@ -161,6 +161,9 @@ struct GameScreen: View {
             }
         }
         }
+        // Custom on-screen KeyboardView only — never let a lingering SYSTEM
+        // keyboard inset (e.g. from the share sheet) squeeze the board layout.
+        .ignoresSafeArea(.keyboard)
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         .hidesBottomNav()

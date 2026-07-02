@@ -123,6 +123,20 @@ struct VSShareCardView: View {
 
     private func fmt(_ s: Double) -> String { String(format: "%.2f", s) }
 
+    /// Both sides' cards render on a SHARED grid size (max rows/cols across
+    /// every displayed board, short boards padded with empty rows) so the two
+    /// columns are pixel-identical — a 3-guess win next to a 6-guess loss used
+    /// to produce two differently-sized boards, which read as a layout bug.
+    private var sharedRows: Int {
+        let all = me.grids.prefix(2) + opponent.grids.prefix(2)
+        return max(all.map(\.count).max() ?? 1, 1)
+    }
+    private var sharedCols: Int {
+        let all = me.grids.prefix(2) + opponent.grids.prefix(2)
+        return max(all.compactMap { $0.first?.count }.max() ?? 5, 1)
+    }
+    private var multiBoard: Bool { me.grids.count > 1 || opponent.grids.count > 1 }
+
     private func sideColumn(_ side: Side, accent: Color) -> some View {
         let highlighted = side.won || isDraw
         return VStack(spacing: 10) {
@@ -138,7 +152,7 @@ struct VSShareCardView: View {
                 .foregroundStyle(side.solved ? Color(hex: 0x16A34A) : lossFG)
             VStack(spacing: 14) {
                 ForEach(0..<min(side.grids.count, 2), id: \.self) { i in
-                    boardCard(grid: side.grids[i], tinted: side.won, maxSide: side.grids.count > 1 ? 260 : 380)
+                    boardCard(grid: side.grids[i], tinted: side.won, maxSide: multiBoard ? 260 : 380)
                 }
             }
             if side.grids.count > 2 {
@@ -149,19 +163,22 @@ struct VSShareCardView: View {
     }
 
     /// Same tinted/bordered board card as the daily share card (uniform grid).
+    /// Sized by the SHARED row/col counts and padded with empty rows, so every
+    /// card on the image has identical dimensions regardless of guess count.
     private func boardCard(grid: [[TileState]], tinted won: Bool, maxSide: CGFloat) -> some View {
-        let cols = grid.first?.count ?? 5
-        let rows = max(grid.count, 1)
+        let cols = sharedCols
+        let rows = sharedRows
         let gap: CGFloat = max(3, maxSide * 0.012)
         let pad: CGFloat = maxSide * 0.04
         let inner = maxSide - pad * 2
         let tile = floor(min((inner - gap * CGFloat(cols - 1)) / CGFloat(cols),
                              (inner - gap * CGFloat(rows - 1)) / CGFloat(rows)))
         return VStack(spacing: gap) {
-            ForEach(0..<grid.count, id: \.self) { r in
+            ForEach(0..<rows, id: \.self) { r in
                 HStack(spacing: gap) {
-                    ForEach(0..<grid[r].count, id: \.self) { c in
-                        RoundedRectangle(cornerRadius: max(4, tile * 0.12)).fill(tileColor(grid[r][c]))
+                    ForEach(0..<cols, id: \.self) { c in
+                        let state: TileState = r < grid.count && c < grid[r].count ? grid[r][c] : .empty
+                        RoundedRectangle(cornerRadius: max(4, tile * 0.12)).fill(tileColor(state))
                             .frame(width: tile, height: tile)
                     }
                 }

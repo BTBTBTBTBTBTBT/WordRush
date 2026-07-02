@@ -97,6 +97,11 @@ struct VSGameView: View {
                 VSLobbyView.VSLimitModal(onClose: { showRematchUpsell = false })
             }
         }
+        // The game renders its own KeyboardView — never let a lingering SYSTEM
+        // keyboard inset (e.g. from the share sheet's iMessage compose) squeeze
+        // the layout: post-rematch the board rendered tiny with a keyboard-sized
+        // dead zone at the bottom.
+        .ignoresSafeArea(.keyboard)
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         // Fullscreen like the solo games — hide the bottom tab bar (the VS game is
