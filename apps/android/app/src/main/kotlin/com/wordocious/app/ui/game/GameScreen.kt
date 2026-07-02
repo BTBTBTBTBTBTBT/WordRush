@@ -201,7 +201,7 @@ private fun HintPill(accent: Color, used: Boolean, label: String, onClick: () ->
     Box(
         modifier = modifier
             .clip(androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
-            .background(if (used) Color(0xFFF3F4F6) else accent.copy(alpha = 0.08f))
+            .background(if (used) WTheme.surfaceHover else accent.copy(alpha = 0.08f))
             .border(1.5.dp, if (used) WTheme.border else accent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
             .then(if (used) Modifier else Modifier.clickableNoRipple(onClick))
             .padding(vertical = 10.dp),

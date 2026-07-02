@@ -214,8 +214,11 @@ export function VsProperNoundle({
 
       {/* Hint clue text (once fetched) */}
       {hints.hint && (
-        <div className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg border border-gray-200 bg-white">
-          <p className="text-xs text-gray-500 italic leading-snug">{hints.hint}</p>
+        <div
+          className="shrink-0 mx-4 mb-1 px-3 py-1.5 rounded-lg"
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+        >
+          <p className="text-xs italic leading-snug" style={{ color: 'var(--color-text-secondary)' }}>{hints.hint}</p>
         </div>
       )}
 

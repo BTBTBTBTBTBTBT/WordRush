@@ -388,7 +388,7 @@ struct GameScreen: View {
                 .foregroundStyle(used ? Theme.textMuted : hintAccent)
                 .padding(.horizontal, 14).padding(.vertical, 8)
                 .frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 10).fill(used ? Color(hex: 0xF3F4F6) : hintAccent.opacity(0.08)))
+                .background(RoundedRectangle(cornerRadius: 10).fill(used ? Theme.surfaceHover : hintAccent.opacity(0.08)))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(used ? Theme.border : hintAccent, lineWidth: 1.5))
         }
         .buttonStyle(.plain)

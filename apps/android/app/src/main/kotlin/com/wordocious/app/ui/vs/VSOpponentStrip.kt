@@ -118,7 +118,7 @@ fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength:
                                 cameraDistance = 12f * density
                             }
                             .clip(RoundedCornerShape(radius)).background(color)
-                            .then(if (st == null || st == TileState.EMPTY) Modifier.border(1.dp, Color(0xFFD1D5DB), RoundedCornerShape(radius)) else Modifier),
+                            .then(if (st == null || st == TileState.EMPTY) Modifier.border(1.dp, WTheme.border, RoundedCornerShape(radius)) else Modifier),
                     )
                 }
             }
