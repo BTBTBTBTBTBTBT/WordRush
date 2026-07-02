@@ -846,11 +846,20 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Countdown overlay — shown on the queue screen for the initial match, and on
   // the result screen for a rematch (relabeled). Kept as one element so both
   // reuse the exact styling.
+  // Near-opaque vignette (same as the match-intro splash) — the queue screen's
+  // "Match Found / Matching you with…" no longer bleeds through, and
+  // intro → countdown reads as one continuous scene.
   const countdownOverlayEl = showCountdown ? (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in"
+      style={{ background: 'radial-gradient(circle at center, rgba(30,27,58,0.96), rgba(0,0,0,0.92))' }}
+    >
       <div className="text-center space-y-4">
         <div className="text-gray-400 text-lg font-bold uppercase tracking-widest animate-fade-in-scale">
           {countdownIsRematch ? 'Rematch starting in' : 'Match Found'}
+        </div>
+        <div className={`text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
+          VS {label.toUpperCase()}
         </div>
         <div
           key={countdown}

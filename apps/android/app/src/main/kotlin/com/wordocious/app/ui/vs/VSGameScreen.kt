@@ -106,7 +106,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
 
         // Don't stack the countdown under the dark intro splash (it ticked behind
         // it and then popped in color); show it only once the intro is gone.
-        vm.countdown?.let { if (!vm.showIntro) CountdownOverlay(it, gradient, vm.countdownIsRematch) }
+        vm.countdown?.let { if (!vm.showIntro) CountdownOverlay(it, label, gradient, vm.countdownIsRematch) }
         // Match-intro splash — sits above the countdown for 2.5s (or until tapped).
         if (vm.showIntro) {
             val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
@@ -355,10 +355,18 @@ private fun CpuSpecial(title: String, color: Long, modifier: Modifier, onClick: 
 }
 
 @Composable
-private fun CountdownOverlay(count: Int, gradient: List<Color>, isRematch: Boolean = false) {
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.6f)), Alignment.Center) {
+private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, isRematch: Boolean = false) {
+    // Same near-opaque vignette as the match-intro splash — the queue screen's
+    // "Match Found / Matching you with…" no longer bleeds through, and
+    // intro -> countdown reads as one continuous scene.
+    Box(
+        Modifier.fillMaxSize().background(Brush.radialGradient(
+            colors = listOf(Color(0xF51E1B3A), Color(0xEB000000)))),
+        Alignment.Center,
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
+            Text(label.uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
             Text("$count", fontSize = 96.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
         }
     }

@@ -50,7 +50,11 @@ struct VSGameView: View {
             // Don't stack the countdown UNDER the intro splash — it ticked behind
             // the dark overlay and then "popped" in color when the intro lifted.
             // Show it only once the intro is gone (clean dark intro → colored count).
-            if vm.countdown != nil && !vm.showIntro { countdownOverlay }
+            if vm.countdown != nil && !vm.showIntro {
+                countdownOverlay
+                    .transition(.opacity)
+                    .zIndex(6)
+            }
 
             // Match-intro splash — sits above the countdown for 2.5s (or until
             // tapped), web parity: MatchIntro renders only on the queue screen.
@@ -97,6 +101,10 @@ struct VSGameView: View {
                 VSLobbyView.VSLimitModal(onClose: { showRematchUpsell = false })
             }
         }
+        // Fade the countdown overlay in/out (it used to pop) — scoped to the
+        // overlay's visibility so nothing else picks up this animation.
+        .animation(Theme.animation(.easeInOut(duration: 0.3)), value: vm.countdown == nil)
+        .animation(Theme.animation(.easeInOut(duration: 0.3)), value: vm.showIntro)
         // The game renders its own KeyboardView — never let a lingering SYSTEM
         // keyboard inset (e.g. from the share sheet's iMessage compose) squeeze
         // the layout: post-rematch the board rendered tiny with a keyboard-sized
@@ -376,10 +384,16 @@ struct VSGameView: View {
 
     private var countdownOverlay: some View {
         ZStack {
-            Color.black.opacity(0.6).ignoresSafeArea()
-            VStack(spacing: 14) {
+            // Same near-opaque vignette as the match-intro splash — the queue
+            // screen's "MATCH FOUND / Matching you with…" no longer bleeds
+            // through, and intro → countdown reads as one continuous scene.
+            RadialGradient(colors: [Color(hex: 0x1E1B3A).opacity(0.96), Color.black.opacity(0.92)],
+                           center: .center, startRadius: 60, endRadius: 520)
+                .ignoresSafeArea()
+            VStack(spacing: 16) {
                 Text(vm.countdownIsRematch ? "REMATCH STARTING IN" : "MATCH FOUND")
                     .font(Brand.font(15, .heavy)).tracking(3).foregroundStyle(.white.opacity(0.7))
+                vsTitle(30)
                 ZStack {
                     // A ring that expands + fades on each tick, so the number
                     // pulses out of a burst instead of just swapping.
