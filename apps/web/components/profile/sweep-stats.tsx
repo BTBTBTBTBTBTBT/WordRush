@@ -22,7 +22,9 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
   );
 }
 
-function PointsChart({ points }: { points: DailyPointsPoint[] }) {
+// Exported: Profile's Trends section renders this chart alone — the sweep
+// COUNTS grid now lives solely on Records → You (page-role split).
+export function PointsChart({ points }: { points: DailyPointsPoint[] }) {
   if (points.length < 2) return null;
   const W = 320, H = 90, pad = 6;
   const max = Math.max(1, ...points.map((p) => p.totalPoints));

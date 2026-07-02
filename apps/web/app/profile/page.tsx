@@ -35,14 +35,15 @@ const ProStats = dynamic(() => import('@/components/profile/pro-stats').then(m =
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
-import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar, fetchTopWordsAllTime, fetchDailySweepStats, fetchDailyPointsOverTime } from '@/lib/stats-service';
-import { SweepStatsCard } from '@/components/profile/sweep-stats';
+import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar, fetchTopWordsAllTime, fetchDailyPointsOverTime } from '@/lib/stats-service';
+import { PointsChart } from '@/components/profile/sweep-stats';
 import { GuessDistribution } from '@/components/profile/guess-distribution';
 import { SolveTimeChart } from '@/components/profile/solve-time-chart';
 import { DailyCalendar } from '@/components/profile/daily-calendar';
 import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
-import { GlobalSummaryRow } from '@/components/profile/global-summary-row';
+import { SnapshotHero } from '@/components/profile/snapshot-hero';
+import { SectionHeader, KitCard, ChartCard } from '@/components/profile/stat-kit';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
@@ -102,7 +103,7 @@ export default function ProfilePage() {
   const { data: profileData, isLoading: loadingStats } = useSWR(
     profile ? ['profile-data', profile.id] : null,
     async () => {
-      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes, sweepStatsRes, sweepPointsRes] = await Promise.all([
+      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes, sweepPointsRes] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
         supabase.from('matches')
           .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit')
@@ -118,7 +119,6 @@ export default function ProfilePage() {
         fetchSolveTimeHistory(profile!.id, 30),
         fetchDailyCalendar(profile!.id, 90),
         fetchTopWordsAllTime(profile!.id, 5),
-        fetchDailySweepStats(profile!.id),
         fetchDailyPointsOverTime(profile!.id, 30),
       ]);
       // Resolve opponent usernames for VS rows in Recent Matches.
@@ -150,7 +150,6 @@ export default function ProfilePage() {
         solveHistory: solveRes,
         calendar: calendarRes,
         topWordsAllTime: topWordsRes,
-        sweepStats: sweepStatsRes,
         sweepPoints: sweepPointsRes,
       };
     },
@@ -168,7 +167,6 @@ export default function ProfilePage() {
   const solveHistory = profileData?.solveHistory ?? [];
   const calendar = profileData?.calendar ?? [];
   const topWordsAllTime = profileData?.topWordsAllTime ?? [];
-  const sweepStats = profileData?.sweepStats;
   const sweepPoints = profileData?.sweepPoints ?? [];
 
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
@@ -501,59 +499,19 @@ export default function ProfilePage() {
           );
         })()}
 
-        {/* ── C. Global Summary Row ── */}
-        <GlobalSummaryRow
+        {/* ── C. Snapshot hero (lifetime headline stats + this-week strip) ── */}
+        <SnapshotHero
           totalWins={profile.total_wins}
           totalLosses={profile.total_losses}
           currentStreak={(profile as any).current_streak ?? 0}
           bestStreak={(profile as any).best_streak ?? 0}
           dailyStreak={profile.daily_login_streak}
           bestDailyStreak={(profile as any).best_daily_login_streak ?? 0}
+          gamesThisWeek={activity.reduce((s, a) => s + a.count, 0)}
+          level={(profile as any).level ?? 1}
+          xpToNext={xpToNextLevel}
+          isPro={isProActive}
         />
-
-        {/* ── C2. "This Week" recap hero ── */}
-        {(() => {
-          const gamesThisWeek = activity.reduce((s, a) => s + a.count, 0);
-          const xp = (profile as any).xp ?? 0;
-          const level = (profile as any).level ?? 1;
-          const xpToNext = 1000 - (xp % 1000);
-          const curStreak = (profile as any).current_streak ?? 0;
-          const cells: { icon: typeof Zap; value: string; label: string; color: string }[] = [
-            { icon: Zap, value: `${gamesThisWeek}`, label: 'Games', color: '#7c3aed' },
-            { icon: Flame, value: `${curStreak}`, label: 'Win Streak', color: '#f97316' },
-            { icon: TrendingUp, value: `${xpToNext}`, label: `XP to Lvl ${level + 1}`, color: '#2563eb' },
-          ];
-          return (
-            <div className="overflow-hidden" style={{ background: 'linear-gradient(135deg, #faf5ff, #fce7f3)', border: '1.5px solid #e9d5ff', borderRadius: '16px' }}>
-              <div className="px-4 py-3">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
-                  <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: '#6d28d9' }}>This Week</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {cells.map((c, i) => {
-                    const CIcon = c.icon;
-                    return (
-                      <div key={i} className="flex items-center gap-2">
-                        <CIcon className="w-4 h-4 shrink-0" style={{ color: c.color }} />
-                        <div className="min-w-0">
-                          <div className="text-base font-black leading-tight" style={{ color: 'var(--color-text)' }}>{c.value}</div>
-                          <div className="text-[9px] font-bold leading-tight truncate" style={{ color: 'var(--color-text-muted)' }}>{c.label}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {!isProActive && (
-                  <Link href="/pro" className="flex items-center justify-between mt-2.5 pt-2.5 text-[11px] font-extrabold" style={{ borderTop: '1px solid #e9d5ff', color: '#7c3aed' }}>
-                    <span>Unlock your full insights with Pro</span>
-                    <span>→</span>
-                  </Link>
-                )}
-              </div>
-            </div>
-          );
-        })()}
 
         {/* ── D. Solo / VS / VS CPU toggle + Mode Picker ── */}
         <div className="flex gap-2">
@@ -642,7 +600,7 @@ export default function ProfilePage() {
             {/* Activity Calendar */}
             {calendar.some((d) => d.gamesPlayed > 0) && (
               <>
-                <div className="section-header mb-2">ACTIVITY</div>
+                <SectionHeader label="Activity" accent="#7c3aed" />
                 <DailyCalendar data={calendar} />
               </>
             )}
@@ -653,11 +611,12 @@ export default function ProfilePage() {
               const totalWeek = activity.reduce((sum, a) => sum + a.count, 0);
               return (
                 <>
-                  <div className="section-header mb-2 flex items-center justify-between">
-                    <span>LAST 7 DAYS</span>
-                    <span style={{ color: 'var(--color-text-muted)' }}>{totalWeek} {totalWeek === 1 ? 'game' : 'games'}</span>
-                  </div>
-                  <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+                  <SectionHeader
+                    label="Last 7 Days"
+                    accent="#a78bfa"
+                    right={<span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{totalWeek} {totalWeek === 1 ? 'game' : 'games'}</span>}
+                  />
+                  <KitCard>
                     <div className="flex items-end justify-between gap-1 h-16">
                       {activity.map((a) => {
                         const d = new Date(a.day + 'T00:00:00Z');
@@ -681,7 +640,7 @@ export default function ProfilePage() {
                         );
                       })}
                     </div>
-                  </div>
+                  </KitCard>
                 </>
               );
             })()}
@@ -689,7 +648,7 @@ export default function ProfilePage() {
             {/* Guess Distribution */}
             {guessDist.some((d) => d.count > 0) && (
               <>
-                <div className="section-header mb-2">GUESS DISTRIBUTION</div>
+                <SectionHeader label="Guess Distribution" accent="#2563eb" />
                 <GuessDistribution data={guessDist} />
               </>
             )}
@@ -697,23 +656,26 @@ export default function ProfilePage() {
             {/* Solve Time Trend */}
             {solveHistory.length >= 2 && (
               <>
-                <div className="section-header mb-2">SOLVE TIME TREND</div>
+                <SectionHeader label="Solve Time Trend" accent="#0d9488" />
                 <SolveTimeChart data={solveHistory} />
               </>
             )}
 
-            {/* Daily Sweeps & Flawless Victories */}
-            {sweepStats?.sweepCount ? (
+            {/* Daily points trend (sweep/flawless days marked). The sweep COUNTS
+                card moved to Records → You — trend vs record split. */}
+            {sweepPoints.length >= 2 && (
               <>
-                <div className="section-header mb-2">DAILY SWEEPS</div>
-                <SweepStatsCard stats={sweepStats} points={sweepPoints} />
+                <SectionHeader label="Daily Points" accent="#ec4899" />
+                <ChartCard title="Points per day" hint="Last 30 days · ● sweep · ● flawless">
+                  <PointsChart points={sweepPoints} />
+                </ChartCard>
               </>
-            ) : null}
+            )}
 
             {/* All-Time Top Words */}
             {topWordsAllTime.length > 0 && (
               <>
-                <div className="section-header mb-2">TOP WORDS — ALL TIME</div>
+                <SectionHeader label="Top Words — All Time" accent="#d97706" />
                 <TopWordsCard words={topWordsAllTime} accentColor="#7c3aed" />
               </>
             )}
@@ -721,7 +683,7 @@ export default function ProfilePage() {
             {/* Insights */}
             {insights.length > 0 && (
               <>
-                <div className="section-header mb-2">INSIGHTS</div>
+                <SectionHeader label="Insights" accent="#7c3aed" />
                 <div className="p-4 space-y-2" style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%)', border: '1.5px solid #ddd6fe', borderRadius: '16px' }}>
                   {insights.map((text, i) => (
                     <div key={i} className="flex items-start gap-2">
@@ -733,10 +695,33 @@ export default function ProfilePage() {
               </>
             )}
 
-            {/* Medals */}
-            <div className="section-header mb-2">DAILY MEDALS</div>
-            <div className="p-4" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-              <div className="grid grid-cols-3 gap-3 mb-3">
+            {/* Pro Stats (global view) */}
+            <ProStats userId={profile.id} isPro={isProActive} />
+          </div>
+        ) : (
+          /* ── Mode Detail View ── */
+          <div
+            className="transition-all duration-200"
+            style={{ animation: 'fadeSlideIn 250ms ease-out' }}
+          >
+            <ModeDetailPanel
+              userId={profile.id}
+              gameMode={selectedMode}
+              isPro={isProActive}
+              stats={getStatsForMode(selectedMode)}
+            />
+          </div>
+        )}
+
+        {/* ── Progression: medals + achievements under one banner ── */}
+        <SectionHeader label="Progression" accent="#f59e0b" />
+
+        {/* Daily Medals */}
+        <KitCard>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Daily Medals</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-3">
                 {[
                   { icon: Crown, count: (profile as any).gold_medals || 0, label: 'Gold', color: '#d97706' },
                   { icon: Medal, count: (profile as any).silver_medals || 0, label: 'Silver', color: 'var(--color-text-muted)' },
@@ -790,29 +775,11 @@ export default function ProfilePage() {
               ) : (
                 <p className="text-center text-xs font-bold py-3" style={{ color: 'var(--color-text-muted)' }}>Play daily challenges to earn medals!</p>
               )}
-            </div>
+        </KitCard>
 
-            {/* Pro Stats (global view) */}
-            <ProStats userId={profile.id} isPro={isProActive} />
-          </div>
-        ) : (
-          /* ── Mode Detail View ── */
-          <div
-            className="transition-all duration-200"
-            style={{ animation: 'fadeSlideIn 250ms ease-out' }}
-          >
-            <ModeDetailPanel
-              userId={profile.id}
-              gameMode={selectedMode}
-              isPro={isProActive}
-              stats={getStatsForMode(selectedMode)}
-            />
-          </div>
-        )}
-
-        {/* ── Achievements (grouped by category, expanded, moved above Recent Matches) ── */}
+        {/* Achievements (grouped by category, under the Progression banner) */}
         <div className="flex items-center justify-between mb-2">
-          <div className="section-header">ACHIEVEMENTS</div>
+          <span className="text-xs font-black" style={{ color: 'var(--color-text)' }}>Achievements</span>
           <span className="text-[10px] font-black px-2 py-0.5 rounded-full" style={{ background: '#f3f0ff', color: '#7c3aed' }}>{userAchievements.size}/{ACHIEVEMENTS.length}</span>
         </div>
         <div className="space-y-3 mb-2">
@@ -868,7 +835,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── F. Recent Matches ── */}
-        <div className="section-header mb-2">RECENT MATCHES</div>
+        <SectionHeader label="Recent Matches" accent="#2563eb" />
         {loadingStats ? (
           <div className="space-y-2">
             {[0, 1, 2, 3, 4].map((i) => (
