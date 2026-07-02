@@ -101,8 +101,12 @@ function formatDuration(seconds: number): string {
 
 export default function ProfilePage() {
   const { profile, loading, refreshProfile, isProActive, exitGuest } = useAuth();
+  // Solo/VS/VS CPU toggle — scopes user_stats AND every per-game chart below
+  // (restat B1: the charts used to silently mix solo+vs regardless of the
+  // toggle). Declared above the SWR call so it can key the fetch.
+  const [activeTab, setActiveTab] = useState<'solo' | 'vs' | 'vs_cpu'>('solo');
   const { data: profileData, isLoading: loadingStats } = useSWR(
-    profile ? ['profile-data', profile.id] : null,
+    profile ? ['profile-data', profile.id, activeTab] : null,
     async () => {
       const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes, sweepPointsRes, openersRes, weekdayRes, standingRes] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
@@ -116,13 +120,13 @@ export default function ProfilePage() {
         fetchUserAchievements(profile!.id),
         fetchTodayDailyCompletions(profile!.id),
         fetchActivityByDay(profile!.id, 7),
-        fetchGuessDistribution(profile!.id),
-        fetchSolveTimeHistory(profile!.id, 30),
+        fetchGuessDistribution(profile!.id, undefined, activeTab),
+        fetchSolveTimeHistory(profile!.id, 30, undefined, activeTab),
         fetchDailyCalendar(profile!.id, 90),
-        fetchTopWordsAllTime(profile!.id, 5),
+        fetchTopWordsAllTime(profile!.id, 5, activeTab),
         fetchDailyPointsOverTime(profile!.id, 30),
-        fetchOpenerStats(profile!.id, 5),
-        fetchWeekdayForm(profile!.id),
+        fetchOpenerStats(profile!.id, 5, activeTab),
+        fetchWeekdayForm(profile!.id, activeTab),
         fetchTodayDailyStanding(profile!.id),
       ]);
       // Resolve opponent usernames for VS rows in Recent Matches.
@@ -180,8 +184,6 @@ export default function ProfilePage() {
   const standing = profileData?.standing ?? null;
 
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
-  // Solo/VS toggle (mirrors the public profile) — filters user_stats by play_type.
-  const [activeTab, setActiveTab] = useState<'solo' | 'vs' | 'vs_cpu'>('solo');
   const [editOpen, setEditOpen] = useState(false);
   const [showAllMedals, setShowAllMedals] = useState(false);
 
@@ -623,6 +625,13 @@ export default function ProfilePage() {
         {selectedMode === null ? (
           /* ── "All" Global View ── */
           <div className="space-y-4">
+            {/* CPU practice records totals only — the per-game charts below
+                draw from match rows that CPU games never write. */}
+            {activeTab === 'vs_cpu' && (
+              <p className="text-[11px] font-bold text-center py-1" style={{ color: 'var(--color-text-muted)' }}>
+                CPU practice records totals only — charts track Solo and VS matches.
+              </p>
+            )}
             {/* Activity Calendar */}
             {calendar.some((d) => d.gamesPlayed > 0) && (
               <>

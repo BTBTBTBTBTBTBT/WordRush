@@ -7,7 +7,7 @@ import { SectionHeader, KitCard, ProLockOverlay } from './stat-kit';
 import {
   fetchSkillRadar, fetchRivalries, fetchOpenerDeep, fetchPositionAccuracy,
   fetchWordAlmanac, fetchGauntletStageStats, fetchHintHonesty,
-  type SkillRadarData,
+  type SkillRadarData, type StatsPlayType,
 } from '@/lib/stats-service';
 
 // Pro Insights deep layer (restat R4): the stat-nerd centerpiece. Every card
@@ -124,19 +124,22 @@ export function RivalriesCard({ userId, isPro }: { userId: string; isPro: boolea
 
 const HINT_MODES = new Set(['DUEL_6', 'DUEL_7', 'PROPERNOUNDLE']);
 
-export function ProDeepModeCard({ userId, gameMode, isPro, accentColor }: {
-  userId: string; gameMode: string; isPro: boolean; accentColor: string;
+export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType = 'solo' }: {
+  userId: string; gameMode: string; isPro: boolean; accentColor: string; playType?: StatsPlayType;
 }) {
-  const { data } = useSWR(isPro ? ['pro-deep', userId, gameMode] : null, async () => {
+  const { data } = useSWR(isPro && playType !== 'vs_cpu' ? ['pro-deep', userId, gameMode, playType] : null, async () => {
     const [openers, positions, almanac, hints, gauntlet] = await Promise.all([
-      fetchOpenerDeep(userId, gameMode, 4),
-      fetchPositionAccuracy(userId, gameMode),
-      fetchWordAlmanac(userId, gameMode, 24),
-      HINT_MODES.has(gameMode) ? fetchHintHonesty(userId, gameMode) : Promise.resolve(null),
-      gameMode === 'GAUNTLET' ? fetchGauntletStageStats(userId) : Promise.resolve([]),
+      fetchOpenerDeep(userId, gameMode, 4, playType),
+      fetchPositionAccuracy(userId, gameMode, playType),
+      fetchWordAlmanac(userId, gameMode, 24, playType),
+      HINT_MODES.has(gameMode) ? fetchHintHonesty(userId, gameMode, playType) : Promise.resolve(null),
+      gameMode === 'GAUNTLET' ? fetchGauntletStageStats(userId, playType) : Promise.resolve([]),
     ]);
     return { openers, positions, almanac, hints, gauntlet };
   });
+  // No per-game rows exist for CPU practice — hide the deep card entirely
+  // (the panel shows a "totals only" note instead).
+  if (playType === 'vs_cpu') return null;
 
   // Locked preview uses static sample content so free users see the shape.
   const d = isPro ? data : {

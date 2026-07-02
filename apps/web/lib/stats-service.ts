@@ -722,16 +722,26 @@ export async function fetchActivityByDay(userId: string, days: number = 7) {
   return Array.from(buckets.entries()).map(([day, count]) => ({ day, count }));
 }
 
+// -- Play-type scoping (restat B1) --
+// `matches` has NO play_type column: solo = no opponent (player2_id null),
+// vs = has opponent, and vs_cpu games are NEVER recorded as match rows
+// (practice writes user_stats aggregates only). Per-game stat fetchers take
+// a StatsPlayType so the profile toggle scopes charts honestly; the vs_cpu
+// branch returns empty and callers show a 'totals only' note instead.
+export type StatsPlayType = 'solo' | 'vs' | 'vs_cpu';
+
 /**
  * Fetch guess distribution for a user's solo wins.
  * Optionally filter to a specific game mode.
  */
-export async function fetchGuessDistribution(userId: string, gameMode?: string) {
+export async function fetchGuessDistribution(userId: string, gameMode?: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return [];
   let query = (supabase as any)
     .from('matches')
     .select('player1_score, player2_id, winner_id, player1_id, game_mode')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
-    .not('winner_id', 'is', null);
+    .not('winner_id', 'is', null)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null);
   if (gameMode) query = query.eq('game_mode', gameMode);
   query = query.limit(2000);
   const { data } = await query as { data: Array<{ player1_score: number; player2_id: string | null; winner_id: string; player1_id: string; game_mode: string }> | null };
@@ -768,13 +778,14 @@ export async function fetchGuessDistribution(userId: string, gameMode?: string) 
  * Fetch recent solve times for a user (wins only, solo).
  * Optionally filter to a specific game mode.
  */
-export async function fetchSolveTimeHistory(userId: string, limit: number = 30, gameMode?: string) {
+export async function fetchSolveTimeHistory(userId: string, limit: number = 30, gameMode?: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return [];
   let query = (supabase as any)
     .from('matches')
     .select('player1_time, player1_id, winner_id, game_mode, created_at, player2_id')
     .eq('player1_id', userId)
     .eq('winner_id', userId)
-    .is('player2_id', null)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .gt('player1_time', 0);
   if (gameMode) query = query.eq('game_mode', gameMode);
   const { data } = await query
@@ -824,12 +835,14 @@ export async function fetchDailyCalendar(userId: string, days: number = 90) {
 /**
  * Fetch current and best win streak for a specific game mode.
  */
-export async function fetchModeWinStreak(userId: string, gameMode: string) {
+export async function fetchModeWinStreak(userId: string, gameMode: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return { current: 0, best: 0 };
   const { data } = await (supabase as any)
     .from('matches')
     .select('winner_id')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .eq('game_mode', gameMode)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .order('created_at', { ascending: false })
     .limit(200) as { data: Array<{ winner_id: string | null }> | null };
 
@@ -853,11 +866,13 @@ export async function fetchModeWinStreak(userId: string, gameMode: string) {
 /**
  * Fetch time-of-day play pattern (24 hourly buckets).
  */
-export async function fetchTimeOfDayHeatmap(userId: string, gameMode?: string) {
+export async function fetchTimeOfDayHeatmap(userId: string, gameMode?: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return [];
   let query = (supabase as any)
     .from('matches')
     .select('created_at, winner_id')
-    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`);
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null);
   if (gameMode) query = query.eq('game_mode', gameMode);
   query = query.limit(2000);
   const { data } = await query as { data: Array<{ created_at: string; winner_id: string | null }> | null };
@@ -875,7 +890,8 @@ export async function fetchTimeOfDayHeatmap(userId: string, gameMode?: string) {
 /**
  * Compare last 10 solo win times vs overall average for a mode.
  */
-export async function fetchImprovementTrend(userId: string, gameMode: string) {
+export async function fetchImprovementTrend(userId: string, gameMode: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return null;
   const [recentData, statsData] = await Promise.all([
     (supabase as any)
       .from('matches')
@@ -883,7 +899,7 @@ export async function fetchImprovementTrend(userId: string, gameMode: string) {
       .eq('player1_id', userId)
       .eq('winner_id', userId)
       .eq('game_mode', gameMode)
-      .is('player2_id', null)
+      .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
       .gt('player1_time', 0)
       .order('created_at', { ascending: false })
       .limit(10),
@@ -907,7 +923,8 @@ export async function fetchImprovementTrend(userId: string, gameMode: string) {
 /**
  * Fetch personal bests (fastest win + fewest guesses) for a mode.
  */
-export async function fetchPersonalBests(userId: string, gameMode: string) {
+export async function fetchPersonalBests(userId: string, gameMode: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return null;
   const [fastestData, fewestData] = await Promise.all([
     (supabase as any)
       .from('matches')
@@ -915,7 +932,7 @@ export async function fetchPersonalBests(userId: string, gameMode: string) {
       .eq('player1_id', userId)
       .eq('winner_id', userId)
       .eq('game_mode', gameMode)
-      .is('player2_id', null)
+      .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
       .gt('player1_time', 0)
       .order('player1_time', { ascending: true })
       .limit(1),
@@ -925,7 +942,7 @@ export async function fetchPersonalBests(userId: string, gameMode: string) {
       .eq('player1_id', userId)
       .eq('winner_id', userId)
       .eq('game_mode', gameMode)
-      .is('player2_id', null)
+      .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
       .gt('player1_score', 0)
       .order('player1_score', { ascending: true })
       .limit(1),
@@ -942,11 +959,13 @@ export async function fetchPersonalBests(userId: string, gameMode: string) {
 /**
  * Count perfect games (1-guess wins) for a mode.
  */
-export async function fetchPerfectGameCount(userId: string, gameMode: string) {
+export async function fetchPerfectGameCount(userId: string, gameMode: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return 0;
   const { count } = await (supabase as any)
     .from('matches')
     .select('*', { count: 'exact', head: true })
     .eq('player1_id', userId)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .eq('winner_id', userId)
     .eq('game_mode', gameMode)
     .eq('player1_score', 1) as { count: number | null };
@@ -956,14 +975,15 @@ export async function fetchPerfectGameCount(userId: string, gameMode: string) {
 /**
  * Calculate consistency score (0-100) from coefficient of variation of last 20 solve times.
  */
-export async function fetchConsistencyScore(userId: string, gameMode: string) {
+export async function fetchConsistencyScore(userId: string, gameMode: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return null;
   const { data } = await (supabase as any)
     .from('matches')
     .select('player1_time')
     .eq('player1_id', userId)
     .eq('winner_id', userId)
     .eq('game_mode', gameMode)
-    .is('player2_id', null)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .gt('player1_time', 0)
     .order('created_at', { ascending: false })
     .limit(20) as { data: Array<{ player1_time: number }> | null };
@@ -981,12 +1001,14 @@ export async function fetchConsistencyScore(userId: string, gameMode: string) {
 /**
  * Fetch top N most-used guess words across ALL modes for a user.
  */
-export async function fetchTopWordsAllTime(userId: string, limit: number = 5) {
+export async function fetchTopWordsAllTime(userId: string, limit: number = 5, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return [];
   const { data } = await (supabase as any)
     .from('matches')
     .select('player1_id, player1_guesses, player2_guesses, winner_id')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .not('player1_guesses', 'is', null)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .order('created_at', { ascending: false })
     .limit(1000) as {
     data: Array<{ player1_id: string; player1_guesses: string[]; player2_guesses: string[] | null; winner_id: string | null }> | null;
@@ -1016,13 +1038,15 @@ export async function fetchTopWordsAllTime(userId: string, limit: number = 5) {
  * Fetch top N most-used guess words for a user in a specific mode.
  * Counts frequency from `player1_guesses` — shows the user's go-to words.
  */
-export async function fetchTopWords(userId: string, gameMode: string, limit: number = 5) {
+export async function fetchTopWords(userId: string, gameMode: string, limit: number = 5, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return [];
   const { data } = await (supabase as any)
     .from('matches')
     .select('player1_guesses, winner_id')
     .eq('player1_id', userId)
     .eq('game_mode', gameMode)
     .not('player1_guesses', 'is', null)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .order('created_at', { ascending: false })
     .limit(500) as { data: Array<{ player1_guesses: string[]; winner_id: string | null }> | null };
 
@@ -1048,12 +1072,14 @@ export async function fetchTopWords(userId: string, gameMode: string, limit: num
 /**
  * Fetch word-based insights: nemesis word (most losses), lucky word (fastest solve).
  */
-export async function fetchWordInsights(userId: string, gameMode: string) {
+export async function fetchWordInsights(userId: string, gameMode: string, playType: StatsPlayType = 'solo') {
+  if (playType === 'vs_cpu') return null;
   const { data } = await (supabase as any)
     .from('matches')
     .select('solutions, winner_id, player1_time, player1_score')
     .eq('player1_id', userId)
     .eq('game_mode', gameMode)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .not('solutions', 'is', null)
     .order('created_at', { ascending: false })
     .limit(500) as { data: Array<{ solutions: string[]; winner_id: string | null; player1_time: number; player1_score: number }> | null };
@@ -1332,12 +1358,14 @@ export interface OpenerStat {
  * that opened with them were won. First guess only — same source rows as
  * fetchTopWordsAllTime.
  */
-export async function fetchOpenerStats(userId: string, limit: number = 5): Promise<OpenerStat[]> {
+export async function fetchOpenerStats(userId: string, limit: number = 5, playType: StatsPlayType = 'solo'): Promise<OpenerStat[]> {
+  if (playType === 'vs_cpu') return [];
   const { data } = await (supabase as any)
     .from('matches')
     .select('player1_id, player1_guesses, player2_guesses, winner_id')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .not('player1_guesses', 'is', null)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .order('created_at', { ascending: false })
     .limit(1000) as {
     data: Array<{ player1_id: string; player1_guesses: string[]; player2_guesses: string[] | null; winner_id: string | null }> | null;
@@ -1367,11 +1395,13 @@ export interface WeekdayFormDay {
 }
 
 /** Win rate by LOCAL day of week (last 500 games) — "your best day" card. */
-export async function fetchWeekdayForm(userId: string): Promise<WeekdayFormDay[]> {
+export async function fetchWeekdayForm(userId: string, playType: StatsPlayType = 'solo'): Promise<WeekdayFormDay[]> {
+  if (playType === 'vs_cpu') return Array.from({ length: 7 }, (_, dow) => ({ dow, played: 0, won: 0 }));
   const { data } = await (supabase as any)
     .from('matches')
     .select('player1_id, winner_id, created_at')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .order('created_at', { ascending: false })
     .limit(500) as { data: Array<{ winner_id: string | null; created_at: string }> | null };
 
@@ -1434,12 +1464,13 @@ export async function fetchTodayDailyStanding(userId: string): Promise<DailyStan
 import { evaluateGuess } from '@wordle-duel/core';
 
 /** Rows of (my guesses, solutions, won, time) for a mode — shared loader. */
-async function fetchMyGuessRows(userId: string, gameMode?: string, limit = 400) {
+async function fetchMyGuessRows(userId: string, gameMode?: string, limit = 400, playType: StatsPlayType = 'solo') {
   let q = (supabase as any)
     .from('matches')
     .select('player1_id, player1_guesses, player2_guesses, solutions, winner_id, player1_time, player2_time, created_at, game_mode, hints_used')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .not('solutions', 'is', null)
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (gameMode) q = q.eq('game_mode', gameMode);
@@ -1475,8 +1506,9 @@ export interface OpenerDeepStat {
 }
 
 /** Opener Lab (deep): info yield of each starting word — avg greens/yellows on guess 1. */
-export async function fetchOpenerDeep(userId: string, gameMode: string, limit = 5): Promise<OpenerDeepStat[]> {
-  const rows = await fetchMyGuessRows(userId, gameMode);
+export async function fetchOpenerDeep(userId: string, gameMode: string, limit = 5, playType: StatsPlayType = 'solo'): Promise<OpenerDeepStat[]> {
+  if (playType === 'vs_cpu') return [];
+  const rows = await fetchMyGuessRows(userId, gameMode, 400, playType);
   const map = new Map<string, { count: number; greens: number; yellows: number; wins: number }>();
   for (const r of rows) {
     const opener = String(r.guesses[0]).toUpperCase();
@@ -1508,8 +1540,9 @@ export interface PositionAccuracy {
 }
 
 /** Position accuracy grid: how often each letter slot comes up green across all guesses. */
-export async function fetchPositionAccuracy(userId: string, gameMode: string): Promise<PositionAccuracy | null> {
-  const rows = await fetchMyGuessRows(userId, gameMode);
+export async function fetchPositionAccuracy(userId: string, gameMode: string, playType: StatsPlayType = 'solo'): Promise<PositionAccuracy | null> {
+  if (playType === 'vs_cpu') return null;
+  const rows = await fetchMyGuessRows(userId, gameMode, 400, playType);
   if (rows.length === 0) return null;
   const wordLength = rows[0].solutions[0]?.length ?? 5;
   const correct = new Array(wordLength).fill(0);
@@ -1535,8 +1568,9 @@ export interface AlmanacEntry {
 }
 
 /** Word Almanac: recent solutions faced (first board), with result + pace. */
-export async function fetchWordAlmanac(userId: string, gameMode: string, limit = 30): Promise<AlmanacEntry[]> {
-  const rows = await fetchMyGuessRows(userId, gameMode, limit);
+export async function fetchWordAlmanac(userId: string, gameMode: string, limit = 30, playType: StatsPlayType = 'solo'): Promise<AlmanacEntry[]> {
+  if (playType === 'vs_cpu') return [];
+  const rows = await fetchMyGuessRows(userId, gameMode, limit, playType);
   return rows.map((r) => ({
     word: String(r.solutions[0]).toUpperCase(),
     won: r.won,
@@ -1555,12 +1589,14 @@ export interface GauntletStageStat {
 }
 
 /** Gauntlet stage analytics from stored gauntlet_stages.stageResults (timeMs per stage). */
-export async function fetchGauntletStageStats(userId: string): Promise<GauntletStageStat[]> {
+export async function fetchGauntletStageStats(userId: string, playType: StatsPlayType = 'solo'): Promise<GauntletStageStat[]> {
+  if (playType === 'vs_cpu') return [];
   const { data } = await (supabase as any)
     .from('matches')
     .select('gauntlet_stages')
     .eq('player1_id', userId)
     .eq('game_mode', 'GAUNTLET')
+    .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
     .not('gauntlet_stages', 'is', null)
     .order('created_at', { ascending: false })
     .limit(200) as { data: Array<{ gauntlet_stages: any }> | null };
@@ -1590,8 +1626,9 @@ export interface HintHonesty {
 }
 
 /** Hint usage honesty card (Six/Seven/ProperNoundle — hints_used is stored). */
-export async function fetchHintHonesty(userId: string, gameMode: string): Promise<HintHonesty | null> {
-  const rows = await fetchMyGuessRows(userId, gameMode);
+export async function fetchHintHonesty(userId: string, gameMode: string, playType: StatsPlayType = 'solo'): Promise<HintHonesty | null> {
+  if (playType === 'vs_cpu') return null;
+  const rows = await fetchMyGuessRows(userId, gameMode, 400, playType);
   if (rows.length === 0) return null;
   const wins = rows.filter((r) => r.won);
   if (wins.length === 0) return null;

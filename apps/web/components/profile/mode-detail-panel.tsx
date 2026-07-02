@@ -68,20 +68,22 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
   const isOwnProfile = user?.id === userId;
 
   const { data, isLoading: loading } = useSWR(
-    ['mode-detail', userId, gameMode],
+    ['mode-detail', userId, gameMode, playType],
     async () => {
+      // Every per-game fetcher is scoped to the page-level play-type toggle
+      // (restat B1) — previously these silently mixed solo + VS matches.
       const [guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights] = await Promise.all([
-        fetchGuessDistribution(userId, gameMode),
-        fetchSolveTimeHistory(userId, 30, gameMode),
-        fetchModeWinStreak(userId, gameMode),
-        fetchTimeOfDayHeatmap(userId, gameMode),
-        fetchImprovementTrend(userId, gameMode),
-        fetchPersonalBests(userId, gameMode),
-        fetchPerfectGameCount(userId, gameMode),
-        fetchConsistencyScore(userId, gameMode),
+        fetchGuessDistribution(userId, gameMode, playType),
+        fetchSolveTimeHistory(userId, 30, gameMode, playType),
+        fetchModeWinStreak(userId, gameMode, playType),
+        fetchTimeOfDayHeatmap(userId, gameMode, playType),
+        fetchImprovementTrend(userId, gameMode, playType),
+        fetchPersonalBests(userId, gameMode, playType),
+        fetchPerfectGameCount(userId, gameMode, playType),
+        fetchConsistencyScore(userId, gameMode, playType),
         fetchHeadToHeadRecord(userId, gameMode),
-        fetchTopWords(userId, gameMode, 5),
-        fetchWordInsights(userId, gameMode),
+        fetchTopWords(userId, gameMode, 5, playType),
+        fetchWordInsights(userId, gameMode, playType),
       ]);
       return { guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights } as ModeData;
     },
@@ -242,7 +244,15 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
 
           {/* Deep Insights (restat R4): opener yield, position accuracy,
               stage breakdown (Gauntlet), hints, Word Almanac. */}
-          <ProDeepModeCard userId={userId} gameMode={gameMode} isPro={isPro} accentColor={accentColor} />
+          <ProDeepModeCard userId={userId} gameMode={gameMode} isPro={isPro} accentColor={accentColor} playType={playType} />
+
+          {/* CPU practice writes aggregate totals only — per-game charts have
+              no data to draw from, so say so instead of showing blanks. */}
+          {playType === 'vs_cpu' && (
+            <p className="text-[11px] font-bold text-center py-2" style={{ color: 'var(--color-text-muted)' }}>
+              CPU practice records totals only — per-game charts track Solo and VS matches.
+            </p>
+          )}
         </>
       )}
 
