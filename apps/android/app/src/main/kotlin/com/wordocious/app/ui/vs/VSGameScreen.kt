@@ -458,7 +458,7 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
             opponentTyping = vm.opponentTyping,
             modifier = Modifier.padding(top = 6.dp),
         )
-        OpponentStrip(vm.opponent, game.maxGuesses, game.wordLength, Modifier.padding(top = 6.dp))
+        OpponentStrip(vm.opponent, game.maxGuesses, game.wordLength, Modifier.padding(top = 6.dp), totalBoards = vm.totalBoards)
 
         // Gauntlet VS: the 5-node stage stepper (parity with the solo header).
         if (vm.mode == GameMode.GAUNTLET) {
@@ -869,6 +869,13 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                     FinalBoards(
                         myName = myName, opponentName = oppName,
                         myGuessLog = myLog, opponentGuessLog = oppLog, solutions = solutions,
+                        mode = vm.mode, seed = vm.seed,
+                        // Submission-ordered flat log — the per-board myLog above
+                        // duplicates shared guesses on applyToAll modes, which
+                        // would corrupt the engine replay.
+                        myWords = vm.myGuessLog.toList(),
+                        myTimeMs = (vm.result?.playerTime ?: 0.0).toInt(),
+                        opponentTimeMs = (vm.result?.opponentTime ?: 0.0).toInt(),
                     )
                 }
             }

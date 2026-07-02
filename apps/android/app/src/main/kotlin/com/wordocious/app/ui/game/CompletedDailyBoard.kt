@@ -198,16 +198,7 @@ fun CompletedDailyBoard(modeId: String) {
         AnimatedVisibility(visible = expanded) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (isMulti) {
-                    FlowRow(horizontalArrangement = Arrangement.Center, verticalArrangement = Arrangement.Center) {
-                        boards.forEach { b ->
-                            // Aspect ratio (cols/rows) gives the weight-based MiniBoardView a
-                            // concrete height so its rows don't collapse to ~0.
-                            Box(Modifier.padding(4.dp).width(if (totalBoards > 4) 64.dp else 96.dp)
-                                .aspectRatio(b.solution.length.toFloat() / b.maxGuesses)) {
-                                MiniBoardView(board = b)
-                            }
-                        }
-                    }
+                    CompletedBoardsRecapGrid(boards)
                     Spacer(Modifier.height(12.dp))
                     StatsRow(listOf("$boardsSolved/$totalBoards" to "Boards", "$guesses" to "Guesses", fmt(timeSeconds) to "Time"))
                 } else {
@@ -234,6 +225,28 @@ fun CompletedDailyBoard(modeId: String) {
                     boardsSolved = boardsSolved, totalBoards = totalBoards, hintsUsed = hints,
                     bestCorrectLetters = bestCorrect,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Compact uniform recap grid for a finished multi-board game — every board at
+ * a fixed small width with its solved/failed frame (completed-daily sizing).
+ * Shared by the Completed-Today card, the solo post-game screen, and the VS
+ * result final-boards recap (iOS build-87 parity: the in-play layout rendered
+ * 2-column modes zoomed huge post-game while OctoWord's 4 columns looked right).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun CompletedBoardsRecapGrid(boards: List<com.wordocious.core.BoardState>) {
+    FlowRow(horizontalArrangement = Arrangement.Center, verticalArrangement = Arrangement.Center) {
+        boards.forEach { b ->
+            // Aspect ratio (cols/rows) gives the weight-based MiniBoardView a
+            // concrete height so its rows don't collapse to ~0.
+            Box(Modifier.padding(4.dp).width(if (boards.size > 4) 64.dp else 96.dp)
+                .aspectRatio(b.solution.length.toFloat() / b.maxGuesses)) {
+                MiniBoardView(board = b)
             }
         }
     }
@@ -310,7 +323,6 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
     val cumTotal = (g.stages.sumOf { it.boardCount }).coerceAtLeast(1)
 
     var expanded by remember { mutableStateOf(false) }
-    var expandedStage by remember { mutableStateOf<Int?>(null) }
 
     Column(
         Modifier.fillMaxWidth().padding(bottom = 12.dp).clip(RoundedCornerShape(16.dp))
@@ -344,51 +356,68 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
         }
         AnimatedVisibility(visible = expanded) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp, top = 4.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                // 3-stat summary (Stages / Guesses / Time)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    StatsRow(listOf("$cleared/${g.totalStages}" to "Stages", "$totalGuesses" to "Guesses", fmtMs(totalMs) to "Time"))
-                }
-                // Per-stage rows (tap → inline expand: ANSWERS + final boards)
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    g.stages.forEach { stage ->
-                        val r = g.stageResults.firstOrNull { it.stageIndex == stage.stageIndex } ?: return@forEach
-                        val sWon = r.status == GameStatus.WON
-                        val hasBoards = !r.boardsSnapshot.isNullOrEmpty()
-                        val isExpanded = expandedStage == stage.stageIndex
-                        Column {
-                            Row(
-                                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                                    .background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEF2F2))
-                                    .border(1.dp, if (sWon) Color(0xFFDDD6FE) else Color(0xFFFECACA), RoundedCornerShape(10.dp))
-                                    .then(if (hasBoards) Modifier.clickableNoRipple { expandedStage = if (isExpanded) null else stage.stageIndex } else Modifier)
-                                    .padding(horizontal = 10.dp, vertical = 7.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Box(Modifier.size(14.dp).clip(CircleShape).background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
-                                    Text(if (sWon) "✓" else "✗", fontSize = 8.sp, fontWeight = FontWeight.Black, color = if (sWon) Color(0xFF7C3AED) else Color(0xFFDC2626))
-                                }
-                                Spacer(Modifier.width(6.dp))
-                                Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
-                                Text("${r.guesses}g · ${fmtMs(r.timeMs)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                if (hasBoards) {
-                                    Spacer(Modifier.width(6.dp))
-                                    Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp).rotate(if (isExpanded) 180f else 0f))
-                                }
-                            }
-                            AnimatedVisibility(visible = isExpanded && hasBoards) {
-                                Box(Modifier.padding(top = 6.dp, start = 4.dp, end = 4.dp, bottom = 2.dp)) {
-                                    GauntletStageInlineReview(r)
-                                }
-                            }
-                        }
-                    }
-                }
+                // Summary stats + per-stage rows (shared with the VS result screen).
+                GauntletStageBreakdown(g = g, totalMs = totalMs)
                 // Score breakdown (cumulative run values — same as post-game).
                 ScoreBreakdownCard(
                     mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = totalSecs,
                     boardsSolved = cumBoards, totalBoards = cumTotal, hintsUsed = 0,
                     stagesCompleted = cleared,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Gauntlet stage-by-stage review — 3-stat summary (Stages / Guesses / Time) +
+ * per-stage won/lost rows with tap-to-expand final boards. Shared by the
+ * Completed-Today daily card and the VS result screen (which reconstructs each
+ * player's run from the seed + flat guess list).
+ */
+@Composable
+internal fun GauntletStageBreakdown(g: GauntletProgress, totalMs: Int) {
+    val cleared = g.stageResults.count { it.status == GameStatus.WON }
+    val totalGuesses = g.stageResults.sumOf { it.guesses }
+    var expandedStage by remember { mutableStateOf<Int?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // 3-stat summary (Stages / Guesses / Time)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            StatsRow(listOf("$cleared/${g.totalStages}" to "Stages", "$totalGuesses" to "Guesses", fmtMs(totalMs) to "Time"))
+        }
+        // Per-stage rows (tap → inline expand: ANSWERS + final boards)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            g.stages.forEach { stage ->
+                val r = g.stageResults.firstOrNull { it.stageIndex == stage.stageIndex } ?: return@forEach
+                val sWon = r.status == GameStatus.WON
+                val hasBoards = !r.boardsSnapshot.isNullOrEmpty()
+                val isExpanded = expandedStage == stage.stageIndex
+                Column {
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                            .background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEF2F2))
+                            .border(1.dp, if (sWon) Color(0xFFDDD6FE) else Color(0xFFFECACA), RoundedCornerShape(10.dp))
+                            .then(if (hasBoards) Modifier.clickableNoRipple { expandedStage = if (isExpanded) null else stage.stageIndex } else Modifier)
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(Modifier.size(14.dp).clip(CircleShape).background(if (sWon) Color(0xFFF5F3FF) else Color(0xFFFEE2E2)), Alignment.Center) {
+                            Text(if (sWon) "✓" else "✗", fontSize = 8.sp, fontWeight = FontWeight.Black, color = if (sWon) Color(0xFF7C3AED) else Color(0xFFDC2626))
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
+                        Text("${r.guesses}g · ${fmtMs(r.timeMs)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                        if (hasBoards) {
+                            Spacer(Modifier.width(6.dp))
+                            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp).rotate(if (isExpanded) 180f else 0f))
+                        }
+                    }
+                    AnimatedVisibility(visible = isExpanded && hasBoards) {
+                        Box(Modifier.padding(top = 6.dp, start = 4.dp, end = 4.dp, bottom = 2.dp)) {
+                            GauntletStageInlineReview(r)
+                        }
+                    }
+                }
             }
         }
     }

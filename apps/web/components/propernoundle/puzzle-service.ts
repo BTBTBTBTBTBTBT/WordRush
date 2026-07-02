@@ -61,6 +61,21 @@ export function getDailyPuzzleNumber(dateString?: string): number {
   return getDaysSinceEpoch(dateString || getTodayLocal()) + 1;
 }
 
+/**
+ * Deterministic puzzle from a VS seed — the SAME ×31 djb2 hash the server's
+ * selectProperNoundlePuzzle uses (shared with core simpleHash), indexed into
+ * the same length-filtered list iOS/Android use, so a local bot match plays
+ * the identical proper noun on every platform.
+ */
+export function getPuzzleForSeed(seed: string): Puzzle | null {
+  if (allPuzzles.length === 0) return null;
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  return allPuzzles[Math.abs(hash) % allPuzzles.length];
+}
+
 export function getRandomPuzzle(excludeIds: string[] = []): Puzzle {
   const available = allPuzzles.filter(p => !excludeIds.includes(p.id));
   const randomIndex = Math.floor(Math.random() * available.length);

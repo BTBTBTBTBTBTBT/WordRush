@@ -40,8 +40,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.BoardState
+import com.wordocious.core.GameAction
+import com.wordocious.core.GameMode
+import com.wordocious.core.GameStatus
+import com.wordocious.core.GauntletProgress
 import com.wordocious.core.TileState
+import com.wordocious.core.createInitialState
 import com.wordocious.core.evaluateGuess
+import com.wordocious.core.gameReducer
 import kotlin.math.max
 import kotlin.random.Random
 
@@ -195,9 +202,87 @@ private fun LetterBoard(rows: List<EvaluatedRow>) {
 }
 
 /**
- * Side-by-side final boards WITH letters — yours from local play, the
- * opponent's reconstructed from the match-end guess log. Multi-board modes
- * are capped at 2 rendered boards per player with a "+N more" note.
+ * Rebuild one player's full board set by replaying their flat guess list
+ * through the real reducer from the deterministic match seed (which also
+ * regenerates Deliverance's prefilled rows) — the same replay the completed
+ * daily card uses. Falls back to a flat per-board rebuild when the seed
+ * doesn't reproduce the recorded solutions.
+ */
+private fun reconstructRecapBoards(
+    mode: GameMode,
+    seed: String,
+    solutions: List<String>,
+    guesses: List<String>,
+): List<BoardState> {
+    if (seed.isNotEmpty()) {
+        var state = createInitialState(seed, mode)
+        val seedMatches = solutions.isEmpty() ||
+            state.boards.map { it.solution.uppercase() }.toSet() == solutions.map { it.uppercase() }.toSet()
+        if (seedMatches && state.gauntlet == null) {
+            val applyAll = state.boards.size > 1 && mode != GameMode.SEQUENCE
+            for (g in guesses.take(200)) {
+                if (state.status != GameStatus.PLAYING) break
+                val word = g.uppercase()
+                if (word.isEmpty()) continue
+                state = if (mode == GameMode.SEQUENCE) {
+                    val idx = state.boards.indexOfFirst { it.status == GameStatus.PLAYING }
+                    if (idx < 0) break
+                    gameReducer(state, GameAction.SubmitGuess(word, boardIndex = idx, applyToAll = false))
+                } else {
+                    gameReducer(state, GameAction.SubmitGuess(word, applyToAll = applyAll))
+                }
+            }
+            return state.boards
+        }
+    }
+    // Legacy flat rebuild: each board gets the shared guesses up to (and
+    // including) its solve.
+    return solutions.map { sol ->
+        val g = mutableListOf<String>()
+        var solved = false
+        for (guess in guesses) {
+            g.add(guess.uppercase())
+            if (guess.uppercase() == sol.uppercase()) { solved = true; break }
+        }
+        BoardState(solution = sol, guesses = g, maxGuesses = maxOf(1, g.size), status = if (solved) GameStatus.WON else GameStatus.LOST)
+    }
+}
+
+/**
+ * Deterministically rebuild a Gauntlet run's per-stage breakdown by replaying
+ * the flat guess list through the engine — the `NextStage` reducer records
+ * each cleared stage's snapshot, so a pure replay reproduces the run.
+ */
+private fun gauntletReconstruct(seed: String, guesses: List<String>): GauntletProgress? {
+    if (seed.isEmpty()) return null
+    var state = createInitialState(seed, GameMode.GAUNTLET)
+    if (state.gauntlet == null) return null
+    var idx = 0
+    var safety = 0
+    while (idx < guesses.size && state.status == GameStatus.PLAYING && safety < 1000) {
+        safety += 1
+        val multi = state.boards.size > 1
+        state = gameReducer(state, GameAction.SubmitGuess(guesses[idx].uppercase(), boardIndex = if (multi) null else 0, applyToAll = multi))
+        idx += 1
+        // Stage cleared but run not finished → advance (records the won
+        // stage's result + boards snapshot, then sets up the next stage).
+        if (state.status == GameStatus.PLAYING && state.gauntlet != null &&
+            state.boards.all { it.status == GameStatus.WON }
+        ) {
+            state = gameReducer(state, GameAction.NextStage())
+        }
+    }
+    return state.gauntlet?.takeIf { it.stageResults.isNotEmpty() }
+}
+
+/**
+ * Final boards WITH letters — yours from local play, the opponent's
+ * reconstructed from the match-end guess log. Single-board modes render the
+ * two boards side-by-side for direct comparison; multi-board modes render
+ * each player's FULL board set as the same compact per-board recap the solo
+ * post-game uses (every board visible with its solved/failed frame — the old
+ * 2-boards-plus-"+N more" stack read as a wall of ambiguous letters).
+ * Gauntlet matches get the solo-style expandable stage-by-stage review.
  */
 @Composable
 fun FinalBoards(
@@ -206,13 +291,54 @@ fun FinalBoards(
     myGuessLog: List<GuessLogEntry>,
     opponentGuessLog: List<GuessLogEntry>,
     solutions: List<String>,
+    mode: GameMode = GameMode.DUEL,
+    seed: String = "",
+    /** My guesses in submission order (the per-board log duplicates shared
+     *  guesses on applyToAll modes) — feeds the engine replay. */
+    myWords: List<String>? = null,
+    /** Per-side elapsed (ms) — feeds the Gauntlet stage review's TIME stat. */
+    myTimeMs: Int = 0,
+    opponentTimeMs: Int = 0,
 ) {
     val mine = remember(myGuessLog, solutions) { evaluateLog(myGuessLog, solutions) }
     val theirs = remember(opponentGuessLog, solutions) { evaluateLog(opponentGuessLog, solutions) }
     if (mine.isEmpty() && theirs.isEmpty()) return
     val mySolved = remember(myGuessLog, solutions) { logSolved(myGuessLog, solutions) }
     val oppSolved = remember(opponentGuessLog, solutions) { logSolved(opponentGuessLog, solutions) }
+    val myFlatWords = myWords ?: myGuessLog.map { it.guess }
+    val oppFlatWords = opponentGuessLog.map { it.guess }
 
+    // ── Gauntlet: the solo-style stage-by-stage fan-down per player (a flat
+    // 21-board letter wall was unreadable). ─────────────────────────────────
+    if (mode == GameMode.GAUNTLET) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            GauntletRecapSection(myName, myFlatWords, Color(0xFF7C3AED), seed, myTimeMs)
+            Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+            GauntletRecapSection(opponentName, oppFlatWords, Color(0xFFEC4899), seed, opponentTimeMs)
+        }
+        return
+    }
+
+    // ── Multi-board (QuadWord/OctoWord/Succession/Deliverance): each player's
+    // FULL board set as the compact solo-style recap. ────────────────────────
+    if (solutions.size > 1) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            MultiBoardRecapSection(myName, myFlatWords, Color(0xFF7C3AED), mySolved, mode, seed, solutions)
+            Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+            MultiBoardRecapSection(opponentName, oppFlatWords, Color(0xFFEC4899), oppSolved, mode, seed, solutions)
+        }
+        return
+    }
+
+    // ── Single board (Classic/Six/Seven/ProperNoundle): side-by-side letters. ─
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
@@ -223,12 +349,58 @@ fun FinalBoards(
             Box(Modifier.width(1.dp).fillMaxHeight().background(WTheme.border))
             FinalBoardsSide(opponentName, theirs, Color(0xFFEC4899), oppSolved, Modifier.weight(1f))
         }
-        // Single-board modes: reveal the answer so a missed board isn't a mystery.
-        if (solutions.size == 1) {
+        // Reveal the answer so a missed board isn't a mystery.
+        solutions.firstOrNull()?.let { answer ->
             Text(
-                "Answer: ${solutions[0].uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                "Answer: ${answer.uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black,
                 letterSpacing = 1.sp, color = WTheme.textSecondary,
             )
+        }
+    }
+}
+
+/** One player's Gauntlet run — solo-style stage breakdown rebuilt from the seed. */
+@Composable
+private fun GauntletRecapSection(label: String, words: List<String>, accent: Color, seed: String, timeMs: Int) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
+            color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+        if (words.isEmpty()) {
+            Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 8.dp))
+            return
+        }
+        val rec = remember(seed, words) { gauntletReconstruct(seed, words) }
+        if (rec != null) {
+            Box(Modifier.fillMaxWidth()) {
+                com.wordocious.app.ui.game.GauntletStageBreakdown(g = rec, totalMs = timeMs)
+            }
+        } else {
+            Text("${words.size} guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
+    }
+}
+
+/** One player's full board set, rebuilt through the engine and laid out compactly. */
+@Composable
+private fun MultiBoardRecapSection(
+    label: String, words: List<String>, accent: Color, solved: Boolean,
+    mode: GameMode, seed: String, solutions: List<String>,
+) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
+                color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis,
+            )
+            SolveBadge(solved, fontSize = 9)
+        }
+        if (words.isEmpty()) {
+            Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 8.dp))
+        } else {
+            val boards = remember(mode, seed, solutions, words) { reconstructRecapBoards(mode, seed, solutions, words) }
+            com.wordocious.app.ui.game.CompletedBoardsRecapGrid(boards)
         }
     }
 }
@@ -236,8 +408,6 @@ fun FinalBoards(
 @Composable
 private fun FinalBoardsSide(label: String, boards: Map<Int, List<EvaluatedRow>>, accent: Color, solved: Boolean, modifier: Modifier) {
     val indices = boards.keys.sorted()
-    val shown = indices.take(2)
-    val more = indices.size - shown.size
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
@@ -245,15 +415,12 @@ private fun FinalBoardsSide(label: String, boards: Map<Int, List<EvaluatedRow>>,
         )
         // At-a-glance outcome for this side's boards.
         SolveBadge(solved, fontSize = 9)
-        if (shown.isEmpty()) {
+        if (indices.isEmpty()) {
             Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 12.dp))
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                shown.forEach { idx -> LetterBoard(boards[idx] ?: emptyList()) }
+                indices.forEach { idx -> LetterBoard(boards[idx] ?: emptyList()) }
             }
-        }
-        if (more > 0) {
-            Text("+$more more", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }
 }

@@ -142,9 +142,24 @@ object BotEngine {
         val p = resolveParams(difficulty, opts.adaptive)
         // Gauntlet's createInitialState boards hold only the current stage; the
         // full 21-board run comes from the seed directly (reducer parity).
-        val solutions = if (mode == GameMode.GAUNTLET)
-            generateSolutionsFromSeed(seed, gauntletTotalSolutions).map { it.uppercase() }
-        else state.boards.map { it.solution.uppercase() }
+        val solutions = when (mode) {
+            GameMode.GAUNTLET ->
+                generateSolutionsFromSeed(seed, gauntletTotalSolutions).map { it.uppercase() }
+            GameMode.PROPERNOUNDLE -> {
+                // ProperNoundle's answer comes from its OWN puzzle set — pull the
+                // actual (normalized) PN answer for the seed so the bot plays the
+                // same proper noun as the player and the result screen reveals
+                // the right solution (iOS build-89 parity; the reducer's raw
+                // answer isn't normalized, so accents/spaces would never match
+                // the player's normalized winning guess).
+                val pn = com.wordocious.core.ProperNoundle.puzzleForSeed(seed)
+                listOf(
+                    pn?.let { com.wordocious.core.ProperNoundle.normalize(it.answer).uppercase() }
+                        ?: (state.boards.firstOrNull()?.solution?.uppercase() ?: ""),
+                )
+            }
+            else -> state.boards.map { it.solution.uppercase() }
+        }
         val willSolveAll = if (opts.forceSolve) true else Random.nextDouble() > p.failChance
 
         val events = ArrayList<Event>()

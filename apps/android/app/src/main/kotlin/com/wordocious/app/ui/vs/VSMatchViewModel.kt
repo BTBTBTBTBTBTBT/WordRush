@@ -123,6 +123,22 @@ class VSMatchViewModel(
     /** Word length for the tug-of-war/mini boards — web MODE_WORD_LEN. */
     val wordLen: Int = when (mode) { GameMode.DUEL_6 -> 6; GameMode.DUEL_7 -> 7; else -> 5 }
 
+    /** The MODE's board count, known from match start (web MODE_TOTAL_BOARDS /
+     *  iOS VSModeInfo.totalBoards) — opponent.totalBoards is 0 until their
+     *  first progress event, which made Quad/Octo show a single tall
+     *  placeholder board in the opponent strip until the opponent typed. */
+    val totalBoards: Int = when (mode) {
+        GameMode.QUORDLE -> 4; GameMode.OCTORDLE -> 8
+        GameMode.SEQUENCE -> 4; GameMode.RESCUE -> 4
+        GameMode.GAUNTLET -> 21
+        else -> 1
+    }
+
+    /** Every guess I submitted this match, in submission order (web/iOS
+     *  myGuessLog) — the VS result recap replays it through the engine to
+     *  rebuild my full board set (incl. across Gauntlet stages). */
+    val myGuessLog = mutableListOf<String>()
+
     // Swappable transport: socket by default, hot-swapped to a client-side CPU
     // bot when the player picks "Play the CPU" (Pro-only practice).
     private var service: VSTransport = VSMatchService()
@@ -138,7 +154,10 @@ class VSMatchViewModel(
     var cpuSessionWins by mutableStateOf(0)
     var cpuSessionLosses by mutableStateOf(0)
 
-    private var seed = ""
+    // Exposed read-only: the VS result FinalBoards replays multi-board/Gauntlet
+    // recaps from the match seed (iOS build-87 parity).
+    var seed = ""
+        private set
     private var matchStartMs = 0.0
     private var resultRecorded = false
     private var countdownJob: Job? = null
@@ -402,6 +421,7 @@ class VSMatchViewModel(
         }
         // Per-match VS-upgrade resets (web resetPerMatchState).
         myGuessCount = 0
+        myGuessLog.clear()
         myStatus = null
         callout = null; lastCallout = ""; calloutJob?.cancel(); calloutJob = null
         opponentTyping = false; typingHideJob?.cancel()
@@ -414,7 +434,11 @@ class VSMatchViewModel(
         // server evaluates it against the right solution and the opponent's
         // per-board mini-board populates the correct board. Single-board /
         // quordle-style applyToAll modes still resolve to 0.
-        vm.onGuessCommitted = { guess, boardIndex -> myGuessCount += 1; service.submitGuess(guess, boardIndex) }
+        vm.onGuessCommitted = { guess, boardIndex ->
+            myGuessCount += 1
+            myGuessLog.add(guess)
+            service.submitGuess(guess, boardIndex)
+        }
         vm.onBoardSolved = { idx -> service.boardSolved(idx) }
         // Gauntlet VS: relay each cleared stage so the opponent's "Stage N" badge
         // advances (mirrors iOS VSMatchViewModel onStageCompleted).

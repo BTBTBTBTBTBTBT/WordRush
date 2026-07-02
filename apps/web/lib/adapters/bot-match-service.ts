@@ -3,6 +3,7 @@ import type { IMatchService, MatchEndedData } from './match-service';
 import { buildBotPlan, type BotPlan, type AdaptiveHint } from '@/lib/bot/bot-engine';
 import { BOT_PERSONAS, type BotDifficulty, type BotTier } from '@/lib/bot/bot-personas';
 import type { GhostRun } from '@/lib/bot/ghost-service';
+import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
 
 /** Every way to pick a CPU opponent from the chooser. */
 export type CpuKind = BotTier | 'adaptive' | 'ghost' | 'daily';
@@ -153,7 +154,7 @@ export class LocalBotMatchService implements IMatchService {
 
   // Registered callbacks
   private cbMatchFound?: (d: { matchId: string; mode: GameMode; serverStartAt: number; countdownSeconds: number; opponentUserId?: string | null }) => void;
-  private cbMatchStart?: (d: { seed: string; startTime: number }) => void;
+  private cbMatchStart?: (d: { seed: string; startTime: number; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void;
   private cbOpponentProgress?: (d: any) => void;
   private cbOpponentStageCompleted?: (d: { stageIndex: number }) => void;
   private cbOpponentTyping?: () => void;
@@ -200,6 +201,21 @@ export class LocalBotMatchService implements IMatchService {
     this.schedule(() => this.startMatch(this.config.fixedSeed ?? generateMatchSeed()), 900);
   }
 
+  /** ProperNoundle: the puzzle metadata the socket server would attach —
+   *  derived client-side from the seed so the player's PN board renders the
+   *  real display name / word groups in a local bot match. */
+  private puzzleMetadataFor(seed: string) {
+    if (this.mode !== GameMode.PROPERNOUNDLE) return undefined;
+    const puzzle = getPuzzleForSeed(seed);
+    if (!puzzle) return undefined;
+    return {
+      display: puzzle.display,
+      category: puzzle.category,
+      answerLength: puzzle.answer.length,
+      themeCategory: puzzle.themeCategory,
+    };
+  }
+
   private startMatch(seed: string) {
     if (this.ended) return;
     this.seed = seed;
@@ -226,7 +242,7 @@ export class LocalBotMatchService implements IMatchService {
     // After intro + countdown, the board goes live and the bot starts playing.
     this.schedule(() => {
       if (this.ended) return;
-      this.cbMatchStart?.({ seed, startTime: this.serverStartAt });
+      this.cbMatchStart?.({ seed, startTime: this.serverStartAt, puzzleMetadata: this.puzzleMetadataFor(seed) });
       this.runPlan();
     }, preMatchMs);
   }
@@ -348,7 +364,7 @@ export class LocalBotMatchService implements IMatchService {
     this.playerDone = false;
     this.playerBoardsSolved = 0;
     this.playerResult = null;
-    this.cbRematchStart?.({ matchId: `bot-${Date.now()}`, seed });
+    this.cbRematchStart?.({ matchId: `bot-${Date.now()}`, seed, puzzleMetadata: this.puzzleMetadataFor(seed) } as any);
     this.schedule(() => this.runPlan(), MATCH_COUNTDOWN_MS);
   }
   declineRematch(): void {

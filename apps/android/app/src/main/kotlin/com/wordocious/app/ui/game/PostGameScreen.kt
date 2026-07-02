@@ -201,18 +201,17 @@ fun PostGameScreen(
             DailyRankBadge(mode)
 
             // Board reveal (the actual finished board with colors).
-            Box(
-                modifier = Modifier.fillMaxWidth().heightIn(max = if (multiBoard) 320.dp else 360.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (multiBoard) {
-                    MultiBoardLayout(
-                        boards = state.boards, currentGuess = "",
-                        currentBoardIndex = state.currentBoardIndex,
-                        isSequential = mode == GameMode.SEQUENCE,
-                        modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp),
-                    )
-                } else {
+            if (multiBoard) {
+                // Compact uniform recap (completed-daily-board sizing) — the
+                // in-play MultiBoardLayout rendered 2-column modes
+                // (QuadWord/Deliverance) zoomed huge post-game while OctoWord's
+                // 4 columns looked right (iOS build-87 parity).
+                CompletedBoardsRecapGrid(state.boards)
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
                     SingleBoard(board = board, currentGuess = "", modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp))
                 }
             }

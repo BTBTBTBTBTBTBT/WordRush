@@ -23,6 +23,8 @@ import {
   TileState,
 } from '@wordle-duel/core';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
+import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
+import { normalizeString } from '@/components/propernoundle/game-logic';
 import type { BotDifficulty, BotTier } from './bot-personas';
 
 /** Boards per mode (mirrors apps/server MODE_BOARD_COUNT). */
@@ -237,9 +239,20 @@ export function buildBotPlan(
   const params = resolveParams(difficulty, opts.adaptive);
   // Gauntlet's createInitialState boards hold only the CURRENT stage; the full
   // 21-board run comes from the seed directly (reducer parity).
-  const solutions = mode === GameMode.GAUNTLET
-    ? generateSolutionsFromSeed(seed, GAUNTLET_TOTAL_SOLUTIONS).map((s) => s.toUpperCase())
-    : state.boards.map((b) => b.solution.toUpperCase());
+  let solutions: string[];
+  if (mode === GameMode.GAUNTLET) {
+    solutions = generateSolutionsFromSeed(seed, GAUNTLET_TOTAL_SOLUTIONS).map((s) => s.toUpperCase());
+  } else if (mode === GameMode.PROPERNOUNDLE) {
+    // ProperNoundle's answer comes from its OWN puzzle set, not the shared
+    // engine (which seeds PN with a dictionary word) — the bot was literally
+    // playing a different answer than the player, so the result screen showed
+    // the wrong solution and marked the real winner "Not solved" (iOS build-89
+    // parity).
+    const pn = getPuzzleForSeed(seed);
+    solutions = [pn ? normalizeString(pn.answer).toUpperCase() : (state.boards[0]?.solution.toUpperCase() ?? '')];
+  } else {
+    solutions = state.boards.map((b) => b.solution.toUpperCase());
+  }
 
   // Decide overall outcome + per-board guess budgets.
   const willSolveAll = opts.forceSolve ? true : Math.random() > params.failChance;

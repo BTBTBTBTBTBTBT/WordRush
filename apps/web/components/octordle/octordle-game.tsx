@@ -3,6 +3,7 @@
 import { useReducer, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { GameMode, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '../game/multi-board';
+import { CompletedBoardsRecap, toRecapBoards } from '../game/completed-mini-board';
 import Link from 'next/link';
 import { Keyboard } from '../game/keyboard';
 import dynamic from 'next/dynamic';
@@ -209,7 +210,14 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
 
       {/* Boards (scrolls post-game so the ScoreBreakdownCard fits). */}
       <div className={`flex-1 min-h-0 px-1 pt-2 pb-1 ${state.status === 'PLAYING' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-        <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
+        {state.status === 'PLAYING' ? (
+          <MultiBoard boards={state.boards} currentGuess={currentGuess} isShaking={isShaking} isInvalidWord={currentGuess.length === 5 && (!isWordValid(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))} />
+        ) : (
+          /* Finished: compact uniform recap (completed-daily-board sizing) —
+             the in-play layout rendered 2-column modes zoomed huge post-game
+             while OctoWord's 4 columns looked right (iOS build-87 parity). */
+          <CompletedBoardsRecap boards={toRecapBoards(state.boards)} />
+        )}
         {state.status !== 'PLAYING' && (
           <ScoreBreakdownCard
             gameMode="OCTORDLE"

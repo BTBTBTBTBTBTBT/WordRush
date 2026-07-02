@@ -24,6 +24,7 @@ import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
+import { CompletedBoardsRecap, toRecapBoards } from '@/components/game/completed-mini-board';
 
 // Board order: TL(0) → TR(1) → BL(2) → BR(3)
 const BOARD_ORDER = [0, 1, 2, 3];
@@ -285,7 +286,13 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
 
       {/* 2x2 Board Grid (scrolls post-game so the ScoreBreakdownCard fits). */}
       <div className={`flex-1 min-h-0 px-2 pb-2 ${state.status === GameStatus.PLAYING ? 'overflow-hidden' : 'overflow-y-auto'}`}>
-        <div className="grid grid-cols-2 grid-rows-2 gap-2 w-full max-w-lg mx-auto" style={{ height: state.status === GameStatus.PLAYING ? '100%' : 'auto' }}>
+        {state.status !== GameStatus.PLAYING ? (
+          /* Finished: compact uniform recap (completed-daily-board sizing) —
+             the in-play 2x2 layout rendered zoomed huge post-game (iOS
+             build-87 parity: all multi-board modes share the clean recap). */
+          <CompletedBoardsRecap boards={toRecapBoards(state.boards)} />
+        ) : (
+        <div className="grid grid-cols-2 grid-rows-2 gap-2 w-full max-w-lg mx-auto" style={{ height: '100%' }}>
 
             {BOARD_ORDER.map((boardIdx) => {
               const board = state.boards[boardIdx];
@@ -313,6 +320,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
               );
             })}
           </div>
+        )}
           {state.status !== GameStatus.PLAYING && (
             <ScoreBreakdownCard
               gameMode="SEQUENCE"

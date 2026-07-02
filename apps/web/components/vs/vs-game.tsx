@@ -1297,6 +1297,10 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               myGuessLog={myGuessLog}
               opponentGuessLog={matchResult?.opponentGuessLog ?? []}
               solutions={matchResult?.solutions ?? []}
+              mode={mode}
+              seed={seed}
+              myTimeMs={matchResult?.playerTime ?? 0}
+              opponentTimeMs={matchResult?.opponentTime ?? 0}
             />
           )}
         </div>
@@ -1486,7 +1490,14 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       onBoardSolved: handleBoardSolved,
       onCompleted: handleCompleted,
       onGuessSubmitted: handleGuessSubmitted,
-      opponentProgress,
+      // The MODE's board count is known from match start — the server's
+      // opponentProgress.totalBoards stays 0 until the opponent's first
+      // progress event, which made Quad/Octo render a single placeholder
+      // board in the opponent HUD until they typed (iOS build-87 parity).
+      opponentProgress: {
+        ...opponentProgress,
+        totalBoards: opponentProgress.totalBoards || totalBoards,
+      },
       opponentTiles,
       startTime,
       onTyping: handleTyping,

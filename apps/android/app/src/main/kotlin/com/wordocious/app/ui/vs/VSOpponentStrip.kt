@@ -37,7 +37,17 @@ import kotlinx.coroutines.delay
  * solved (multi), a solved checkmark, and a live colors-only tile preview.
  */
 @Composable
-fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: Int, modifier: Modifier = Modifier) {
+fun OpponentStrip(
+    opponent: OpponentProgressState,
+    maxGuesses: Int,
+    wordLength: Int,
+    modifier: Modifier = Modifier,
+    // The MODE's board count, known from match start — opponent.totalBoards is
+    // 0 until their first progress event, which made Quad/Octo render a single
+    // tall placeholder board pre-typing (iOS build-87 parity).
+    totalBoards: Int = 1,
+) {
+    val liveTotalBoards = maxOf(opponent.totalBoards, totalBoards)
     Column(
         modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -48,8 +58,8 @@ fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: 
             Spacer(Modifier.weight(1f))
             if (opponent.stagesCleared > 0) {
                 Text("Stage ${opponent.stagesCleared + 1}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-            } else if (opponent.totalBoards > 1) {
-                Text("${opponent.boardsSolved}/${opponent.totalBoards} boards", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+            } else if (liveTotalBoards > 1) {
+                Text("${opponent.boardsSolved}/$liveTotalBoards boards", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             }
             Text("${opponent.attempts} guesses", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             if (opponent.solved) Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
@@ -61,11 +71,11 @@ fun OpponentStrip(opponent: OpponentProgressState, maxGuesses: Int, wordLength: 
         // also falls out here — it shows Stage N.
         // Render the EMPTY grid from the start (no hasTiles gate) so the board is
         // visible the whole match and never flickers in on the opponent's first guess.
-        if (opponent.totalBoards <= 4) {
-            val boards = if (opponent.totalBoards > 1) (0 until opponent.totalBoards).toList() else listOf(0)
+        if (liveTotalBoards <= 4) {
+            val boards = if (liveTotalBoards > 1) (0 until liveTotalBoards).toList() else listOf(0)
             // Bigger cells so the opponent board uses the space around it and the
             // live flip-in reveal is easy to follow (single gets the most room).
-            val cell = if (opponent.totalBoards > 1) 10.dp else 14.dp
+            val cell = if (liveTotalBoards > 1) 10.dp else 14.dp
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 boards.forEach { i -> OpponentMiniBoard(opponent.tiles[i] ?: emptyList(), maxGuesses, wordLength, cell) }
             }

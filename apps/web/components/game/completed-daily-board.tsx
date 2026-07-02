@@ -2,11 +2,12 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { evaluateGuess, TileState, GameStatus, BoardState, generateDailySeed, type GameState, type GameMode } from '@wordle-duel/core';
+import { evaluateGuess, GameStatus, BoardState, generateDailySeed, type GameState, type GameMode } from '@wordle-duel/core';
 import type { GauntletProgress, GauntletStageConfig, GauntletStageResult } from '@wordle-duel/core';
 import { replayRecordedGuesses } from '@/hooks/use-game-snapshot';
 import { supabase } from '@/lib/supabase-client';
 import { Board } from '@/components/game/board';
+import { CompletedMiniBoard, GauntletStageBreakdown } from '@/components/game/completed-mini-board';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
 import { useWordDefinition } from '@/hooks/use-word-definition';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
@@ -176,97 +177,8 @@ interface CompletedDailyBoardProps {
   modeId: string;
 }
 
-const getTileColor = (state: TileState) => {
-  switch (state) {
-    case TileState.CORRECT: return 'tile-correct';
-    case TileState.PRESENT: return 'tile-present';
-    case TileState.ABSENT: return 'tile-absent';
-    case TileState.HINT_USED: return 'bg-gray-100 border-gray-200';
-    default: return 'bg-white border-gray-300';
-  }
-};
-
-const evaluateGuessTiles = (guess: string, solution: string): TileState[] => {
-  const len = solution.length;
-  const result: TileState[] = Array(len).fill(TileState.EMPTY);
-  const solutionArray = solution.split('');
-  const guessArray = guess.split('');
-  const used = Array(len).fill(false);
-
-  guessArray.forEach((letter, i) => {
-    if (letter === solutionArray[i]) { result[i] = TileState.CORRECT; used[i] = true; }
-  });
-  guessArray.forEach((letter, i) => {
-    if (result[i] === TileState.EMPTY) {
-      const f = solutionArray.findIndex((l, idx) => l === letter && !used[idx]);
-      if (f !== -1) { result[i] = TileState.PRESENT; used[f] = true; }
-      else { result[i] = TileState.ABSENT; }
-    }
-  });
-  return result;
-};
-
-// ── Compact mini board for multi-board completed view ──
-// Uses a FIXED tile size (px) rather than aspect-ratio + auto rows. The latter
-// let empty rows collapse to ~0 height on some layout passes, so boards with
-// fewer guesses rendered shorter than their neighbours (the "wonky"/uneven
-// grid). A definite tile size makes every board the same height = crisp grid,
-// mirroring the native CompletedMiniBoardView.
-function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEvaluations, tileSize = 16 }: {
-  solution: string;
-  guesses: string[];
-  maxGuesses: number;
-  hintEvaluations?: Record<number, import('@wordle-duel/core').GuessResult>;
-  won: boolean;
-  tileSize?: number;
-}) {
-  const wordLen = solution.length;
-  const fontSize = Math.max(6, Math.round(tileSize * 0.5));
-  return (
-    <div className={`relative p-0.5 rounded-lg border-2 ${
-      won ? 'border-violet-400 bg-violet-50' : 'border-red-400 bg-red-50'
-    }`}>
-      {won && (
-        <div className="absolute -top-1.5 -right-1.5 bg-violet-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center z-10">
-          ✓
-        </div>
-      )}
-      <div
-        className="grid gap-[1px]"
-        style={{
-          gridTemplateColumns: `repeat(${wordLen}, ${tileSize}px)`,
-          gridTemplateRows: `repeat(${maxGuesses}, ${tileSize}px)`,
-        }}
-      >
-        {Array.from({ length: maxGuesses }).flatMap((_, rowIndex) => {
-          const guess = guesses[rowIndex] || '';
-          const isPast = rowIndex < guesses.length;
-          const tiles = isPast
-            ? (hintEvaluations?.[rowIndex]
-                ? hintEvaluations[rowIndex].tiles.map(t => t.state)
-                : evaluateGuessTiles(guess, solution))
-            : Array(wordLen).fill(TileState.EMPTY);
-
-          return Array.from({ length: wordLen }).map((_, li) => {
-            const letter = guess[li] || '';
-            const tileState = isPast ? tiles[li] : TileState.EMPTY;
-            return (
-              <div
-                key={`${rowIndex}-${li}`}
-                className={`flex items-center justify-center border rounded font-bold leading-none ${
-                  tileState === TileState.EMPTY ? 'text-gray-800' : 'text-white'
-                } ${getTileColor(tileState)}`}
-                style={{ width: tileSize, height: tileSize, fontSize }}
-              >
-                {letter.toUpperCase()}
-              </div>
-            );
-          });
-        })}
-      </div>
-    </div>
-  );
-}
+// CompletedMiniBoard (compact fixed-tile mini board) lives in
+// completed-mini-board.tsx so the post-game + VS result recaps share it.
 
 // ── ProperNoundle mini board with variable-length word groups ──
 function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }: {
@@ -339,8 +251,6 @@ function GauntletCompletedCard({
   totalGuesses: number;
   totalTimeMs: number;
 }) {
-  const [expandedStage, setExpandedStage] = useState<number | null>(null);
-
   const fmtTime = (ms: number) => {
     const s = Math.floor(ms / 1000);
     if (s < 60) return `${s}s`;
@@ -362,98 +272,14 @@ function GauntletCompletedCard({
       won={won}
       summaryLabel={`${stagesCleared}/5 · ${totalGuesses}g · ${fmtTime(totalTimeMs)}`}
     >
-      {/* Summary stats */}
-      <div className="flex justify-center gap-5 mb-3">
-        <div className="text-center">
-          <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-            {stagesCleared}/5
-          </div>
-          <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-            Stages
-          </div>
-        </div>
-        <div className="text-center">
-          <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-            {totalGuesses}
-          </div>
-          <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-            Guesses
-          </div>
-        </div>
-        <div className="text-center">
-          <div className="text-sm font-black" style={{ color: 'var(--color-text)' }}>
-            {fmtTime(totalTimeMs)}
-          </div>
-          <div className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-            Time
-          </div>
-        </div>
-      </div>
-
-      {/* Compact stage rows */}
-      <div className="space-y-1">
-        {stages.map((stage, i) => {
-          const result = stageResults.find(r => r.stageIndex === i);
-          if (!result) return null;
-          const stageWon = result.status === GameStatus.WON;
-          const hasBoards = !!result.boardsSnapshot?.length;
-          const isExpanded = expandedStage === i;
-
-          return (
-            <div key={i}>
-              <button
-                type="button"
-                onClick={() => hasBoards && setExpandedStage(isExpanded ? null : i)}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors"
-                style={{
-                  background: stageWon ? '#f5f3ff' : '#fef2f2',
-                  border: `1px solid ${stageWon ? '#ddd6fe' : '#fecaca'}`,
-                  cursor: hasBoards ? 'pointer' : 'default',
-                }}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black"
-                    style={{
-                      background: stageWon ? '#f5f3ff' : '#fee2e2',
-                      color: stageWon ? '#7c3aed' : '#dc2626',
-                    }}
-                  >
-                    {stageWon ? '✓' : '✗'}
-                  </span>
-                  <span className="text-[10px] font-bold" style={{ color: 'var(--color-text)' }}>
-                    {stage.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    {result.guesses}g · {fmtTime(result.timeMs)}
-                  </span>
-                  {hasBoards && (
-                    <span
-                      className="text-[8px] transition-transform"
-                      style={{
-                        color: 'var(--color-text-muted)',
-                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                      }}
-                    >
-                      ▼
-                    </span>
-                  )}
-                </div>
-              </button>
-              {isExpanded && hasBoards && (
-                <div className="px-1 pt-1.5 pb-1">
-                  <GauntletStageMiniBoards
-                    boards={result.boardsSnapshot!}
-                    maxGuesses={stage.maxGuesses}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      {/* Summary stats + per-stage rows (shared with the VS result screen). */}
+      <GauntletStageBreakdown
+        stages={stages}
+        stageResults={stageResults}
+        stagesCleared={stagesCleared}
+        totalGuesses={totalGuesses}
+        totalTimeMs={totalTimeMs}
+      />
 
       {/* Score breakdown — cumulative run values, matching the native
           completed-today card (iOS/Android) and the post-game results. */}
@@ -469,28 +295,6 @@ function GauntletCompletedCard({
         />
       </div>
     </CollapsibleCompletedCard>
-  );
-}
-
-function GauntletStageMiniBoards({ boards, maxGuesses }: { boards: BoardState[]; maxGuesses: number }) {
-  const n = boards.length;
-  // Fixed tile size keeps every board the same height (crisp, uniform) and
-  // scales down as the board count grows so the row still fits.
-  const tileSize = n === 1 ? 22 : n <= 4 ? 16 : 11;
-  const maxW = n === 1 ? '160px' : n <= 4 ? '240px' : '320px';
-  return (
-    <div className="mx-auto flex flex-wrap justify-center gap-1.5 pt-2" style={{ maxWidth: maxW }}>
-      {boards.map((board, i) => (
-        <CompletedMiniBoard
-          key={i}
-          solution={board.solution}
-          guesses={board.guesses}
-          maxGuesses={maxGuesses}
-          won={board.status === GameStatus.WON}
-          tileSize={tileSize}
-        />
-      ))}
-    </div>
   );
 }
 
