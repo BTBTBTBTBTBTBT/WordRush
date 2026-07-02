@@ -24,7 +24,9 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Tab
@@ -370,16 +372,20 @@ private val STREAK_MILESTONES = listOf(7, 30, 100)
 private fun recModeTitle(key: String) = MODE_OPTIONS.firstOrNull { it.first == key }?.second ?: key
 private fun fmtSecs(v: Int) = if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s"
 
-/** "You" tab — the player's own records: milestone progress, sweep totals,
- *  per-mode personal bests, medals + global-records-held. Mirrors web YourRecordsView. */
+/** One beatable all-time record: label, gap copy, progress (record/mine %). */
+private data class RecordChase(val label: String, val gap: String, val pct: Int)
+
+/** "You" tab — the player's own records: milestone progress + Record Chase,
+ *  sweep totals (single home), per-mode personal bests, medals +
+ *  global-records-held + Trophy Shelf. Mirrors web YourRecordsView. */
 @Composable
 private fun YourRecordsTab() {
     val profile by AuthService.profile.collectAsState()
     val userId = profile?.id
     var stats by remember { mutableStateOf<List<com.wordocious.app.data.ProfileService.UserStat>>(emptyList()) }
     var sweep by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.DailySweepStats()) }
-    var recordsHeld by remember { mutableIntStateOf(0) }
-    var closest by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var recordsHeld by remember { mutableStateOf<List<LeaderboardService.AllTimeRecord>>(emptyList()) }
+    var chases by remember { mutableStateOf<List<RecordChase>>(emptyList()) }
     var selectedMode by remember { mutableStateOf("DUEL") }
     var loading by remember { mutableStateOf(true) }
 
@@ -389,21 +395,34 @@ private fun YourRecordsTab() {
         sweep = com.wordocious.app.data.MatchStatsService.dailySweepStats()
         val recs = LeaderboardService.fetchAllTimeRecords()
         stats = s
-        recordsHeld = recs.count { it.holderId == userId }
-        var bestGap = Double.MAX_VALUE
-        var best: Pair<String, String>? = null
+        recordsHeld = recs.filter { it.holderId == userId }
+        // Record Chase: EVERY beatable all-time record with your gap, sorted by
+        // how close you are (relative gap), top 3. Lower-is-better types only.
+        // Ports the web loop in records/page.tsx exactly.
+        data class Cand(val chase: RecordChase, val rel: Double)
+        val all = ArrayList<Cand>()
         for (r in recs) {
             if (r.holderId == userId || r.gameMode == null || r.playType != "solo") continue
             val mine = s.find { it.gameMode == r.gameMode && it.playType == "solo" } ?: continue
             val ft = mine.fastestTime ?: 0
             val bs = mine.bestScore ?: 0.0
             if (r.recordType == "fastest_win" && ft > 0 && ft.toDouble() > r.recordValue) {
-                val gap = ft - r.recordValue; if (gap < bestGap) { bestGap = gap; best = "${recModeTitle(r.gameMode!!)} fastest win" to "${gap.toInt()}s away" }
+                val gap = ft - r.recordValue
+                all.add(Cand(RecordChase(
+                    label = "${recModeTitle(r.gameMode!!)} fastest win",
+                    gap = "${gap.toInt()}s away",
+                    pct = Math.round(r.recordValue / ft * 100).toInt(),
+                ), gap / maxOf(1.0, r.recordValue)))
             } else if (r.recordType == "fewest_guesses" && bs > 0 && bs > r.recordValue) {
-                val gap = bs - r.recordValue; if (gap < bestGap) { bestGap = gap; best = "${recModeTitle(r.gameMode!!)} fewest guesses" to "${gap.toInt()} away" }
+                val gap = bs - r.recordValue
+                all.add(Cand(RecordChase(
+                    label = "${recModeTitle(r.gameMode!!)} fewest guesses",
+                    gap = "${gap.toInt()} away",
+                    pct = Math.round(r.recordValue / bs * 100).toInt(),
+                ), gap / maxOf(1.0, r.recordValue)))
             }
         }
-        closest = best
+        chases = all.sortedBy { it.rel }.take(3).map { it.chase }
         loading = false
     }
 
@@ -423,8 +442,8 @@ private fun YourRecordsTab() {
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item { Spacer(Modifier.height(8.dp)) }
-        // Milestone
-        if (nextMilestone != null || closest != null) item {
+        // Milestone + Record Chase (top-3 beatable records with progress bars)
+        if (nextMilestone != null || chases.isNotEmpty()) item {
             CardShell(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))) {
                 Text("NEXT UP", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
                 if (nextMilestone != null) {
@@ -441,9 +460,28 @@ private fun YourRecordsTab() {
                         Box(Modifier.fillMaxWidth((streak.toFloat() / nextMilestone).coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(50)).background(Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24)))))
                     }
                 }
-                closest?.let { (label, gap) ->
+                chases.forEach { c ->
                     Spacer(Modifier.height(8.dp))
-                    Text("You're $gap from the $label record", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(Icons.Filled.TrendingUp, null, tint = WTheme.primary, modifier = Modifier.size(14.dp))
+                        Row(Modifier.weight(1f)) {
+                            Text("You're ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
+                            Text(c.gap, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
+                            Text(
+                                " from the ${c.label} record", fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                color = WTheme.textMuted, maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
+                        Box(
+                            Modifier.fillMaxWidth((c.pct / 100f).coerceIn(0f, 1f)).height(6.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFF7C3AED)))),
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -505,8 +543,42 @@ private fun YourRecordsTab() {
                 ) {
                     Text("GLOBAL RECORDS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
                     Spacer(Modifier.height(2.dp))
-                    Text("★ $recordsHeld", fontSize = 24.sp, fontWeight = FontWeight.Black, color = if (recordsHeld == 0) WTheme.textMuted else Color(0xFFD97706))
-                    Text("all-time record${if (recordsHeld == 1) "" else "s"} held", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text("★ ${recordsHeld.size}", fontSize = 24.sp, fontWeight = FontWeight.Black, color = if (recordsHeld.isEmpty()) WTheme.textMuted else Color(0xFFD97706))
+                    Text("all-time record${if (recordsHeld.size == 1) "" else "s"} held", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+        // Trophy shelf — the specific records you hold, spelled out (web parity).
+        if (recordsHeld.isNotEmpty()) item {
+            CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706)))) {
+                Text("YOUR TROPHY SHELF", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                Spacer(Modifier.height(6.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    recordsHeld.forEach { r ->
+                        val cfg = RECORD_CFG[r.recordType]
+                        val modeTitle = r.gameMode?.let { recModeTitle(it) } ?: "Global"
+                        Row(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg).padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            if (cfg?.crown == true) {
+                                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
+                            } else {
+                                Icon(cfg?.icon ?: androidx.compose.material.icons.Icons.Filled.Star, null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
+                            }
+                            Text(
+                                "$modeTitle · ${cfg?.label ?: r.recordType}",
+                                fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
+                                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                cfg?.format?.invoke(r.recordValue.toInt()) ?: "${r.recordValue.toInt()}",
+                                fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706),
+                            )
+                        }
+                    }
                 }
             }
             Spacer(Modifier.height(24.dp))
