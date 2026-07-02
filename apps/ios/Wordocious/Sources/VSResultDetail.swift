@@ -1,5 +1,8 @@
 import SwiftUI
 import WordociousCore
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Result-screen detail blocks — ports apps/web/components/vs/vs-result-detail.tsx:
 /// FinalBoards (both players' boards WITH letters, the opponent's reconstructed
@@ -43,6 +46,162 @@ enum VSResultBoards {
             if entry.guess.uppercased() == solution { return true }
         }
         return false
+    }
+}
+
+/// VS result share card — same canvas + aesthetic as the daily ShareCardView
+/// (F8F7FF bg, WORDOCIOUS gradient wordmark, accent mode label, Win/Loss pill,
+/// tinted board cards, wordocious.com footer), with a head-to-head center:
+/// each player's name, final score (winner crowned + accent, loser dimmed),
+/// solve line, and their color-only boards. Colors only = no daily spoilers.
+struct VSShareCardView: View {
+    struct Side {
+        let name: String
+        let score: Double
+        let won: Bool
+        let solved: Bool
+        /// Per board: rows of tile states (colors only).
+        let grids: [[[TileState]]]
+    }
+
+    let modeLabel: String     // e.g. "VS CLASSIC"
+    let accent: Color
+    let isWin: Bool           // my result (drives the pill)
+    let isDraw: Bool
+    let me: Side
+    let opponent: Side
+    let dateStr: String
+
+    // Identical palette to ShareCardView.
+    private let bg = Color(hex: 0xF8F7FF)
+    private let textMuted = Color(hex: 0x6B7280)
+    private let winFG = Color(hex: 0x7C3AED), winBG = Color(hex: 0xF5F3FF)
+    private let lossFG = Color(hex: 0xDC2626), lossBG = Color(hex: 0xFEE2E2)
+    private let drawFG = Color(hex: 0xD97706), drawBG = Color(hex: 0xFEF3C7)
+    private let boardWinTint = Color(hex: 0xF5F3FF), boardLossTint = Color(hex: 0xFEF2F2)
+    private let mePurple = Color(hex: 0x7C3AED), oppPink = Color(hex: 0xEC4899)
+
+    var size: CGSize { CGSize(width: 1080, height: 1080) }
+
+    var body: some View {
+        ZStack {
+            bg
+            VStack(spacing: 0) {
+                Text("WORDOCIOUS")
+                    .font(Brand.font(56, .black))
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
+                                                    startPoint: .leading, endPoint: .trailing))
+                    .padding(.top, 44)
+                Text(modeLabel).font(Brand.font(38, .black)).foregroundStyle(accent).padding(.top, 10)
+                // Stats line + result pill (same row shape as the daily card).
+                HStack(spacing: 12) {
+                    Text("\(fmt(me.score)) vs \(fmt(opponent.score)) · \(dateStr)")
+                        .font(Brand.font(24, .bold)).foregroundStyle(textMuted)
+                    Text(isDraw ? "Draw" : isWin ? "Victory" : "Defeat")
+                        .font(Brand.font(22, .bold))
+                        .foregroundStyle(isDraw ? drawFG : isWin ? winFG : lossFG)
+                        .padding(.horizontal, 16).padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(isDraw ? drawBG : isWin ? winBG : lossBG))
+                }
+                .padding(.top, 22)
+
+                Spacer()
+                HStack(alignment: .top, spacing: 44) {
+                    sideColumn(me, accent: mePurple)
+                    Text("VS").font(Brand.font(34, .black)).foregroundStyle(textMuted).padding(.top, 120)
+                    sideColumn(opponent, accent: oppPink)
+                }
+                .padding(.horizontal, 50)
+                Spacer()
+
+                Text("wordocious.com").font(Brand.font(22, .bold))
+                    .foregroundStyle(Color(hex: 0x9CA3AF)).padding(.bottom, 40)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+
+    private func fmt(_ s: Double) -> String { String(format: "%.2f", s) }
+
+    private func sideColumn(_ side: Side, accent: Color) -> some View {
+        let highlighted = side.won || isDraw
+        return VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                if side.won && !isDraw { Text("👑").font(.system(size: 24)) }
+                Text(side.name).font(Brand.font(28, .black)).foregroundStyle(accent).lineLimit(1)
+            }
+            Text(fmt(side.score))
+                .font(Brand.font(52, .black)).monospacedDigit()
+                .foregroundStyle(highlighted ? accent : textMuted)
+            Text(side.solved ? "✓ Solved" : "✗ Not solved")
+                .font(Brand.font(20, .bold))
+                .foregroundStyle(side.solved ? Color(hex: 0x16A34A) : lossFG)
+            VStack(spacing: 14) {
+                ForEach(0..<min(side.grids.count, 2), id: \.self) { i in
+                    boardCard(grid: side.grids[i], tinted: side.won, maxSide: side.grids.count > 1 ? 260 : 380)
+                }
+            }
+            if side.grids.count > 2 {
+                Text("+\(side.grids.count - 2) more").font(Brand.font(18, .bold)).foregroundStyle(textMuted)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Same tinted/bordered board card as the daily share card (uniform grid).
+    private func boardCard(grid: [[TileState]], tinted won: Bool, maxSide: CGFloat) -> some View {
+        let cols = grid.first?.count ?? 5
+        let rows = max(grid.count, 1)
+        let gap: CGFloat = max(3, maxSide * 0.012)
+        let pad: CGFloat = maxSide * 0.04
+        let inner = maxSide - pad * 2
+        let tile = floor(min((inner - gap * CGFloat(cols - 1)) / CGFloat(cols),
+                             (inner - gap * CGFloat(rows - 1)) / CGFloat(rows)))
+        return VStack(spacing: gap) {
+            ForEach(0..<grid.count, id: \.self) { r in
+                HStack(spacing: gap) {
+                    ForEach(0..<grid[r].count, id: \.self) { c in
+                        RoundedRectangle(cornerRadius: max(4, tile * 0.12)).fill(tileColor(grid[r][c]))
+                            .frame(width: tile, height: tile)
+                    }
+                }
+            }
+        }
+        .padding(pad)
+        .background(RoundedRectangle(cornerRadius: 18).fill(won ? boardWinTint : boardLossTint))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(won ? winFG : lossFG, lineWidth: 4))
+    }
+
+    private func tileColor(_ s: TileState) -> Color {
+        switch s {
+        case .correct: return Color(hex: 0x7C3AED)
+        case .present: return Color(hex: 0xF59E0B)
+        case .absent, .hintUsed: return Color(hex: 0x9CA3AF)
+        case .empty: return Color(hex: 0xE5E7EB)
+        }
+    }
+}
+
+/// Renders the VS share card to a PNG and presents the native share sheet with
+/// [image, text] — image for Messages/WhatsApp, text+link for everything else.
+enum VSShareService {
+    @MainActor
+    static func share(card: VSShareCardView, text: String) {
+        #if canImport(UIKit)
+        let renderer = ImageRenderer(content: card)
+        renderer.proposedSize = .init(card.size)
+        renderer.scale = 1
+        var items: [Any] = [text]
+        if let image = renderer.uiImage { items.insert(image, at: 0) }
+        guard let scene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+              let root = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else { return }
+        var top = root
+        while let p = top.presentedViewController { top = p }
+        let av = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        av.popoverPresentationController?.sourceView = top.view
+        av.popoverPresentationController?.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
+        top.present(av, animated: true)
+        #endif
     }
 }
 

@@ -833,13 +833,48 @@ struct VSGameView: View {
                         .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
                 }.buttonStyle(.plain)
 
-                ShareLink(item: shareText) {
+                Button { shareVSCard() } label: {
                     Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(14, .bold)).foregroundStyle(Theme.textSecondary)
                         .frame(maxWidth: .infinity).padding(.vertical, 13)
                         .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surface)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
                 }.buttonStyle(.plain)
             }
         }
+    }
+
+    /// Render + share the VS result card (same aesthetic as the daily share
+    /// cards: wordmark, accent label, result pill, tinted color-only boards).
+    /// Falls back to text-only when there's no result payload.
+    private func shareVSCard() {
+        guard let r = vm.result else {
+            #if canImport(UIKit)
+            let av = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+            UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?
+                .windows.first(where: { $0.isKeyWindow })?.rootViewController?.present(av, animated: true)
+            #endif
+            return
+        }
+        let solutions = r.solutions ?? []
+        func grids(_ log: [VSGuessLogEntry]) -> [[[TileState]]] {
+            let byBoard = VSResultBoards.evaluate(log: log, solutions: solutions)
+            return byBoard.keys.sorted().map { idx in (byBoard[idx] ?? []).map(\.states) }
+        }
+        let isWin = r.winner == "player", isDraw = r.winner == "draw"
+        let card = VSShareCardView(
+            modeLabel: "VS \(vsModeLabel.uppercased())",
+            accent: ModeStyle.accent(mode),
+            isWin: isWin, isDraw: isDraw,
+            me: .init(name: AuthService.shared.profile?.username ?? "You",
+                      score: r.playerScore, won: isWin,
+                      solved: vm.myStatus == .won, grids: grids(vm.myGuessLog)),
+            opponent: .init(name: vm.opponentName,
+                            score: r.opponentScore, won: !isWin && !isDraw,
+                            solved: VSResultBoards.solved(log: r.opponentGuessLog ?? [], solutions: solutions),
+                            grids: grids(r.opponentGuessLog ?? [])),
+            dateStr: {
+                let f = DateFormatter(); f.dateFormat = "MMM d, yyyy"; return f.string(from: Date())
+            }())
+        VSShareService.share(card: card, text: shareText)
     }
 
     /// Share copy — ports the web result-screen handleShare strings.
