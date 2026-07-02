@@ -641,6 +641,13 @@ struct ProperNoundleVSBoard: View {
                 }
                 .padding(.top, 4)
             }
+            // Clue text — the solo view renders this under the header, but the
+            // VS board never did: tapping Clue burned a row and the fetched
+            // clue had nowhere to appear.
+            if let clue = vm.clue {
+                Text(clue).font(Brand.body(12)).foregroundStyle(Theme.textSecondary).italic()
+                    .multilineTextAlignment(.center).padding(.horizontal, 20)
+            }
             NoundleBoard(vm: vm)
             Spacer(minLength: 4)
             if !vm.isFinished { NoundleHints(vm: vm) }
