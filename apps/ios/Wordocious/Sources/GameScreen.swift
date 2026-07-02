@@ -194,6 +194,9 @@ struct GameScreen: View {
                     withAnimation(Theme.animation(.easeOut(duration: 0.3))) {
                         showVictory = true
                     }
+                    // High-point review ask: win + streak ≥ 3, once per version,
+                    // delayed past the confetti (no-ops otherwise).
+                    if newValue == .won { ReviewPrompter.maybeAskAfterWin() }
                 }
             }
         }

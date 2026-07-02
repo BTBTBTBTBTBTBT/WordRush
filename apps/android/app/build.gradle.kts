@@ -76,6 +76,8 @@ dependencies {
 
     // Google Play Billing (Pro subscriptions + day pass) — coroutine extensions
     implementation("com.android.billingclient:billing-ktx:7.1.1")
+    // Play in-app review (win-moment rating ask)
+    implementation("com.google.android.play:review-ktx:2.0.2")
 
     // Socket.IO client for realtime VS (same server.wordocious.com socket.io
     // server the web + iOS connect to). Pulls org.json + OkHttp transitively.
