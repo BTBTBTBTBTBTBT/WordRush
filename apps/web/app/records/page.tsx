@@ -11,6 +11,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
+import { SectionHeader } from '@/components/profile/stat-kit';
 import {
   fetchAllTimeRecords,
   fetchDailyLeaderboard,
@@ -688,7 +689,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
 
       {/* Personal bests by mode */}
       <div>
-        <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Your Bests By Mode</div>
+        <SectionHeader label="Your Bests By Mode" accent="#7c3aed" />
         <div className="mb-3">
           <ModePicker grid showAll={false} selectedMode={selectedMode} onSelectMode={(m) => setSelectedMode(m || 'DUEL')} />
         </div>
@@ -732,6 +733,34 @@ function YourRecordsView({ userId }: { userId?: string }) {
           </div>
         </div>
       </div>
+
+      {/* Trophy shelf — the specific records you hold, spelled out. */}
+      {recordsHeld.length > 0 && (
+        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
+          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #fbbf24, #d97706)' }} />
+          <div className="px-4 pt-2 pb-3">
+            <div className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{ color: 'var(--color-text-muted)' }}>Your Trophy Shelf</div>
+            <div className="space-y-1.5">
+              {recordsHeld.map((r) => {
+                const cfg = RECORD_LABELS[r.record_type];
+                const RIcon = cfg?.icon ?? Star;
+                const modeTitle = r.game_mode ? getMode(r.game_mode).title : 'Global';
+                return (
+                  <div key={`${r.record_type}-${r.game_mode ?? 'g'}-${r.play_type ?? 'g'}`} className="flex items-center gap-2.5 p-2" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
+                    <RIcon className="w-4 h-4 shrink-0" style={{ color: '#d97706' }} />
+                    <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>
+                      {modeTitle} · {cfg?.label ?? r.record_type}
+                    </span>
+                    <span className="text-xs font-black" style={{ color: '#d97706' }}>
+                      {cfg ? cfg.format(r.record_value) : r.record_value}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
