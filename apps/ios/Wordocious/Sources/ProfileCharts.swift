@@ -15,24 +15,39 @@ struct ProfileDashboard: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            GuessDistributionChart(mode: mode)
-            ActivityCalendarView(mode: mode)
-            SolveTimeChart(mode: mode)
-            TimeOfDayHeatmap(mode: mode)
-            TopWordsCard(mode: mode)
-            if mode == nil { SweepStatsCard() }
-            // Per-mode Pro insights (selected mode). On the All view the global
-            // Pro Stats card is rendered by ProfileTab AFTER the Insights + Medals
-            // sections, to match the web All-view order (…Insights → Medals →
-            // Pro Stats).
-            if let mode { ProInsightsCard(mode: mode) }
+            if mode == nil {
+                // Web All-view Trends order (restat R1): activity calendar →
+                // last-7-days → guess distribution → solve time → daily points
+                // → top words → opener lab → weekday form. The sweep-COUNTS
+                // card moved to Records → You (single home); the points trend
+                // stays here. Time-of-day is an iOS-only extra kept at the end.
+                ActivityCalendarView(mode: nil)
+                SevenDayActivityCard()
+                GuessDistributionChart(mode: nil)
+                SolveTimeChart(mode: nil)
+                DailyPointsChartCard()
+                TopWordsCard(mode: nil)
+                OpenerLabCard()
+                WeekdayFormCard()
+                TimeOfDayHeatmap(mode: nil)
+            } else {
+                GuessDistributionChart(mode: mode)
+                ActivityCalendarView(mode: mode)
+                SolveTimeChart(mode: mode)
+                TimeOfDayHeatmap(mode: mode)
+                TopWordsCard(mode: mode)
+                // Per-mode Pro insights (selected mode). On the All view the
+                // global Pro Stats card is rendered by ProfileTab AFTER the
+                // Insights section, to match the web All-view order.
+                ProInsightsCard(mode: mode!)
+            }
         }
     }
 }
 
 // MARK: - Shared card chrome
 
-private struct ChartCard<Content: View>: View {
+private struct LegacyChartCard<Content: View>: View {
     let title: String
     @ViewBuilder var content: Content
     var body: some View {
@@ -72,7 +87,7 @@ private struct GuessDistributionChart: View {
         // Gauntlet runs can take up to 50 guesses across 21 boards — a guess
         // histogram is meaningless there, so the chart is hidden (all platforms).
         if mode == .gauntlet { EmptyView() } else {
-        ChartCard(title: "GUESS DISTRIBUTION") {
+        LegacyChartCard(title: "GUESS DISTRIBUTION") {
             if totalWins == 0 {
                 EmptyChart(copy: "Win a game to see your guess distribution")
             } else {
@@ -104,7 +119,7 @@ private struct ActivityCalendarView: View {
         // the card is hidden entirely, not shown with placeholder copy.
         Group {
             if data.contains(where: { $0.played > 0 }) {
-                ChartCard(title: "ACTIVITY (LAST 90 DAYS)") {
+                LegacyChartCard(title: "ACTIVITY (LAST 90 DAYS)") {
                 let weeks = makeWeeks()
                 let maxPlayed = max(1, data.map(\.played).max() ?? 1)
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -266,7 +281,7 @@ private struct SolveTimeChart: View {
     private var avg: Double { data.isEmpty ? 0 : Double(data.reduce(0) { $0 + $1.seconds }) / Double(data.count) }
 
     var body: some View {
-        ChartCard(title: "SOLVE TIME — LAST \(data.count) WINS") {
+        LegacyChartCard(title: "SOLVE TIME — LAST \(data.count) WINS") {
             if data.count < 2 {
                 EmptyChart(copy: "Win more games to see your solve time trend")
             } else {
@@ -318,7 +333,7 @@ private struct TimeOfDayHeatmap: View {
         // Web parity: time-of-day-heatmap.tsx returns null when empty — hide.
         Group {
             if data.contains(where: { $0.played > 0 }) {
-                ChartCard(title: "WHEN YOU PLAY") {
+                LegacyChartCard(title: "WHEN YOU PLAY") {
                     let maxPlayed = max(1, data.map(\.played).max() ?? 1)
                     HStack(alignment: .bottom, spacing: 2) {
                         ForEach(data) { h in
@@ -362,7 +377,7 @@ private struct TopWordsCard: View {
         // Web parity: top-words-card.tsx returns null when empty — hide.
         Group {
             if !data.isEmpty {
-                ChartCard(title: "TOP WORDS") {
+                LegacyChartCard(title: "TOP WORDS") {
                 let maxCount = max(1, data.map(\.count).max() ?? 1)
                 VStack(spacing: 8) {
                     ForEach(Array(data.enumerated()), id: \.element.id) { i, w in
@@ -408,7 +423,7 @@ private struct ProInsightsCard: View {
         // no data — only the free-user locked teaser always shows.
         Group {
             if !auth.isProActive || s.hasData {
-                ChartCard(title: "PRO INSIGHTS") {
+                LegacyChartCard(title: "PRO INSIGHTS") {
             if !auth.isProActive {
                 locked
             } else {
@@ -513,78 +528,6 @@ private struct ProInsightsCard: View {
     }
 }
 
-// MARK: - Daily Sweeps (All view)
-
-/// Sweep / Flawless counts, avg & best times, current sweep streak, plus a
-/// 30-day daily-points trend. Mirrors web components/profile/sweep-stats.tsx.
-private struct SweepStatsCard: View {
-    @State private var stats = MatchStatsService.DailySweepStats()
-    @State private var points: [MatchStatsService.DailyPointsPoint] = []
-
-    var body: some View {
-        Group {
-            if stats.sweepCount > 0 {
-                ChartCard(title: "DAILY SWEEPS") {
-                    VStack(spacing: 12) {
-                        // Three equal-width centered columns (was item·Spacer·item,
-                        // which shoved the outer two to the card edges).
-                        HStack(alignment: .top, spacing: 0) {
-                            iconStat("sparkles", Color(hex: 0x7C3AED), "\(stats.sweepCount)", "Sweeps").frame(maxWidth: .infinity)
-                            iconStat("trophy.fill", Color(hex: 0xD97706), "\(stats.flawlessCount)", "Flawless").frame(maxWidth: .infinity)
-                            iconStat("flame.fill", Color(hex: 0xEF4444), "\(stats.currentSweepStreak)", "Streak").frame(maxWidth: .infinity)
-                        }
-                        HStack(alignment: .top, spacing: 0) {
-                            timeStat("Avg Sweep", stats.avgSweepSecs).frame(maxWidth: .infinity)
-                            timeStat("Best Sweep", stats.bestSweepSecs).frame(maxWidth: .infinity)
-                            timeStat("Best Flawless", stats.bestFlawlessSecs).frame(maxWidth: .infinity)
-                        }
-                        if points.count >= 2 {
-                            Text("DAILY POINTS · LAST 30 DAYS")
-                                .font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Chart {
-                                ForEach(points) { p in
-                                    LineMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
-                                        .foregroundStyle(Color(hex: 0x7C3AED)).interpolationMethod(.catmullRom)
-                                    AreaMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
-                                        .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA).opacity(0.3), .clear], startPoint: .top, endPoint: .bottom))
-                                        .interpolationMethod(.catmullRom)
-                                    if p.swept || p.flawless {
-                                        PointMark(x: .value("Day", p.day), y: .value("Points", p.totalPoints))
-                                            .foregroundStyle(p.flawless ? Color(hex: 0xF59E0B) : Color(hex: 0xEC4899))
-                                    }
-                                }
-                            }
-                            .chartXAxis(.hidden)
-                            .frame(height: 110)
-                        }
-                    }
-                }
-            } else {
-                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
-            }
-        }
-        .task {
-            stats = await MatchStatsService.dailySweepStats()
-            points = await MatchStatsService.dailyPointsOverTime(days: 30)
-        }
-    }
-
-    private func iconStat(_ icon: String, _ color: Color, _ value: String, _ label: String) -> some View {
-        VStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 14)).foregroundStyle(color)
-            Text(value).font(Brand.font(18, .black)).foregroundStyle(color)
-            Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
-        }
-    }
-    private func timeStat(_ label: String, _ s: Int) -> some View {
-        VStack(spacing: 2) {
-            Text(label).font(Brand.font(9, .heavy)).foregroundStyle(Theme.textMuted)
-            Text(s > 0 ? "\(s/60):\(String(format: "%02d", s%60))" : "—").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-        }
-    }
-}
-
 // MARK: - Pro Stats (global "All" view, Pro-gated)
 
 /// Aggregate per-mode bar charts shown on the All view — Win Rate by Mode and
@@ -628,7 +571,7 @@ struct ProStatsCard: View {
         // only the free-user locked teaser always shows.
         Group {
             if !auth.isProActive || !bars.isEmpty {
-                ChartCard(title: "PRO STATS") {
+                LegacyChartCard(title: "PRO STATS") {
             if !auth.isProActive {
                 locked
             } else {
