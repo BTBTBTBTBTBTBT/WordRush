@@ -361,7 +361,7 @@ private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, i
     // intro -> countdown reads as one continuous scene.
     Box(
         Modifier.fillMaxSize().background(Brush.radialGradient(
-            colors = listOf(Color(0xF51E1B3A), Color(0xEB000000)))),
+            colors = listOf(Color(0xFF1E1B3A), Color(0xFF0A0A12)))),
         Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -384,10 +384,9 @@ struct VSGameView: View {
 
     private var countdownOverlay: some View {
         ZStack {
-            // Same near-opaque vignette as the match-intro splash — the queue
-            // screen's "MATCH FOUND / Matching you with…" no longer bleeds
-            // through, and intro → countdown reads as one continuous scene.
-            RadialGradient(colors: [Color(hex: 0x1E1B3A).opacity(0.96), Color.black.opacity(0.92)],
+            // FULLY opaque vignette (the earlier 0.92–0.96 alphas still let the
+            // bright queue screen ghost through) — nothing behind can show.
+            RadialGradient(colors: [Color(hex: 0x1E1B3A), Color(hex: 0x0A0A12)],
                            center: .center, startRadius: 60, endRadius: 520)
                 .ignoresSafeArea()
             VStack(spacing: 16) {

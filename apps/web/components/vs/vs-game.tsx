@@ -852,7 +852,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const countdownOverlayEl = showCountdown ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in"
-      style={{ background: 'radial-gradient(circle at center, rgba(30,27,58,0.96), rgba(0,0,0,0.92))' }}
+      style={{ background: 'radial-gradient(circle at center, #1e1b3a, #0a0a12)' }}
     >
       <div className="text-center space-y-4">
         <div className="text-gray-400 text-lg font-bold uppercase tracking-widest animate-fade-in-scale">
