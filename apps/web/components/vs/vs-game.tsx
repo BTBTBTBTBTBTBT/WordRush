@@ -30,7 +30,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine } from './match-intro';
 import { VsMatchHeader } from './vs-match-header';
-import { FinalBoards, ComparisonBars } from './vs-result-detail';
+import { FinalBoards, ScoreCard, logSolved } from './vs-result-detail';
 import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
 import {
   hasPlayedModeToday,
@@ -1098,13 +1098,15 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     const myName = profile?.username || 'You';
     const oppName = opponentInfo?.username || 'Opponent';
 
-    const comparisonMetrics = [
-      { label: 'Guesses', mine: matchResult?.playerGuesses ?? 0, theirs: matchResult?.opponentGuesses ?? 0, format: (v: number) => `${v}` },
-      { label: 'Time', mine: matchResult?.playerTime ?? 0, theirs: matchResult?.opponentTime ?? 0, format: (v: number) => formatTime(v) },
-      ...(matchResult?.playerScore != null
-        ? [{ label: 'Score (guesses + time penalty)', mine: matchResult.playerScore, theirs: matchResult.opponentScore, format: (v: number) => v.toFixed(2) }]
-        : []),
-    ];
+    // Solve status decides most matches (solving beats score), so spell it out —
+    // the loser often has "better" numbers, which reads as a mistake otherwise.
+    const mySolved = myStatus === 'won';
+    const oppSolved = logSolved(matchResult?.opponentGuessLog ?? [], matchResult?.solutions ?? []);
+    const whyLine = isDraw
+      ? 'Dead even — identical scores'
+      : isWin
+        ? (mySolved && !oppSolved ? `You solved it — ${oppName} didn’t` : 'Both solved — you won on score')
+        : (oppSolved && !mySolved ? `${oppName} solved it — you didn’t` : `Both solved — ${oppName} won on score`);
 
     const handleShare = () => {
       const text = isWin
@@ -1141,6 +1143,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             <h1 className={`text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r ${headlineColor}`}>
               {headlineText}
             </h1>
+            {/* Why you won/lost, in plain English. */}
+            {matchResult && (
+              <p className="text-[13px] font-extrabold mt-2" style={{ color: 'var(--color-text-secondary)' }}>
+                {whyLine}
+              </p>
+            )}
             {/* Updated all-time head-to-head (refetched after the match was recorded) */}
             {opponentUserId && headToHead && !isCpu && (
               <p className="text-sm font-extrabold mt-2" style={{ color: 'var(--color-text-secondary)' }}>
@@ -1165,8 +1173,15 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             )}
           </div>
 
-          {/* Comparison bars: you (purple) vs them (pink), lower is better */}
-          <ComparisonBars myName={myName} opponentName={oppName} metrics={comparisonMetrics} />
+          {/* Prominent head-to-head FINAL SCORE — big totals with the exact
+              calculation + solve badges (replaces the inverted comparison bars). */}
+          {matchResult && (
+            <ScoreCard
+              me={{ name: myName, score: matchResult.playerScore ?? matchResult.playerGuesses, guesses: matchResult.playerGuesses, timeMs: matchResult.playerTime, solved: mySolved, isWinner: isWin }}
+              opponent={{ name: oppName, score: matchResult.opponentScore ?? matchResult.opponentGuesses, guesses: matchResult.opponentGuesses, timeMs: matchResult.opponentTime, solved: oppSolved, isWinner: !isWin && !isDraw }}
+              isDraw={isDraw}
+            />
+          )}
 
           {/* Rematch Status */}
           {rematchState === 'received' && (

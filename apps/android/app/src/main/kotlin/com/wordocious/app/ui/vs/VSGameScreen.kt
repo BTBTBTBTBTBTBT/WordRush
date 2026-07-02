@@ -727,10 +727,29 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
     val myName = profile?.username ?: "You"
     val oppName = vm.opponentName
     val modeLabel = vsModeLabel(vm.mode)
+    // Solve status decides most matches (solving beats score), so spell it out —
+    // the loser often has "better" numbers, which reads as a mistake otherwise.
+    val mySolved = vm.myStatus == GameStatus.WON
+    val oppSolved = logSolved(
+        (vm.result?.opponentGuessLog ?: emptyList()).map { GuessLogEntry(it.boardIndex, it.guess) },
+        vm.result?.solutions ?: emptyList(),
+    )
+    val whyLine = when {
+        vm.result == null -> null
+        isDraw -> "Dead even — identical scores"
+        isWin -> if (mySolved && !oppSolved) "You solved it — $oppName didn’t" else "Both solved — you won on score"
+        else -> if (oppSolved && !mySolved) "$oppName solved it — you didn’t" else "Both solved — $oppName won on score"
+    }
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         item { Spacer(Modifier.height(40.dp)) }
         item { Text(headline, fontSize = 56.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(colors))) }
+        // Why you won/lost, in plain English.
+        whyLine?.let { line ->
+            item {
+                Text(line, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textSecondary, modifier = Modifier.padding(top = 6.dp))
+            }
+        }
         // CPU practice: photo-finish flourish + streak / milestone / cosmetic /
         // run-it-back session tally.
         if (vm.isCpu) {
@@ -762,16 +781,14 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
             }
         }
         item { Spacer(Modifier.height(20.dp)) }
-        // Comparison bars: you (purple) vs them (pink), lower is better.
+        // Prominent head-to-head FINAL SCORE — big totals with the exact
+        // calculation + solve badges (replaces the inverted comparison bars).
         vm.result?.let { r ->
             item {
-                ComparisonBars(
-                    myName = myName, opponentName = oppName,
-                    metrics = listOf(
-                        ComparisonMetric("Guesses", r.playerGuesses.toDouble(), r.opponentGuesses.toDouble()) { "${it.toInt()}" },
-                        ComparisonMetric("Time", r.playerTime, r.opponentTime) { fmtTime(it) },
-                        ComparisonMetric("Score (guesses + time penalty)", r.playerScore, r.opponentScore) { String.format("%.2f", it) },
-                    ),
+                ScoreCard(
+                    me = ScoreCardPlayer(myName, r.playerScore, r.playerGuesses, r.playerTime, mySolved, isWin),
+                    opponent = ScoreCardPlayer(oppName, r.opponentScore, r.opponentGuesses, r.opponentTime, oppSolved, !isWin && !isDraw),
+                    isDraw = isDraw,
                 )
             }
         }

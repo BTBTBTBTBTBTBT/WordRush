@@ -77,6 +77,87 @@ private fun evaluateLog(log: List<GuessLogEntry>, solutions: List<String>): Map<
     return byBoard
 }
 
+/** Did this guess log actually solve anything? True when any guess matches its
+ *  board's solution — solving beats score, and the result screen spells it out. */
+fun logSolved(log: List<GuessLogEntry>, solutions: List<String>): Boolean =
+    log.any { (boardIndex, guess) ->
+        solutions.getOrNull(boardIndex)?.uppercase() == guess.uppercase()
+    }
+
+@Composable
+private fun SolveBadge(solved: Boolean, fontSize: Int = 10) {
+    val color = if (solved) Color(0xFF16A34A) else Color(0xFFDC2626)
+    Text(
+        if (solved) "✓ Solved" else "✗ Not solved",
+        fontSize = fontSize.sp, fontWeight = FontWeight.ExtraBold, color = color,
+        modifier = Modifier.clip(RoundedCornerShape(50))
+            .background(color.copy(alpha = 0.10f))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
+data class ScoreCardPlayer(
+    val name: String,
+    val score: Double,
+    val guesses: Int,
+    val timeMs: Double,
+    val solved: Boolean,
+    val isWinner: Boolean,
+)
+
+/**
+ * Prominent head-to-head FINAL SCORE card — big totals (winner crowned +
+ * highlighted, loser dimmed), the exact calculation under each, and solve
+ * badges. Replaces the inverted comparison bars, which read backwards for
+ * lower-is-better metrics.
+ */
+@Composable
+fun ScoreCard(me: ScoreCardPlayer, opponent: ScoreCardPlayer, isDraw: Boolean) {
+    fun clock(ms: Double): String {
+        val s = (ms / 1000).toInt()
+        return "${s / 60}m ${s % 60}s"
+    }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text("FINAL SCORE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, color = WTheme.textMuted)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ScoreColumn(me, Color(0xFF7C3AED), isDraw, ::clock, Modifier.weight(1f))
+            Text("VS", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.padding(top = 32.dp))
+            ScoreColumn(opponent, Color(0xFFEC4899), isDraw, ::clock, Modifier.weight(1f))
+        }
+        Text(
+            "Score = guesses + time (1 pt per 45s) · lowest score wins — but solving always beats not solving",
+            fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun ScoreColumn(p: ScoreCardPlayer, accent: Color, isDraw: Boolean, clock: (Double) -> String, modifier: Modifier) {
+    val highlighted = p.isWinner || isDraw
+    val timePenalty = max(0.0, p.score - p.guesses)
+    Column(
+        modifier.then(if (highlighted) Modifier else Modifier.graphicsLayer { alpha = 0.75f }),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            if (p.isWinner && !isDraw) Text("👑", fontSize = 10.sp)
+            Text(p.name, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Text(
+            String.format("%.2f", p.score), fontSize = 34.sp, fontWeight = FontWeight.Black,
+            color = if (highlighted) accent else WTheme.textMuted,
+        )
+        Text("${p.guesses} guesses + ${String.format("%.2f", timePenalty)} time", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        Text(clock(p.timeMs), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        SolveBadge(p.solved)
+    }
+}
+
 private fun tileBrush(state: TileState): Brush = when (state) {
     TileState.CORRECT -> Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)))
     TileState.PRESENT -> Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706)))
@@ -121,21 +202,31 @@ fun FinalBoards(
     val mine = remember(myGuessLog, solutions) { evaluateLog(myGuessLog, solutions) }
     val theirs = remember(opponentGuessLog, solutions) { evaluateLog(opponentGuessLog, solutions) }
     if (mine.isEmpty() && theirs.isEmpty()) return
+    val mySolved = remember(myGuessLog, solutions) { logSolved(myGuessLog, solutions) }
+    val oppSolved = remember(opponentGuessLog, solutions) { logSolved(opponentGuessLog, solutions) }
 
-    Row(
+    Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp)
-            .height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        FinalBoardsSide(myName, mine, Color(0xFF7C3AED), Modifier.weight(1f))
-        Box(Modifier.width(1.dp).fillMaxHeight().background(WTheme.border))
-        FinalBoardsSide(opponentName, theirs, Color(0xFFEC4899), Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            FinalBoardsSide(myName, mine, Color(0xFF7C3AED), mySolved, Modifier.weight(1f))
+            Box(Modifier.width(1.dp).fillMaxHeight().background(WTheme.border))
+            FinalBoardsSide(opponentName, theirs, Color(0xFFEC4899), oppSolved, Modifier.weight(1f))
+        }
+        // Single-board modes: reveal the answer so a missed board isn't a mystery.
+        if (solutions.size == 1) {
+            Text(
+                "Answer: ${solutions[0].uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp, color = WTheme.textSecondary,
+            )
+        }
     }
 }
 
 @Composable
-private fun FinalBoardsSide(label: String, boards: Map<Int, List<EvaluatedRow>>, accent: Color, modifier: Modifier) {
+private fun FinalBoardsSide(label: String, boards: Map<Int, List<EvaluatedRow>>, accent: Color, solved: Boolean, modifier: Modifier) {
     val indices = boards.keys.sorted()
     val shown = indices.take(2)
     val more = indices.size - shown.size
@@ -144,6 +235,8 @@ private fun FinalBoardsSide(label: String, boards: Map<Int, List<EvaluatedRow>>,
             label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
             color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
+        // At-a-glance outcome for this side's boards.
+        SolveBadge(solved, fontSize = 9)
         if (shown.isEmpty()) {
             Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 12.dp))
         } else {
