@@ -60,7 +60,7 @@ object ShareImage {
     private const val TEXT_MUTED = 0xFF6B7280.toInt()
     private const val FOOT = 0xFF9CA3AF.toInt()
 
-    private fun accentFor(mode: GameMode): Int = when (mode) {
+    fun accentFor(mode: GameMode): Int = when (mode) {
         GameMode.DUEL -> 0xFF7C3AED
         GameMode.QUORDLE -> 0xFFEC4899
         GameMode.OCTORDLE -> 0xFF7E22CE
@@ -350,6 +350,153 @@ object ShareImage {
                 }
             }
         }
+    }
+
+    // ── VS result card ─────────────────────────────────────────────────────────
+
+    data class VsShareSide(
+        val name: String,
+        val score: Double,
+        val won: Boolean,
+        val solved: Boolean,
+        /** Per board: rows of tile states (colors only — no daily-VS spoilers). */
+        val grids: List<List<List<TileState>>>,
+    )
+
+    /**
+     * VS result share card — same canvas + aesthetic as the daily card
+     * (wordmark, accent label, result pill, tinted board cards, footer) with a
+     * head-to-head center: name (winner crowned), score (accent vs dimmed),
+     * solved line, and up to 2 color-only boards per side.
+     */
+    fun renderVs(
+        context: Context, modeLabel: String, accent: Int,
+        isWin: Boolean, isDraw: Boolean, me: VsShareSide, opp: VsShareSide,
+    ): Bitmap {
+        val bmp = Bitmap.createBitmap(W, 1080, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(BG)
+        val black = nunito(context, true)
+        val bold = nunito(context, false)
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+        val cx = W / 2f
+
+        // Header — identical geometry to render().
+        p.typeface = black; p.textSize = 56f; p.isFakeBoldText = true
+        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 92f, p)
+        p.shader = null
+        p.textSize = 38f; p.color = accent
+        c.drawText(modeLabel.uppercase(), cx, 152f, p)
+
+        val date = SimpleDateFormat("MMM d, yyyy", Locale.US).format(Date())
+        p.typeface = bold; p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText("%.2f vs %.2f · %s".format(me.score, opp.score, date), cx, 200f, p)
+
+        // Victory / Defeat / Draw pill.
+        run {
+            p.textSize = 22f
+            val label = if (isDraw) "Draw" else if (isWin) "Victory" else "Defeat"
+            val tw = p.measureText(label)
+            val rect = RectF(cx - tw / 2 - 16f, 218f, cx + tw / 2 + 16f, 256f)
+            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = (if (isDraw) 0xFFFEF3C7 else if (isWin) 0xFFF5F3FF else 0xFFFEE2E2).toInt()
+            }
+            c.drawRoundRect(rect, 10f, 10f, fill)
+            p.color = (if (isDraw) 0xFFD97706 else if (isWin) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(label, cx, rect.centerY() + 8f, p)
+        }
+
+        // Head-to-head sides.
+        fun side(s: VsShareSide, sideAccent: Int, scx: Float) {
+            val highlighted = s.won || isDraw
+            var y = 340f
+            p.typeface = black; p.textSize = 28f; p.color = sideAccent
+            val crown = if (s.won && !isDraw) "👑 " else ""
+            c.drawText((crown + s.name).take(22), scx, y, p)
+            y += 58f
+            p.textSize = 52f; p.color = if (highlighted) sideAccent else TEXT_MUTED
+            c.drawText("%.2f".format(s.score), scx, y, p)
+            y += 40f
+            p.typeface = bold; p.textSize = 20f
+            p.color = (if (s.solved) 0xFF16A34A else 0xFFDC2626).toInt()
+            c.drawText(if (s.solved) "✓ Solved" else "✗ Not solved", scx, y, p)
+            y += 32f
+            val shown = s.grids.take(2)
+            val maxSide = if (shown.size > 1) 250f else 380f
+            for (grid in shown) {
+                y += drawVsBoard(c, grid, scx, y, maxSide, s.won) + 14f
+            }
+            if (s.grids.size > 2) {
+                p.typeface = bold; p.textSize = 18f; p.color = TEXT_MUTED
+                c.drawText("+${s.grids.size - 2} more", scx, y + 12f, p)
+            }
+        }
+        side(me, 0xFF7C3AED.toInt(), W * 0.28f)
+        side(opp, 0xFFEC4899.toInt(), W * 0.72f)
+        p.typeface = black; p.textSize = 34f; p.color = TEXT_MUTED
+        c.drawText("VS", cx, 480f, p)
+
+        p.typeface = bold; p.textSize = 22f; p.color = FOOT
+        c.drawText("wordocious.com", cx, 1080f - 40f, p)
+        return bmp
+    }
+
+    /** Grid-only board card (tinted + bordered like the daily card). Returns height. */
+    private fun drawVsBoard(c: Canvas, grid: List<List<TileState>>, scx: Float, top: Float, maxSide: Float, won: Boolean): Float {
+        val cols = grid.firstOrNull()?.size ?: 5
+        val rows = maxOf(grid.size, 1)
+        val gap = maxOf(3f, maxSide * 0.012f)
+        val pad = maxSide * 0.04f
+        val inner = maxSide - pad * 2
+        val tile = minOf((inner - gap * (cols - 1)) / cols, (inner - gap * (rows - 1)) / rows)
+        val cardW = tile * cols + gap * (cols - 1) + pad * 2
+        val cardH = tile * rows + gap * (rows - 1) + pad * 2
+        val x = scx - cardW / 2
+        val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEF2F2).toInt() }
+        val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE; strokeWidth = 4f
+            color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+        }
+        c.drawRoundRect(RectF(x, top, x + cardW, top + cardH), 18f, 18f, fill)
+        c.drawRoundRect(RectF(x, top, x + cardW, top + cardH), 18f, 18f, stroke)
+        val tilePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        for (r in grid.indices) {
+            for (col in grid[r].indices) {
+                tilePaint.color = when (grid[r][col]) {
+                    TileState.CORRECT -> 0xFF7C3AED.toInt()
+                    TileState.PRESENT -> 0xFFF59E0B.toInt()
+                    TileState.EMPTY -> 0xFFE5E7EB.toInt()
+                    else -> 0xFF9CA3AF.toInt()
+                }
+                val tx = x + pad + col * (tile + gap)
+                val ty = top + pad + r * (tile + gap)
+                c.drawRoundRect(RectF(tx, ty, tx + tile, ty + tile), maxOf(4f, tile * 0.12f), maxOf(4f, tile * 0.12f), tilePaint)
+            }
+        }
+        return cardH
+    }
+
+    /** Share the VS card image + text (no /s upload — that route is solo-keyed). */
+    fun shareVs(context: Context, bitmap: Bitmap, text: String) {
+        val uri = runCatching {
+            val dir = File(context.cacheDir, "share").apply { mkdirs() }
+            val file = File(dir, "wordocious-vs.png")
+            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        }.getOrNull()
+        if (uri == null) { ShareHelper.share(context, text); return }
+        runCatching {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_TEXT, text)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(intent, "Share your result").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        }.onFailure { ShareHelper.share(context, text) }
     }
 
     /** ShareMode strings the web /s/[...key] route + iOS ShareService use. */

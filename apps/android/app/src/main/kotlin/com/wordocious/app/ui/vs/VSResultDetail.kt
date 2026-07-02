@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.TileState
@@ -75,6 +76,13 @@ private fun evaluateLog(log: List<GuessLogEntry>, solutions: List<String>): Map<
             .add(EvaluatedRow(word.map { it.toString() }, states))
     }
     return byBoard
+}
+
+/** Guess log → per-board grids of tile states (colors only), sorted by board.
+ *  Used by the VS share card (ShareImage.renderVs). */
+fun logToGrids(log: List<GuessLogEntry>, solutions: List<String>): List<List<List<TileState>>> {
+    val byBoard = evaluateLog(log, solutions)
+    return byBoard.keys.sorted().map { idx -> (byBoard[idx] ?: emptyList()).map { it.states } }
 }
 
 /** Did this guess log actually solve anything? True when any guess matches its

@@ -31,6 +31,7 @@ import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine } from './match-intro';
 import { VsMatchHeader } from './vs-match-header';
 import { FinalBoards, ScoreCard, logSolved } from './vs-result-detail';
+import { generateVsShareImage, logToGrids } from '@/lib/vs-share-image';
 import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
 import {
   hasPlayedModeToday,
@@ -1108,13 +1109,43 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         ? (mySolved && !oppSolved ? `You solved it — ${oppName} didn’t` : 'Both solved — you won on score')
         : (oppSolved && !mySolved ? `${oppName} solved it — you didn’t` : `Both solved — ${oppName} won on score`);
 
-    const handleShare = () => {
+    const handleShare = async () => {
       const text = isWin
         ? `I just beat ${oppName} in a Wordocious VS ${label} duel! ⚔️🏆`
         : isDraw
           ? `${oppName} and I battled to a draw in VS ${label} on Wordocious! ⚔️`
           : `Epic VS ${label} duel against ${oppName} on Wordocious! ⚔️`;
       const payload = `${text}\nhttps://wordocious.com`;
+
+      // Render the VS share card (same aesthetic as the daily cards) and share
+      // it as an image when the platform supports file sharing; text fallback.
+      if (matchResult) {
+        try {
+          const solutions = matchResult.solutions ?? [];
+          const blob = await generateVsShareImage({
+            modeLabel: `VS ${label}`,
+            isWin,
+            isDraw,
+            me: {
+              name: myName, score: matchResult.playerScore ?? matchResult.playerGuesses,
+              won: isWin, solved: mySolved, grids: logToGrids(myGuessLog, solutions),
+            },
+            opponent: {
+              name: oppName, score: matchResult.opponentScore ?? matchResult.opponentGuesses,
+              won: !isWin && !isDraw, solved: oppSolved,
+              grids: logToGrids(matchResult.opponentGuessLog ?? [], solutions),
+            },
+          });
+          if (blob) {
+            const file = new File([blob], 'wordocious-vs.png', { type: 'image/png' });
+            if (typeof navigator !== 'undefined' && navigator.canShare?.({ files: [file] })) {
+              await navigator.share({ files: [file], text: payload });
+              return;
+            }
+          }
+        } catch { /* fall through to text share */ }
+      }
+
       if (typeof navigator !== 'undefined' && navigator.share) {
         navigator.share({ text: payload }).catch(() => {});
       } else if (typeof navigator !== 'undefined' && navigator.clipboard) {

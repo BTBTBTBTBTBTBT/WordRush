@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.vs
 
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -822,7 +823,28 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                     val text = if (isWin) "I just beat $oppName in a Wordocious VS $modeLabel duel! ⚔️🏆"
                     else if (isDraw) "$oppName and I battled to a draw in VS $modeLabel on Wordocious! ⚔️"
                     else "Epic VS $modeLabel duel against $oppName on Wordocious! ⚔️"
-                    com.wordocious.app.data.ShareHelper.share(context, "$text\nhttps://wordocious.com")
+                    val payload = "$text\nhttps://wordocious.com"
+                    // Render the VS share card (same aesthetic as the daily cards);
+                    // text-only fallback when there's no result payload.
+                    val r = vm.result
+                    if (r != null) {
+                        val solutions = r.solutions ?: emptyList()
+                        val myLog = vm.game?.state?.value?.boards.orEmpty().flatMapIndexed { i, b ->
+                            b.guesses.map { GuessLogEntry(i, it) }
+                        }
+                        val oppLog = (r.opponentGuessLog ?: emptyList()).map { GuessLogEntry(it.boardIndex, it.guess) }
+                        val bmp = com.wordocious.app.data.ShareImage.renderVs(
+                            context, "VS $modeLabel", com.wordocious.app.data.ShareImage.accentFor(vm.mode),
+                            isWin = isWin, isDraw = isDraw,
+                            me = com.wordocious.app.data.ShareImage.VsShareSide(
+                                myName, r.playerScore, isWin, mySolved, logToGrids(myLog, solutions)),
+                            opp = com.wordocious.app.data.ShareImage.VsShareSide(
+                                oppName, r.opponentScore, !isWin && !isDraw, oppSolved, logToGrids(oppLog, solutions)),
+                        )
+                        com.wordocious.app.data.ShareImage.shareVs(context, bmp, payload)
+                    } else {
+                        com.wordocious.app.data.ShareHelper.share(context, payload)
+                    }
                 }
             }
         }
