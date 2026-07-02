@@ -694,19 +694,33 @@ struct VSGameView: View {
             : [Color(hex: 0xF87171), Color(hex: 0xFDA4AF)]
         let myName = AuthService.shared.profile?.username ?? "You"
         let oppName = vm.opponentName
+        // Solve status decides most matches (solving beats score), so spell it
+        // out — the loser often has "better" numbers and it reads as a mistake.
+        let mySolved = vm.myStatus == .won
+        let oppSolved = VSResultBoards.solved(log: vm.result?.opponentGuessLog ?? [],
+                                              solutions: vm.result?.solutions ?? [])
+        let whyLine: String? = {
+            guard vm.result != nil else { return nil }
+            if isDraw { return "Dead even — identical scores" }
+            if isWin { return mySolved && !oppSolved ? "You solved it — \(oppName) didn’t" : "Both solved — you won on score" }
+            return oppSolved && !mySolved ? "\(oppName) solved it — you didn’t" : "Both solved — \(oppName) won on score"
+        }()
 
         return ZStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Headline + updated all-time head-to-head (refetched after
-                    // the match was recorded).
+                    // Headline + why-you-won/lost + updated all-time head-to-head
+                    // (refetched after the match was recorded).
                     VStack(spacing: 8) {
                         Text(headline).font(Brand.font(56, .black))
                             .foregroundStyle(LinearGradient(colors: colors, startPoint: .leading, endPoint: .trailing))
                             .minimumScaleFactor(0.6).lineLimit(1)
+                        if let whyLine {
+                            Text(whyLine).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textSecondary)
+                        }
                         if vm.opponentUserId != nil, let h2h = vm.headToHead {
                             Text(HeadToHeadService.headToHeadLine(opponentName: oppName, h2h))
-                                .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textSecondary)
+                                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                         }
                     }
                     .padding(.top, 40)
@@ -735,16 +749,16 @@ struct VSGameView: View {
                         }
                     }
 
-                    // Comparison bars: you (purple) vs them (pink), lower is better
+                    // Prominent head-to-head FINAL SCORE — big totals with the exact
+                    // calculation + solve badges (replaces the inverted comparison
+                    // bars, which read backwards for lower-is-better metrics).
                     if let r = vm.result {
-                        VSComparisonBars(myName: myName, opponentName: oppName, metrics: [
-                            .init(label: "Guesses", mine: Double(r.playerGuesses), theirs: Double(r.opponentGuesses),
-                                  format: { "\(Int($0))" }),
-                            .init(label: "Time", mine: r.playerTime, theirs: r.opponentTime,
-                                  format: { [self] in formatTime($0) }),
-                            .init(label: "Score (guesses + time penalty)", mine: r.playerScore, theirs: r.opponentScore,
-                                  format: { String(format: "%.2f", $0) }),
-                        ])
+                        VSScoreCard(
+                            me: .init(name: myName, score: r.playerScore, guesses: r.playerGuesses,
+                                      timeMs: r.playerTime, solved: mySolved, isWinner: isWin),
+                            opponent: .init(name: oppName, score: r.opponentScore, guesses: r.opponentGuesses,
+                                            timeMs: r.opponentTime, solved: oppSolved, isWinner: !isWin && !isDraw),
+                            isDraw: isDraw)
                     }
 
                     rematchSection
