@@ -310,17 +310,89 @@ struct VSScoreCard: View {
     }
 }
 
-/// Side-by-side final boards WITH letters — yours from local play, the
-/// opponent's reconstructed from the match-end guess log. Multi-board modes
-/// are capped at 2 rendered boards per player with a "+N more" note.
+/// Final boards WITH letters — yours from local play, the opponent's
+/// reconstructed from the match-end guess log. Single-board modes render the
+/// two boards side-by-side for direct comparison; multi-board modes render
+/// each player's FULL board set as the same compact per-board recap the solo
+/// post-game uses (every board visible with its solved/failed frame — the old
+/// 2-boards-plus-"+N more" stack read as a wall of ambiguous letters).
 struct VSFinalBoards: View {
     let myName: String
     let opponentName: String
     let myGuessLog: [VSGuessLogEntry]
     let opponentGuessLog: [VSGuessLogEntry]
     let solutions: [String]
+    var mode: GameMode = .duel
+    var seed: String = ""
 
     var body: some View {
+        if solutions.count > 1 {
+            multiBoardRecap
+        } else {
+            singleBoardComparison
+        }
+    }
+
+    // MARK: Multi-board (Quad/Octo/Succession/Deliverance/Gauntlet)
+
+    @ViewBuilder private var multiBoardRecap: some View {
+        let myWords = myGuessLog.map(\.guess)
+        let oppWords = opponentGuessLog.map(\.guess)
+        if !(myWords.isEmpty && oppWords.isEmpty) {
+            VStack(spacing: 14) {
+                recapSection(label: myName, words: myWords, accent: Color(hex: 0x7C3AED),
+                             solved: VSResultBoards.solved(log: myGuessLog, solutions: solutions))
+                Rectangle().fill(Theme.border).frame(height: 1)
+                recapSection(label: opponentName, words: oppWords, accent: Color(hex: 0xEC4899),
+                             solved: VSResultBoards.solved(log: opponentGuessLog, solutions: solutions))
+            }
+            .padding(16).frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        }
+    }
+
+    /// One player's full board set, rebuilt through the engine (same replay the
+    /// solo "view solved puzzle" uses) and laid out compactly.
+    @ViewBuilder private func recapSection(label: String, words: [String], accent: Color, solved: Bool) -> some View {
+        let boards = CompletedBoardReconstruct.boards(
+            mode: mode, seed: seed, solutions: solutions, guesses: words,
+            maxGuesses: VSModeInfo.maxGuesses(mode))
+        let wordLen = solutions.first?.count ?? 5
+        let tile = CompletedBoardLayout.tileSize(boardCount: boards.count, wordLen: wordLen)
+        let cols = CompletedBoardLayout.cols(boards.count)
+        let rowCount = boards.map { $0.guesses.count }.max() ?? 1
+
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Text(label.uppercased())
+                    .font(Brand.font(10, .heavy)).tracking(0.8)
+                    .foregroundStyle(accent).lineLimit(1)
+                HStack(spacing: 3) {
+                    Image(systemName: solved ? "checkmark.circle.fill" : "xmark.circle.fill").font(.system(size: 9))
+                    Text(solved ? "Solved" : "Not solved").font(Brand.font(9, .heavy))
+                }
+                .foregroundStyle(solved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+            }
+            if words.isEmpty {
+                Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    .padding(.vertical, 8)
+            } else {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing), count: cols),
+                          spacing: CompletedBoardLayout.gridSpacing) {
+                    ForEach(boards.indices, id: \.self) { i in
+                        CompletedMiniBoardView(board: boards[i], tileSize: tile, rowCount: max(1, rowCount))
+                    }
+                }
+                .frame(maxWidth: CompletedBoardLayout.maxWidth(boards.count))
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: Single board (Classic/Six/Seven/ProperNoundle)
+
+    @ViewBuilder private var singleBoardComparison: some View {
         let mine = VSResultBoards.evaluate(log: myGuessLog, solutions: solutions)
         let theirs = VSResultBoards.evaluate(log: opponentGuessLog, solutions: solutions)
 
@@ -334,9 +406,8 @@ struct VSFinalBoards: View {
                     Rectangle().fill(Theme.border).frame(width: 1)
                     side(label: opponentName, boards: theirs, accent: Color(hex: 0xEC4899), solved: oppSolved)
                 }
-                // Single-board modes: reveal the answer so a missed board isn't a
-                // mystery. (Multi-board answer lists are too long to show here.)
-                if solutions.count == 1, let answer = solutions.first {
+                // Reveal the answer so a missed board isn't a mystery.
+                if let answer = solutions.first {
                     Text("Answer: \(answer.uppercased())")
                         .font(Brand.font(11, .black)).tracking(1)
                         .foregroundStyle(Theme.textSecondary)
@@ -350,8 +421,6 @@ struct VSFinalBoards: View {
 
     private func side(label: String, boards: [Int: [VSResultBoards.EvaluatedRow]], accent: Color, solved: Bool) -> some View {
         let indices = boards.keys.sorted()
-        let shown = Array(indices.prefix(2))
-        let more = indices.count - shown.count
         return VStack(spacing: 8) {
             Text(label.uppercased())
                 .font(Brand.font(10, .heavy)).tracking(0.8)
@@ -362,18 +431,15 @@ struct VSFinalBoards: View {
                 Text(solved ? "Solved" : "Not solved").font(Brand.font(9, .heavy))
             }
             .foregroundStyle(solved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
-            if shown.isEmpty {
+            if indices.isEmpty {
                 Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     .padding(.vertical, 12)
             } else {
                 VStack(spacing: 12) {
-                    ForEach(shown, id: \.self) { idx in
+                    ForEach(indices, id: \.self) { idx in
                         letterBoard(boards[idx] ?? [])
                     }
                 }
-            }
-            if more > 0 {
-                Text("+\(more) more").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
             }
         }
         .frame(maxWidth: .infinity)

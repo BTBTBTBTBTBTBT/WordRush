@@ -420,7 +420,7 @@ struct VSGameView: View {
                 matchHeader
                 tugOfWarHeader
                     .padding(.horizontal, 10).padding(.top, 6)
-                OpponentStrip(opponent: vm.opponent, gradient: gradient)
+                OpponentStrip(opponent: vm.opponent, gradient: gradient, totalBoards: vm.totalBoards)
                     .padding(.horizontal, 10).padding(.top, 6)
                 ProperNoundleVSBoard(vm: pvm)   // bespoke ProperNoundle board+keyboard
             }
@@ -437,6 +437,7 @@ struct VSGameView: View {
                     .padding(.horizontal, 10).padding(.top, 6)
                 OpponentStrip(opponent: vm.opponent, gradient: gradient,
                               maxGuesses: game.maxGuesses, wordLength: game.wordLength,
+                              totalBoards: vm.totalBoards,
                               stageName: mode == .gauntlet ? game.gauntletStageName(at: vm.opponent.stagesCleared) : nil,
                               stageGradient: mode == .gauntlet ? GameScreen.gauntletStageGradient(game.gauntletStageName(at: vm.opponent.stagesCleared)) : [])
                     .padding(.horizontal, 10).padding(.top, 6)
@@ -788,7 +789,8 @@ struct VSGameView: View {
                         VSFinalBoards(myName: myName, opponentName: oppName,
                                       myGuessLog: vm.myGuessLog,
                                       opponentGuessLog: r.opponentGuessLog ?? [],
-                                      solutions: solutions)
+                                      solutions: solutions,
+                                      mode: mode, seed: vm.seed)
                     }
                 }
                 .padding(.horizontal, 24).padding(.bottom, 24)
@@ -1104,6 +1106,10 @@ private struct OpponentStrip: View {
     let gradient: [Color]
     var maxGuesses: Int = 6
     var wordLength: Int = 5
+    /// The MODE's board count, known from match start — opponent.totalBoards is
+    /// 0 until their first progress event, which made Quad/Octo render a single
+    /// tall placeholder board pre-typing.
+    var totalBoards: Int = 1
     /// Gauntlet VS: the opponent's current stage name + its accent gradient.
     var stageName: String? = nil
     var stageGradient: [Color] = []
@@ -1126,8 +1132,8 @@ private struct OpponentStrip: View {
                                                             startPoint: .leading, endPoint: .trailing))
                             .lineLimit(1)
                     }
-                } else if opponent.totalBoards > 1 {
-                    Text("\(opponent.boardsSolved)/\(opponent.totalBoards) boards").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
+                } else if max(opponent.totalBoards, totalBoards) > 1 {
+                    Text("\(opponent.boardsSolved)/\(max(opponent.totalBoards, totalBoards)) boards").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
                 }
                 Text("\(opponent.attempts) guesses").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
                 if opponent.solved {
@@ -1143,12 +1149,13 @@ private struct OpponentStrip: View {
             // Gauntlet (21 boards) also falls out here — it shows Stage N.
             // Render the EMPTY grid from the start (no hasTiles gate) so the board
             // is visible the whole match and never flickers in on the first guess.
-            if opponent.totalBoards <= 4 {
-                let boards = opponent.totalBoards > 1 ? Array(0..<opponent.totalBoards) : [0]
+            if max(opponent.totalBoards, totalBoards) <= 4 {
+                let total = max(opponent.totalBoards, totalBoards)
+                let boards = total > 1 ? Array(0..<total) : [0]
                 // Bigger cells so the opponent board uses the space around it and
                 // the live flip-in reveal is easy to follow (single board gets the
                 // most room; multi-board stays compact so 4 grids still fit).
-                let cell: CGFloat = opponent.totalBoards > 1 ? 10 : 14
+                let cell: CGFloat = total > 1 ? 10 : 14
                 HStack(spacing: 8) {
                     ForEach(boards, id: \.self) { i in
                         OpponentMiniBoard(tiles: opponent.tiles[i] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: cell)

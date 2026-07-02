@@ -40,7 +40,10 @@ struct ProfileTab: View {
     @State private var sevenDayTotal = 0
 
     // Mode-picker (per-mode stats) only covers modes backed by a GameMode enum.
-    private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil && $0.mode != nil }
+    // Every daily mode with recorded stats — including ProperNoundle, whose
+    // HomeMode has `mode: nil` (it launches its own view, not GameScreen) but
+    // still has a GameMode case + stats rows. Only VS (dbKey nil) is excluded.
+    private let dailyModes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
     // Today's-Dailies grid covers all 9 daily-recordable modes — including
     // ProperNoundle, which has a dbKey but no GameMode (its own engine). VS is
     // excluded (no daily row).
@@ -857,9 +860,12 @@ private struct ProfileModePicker: View {
     }
 
     private func modeChip(_ m: HomeMode) -> some View {
-        let active = selected == m.mode
-        let count = m.mode.flatMap { games[$0.rawValue] } ?? 0
-        return Button { selected = active ? nil : m.mode } label: {
+        // ProperNoundle's HomeMode carries mode: nil (own view, not GameScreen) —
+        // derive its GameMode from the dbKey so the chip selects + counts.
+        let gm = m.mode ?? m.dbKey.flatMap { GameMode(rawValue: $0) }
+        let active = selected != nil && selected == gm
+        let count = gm.flatMap { games[$0.rawValue] } ?? 0
+        return Button { selected = active ? nil : gm } label: {
             VStack(spacing: 4) {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 28)
                 Text(shortTitles[m.id] ?? m.title).font(Brand.font(10, .heavy))

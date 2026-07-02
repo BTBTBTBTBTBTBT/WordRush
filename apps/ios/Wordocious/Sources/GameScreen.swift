@@ -66,7 +66,24 @@ struct GameScreen: View {
                                 onHome: { dismiss() }, onShare: { share() },
                                 onPlayAgain: playAgainAction)
                             if vm.isDaily { DailyRankBadge(gameMode: mode) }
-                            BoardLayout(vm: vm, availableWidth: root.size.width - 20)
+                            if vm.boardCount > 1 {
+                                // Compact uniform recap (completed-daily-board
+                                // sizing) — the in-play BoardLayout rendered
+                                // 2-column modes (Quad/Deliverance) zoomed huge
+                                // post-game while Octo's 4 columns looked right.
+                                let tile = CompletedBoardLayout.tileSize(boardCount: vm.boardCount, wordLen: vm.wordLength)
+                                let cols = CompletedBoardLayout.cols(vm.boardCount)
+                                let rowCount = vm.boards.map(\.maxGuesses).max() ?? vm.maxGuesses
+                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: CompletedBoardLayout.gridSpacing), count: cols),
+                                          spacing: CompletedBoardLayout.gridSpacing) {
+                                    ForEach(vm.boards.indices, id: \.self) { i in
+                                        CompletedMiniBoardView(board: vm.boards[i], tileSize: tile, rowCount: rowCount)
+                                    }
+                                }
+                                .frame(maxWidth: CompletedBoardLayout.maxWidth(vm.boardCount))
+                            } else {
+                                BoardLayout(vm: vm, availableWidth: root.size.width - 20)
+                            }
                             ScoreBreakdownView(gameMode: mode.rawValue, completed: vm.status == .won,
                                                guessCount: vm.rowsUsed, timeSeconds: vm.elapsedSeconds,
                                                boardsSolved: vm.boards.filter { $0.status == .won }.count,

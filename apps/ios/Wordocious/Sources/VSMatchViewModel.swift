@@ -181,7 +181,7 @@ final class VSMatchViewModel: ObservableObject {
     @Published var cpuSessionWins = 0
     @Published var cpuSessionLosses = 0
 
-    private var seed = ""
+    private(set) var seed = ""   // exposed read-only: VSFinalBoards replays multi-board recaps from it
     private var matchStartMs: Double = 0
     private var resultRecorded = false
     private var countdownTimer: Timer?
