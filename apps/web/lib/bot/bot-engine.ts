@@ -130,11 +130,15 @@ function greens(word: string, solution: string): number {
  * when `willSolve`, otherwise a near-miss (len-1 greens) so it looks like the
  * bot ran out of guesses one letter short.
  */
-function realWordPath(solution: string, steps: number, willSolve: boolean): string[] {
+function realWordPath(solution: string, steps: number, willSolve: boolean, exclude?: string[]): string[] {
   const len = solution.length;
+  // `exclude` (restat B3): shared-guess fillers must never equal ANOTHER
+  // board's solution — post-filtering shrank the sequence below the intended
+  // budget, making the bot slightly stronger than its difficulty tuning.
+  const ex = new Set((exclude ?? []).map((w) => w.toUpperCase()));
   const pool = getAllowedWords()
     .map((w) => w.toUpperCase())
-    .filter((w) => w.length === len && w !== solution);
+    .filter((w) => w.length === len && w !== solution && !ex.has(w));
   if (pool.length === 0) return fabricatedPath(solution, steps, willSolve);
 
   const path: string[] = [];
@@ -324,7 +328,7 @@ export function buildBotPlan(
     }
     // Fillers must not accidentally solve a board they weren't credited for.
     const fillers = fillerCount > 0
-      ? realWordPath(sols[n - 1], fillerCount, false).filter((w) => !sols.includes(w))
+      ? realWordPath(sols[n - 1], fillerCount, false, sols)
       : [];
     const solvedLocal = new Set<number>();
     const solveOrder = shuffle([...Array(n).keys()]).slice(0, solveCount);

@@ -1435,18 +1435,29 @@ export async function fetchTodayDailyStanding(userId: string): Promise<DailyStan
     .eq('play_type', 'solo') as { data: Array<{ game_mode: string; composite_score: number }> | null };
   if (!mine || mine.length === 0) return null;
 
+  // ONE batched leaderboard query for all played modes (restat B2) — the
+  // per-mode loop issued up to 9 sequential round-trips on every profile load.
+  const { data: field } = await (supabase as any)
+    .from('daily_results')
+    .select('game_mode, composite_score')
+    .eq('day', day)
+    .eq('play_type', 'solo')
+    .in('game_mode', mine.map((m) => m.game_mode))
+    .limit(9000) as { data: Array<{ game_mode: string; composite_score: number }> | null };
+  if (!field) return null;
+  const byMode = new Map<string, number[]>();
+  for (const f of field) {
+    const arr = byMode.get(f.game_mode) || [];
+    arr.push(f.composite_score);
+    byMode.set(f.game_mode, arr);
+  }
+
   const percentiles: number[] = [];
   for (const row of mine) {
-    const { data: field } = await (supabase as any)
-      .from('daily_results')
-      .select('composite_score')
-      .eq('day', day)
-      .eq('game_mode', row.game_mode)
-      .eq('play_type', 'solo')
-      .limit(2000) as { data: Array<{ composite_score: number }> | null };
-    if (!field || field.length < 2) continue;
-    const better = field.filter((f) => f.composite_score > row.composite_score).length;
-    percentiles.push(Math.max(1, Math.round(((better + 1) / field.length) * 100)));
+    const scores = byMode.get(row.game_mode) || [];
+    if (scores.length < 2) continue;
+    const better = scores.filter((sc) => sc > row.composite_score).length;
+    percentiles.push(Math.max(1, Math.round(((better + 1) / scores.length) * 100)));
   }
   if (percentiles.length === 0) return null;
   return {

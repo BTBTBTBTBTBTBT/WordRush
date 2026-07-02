@@ -91,9 +91,13 @@ object BotEngine {
         return n
     }
 
-    private fun realWordPath(solution: String, steps: Int, willSolve: Boolean): List<String> {
+    // `excluding` (restat B3): shared-guess fillers must never equal ANOTHER
+    // board's solution — post-filtering shrank the sequence below the intended
+    // budget, making the bot slightly stronger than its difficulty tuning.
+    private fun realWordPath(solution: String, steps: Int, willSolve: Boolean, excluding: List<String> = emptyList()): List<String> {
+        val ex = excluding.map { it.uppercase() }.toSet()
         val len = solution.length
-        val pool = GameDictionary.getAllowedWords().filter { it.length == len && it != solution }
+        val pool = GameDictionary.getAllowedWords().filter { it.length == len && it != solution && it.uppercase() !in ex }
         if (pool.isEmpty()) return fabricatedPath(solution, steps, willSolve)
         val path = ArrayList<String>()
         val used = HashSet<String>()
@@ -207,7 +211,7 @@ object BotEngine {
             }
             // Fillers must not accidentally solve a board they weren't credited for.
             val fillers = if (fillerCount > 0)
-                realWordPath(sols[n - 1], fillerCount, false).filter { it !in sols }
+                realWordPath(sols[n - 1], fillerCount, false, excluding = sols)
             else emptyList()
             val solvedLocal = HashSet<Int>()
             val solveOrder = (0 until n).shuffled().take(solveCount)

@@ -84,9 +84,13 @@ enum BotEngine {
     }
 
     /// Increasing-greens path of real dictionary words toward `solution`.
-    private static func realWordPath(_ solution: String, steps: Int, willSolve: Bool) -> [String] {
+    /// `excluding` (restat B3): shared-guess fillers must never equal ANOTHER
+    /// board's solution — post-filtering shrank the sequence below the
+    /// intended budget, making the bot slightly stronger than tuned.
+    private static func realWordPath(_ solution: String, steps: Int, willSolve: Bool, excluding: [String] = []) -> [String] {
         let len = solution.count
-        let pool = GameDictionary.shared.getAllowedWords().filter { $0.count == len && $0 != solution }
+        let ex = Set(excluding.map { $0.uppercased() })
+        let pool = GameDictionary.shared.getAllowedWords().filter { $0.count == len && $0 != solution && !ex.contains($0.uppercased()) }
         if pool.isEmpty { return fabricatedPath(solution, steps: steps, willSolve: willSolve) }
         var path: [String] = []
         var used = Set<String>()
@@ -194,7 +198,7 @@ enum BotEngine {
                 return max(0, min(budget - solveCount, Int.random(in: max(0, p.minGuesses - 2)...max(1, p.maxGuesses - 2))))
             }()
             let fillers = fillerCount > 0
-                ? realWordPath(sols[n - 1], steps: fillerCount, willSolve: false).filter { !sols.contains($0) }
+                ? realWordPath(sols[n - 1], steps: fillerCount, willSolve: false, excluding: sols)
                 : []
             var solvedLocal = Set<Int>()
             let solveOrder = Array(Array(0..<n).shuffled().prefix(solveCount))
