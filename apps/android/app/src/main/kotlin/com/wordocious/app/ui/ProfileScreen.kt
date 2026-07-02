@@ -101,7 +101,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var timeOfDay by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.HourBucket>>(emptyList()) }
     var topWords by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.TopWord>>(emptyList()) }
     var proInsights by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.ProInsights()) }
-    var sweepStats by remember { mutableStateOf(com.wordocious.app.data.MatchStatsService.DailySweepStats()) }
+    // Sweep COUNTS moved to Records → You (single home); profile keeps only the
+    // Daily Points trend, so only the points series is fetched here.
     var sweepPoints by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>>(emptyList()) }
     // Per-mode dashboard filter — null == "All" (global view). Mirrors iOS ProfileModePicker.
     var selectedMode by remember { mutableStateOf<String?>(null) }
@@ -144,7 +145,6 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             todayDailies = DailyCompletionsService.fetchTodayCompletions()
             unlockedAchievements = com.wordocious.app.data.AchievementService.fetchUnlocked(userId)
             activityCal = com.wordocious.app.data.MatchStatsService.dailyCalendar(userId, days = 90)
-            sweepStats = com.wordocious.app.data.MatchStatsService.dailySweepStats()
             sweepPoints = com.wordocious.app.data.MatchStatsService.dailyPointsOverTime(days = 30)
         }
         loading = false
@@ -220,27 +220,26 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // ── B. Today's Dailies ────────────────────────────────────
         item { TodaysDailies(todayDailies, onPlayDaily) }
 
-        // ── C. Global Summary ─────────────────────────────────────
+        // ── C. Snapshot hero (lifetime headline stats + this-week strip,
+        //       merged into ONE card — web snapshot-hero.tsx) ────────
         item {
-            GlobalSummaryRow(
+            SnapshotHero(
                 totalWins = profile?.totalWins ?: 0,
                 totalLosses = profile?.totalLosses ?: 0,
                 currentStreak = profile?.currentStreak ?: 0,
                 bestStreak = profile?.bestStreak ?: 0,
                 dailyStreak = profile?.dailyLoginStreak ?: 0,
                 bestDailyStreak = profile?.bestDailyLoginStreak ?: 0,
-            )
-        }
-
-        // ── C2. "This Week" recap hero ─────────────────────────────
-        item {
-            ProfileRecapCard(
                 gamesThisWeek = activity7.sumOf { it.played },
-                currentStreak = profile?.currentStreak ?: 0,
-                xp = profile?.xp ?: 0, level = profile?.level ?: 1,
+                level = profile?.level ?: 1,
+                xpToNext = 1000 - ((profile?.xp ?: 0) % 1000),
                 isPro = isProActive, onGoPro = onGoPro,
             )
         }
+
+        // Daily standing — "top X% today · across N dailies" (hidden until a
+        // daily is played today; refetches on completionTick).
+        item { DailyStandingStrip(reloadToken = tick) }
 
         // ── Solo/VS toggle (web profile/page.tsx §D) ────────────────
         item { SoloVsToggle(activeTab) { activeTab = it } }
@@ -248,6 +247,12 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // VS RECORD summary card (VS tab only) — aggregated across all modes.
         if (activeTab == "vs") {
             item { VsRecordCard(stats) }
+            // Rivalries — most-faced opponents with head-to-head bars (Pro),
+            // only once there's an actual VS record (web parity).
+            val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
+            if (vsTotal > 0) {
+                item { RivalriesCard(isPro = isProActive, onGoPro = onGoPro) }
+            }
         }
         if (activeTab == "vs_cpu") {
             item { CpuRecordCard(stats) }
@@ -259,79 +264,106 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             val gamesPerMode = filtered.groupBy { it.gameMode }.mapValues { (_, rows) -> rows.sumOf { it.totalGames } }
             ProfileModePicker(selected = selectedMode, gamesPerMode = gamesPerMode, onSelect = { selectedMode = it })
         }
-        // Web dashboard order (All-view): ACTIVITY calendar → LAST 7 DAYS →
-        // GUESS DISTRIBUTION → SOLVE TIME → TOP WORDS → (extras) → INSIGHTS.
-        // 90-day calendar is global + only shown in the "All" view (web parity).
-        if (selectedMode == null && activityCal.any { it.played > 0 }) {
-            item { DailyCalendarCard(activityCal) }
-        }
-        // LAST 7 DAYS — All view only (web renders it inside the selectedMode===null block).
-        if (selectedMode == null && activity7.isNotEmpty()) {
-            item { ActivityCard(activity7) }
-        }
-        // Web parity: these two charts stay VISIBLE when empty, with
-        // chart-specific copy (guess-distribution.tsx / solve-time-chart.tsx).
-        // Gauntlet: up to 50 guesses across 21 boards — a histogram is meaningless.
-        if (selectedMode != "GAUNTLET") {
-            item { GuessDistributionCard(guessDist) }
-        }
-        item { SolveTimeCard(solveTimes) }
-        if (topWords.isNotEmpty()) {
-            item { TopWordsCard(topWords) }
-        }
-        // DAILY SWEEPS — All view only (sweep/flawless counts, times, streak, trend).
-        if (selectedMode == null && sweepStats.sweepCount > 0) {
-            item { SweepStatsCard(sweepStats, sweepPoints) }
-        }
-        // WHEN YOU PLAY (time-of-day) — mode view only. On web it lives INSIDE the
-        // per-mode ProInsights card, never standalone in the All view.
-        if (selectedMode != null && timeOfDay.any { it.played > 0 }) {
-            item { WhenYouPlayCard(timeOfDay) }
-        }
-        // Per-mode Pro Insights (selected mode) / global Pro Stats (All view) —
-        // both self-gate: locked teaser for free users, real data for Pro.
-        // Web parity: a Pro user with no data sees NOTHING here (web returns
-        // null); the free-user locked teaser always shows.
-        item {
-            if (selectedMode != null) {
+        if (selectedMode == null) {
+            // ── "All" global view — web Trends order (restat R1): activity
+            // calendar → last-7 → guess dist → solve time → daily points → top
+            // words → Opener Lab → Weekday Form → Insights → Pro Stats → Radar.
+            if (activityCal.any { it.played > 0 }) {
+                item { DailyCalendarCard(activityCal) }
+            }
+            if (activity7.isNotEmpty()) {
+                item { ActivityCard(activity7) }
+            }
+            // All view hides empty charts (web profile/page.tsx gates on data).
+            if (guessDist.any { it.count > 0 }) {
+                item { GuessDistributionCard(guessDist) }
+            }
+            if (solveTimes.size >= 2) {
+                item { SolveTimeCard(solveTimes) }
+            }
+            // Daily points trend (sweep/flawless days marked). The sweep COUNTS
+            // card moved to Records → You — trend vs record split.
+            item { DailyPointsChartCard(sweepPoints) }
+            if (topWords.isNotEmpty()) {
+                item { TopWordsCard(topWords) }
+            }
+            // Opener Lab (basic): favorite starting words + how they convert.
+            item { OpenerLabCard() }
+            // Weekday form: your best day of the week.
+            item { WeekdayFormCard() }
+            // Insights — up to two derived one-liners (web `insights` IIFE).
+            val insights = profileInsights(stats, activity7, profile, todayDailies)
+            if (insights.isNotEmpty()) {
+                item { InsightsCard(insights) }
+            }
+            // Pro Stats (global view; SOLO rows only, web pro-stats.tsx parity).
+            if (!isProActive || stats.isNotEmpty()) {
+                item { ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro) }
+            }
+            // Skill Radar — the five-axis signature chart (Pro).
+            item { SkillRadarCard(isPro = isProActive, onGoPro = onGoPro) }
+        } else {
+            // ── Mode-detail view (web mode-detail-panel.tsx) — header row with
+            // a READ-ONLY play-type chip (the page-level toggle drives it; the
+            // panel has no toggle of its own), then stats + charts + insights.
+            val m = selectedMode!!
+            item { ModeDetailHeader(m, activeTab) }
+            val tabStats = stats.filter { it.playType == activeTab && it.gameMode == m }
+            if (tabStats.isEmpty()) {
+                item {
+                    Box(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(24.dp),
+                        Alignment.Center,
+                    ) {
+                        Text(
+                            "No ${if (activeTab == "solo") "solo" else if (activeTab == "vs") "VS" else "VS CPU"} games played in this mode yet",
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        )
+                    }
+                }
+            } else {
+                item { ModeStatsGrid(tabStats, modeStreaks[m]) }
+            }
+            // Gauntlet: up to 50 guesses across 21 boards — histogram meaningless.
+            // These charts keep their own empty copy in the mode view (web
+            // GuessDistribution/SolveTimeChart components).
+            if (m != "GAUNTLET") {
+                item { GuessDistributionCard(guessDist) }
+            }
+            if (solveTimes.size >= 2) {
+                item { SolveTimeCard(solveTimes) }
+            }
+            if (topWords.isNotEmpty()) {
+                item { TopWordsCard(topWords) }
+            }
+            // WHEN YOU PLAY (time-of-day) — on web it lives inside the per-mode
+            // ProInsights card; standalone here (Android extra, kept).
+            if (timeOfDay.any { it.played > 0 }) {
+                item { WhenYouPlayCard(timeOfDay) }
+            }
+            // Per-mode Pro Insights — self-gates: locked teaser for free users;
+            // a Pro user with no data sees NOTHING here (web returns null).
+            item {
                 if (!isProActive || proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
                     ProInsightsCard(proInsights, isProActive, onGoPro)
                 }
-            } else if (!isProActive || stats.isNotEmpty()) {
-                // Web parity (pro-stats.tsx): Pro Stats compute from SOLO rows only.
-                ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro)
+            }
+            // Deep Insights (restat R4): opener yield, position accuracy, stage
+            // breakdown (Gauntlet), hints, Word Almanac. Pro-gated w/ preview.
+            item {
+                val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
+                ProDeepModeCard(gameMode = m, isPro = isProActive, accent = accent, onGoPro = onGoPro)
             }
         }
 
-        // ── D. Daily Medals ───────────────────────────────────────
+        // ── Progression: medals + achievements under one banner (BOTH views) ──
+        item { SectionHeader("Progression", accent = Color(0xFFF59E0B)) }
         item { DailyMedals(profile, medals) }
-
-        // ── Achievements (grouped by category, expanded) ──────────
         item { AchievementsSection(unlockedAchievements, profile) }
 
-        // ── E. Stats by mode (active Solo/VS tab only) ────────────
-        val tabStats = stats.filter { it.playType == activeTab }
         if (loading) {
             item { Box(Modifier.fillMaxWidth().padding(32.dp), Alignment.Center) { CircularProgressIndicator(color = WTheme.primary) } }
-        } else if (tabStats.isNotEmpty()) {
-            item { SectionLabel("STATS BY MODE") }
-            items(tabStats) { s ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                        .background(WTheme.surface).border(1.dp, WTheme.border, RoundedCornerShape(10.dp)).padding(10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(modeLabel(s.gameMode), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("${s.wins}W ${s.losses}L", fontSize = 12.sp, color = WTheme.textSecondary, fontWeight = FontWeight.Bold)
-                        modeStreaks[s.gameMode]?.let { (cur, best) ->
-                            if (best > 0) Text("🔥 $cur · best $best", fontSize = 11.sp, color = Color(0xFFF97316), fontWeight = FontWeight.Bold)
-                        }
-                        if (s.bestScore != null) Text("Best: ${s.bestScore.toInt()}", fontSize = 11.sp, color = WTheme.primary, fontWeight = FontWeight.Bold)
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-            }
         }
 
         // ── Recent matches ────────────────────────────────────────
@@ -661,35 +693,124 @@ private fun fmtMatchDate(iso: String): String {
         .apply { timeZone = java.util.TimeZone.getDefault() }.format(java.util.Date(millis))
 }
 
-// ── C. Global Summary ─────────────────────────────────────────────────────────
+// ── Mode-detail header + stats grid (web mode-detail-panel.tsx) ───────────────
+/** Mode icon tile + title in the mode accent, and a read-only play-type chip
+ *  that reflects the page-level Solo/VS/VS-CPU toggle. */
 @Composable
-private fun GlobalSummaryRow(totalWins: Int, totalLosses: Int, currentStreak: Int, bestStreak: Int, dailyStreak: Int, bestDailyStreak: Int) {
-    val totalGames = totalWins + totalLosses
-    val winRate = if (totalGames > 0) Math.round(totalWins.toFloat() / totalGames * 100) else 0
-    // Fixed card height keeps all four identical regardless of the "Best:" subline.
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        SummaryCard(Icons.Filled.EmojiEvents, "WINS", "$totalWins", null, Color(0xFF7C3AED), Modifier.weight(1f))
-        SummaryCard(Icons.Filled.TrackChanges, "WIN RATE", "$winRate%", null, Color(0xFF2563EB), Modifier.weight(1f))
-        SummaryCard(Icons.Filled.Bolt, "STREAK", "$currentStreak", "Best: $bestStreak", Color(0xFF7C3AED), Modifier.weight(1f))
-        SummaryCard(Icons.Filled.LocalFireDepartment, "DAILY", "$dailyStreak", "Best: $bestDailyStreak", Color(0xFFF97316), Modifier.weight(1f))
+private fun ModeDetailHeader(modeId: String, activeTab: String) {
+    val mode = runCatching { GameMode.valueOf(modeId) }.getOrNull()
+    val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.08f)), Alignment.Center) {
+            mode?.let { ModeGlyph(it, accent, glyphSize = 11.sp, iconSize = 16.dp) }
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(modeLabel(modeId), fontSize = 14.sp, fontWeight = FontWeight.Black, color = accent)
+        Spacer(Modifier.weight(1f))
+        Row(
+            Modifier.clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.08f))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            when (activeTab) {
+                "solo" -> Icon(Icons.Filled.Person, null, tint = accent, modifier = Modifier.size(12.dp))
+                "vs" -> Icon(
+                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
+                    tint = accent, modifier = Modifier.size(12.dp),
+                )
+                else -> Text("🤖", fontSize = 10.sp)
+            }
+            Text(
+                if (activeTab == "solo") "Solo" else if (activeTab == "vs") "VS" else "VS CPU",
+                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = accent,
+            )
+        }
     }
 }
 
+/** 4×2 stats grid for the selected mode (web ModeStatsCard). */
 @Composable
-private fun SummaryCard(icon: ImageVector, label: String, value: String, sub: String?, color: Color, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.height(86.dp).clip(RoundedCornerShape(14.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)).padding(vertical = 10.dp, horizontal = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
-        Text(value, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text, lineHeight = 18.sp)
-        Text(label, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.5.sp)
-        // Reserve space for subline on ALL cards (visible or invisible) — keeps heights equal
-        Text(sub ?: " ", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+private fun ModeStatsGrid(rows: List<ProfileService.UserStat>, streak: Pair<Int, Int>?) {
+    val wins = rows.sumOf { it.wins }
+    val losses = rows.sumOf { it.losses }
+    val games = rows.sumOf { it.totalGames }
+    val winRate = if (games > 0) Math.round(wins.toFloat() / games * 100) else 0
+    val best = rows.mapNotNull { it.bestScore }.filter { it > 0 }.minOrNull()
+    val fastest = rows.mapNotNull { it.fastestTime }.filter { it > 0 }.minOrNull()
+    val cells = listOf(
+        "Wins" to "$wins", "Losses" to "$losses", "Games" to "$games", "Win Rate" to "$winRate%",
+        "Best" to (best?.let { "${it.toInt()}" } ?: "-"),
+        "Fastest" to (fastest?.let { if (it < 60) "${it}s" else "${it / 60}m ${it % 60}s" } ?: "-"),
+        "Streak" to "${streak?.first ?: 0}", "Best Streak" to "${streak?.second ?: 0}",
+    )
+    KitCard {
+        cells.chunked(4).forEachIndexed { i, row ->
+            if (i > 0) Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { (label, value) ->
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
+                        Text(
+                            label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                            color = WTheme.textMuted, letterSpacing = 0.4.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ── Insights (All view, web profile/page.tsx `insights` IIFE) ─────────────────
+/** Up to two derived one-liners: strongest mode, weekly volume, XP-to-next,
+ *  today's dailies progress. */
+private fun profileInsights(
+    stats: List<ProfileService.UserStat>,
+    activity7: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
+    profile: com.wordocious.app.data.Profile?,
+    todayDailies: Map<String, DailyCompletionsService.Completion>,
+): List<String> {
+    val out = ArrayList<String>()
+    // Strongest mode by win rate among modes with ≥3 games (all play types,
+    // matching the web which uses the unfiltered stats).
+    val qualifying = stats.filter { it.totalGames >= 3 }
+    qualifying.maxByOrNull { it.wins.toDouble() / maxOf(1, it.totalGames) }?.let { strongest ->
+        val rate = Math.round(strongest.wins * 100.0 / strongest.totalGames)
+        out.add("Your strongest mode is ${modeLabel(strongest.gameMode)} at $rate% win rate.")
+    }
+    val weekTotal = activity7.sumOf { it.played }
+    if (weekTotal >= 10) out.add("You've played $weekTotal games this week — on a roll!")
+    else if (weekTotal in 1..4) out.add("Only $weekTotal game${if (weekTotal == 1) "" else "s"} this week — warm up with a daily.")
+    val xpToNext = 1000 - ((profile?.xp ?: 0) % 1000)
+    if (xpToNext <= 300) out.add("Just $xpToNext XP away from Level ${(profile?.level ?: 1) + 1}.")
+    val total = DAILY_MODES.size
+    if (todayDailies.size == total) {
+        val allWon = DAILY_MODES.all { todayDailies[it]?.completed == true }
+        out.add(if (allWon) "Flawless Victory — all $total dailies won today." else "All $total dailies done today. Legendary.")
+    } else if (todayDailies.size >= 3) {
+        out.add("${todayDailies.size}/$total dailies complete today — keep going.")
+    }
+    return out.take(2)
+}
+
+@Composable
+private fun InsightsCard(insights: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader("Insights", accent = WTheme.primary)
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFFF5F3FF), Color(0xFFEEF2FF))))
+                .border(1.5.dp, Color(0xFFDDD6FE), RoundedCornerShape(16.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            insights.forEach { text ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp))
+                    Text(text, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A2E), lineHeight = 16.sp)
+                }
+            }
+        }
     }
 }
 
@@ -947,45 +1068,6 @@ private val ACH_CATEGORIES = listOf(
     Triple("social", "Social", 0xFF0D9488L),
     Triple("collection", "Collection", 0xFFD97706L),
 )
-
-@Composable
-private fun ProfileRecapCard(gamesThisWeek: Int, currentStreak: Int, xp: Int, level: Int, isPro: Boolean, onGoPro: () -> Unit) {
-    val xpToNext = 1000 - (xp % 1000)
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(listOf(Color(0xFFFAF5FF), Color(0xFFFCE7F3))))
-            .border(1.5.dp, Color(0xFFE9D5FF), RoundedCornerShape(16.dp)).padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp))
-            Text("THIS WEEK", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF6D28D9), letterSpacing = 0.5.sp)
-        }
-        Row(Modifier.fillMaxWidth()) {
-            RecapStat(Icons.Filled.Bolt, "$gamesThisWeek", "Games", Color(0xFF7C3AED), Modifier.weight(1f))
-            RecapStat(Icons.Filled.LocalFireDepartment, "$currentStreak", "Win Streak", Color(0xFFF97316), Modifier.weight(1f))
-            RecapStat(Icons.Filled.BarChart, "$xpToNext", "XP to Lvl ${level + 1}", Color(0xFF2563EB), Modifier.weight(1f))
-        }
-        if (!isPro) {
-            Row(Modifier.fillMaxWidth().clickableNoRipple(onGoPro).padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Unlock your full insights with Pro", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
-                Spacer(Modifier.weight(1f))
-                Text("→", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecapStat(icon: ImageVector, value: String, label: String, color: Color, modifier: Modifier) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
-        Column {
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
-        }
-    }
-}
 
 @Composable
 private fun AchievementsSection(unlocked: Set<String>, profile: com.wordocious.app.data.Profile?) {
@@ -1258,69 +1340,6 @@ private fun TimeStat(label: String, seconds: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
         Text(fmtTime(seconds), fontSize = 13.sp, fontWeight = FontWeight.Black, color = color)
-    }
-}
-
-// ── Daily Sweeps (All view) ──────────────────────────────────────────────────────
-@Composable
-private fun SweepStatsCard(
-    stats: com.wordocious.app.data.MatchStatsService.DailySweepStats,
-    points: List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionLabel("DAILY SWEEPS")
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // Equal-width centered thirds (was SpaceEvenly/SpaceBetween, which
-            // didn't line the columns up cleanly).
-            Row(Modifier.fillMaxWidth()) {
-                Box(Modifier.weight(1f), Alignment.Center) { IconStat(Icons.Filled.AutoAwesome, Color(0xFF7C3AED), "${stats.sweepCount}", "Sweeps") }
-                Box(Modifier.weight(1f), Alignment.Center) { IconStat(Icons.Filled.EmojiEvents, Color(0xFFD97706), "${stats.flawlessCount}", "Flawless") }
-                Box(Modifier.weight(1f), Alignment.Center) { IconStat(Icons.Filled.LocalFireDepartment, Color(0xFFEF4444), "${stats.currentSweepStreak}", "Streak") }
-            }
-            Row(Modifier.fillMaxWidth()) {
-                Box(Modifier.weight(1f), Alignment.Center) { TimeStat("Avg Sweep", stats.avgSweepSecs, WTheme.text) }
-                Box(Modifier.weight(1f), Alignment.Center) { TimeStat("Best Sweep", stats.bestSweepSecs, WTheme.correct) }
-                Box(Modifier.weight(1f), Alignment.Center) { TimeStat("Best Flawless", stats.bestFlawlessSecs, Color(0xFFD97706)) }
-            }
-            if (points.size >= 2) {
-                Text("DAILY POINTS · LAST 30 DAYS", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
-                val maxV = (points.maxOfOrNull { it.totalPoints } ?: 1).coerceAtLeast(1)
-                androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(100.dp)) {
-                    val w = size.width; val h = size.height
-                    fun x(i: Int) = w * i / (points.size - 1)
-                    fun y(v: Int) = h - (h * v / maxV)
-                    val areaPath = androidx.compose.ui.graphics.Path().apply {
-                        moveTo(0f, h)
-                        points.forEachIndexed { i, p -> lineTo(x(i), y(p.totalPoints)) }
-                        lineTo(w, h); close()
-                    }
-                    drawPath(areaPath, brush = Brush.verticalGradient(listOf(WTheme.primary.copy(alpha = 0.25f), Color.Transparent)))
-                    val linePath = androidx.compose.ui.graphics.Path().apply {
-                        points.forEachIndexed { i, p -> if (i == 0) moveTo(x(i), y(p.totalPoints)) else lineTo(x(i), y(p.totalPoints)) }
-                    }
-                    drawPath(linePath, WTheme.primary, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f))
-                    points.forEachIndexed { i, p ->
-                        if (p.swept || p.flawless) {
-                            drawCircle(if (p.flawless) Color(0xFFF59E0B) else Color(0xFFEC4899),
-                                radius = 5f, center = androidx.compose.ui.geometry.Offset(x(i), y(p.totalPoints)))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun IconStat(icon: ImageVector, color: Color, value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
-        Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = color)
-        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
 }
 
