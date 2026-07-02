@@ -156,6 +156,12 @@ enum BotEngine {
         }
         let willSolveAll = opts.forceSolve ? true : Double.random(in: 0..<1) > p.failChance
 
+        // The bot must play by the REAL rules: shared-guess modes (Quad/Octo/
+        // Deliverance, and multi-board Gauntlet stages) get ONE submission
+        // sequence capped at the mode's max — each submission applies to every
+        // unsolved board. The old per-board-independent model reported
+        // impossible guess counts (43 in a 13-max OctoWord), which skewed
+        // scores and produced garbage when the log was replayed on the recap.
         var events: [Event] = []
         var stageEvents: [(atMs: Double, stageIndex: Int)] = []
         var guessLog: [VSGuessLogEntry] = []
@@ -163,36 +169,105 @@ enum BotEngine {
         var boardsSolved = 0
         var lastAtMs: Double = 0
 
-        for bi in 0..<totalBoards {
-            let solution = bi < solutions.count ? solutions[bi] : (solutions.first ?? "")
-            let steps = opts.targetGuesses ?? Int.random(in: p.minGuesses...max(p.minGuesses, p.maxGuesses))
-            let boardSolves = willSolveAll ? true : bi < totalBoards - 1
-            let path = mode == .propernoundle
-                ? fabricatedPath(solution, steps: steps, willSolve: boardSolves)
-                : realWordPath(solution, steps: steps, willSolve: boardSolves)
+        func emit(word: String, entries: [VSOpponentLatestGuess], logBoard: Int, single: VSOpponentLatestGuess? = nil) {
+            lastAtMs += Double.random(in: p.perGuessMinMs...max(p.perGuessMinMs, p.perGuessMaxMs))
+            cumulativeAttempts += 1
+            events.append(Event(atMs: max(0, lastAtMs - 1100), typing: true, progress: nil))
+            events.append(Event(atMs: lastAtMs, typing: false, progress: VSOpponentProgress(
+                attempts: cumulativeAttempts,
+                solved: boardsSolved >= totalBoards,
+                boardsSolved: boardsSolved,
+                totalBoards: totalBoards,
+                latestGuess: single,
+                latestGuesses: single == nil ? entries : nil)))
+            guessLog.append(VSGuessLogEntry(boardIndex: logBoard, guess: word))
+        }
 
-            var atMs = lastAtMs
-            for (i, word) in path.enumerated() {
-                atMs += Double.random(in: p.perGuessMinMs...max(p.perGuessMinMs, p.perGuessMaxMs))
-                cumulativeAttempts += 1
-                let isSolvingRow = boardSolves && i == path.count - 1
-                if isSolvingRow { boardsSolved += 1 }
-                if isSolvingRow && mode == .gauntlet, let stageIndex = gauntletStageLastBoard.firstIndex(of: bi) {
-                    stageEvents.append((atMs: atMs, stageIndex: stageIndex))
+        /// Shared-guess group (applyToAll): info-gathering fillers, then the
+        /// solutions one per submission. `budget` = the real max guesses.
+        func sharedSegment(offset: Int, sols: [String], budget: Int, solveAll: Bool, stageIndex: Int? = nil) {
+            let n = sols.count
+            let solveCount = solveAll ? n : max(0, n - 1)
+            let fillerCount: Int = {
+                if let t = opts.targetGuesses { return max(0, min(budget, t) - solveCount) }
+                if !solveAll { return max(0, budget - solveCount) }   // failed run burns the budget
+                return max(0, min(budget - solveCount, Int.random(in: max(0, p.minGuesses - 2)...max(1, p.maxGuesses - 2))))
+            }()
+            let fillers = fillerCount > 0
+                ? realWordPath(sols[n - 1], steps: fillerCount, willSolve: false).filter { !sols.contains($0) }
+                : []
+            var solvedLocal = Set<Int>()
+            let solveOrder = Array(Array(0..<n).shuffled().prefix(solveCount))
+            let sequence: [(word: String, solves: Int?)] =
+                fillers.map { ($0, nil) } + solveOrder.map { (sols[$0], $0) }
+            for (word, solves) in sequence {
+                if let sb = solves { solvedLocal.insert(sb); boardsSolved += 1 }
+                var entries: [VSOpponentLatestGuess] = []
+                for li in 0..<n where !solvedLocal.contains(li) || solves == li {
+                    entries.append(VSOpponentLatestGuess(boardIndex: offset + li, tiles: tiles(sols[li], word)))
                 }
-                events.append(Event(atMs: max(0, atMs - 1100), typing: true, progress: nil))
-                let prog = VSOpponentProgress(
-                    attempts: cumulativeAttempts,
-                    solved: boardsSolved >= totalBoards,
-                    boardsSolved: boardsSolved,
-                    totalBoards: totalBoards,
-                    latestGuess: VSOpponentLatestGuess(boardIndex: bi, tiles: tiles(solution, word)),
-                    latestGuesses: nil
-                )
-                events.append(Event(atMs: atMs, typing: false, progress: prog))
-                guessLog.append(VSGuessLogEntry(boardIndex: bi, guess: word))
+                emit(word: word, entries: entries, logBoard: offset + (solves ?? 0))
             }
-            lastAtMs = atMs
+            if let stageIndex, solveAll { stageEvents.append((atMs: lastAtMs, stageIndex: stageIndex)) }
+        }
+
+        /// Sequential group (Succession / sequential Gauntlet stages): boards in
+        /// order, one at a time, sharing one guess budget.
+        func sequentialSegment(offset: Int, sols: [String], budget: Int, solveAll: Bool, stageIndex: Int? = nil) {
+            var remaining = budget
+            for (li, sol) in sols.enumerated() {
+                guard remaining > 0 else { return }
+                let isLast = li == sols.count - 1
+                let fails = !solveAll && isLast
+                let reserve = sols.count - 1 - li     // ≥1 guess for each later board
+                let steps = fails ? remaining
+                    : max(1, min(remaining - reserve, Int.random(in: 1...max(1, min(3, p.maxGuesses - 2)))))
+                let path = realWordPath(sol, steps: steps, willSolve: !fails)
+                for (i, word) in path.enumerated() {
+                    let solving = !fails && i == path.count - 1
+                    if solving { boardsSolved += 1 }
+                    emit(word: word, entries: [], logBoard: offset + li,
+                         single: VSOpponentLatestGuess(boardIndex: offset + li, tiles: tiles(sol, word)))
+                }
+                remaining -= path.count
+                if fails { return }
+            }
+            if let stageIndex, solveAll { stageEvents.append((atMs: lastAtMs, stageIndex: stageIndex)) }
+        }
+
+        switch mode {
+        case .quordle, .octordle, .rescue:
+            sharedSegment(offset: 0, sols: solutions, budget: VSModeInfo.maxGuesses(mode), solveAll: willSolveAll)
+        case .sequence:
+            sequentialSegment(offset: 0, sols: solutions, budget: VSModeInfo.maxGuesses(mode), solveAll: willSolveAll)
+        case .gauntlet:
+            var offset = 0
+            for (si, stage) in gauntletStages.enumerated() {
+                let sols = Array(solutions[offset..<min(solutions.count, offset + stage.boardCount)])
+                guard !sols.isEmpty else { break }
+                let lastStage = si == gauntletStages.count - 1
+                let stageSolves = willSolveAll || !lastStage
+                if stage.boardCount == 1 || stage.sequential {
+                    sequentialSegment(offset: offset, sols: sols, budget: stage.maxGuesses, solveAll: stageSolves, stageIndex: si)
+                } else {
+                    sharedSegment(offset: offset, sols: sols, budget: stage.maxGuesses, solveAll: stageSolves, stageIndex: si)
+                }
+                offset += stage.boardCount
+                if !stageSolves { break }   // a failed stage ends the run
+            }
+        default:
+            // Single-board modes (Classic/Six/Seven/ProperNoundle).
+            let solution = solutions.first ?? ""
+            let cap = VSModeInfo.maxGuesses(mode)
+            let steps = min(cap, opts.targetGuesses ?? Int.random(in: p.minGuesses...max(p.minGuesses, p.maxGuesses)))
+            let path = mode == .propernoundle
+                ? fabricatedPath(solution, steps: willSolveAll ? steps : cap, willSolve: willSolveAll)
+                : realWordPath(solution, steps: willSolveAll ? steps : cap, willSolve: willSolveAll)
+            for (i, word) in path.enumerated() {
+                if willSolveAll && i == path.count - 1 { boardsSolved += 1 }
+                emit(word: word, entries: [], logBoard: 0,
+                     single: VSOpponentLatestGuess(boardIndex: 0, tiles: tiles(solution, word)))
+            }
         }
 
         // Ghost pacing: rescale the whole timeline to a target total solve time.

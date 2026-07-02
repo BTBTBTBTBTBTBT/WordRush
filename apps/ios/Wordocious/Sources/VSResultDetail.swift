@@ -380,11 +380,9 @@ struct VSFinalBoards: View {
         let oppWords = opponentGuessLog.map(\.guess)
         if !(myWords.isEmpty && oppWords.isEmpty) {
             VStack(spacing: 14) {
-                recapSection(label: myName, words: myWords, accent: Color(hex: 0x7C3AED),
-                             solved: VSResultBoards.solved(log: myGuessLog, solutions: solutions))
+                recapSection(label: myName, words: myWords, accent: Color(hex: 0x7C3AED))
                 Rectangle().fill(Theme.border).frame(height: 1)
-                recapSection(label: opponentName, words: oppWords, accent: Color(hex: 0xEC4899),
-                             solved: VSResultBoards.solved(log: opponentGuessLog, solutions: solutions))
+                recapSection(label: opponentName, words: oppWords, accent: Color(hex: 0xEC4899))
             }
             .padding(16).frame(maxWidth: .infinity)
             .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -394,7 +392,7 @@ struct VSFinalBoards: View {
 
     /// One player's full board set, rebuilt through the engine (same replay the
     /// solo "view solved puzzle" uses) and laid out compactly.
-    @ViewBuilder private func recapSection(label: String, words: [String], accent: Color, solved: Bool) -> some View {
+    @ViewBuilder private func recapSection(label: String, words: [String], accent: Color) -> some View {
         let boards = CompletedBoardReconstruct.boards(
             mode: mode, seed: seed, solutions: solutions, guesses: words,
             maxGuesses: VSModeInfo.maxGuesses(mode))
@@ -402,6 +400,11 @@ struct VSFinalBoards: View {
         let tile = CompletedBoardLayout.tileSize(boardCount: boards.count, wordLen: wordLen)
         let cols = CompletedBoardLayout.cols(boards.count)
         let rowCount = boards.map { $0.guesses.count }.max() ?? 1
+        // Honest per-board tally from the replayed boards — a binary
+        // Solved/Not-solved here contradicted the frames (7 purple + 1 red
+        // under a "Solved" badge).
+        let won = boards.filter { $0.status == .won }.count
+        let allWon = won == boards.count && !boards.isEmpty
 
         VStack(spacing: 8) {
             HStack(spacing: 6) {
@@ -409,10 +412,10 @@ struct VSFinalBoards: View {
                     .font(Brand.font(10, .heavy)).tracking(0.8)
                     .foregroundStyle(accent).lineLimit(1)
                 HStack(spacing: 3) {
-                    Image(systemName: solved ? "checkmark.circle.fill" : "xmark.circle.fill").font(.system(size: 9))
-                    Text(solved ? "Solved" : "Not solved").font(Brand.font(9, .heavy))
+                    Image(systemName: allWon ? "checkmark.circle.fill" : "xmark.circle.fill").font(.system(size: 9))
+                    Text("\(won)/\(boards.count) boards").font(Brand.font(9, .heavy))
                 }
-                .foregroundStyle(solved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
+                .foregroundStyle(allWon ? Color(hex: 0x16A34A) : (won > 0 ? Color(hex: 0xD97706) : Color(hex: 0xDC2626)))
             }
             if words.isEmpty {
                 Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
