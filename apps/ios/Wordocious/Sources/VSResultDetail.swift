@@ -324,16 +324,56 @@ struct VSFinalBoards: View {
     let solutions: [String]
     var mode: GameMode = .duel
     var seed: String = ""
+    /// Per-side elapsed (ms) — feeds the Gauntlet stage review's TIME stat.
+    var myTimeMs: Int = 0
+    var opponentTimeMs: Int = 0
 
     var body: some View {
-        if solutions.count > 1 {
+        if mode == .gauntlet {
+            gauntletRecap
+        } else if solutions.count > 1 {
             multiBoardRecap
         } else {
             singleBoardComparison
         }
     }
 
-    // MARK: Multi-board (Quad/Octo/Succession/Deliverance/Gauntlet)
+    // MARK: Gauntlet — the solo-style stage-by-stage fan-down per player
+    // (a flat 21-board letter wall was unreadable).
+
+    @ViewBuilder private var gauntletRecap: some View {
+        let myWords = myGuessLog.map(\.guess)
+        let oppWords = opponentGuessLog.map(\.guess)
+        if !(myWords.isEmpty && oppWords.isEmpty) {
+            VStack(spacing: 14) {
+                gauntletSection(label: myName, words: myWords, accent: Color(hex: 0x7C3AED), timeMs: myTimeMs)
+                Rectangle().fill(Theme.border).frame(height: 1)
+                gauntletSection(label: opponentName, words: oppWords, accent: Color(hex: 0xEC4899), timeMs: opponentTimeMs)
+            }
+            .padding(16).frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        }
+    }
+
+    @ViewBuilder private func gauntletSection(label: String, words: [String], accent: Color, timeMs: Int) -> some View {
+        VStack(spacing: 8) {
+            Text(label.uppercased())
+                .font(Brand.font(10, .heavy)).tracking(0.8)
+                .foregroundStyle(accent).lineLimit(1)
+            if words.isEmpty {
+                Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    .padding(.vertical, 8)
+            } else if let rec = GauntletReconstruct.reconstruct(seed: seed, guesses: words) {
+                GauntletCompletedView(progress: rec.progress, totalTimeMs: timeMs, showSummary: true)
+            } else {
+                Text("\(words.count) guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: Multi-board (Quad/Octo/Succession/Deliverance)
 
     @ViewBuilder private var multiBoardRecap: some View {
         let myWords = myGuessLog.map(\.guess)

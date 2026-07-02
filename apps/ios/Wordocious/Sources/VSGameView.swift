@@ -790,7 +790,8 @@ struct VSGameView: View {
                                       myGuessLog: vm.myGuessLog,
                                       opponentGuessLog: r.opponentGuessLog ?? [],
                                       solutions: solutions,
-                                      mode: mode, seed: vm.seed)
+                                      mode: mode, seed: vm.seed,
+                                      myTimeMs: Int(r.playerTime), opponentTimeMs: Int(r.opponentTime))
                     }
                 }
                 .padding(.horizontal, 24).padding(.bottom, 24)
