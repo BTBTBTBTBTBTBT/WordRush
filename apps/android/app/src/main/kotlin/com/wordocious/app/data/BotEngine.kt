@@ -28,11 +28,13 @@ object BotEngine {
     )
     fun boardCount(mode: GameMode): Int = MODE_BOARD_COUNT[mode] ?: 1
 
-    /** Board index that COMPLETES each Gauntlet stage (last board of the stage). */
-    private val gauntletStageLastBoard: List<Int> = buildList {
-        var cum = 0
-        for (s in gauntletStages) { cum += s.boardCount; add(cum - 1) } // [0,4,8,12,20]
-    }
+    /** Real per-mode guess cap (mirrors core createInitialState). */
+    private val MODE_MAX_GUESSES = mapOf(
+        GameMode.DUEL to 6, GameMode.DUEL_6 to 7, GameMode.DUEL_7 to 8, GameMode.PROPERNOUNDLE to 6,
+        GameMode.QUORDLE to 9, GameMode.OCTORDLE to 13, GameMode.SEQUENCE to 10, GameMode.RESCUE to 6,
+        GameMode.MULTI_DUEL to 6,
+    )
+    private fun maxGuessesFor(mode: GameMode): Int = MODE_MAX_GUESSES[mode] ?: 6
 
     data class AdaptiveHint(val winRate: Double = 0.5, val avgGuesses: Int? = null)
 
@@ -162,6 +164,12 @@ object BotEngine {
         }
         val willSolveAll = if (opts.forceSolve) true else Random.nextDouble() > p.failChance
 
+        // The bot must play by the REAL rules: shared-guess modes (Quad/Octo/
+        // Deliverance, and multi-board Gauntlet stages) get ONE submission
+        // sequence capped at the mode's max — each submission applies to every
+        // unsolved board. The old per-board-independent model reported
+        // impossible guess counts (43 in a 13-max OctoWord), which skewed
+        // scores and produced garbage when the log was replayed on the recap.
         val events = ArrayList<Event>()
         val stageEvents = ArrayList<Pair<Double, Int>>()
         val guessLog = ArrayList<VSGuessLogEntry>()
@@ -169,34 +177,113 @@ object BotEngine {
         var boardsSolved = 0
         var lastAtMs = 0.0
 
-        for (bi in 0 until totalBoards) {
-            val solution = solutions.getOrElse(bi) { solutions.firstOrNull() ?: "" }
-            val steps = opts.targetGuesses ?: Random.nextInt(p.minGuesses, max(p.minGuesses, p.maxGuesses) + 1)
-            val boardSolves = willSolveAll || bi < totalBoards - 1
-            val path = if (mode == GameMode.PROPERNOUNDLE) fabricatedPath(solution, steps, boardSolves)
-            else realWordPath(solution, steps, boardSolves)
+        fun emit(word: String, entries: List<VSOpponentLatestGuess>, logBoard: Int, single: VSOpponentLatestGuess? = null) {
+            lastAtMs += p.perGuessMinMs + Random.nextDouble() * (max(p.perGuessMinMs, p.perGuessMaxMs) - p.perGuessMinMs)
+            cumulativeAttempts += 1
+            events.add(Event(max(0.0, lastAtMs - 1100), true, null))
+            events.add(Event(lastAtMs, false, VSOpponentProgress(
+                attempts = cumulativeAttempts,
+                solved = boardsSolved >= totalBoards,
+                boardsSolved = boardsSolved,
+                totalBoards = totalBoards,
+                latestGuess = single,
+                latestGuesses = if (single == null) entries else null,
+            )))
+            guessLog.add(VSGuessLogEntry(logBoard, word))
+        }
 
-            var atMs = lastAtMs
-            for ((i, word) in path.withIndex()) {
-                atMs += p.perGuessMinMs + Random.nextDouble() * (max(p.perGuessMinMs, p.perGuessMaxMs) - p.perGuessMinMs)
-                cumulativeAttempts += 1
-                val isSolvingRow = boardSolves && i == path.size - 1
-                if (isSolvingRow) boardsSolved += 1
-                if (isSolvingRow && mode == GameMode.GAUNTLET) {
-                    val stageIndex = gauntletStageLastBoard.indexOf(bi)
-                    if (stageIndex >= 0) stageEvents.add(atMs to stageIndex)
-                }
-                events.add(Event(max(0.0, atMs - 1100), true, null))
-                events.add(Event(atMs, false, VSOpponentProgress(
-                    attempts = cumulativeAttempts,
-                    solved = boardsSolved >= totalBoards,
-                    boardsSolved = boardsSolved,
-                    totalBoards = totalBoards,
-                    latestGuess = VSOpponentLatestGuess(bi, tiles(solution, word)),
-                )))
-                guessLog.add(VSGuessLogEntry(bi, word))
+        /** Shared-guess group (applyToAll): info-gathering fillers, then the
+         *  solutions one per submission. `budget` = the real max guesses. */
+        fun sharedSegment(offset: Int, sols: List<String>, budget: Int, solveAll: Boolean, stageIndex: Int? = null) {
+            val n = sols.size
+            val solveCount = if (solveAll) n else max(0, n - 1)
+            val fillerCount: Int = when {
+                opts.targetGuesses != null -> max(0, min(budget, opts.targetGuesses) - solveCount)
+                !solveAll -> max(0, budget - solveCount) // failed run burns the budget
+                else -> max(0, min(
+                    budget - solveCount,
+                    Random.nextInt(max(0, p.minGuesses - 2), max(1, p.maxGuesses - 2) + 1),
+                ))
             }
-            lastAtMs = atMs
+            // Fillers must not accidentally solve a board they weren't credited for.
+            val fillers = if (fillerCount > 0)
+                realWordPath(sols[n - 1], fillerCount, false).filter { it !in sols }
+            else emptyList()
+            val solvedLocal = HashSet<Int>()
+            val solveOrder = (0 until n).shuffled().take(solveCount)
+            val sequence: List<Pair<String, Int?>> =
+                fillers.map { it to null as Int? } + solveOrder.map { sols[it] to it as Int? }
+            for ((word, solves) in sequence) {
+                if (solves != null) { solvedLocal.add(solves); boardsSolved += 1 }
+                val entries = ArrayList<VSOpponentLatestGuess>()
+                for (li in 0 until n) {
+                    if (li !in solvedLocal || solves == li) {
+                        entries.add(VSOpponentLatestGuess(offset + li, tiles(sols[li], word)))
+                    }
+                }
+                emit(word, entries, offset + (solves ?: 0))
+            }
+            if (stageIndex != null && solveAll) stageEvents.add(lastAtMs to stageIndex)
+        }
+
+        /** Sequential group (Succession / sequential Gauntlet stages): boards in
+         *  order, one at a time, sharing one guess budget. */
+        fun sequentialSegment(offset: Int, sols: List<String>, budget: Int, solveAll: Boolean, stageIndex: Int? = null) {
+            var remaining = budget
+            for ((li, sol) in sols.withIndex()) {
+                if (remaining <= 0) return
+                val isLast = li == sols.size - 1
+                val fails = !solveAll && isLast
+                val reserve = sols.size - 1 - li // ≥1 guess for each later board
+                val steps = if (fails) remaining
+                else max(1, min(remaining - reserve, Random.nextInt(1, max(1, min(3, p.maxGuesses - 2)) + 1)))
+                val path = realWordPath(sol, steps, !fails)
+                for ((i, word) in path.withIndex()) {
+                    val solving = !fails && i == path.size - 1
+                    if (solving) boardsSolved += 1
+                    emit(word, emptyList(), offset + li, VSOpponentLatestGuess(offset + li, tiles(sol, word)))
+                }
+                remaining -= path.size
+                if (fails) return
+            }
+            if (stageIndex != null && solveAll) stageEvents.add(lastAtMs to stageIndex)
+        }
+
+        when (mode) {
+            GameMode.QUORDLE, GameMode.OCTORDLE, GameMode.RESCUE, GameMode.MULTI_DUEL ->
+                sharedSegment(0, solutions, maxGuessesFor(mode), willSolveAll)
+            GameMode.SEQUENCE ->
+                sequentialSegment(0, solutions, maxGuessesFor(mode), willSolveAll)
+            GameMode.GAUNTLET -> {
+                var offset = 0
+                for ((si, stage) in gauntletStages.withIndex()) {
+                    val sols = solutions.subList(offset, min(solutions.size, offset + stage.boardCount)).toList()
+                    if (sols.isEmpty()) break
+                    val lastStage = si == gauntletStages.size - 1
+                    val stageSolves = willSolveAll || !lastStage
+                    if (stage.boardCount == 1 || stage.sequential) {
+                        sequentialSegment(offset, sols, stage.maxGuesses, stageSolves, si)
+                    } else {
+                        sharedSegment(offset, sols, stage.maxGuesses, stageSolves, si)
+                    }
+                    offset += stage.boardCount
+                    if (!stageSolves) break // a failed stage ends the run
+                }
+            }
+            else -> {
+                // Single-board modes (Classic/Six/Seven/ProperNoundle).
+                val solution = solutions.firstOrNull() ?: ""
+                val cap = maxGuessesFor(mode)
+                val steps = min(cap, opts.targetGuesses
+                    ?: Random.nextInt(p.minGuesses, max(p.minGuesses, p.maxGuesses) + 1))
+                val path = if (mode == GameMode.PROPERNOUNDLE)
+                    fabricatedPath(solution, if (willSolveAll) steps else cap, willSolveAll)
+                else realWordPath(solution, if (willSolveAll) steps else cap, willSolveAll)
+                for ((i, word) in path.withIndex()) {
+                    if (willSolveAll && i == path.size - 1) boardsSolved += 1
+                    emit(word, emptyList(), 0, VSOpponentLatestGuess(0, tiles(solution, word)))
+                }
+            }
         }
 
         var stageEventsOut: List<Pair<Double, Int>> = stageEvents

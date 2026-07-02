@@ -342,16 +342,27 @@ export function FinalBoards({
   // ── Multi-board (QuadWord/OctoWord/Succession/Deliverance): each player's
   // FULL board set as the compact solo-style recap. ────────────────────────
   if (solutions.length > 1) {
-    const recapSection = (label: string, words: string[], accent: string, solved: boolean) => {
+    const recapSection = (label: string, words: string[], accent: string) => {
       const boards = reconstructRecapBoards(mode, seed, solutions, words);
       const rowCount = Math.max(1, ...boards.map(b => b.guesses.length));
+      // Honest per-board tally from the replayed boards — a binary
+      // Solved/Not-solved here contradicted the frames (7 purple + 1 red
+      // under a "Solved" badge).
+      const won = boards.filter(b => b.won).length;
+      const allWon = boards.length > 0 && won === boards.length;
+      const badgeColor = allWon ? '#16a34a' : won > 0 ? '#d97706' : '#dc2626';
       return (
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-extrabold uppercase tracking-wider truncate" style={{ color: accent }}>
               {label}
             </span>
-            <SolveBadge solved={solved} size={9} />
+            <span
+              className="inline-flex items-center gap-1 font-extrabold rounded-full px-2 py-0.5"
+              style={{ color: badgeColor, background: `${badgeColor}1a`, fontSize: 9 }}
+            >
+              {allWon ? '✓' : '✗'} {won}/{boards.length} boards
+            </span>
           </div>
           {words.length === 0 ? (
             <div className="text-[10px] font-bold py-2" style={{ color: 'var(--color-text-muted)' }}>No guesses</div>
@@ -380,9 +391,9 @@ export function FinalBoards({
         className="rounded-2xl p-4 space-y-3 animate-fade-in-up"
         style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
       >
-        {recapSection(myName, myGuessLog.map(e => e.guess), '#7c3aed', mySolved)}
+        {recapSection(myName, myGuessLog.map(e => e.guess), '#7c3aed')}
         <div className="h-px" style={{ background: 'var(--color-border)' }} />
-        {recapSection(opponentName, opponentGuessLog.map(e => e.guess), '#ec4899', oppSolved)}
+        {recapSection(opponentName, opponentGuessLog.map(e => e.guess), '#ec4899')}
       </div>
     );
   }

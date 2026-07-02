@@ -41,16 +41,25 @@ const MODE_BOARD_COUNT: Partial<Record<GameMode, number>> = {
   [GameMode.GAUNTLET]: GAUNTLET_TOTAL_SOLUTIONS, // 21 boards across 5 stages
 };
 
-/** Board index that COMPLETES each Gauntlet stage (last board of the stage). */
-const GAUNTLET_STAGE_LAST_BOARD: number[] = (() => {
-  const out: number[] = [];
-  let cum = 0;
-  for (const s of GAUNTLET_STAGES) { cum += s.boardCount; out.push(cum - 1); }
-  return out; // e.g. [0, 4, 8, 12, 20]
-})();
-
 export function boardCountForMode(mode: GameMode): number {
   return MODE_BOARD_COUNT[mode] ?? 1;
+}
+
+/** Real per-mode guess cap (mirrors packages/core createInitialState). */
+const MODE_MAX_GUESSES: Partial<Record<GameMode, number>> = {
+  [GameMode.DUEL]: 6,
+  [GameMode.DUEL_6]: 7,
+  [GameMode.DUEL_7]: 8,
+  [GameMode.PROPERNOUNDLE]: 6,
+  [GameMode.QUORDLE]: 9,
+  [GameMode.OCTORDLE]: 13,
+  [GameMode.SEQUENCE]: 10,
+  [GameMode.RESCUE]: 6,
+  [GameMode.MULTI_DUEL]: 6,
+};
+
+function maxGuessesForMode(mode: GameMode): number {
+  return MODE_MAX_GUESSES[mode] ?? 6;
 }
 
 interface DiffParams {
@@ -98,6 +107,14 @@ function randInt(min: number, max: number): number {
 }
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+function shuffle<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }
 
 /** How many positions match between two equal-length uppercase words. */
@@ -223,9 +240,13 @@ function tilesFor(solution: string, guess: string): string[] {
 }
 
 /**
- * Build a full bot plan for a match. Currently produces a per-board schedule:
- * each board is solved over its own increasing-greens path, with board solves
- * spread across the run. Single-board modes reduce to one path.
+ * Build a full bot plan for a match. The bot plays by the REAL rules:
+ * shared-guess modes (QuadWord/OctoWord/Deliverance, and multi-board Gauntlet
+ * stages) get ONE submission sequence capped at the mode's max — each
+ * submission applies to every unsolved board. Succession is sequential within
+ * one shared budget. The old per-board-independent model reported impossible
+ * guess counts (43 in a 13-max OctoWord), which skewed scores and produced
+ * garbage when the log was replayed on the recap.
  */
 export function buildBotPlan(
   seed: string,
@@ -254,7 +275,7 @@ export function buildBotPlan(
     solutions = state.boards.map((b) => b.solution.toUpperCase());
   }
 
-  // Decide overall outcome + per-board guess budgets.
+  // Decide the overall outcome up front.
   const willSolveAll = opts.forceSolve ? true : Math.random() > params.failChance;
 
   const events: BotProgressEvent[] = [];
@@ -264,45 +285,132 @@ export function buildBotPlan(
   let boardsSolved = 0;
   let lastAtMs = 0;
 
-  for (let bi = 0; bi < totalBoards; bi++) {
-    const solution = solutions[bi];
-    const steps = opts.targetGuesses ?? randInt(params.minGuesses, params.maxGuesses);
-    // The last board may be the one the bot fails (if it fails at all).
-    const boardSolves = willSolveAll ? true : bi < totalBoards - 1;
-    const path = mode === GameMode.PROPERNOUNDLE
-      ? fabricatedPath(solution, steps, boardSolves)
-      : realWordPath(solution, steps, boardSolves);
+  type LatestGuess = { boardIndex: number; tiles: string[] };
 
-    let atMs = lastAtMs;
-    for (let i = 0; i < path.length; i++) {
-      const word = path[i];
-      const dwell = rand(params.perGuessMinMs, params.perGuessMaxMs);
-      atMs += dwell;
-      cumulativeAttempts += 1;
-      const isSolvingRow = boardSolves && i === path.length - 1;
-      if (isSolvingRow) boardsSolved += 1;
-      // Gauntlet: emit a stage-completed marker when the last board of a stage
-      // is solved, so the opponent's 5-node stepper advances.
-      if (isSolvingRow && mode === GameMode.GAUNTLET) {
-        const stageIndex = GAUNTLET_STAGE_LAST_BOARD.indexOf(bi);
-        if (stageIndex >= 0) stageEvents.push({ atMs, stageIndex });
-      }
+  const emit = (word: string, entries: LatestGuess[], logBoard: number, single?: LatestGuess) => {
+    lastAtMs += rand(params.perGuessMinMs, params.perGuessMaxMs);
+    cumulativeAttempts += 1;
+    // Typing ping ~1.1s before the guess lands.
+    events.push({ atMs: Math.max(0, lastAtMs - 1100), typing: true });
+    events.push({
+      atMs: lastAtMs,
+      progress: {
+        attempts: cumulativeAttempts,
+        solved: boardsSolved >= totalBoards,
+        boardsSolved,
+        totalBoards,
+        latestGuess: single,
+        latestGuesses: single ? undefined : entries,
+      },
+    });
+    guessLog.push({ boardIndex: logBoard, guess: word });
+  };
 
-      // Typing ping ~1.1s before the guess lands.
-      events.push({ atMs: Math.max(0, atMs - 1100), typing: true });
-      events.push({
-        atMs,
-        progress: {
-          attempts: cumulativeAttempts,
-          solved: boardsSolved >= totalBoards,
-          boardsSolved,
-          totalBoards,
-          latestGuess: { boardIndex: bi, tiles: tilesFor(solution, word) },
-        },
-      });
-      guessLog.push({ boardIndex: bi, guess: word });
+  /** Shared-guess group (applyToAll): info-gathering fillers, then the
+   *  solutions one per submission. `budget` = the real max guesses. */
+  const sharedSegment = (offset: number, sols: string[], budget: number, solveAll: boolean, stageIndex?: number) => {
+    const n = sols.length;
+    const solveCount = solveAll ? n : Math.max(0, n - 1);
+    let fillerCount: number;
+    if (opts.targetGuesses != null) {
+      fillerCount = Math.max(0, Math.min(budget, opts.targetGuesses) - solveCount);
+    } else if (!solveAll) {
+      fillerCount = Math.max(0, budget - solveCount); // failed run burns the budget
+    } else {
+      fillerCount = Math.max(0, Math.min(
+        budget - solveCount,
+        randInt(Math.max(0, params.minGuesses - 2), Math.max(1, params.maxGuesses - 2)),
+      ));
     }
-    lastAtMs = atMs;
+    // Fillers must not accidentally solve a board they weren't credited for.
+    const fillers = fillerCount > 0
+      ? realWordPath(sols[n - 1], fillerCount, false).filter((w) => !sols.includes(w))
+      : [];
+    const solvedLocal = new Set<number>();
+    const solveOrder = shuffle([...Array(n).keys()]).slice(0, solveCount);
+    const sequence: { word: string; solves: number | null }[] = [
+      ...fillers.map((w) => ({ word: w, solves: null as number | null })),
+      ...solveOrder.map((i) => ({ word: sols[i], solves: i as number | null })),
+    ];
+    for (const { word, solves } of sequence) {
+      if (solves != null) { solvedLocal.add(solves); boardsSolved += 1; }
+      const entries: LatestGuess[] = [];
+      for (let li = 0; li < n; li++) {
+        if (!solvedLocal.has(li) || solves === li) {
+          entries.push({ boardIndex: offset + li, tiles: tilesFor(sols[li], word) });
+        }
+      }
+      emit(word, entries, offset + (solves ?? 0));
+    }
+    if (stageIndex != null && solveAll) stageEvents.push({ atMs: lastAtMs, stageIndex });
+  };
+
+  /** Sequential group (Succession / sequential Gauntlet stages): boards in
+   *  order, one at a time, sharing one guess budget. */
+  const sequentialSegment = (offset: number, sols: string[], budget: number, solveAll: boolean, stageIndex?: number) => {
+    let remaining = budget;
+    for (let li = 0; li < sols.length; li++) {
+      if (remaining <= 0) return;
+      const sol = sols[li];
+      const isLast = li === sols.length - 1;
+      const fails = !solveAll && isLast;
+      const reserve = sols.length - 1 - li; // ≥1 guess for each later board
+      const steps = fails
+        ? remaining
+        : Math.max(1, Math.min(remaining - reserve, randInt(1, Math.max(1, Math.min(3, params.maxGuesses - 2)))));
+      const path = realWordPath(sol, steps, !fails);
+      for (let i = 0; i < path.length; i++) {
+        const solving = !fails && i === path.length - 1;
+        if (solving) boardsSolved += 1;
+        emit(path[i], [], offset + li, { boardIndex: offset + li, tiles: tilesFor(sol, path[i]) });
+      }
+      remaining -= path.length;
+      if (fails) return;
+    }
+    if (stageIndex != null && solveAll) stageEvents.push({ atMs: lastAtMs, stageIndex });
+  };
+
+  switch (mode) {
+    case GameMode.QUORDLE:
+    case GameMode.OCTORDLE:
+    case GameMode.RESCUE:
+    case GameMode.MULTI_DUEL:
+      sharedSegment(0, solutions, maxGuessesForMode(mode), willSolveAll);
+      break;
+    case GameMode.SEQUENCE:
+      sequentialSegment(0, solutions, maxGuessesForMode(mode), willSolveAll);
+      break;
+    case GameMode.GAUNTLET: {
+      let offset = 0;
+      for (let si = 0; si < GAUNTLET_STAGES.length; si++) {
+        const stage = GAUNTLET_STAGES[si];
+        const sols = solutions.slice(offset, Math.min(solutions.length, offset + stage.boardCount));
+        if (sols.length === 0) break;
+        const lastStage = si === GAUNTLET_STAGES.length - 1;
+        const stageSolves = willSolveAll || !lastStage;
+        if (stage.boardCount === 1 || stage.sequential) {
+          sequentialSegment(offset, sols, stage.maxGuesses, stageSolves, si);
+        } else {
+          sharedSegment(offset, sols, stage.maxGuesses, stageSolves, si);
+        }
+        offset += stage.boardCount;
+        if (!stageSolves) break; // a failed stage ends the run
+      }
+      break;
+    }
+    default: {
+      // Single-board modes (Classic/Six/Seven/ProperNoundle).
+      const solution = solutions[0] ?? '';
+      const cap = maxGuessesForMode(mode);
+      const steps = Math.min(cap, opts.targetGuesses ?? randInt(params.minGuesses, params.maxGuesses));
+      const path = mode === GameMode.PROPERNOUNDLE
+        ? fabricatedPath(solution, willSolveAll ? steps : cap, willSolveAll)
+        : realWordPath(solution, willSolveAll ? steps : cap, willSolveAll);
+      for (let i = 0; i < path.length; i++) {
+        if (willSolveAll && i === path.length - 1) boardsSolved += 1;
+        emit(path[i], [], 0, { boardIndex: 0, tiles: tilesFor(solution, path[i]) });
+      }
+    }
   }
 
   // Ghost pacing: rescale the whole timeline to hit a target total solve time.

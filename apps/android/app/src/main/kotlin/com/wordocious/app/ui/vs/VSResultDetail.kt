@@ -331,9 +331,9 @@ fun FinalBoards(
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            MultiBoardRecapSection(myName, myFlatWords, Color(0xFF7C3AED), mySolved, mode, seed, solutions)
+            MultiBoardRecapSection(myName, myFlatWords, Color(0xFF7C3AED), mode, seed, solutions)
             Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
-            MultiBoardRecapSection(opponentName, oppFlatWords, Color(0xFFEC4899), oppSolved, mode, seed, solutions)
+            MultiBoardRecapSection(opponentName, oppFlatWords, Color(0xFFEC4899), mode, seed, solutions)
         }
         return
     }
@@ -385,21 +385,33 @@ private fun GauntletRecapSection(label: String, words: List<String>, accent: Col
 /** One player's full board set, rebuilt through the engine and laid out compactly. */
 @Composable
 private fun MultiBoardRecapSection(
-    label: String, words: List<String>, accent: Color, solved: Boolean,
+    label: String, words: List<String>, accent: Color,
     mode: GameMode, seed: String, solutions: List<String>,
 ) {
+    val boards = remember(mode, seed, solutions, words) { reconstructRecapBoards(mode, seed, solutions, words) }
+    // Honest per-board tally from the replayed boards — a binary
+    // Solved/Not-solved here contradicted the frames (7 purple + 1 red
+    // under a "Solved" badge).
+    val won = boards.count { it.status == GameStatus.WON }
+    val allWon = boards.isNotEmpty() && won == boards.size
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
                 color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
-            SolveBadge(solved, fontSize = 9)
+            val badgeColor = if (allWon) Color(0xFF16A34A) else if (won > 0) Color(0xFFD97706) else Color(0xFFDC2626)
+            Text(
+                "${if (allWon) "✓" else "✗"} $won/${boards.size} boards",
+                fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = badgeColor,
+                modifier = Modifier.clip(RoundedCornerShape(50))
+                    .background(badgeColor.copy(alpha = 0.10f))
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+            )
         }
         if (words.isEmpty()) {
             Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 8.dp))
         } else {
-            val boards = remember(mode, seed, solutions, words) { reconstructRecapBoards(mode, seed, solutions, words) }
             com.wordocious.app.ui.game.CompletedBoardsRecapGrid(boards)
         }
     }
