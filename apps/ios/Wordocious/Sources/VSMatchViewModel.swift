@@ -425,7 +425,16 @@ final class VSMatchViewModel: ObservableObject {
             Task { @MainActor in
                 guard let self else { t.invalidate(); return }
                 if let c = self.countdown, c > 1 { self.countdown = c - 1 }
-                else { self.countdown = nil; t.invalidate() }
+                else {
+                    // 3-2-1-GO: hold "GO!" (countdown == 0) — beginMatch fades it
+                    // out over the first beat of the board. Safety: if the match
+                    // never starts, drop the overlay after 2.5s.
+                    self.countdown = 0
+                    t.invalidate()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
+                        if self?.countdown == 0, self?.screen == .queue { self?.countdown = nil }
+                    }
+                }
             }
         }
     }
@@ -459,7 +468,14 @@ final class VSMatchViewModel: ObservableObject {
         rematch = .idle
         resultRecorded = false
         matchCompletionHandled = false
-        countdown = nil
+        // 3-2-1-GO: if a countdown was running, flash "GO!" over the board's
+        // first ~0.6s instead of cutting straight from "1" into the game.
+        if countdown != nil {
+            countdown = 0
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                if self?.countdown == 0 { self?.countdown = nil }
+            }
+        }
         // Per-match VS-experience state (web resetPerMatchState).
         myGuessLog = []
         myBoardsSolved = 0

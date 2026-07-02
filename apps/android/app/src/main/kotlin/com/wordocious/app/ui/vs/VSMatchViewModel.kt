@@ -357,7 +357,11 @@ class VSMatchViewModel(
         countdownJob = viewModelScope.launch {
             var c = secs
             while (c > 1) { delay(1000); c -= 1; countdown = c }
-            delay(1000); countdown = null
+            // 3-2-1-GO: hold "GO!" (countdown == 0) — beginMatch fades it out.
+            // Safety: if the match never starts, drop the overlay after 2.5s.
+            delay(1000); countdown = 0
+            delay(2500)
+            if (countdown == 0 && screen == VSScreen.QUEUE) countdown = null
         }
     }
 
@@ -389,7 +393,13 @@ class VSMatchViewModel(
         result = null
         rematch = RematchState.IDLE
         resultRecorded = false
-        countdown = null
+        // 3-2-1-GO: if a countdown was running, flash "GO!" over the board's
+        // first ~0.6s instead of cutting straight from "1" into the game.
+        if (countdown != null) {
+            countdown = 0
+            countdownJob?.cancel()
+            countdownJob = viewModelScope.launch { delay(600); if (countdown == 0) countdown = null }
+        }
         // Per-match VS-upgrade resets (web resetPerMatchState).
         myGuessCount = 0
         myStatus = null

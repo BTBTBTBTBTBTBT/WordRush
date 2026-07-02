@@ -349,7 +349,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         return prev - 1;
       });
     }, 1000);
-    setTimeout(() => setShowCountdown(false), secs * 1000);
+    // 3-2-1-GO: the "GO!" beat (countdown === 0) overlaps the board's first
+    // ~0.6s before the overlay drops.
+    setTimeout(() => setShowCountdown(false), secs * 1000 + 600);
   }, []);
   const [opponentUserId, setOpponentUserId] = useState<string | null>(null);
   const [opponentInfo, setOpponentInfo] = useState<VsProfile | null>(null);
@@ -863,9 +865,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         </div>
         <div
           key={countdown}
-          className={`text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient} animate-fade-in-scale`}
+          className={`${countdown === 0 ? 'text-8xl' : 'text-9xl'} font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient} animate-fade-in-scale`}
         >
-          {countdown}
+          {countdown === 0 ? 'GO!' : countdown}
         </div>
       </div>
     </div>

@@ -367,7 +367,7 @@ private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, i
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
             Text(label.uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
-            Text("$count", fontSize = 96.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
+            Text(if (count == 0) "GO!" else "$count", fontSize = if (count == 0) 72.sp else 96.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
         }
     }
 }
