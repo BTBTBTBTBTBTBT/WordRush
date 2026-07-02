@@ -139,9 +139,21 @@ enum BotEngine {
         let p = resolveParams(difficulty, opts.adaptive)
         // Gauntlet's createInitialState boards hold only the current stage; the
         // full 21-board run comes from the seed directly (reducer parity).
-        let solutions = mode == .gauntlet
-            ? generateSolutionsFromSeed(seed, count: gauntletTotalSolutions).map { $0.uppercased() }
-            : state.boards.map { $0.solution.uppercased() }
+        let solutions: [String]
+        if mode == .gauntlet {
+            solutions = generateSolutionsFromSeed(seed, count: gauntletTotalSolutions).map { $0.uppercased() }
+        } else if mode == .propernoundle {
+            // ProperNoundle's answer comes from its OWN puzzle set, not the
+            // shared engine (which seeds PN with a dictionary word) — the bot
+            // was literally playing a different answer than the player, so the
+            // result screen showed the wrong solution and marked the real
+            // winner "Not solved".
+            let pn = ProperNoundle.puzzle(forSeed: seed)
+            solutions = [pn.map { ProperNoundle.normalize($0.answer).uppercased() }
+                         ?? (state.boards.first?.solution.uppercased() ?? "")]
+        } else {
+            solutions = state.boards.map { $0.solution.uppercased() }
+        }
         let willSolveAll = opts.forceSolve ? true : Double.random(in: 0..<1) > p.failChance
 
         var events: [Event] = []
