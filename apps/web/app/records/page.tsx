@@ -581,7 +581,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
   const [stats, setStats] = useState<UserStatRow[]>([]);
   const [sweep, setSweep] = useState<DailySweepStats | null>(null);
   const [recordsHeld, setRecordsHeld] = useState<AllTimeRecord[]>([]);
-  const [closest, setClosest] = useState<{ label: string; gap: string } | null>(null);
+  const [chases, setChases] = useState<Array<{ label: string; gap: string; pct: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMode, setSelectedMode] = useState('DUEL');
 
@@ -600,23 +600,22 @@ function YourRecordsView({ userId }: { userId?: string }) {
       setSweep(sweepRes);
       setRecordsHeld(recs.filter((r) => r.holder_id === userId));
 
-      // Closest all-time record the player is near beating (lower-is-better
-      // types: fastest_win / fewest_guesses). Smallest positive gap wins.
-      let best: { label: string; gap: string } | null = null;
-      let bestGap = Infinity;
+      // Record Chase: EVERY beatable all-time record with your gap, sorted by
+      // how close you are (relative gap). Lower-is-better types only.
+      const all: Array<{ label: string; gap: string; pct: number; rel: number }> = [];
       for (const r of recs) {
         if (r.holder_id === userId || !r.game_mode || r.play_type !== 'solo') continue;
         const mine = rows.find((s) => s.game_mode === r.game_mode && s.play_type === 'solo');
         if (!mine) continue;
         if (r.record_type === 'fastest_win' && mine.fastest_time && mine.fastest_time > r.record_value) {
           const gap = mine.fastest_time - r.record_value;
-          if (gap < bestGap) { bestGap = gap; best = { label: `${getMode(r.game_mode).title} fastest win`, gap: `${gap}s away` }; }
+          all.push({ label: `${getMode(r.game_mode).title} fastest win`, gap: `${gap}s away`, pct: Math.round((r.record_value / mine.fastest_time) * 100), rel: gap / Math.max(1, r.record_value) });
         } else if (r.record_type === 'fewest_guesses' && mine.best_score && mine.best_score > r.record_value) {
           const gap = mine.best_score - r.record_value;
-          if (gap < bestGap) { bestGap = gap; best = { label: `${getMode(r.game_mode).title} fewest guesses`, gap: `${gap} away` }; }
+          all.push({ label: `${getMode(r.game_mode).title} fewest guesses`, gap: `${gap} away`, pct: Math.round((r.record_value / mine.best_score) * 100), rel: gap / Math.max(1, r.record_value) });
         }
       }
-      setClosest(best);
+      setChases(all.sort((a, b) => a.rel - b.rel).slice(0, 3).map(({ rel: _rel, ...rest }) => rest));
       setLoading(false);
     })();
     return () => { active = false; };
@@ -645,7 +644,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
   return (
     <div className="animate-fade-in-up space-y-5">
       {/* Milestone progress */}
-      {(nextMilestone || closest) && (
+      {(nextMilestone || chases.length > 0) && (
         <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
           <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899)' }} />
           <div className="px-4 pt-3 pb-4">
@@ -661,10 +660,19 @@ function YourRecordsView({ userId }: { userId?: string }) {
                 </div>
               </div>
             )}
-            {closest && (
-              <div className="flex items-center gap-1.5 text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                <TrendingUp className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
-                <span>You&apos;re <b style={{ color: 'var(--color-text)' }}>{closest.gap}</b> from the {closest.label} record</span>
+            {chases.length > 0 && (
+              <div className="space-y-2">
+                {chases.map((c) => (
+                  <div key={c.label}>
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold mb-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                      <TrendingUp className="w-3.5 h-3.5 shrink-0" style={{ color: '#7c3aed' }} />
+                      <span className="flex-1 truncate">You&apos;re <b style={{ color: 'var(--color-text)' }}>{c.gap}</b> from the {c.label} record</span>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, c.pct)}%`, background: 'linear-gradient(90deg, #a78bfa, #7c3aed)' }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

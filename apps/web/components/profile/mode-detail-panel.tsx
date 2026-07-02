@@ -12,6 +12,7 @@ import { SolveTimeChart } from './solve-time-chart';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { createInvite, vsHrefForMode } from '@/lib/invite-service';
 import { useAuth } from '@/lib/auth-context';
+import { ProDeepModeCard } from './pro-insights-deep';
 import {
   fetchGuessDistribution,
   fetchSolveTimeHistory,
@@ -247,6 +248,10 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats }: ModeDetailPa
               wordInsights={data.wordInsights}
             />
           )}
+
+          {/* Deep Insights (restat R4): opener yield, position accuracy,
+              stage breakdown (Gauntlet), hints, Word Almanac. */}
+          <ProDeepModeCard userId={userId} gameMode={gameMode} isPro={isPro} accentColor={accentColor} />
         </>
       )}
 

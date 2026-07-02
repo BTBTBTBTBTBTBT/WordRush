@@ -44,6 +44,7 @@ import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchUserAchievements, ACHIEVEMENTS } from '@/lib/achievement-service';
 import { SnapshotHero } from '@/components/profile/snapshot-hero';
 import { SectionHeader, KitCard, ChartCard } from '@/components/profile/stat-kit';
+import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights-deep';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
@@ -576,6 +577,11 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {/* Rivalries — most-faced opponents with head-to-head bars (Pro). */}
+        {activeTab === 'vs' && vsRecord.total > 0 && (
+          <div><RivalriesCard userId={profile.id} isPro={isProActive} /></div>
+        )}
+
         {/* vs CPU record — its own tab; the mode picker + per-mode scoring below
             populate from vs_cpu stats just like Solo/VS. Unranked: no
             leaderboard, no XP, no streak. */}
@@ -780,6 +786,9 @@ export default function ProfilePage() {
 
             {/* Pro Stats (global view) */}
             <ProStats userId={profile.id} isPro={isProActive} />
+
+            {/* Skill Radar — the five-axis signature chart (Pro). */}
+            <SkillRadarCard userId={profile.id} isPro={isProActive} />
           </div>
         ) : (
           /* ── Mode Detail View ── */

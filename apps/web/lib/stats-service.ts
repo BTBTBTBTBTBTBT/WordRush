@@ -1424,3 +1424,280 @@ export async function fetchTodayDailyStanding(userId: string): Promise<DailyStan
     modesCounted: percentiles.length,
   };
 }
+
+/* ═══════════════════════════════════════════════════════
+   Pro Insights deep stats (restat R4) — derived client-side
+   from stored guess logs (matches.player1/2_guesses +
+   solutions), hints_used, and gauntlet_stages.
+   ═══════════════════════════════════════════════════════ */
+
+import { evaluateGuess } from '@wordle-duel/core';
+
+/** Rows of (my guesses, solutions, won, time) for a mode — shared loader. */
+async function fetchMyGuessRows(userId: string, gameMode?: string, limit = 400) {
+  let q = (supabase as any)
+    .from('matches')
+    .select('player1_id, player1_guesses, player2_guesses, solutions, winner_id, player1_time, player2_time, created_at, game_mode, hints_used')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .not('solutions', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (gameMode) q = q.eq('game_mode', gameMode);
+  const { data } = await q as { data: Array<{
+    player1_id: string; player1_guesses: string[] | null; player2_guesses: string[] | null;
+    solutions: string[] | null; winner_id: string | null; player1_time: number | null; player2_time: number | null;
+    created_at: string; game_mode: string; hints_used: number | null;
+  }> | null };
+  return (data || []).map((r) => ({
+    guesses: (r.player1_id === userId ? r.player1_guesses : r.player2_guesses) || [],
+    solutions: r.solutions || [],
+    won: r.winner_id === userId,
+    time: (r.player1_id === userId ? r.player1_time : r.player2_time) || 0,
+    createdAt: r.created_at,
+    gameMode: r.game_mode,
+    hintsUsed: r.hints_used || 0,
+  })).filter((r) => r.guesses.length > 0 && r.solutions.length > 0);
+}
+
+const safeEval = (solution: string, guess: string): string[] | null => {
+  try {
+    if (solution.length !== guess.length) return null;
+    return evaluateGuess(solution.toUpperCase(), guess.toUpperCase()).tiles.map((t: any) => t.state as string);
+  } catch { return null; }
+};
+
+export interface OpenerDeepStat {
+  word: string;
+  count: number;
+  avgGreens: number;
+  avgYellows: number;
+  winRate: number; // 0–100
+}
+
+/** Opener Lab (deep): info yield of each starting word — avg greens/yellows on guess 1. */
+export async function fetchOpenerDeep(userId: string, gameMode: string, limit = 5): Promise<OpenerDeepStat[]> {
+  const rows = await fetchMyGuessRows(userId, gameMode);
+  const map = new Map<string, { count: number; greens: number; yellows: number; wins: number }>();
+  for (const r of rows) {
+    const opener = String(r.guesses[0]).toUpperCase();
+    const states = safeEval(r.solutions[0], opener);
+    if (!states) continue;
+    const e = map.get(opener) || { count: 0, greens: 0, yellows: 0, wins: 0 };
+    e.count++;
+    e.greens += states.filter((s) => s === 'CORRECT').length;
+    e.yellows += states.filter((s) => s === 'PRESENT').length;
+    if (r.won) e.wins++;
+    map.set(opener, e);
+  }
+  return Array.from(map.entries())
+    .map(([word, s]) => ({
+      word, count: s.count,
+      avgGreens: Math.round((s.greens / s.count) * 10) / 10,
+      avgYellows: Math.round((s.yellows / s.count) * 10) / 10,
+      winRate: Math.round((s.wins / s.count) * 100),
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+export interface PositionAccuracy {
+  wordLength: number;
+  /** Per position: share of ALL guesses that had that slot correct (0–100). */
+  pct: number[];
+  sampleGuesses: number;
+}
+
+/** Position accuracy grid: how often each letter slot comes up green across all guesses. */
+export async function fetchPositionAccuracy(userId: string, gameMode: string): Promise<PositionAccuracy | null> {
+  const rows = await fetchMyGuessRows(userId, gameMode);
+  if (rows.length === 0) return null;
+  const wordLength = rows[0].solutions[0]?.length ?? 5;
+  const correct = new Array(wordLength).fill(0);
+  let total = 0;
+  for (const r of rows) {
+    for (const g of r.guesses) {
+      const states = safeEval(r.solutions[0], String(g));
+      if (!states || states.length !== wordLength) continue;
+      total++;
+      states.forEach((s, i) => { if (s === 'CORRECT') correct[i]++; });
+    }
+  }
+  if (total < 10) return null;
+  return { wordLength, pct: correct.map((c) => Math.round((c / total) * 100)), sampleGuesses: total };
+}
+
+export interface AlmanacEntry {
+  word: string;
+  won: boolean;
+  guesses: number;
+  time: number;
+  date: string;
+}
+
+/** Word Almanac: recent solutions faced (first board), with result + pace. */
+export async function fetchWordAlmanac(userId: string, gameMode: string, limit = 30): Promise<AlmanacEntry[]> {
+  const rows = await fetchMyGuessRows(userId, gameMode, limit);
+  return rows.map((r) => ({
+    word: String(r.solutions[0]).toUpperCase(),
+    won: r.won,
+    guesses: r.guesses.length,
+    time: r.time,
+    date: r.createdAt,
+  }));
+}
+
+export interface GauntletStageStat {
+  stage: number;          // 0-based
+  name: string | null;
+  runs: number;
+  clears: number;
+  avgTimeSecs: number;
+}
+
+/** Gauntlet stage analytics from stored gauntlet_stages.stageResults (timeMs per stage). */
+export async function fetchGauntletStageStats(userId: string): Promise<GauntletStageStat[]> {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('gauntlet_stages')
+    .eq('player1_id', userId)
+    .eq('game_mode', 'GAUNTLET')
+    .not('gauntlet_stages', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(200) as { data: Array<{ gauntlet_stages: any }> | null };
+
+  const agg: Array<{ name: string | null; runs: number; clears: number; timeMs: number; timed: number }> = [];
+  for (const row of data || []) {
+    const results = row.gauntlet_stages?.stageResults;
+    if (!Array.isArray(results)) continue;
+    results.forEach((sr: any, i: number) => {
+      if (!agg[i]) agg[i] = { name: sr?.name ?? null, runs: 0, clears: 0, timeMs: 0, timed: 0 };
+      agg[i].runs++;
+      if (sr?.status === 'won' || sr?.status === 'WON') agg[i].clears++;
+      if (typeof sr?.timeMs === 'number' && sr.timeMs > 0) { agg[i].timeMs += sr.timeMs; agg[i].timed++; }
+      if (!agg[i].name && sr?.name) agg[i].name = sr.name;
+    });
+  }
+  return agg.map((a, i) => ({
+    stage: i, name: a.name, runs: a.runs, clears: a.clears,
+    avgTimeSecs: a.timed > 0 ? Math.round(a.timeMs / a.timed / 1000) : 0,
+  })).filter((a) => a.runs > 0);
+}
+
+export interface HintHonesty {
+  hintlessWinRate: number;  // % of wins that used zero hints
+  avgHintsPerGame: number;
+  gamesCounted: number;
+}
+
+/** Hint usage honesty card (Six/Seven/ProperNoundle — hints_used is stored). */
+export async function fetchHintHonesty(userId: string, gameMode: string): Promise<HintHonesty | null> {
+  const rows = await fetchMyGuessRows(userId, gameMode);
+  if (rows.length === 0) return null;
+  const wins = rows.filter((r) => r.won);
+  if (wins.length === 0) return null;
+  const hintlessWins = wins.filter((r) => r.hintsUsed === 0).length;
+  const totalHints = rows.reduce((s, r) => s + r.hintsUsed, 0);
+  return {
+    hintlessWinRate: Math.round((hintlessWins / wins.length) * 100),
+    avgHintsPerGame: Math.round((totalHints / rows.length) * 10) / 10,
+    gamesCounted: rows.length,
+  };
+}
+
+export interface SkillRadarData {
+  /** All axes 0–100. */
+  speed: number;
+  accuracy: number;
+  consistency: number;
+  endurance: number;
+  versatility: number;
+}
+
+/** Skill Radar: five 0–100 axes from user_stats + recent solve times. */
+export async function fetchSkillRadar(userId: string): Promise<SkillRadarData | null> {
+  const [{ data: statRows }, times] = await Promise.all([
+    (supabase as any).from('user_stats')
+      .select('game_mode, play_type, wins, losses, total_games, average_time, best_score')
+      .eq('user_id', userId).eq('play_type', 'solo') as Promise<{ data: Array<{ game_mode: string; wins: number; losses: number; total_games: number; average_time: number | null; best_score: number | null }> | null }>,
+    fetchSolveTimeHistory(userId, 20),
+  ]);
+  const rows = statRows || [];
+  if (rows.length === 0) return null;
+  const totalGames = rows.reduce((s, r) => s + (r.total_games || 0), 0);
+  if (totalGames < 5) return null;
+
+  // Accuracy: overall win rate.
+  const wins = rows.reduce((s, r) => s + (r.wins || 0), 0);
+  const accuracy = Math.round((wins / Math.max(1, totalGames)) * 100);
+
+  // Speed: recent solve times vs a 5-minute yardstick (faster → higher).
+  const avgTime = times.length > 0 ? times.reduce((s, t) => s + t.timeSeconds, 0) / times.length : 300;
+  const speed = Math.round(Math.max(0, Math.min(100, 100 - (avgTime / 300) * 100)));
+
+  // Consistency: coefficient of variation of recent times (steadier → higher).
+  let consistency = 50;
+  if (times.length >= 5) {
+    const avg = avgTime;
+    const variance = times.reduce((s, t) => s + (t.timeSeconds - avg) ** 2, 0) / times.length;
+    const cv = Math.sqrt(variance) / Math.max(1, avg);
+    consistency = Math.round(Math.max(0, Math.min(100, 100 - cv * 100)));
+  }
+
+  // Endurance: Gauntlet clear rate (the marathon mode).
+  const g = rows.find((r) => r.game_mode === 'GAUNTLET');
+  const endurance = g && g.total_games > 0 ? Math.round((g.wins / g.total_games) * 100) : 0;
+
+  // Versatility: how evenly play spreads across modes (normalized entropy).
+  const played = rows.filter((r) => (r.total_games || 0) > 0);
+  let versatility = 0;
+  if (played.length > 1) {
+    const H = played.reduce((s, r) => {
+      const p = r.total_games / totalGames;
+      return s - p * Math.log(p);
+    }, 0);
+    versatility = Math.round((H / Math.log(9)) * 100);
+  }
+  return { speed, accuracy, consistency, endurance, versatility };
+}
+
+export interface Rivalry {
+  opponentId: string;
+  username: string;
+  wins: number;
+  losses: number;
+  draws: number;
+  total: number;
+}
+
+/** Rivalries: most-faced human opponents with the head-to-head record. */
+export async function fetchRivalries(userId: string, limit = 5): Promise<Rivalry[]> {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('player1_id, player2_id, winner_id')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .not('player2_id', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(1000) as { data: Array<{ player1_id: string; player2_id: string; winner_id: string | null }> | null };
+
+  const map = new Map<string, { wins: number; losses: number; draws: number }>();
+  for (const m of data || []) {
+    const opp = m.player1_id === userId ? m.player2_id : m.player1_id;
+    if (!opp || opp === userId) continue;
+    const e = map.get(opp) || { wins: 0, losses: 0, draws: 0 };
+    if (m.winner_id === userId) e.wins++;
+    else if (m.winner_id) e.losses++;
+    else e.draws++;
+    map.set(opp, e);
+  }
+  const top = Array.from(map.entries())
+    .map(([opponentId, r]) => ({ opponentId, ...r, total: r.wins + r.losses + r.draws }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit);
+  if (top.length === 0) return [];
+
+  const { data: profiles } = await (supabase as any)
+    .from('profiles').select('id, username').in('id', top.map((t) => t.opponentId));
+  const names: Record<string, string> = {};
+  for (const p of (profiles as Array<{ id: string; username: string }> | null) || []) names[p.id] = p.username;
+  return top.map((t) => ({ ...t, username: names[t.opponentId] ?? 'Unknown' }));
+}
