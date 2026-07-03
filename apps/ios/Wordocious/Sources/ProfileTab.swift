@@ -1209,12 +1209,16 @@ struct LeaderboardTab: View {
 
         async let e = try? LeaderboardService.fetch(gameMode: mode)
         async let pc = LeaderboardService.playerCount(gameMode: mode)
-        let fetched = (await e) ?? []
+        let fetchedOpt = await e
         let count = await pc
         // .task(id:) cancels this on mode switch, but the awaits above aren't
         // cancellation-checked — bail before assigning so a slow prior-mode
         // response can't overwrite the new mode's rows.
         guard !Task.isCancelled else { return }
+        // Network error (nil, not an empty day): keep whatever is showing —
+        // cached rows beat clobbering them with a blank list, and never cache
+        // the failure.
+        guard let fetched = fetchedOpt else { loading = false; return }
         // Paint the rows the moment they arrive — the rank banner fills in on
         // its own instead of holding the whole list behind its extra queries.
         entries = fetched
