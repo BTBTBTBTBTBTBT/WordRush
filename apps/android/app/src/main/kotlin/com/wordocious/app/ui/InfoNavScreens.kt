@@ -114,25 +114,45 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
     }
 }
 
-// ── Services (mirror GuideService: fetch web JSON, memory-cache) ───────────────
+// ── Services (mirror ContentService: fetch web JSON, PERSIST to prefs so the
+//    content renders instantly on cold open; network refresh updates silently) ──
+
+/** Shared prefs handle for the info-content caches (same file ContentService uses). */
+private val infoPrefs by lazy {
+    com.wordocious.app.App.instance.getSharedPreferences("wordocious_prefs", android.content.Context.MODE_PRIVATE)
+}
 
 object StrategyService {
     private val json = Json { ignoreUnknownKeys = true }
     @Serializable data class Article(val slug: String, val title: String, val dek: String, val minutes: Int, val sections: List<Section> = emptyList())
     @Serializable data class Section(val heading: String, val body: List<String> = emptyList())
     @Serializable private data class Payload(val articles: List<Article> = emptyList())
-    private var cache: List<Article>? = null
+    private const val CACHE_KEY = "strategy-cache-v1"
+    private var memCache: List<Article>? = null
 
+    /** Last-persisted articles for an instant first render (ContentService parity). */
+    fun cached(): List<Article>? {
+        memCache?.let { return it }
+        val raw = infoPrefs.getString(CACHE_KEY, null) ?: return null
+        return runCatching { json.decodeFromString(Payload.serializer(), raw).articles }.getOrNull()?.also { memCache = it }
+    }
+
+    /** Fetch the live copy; persists on success. Falls back to the cache. */
     suspend fun articles(): List<Article> = withContext(Dispatchers.IO) {
-        cache ?: runCatching {
+        runCatching {
             val conn = (URL("https://wordocious.com/api/strategy").openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"; connectTimeout = 8000; readTimeout = 8000
             }
-            val out = if (conn.responseCode in 200..299)
-                json.decodeFromString(Payload.serializer(), conn.inputStream.bufferedReader().use { it.readText() }).articles
-            else emptyList()
-            conn.disconnect(); cache = out; out
-        }.getOrDefault(emptyList())
+            val out = if (conn.responseCode in 200..299) {
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                val articles = json.decodeFromString(Payload.serializer(), body).articles
+                memCache = articles
+                infoPrefs.edit().putString(CACHE_KEY, body).apply()
+                articles
+            } else null
+            conn.disconnect()
+            out
+        }.getOrNull() ?: cached() ?: emptyList()
     }
 }
 
@@ -145,18 +165,32 @@ object WordsService {
     )
     @Serializable data class Sense(val partOfSpeech: String = "", val definition: String = "")
     @Serializable private data class Payload(val words: List<Entry> = emptyList())
-    private var cache: List<Entry>? = null
+    private const val CACHE_KEY = "words-cache-v1"
+    private var memCache: List<Entry>? = null
 
+    /** Last-persisted words for an instant first render (ContentService parity). */
+    fun cached(): List<Entry>? {
+        memCache?.let { return it }
+        val raw = infoPrefs.getString(CACHE_KEY, null) ?: return null
+        return runCatching { json.decodeFromString(Payload.serializer(), raw).words }.getOrNull()?.also { memCache = it }
+    }
+
+    /** Fetch the live copy; persists on success. Falls back to the cache. */
     suspend fun words(): List<Entry> = withContext(Dispatchers.IO) {
-        cache ?: runCatching {
+        runCatching {
             val conn = (URL("https://wordocious.com/api/words").openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"; connectTimeout = 8000; readTimeout = 8000
             }
-            val out = if (conn.responseCode in 200..299)
-                json.decodeFromString(Payload.serializer(), conn.inputStream.bufferedReader().use { it.readText() }).words
-            else emptyList()
-            conn.disconnect(); cache = out; out
-        }.getOrDefault(emptyList())
+            val out = if (conn.responseCode in 200..299) {
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                val words = json.decodeFromString(Payload.serializer(), body).words
+                memCache = words
+                infoPrefs.edit().putString(CACHE_KEY, body).apply()
+                words
+            } else null
+            conn.disconnect()
+            out
+        }.getOrNull() ?: cached() ?: emptyList()
     }
 }
 
@@ -190,7 +224,7 @@ private fun infoCardMod() = Modifier
 
 @Composable
 fun StrategyScreen(onDone: () -> Unit) {
-    val articles by produceState(initialValue = emptyList<StrategyService.Article>()) { value = StrategyService.articles() }
+    val articles by produceState(initialValue = StrategyService.cached() ?: emptyList()) { value = StrategyService.articles() }
     var selected by remember { mutableStateOf<StrategyService.Article?>(null) }
 
     selected?.let { a ->
@@ -239,7 +273,7 @@ fun StrategyScreen(onDone: () -> Unit) {
 
 @Composable
 fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
-    val words by produceState(initialValue = emptyList<WordsService.Entry>()) { value = WordsService.words() }
+    val words by produceState(initialValue = WordsService.cached() ?: emptyList()) { value = WordsService.words() }
     var selected by remember { mutableStateOf<WordsService.Entry?>(null) }
 
     selected?.let { w ->
@@ -390,18 +424,32 @@ object HowToPlayService {
     @Serializable data class Letter(val ch: String, val color: String)
     @Serializable data class TileRow(val letters: List<Letter>, val strong: String, val strongColor: String, val rest: String)
     @Serializable private data class Payload(val sections: List<Section> = emptyList())
-    private var cache: List<Section>? = null
+    private const val CACHE_KEY = "howtoplay-cache-v1"
+    private var memCache: List<Section>? = null
 
+    /** Last-persisted sections for an instant first render (ContentService parity). */
+    fun cached(): List<Section>? {
+        memCache?.let { return it }
+        val raw = infoPrefs.getString(CACHE_KEY, null) ?: return null
+        return runCatching { json.decodeFromString(Payload.serializer(), raw).sections }.getOrNull()?.also { memCache = it }
+    }
+
+    /** Fetch the live copy; persists on success. Falls back to the cache. */
     suspend fun sections(): List<Section> = withContext(Dispatchers.IO) {
-        cache ?: runCatching {
+        runCatching {
             val conn = (URL("https://wordocious.com/api/howtoplay").openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"; connectTimeout = 8000; readTimeout = 8000
             }
-            val out = if (conn.responseCode in 200..299)
-                json.decodeFromString(Payload.serializer(), conn.inputStream.bufferedReader().use { it.readText() }).sections
-            else emptyList()
-            conn.disconnect(); cache = out; out
-        }.getOrDefault(emptyList())
+            val out = if (conn.responseCode in 200..299) {
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                val sections = json.decodeFromString(Payload.serializer(), body).sections
+                memCache = sections
+                infoPrefs.edit().putString(CACHE_KEY, body).apply()
+                sections
+            } else null
+            conn.disconnect()
+            out
+        }.getOrNull() ?: cached() ?: emptyList()
     }
 }
 
@@ -410,7 +458,7 @@ private fun htpColor(hex: String): Color =
 
 @Composable
 fun HowToPlayScreen(onDone: () -> Unit) {
-    val sections by produceState(initialValue = emptyList<HowToPlayService.Section>()) { value = HowToPlayService.sections() }
+    val sections by produceState(initialValue = HowToPlayService.cached() ?: emptyList()) { value = HowToPlayService.sections() }
     OverlayScaffold("How to Play", onDone) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("Everything you need to know to get started", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
