@@ -151,7 +151,9 @@ httpServer.on('request', (req, res) => {
       waiting[mode] = (waiting[mode] ?? 0) + arr.length;
     }
     const playing: Record<string, number> = {};
-    for (const m of matches.values()) playing[m.mode] = (playing[m.mode] ?? 0) + 2; // 2 players/match
+    // Skip ended matches — they linger only for a possible rematch and used
+    // to inflate "M playing" until a socket dropped.
+    for (const m of matches.values()) { if (!m.ended) playing[m.mode] = (playing[m.mode] ?? 0) + 2; } // 2 players/match
     res.writeHead(200, {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': allowed,
@@ -176,6 +178,26 @@ httpServer.on('request', (req, res) => {
 const queue = new MatchmakingQueue();
 const matches = new Map<string, Match>();
 const playerToMatch = new Map<string, string>();
+// Monotonic counter so two matches created in the same millisecond can't
+// collide on a Date.now()-only id (second pair silently overwrote the first).
+let matchSeq = 0;
+const nextMatchId = () => `match-${Date.now()}-${++matchSeq}`;
+// How long a finished match is kept around for a possible rematch before the
+// sweep deletes it (rematch/decline/disconnect all clean up sooner themselves).
+const ENDED_MATCH_TTL_MS = 5 * 60 * 1000;
+
+/** Delete a match and every lookup keyed to it. */
+function cleanupMatch(matchId: string): void {
+  const m = matches.get(matchId);
+  if (m) {
+    if (m.rematchTimer) clearTimeout(m.rematchTimer);
+    if (playerToMatch.get(m.player1.id) === matchId) playerToMatch.delete(m.player1.id);
+    if (playerToMatch.get(m.player2.id) === matchId) playerToMatch.delete(m.player2.id);
+  }
+  matches.delete(matchId);
+  submittedWordsByMatch.delete(matchId);
+  guessLogByMatch.delete(matchId);
+}
 // Per-player guess history within an active match. Keyed by matchId so
 // it clears naturally on match end. Used to reject duplicate guesses
 // server-side even if a modified client bypasses its local check.
@@ -430,6 +452,9 @@ io.on('connection', (socket) => {
     const maxGuesses = MODE_MAX_GUESSES[match.mode] || 6;
 
     if (isCorrect) {
+      // Server-verified solve for the submitted board (ground truth for the
+      // player_completed won-claim check below).
+      (playerState.serverSolvedSet ??= new Set<number>()).add(boardIndex);
       // For single-board modes, mark done
       if (MODE_BOARD_COUNT[match.mode] === 1) {
         playerState.status = GameStatus.WON;
@@ -465,6 +490,10 @@ io.on('connection', (socket) => {
         try {
           const ev = evaluateGuess(match.solutions[i].toUpperCase(), normalizedGuess);
           latestGuesses.push({ boardIndex: i, tiles: ev.tiles.map((t: any) => t.state) });
+          // applyToAll: the one guess hit every board — record any it solved.
+          if (normalizedGuess === match.solutions[i].toUpperCase()) {
+            (playerState.serverSolvedSet ??= new Set<number>()).add(i);
+          }
         } catch { /* skip unevaluable board */ }
       }
     }
@@ -520,7 +549,28 @@ io.on('connection', (socket) => {
     const playerState = isPlayer1 ? match.player1State : match.player2State;
     const opponentState = isPlayer1 ? match.player2State : match.player1State;
 
-    playerState.status = status === 'won' ? GameStatus.WON : GameStatus.LOST;
+    // Validate a "won" claim against the server's OWN evaluations — a modified
+    // client could otherwise claim an instant win without ever guessing right.
+    // Single-board: the server already marked WON on the correct guess.
+    // applyToAll multi-board + Sequence: every board's solution must have been
+    // seen correct by the server (serverSolvedSet, filled in submit_guess).
+    // Gauntlet is excluded (its 21 board indices are stage-relative, so the
+    // set can't be compared to a flat board count).
+    let claimedWon = status === 'won';
+    if (claimedWon && match.mode !== GameMode.GAUNTLET) {
+      const boardCount = MODE_BOARD_COUNT[match.mode] || 1;
+      const verified = boardCount === 1
+        ? playerState.status === GameStatus.WON
+        : (playerState.serverSolvedSet?.size ?? 0) >= boardCount;
+      if (!verified) {
+        logVS('player_completed_WON_REJECTED', presenceId ?? socket.id, {
+          mode: match.mode, serverSolved: playerState.serverSolvedSet?.size ?? 0,
+        });
+        claimedWon = false;
+      }
+    }
+
+    playerState.status = claimedWon ? GameStatus.WON : GameStatus.LOST;
     playerState.completedAt = Date.now();
     playerState.guesses = totalGuesses;
     logVS('player_completed', presenceId ?? socket.id, {
@@ -546,6 +596,14 @@ io.on('connection', (socket) => {
     const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
 
     playerState.currentStage = stageIndex;
+
+    // Gauntlet: each stage is a fresh board set, so a word from an earlier
+    // stage is a LEGAL guess again (clients only dedupe within the stage).
+    // The per-match dedupe set used to reject it — and if a later stage's
+    // solution had been guessed in an earlier stage, that board became
+    // unwinnable. Reset this player's dedupe history at each stage boundary.
+    const history = submittedWordsByMatch.get(matchId);
+    if (history) (isPlayer1 ? history.p1 : history.p2).clear();
 
     io.to(opponentSocket).emit('opponent_stage_completed', { stageIndex });
   });
@@ -574,10 +632,18 @@ io.on('connection', (socket) => {
 
   socket.on('offer_rematch', () => {
     const matchId = playerToMatch.get(playerId);
-    if (!matchId) return;
-
+    // The match may already be gone (opponent left and it was cleaned up, or
+    // the TTL sweep ran) — bounce a decline straight back so the offerer's
+    // button resolves instead of hanging on "Waiting…".
+    if (!matchId) {
+      socket.emit('rematch_declined');
+      return;
+    }
     const match = matches.get(matchId);
-    if (!match) return;
+    if (!match) {
+      socket.emit('rematch_declined');
+      return;
+    }
 
     match.rematchOffers.add(playerId);
 
@@ -586,8 +652,26 @@ io.on('connection', (socket) => {
 
     io.to(opponentSocket).emit('rematch_offered');
 
+    // First offer arms the (previously dead-code) REMATCH_TIMEOUT: if the
+    // opponent never answers within the window, tell the offerer it's off —
+    // their "Waiting…" state used to hang forever. Reuses rematch_declined so
+    // every existing client handles it with zero changes.
+    if (match.rematchOffers.size === 1 && !match.rematchTimer) {
+      match.rematchTimer = setTimeout(() => {
+        const m = matches.get(matchId);
+        if (!m || m.rematchOffers.size === 2) return;
+        for (const offererId of m.rematchOffers) {
+          const offererSocket = m.player1.id === offererId ? m.player1.socketId : m.player2.socketId;
+          io.to(offererSocket).emit('rematch_declined');
+        }
+        logVS('rematch_timeout', null, { mode: m.mode, matchId });
+        cleanupMatch(matchId);
+      }, REMATCH_TIMEOUT);
+    }
+
     if (match.rematchOffers.size === 2) {
-      const newMatchId = `match-${Date.now()}`;
+      if (match.rematchTimer) { clearTimeout(match.rematchTimer); match.rematchTimer = undefined; }
+      const newMatchId = nextMatchId();
       const newSeed = generateMatchSeed();
       const boardCount = MODE_BOARD_COUNT[match.mode] || 1;
 
@@ -644,10 +728,7 @@ io.on('connection', (socket) => {
 
     io.to(opponentSocket).emit('rematch_declined');
 
-    playerToMatch.delete(match.player1.id);
-    playerToMatch.delete(match.player2.id);
-    matches.delete(matchId);
-    submittedWordsByMatch.delete(matchId);
+    cleanupMatch(matchId);
   });
 
   socket.on('disconnect', () => {
@@ -691,11 +772,7 @@ io.on('connection', (socket) => {
               logVS('reconnect_grace_expired', presenceId, { mode: m.mode, matchId });
               endMatch(matchId, playerId);
             }
-            playerToMatch.delete(m.player1.id);
-            playerToMatch.delete(m.player2.id);
-            matches.delete(matchId);
-            submittedWordsByMatch.delete(matchId);
-            guessLogByMatch.delete(matchId);
+            cleanupMatch(matchId);
           }, RECONNECT_GRACE_MS);
           pendingReconnects.set(presenceId, { matchId, oldPlayerId: playerId, timer });
           // Leave the match + lookups intact so the reconnect can re-bind. The
@@ -708,20 +785,22 @@ io.on('connection', (socket) => {
           playerState.status = GameStatus.ABANDONED;
           playerState.completedAt = playerState.completedAt ?? Date.now();
           endMatch(matchId, playerId);
+        } else {
+          // Match already over → the leaver was on the RESULT screen. Tell the
+          // remaining player (as a decline) so their rematch button can't hang
+          // on "Waiting…" against someone who's gone.
+          const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
+          io.to(opponentSocket).emit('rematch_declined');
         }
 
-        playerToMatch.delete(match.player1.id);
-        playerToMatch.delete(match.player2.id);
-        matches.delete(matchId);
-        submittedWordsByMatch.delete(matchId);
-        guessLogByMatch.delete(matchId);
+        cleanupMatch(matchId);
       }
     }
   });
 });
 
 function createMatch(player1: Player, player2: Player, mode: GameMode, preferredSeed?: string): void {
-  const matchId = `match-${Date.now()}`;
+  const matchId = nextMatchId();
   // If a preferred (daily) seed is supplied, use it verbatim so the
   // solution derivation below produces the same word for everyone
   // playing that day's daily match. Otherwise fall back to the random
@@ -787,6 +866,11 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
   });
 
   setTimeout(() => {
+    // A disconnect during the countdown can end the match (anonymous forfeit)
+    // before it ever starts — don't fire match_start into a finished match,
+    // or the surviving client can see match_ended THEN match_start.
+    const m = matches.get(matchId);
+    if (!m || m.ended) return;
     io.to(player1.socketId).emit('match_start', { seed, startTime: serverStartAt, puzzleMetadata });
     io.to(player2.socketId).emit('match_start', { seed, startTime: serverStartAt, puzzleMetadata });
   }, MATCH_COUNTDOWN * 1000);
@@ -795,6 +879,14 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
 function endMatch(matchId: string, forfeitBy?: string): void {
   const match = matches.get(matchId);
   if (!match) return;
+  // Idempotence: the final submit_guess and the client's player_completed can
+  // both reach the "both done" condition — only the first may emit match_ended
+  // (a duplicate re-ran winner logic and re-emitted to both players).
+  if (match.ended) return;
+  match.ended = true;
+  // The match object stays alive for a possible rematch, but never forever:
+  // if neither rematch nor decline nor a disconnect cleans it up, sweep it.
+  setTimeout(() => { if (matches.get(matchId)?.ended) cleanupMatch(matchId); }, ENDED_MATCH_TTL_MS);
   logVS('endMatch', forfeitBy ?? null, {
     mode: match.mode,
     p1Status: match.player1State.status, p2Status: match.player2State.status,

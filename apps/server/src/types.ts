@@ -36,6 +36,11 @@ export interface PlayerMatchState {
   /** Board indices this player has already solved (from board_solved). Used to
    *  skip solved boards when fanning out an applyToAll guess to the opponent. */
   solvedBoardSet?: Set<number>;
+  /** Board indices whose solution the SERVER saw this player guess correctly
+   *  (its own submit_guess evaluation) — ground truth for validating the
+   *  client's player_completed "won" claim. solvedBoardSet is client-reported
+   *  (board_solved events) so it can't serve that purpose. */
+  serverSolvedSet?: Set<number>;
 }
 
 export interface Match {
@@ -49,6 +54,12 @@ export interface Match {
   player1State: PlayerMatchState;
   player2State: PlayerMatchState;
   rematchOffers: Set<string>;
+  /** Set once endMatch has run — makes endMatch idempotent (the final guess
+   *  and player_completed can both trigger it) and lets /vs/counts skip
+   *  finished matches kept alive only for a possible rematch. */
+  ended?: boolean;
+  /** 30s no-answer timer on a pending rematch offer (REMATCH_TIMEOUT). */
+  rematchTimer?: ReturnType<typeof setTimeout>;
 }
 
 export interface ClientToServerEvents {
