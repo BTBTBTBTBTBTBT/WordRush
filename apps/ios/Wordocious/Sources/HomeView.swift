@@ -178,7 +178,17 @@ struct HomeView: View {
                     VSGameView(mode: inv.mode, inviteCode: inv.code)
                 }
             }
-            .task(id: auth.isAuthenticated) { await completions.load(); await loadPendingInvites(); vsDailyWon = await DailyResultsService.dailyVSResult(); checkStreakAtRisk(); checkSweepCelebration() }
+            .task(id: auth.isAuthenticated) {
+                // Concurrent, not serial — the three loads are independent.
+                async let load: Void = completions.load()
+                async let invites: Void = loadPendingInvites()
+                async let won = DailyResultsService.dailyVSResult()
+                _ = await load
+                _ = await invites
+                vsDailyWon = await won
+                checkStreakAtRisk()
+                checkSweepCelebration()
+            }
             // Refresh today's daily completions whenever Home reappears (returning
             // from a daily push like ProperNoundle) so a just-finished game shows
             // its completed state immediately — no longer needs a tab round-trip.
@@ -335,18 +345,20 @@ struct HomeView: View {
     /// seeds from cache so there's no flicker). Called on Home reappear and game
     /// dismissal so finished games show their completed state right away.
     private func reloadDaily() {
-        Task { await completions.load(); vsDailyWon = await DailyResultsService.dailyVSResult() }
+        Task {
+            // Concurrent, not serial — the two loads are independent.
+            async let load: Void = completions.load()
+            async let won = DailyResultsService.dailyVSResult()
+            _ = await load
+            vsDailyWon = await won
+        }
     }
 
     private func loadPendingInvites() async {
         guard let uid = auth.profile?.id else { return }
         let list = await InviteService.fetchPending(userId: uid)
         pendingInvites = list
-        var names: [String: String] = [:]
-        for inv in list where names[inv.inviter_id] == nil {
-            if let n = await InviteService.inviterUsername(inv.inviter_id) { names[inv.inviter_id] = n }
-        }
-        inviterNames = names
+        inviterNames = await InviteService.inviterUsernames(Array(Set(list.map(\.inviter_id))))
     }
 
     @ViewBuilder private var pendingInvitesBanner: some View {

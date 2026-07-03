@@ -94,12 +94,20 @@ enum InviteService {
             .execute().value) ?? []
     }
 
-    /// The inviter's display name for the banner.
-    static func inviterUsername(_ inviterId: String) async -> String? {
-        struct Row: Decodable { let username: String? }
-        let row: Row? = try? await AuthService.shared.client.from("profiles")
-            .select("username").eq("id", value: inviterId).limit(1).single().execute().value
-        return row?.username
+    /// Inviter display names for the banner, in ONE batched query (replaces
+    /// the old per-inviter serial lookups). match_invites.inviter_id references
+    /// auth.users(id) — not profiles — so a PostgREST embed isn't possible;
+    /// the web does the same two-step (invites query + batched profiles .in()).
+    static func inviterUsernames(_ inviterIds: [String]) async -> [String: String] {
+        guard !inviterIds.isEmpty else { return [:] }
+        struct Row: Decodable { let id: String; let username: String? }
+        let rows: [Row] = (try? await AuthService.shared.client.from("profiles")
+            .select("id,username")
+            .in("id", values: inviterIds)
+            .execute().value) ?? []
+        return rows.reduce(into: [:]) { acc, row in
+            if let u = row.username { acc[row.id] = u }
+        }
     }
 
     /// Decline an invite (dismiss from the banner).
