@@ -136,7 +136,15 @@ private fun RadarChart(data: StatsDeepService.SkillRadarData) {
 fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
     var data by remember { mutableStateOf<StatsDeepService.SkillRadarData?>(null) }
     LaunchedEffect(isPro) {
-        if (isPro) AuthService.userId?.let { data = StatsDeepService.skillRadar(it) }
+        if (isPro) AuthService.userId?.let { uid ->
+            // P-cache: seed from the session memo (instant repaint), refresh, store back.
+            val memoKey = "skillRadar:$uid"
+            com.wordocious.app.data.StatsMemo.get<StatsDeepService.SkillRadarData>(memoKey)?.let { data = it }
+            StatsDeepService.skillRadar(uid)?.let { fresh ->
+                data = fresh
+                com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
+            }
+        }
     }
     // Locked preview uses the web's static sample so free users see the shape.
     val d = if (isPro) data else StatsDeepService.SkillRadarData(62, 74, 55, 40, 68)
@@ -167,7 +175,14 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
 fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
     var rows by remember { mutableStateOf<List<StatsDeepService.Rivalry>>(emptyList()) }
     LaunchedEffect(isPro) {
-        if (isPro) AuthService.userId?.let { rows = StatsDeepService.rivalries(it, 5) }
+        if (isPro) AuthService.userId?.let { uid ->
+            // P-cache: seed from the session memo (instant repaint), refresh, store back.
+            val memoKey = "rivalries:$uid"
+            com.wordocious.app.data.StatsMemo.get<List<StatsDeepService.Rivalry>>(memoKey)?.let { rows = it }
+            val fresh = StatsDeepService.rivalries(uid, 5)
+            rows = fresh
+            com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
+        }
     }
     val display = if (isPro) rows else listOf(
         StatsDeepService.Rivalry("1", "WordSmith", 4, 2, 0, 6),
@@ -252,12 +267,16 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
         if (!isPro || playType == "vs_cpu") return@LaunchedEffect
         data = null
         val uid = AuthService.userId ?: return@LaunchedEffect
+        // P-cache: seed from the session memo (instant repaint on mode re-tap),
+        // then fetch fresh below and store back (SWR).
+        val memoKey = "deepMode:$uid:$gameMode:$playType"
+        com.wordocious.app.data.StatsMemo.get<DeepData>(memoKey)?.let { data = it }
         // All sub-stats CONCURRENTLY (was 5 serial round-trips). Openers /
         // positions / hint honesty all consume the identical myGuessRows
         // slice (mode, limit 400, play type) — fetch it ONCE and pass it down;
         // almanac (limit 24) and gauntlet hit different queries so they just
         // run in parallel.
-        data = kotlinx.coroutines.coroutineScope {
+        val fresh = kotlinx.coroutines.coroutineScope {
             val rowsD = async { StatsDeepService.myGuessRows(uid, gameMode, playType = playType) }
             val almanacD = async { StatsDeepService.wordAlmanac(uid, gameMode, 24, playType) }
             val gauntletD = async { if (gameMode == "GAUNTLET") StatsDeepService.gauntletStageStats(uid, playType) else emptyList() }
@@ -273,6 +292,8 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
                 gauntlet = gauntletD.await(),
             )
         }
+        data = fresh
+        com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
     }
     // No per-game rows exist for CPU practice — hide the deep card entirely
     // (the panel shows a "totals only" note instead; restat B1).

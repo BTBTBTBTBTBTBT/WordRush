@@ -84,6 +84,28 @@ import kotlinx.coroutines.launch
  */
 private val DAILY_MODES = listOf("DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE", "DUEL_6", "DUEL_7", "GAUNTLET", "PROPERNOUNDLE")
 
+// ── P-cache memo bundles (session-lived StatsMemo snapshots; SWR seeds) ──────
+private data class ProfileMainMemo(
+    val stats: List<ProfileService.UserStat>,
+    val recentMatches: List<ProfileService.RecentMatch>,
+    val opponentNames: Map<String, String>,
+    val medals: List<ProfileService.UserMedal>,
+    val todayDailies: Map<String, DailyCompletionsService.Completion>,
+    val unlocked: Set<String>,
+    val activityCal: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
+    val sweepPoints: List<com.wordocious.app.data.MatchStatsService.DailyPointsPoint>,
+)
+
+private data class ProfileChartsMemo(
+    val guessDist: List<com.wordocious.app.data.MatchStatsService.GuessBucket>,
+    val activity7: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
+    val solveTimes: List<com.wordocious.app.data.MatchStatsService.SolvePoint>,
+    val timeOfDay: List<com.wordocious.app.data.MatchStatsService.HourBucket>,
+    val topWords: List<com.wordocious.app.data.MatchStatsService.TopWord>,
+    val proInsights: com.wordocious.app.data.MatchStatsService.ProInsights,
+    val modeStreaks: Map<String, Pair<Int, Int>>,
+)
+
 @Composable
 fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {}) {
     val profile by AuthService.profile.collectAsState()
@@ -133,6 +155,20 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     val tick by DailyCompletionsService.completionTick.collectAsState()
     LaunchedEffect(userId, tick) {
         if (userId != null) {
+            // P-cache: seed from the session memo for an INSTANT repaint on
+            // screen re-entry, then fetch fresh below and store back (SWR).
+            val memoKey = "profileMain:$userId"
+            com.wordocious.app.data.StatsMemo.get<ProfileMainMemo>(memoKey)?.let { saved ->
+                stats = saved.stats
+                recentMatches = saved.recentMatches
+                opponentNames = saved.opponentNames
+                medals = saved.medals
+                todayDailies = saved.todayDailies
+                unlockedAchievements = saved.unlocked
+                activityCal = saved.activityCal
+                sweepPoints = saved.sweepPoints
+                loading = false
+            }
             // All independent fetches run CONCURRENTLY (was 8 serial round-trips
             // gating the whole screen); only usernames chains off recentMatches.
             kotlinx.coroutines.coroutineScope {
@@ -157,6 +193,11 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 activityCal = calD.await()
                 sweepPoints = pointsD.await()
             }
+            com.wordocious.app.data.StatsMemo.set(memoKey, ProfileMainMemo(
+                stats = stats, recentMatches = recentMatches, opponentNames = opponentNames,
+                medals = medals, todayDailies = todayDailies, unlocked = unlockedAchievements,
+                activityCal = activityCal, sweepPoints = sweepPoints,
+            ))
         }
         loading = false
     }
@@ -167,6 +208,18 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     LaunchedEffect(userId, selectedMode, isProActive, activeTab, tick) {
         val uid = userId ?: return@LaunchedEffect
         val m = selectedMode
+        // P-cache: seed from the session memo (instant repaint on mode re-tap /
+        // toggle flip), then fetch fresh below and store back (SWR).
+        val memoKey = "profileCharts:$uid:${m ?: "ALL"}:$activeTab:$isProActive"
+        com.wordocious.app.data.StatsMemo.get<ProfileChartsMemo>(memoKey)?.let { saved ->
+            guessDist = saved.guessDist
+            activity7 = saved.activity7
+            solveTimes = saved.solveTimes
+            timeOfDay = saved.timeOfDay
+            topWords = saved.topWords
+            proInsights = saved.proInsights
+            modeStreaks = saved.modeStreaks
+        }
         // All chart fetches run CONCURRENTLY (was 6 serial round-trips + a
         // 9-query per-mode streak N+1 — now one consolidated streak query).
         kotlinx.coroutines.coroutineScope {
@@ -192,6 +245,11 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             proInsights = piD.await()
             modeStreaks = streaksD.await()
         }
+        com.wordocious.app.data.StatsMemo.set(memoKey, ProfileChartsMemo(
+            guessDist = guessDist, activity7 = activity7, solveTimes = solveTimes,
+            timeOfDay = timeOfDay, topWords = topWords, proInsights = proInsights,
+            modeStreaks = modeStreaks,
+        ))
     }
 
     val isGuest by AuthService.isGuest.collectAsState()
