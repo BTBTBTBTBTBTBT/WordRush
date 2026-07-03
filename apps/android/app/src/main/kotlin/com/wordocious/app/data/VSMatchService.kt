@@ -111,7 +111,18 @@ class VSMatchService : VSTransport {
         s.on(VSEvent.OPPONENT_TYPING) { runOnMain { onOpponentTyping?.invoke() } }
     }
 
-    /** Decode args[0] (a JSONObject) into [T] and deliver on the main thread. */
+    /**
+     * Decode args[0] (a JSONObject) into [T] and deliver on the main thread.
+     *
+     * Perf audit note (G4): the decode already runs OFF-main — socket.io-java
+     * executes all `on` handlers on its single EventThread, so JSON parsing
+     * never touches the UI thread and delivery order is inherently guaranteed
+     * (one thread, FIFO posts to main). Do NOT coalesce opponent_progress
+     * events: they are DELTAS (latestGuess/latestGuesses carry only the newest
+     * guess row, which VSMatchViewModel APPENDS to opponent.tiles) — dropping
+     * an intermediate event would permanently lose a row from the opponent's
+     * mini-boards.
+     */
     private fun <T> bind(s: Socket, event: String, deserializer: kotlinx.serialization.DeserializationStrategy<T>, deliver: (T) -> Unit) {
         s.on(event) { args ->
             val obj = args.firstOrNull() as? JSONObject ?: return@on
