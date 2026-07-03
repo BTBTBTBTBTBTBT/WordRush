@@ -85,6 +85,7 @@ struct HomeView: View {
                                 DailyChallengeHero()
                             }
                             WordOfTheDayView()
+                            if showFirstGameCard { firstGameCard }
                             sectionHeader
                             LazyVGrid(columns: columns, spacing: 8) {
                                 ForEach(homeModes) { mode in
@@ -268,6 +269,69 @@ struct HomeView: View {
     private func countdown() -> String {
         let s = secondsUntilLocalMidnight()
         return String(format: "%02d:%02d:%02d", s / 3600, (s % 3600) / 60, s % 60)
+    }
+
+    // MARK: - First-game suggestion card (new accounts)
+
+    /// One-time "where do I start?" nudge for brand-new accounts. Zero-games
+    /// signal: profiles.total_wins + total_losses == 0 — GameResultsService
+    /// increments one of the two on EVERY recorded game (solo daily, unlimited,
+    /// gauntlet, PN, VS), so it's a direct games-played count that flips the
+    /// instant any game records (more reliable than the xp/level proxy, which
+    /// login-streak XP can inflate without a single game played).
+    @AppStorage("first-game-card-dismissed") private var firstGameCardDismissed = false
+
+    private var showFirstGameCard: Bool {
+        guard !firstGameCardDismissed, auth.isAuthenticated, let p = auth.profile else { return false }
+        return p.totalWins + p.totalLosses == 0
+    }
+
+    private var firstGameCard: some View {
+        // Classic's catalog entry — accent + title stay single-sourced.
+        let classic = homeModes.first { $0.id == "practice" }
+        let accent = classic?.accent ?? Theme.primary
+        return HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 16, weight: .bold)).foregroundStyle(accent)
+                .frame(width: 32, height: 32)
+                .background(RoundedRectangle(cornerRadius: 9).fill(accent.opacity(0.08)))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("New here? Start with Classic")
+                    .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text("The original 5-letter challenge — a fresh puzzle every day.")
+                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 14) {
+                    Button {
+                        // Same route as the Classic mode card's daily launch.
+                        if let gm = classic?.mode {
+                            pendingGame = ActiveGame(seed: DailySeed.today(mode: gm), mode: gm, title: classic?.title ?? "Classic")
+                        }
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "play.fill").font(.system(size: 10))
+                            Text("Play").font(Brand.font(12, .black))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14).padding(.vertical, 7)
+                        .background(Capsule().fill(accent))
+                        .shadow(color: accent.opacity(0.3), radius: 4, x: 0, y: 2)
+                    }.buttonStyle(.plain)
+                    NavigationLink { HowToPlayView() } label: {
+                        Text("How to play").font(Brand.font(11, .bold)).foregroundStyle(Theme.primary).underline()
+                    }.buttonStyle(.plain)
+                }
+                .padding(.top, 8)
+            }
+            Spacer(minLength: 4)
+            Button { firstGameCardDismissed = true } label: {
+                Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.textMuted)
+                    .frame(width: 26, height: 26).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
     }
 
     private var sectionHeader: some View {
