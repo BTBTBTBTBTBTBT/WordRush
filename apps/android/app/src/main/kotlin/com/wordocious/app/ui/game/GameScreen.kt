@@ -256,7 +256,7 @@ fun GauntletStepper(current: Int, total: Int) {
 }
 
 @Composable
-fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, onPlayAgain: (() -> Unit)? = null) {
+fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, onPlayAgain: (() -> Unit)? = null, onOpenDaily: ((GameMode) -> Unit)? = null) {
     val vm: GameViewModel = viewModel(
         key = "game-$mode-$seed",
         factory = GameVMFactory(seed, mode),
@@ -518,6 +518,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 hintsUsed = vm.hintsUsed,
                 onBack = onBack,
                 onPlayAgain = onPlayAgain,
+                onOpenDaily = onOpenDaily,
             )
             xpResult?.let { XpToast(it) { xpResult = null } }
         }

@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -73,6 +74,7 @@ fun PostGameScreen(
     hintsUsed: Int = 0,
     onBack: () -> Unit,
     onPlayAgain: (() -> Unit)? = null,
+    onOpenDaily: ((GameMode) -> Unit)? = null,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val won = state.status == GameStatus.WON
@@ -221,6 +223,13 @@ fun PostGameScreen(
                 boardsSolved = cardBoardsSolved, totalBoards = cardTotalBoards, hintsUsed = hintsUsed,
                 stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
             )
+
+            // U3: next-daily handoff — DAILY games only (seed == today's daily
+            // seed for this mode; unlimited seeds are "unlimited-…" and VS has
+            // its own screen). Keeps the 9-mode daily loop moving.
+            if (onOpenDaily != null && seed == com.wordocious.app.todayLocalSeed(mode.name)) {
+                NextDailyRow(currentMode = mode, onOpenDaily = onOpenDaily)
+            }
 
             // Single-board modes: word definition (with "No definition" fallback).
             if (!multiBoard && mode != GameMode.PROPERNOUNDLE) {
@@ -406,6 +415,56 @@ private fun ScoreRow(label: String, detail: String, value: Double, pure: Boolean
 }
 
 private fun fmtSecs(s: Int): String = if (s <= 0) "0s" else if (s >= 60) "${s / 60}m ${s % 60}s" else "${s}s"
+
+/**
+ * U3: compact handoff row under the score breakdown of a DAILY result — points
+ * at the FIRST still-unplayed daily mode in the home-grid order (MODE_CARDS,
+ * the canonical order) in that mode's accent; tap closes this game and opens
+ * that mode's daily (same route as the home cards / leaderboard Play CTA).
+ * All 9 done → static "Sweep complete!" line.
+ */
+@Composable
+private fun NextDailyRow(currentMode: GameMode, onOpenDaily: (GameMode) -> Unit) {
+    // Seed from the day-keyed cache (updated the instant this game recorded via
+    // noteCompletion), then confirm against the server; re-fetch on completionTick.
+    val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
+    val completions by produceState(
+        initialValue = com.wordocious.app.data.DailyCompletionsService.readCache(), key1 = tick,
+    ) {
+        value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
+    }
+    // First unplayed daily in home-grid order. The just-finished mode is
+    // excluded outright — its row can lag the record pipeline (or never exist
+    // for guests) and it's never a sensible "next".
+    val next = com.wordocious.app.ui.MODE_CARDS.firstOrNull { c ->
+        c.engineMode != null && c.engineMode != currentMode && completions[c.engineMode.name] == null
+    }
+    val allDone = next == null &&
+        completions.size >= com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES
+    // next == null with count < 9 can't normally happen (next covers every
+    // gap); render nothing rather than a wrong claim if state is mid-flight.
+    if (next == null && !allDone) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+            .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
+            .then(
+                if (next?.engineMode != null) Modifier.clickableNoRipple { onOpenDaily(next.engineMode) }
+                else Modifier
+            )
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (next != null) Text(
+            "Next Daily: ${next.title} →",
+            fontSize = 13.sp, fontWeight = FontWeight.Black, color = next.accent,
+        ) else Text(
+            "All 9 dailies done — Sweep complete! 🏆",
+            fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+        )
+    }
+}
 
 /**
  * Dictionary definition card (ports iOS DefinitionCard). Always populates once

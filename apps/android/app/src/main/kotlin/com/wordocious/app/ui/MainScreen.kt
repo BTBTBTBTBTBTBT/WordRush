@@ -131,6 +131,10 @@ fun MainScreen() {
             // Pro Unlimited: "Play Again" mints a fresh non-daily seed for the
             // same mode (web parity — Play Again on non-daily games).
             onPlayAgain = { activeSeed = "unlimited-${card.engineMode.name}-${System.nanoTime()}" },
+            // U3: "Next Daily" handoff from the results screen — same route as
+            // the leaderboard Play CTA (swap activeGame; null seed = today's
+            // daily). remember(card) re-mints the seed for the new mode.
+            onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
         )
         return
     }
