@@ -458,6 +458,10 @@ class VSMatchViewModel(
     }
 
     private fun applyOpponentProgress(p: VSOpponentProgress) {
+        // V6: a late in-flight progress event after the match ends (or between
+        // rematch reset and rematch start) must not mutate opponent state --
+        // it corrupted the result recap / freshly-reset rematch HUD.
+        if (screen != VSScreen.MATCH && screen != VSScreen.WAITING) return
         opponent.attempts = p.attempts
         opponent.solved = p.solved
         opponent.boardsSolved = p.boardsSolved

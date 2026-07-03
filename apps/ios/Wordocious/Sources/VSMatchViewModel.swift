@@ -596,6 +596,10 @@ final class VSMatchViewModel: ObservableObject {
     }
 
     private func applyOpponentProgress(_ p: VSOpponentProgress) {
+        // V6: a late in-flight progress event after the match ends (or between
+        // rematch reset and rematch start) must not mutate opponent state --
+        // it corrupted the result recap / freshly-reset rematch HUD.
+        guard screen == .match || screen == .waiting else { return }
         opponent.attempts = p.attempts
         opponent.solved = p.solved
         opponent.boardsSolved = p.boardsSolved
