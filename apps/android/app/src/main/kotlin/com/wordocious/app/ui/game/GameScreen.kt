@@ -283,15 +283,21 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         state.gauntlet?.let { it.stages.getOrNull(it.currentStage)?.sequential } == true
     // Quadrant keyboard for parallel multi-board modes (Quad/Octo/Deliverance); NOT Sequence.
     val useQuadrant = multiBoard && !isSequential
-    val letterStates = if (isSequential) {
-        // Sequence: keyboard colors from the ACTIVE board only (spec hot-spot #8)
-        // = the first still-PLAYING board (currentBoardIndex is never advanced).
-        val active = state.boards.firstOrNull { it.status == GameStatus.PLAYING } ?: state.boards.last()
-        computeCombinedLetterStates(listOf(active))
-    } else {
-        computeCombinedLetterStates(state.boards)
+    // Memoized on `state`: letter-states only change on submit (a new GameState),
+    // but this composable recomposes on every keystroke (`input` above) — don't
+    // rescan every board's guesses per keypress. isSequential/useQuadrant derive
+    // from state + the stable `mode` param, so keying on state alone is exact.
+    val letterStates = remember(state) {
+        if (isSequential) {
+            // Sequence: keyboard colors from the ACTIVE board only (spec hot-spot #8)
+            // = the first still-PLAYING board (currentBoardIndex is never advanced).
+            val active = state.boards.firstOrNull { it.status == GameStatus.PLAYING } ?: state.boards.last()
+            computeCombinedLetterStates(listOf(active))
+        } else {
+            computeCombinedLetterStates(state.boards)
+        }
     }
-    val perBoardStates = if (useQuadrant) computePerBoardLetterStates(state.boards) else null
+    val perBoardStates = if (useQuadrant) remember(state) { computePerBoardLetterStates(state.boards) } else null
     // ALL multi-board modes (incl. Sequence) apply each guess to every
     // still-PLAYING board — web sequence-game dispatches applyToAll:true and
     // iOS matches. The old !isSequential exception routed guesses to
