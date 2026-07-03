@@ -211,10 +211,12 @@ object StatsDeepService {
         val avgGreens: Double, val avgYellows: Double, val winRate: Int,
     )
 
-    /** Info yield of each starting word — avg greens/yellows on guess 1. */
-    suspend fun openerDeep(userId: String, gameMode: String, limit: Int = 5, playType: String = "solo"): List<OpenerDeepStat> {
+    /** Info yield of each starting word — avg greens/yellows on guess 1.
+     *  [preloaded] skips the fetch when the caller already holds the same
+     *  myGuessRows(userId, gameMode, 400, playType) slice (ProDeepModeCard). */
+    suspend fun openerDeep(userId: String, gameMode: String, limit: Int = 5, playType: String = "solo", preloaded: List<GuessRow>? = null): List<OpenerDeepStat> {
         if (playType == "vs_cpu") return emptyList()
-        val rows = myGuessRows(userId, gameMode, playType = playType)
+        val rows = preloaded ?: myGuessRows(userId, gameMode, playType = playType)
         val map = HashMap<String, IntArray>()  // word -> [count, greens, yellows, wins]
         for (r in rows) {
             val first = r.guesses.firstOrNull() ?: continue
@@ -242,10 +244,11 @@ object StatsDeepService {
     /** pct: per position, share of ALL guesses that had that slot correct (0–100). */
     data class PositionAccuracy(val wordLength: Int, val pct: List<Int>, val sampleGuesses: Int)
 
-    /** How often each letter slot comes up green across all guesses. */
-    suspend fun positionAccuracy(userId: String, gameMode: String, playType: String = "solo"): PositionAccuracy? {
+    /** How often each letter slot comes up green across all guesses.
+     *  [preloaded] as in [openerDeep] — same myGuessRows slice, no re-fetch. */
+    suspend fun positionAccuracy(userId: String, gameMode: String, playType: String = "solo", preloaded: List<GuessRow>? = null): PositionAccuracy? {
         if (playType == "vs_cpu") return null
-        val rows = myGuessRows(userId, gameMode, playType = playType)
+        val rows = preloaded ?: myGuessRows(userId, gameMode, playType = playType)
         val wordLength = rows.firstOrNull()?.solutions?.firstOrNull()?.length ?: return null
         val correct = IntArray(wordLength)
         var total = 0
@@ -351,10 +354,11 @@ object StatsDeepService {
 
     data class HintHonesty(val hintlessWinRate: Int, val avgHintsPerGame: Double, val gamesCounted: Int)
 
-    /** Hint usage honesty card (Six/Seven/ProperNoundle — hints_used is stored). */
-    suspend fun hintHonesty(userId: String, gameMode: String, playType: String = "solo"): HintHonesty? {
+    /** Hint usage honesty card (Six/Seven/ProperNoundle — hints_used is stored).
+     *  [preloaded] as in [openerDeep] — same myGuessRows slice, no re-fetch. */
+    suspend fun hintHonesty(userId: String, gameMode: String, playType: String = "solo", preloaded: List<GuessRow>? = null): HintHonesty? {
         if (playType == "vs_cpu") return null
-        val rows = myGuessRows(userId, gameMode, playType = playType)
+        val rows = preloaded ?: myGuessRows(userId, gameMode, playType = playType)
         if (rows.isEmpty()) return null
         val wins = rows.filter { it.won }
         if (wins.isEmpty()) return null

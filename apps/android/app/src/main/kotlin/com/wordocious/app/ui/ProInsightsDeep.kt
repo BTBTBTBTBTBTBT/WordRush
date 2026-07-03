@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.StatsDeepService
 import com.wordocious.app.ui.theme.WTheme
+import kotlinx.coroutines.async
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -251,13 +252,27 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
         if (!isPro || playType == "vs_cpu") return@LaunchedEffect
         data = null
         val uid = AuthService.userId ?: return@LaunchedEffect
-        data = DeepData(
-            openers = StatsDeepService.openerDeep(uid, gameMode, 4, playType),
-            positions = StatsDeepService.positionAccuracy(uid, gameMode, playType),
-            almanac = StatsDeepService.wordAlmanac(uid, gameMode, 24, playType),
-            hints = if (gameMode in HINT_MODES) StatsDeepService.hintHonesty(uid, gameMode, playType) else null,
-            gauntlet = if (gameMode == "GAUNTLET") StatsDeepService.gauntletStageStats(uid, playType) else emptyList(),
-        )
+        // All sub-stats CONCURRENTLY (was 5 serial round-trips). Openers /
+        // positions / hint honesty all consume the identical myGuessRows
+        // slice (mode, limit 400, play type) — fetch it ONCE and pass it down;
+        // almanac (limit 24) and gauntlet hit different queries so they just
+        // run in parallel.
+        data = kotlinx.coroutines.coroutineScope {
+            val rowsD = async { StatsDeepService.myGuessRows(uid, gameMode, playType = playType) }
+            val almanacD = async { StatsDeepService.wordAlmanac(uid, gameMode, 24, playType) }
+            val gauntletD = async { if (gameMode == "GAUNTLET") StatsDeepService.gauntletStageStats(uid, playType) else emptyList() }
+            val rows = rowsD.await()
+            val openersD = async { StatsDeepService.openerDeep(uid, gameMode, 4, playType, preloaded = rows) }
+            val positionsD = async { StatsDeepService.positionAccuracy(uid, gameMode, playType, preloaded = rows) }
+            val hintsD = async { if (gameMode in HINT_MODES) StatsDeepService.hintHonesty(uid, gameMode, playType, preloaded = rows) else null }
+            DeepData(
+                openers = openersD.await(),
+                positions = positionsD.await(),
+                almanac = almanacD.await(),
+                hints = hintsD.await(),
+                gauntlet = gauntletD.await(),
+            )
+        }
     }
     // No per-game rows exist for CPU practice — hide the deep card entirely
     // (the panel shows a "totals only" note instead; restat B1).
