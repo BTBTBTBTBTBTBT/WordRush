@@ -277,6 +277,18 @@ export default function HomePage() {
       import('@wordle-duel/core'),
     ]).then(([allowed, solutions, core]) => {
       core.initDictionary(allowed, solutions);
+      // G5: also pre-warm the Six/Seven lists (200-300KB chunks) so a first
+      // open of those modes doesn't pay the download. After the 5-letter
+      // warm so it never competes with the primary path.
+      Promise.all([
+        import('@/data/allowed-6.json').then(m => m.default),
+        import('@/data/solutions-6.json').then(m => m.default),
+        import('@/data/allowed-7.json').then(m => m.default),
+        import('@/data/solutions-7.json').then(m => m.default),
+      ]).then(([a6, s6, a7, s7]) => {
+        core.initDictionaryForLength(6, a6, s6);
+        core.initDictionaryForLength(7, a7, s7);
+      }).catch(() => {});
     });
   }, []);
 
