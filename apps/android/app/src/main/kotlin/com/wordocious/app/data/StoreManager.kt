@@ -21,6 +21,8 @@ import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -130,9 +132,16 @@ object StoreManager {
             )
             .build()
 
-        val loaded = buildList {
-            runCatching { addAll(client.queryProductDetails(subsParams).productDetailsList.orEmpty()) }
-            runCatching { addAll(client.queryProductDetails(inappParams).productDetailsList.orEmpty()) }
+        // SUBS and INAPP can't share one query (Billing library constraint),
+        // but they don't need to run back-to-back either.
+        val loaded: List<ProductDetails> = coroutineScope {
+            val subs = async {
+                runCatching { client.queryProductDetails(subsParams).productDetailsList.orEmpty() }.getOrDefault(emptyList())
+            }
+            val inapp = async {
+                runCatching { client.queryProductDetails(inappParams).productDetailsList.orEmpty() }.getOrDefault(emptyList())
+            }
+            subs.await() + inapp.await()
         }
         if (loaded.isEmpty()) return // keep fallbacks — products not created yet / no Play
 

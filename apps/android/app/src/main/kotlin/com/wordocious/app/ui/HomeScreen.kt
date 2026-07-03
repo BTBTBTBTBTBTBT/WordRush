@@ -577,6 +577,9 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
     // Web useLivePlayerCount: poll {server}/presence every 10s for body.online;
     // null until the first success, keep last value on errors.
     val count by androidx.compose.runtime.produceState<Int?>(initialValue = null) {
+        // Defer the FIRST request ~2s so it doesn't compete with the home
+        // screen's initial loads; 10s cadence after as before.
+        kotlinx.coroutines.delay(2_000)
         while (true) {
             val online = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                 runCatching {
