@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
@@ -24,6 +24,29 @@ import {
 } from '@/lib/daily-service';
 
 const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey)!;
+
+// Session-lived stale-while-revalidate cache for the Daily records view —
+// same pattern as lbCache on /daily, with playType in the key (this view has
+// a Solo/VS toggle). Mode/toggle taps repaint instantly; skeleton = first load.
+const recordsLbCache = new Map<string, {
+  lb: LeaderboardEntry[];
+  count: number;
+  rank: { rank: number; totalPlayers: number } | null;
+}>();
+
+// All-Time and Your Records both need the full record list — share one
+// session-lived fetch (fresh on reload; records change rarely) instead of
+// re-querying per sub-tab visit.
+let allTimeRecordsPromise: Promise<AllTimeRecord[]> | null = null;
+function fetchAllTimeRecordsShared(): Promise<AllTimeRecord[]> {
+  if (!allTimeRecordsPromise) {
+    allTimeRecordsPromise = fetchAllTimeRecords().catch((e) => {
+      allTimeRecordsPromise = null;  // don't memoize a failure
+      throw e;
+    });
+  }
+  return allTimeRecordsPromise;
+}
 
 const RECORD_LABELS: Record<string, { label: string; icon: typeof Trophy; format: (v: number) => string }> = {
   fastest_win: { label: 'Fastest Win', icon: Clock, format: (v) => v < 60 ? `${v}s` : `${Math.floor(v / 60)}m ${v % 60}s` },
@@ -150,22 +173,42 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   const [loading, setLoading] = useState(true);
 
   const today = getTodayLocal();
+  // Drops late responses from a previous mode/toggle so a slow fetch can't
+  // overwrite the selection the user has since switched to.
+  const loadSeq = useRef(0);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
-    setUserRank(null);
+    const seq = ++loadSeq.current;
+    const cacheKey = `${selectedMode}:${playType}:${today}:${userId ?? 'anon'}`;
+    const cached = recordsLbCache.get(cacheKey);
+    if (cached) {
+      setLeaderboard(cached.lb);
+      setPlayerCount(cached.count);
+      setUserRank(cached.rank);
+      setLoading(false);
+    } else {
+      setLoading(true);
+      setUserRank(null);
+      setLeaderboard([]);
+    }
+
     const [lb, count] = await Promise.all([
       fetchDailyLeaderboard(selectedMode, playType, today, 50),
       getDailyPlayerCount(selectedMode, today),
     ]);
+    if (seq !== loadSeq.current) return;
+    // Paint the rows the moment they arrive — the rank banner fills in on its
+    // own instead of holding the whole list behind its extra queries.
     setLeaderboard(lb);
     setPlayerCount(count);
-
-    if (userId) {
-      const rank = await getUserDailyRank(userId, selectedMode, playType, today);
-      setUserRank(rank);
-    }
     setLoading(false);
+
+    let rank: { rank: number; totalPlayers: number } | null = null;
+    if (userId) {
+      rank = await getUserDailyRank(userId, selectedMode, playType, today, lb, 50);
+      if (seq === loadSeq.current) setUserRank(rank);
+    }
+    recordsLbCache.set(cacheKey, { lb, count, rank });
   }, [selectedMode, playType, userId, today]);
 
   useEffect(() => {
@@ -395,10 +438,10 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
   const [selectedMode, setSelectedMode] = useState('DUEL');
 
   useEffect(() => {
-    fetchAllTimeRecords().then((data) => {
+    fetchAllTimeRecordsShared().then((data) => {
       setRecords(data);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const globalRecords = useMemo(
@@ -592,7 +635,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
       const [statsRes, sweepRes, recs] = await Promise.all([
         supabase.from('user_stats').select('game_mode, play_type, wins, losses, total_games, best_score, fastest_time').eq('user_id', userId),
         fetchDailySweepStats(userId),
-        fetchAllTimeRecords(),
+        fetchAllTimeRecordsShared(),
       ]);
       if (!active) return;
       const rows = (statsRes.data || []) as UserStatRow[];

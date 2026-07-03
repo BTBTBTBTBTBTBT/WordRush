@@ -105,79 +105,99 @@ export default function ProfilePage() {
   // (restat B1: the charts used to silently mix solo+vs regardless of the
   // toggle). Declared above the SWR call so it can key the fetch.
   const [activeTab, setActiveTab] = useState<'solo' | 'vs' | 'vs_cpu'>('solo');
-  const { data: profileData, isLoading: loadingStats } = useSWR(
-    profile ? ['profile-data', profile.id, activeTab] : null,
+  // P5 split: the play-type toggle used to re-key ONE big fetch, refetching
+  // all 10 queries when only 3 depend on the tab. Static-per-user data
+  // (stats/matches/medals/achievements/dailies/sweep/standing) now fetches
+  // once; only trends/openers/weekday re-fetch on a toggle, and
+  // keepPreviousData keeps the old charts up (with the F1 fade) instead of
+  // dropping to skeletons.
+  const { data: staticData, isLoading: loadingStats } = useSWR(
+    profile ? ['profile-static', profile.id] : null,
     async () => {
-      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, trendsRes, sweepPointsRes, openersRes, weekdayRes, standingRes] = await Promise.all([
+      const [statsRes, matchBundle, medalsRes, achievementsRes, dailiesRes, sweepPointsRes, standingRes] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
-        supabase.from('matches')
-          .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit')
-          .or(`player1_id.eq.${profile!.id},player2_id.eq.${profile!.id}`)
-          .order('created_at', { ascending: false })
-          .limit(5)
-          .then(r => r.data || []),
+        // Matches + opponent usernames chained INSIDE the Promise.all — the
+        // name lookup used to run after it, adding a round trip to everything.
+        (async () => {
+          const { data } = await supabase.from('matches')
+            .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit')
+            .or(`player1_id.eq.${profile!.id},player2_id.eq.${profile!.id}`)
+            .order('created_at', { ascending: false })
+            .limit(5);
+          const matchRows = (data || []) as Match[];
+          const oppIds = Array.from(new Set(
+            matchRows
+              .filter((m) => m.player2_id)
+              .map((m) => (m.player1_id === profile!.id ? m.player2_id! : m.player1_id)),
+          ));
+          const opponentNames: Record<string, string> = {};
+          if (oppIds.length > 0) {
+            const { data: oppProfiles } = await (supabase as any)
+              .from('profiles')
+              .select('id, username')
+              .in('id', oppIds);
+            for (const p of (oppProfiles as Array<{ id: string; username: string }> | null) || []) {
+              opponentNames[p.id] = p.username;
+            }
+          }
+          return { matchRows, opponentNames };
+        })(),
         fetchUserMedals(profile!.id, 120),
         fetchUserAchievements(profile!.id),
         fetchTodayDailyCompletions(profile!.id),
-        fetchProfileTrends(profile!.id, activeTab),   // B4: one query → activity+calendar+dist+solve+topwords
         fetchDailyPointsOverTime(profile!.id, 30),
-        fetchOpenerStats(profile!.id, 5, activeTab),
-        fetchWeekdayForm(profile!.id, activeTab),
         fetchTodayDailyStanding(profile!.id),
       ]);
-      // Resolve opponent usernames for VS rows in Recent Matches.
-      const matchRows = matchesRes as Match[];
-      const oppIds = Array.from(new Set(
-        matchRows
-          .filter((m) => m.player2_id)
-          .map((m) => (m.player1_id === profile!.id ? m.player2_id! : m.player1_id)),
-      ));
-      const opponentNames: Record<string, string> = {};
-      if (oppIds.length > 0) {
-        const { data: oppProfiles } = await (supabase as any)
-          .from('profiles')
-          .select('id, username')
-          .in('id', oppIds);
-        for (const p of (oppProfiles as Array<{ id: string; username: string }> | null) || []) {
-          opponentNames[p.id] = p.username;
-        }
-      }
       return {
         stats: statsRes as UserStats[],
-        matches: matchRows,
-        opponentNames,
+        matches: matchBundle.matchRows,
+        opponentNames: matchBundle.opponentNames,
         medals: medalsRes,
         userAchievements: new Set(achievementsRes.map(a => a.key)),
         todayDailies: dailiesRes,
-        activity: trendsRes.activity,
-        guessDist: trendsRes.guessDist,
-        solveHistory: trendsRes.solveHistory,
-        calendar: trendsRes.calendar,
-        topWordsAllTime: trendsRes.topWordsAllTime,
         sweepPoints: sweepPointsRes,
-        openers: openersRes,
-        weekdayForm: weekdayRes,
         standing: standingRes,
       };
     },
     { revalidateOnFocus: true, onError: (err: any) => handleSupabaseError(err, 'profile-data') },
   );
 
-  const stats = profileData?.stats ?? [];
-  const matches = profileData?.matches ?? [];
-  const opponentNames = profileData?.opponentNames ?? {};
-  const medals = profileData?.medals ?? [];
-  const userAchievements = profileData?.userAchievements ?? new Set<string>();
-  const todayDailies = profileData?.todayDailies ?? new Map<string, DailyCompletion>();
-  const activity = profileData?.activity ?? [];
-  const guessDist = profileData?.guessDist ?? [];
-  const solveHistory = profileData?.solveHistory ?? [];
-  const calendar = profileData?.calendar ?? [];
-  const topWordsAllTime = profileData?.topWordsAllTime ?? [];
-  const sweepPoints = profileData?.sweepPoints ?? [];
-  const openers = profileData?.openers ?? [];
-  const weekdayForm = profileData?.weekdayForm ?? [];
-  const standing = profileData?.standing ?? null;
+  const { data: tabData } = useSWR(
+    profile ? ['profile-tab', profile.id, activeTab] : null,
+    async () => {
+      const [trendsRes, openersRes, weekdayRes] = await Promise.all([
+        fetchProfileTrends(profile!.id, activeTab),   // B4: one query → activity+calendar+dist+solve+topwords
+        fetchOpenerStats(profile!.id, 5, activeTab),
+        fetchWeekdayForm(profile!.id, activeTab),
+      ]);
+      return {
+        activity: trendsRes.activity,
+        guessDist: trendsRes.guessDist,
+        solveHistory: trendsRes.solveHistory,
+        calendar: trendsRes.calendar,
+        topWordsAllTime: trendsRes.topWordsAllTime,
+        openers: openersRes,
+        weekdayForm: weekdayRes,
+      };
+    },
+    { revalidateOnFocus: true, keepPreviousData: true, onError: (err: any) => handleSupabaseError(err, 'profile-data') },
+  );
+
+  const stats = staticData?.stats ?? [];
+  const matches = staticData?.matches ?? [];
+  const opponentNames = staticData?.opponentNames ?? {};
+  const medals = staticData?.medals ?? [];
+  const userAchievements = staticData?.userAchievements ?? new Set<string>();
+  const todayDailies = staticData?.todayDailies ?? new Map<string, DailyCompletion>();
+  const sweepPoints = staticData?.sweepPoints ?? [];
+  const standing = staticData?.standing ?? null;
+  const activity = tabData?.activity ?? [];
+  const guessDist = tabData?.guessDist ?? [];
+  const solveHistory = tabData?.solveHistory ?? [];
+  const calendar = tabData?.calendar ?? [];
+  const topWordsAllTime = tabData?.topWordsAllTime ?? [];
+  const openers = tabData?.openers ?? [];
+  const weekdayForm = tabData?.weekdayForm ?? [];
 
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
