@@ -152,6 +152,29 @@ fun HomeScreen(
             else DailyHero(completions) { com.wordocious.app.data.DailySweepShare.share(context, completions) }
             WordOfTheDayCard(onClick = { onNavigate("pastwords") })
 
+            // U2: first-game suggestion for brand-new accounts — signed in with
+            // ZERO recorded games (total_wins + total_losses == 0; the profiles
+            // row's direct games count, bumped on every recorded game). Points
+            // them at the Classic daily. X dismisses permanently; the card also
+            // disappears on its own once any game is recorded (profile refresh).
+            val isAuthedForCard by com.wordocious.app.data.AuthService.isAuthenticated.collectAsState()
+            var firstGameCardDismissed by remember {
+                mutableStateOf(com.wordocious.app.data.SettingsPref.get("first-game-card-dismissed", false))
+            }
+            val zeroGames = authProfile?.let { it.totalWins + it.totalLosses == 0 } == true
+            if (isAuthedForCard && zeroGames && !firstGameCardDismissed) {
+                FirstGameCard(
+                    onPlay = {
+                        MODE_CARDS.firstOrNull { it.id == "practice" }?.let { onSelectMode(it, false) }
+                    },
+                    onHowToPlay = { onNavigate("help") },
+                    onDismiss = {
+                        firstGameCardDismissed = true
+                        com.wordocious.app.data.SettingsPref.set("first-game-card-dismissed", true)
+                    },
+                )
+            }
+
             Text(
                 "GAME MODES",
                 fontSize = 11.sp,
@@ -240,6 +263,57 @@ fun HomeScreen(
     }
     // Pro-only "Invite a friend to VS" modal (web InviteModal / iOS InviteSheet).
     if (inviteOpen) InviteSheet(onDismiss = { inviteOpen = false })
+}
+
+/**
+ * U2: compact dismissible "start here" card for brand-new accounts — sparkle
+ * icon, Classic pitch, a Play button that launches the Classic DAILY (same
+ * route as the Classic mode card) and a "How to play" text link.
+ */
+@Composable
+private fun FirstGameCard(onPlay: () -> Unit, onHowToPlay: () -> Unit, onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(
+            Icons.Filled.AutoAwesome, null,
+            tint = Color(0xFF7C3AED), modifier = Modifier.size(28.dp),
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("New here? Start with Classic", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+            Text(
+                "The original 5-letter challenge — a fresh puzzle every day.",
+                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            )
+            Text(
+                "How to play",
+                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED),
+                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+                modifier = Modifier.clickableNoRipple(onHowToPlay).padding(top = 2.dp),
+            )
+        }
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5))))
+                .clickableNoRipple(onPlay)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        ) {
+            Text("Play", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+        }
+        Icon(
+            Icons.Filled.Close, null,
+            tint = WTheme.textMuted,
+            modifier = Modifier.size(16.dp).clickableNoRipple(onDismiss),
+        )
+    }
 }
 
 /**
