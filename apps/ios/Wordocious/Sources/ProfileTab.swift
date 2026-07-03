@@ -62,27 +62,38 @@ struct ProfileTab: View {
             .toolbar(.hidden, for: .navigationBar)
             .onDailyCompletion { reloadToken += 1 }
             .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
-                await completions.load()
-                await achievementCatalog.load()
+                // P1: every independent fetch runs concurrently (was 8+ serial
+                // round trips). Only the opponent-name lookup chains off
+                // recentMatches; the 7-day activity calendar is fetched ONCE
+                // and feeds both gamesThisWeek and sevenDayTotal.
+                async let completionsLoad: Void = completions.load()
+                async let catalogLoad: Void = achievementCatalog.load()
                 if let uid = auth.profile?.id {
-                    statRows = await UserStatsService.fetch(userId: uid)
-                    unlockedAchievements = await AchievementService.fetchUnlocked(userId: uid)
-                    medals = await MedalsService.recent(userId: uid, limit: 120)
-                    gamesThisWeek = await MatchStatsService.activityCalendar(days: 7).reduce(0) { $0 + $1.played }
-                    socialLinks = await ProfileExtras.socialLinks(userId: uid)
-                    recentMatches = await PublicProfileService.recentMatches(id: uid)
+                    async let statsF = UserStatsService.fetch(userId: uid)
+                    async let achievementsF = AchievementService.fetchUnlocked(userId: uid)
+                    async let medalsF = MedalsService.recent(userId: uid, limit: 120)
+                    async let weekF = MatchStatsService.activityCalendar(days: 7)
+                    async let socialF = ProfileExtras.socialLinks(userId: uid)
+                    async let matchesF = PublicProfileService.recentMatches(id: uid)
+                    statRows = await statsF
+                    unlockedAchievements = await achievementsF
+                    medals = await medalsF
+                    socialLinks = await socialF
+                    recentMatches = await matchesF
                     let oppIds = Array(Set(recentMatches.compactMap { $0.opponentId(uid) }))
                     opponentNames = await PublicProfileService.usernames(ids: oppIds)
+                    let week = await weekF
+                    gamesThisWeek = week.reduce(0) { $0 + $1.played }
                     // Last-7-days game count for the Insights "this week" line.
                     let cal = Calendar.current
                     let today = cal.startOfDay(for: Date())
-                    let week = await MatchStatsService.activityCalendar(days: 7)
                     sevenDayTotal = week.filter {
                         guard let cutoff = cal.date(byAdding: .day, value: -6, to: today) else { return true }
                         return $0.day >= cutoff
                     }.reduce(0) { $0 + $1.played }
                     recentLoading = false
                 }
+                _ = await (completionsLoad, catalogLoad)
             }
             // Banner inside the NavigationStack so the ScrollView insets for it
             // (the Sign-out button stays scrollable above the banner) and it
