@@ -94,7 +94,16 @@ object LeaderboardService {
         playType: String = "solo",
         day: String = todayLocalDate(),
         limit: Int = 50,
-    ): List<LeaderboardEntry> = runCatching {
+    ): List<LeaderboardEntry> = fetchDailyLeaderboardOrNull(gameMode, playType, day, limit) ?: emptyList()
+
+    /** Same, but null on a network/decode error (vs. a genuinely empty day) so
+     *  the SWR path can keep cached rows instead of clobbering them with []. */
+    suspend fun fetchDailyLeaderboardOrNull(
+        gameMode: String,
+        playType: String = "solo",
+        day: String = todayLocalDate(),
+        limit: Int = 50,
+    ): List<LeaderboardEntry>? = runCatching {
         client.postgrest["daily_results"]
             .select(Columns.raw(COLS)) {
                 filter {
@@ -107,7 +116,7 @@ object LeaderboardService {
                 limit(limit.toLong())
             }
             .decodeList<LeaderboardEntry>()
-    }.getOrElseNotCancelled { emptyList() }
+    }.getOrElseNotCancelled { null }
 
     /** Yesterday's top finishers (for the "Yesterday's Winners" card). */
     suspend fun fetchYesterdayWinners(gameMode: String, playType: String = "solo", limit: Int = 3): List<LeaderboardEntry> =

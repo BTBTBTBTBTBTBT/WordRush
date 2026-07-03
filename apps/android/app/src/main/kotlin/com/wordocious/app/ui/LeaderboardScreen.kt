@@ -102,14 +102,18 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         // Rows + "{n} players today" (ALL play types, exact server count) in
         // parallel — paint the rows the moment they land; the rank banner fills
         // in on its own instead of holding the whole list behind its queries.
-        val (lb, count) = kotlinx.coroutines.coroutineScope {
-            val lbD = async { LeaderboardService.fetchDailyLeaderboard(mode, day = day) }
+        val (lbOpt, count) = kotlinx.coroutines.coroutineScope {
+            val lbD = async { LeaderboardService.fetchDailyLeaderboardOrNull(mode, day = day) }
             val countD = async { LeaderboardService.playerCount(mode) }
             lbD.await() to countD.await()
         }
         // Race guard: a mode switch cancels this effect; never let a late
         // response from the old mode overwrite the new mode's rows.
         ensureActive()
+        // Network error (null, not an empty day): keep whatever is showing —
+        // cached rows beat clobbering them with a blank list; never cache the failure.
+        if (lbOpt == null) { loading = false; return@LaunchedEffect }
+        val lb = lbOpt
         entries = lb
         playerCount = count
         loading = false
