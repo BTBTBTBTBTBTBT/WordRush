@@ -351,7 +351,7 @@ export default function HomePage() {
             return (
               <button
                 onClick={() => { shareDailySweep(todayDailies); }}
-                className="w-full shrink-0 btn-3d flex flex-col items-center py-2.5 font-black relative overflow-hidden"
+                className="w-full shrink-0 btn-3d flex flex-col items-center py-2.5 font-black relative overflow-hidden transition-transform active:scale-[0.98]"
                 style={{ background: bg, border, borderRadius: '14px' }}
               >
                 {/* Subtle foil shimmer sweep */}
@@ -571,7 +571,7 @@ export default function HomePage() {
           {isPro && (
             <button
               onClick={() => setInviteOpen(true)}
-              className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md"
+              className="btn-3d px-3 py-1.5 text-white font-black text-[10px] rounded-md transition-transform active:scale-95"
               style={{
                 background: 'linear-gradient(135deg, #ec4899, #db2777)',
                 boxShadow: '0 2px 0 #9f1239',
@@ -587,7 +587,7 @@ export default function HomePage() {
         {user && (
           <button
             onClick={() => signOut()}
-            className="w-full py-1 text-center text-[10px] font-bold hover:opacity-70 transition-colors"
+            className="w-full py-1 text-center text-[10px] font-bold hover:opacity-70 active:opacity-50 transition-all"
             style={{ color: 'var(--color-text-muted)' }}
           >
             <LogOut className="w-3 h-3 inline mr-1" />

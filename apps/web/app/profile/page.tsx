@@ -555,6 +555,9 @@ export default function ProfilePage() {
           ))}
         </div>
 
+        {/* Tab-specific summary cards — keyed on the toggle so they fade+rise
+            on each Solo/VS/VS CPU swap (F1) instead of popping. */}
+        <div key={`tabcards-${activeTab}`} className="animate-content-swap space-y-4 empty:hidden">
         {/* VS RECORD summary card (VS tab only) */}
         {activeTab === 'vs' && (
           <div
@@ -614,6 +617,7 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+        </div>{/* /tabcards swap */}
 
         <ModePicker
           selectedMode={selectedMode}
@@ -622,6 +626,9 @@ export default function ProfilePage() {
         />
 
         {/* ── E. Dashboard Content ── */}
+        {/* Keyed on the play-type toggle + selected mode so each swap re-runs
+            the soft fade+rise (F1) instead of snapping. */}
+        <div key={`${activeTab}-${selectedMode ?? 'all'}`} className="animate-content-swap space-y-4">
         {selectedMode === null ? (
           /* ── "All" Global View ── */
           <div className="space-y-4">
@@ -800,20 +807,16 @@ export default function ProfilePage() {
             <SkillRadarCard userId={profile.id} isPro={isProActive} />
           </div>
         ) : (
-          /* ── Mode Detail View ── */
-          <div
-            className="transition-all duration-200"
-            style={{ animation: 'fadeSlideIn 250ms ease-out' }}
-          >
-            <ModeDetailPanel
-              userId={profile.id}
-              gameMode={selectedMode}
-              isPro={isProActive}
-              stats={getStatsForMode(selectedMode)}
-              playType={activeTab}
-            />
-          </div>
+          /* ── Mode Detail View ── (entrance handled by the keyed wrapper) */
+          <ModeDetailPanel
+            userId={profile.id}
+            gameMode={selectedMode}
+            isPro={isProActive}
+            stats={getStatsForMode(selectedMode)}
+            playType={activeTab}
+          />
         )}
+        </div>{/* /animate-content-swap */}
 
         {/* ── Progression: medals + achievements under one banner ── */}
         <SectionHeader label="Progression" accent="#f59e0b" />
