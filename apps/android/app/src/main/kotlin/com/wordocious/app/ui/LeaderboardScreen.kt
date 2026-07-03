@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.LeaderboardService
+import kotlinx.coroutines.async
+import kotlinx.coroutines.ensureActive
 import com.wordocious.app.ui.theme.WTheme
 
 internal val MODE_OPTIONS = listOf(
@@ -73,23 +75,56 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     val userId = AuthService.profile.value?.id
 
     var playerCount by remember { mutableStateOf(0) }
+    // Rank banner ("You're ranked #N of M") — web getUserDailyRank parity:
+    // true total even past a full page, and a computed rank when the user
+    // sits outside the top 50.
+    var userRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
     // Reload when mode changes OR the instant a daily is recorded (completionTick)
     // so a just-finished puzzle shows on the board without a tab round-trip.
     val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
     LaunchedEffect(selectedMode, tick) {
-        loading = true
-        entries = LeaderboardService.fetchDailyLeaderboard(selectedMode)
+        val mode = selectedMode
+        val day = com.wordocious.app.todayLocalDate()
+        // Stale-while-revalidate: a mode-chip tap or screen re-entry paints the
+        // last-known rows instantly; the skeleton only shows on a true first load.
+        val key = LeaderboardService.cacheKey(mode, day, userId)
+        val cached = LeaderboardService.cachedBoard(key)
+        if (cached != null) {
+            entries = cached.entries
+            playerCount = cached.playerCount
+            userRank = cached.rank
+            loading = false
+        } else {
+            loading = true
+            entries = emptyList()
+            userRank = null
+        }
+        // Rows + "{n} players today" (ALL play types, exact server count) in
+        // parallel — paint the rows the moment they land; the rank banner fills
+        // in on its own instead of holding the whole list behind its queries.
+        val (lb, count) = kotlinx.coroutines.coroutineScope {
+            val lbD = async { LeaderboardService.fetchDailyLeaderboard(mode, day = day) }
+            val countD = async { LeaderboardService.playerCount(mode) }
+            lbD.await() to countD.await()
+        }
+        // Race guard: a mode switch cancels this effect; never let a late
+        // response from the old mode overwrite the new mode's rows.
+        ensureActive()
+        entries = lb
+        playerCount = count
         loading = false
-        // Web parity: "{n} players today" counts ALL play types via an exact
-        // server count, independent of the (solo, 50-cap) leaderboard slice.
-        playerCount = LeaderboardService.playerCount(selectedMode)
+        val rank = if (userId != null) {
+            LeaderboardService.getUserDailyRank(userId, mode, day = day, topEntries = lb)
+        } else null
+        ensureActive()
+        userRank = rank
+        LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank))
     }
     LaunchedEffect(selectedMode, showYesterday) {
         yesterday = if (showYesterday) LeaderboardService.fetchYesterdayWinners(selectedMode) else emptyList()
     }
 
     val modeLabel = MODE_OPTIONS.firstOrNull { it.first == selectedMode }?.second ?: selectedMode
-    val userIdx = if (userId != null) entries.indexOfFirst { it.userId == userId } else -1
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         // (Shared AppHeader is above.) Page title: DAILY CHALLENGE + countdown.
@@ -118,10 +153,11 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             item(key = "completed-$selectedMode") {
                 com.wordocious.app.ui.game.CompletedDailyBoard(selectedMode)
             }
-            // User rank — "You're ranked #N of M"
-            if (userIdx >= 0) {
+            // User rank — "You're ranked #N of M" (true total; shows even when
+            // the user is outside the visible top 50, web/iOS parity).
+            userRank?.let { rank ->
                 item {
-                    UserRankCard(rank = userIdx + 1, total = entries.size, mode = selectedMode)
+                    UserRankCard(rank = rank.rank, total = rank.totalPlayers, mode = selectedMode)
                     Spacer(Modifier.height(12.dp))
                 }
             }

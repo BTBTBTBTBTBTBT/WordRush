@@ -4,7 +4,11 @@ import com.wordocious.app.todayLocalDate
 import com.wordocious.app.yesterdayLocalDate
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -18,6 +22,28 @@ import kotlinx.serialization.Serializable
  */
 object LeaderboardService {
     private val client get() = SupabaseConfig.client
+
+    /** Like [runCatching].getOrElse, but lets cancellation propagate so a
+     *  cancelled LaunchedEffect (mode switch) can't resume with a bogus
+     *  fallback value and overwrite the new mode's state. */
+    private inline fun <T> Result<T>.getOrElseNotCancelled(fallback: (Throwable) -> T): T =
+        getOrElse { if (it is CancellationException) throw it else fallback(it) }
+
+    /** User's rank + total for the rank banner (web getUserDailyRank parity). */
+    data class RankInfo(val rank: Int, val totalPlayers: Int)
+
+    /** Session-lived stale-while-revalidate cache, keyed "mode:day:userId".
+     *  A mode-chip tap or a screen re-entry paints the last-known rows
+     *  instantly (no skeleton) while a fresh fetch swaps in silently. */
+    data class CachedBoard(
+        val entries: List<LeaderboardEntry>,
+        val playerCount: Int,
+        val rank: RankInfo?,
+    )
+    private val boardCache = mutableMapOf<String, CachedBoard>()
+    fun cacheKey(gameMode: String, day: String, userId: String?) = "$gameMode:$day:${userId ?: "anon"}"
+    fun cachedBoard(key: String): CachedBoard? = boardCache[key]
+    fun cacheBoard(key: String, board: CachedBoard) { boardCache[key] = board }
 
     @Serializable
     data class ProfileRef(
@@ -81,7 +107,7 @@ object LeaderboardService {
                 limit(limit.toLong())
             }
             .decodeList<LeaderboardEntry>()
-    }.getOrElse { emptyList() }
+    }.getOrElseNotCancelled { emptyList() }
 
     /** Yesterday's top finishers (for the "Yesterday's Winners" card). */
     suspend fun fetchYesterdayWinners(gameMode: String, playType: String = "solo", limit: Int = 3): List<LeaderboardEntry> =
@@ -99,8 +125,88 @@ object LeaderboardService {
             (if (idx >= 0) idx + 1 else all.size + 1) to all.size
         }.getOrNull()
 
-    suspend fun getUserDailyRank(userId: String, gameMode: String, day: String = todayLocalDate()): Int? =
-        userRankAndTotal(userId, gameMode)?.first
+    @Serializable
+    private data class ScoreRow(@SerialName("composite_score") val compositeScore: Double)
+
+    /** Exact server-side count of today's SOLO players for [gameMode] — the true
+     *  "of M" once the leaderboard page is full (web totalQuery parity). */
+    suspend fun soloPlayerCount(gameMode: String, day: String = todayLocalDate(), playType: String = "solo"): Int =
+        runCatching {
+            client.postgrest["daily_results"]
+                .select(Columns.raw("id")) {
+                    count(Count.EXACT)
+                    limit(1)
+                    filter {
+                        eq("day", day)
+                        eq("game_mode", gameMode)
+                        eq("play_type", playType)
+                    }
+                }
+                .countOrNull()?.toInt() ?: 0
+        }.getOrElseNotCancelled { 0 }
+
+    /**
+     * User's rank + true total (web getUserDailyRank parity). When the user is on
+     * the already-fetched [topEntries] page, rank comes from their index — zero
+     * (under-full page) or one (full page → true total) extra queries. Outside a
+     * full page: score + total in parallel, then a players-ahead count. Returns
+     * null when the user has no result today.
+     */
+    suspend fun getUserDailyRank(
+        userId: String,
+        gameMode: String,
+        playType: String = "solo",
+        day: String = todayLocalDate(),
+        topEntries: List<LeaderboardEntry>? = null,
+        topLimit: Int = 50,
+    ): RankInfo? = runCatching {
+        if (topEntries != null) {
+            val idx = topEntries.indexOfFirst { it.userId == userId }
+            if (idx >= 0) {
+                // Under-full page → the list IS everyone; full page needs a true total.
+                if (topEntries.size < topLimit) return@runCatching RankInfo(idx + 1, topEntries.size)
+                val count = soloPlayerCount(gameMode, day, playType)
+                return@runCatching RankInfo(idx + 1, if (count > 0) count else topEntries.size)
+            }
+            // Full board visible and the user isn't on it → they haven't played today.
+            if (topEntries.size < topLimit) return@runCatching null
+        }
+
+        // Outside the fetched page: user's score + total in parallel, then players ahead.
+        val (userScore, totalPlayers) = coroutineScope {
+            val score = async {
+                client.postgrest["daily_results"]
+                    .select(Columns.raw("composite_score")) {
+                        filter {
+                            eq("user_id", userId)
+                            eq("day", day)
+                            eq("game_mode", gameMode)
+                            eq("play_type", playType)
+                        }
+                        limit(1)
+                    }
+                    .decodeList<ScoreRow>().firstOrNull()?.compositeScore
+            }
+            val total = async { soloPlayerCount(gameMode, day, playType) }
+            score.await() to total.await()
+        }
+        if (userScore == null) return@runCatching null
+
+        val higherCount = client.postgrest["daily_results"]
+            .select(Columns.raw("id")) {
+                count(Count.EXACT)
+                limit(1)
+                filter {
+                    eq("day", day)
+                    eq("game_mode", gameMode)
+                    eq("play_type", playType)
+                    gt("composite_score", userScore)
+                }
+            }
+            .countOrNull()?.toInt() ?: 0
+
+        RankInfo(higherCount + 1, totalPlayers)
+    }.getOrElseNotCancelled { null }
 
     /** Total players who logged a result for today's [gameMode] (for "{n} players today").
      *  Web parity: getDailyPlayerCount counts ALL play types (solo + VS) with an
@@ -108,7 +214,7 @@ object LeaderboardService {
     suspend fun playerCount(gameMode: String): Int = runCatching {
         client.postgrest["daily_results"]
             .select(Columns.raw("user_id")) {
-                count(io.github.jan.supabase.postgrest.query.Count.EXACT)
+                count(Count.EXACT)
                 limit(1)
                 filter {
                     eq("game_mode", gameMode)
@@ -116,7 +222,7 @@ object LeaderboardService {
                 }
             }
             .countOrNull()?.toInt() ?: 0
-    }.getOrElse { 0 }
+    }.getOrElseNotCancelled { 0 }
 
     suspend fun fetchAllTimeRecords(): List<AllTimeRecord> = runCatching {
         client.postgrest["all_time_records"]
