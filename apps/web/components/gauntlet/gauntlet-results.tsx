@@ -7,6 +7,7 @@ import { recordGauntletGame } from '@/lib/gauntlet-stats';
 import { shareResult } from '@/lib/share-utils';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
+import { NextDailyCta } from '@/components/game/next-daily-cta';
 
 interface GauntletResultsProps {
   won: boolean;
@@ -188,6 +189,7 @@ export function GauntletResults({
             totalBoards={cumulativeTotalBoards}
             stagesCompleted={stagesCompleted}
           />
+          {isDaily && <NextDailyCta currentMode="GAUNTLET" />}
         </div>
 
         {/* Per-Stage Breakdown */}

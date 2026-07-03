@@ -26,6 +26,7 @@ import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
+import { NextDailyCta } from '@/components/game/next-daily-cta';
 
 interface QuordleGameProps {
   initialSeed?: string;
@@ -234,6 +235,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
             totalBoards={4}
           />
         )}
+        {state.status !== 'PLAYING' && isDaily && <NextDailyCta currentMode="QUORDLE" />}
       </div>
 
       {/* Keyboard — hidden when game is complete */}

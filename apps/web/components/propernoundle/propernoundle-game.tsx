@@ -29,6 +29,7 @@ import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
+import { NextDailyCta } from '@/components/game/next-daily-cta';
 
 const MAX_GUESSES = 6;
 const DAILY_STORAGE_KEY = 'wordocious-propernoundle-daily';
@@ -863,6 +864,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
                 hintsUsed={hintsUsed}
                 bestCorrectLetters={guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)}
               />
+              {mode === 'daily' && <NextDailyCta currentMode="PROPERNOUNDLE" />}
             </div>
           </div>
 

@@ -23,6 +23,7 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
+import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { CompletedBoardsRecap, toRecapBoards } from '@/components/game/completed-mini-board';
 
@@ -331,6 +332,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
               totalBoards={4}
             />
           )}
+          {state.status !== 'PLAYING' && isDaily && <NextDailyCta currentMode="SEQUENCE" />}
       </div>
 
       {/* Keyboard — hidden when game is complete */}

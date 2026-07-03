@@ -14,6 +14,7 @@ import { SoundToggle } from '@/components/game/sound-toggle';
 import Link from 'next/link';
 import { PostGameSummary } from '@/components/game/post-game-summary';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
+import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
@@ -417,6 +418,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
                   currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)}
               />
               <PostGameSummary solution={currentBoard.solution} />
+              {isDaily && <NextDailyCta currentMode={mode} />}
             </>
           )}
         </div>

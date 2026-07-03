@@ -13,6 +13,7 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
 import { InviteModal } from '@/components/invites/invite-modal';
 import { PendingInvitesBanner } from '@/components/invites/pending-invites-banner';
+import { FirstGameCard } from '@/components/ui/first-game-card';
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { useCountdown } from '@/hooks/use-countdown';
@@ -338,6 +339,7 @@ export default function HomePage() {
 
       <div className="px-4 flex-1 min-h-0 overflow-y-auto pb-24" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <PendingInvitesBanner userId={user?.id} />
+        <FirstGameCard />
 
         {/* Pro-only: switch between Daily and Unlimited. Freemium users
             never see the pill (playMode is forced to 'daily' above). */}

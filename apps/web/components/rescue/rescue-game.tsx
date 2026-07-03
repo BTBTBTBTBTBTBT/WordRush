@@ -25,6 +25,7 @@ import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ScoreBreakdownCard } from '@/components/game/score-breakdown';
+import { NextDailyCta } from '@/components/game/next-daily-cta';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 
 interface RescueGameProps {
@@ -234,6 +235,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
             totalBoards={4}
           />
         )}
+        {state.status !== 'PLAYING' && isDaily && <NextDailyCta currentMode="RESCUE" />}
       </div>
 
       {/* Keyboard — hidden when game is complete */}
