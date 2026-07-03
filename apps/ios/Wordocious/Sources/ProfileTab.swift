@@ -69,6 +69,21 @@ struct ProfileTab: View {
                 async let completionsLoad: Void = completions.load()
                 async let catalogLoad: Void = achievementCatalog.load()
                 if let uid = auth.profile?.id {
+                    // P-cache: seed everything from the session memo so a tab
+                    // return repaints instantly; the fresh fetches below swap
+                    // in exactly as before.
+                    let memo = StatsMemo.shared
+                    if let v: [UserStatRow] = memo.get("statRows:\(uid)") { statRows = v }
+                    if let v: Set<String> = memo.get("achievements:\(uid)") { unlockedAchievements = v }
+                    if let v: [MedalRow] = memo.get("medals:\(uid)") { medals = v }
+                    if let v: [String: String] = memo.get("socialLinks:\(uid)") { socialLinks = v }
+                    if let v: [PublicProfileService.RecentMatch] = memo.get("recentMatches:\(uid)") {
+                        recentMatches = v
+                        if let n: [String: String] = memo.get("opponentNames:\(uid)") { opponentNames = n }
+                        recentLoading = false
+                    }
+                    if let v: Int = memo.get("gamesThisWeek:\(uid)") { gamesThisWeek = v }
+                    if let v: Int = memo.get("sevenDayTotal:\(uid)") { sevenDayTotal = v }
                     async let statsF = UserStatsService.fetch(userId: uid)
                     async let achievementsF = AchievementService.fetchUnlocked(userId: uid)
                     async let medalsF = MedalsService.recent(userId: uid, limit: 120)
@@ -92,6 +107,15 @@ struct ProfileTab: View {
                         return $0.day >= cutoff
                     }.reduce(0) { $0 + $1.played }
                     recentLoading = false
+                    // Store the fresh results back into the session memo.
+                    memo.set("statRows:\(uid)", statRows)
+                    memo.set("achievements:\(uid)", unlockedAchievements)
+                    memo.set("medals:\(uid)", medals)
+                    memo.set("socialLinks:\(uid)", socialLinks)
+                    memo.set("recentMatches:\(uid)", recentMatches)
+                    memo.set("opponentNames:\(uid)", opponentNames)
+                    memo.set("gamesThisWeek:\(uid)", gamesThisWeek)
+                    memo.set("sevenDayTotal:\(uid)", sevenDayTotal)
                 }
                 _ = await (completionsLoad, catalogLoad)
             }

@@ -235,3 +235,21 @@ extension View {
             .animation(Theme.animation(.easeOut(duration: 0.3)), value: token)
     }
 }
+
+// MARK: - Session stats memo (P-cache)
+
+/// Session-lived, type-erased memo for the profile dashboards' fetch results —
+/// SWR-style: a `.task` seeds its @State from here (instant repaint when the
+/// user re-enters the tab or re-taps a mode), then fetches fresh exactly as
+/// before and stores the result back. Purely additive: what is fetched and how
+/// it renders are unchanged. Key by a stable string that includes the user id,
+/// mode and play type, e.g. "guessDist:\(uid):\(mode):\(playType)".
+@MainActor
+final class StatsMemo {
+    static let shared = StatsMemo()
+    private var store: [String: Any] = [:]
+    private init() {}
+
+    func get<T>(_ key: String) -> T? { store[key] as? T }
+    func set<T>(_ key: String, _ value: T) { store[key] = value }
+}

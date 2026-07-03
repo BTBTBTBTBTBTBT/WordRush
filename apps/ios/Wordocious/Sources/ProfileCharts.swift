@@ -108,7 +108,15 @@ private struct GuessDistributionChart: View {
                 Text("\(totalWins) win\(totalWins == 1 ? "" : "s")").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
             }
         }
-        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") { data = await MatchStatsService.guessDistribution(mode: mode, playType: playType) }
+        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
+            // P-cache: seed from the session memo (instant repaint), then
+            // fetch fresh exactly as before and store back.
+            let key = "guessDist:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all"):\(playType)"
+            if let cached: [MatchStatsService.GuessBucket] = StatsMemo.shared.get(key) { data = cached }
+            let fresh = await MatchStatsService.guessDistribution(mode: mode, playType: playType)
+            data = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
         }
     }
 }
@@ -149,7 +157,13 @@ private struct ActivityCalendarView: View {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
-        .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.activityCalendar(mode: mode) }
+        .task(id: mode?.rawValue ?? "all") {
+            let key = "activityCal:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all")"
+            if let cached: [MatchStatsService.DayActivity] = StatsMemo.shared.get(key) { data = cached }
+            let fresh = await MatchStatsService.activityCalendar(mode: mode)
+            data = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 
     /// Group the last 90 days into Sunday-aligned week columns of 7 cells.
@@ -237,7 +251,13 @@ struct SevenDayActivityCard: View {
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
             }
         }
-        .task { data = await MatchStatsService.activityCalendar(days: 7) }
+        .task {
+            let key = "activity7:\(AuthService.shared.profile?.id ?? "anon")"
+            if let cached: [MatchStatsService.DayActivity] = StatsMemo.shared.get(key) { data = cached }
+            let fresh = await MatchStatsService.activityCalendar(days: 7)
+            data = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 
     private func dow(_ d: Date) -> String {
@@ -317,7 +337,13 @@ private struct SolveTimeChart: View {
                 }
             }
         }
-        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") { data = await MatchStatsService.solveTimes(mode: mode, playType: playType) }
+        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
+            let key = "solveTimes:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all"):\(playType)"
+            if let cached: [MatchStatsService.SolvePoint] = StatsMemo.shared.get(key) { data = cached }
+            let fresh = await MatchStatsService.solveTimes(mode: mode, playType: playType)
+            data = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 
     private func timeStat(_ label: String, _ seconds: Int, _ color: Color) -> some View {
@@ -364,7 +390,13 @@ private struct TimeOfDayHeatmap: View {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
-        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") { data = await MatchStatsService.timeOfDay(mode: mode, playType: playType) }
+        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
+            let key = "timeOfDay:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all"):\(playType)"
+            if let cached: [MatchStatsService.HourBucket] = StatsMemo.shared.get(key) { data = cached }
+            let fresh = await MatchStatsService.timeOfDay(mode: mode, playType: playType)
+            data = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 
     private func hourLabel(_ h: Int) -> String {
@@ -413,7 +445,13 @@ private struct TopWordsCard: View {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
-        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") { data = await MatchStatsService.topWords(mode: mode, playType: playType) }
+        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
+            let key = "topWords:\(AuthService.shared.profile?.id ?? "anon"):\(mode?.rawValue ?? "all"):\(playType)"
+            if let cached: [MatchStatsService.TopWord] = StatsMemo.shared.get(key) { data = cached }
+            let fresh = await MatchStatsService.topWords(mode: mode, playType: playType)
+            data = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 }
 
@@ -485,7 +523,13 @@ private struct ProInsightsCard: View {
         }
         .task(id: "\(mode.rawValue)-\(auth.isProActive)-\(playType)") {
             s = MatchStatsService.ProInsights()
-            if auth.isProActive { s = await MatchStatsService.proInsights(mode: mode, playType: playType) }
+            if auth.isProActive {
+                let key = "proInsights:\(auth.profile?.id ?? "anon"):\(mode.rawValue):\(playType)"
+                if let cached: MatchStatsService.ProInsights = StatsMemo.shared.get(key) { s = cached }
+                let fresh = await MatchStatsService.proInsights(mode: mode, playType: playType)
+                s = fresh
+                StatsMemo.shared.set(key, fresh)
+            }
         }
         .sheet(isPresented: $showPro) { ProView() }
     }

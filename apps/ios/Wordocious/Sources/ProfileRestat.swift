@@ -139,7 +139,14 @@ struct OpenerLabCard: View {
                 }
             }
         }
-        .task(id: playType) { openers = await StatsDeepService.openerStats(limit: 5, playType: playType) }
+        .task(id: playType) {
+            // P-cache: seed from the session memo, then fetch fresh as before.
+            let key = "openerLab:\(AuthService.shared.profile?.id ?? "anon"):\(playType)"
+            if let cached: [StatsDeepService.OpenerStat] = StatsMemo.shared.get(key) { openers = cached }
+            let fresh = await StatsDeepService.openerStats(limit: 5, playType: playType)
+            openers = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 }
 
@@ -192,7 +199,13 @@ struct WeekdayFormCard: View {
                 }
             }
         }
-        .task(id: playType) { days = await StatsDeepService.weekdayForm(playType: playType) }
+        .task(id: playType) {
+            let key = "weekdayForm:\(AuthService.shared.profile?.id ?? "anon"):\(playType)"
+            if let cached: [StatsDeepService.WeekdayFormDay] = StatsMemo.shared.get(key) { days = cached }
+            let fresh = await StatsDeepService.weekdayForm(playType: playType)
+            days = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 }
 
@@ -228,6 +241,12 @@ struct DailyPointsChartCard: View {
                 }
             }
         }
-        .task { points = await MatchStatsService.dailyPointsOverTime(days: 30) }
+        .task {
+            let key = "dailyPoints:\(AuthService.shared.profile?.id ?? "anon")"
+            if let cached: [MatchStatsService.DailyPointsPoint] = StatsMemo.shared.get(key) { points = cached }
+            let fresh = await MatchStatsService.dailyPointsOverTime(days: 30)
+            points = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 }

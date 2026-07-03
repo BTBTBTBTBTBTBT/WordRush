@@ -146,7 +146,14 @@ struct SkillRadarCard: View {
                 }
             }
         }
-        .task(id: isPro) { if isPro { data = await StatsDeepService.skillRadar() } }
+        .task(id: isPro) {
+            guard isPro else { return }
+            let key = "skillRadar:\(AuthService.shared.profile?.id ?? "anon")"
+            if let cached: StatsDeepService.SkillRadarData = StatsMemo.shared.get(key) { data = cached }
+            let fresh = await StatsDeepService.skillRadar()
+            data = fresh
+            if let fresh { StatsMemo.shared.set(key, fresh) }
+        }
     }
 }
 
@@ -190,7 +197,14 @@ struct RivalriesCard: View {
                 .asyncEntrance(rows.count)   // F3: fade+rise when the fetch lands
             }
         }
-        .task(id: isPro) { if isPro { rows = await StatsDeepService.rivalries(limit: 5) } }
+        .task(id: isPro) {
+            guard isPro else { return }
+            let key = "rivalries:\(AuthService.shared.profile?.id ?? "anon")"
+            if let cached: [StatsDeepService.Rivalry] = StatsMemo.shared.get(key) { rows = cached }
+            let fresh = await StatsDeepService.rivalries(limit: 5)
+            rows = fresh
+            StatsMemo.shared.set(key, fresh)
+        }
     }
 
     private func rivalryRow(_ r: StatsDeepService.Rivalry) -> some View {
@@ -277,7 +291,10 @@ struct ProDeepModeCard: View {
         }
         .task(id: "\(gameMode)-\(isPro)-\(playType)") {
             guard isPro, playType != "vs_cpu" else { return }
-            data = nil
+            // P-cache: seed from the session memo so re-tapping a mode paints
+            // instantly; the fresh fetch below swaps in as before.
+            let memoKey = "deepMode:\(AuthService.shared.profile?.id ?? "anon"):\(gameMode):\(playType)"
+            if let cached: DeepData = StatsMemo.shared.get(memoKey) { data = cached } else { data = nil }
             // P4: one shared 400-row guess-log fetch feeds every section (was
             // 4 identical `matches` reads). wordAlmanac takes a prefix(24)
             // slice — its own query is identical (same filters, same
@@ -291,8 +308,10 @@ struct ProDeepModeCard: View {
                                                              rows: Array(rows.prefix(24)))
             let hints = HINT_MODES.contains(gameMode)
                 ? await StatsDeepService.hintHonesty(gameMode: gameMode, playType: playType, rows: rows) : nil
-            data = DeepData(openers: await openers, positions: await positions,
-                            almanac: await almanac, hints: hints, gauntlet: await gauntletF)
+            let fresh = DeepData(openers: await openers, positions: await positions,
+                                 almanac: await almanac, hints: hints, gauntlet: await gauntletF)
+            data = fresh
+            StatsMemo.shared.set(memoKey, fresh)
         }
     }
 
