@@ -1192,13 +1192,42 @@ struct LeaderboardTab: View {
     }
 
     private func load() async {
-        loading = true
+        // Stale-while-revalidate (web parity: lbCache in app/daily/page.tsx) —
+        // a cache hit paints the last-known rows instantly (no skeleton) while
+        // the fresh fetch below swaps in silently. Skeleton = true first load only.
+        let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id)
+        if let cached = LeaderboardCache.shared[cacheKey] {
+            entries = cached.entries
+            playerCount = cached.playerCount
+            userRank = cached.userRank
+            loading = false
+        } else {
+            loading = true
+            userRank = nil
+            entries = []
+        }
+
         async let e = try? LeaderboardService.fetch(gameMode: mode)
         async let pc = LeaderboardService.playerCount(gameMode: mode)
-        entries = (await e) ?? []
-        playerCount = await pc
-        if let uid = auth.profile?.id { userRank = await LeaderboardService.userRank(gameMode: mode, userId: uid) }
+        let fetched = (await e) ?? []
+        let count = await pc
+        // .task(id:) cancels this on mode switch, but the awaits above aren't
+        // cancellation-checked — bail before assigning so a slow prior-mode
+        // response can't overwrite the new mode's rows.
+        guard !Task.isCancelled else { return }
+        // Paint the rows the moment they arrive — the rank banner fills in on
+        // its own instead of holding the whole list behind its extra queries.
+        entries = fetched
+        playerCount = count
         loading = false
+
+        var rank: (rank: Int, total: Int)? = nil
+        if let uid = auth.profile?.id {
+            rank = await LeaderboardService.userRank(gameMode: mode, userId: uid, topEntries: fetched)
+            guard !Task.isCancelled else { return }
+            userRank = rank
+        }
+        LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: count, userRank: rank)
     }
 
     private func loadYesterday() async {
