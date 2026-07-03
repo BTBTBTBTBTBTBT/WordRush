@@ -343,22 +343,47 @@ export async function getUserDailyRank(
   gameMode: string,
   playType: 'solo' | 'vs',
   day?: string,
+  /** The already-fetched leaderboard page (and the limit it was fetched with).
+   *  When the user appears in it, rank comes from their index — zero or one
+   *  extra queries instead of three. */
+  topEntries?: LeaderboardEntry[],
+  topLimit: number = 50,
 ): Promise<{ rank: number; totalPlayers: number } | null> {
   const targetDay = day || getTodayLocal();
-
-  // Get the user's score
-  const { data: userResult } = await (supabase as any)
+  const totalQuery = () => (supabase as any)
     .from('daily_results')
-    .select('composite_score')
-    .eq('user_id', userId)
+    .select('id', { count: 'exact', head: true })
     .eq('day', targetDay)
     .eq('game_mode', gameMode)
-    .eq('play_type', playType)
-    .maybeSingle();
+    .eq('play_type', playType);
+
+  if (topEntries) {
+    const idx = topEntries.findIndex((e) => e.user_id === userId);
+    if (idx >= 0) {
+      // Under-full page → the list IS everyone; over-full needs a true total.
+      if (topEntries.length < topLimit) return { rank: idx + 1, totalPlayers: topEntries.length };
+      const { count } = await totalQuery();
+      return { rank: idx + 1, totalPlayers: count ?? topEntries.length };
+    }
+    // Full board visible and the user isn't on it → they haven't played today.
+    if (topEntries.length < topLimit) return null;
+  }
+
+  // Outside the fetched page: user's score + total in parallel, then players ahead.
+  const [{ data: userResult }, { count: totalPlayers }] = await Promise.all([
+    (supabase as any)
+      .from('daily_results')
+      .select('composite_score')
+      .eq('user_id', userId)
+      .eq('day', targetDay)
+      .eq('game_mode', gameMode)
+      .eq('play_type', playType)
+      .maybeSingle(),
+    totalQuery(),
+  ]);
 
   if (!userResult) return null;
 
-  // Count how many players scored higher
   const { count: higherCount } = await (supabase as any)
     .from('daily_results')
     .select('id', { count: 'exact', head: true })
@@ -366,14 +391,6 @@ export async function getUserDailyRank(
     .eq('game_mode', gameMode)
     .eq('play_type', playType)
     .gt('composite_score', userResult.composite_score);
-
-  // Count total players
-  const { count: totalPlayers } = await (supabase as any)
-    .from('daily_results')
-    .select('id', { count: 'exact', head: true })
-    .eq('day', targetDay)
-    .eq('game_mode', gameMode)
-    .eq('play_type', playType);
 
   return {
     rank: (higherCount ?? 0) + 1,

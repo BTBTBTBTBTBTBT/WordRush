@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -26,6 +26,15 @@ import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey)!;
+
+// Session-lived stale-while-revalidate cache, keyed mode:day:user. A mode-chip
+// tap or a return visit paints the last-known rows instantly while the fresh
+// fetch swaps in silently — the skeleton only ever shows on a true first load.
+const lbCache = new Map<string, {
+  lb: LeaderboardEntry[];
+  count: number;
+  rank: { rank: number; totalPlayers: number } | null;
+}>();
 
 function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -101,25 +110,47 @@ export default function DailyPage() {
     setToday(getTodayLocal());
   }, []);
   const yesterday = useMemo(() => getYesterdayLocal(), []);
+  // Drops late responses from a previous mode so a slow fetch can't overwrite
+  // the rows of the mode the user has since switched to.
+  const loadSeq = useRef(0);
 
   const loadLeaderboard = useCallback(async () => {
-    if (!today) return;
-    setLoading(true);
-    setUserRank(null);
-    setLeaderboard([]);
+    // The fetch keys off the local date directly — the `today` state only
+    // gates the SSR-rendered date display, and waiting for its post-hydration
+    // effect delayed the first request by a render cycle.
+    const day = getTodayLocal();
+    const seq = ++loadSeq.current;
+    const cacheKey = `${selectedMode}:${day}:${user?.id ?? 'anon'}`;
+    const cached = lbCache.get(cacheKey);
+    if (cached) {
+      setLeaderboard(cached.lb);
+      setPlayerCount(cached.count);
+      setUserRank(cached.rank);
+      setLoading(false);
+    } else {
+      setLoading(true);
+      setUserRank(null);
+      setLeaderboard([]);
+    }
+
     const [lb, count] = await Promise.all([
-      fetchDailyLeaderboard(selectedMode, 'solo', today, 50),
-      getDailyPlayerCount(selectedMode, today),
+      fetchDailyLeaderboard(selectedMode, 'solo', day, 50),
+      getDailyPlayerCount(selectedMode, day),
     ]);
+    if (seq !== loadSeq.current) return;
+    // Paint the rows the moment they arrive — the rank banner fills in on its
+    // own instead of holding the whole list behind its extra queries.
     setLeaderboard(lb);
     setPlayerCount(count);
-
-    if (user) {
-      const rank = await getUserDailyRank(user.id, selectedMode, 'solo', today);
-      setUserRank(rank);
-    }
     setLoading(false);
-  }, [selectedMode, user, today]);
+
+    let rank: { rank: number; totalPlayers: number } | null = null;
+    if (user) {
+      rank = await getUserDailyRank(user.id, selectedMode, 'solo', day, lb, 50);
+      if (seq === loadSeq.current) setUserRank(rank);
+    }
+    lbCache.set(cacheKey, { lb, count, rank });
+  }, [selectedMode, user]);
 
   useEffect(() => {
     loadLeaderboard();
