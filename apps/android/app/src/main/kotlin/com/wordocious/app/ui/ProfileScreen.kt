@@ -69,6 +69,7 @@ import com.wordocious.app.data.ProfileService
 import com.wordocious.app.data.SettingsPref
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 /**
@@ -132,17 +133,30 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     val tick by DailyCompletionsService.completionTick.collectAsState()
     LaunchedEffect(userId, tick) {
         if (userId != null) {
-            stats = ProfileService.fetchUserStats(userId)
-            recentMatches = ProfileService.fetchRecentMatches(userId)
-            val oppIds = recentMatches.filter { it.player2Id != null }
-                .map { if (it.player1Id == userId) it.player2Id!! else it.player1Id }
-                .distinct()
-            opponentNames = ProfileService.fetchUsernames(oppIds)
-            medals = ProfileService.fetchUserMedals(userId, limit = 100)
-            todayDailies = DailyCompletionsService.fetchTodayCompletions()
-            unlockedAchievements = com.wordocious.app.data.AchievementService.fetchUnlocked(userId)
-            activityCal = com.wordocious.app.data.MatchStatsService.dailyCalendar(userId, days = 90)
-            sweepPoints = com.wordocious.app.data.MatchStatsService.dailyPointsOverTime(days = 30)
+            // All independent fetches run CONCURRENTLY (was 8 serial round-trips
+            // gating the whole screen); only usernames chains off recentMatches.
+            kotlinx.coroutines.coroutineScope {
+                val statsD = async { ProfileService.fetchUserStats(userId) }
+                val matchesD = async { ProfileService.fetchRecentMatches(userId) }
+                val medalsD = async { ProfileService.fetchUserMedals(userId, limit = 100) }
+                val todayD = async { DailyCompletionsService.fetchTodayCompletions() }
+                val unlockedD = async { com.wordocious.app.data.AchievementService.fetchUnlocked(userId) }
+                val calD = async { com.wordocious.app.data.MatchStatsService.dailyCalendar(userId, days = 90) }
+                val pointsD = async { com.wordocious.app.data.MatchStatsService.dailyPointsOverTime(days = 30) }
+                val matches = matchesD.await()
+                val oppIds = matches.filter { it.player2Id != null }
+                    .map { if (it.player1Id == userId) it.player2Id!! else it.player1Id }
+                    .distinct()
+                val namesD = async { ProfileService.fetchUsernames(oppIds) }
+                stats = statsD.await()
+                recentMatches = matches
+                opponentNames = namesD.await()
+                medals = medalsD.await()
+                todayDailies = todayD.await()
+                unlockedAchievements = unlockedD.await()
+                activityCal = calD.await()
+                sweepPoints = pointsD.await()
+            }
         }
         loading = false
     }
@@ -153,19 +167,31 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     LaunchedEffect(userId, selectedMode, isProActive, activeTab, tick) {
         val uid = userId ?: return@LaunchedEffect
         val m = selectedMode
-        guessDist = com.wordocious.app.data.MatchStatsService.guessDistribution(uid, m, activeTab)
-        // LAST 7 DAYS is GLOBAL (web fetchActivityByDay takes no mode and no
-        // play-type) and only rendered in the All view — load it unfiltered.
-        activity7 = com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = null)
-        solveTimes = com.wordocious.app.data.MatchStatsService.solveTimes(uid, m, playType = activeTab)
-        timeOfDay = com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m, activeTab)
-        topWords = com.wordocious.app.data.MatchStatsService.topWords(uid, m, playType = activeTab)
-        proInsights = if (m != null && isProActive) com.wordocious.app.data.MatchStatsService.proInsights(uid, m, activeTab)
-        else com.wordocious.app.data.MatchStatsService.ProInsights()
-        // Per-mode win streak for each mode the player has stats in (scoped to
-        // the toggle — waits on `stats` from the main effect via the tick key).
-        modeStreaks = ProfileService.fetchUserStats(uid).map { it.gameMode }.distinct()
-            .associateWith { com.wordocious.app.data.MatchStatsService.modeWinStreak(uid, it, activeTab) }
+        // All chart fetches run CONCURRENTLY (was 6 serial round-trips + a
+        // 9-query per-mode streak N+1 — now one consolidated streak query).
+        kotlinx.coroutines.coroutineScope {
+            val gdD = async { com.wordocious.app.data.MatchStatsService.guessDistribution(uid, m, activeTab) }
+            // LAST 7 DAYS is GLOBAL (web fetchActivityByDay takes no mode and no
+            // play-type) and only rendered in the All view — load it unfiltered.
+            val a7D = async { com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = null) }
+            val stD = async { com.wordocious.app.data.MatchStatsService.solveTimes(uid, m, playType = activeTab) }
+            val todD = async { com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m, activeTab) }
+            val twD = async { com.wordocious.app.data.MatchStatsService.topWords(uid, m, playType = activeTab) }
+            val piD = async {
+                if (m != null && isProActive) com.wordocious.app.data.MatchStatsService.proInsights(uid, m, activeTab)
+                else com.wordocious.app.data.MatchStatsService.ProInsights()
+            }
+            // Per-mode win streaks (scoped to the toggle) — ONE query for every
+            // mode at once (modeWinStreaks) instead of stats re-fetch + per-mode.
+            val streaksD = async { com.wordocious.app.data.MatchStatsService.modeWinStreaks(uid, activeTab) }
+            guessDist = gdD.await()
+            activity7 = a7D.await()
+            solveTimes = stD.await()
+            timeOfDay = todD.await()
+            topWords = twD.await()
+            proInsights = piD.await()
+            modeStreaks = streaksD.await()
+        }
     }
 
     val isGuest by AuthService.isGuest.collectAsState()

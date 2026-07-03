@@ -407,6 +407,38 @@ object MatchStatsService {
         current to best
     }.getOrElse { 0 to 0 }
 
+    @Serializable
+    private data class ModeWinnerRow(
+        @SerialName("winner_id") val winnerId: String? = null,
+        @SerialName("game_mode") val gameMode: String = "",
+    )
+
+    /** (current, best) win streak for EVERY mode in ONE query — replaces the
+     *  profile dashboard's per-mode modeWinStreak N+1 (~9 serial queries).
+     *  Same semantics as [modeWinStreak]: recent-first rows per mode, current
+     *  streak runs until the first non-win, best is the longest run in-window. */
+    suspend fun modeWinStreaks(userId: String, playType: String = "solo"): Map<String, Pair<Int, Int>> = runCatching {
+        if (playType == "vs_cpu") return emptyMap()
+        val rows = client.postgrest["matches"]
+            .select(Columns.raw("winner_id,game_mode")) {
+                filter { or { eq("player1_id", userId); eq("player2_id", userId) }; scopeToPlayType(playType) }
+                order("created_at", Order.DESCENDING)
+                limit(1000)
+            }
+            .decodeList<ModeWinnerRow>()
+        // groupBy preserves encounter (recent-first) order within each mode.
+        rows.groupBy { it.gameMode }.mapValues { (_, modeRows) ->
+            var current = 0; var best = 0; var streak = 0; var foundFirstLoss = false
+            modeRows.forEach { r ->
+                if (r.winnerId == userId) {
+                    streak++; best = maxOf(best, streak)
+                    if (!foundFirstLoss) current = streak
+                } else { foundFirstLoss = true; streak = 0 }
+            }
+            current to best
+        }
+    }.getOrElse { emptyMap() }
+
     /** Hour (0–23) with the best win-rate among hours with ≥3 games. */
     private suspend fun peakHour(userId: String, mode: String, playType: String = "solo"): Int? {
         val buckets = timeOfDay(userId, mode, playType)
