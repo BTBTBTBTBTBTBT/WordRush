@@ -1,4 +1,5 @@
 import SwiftUI
+import WordociousCore
 
 /// 4-tab shell with a custom bottom nav that matches the web BottomNav
 /// (components/ui/bottom-nav.tsx): outline icon + muted label when inactive,
@@ -13,6 +14,10 @@ struct RootTabView: View {
     // clears it so returning shows the leaderboard (not the profile you left on).
     @State private var leaderboardPath: [String] = []
     @ObservedObject private var chrome = ChromeVisibility.shared
+    /// Post-game "Next Daily" handoff (NextDailyCTA): the tapped mode's daily,
+    /// presented from the tab root so it works no matter which tab/screen
+    /// presented the game that just finished.
+    @State private var nextDaily: HomeMode?
 
     enum Tab: Hashable { case home, leaderboard, profile, records }
 
@@ -50,6 +55,23 @@ struct RootTabView: View {
         // views and steals the height the keyboard/boards need.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !chrome.bottomNavHidden { BottomNav(selection: tabSelection) }
+        }
+        // Post-game "Next Daily" handoff: launch the requested mode's daily via
+        // the same path the Leaderboard Play CTA uses (GameScreen with today's
+        // seed; ProperNoundleView() for PN). The CTA dismisses its own game
+        // first, then posts, so this cover presents cleanly from the root.
+        .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playNextDaily)) { note in
+            guard let key = note.object as? String else { return }
+            nextDaily = homeModes.first { $0.dbKey == key }
+        }
+        .fullScreenCover(item: $nextDaily) { m in
+            NavigationStack {
+                if let gm = m.mode {
+                    GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title)
+                } else {
+                    ProperNoundleView()   // ProperNoundle daily (dbKey set, no engine mode)
+                }
+            }
         }
     }
 }

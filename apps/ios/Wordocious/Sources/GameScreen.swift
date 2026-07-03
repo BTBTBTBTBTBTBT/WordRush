@@ -50,6 +50,7 @@ struct GameScreen: View {
                 // results screen — same component as the re-entry review.
                 if vm.isFinished && vm.isGauntlet, let g = vm.state.gauntlet {
                     GauntletResultsView(progress: g, won: vm.status == .won, mode: mode, isDaily: vm.isDaily,
+                                        showNextDaily: true,
                                         elapsedMsFallback: vm.elapsedSeconds * 1000,
                                         onHome: { dismiss() }, onShare: { share() },
                                         onPlayAgain: playAgainAction)
@@ -90,6 +91,7 @@ struct GameScreen: View {
                                                totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
                                                stagesCompleted: vm.stagesCompletedForScore,
                                                bestCorrectLetters: vm.bestCorrectLettersForScore)
+                            if vm.isDaily { NextDailyCTA() }
                             if vm.boardCount == 1 {
                                 DefinitionCard(solution: vm.boards[0].solution, showWord: false)
                             }

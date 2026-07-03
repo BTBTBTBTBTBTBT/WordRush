@@ -184,6 +184,9 @@ struct GauntletResultsView: View {
     let won: Bool
     var mode: GameMode = .gauntlet
     var isDaily: Bool = true
+    /// Post-game only (GameScreen) — the re-entry review (SolvedPuzzleView)
+    /// keeps its default false so the handoff row stays a results-flow nudge.
+    var showNextDaily: Bool = false
     var elapsedMsFallback: Int = 0
     var onHome: () -> Void
     var onShare: () -> Void
@@ -239,6 +242,10 @@ struct GauntletResultsView: View {
                                    timeSeconds: totalTimeMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal,
                                    stagesCompleted: cleared)
                     .modifier(RiseIn(appeared: appeared, delay: 0.5))
+
+                if isDaily && showNextDaily {
+                    NextDailyCTA().modifier(RiseIn(appeared: appeared, delay: 0.55))
+                }
 
                 GauntletCompletedView(progress: progress, totalTimeMs: totalTimeMs, showSummary: false, showStageHeader: true)
                     .modifier(RiseIn(appeared: appeared, delay: 0.6))
