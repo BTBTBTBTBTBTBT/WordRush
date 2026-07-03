@@ -110,6 +110,12 @@ final class VSMatchService {
         }
     }
 
+    /// Shared decoder for inbound socket events — JSONDecoder is safe to reuse
+    /// for sequential decodes on one thread (socket.io delivers handlers on its
+    /// single handleQueue), and reusing it avoids a fresh allocation per event
+    /// on the hot in-match path (guess_result / opponent_progress).
+    private static let eventDecoder = JSONDecoder()
+
     private static func decode<T: Decodable>(_ type: T.Type, _ data: [Any]) -> T? {
         // JSONSerialization.data(withJSONObject:) RAISES an NSException (not a
         // Swift error, so `try?` can't catch it → crash) when `first` isn't a
@@ -119,7 +125,7 @@ final class VSMatchService {
         guard let first = data.first,
               JSONSerialization.isValidJSONObject(first),
               let json = try? JSONSerialization.data(withJSONObject: first) else { return nil }
-        return try? JSONDecoder().decode(T.self, from: json)
+        return try? eventDecoder.decode(T.self, from: json)
     }
 
     private func main(_ work: @escaping () -> Void) {
