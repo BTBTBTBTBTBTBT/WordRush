@@ -34,6 +34,19 @@ struct WordOfTheDayView: View {
         // forever). Including scenePhase in the id forces a re-check on foreground.
         .task(id: "\(todayIndex)-\(scenePhase)") {
             if fetchedDay != todayIndex {
+                // Day-keyed disk cache: the word only changes at the UTC day
+                // rollover, so after the first successful fetch of the day every
+                // subsequent home entry renders instantly with ZERO network.
+                if let (cached, resolved) = Self.loadCached(day: todayIndex) {
+                    info = cached
+                    if resolved {
+                        fetchedDay = todayIndex
+                        return
+                    }
+                    // Unresolved (no-definition) day: render the cached word
+                    // instantly — no skeleton — then retry the lookup silently
+                    // below (same foreground-retry semantics as before).
+                }
                 let fresh = await fetch()
                 info = fresh
                 // Only cache the day once we actually got a definition. If every
@@ -43,6 +56,12 @@ struct WordOfTheDayView: View {
                 // word (e.g. "Baton") definition-less until midnight.
                 if let def = fresh.definition, !def.isEmpty {
                     fetchedDay = todayIndex
+                    Self.storeCached(fresh, day: todayIndex, resolved: true)
+                } else {
+                    // Store the no-definition fallback too (marked unresolved) so a
+                    // flaky dictionaryapi.dev day doesn't refetch 20 words per visit;
+                    // the resolved flag lets a later visit still try once more.
+                    Self.storeCached(fresh, day: todayIndex, resolved: false)
                 }
             }
         }
@@ -102,6 +121,33 @@ struct WordOfTheDayView: View {
         .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    // MARK: - Day-keyed UserDefaults cache (one dictionary fetch per day)
+
+    private static let cacheKey = "wotdCache.v1"
+
+    /// Returns today's cached word info plus whether the definition lookup had
+    /// actually succeeded (`resolved`). Entries from a previous day are ignored.
+    static func loadCached(day: Int) -> (WordInfo, resolved: Bool)? {
+        guard let dict = UserDefaults.standard.dictionary(forKey: cacheKey),
+              dict["day"] as? Int == day,
+              let word = dict["word"] as? String, !word.isEmpty else { return nil }
+        let info = WordInfo(
+            word: word,
+            phonetic: dict["phonetic"] as? String,
+            partOfSpeech: dict["partOfSpeech"] as? String,
+            definition: dict["definition"] as? String
+        )
+        return (info, dict["resolved"] as? Bool ?? false)
+    }
+
+    static func storeCached(_ info: WordInfo, day: Int, resolved: Bool) {
+        var dict: [String: Any] = ["day": day, "word": info.word, "resolved": resolved]
+        if let p = info.phonetic { dict["phonetic"] = p }
+        if let pos = info.partOfSpeech { dict["partOfSpeech"] = pos }
+        if let d = info.definition { dict["definition"] = d }
+        UserDefaults.standard.set(dict, forKey: cacheKey)
     }
 
     private func fetch() async -> WordInfo {
