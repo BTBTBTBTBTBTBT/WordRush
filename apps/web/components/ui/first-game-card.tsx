@@ -9,9 +9,9 @@ const DISMISS_KEY = 'first-game-card-dismissed';
 
 /**
  * U2: one-time "start here" nudge for brand-new accounts — ten modes is a
- * lot to land on cold. Shown only while the account has zero games
- * (xp === 0 && level <= 1 proxy — flips off after the first recorded game)
- * and until dismissed. Matches the native apps' card.
+ * lot to land on cold. Shown only while the account has zero recorded games
+ * (profiles.total_wins + total_losses, bumped on every recorded game) and
+ * until dismissed. Matches the native apps' card and gate.
  */
 export function FirstGameCard() {
   const { profile } = useAuth();
@@ -19,7 +19,7 @@ export function FirstGameCard() {
     try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; }
   });
 
-  const isNew = !!profile && (profile.xp ?? 0) === 0 && (profile.level ?? 1) <= 1;
+  const isNew = !!profile && ((profile.total_wins ?? 0) + (profile.total_losses ?? 0)) === 0;
   if (!isNew || dismissed) return null;
 
   const dismiss = () => {
