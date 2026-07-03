@@ -4,6 +4,8 @@ import com.wordocious.core.GameMode
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -375,31 +377,54 @@ object GameResultsService {
         bestCorrectLetters: Int? = null,
     ): XpResult? {
         val userId = AuthService.userId ?: return null
-        updateUserStats(userId, gameMode.name, playType, won, guessCount, timeSeconds)
-        // Solo games only: VS matches get their single shared row via
-        // recordVsMatch (designated writer) — writing a player2_id=null row
-        // here too polluted Recent Matches/charts with phantom solo games.
-        if (playType == "solo") {
-            recordSoloMatch(gameMode, won, guessCount, timeSeconds, seed, solutions, guesses, hintsUsed)
+        // The first three writes touch DISJOINT tables and never read each
+        // other's output — user_stats (read-modify-write user_stats),
+        // matches (pure insert), profiles progression (read-modify-write
+        // profiles) — so they run concurrently instead of as three serial
+        // round-trips. Everything BELOW the join reads what these wrote
+        // (streak medals read profiles.daily_login_streak; records/
+        // achievements read the fresh totals) and must stay after.
+        var xp = coroutineScope {
+            val statsJob = async { updateUserStats(userId, gameMode.name, playType, won, guessCount, timeSeconds) }
+            // Solo games only: VS matches get their single shared row via
+            // recordVsMatch (designated writer) — writing a player2_id=null row
+            // here too polluted Recent Matches/charts with phantom solo games.
+            val matchJob = if (playType == "solo") async {
+                recordSoloMatch(gameMode, won, guessCount, timeSeconds, seed, solutions, guesses, hintsUsed)
+            } else null
+            val xpJob = async { updateProfileProgression(userId, won, seed) }
+            statsJob.await()
+            matchJob?.await()
+            xpJob.await()
         }
-        var xp = updateProfileProgression(userId, won, seed)
 
         // Daily extras — web stats-service ordering: daily row first, then
         // medals + the one-shot sweep/flawless bonuses (all idempotent).
         if (isDailySeed(seed) && playType == "solo") {
-            DailyResultsService.recordDailyResult(
-                mode = gameMode, completed = won, guessCount = guessCount,
-                elapsedSeconds = timeSeconds, boardsSolved = boardsSolved,
-                totalBoards = totalBoards, hintsUsed = hintsUsed, seed = seed,
-                stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
-            )
             val today = com.wordocious.app.todayLocalDate()
-            MedalService.awardStreakMedals(userId, today)
-            MedalService.awardPerfectMedal(
-                userId, gameMode.name, today,
-                guessCount = guessCount, boardsSolved = boardsSolved,
-                totalBoards = totalBoards, completed = won,
-            )
+            coroutineScope {
+                // Independent of each other: daily_results row ∥ streak medals
+                // (read profiles — written above, before this scope) ∥ perfect
+                // medal (own idempotent medals row). The sweep/flawless check
+                // below READS today's daily_results, so it stays after the join.
+                val dailyJob = async {
+                    DailyResultsService.recordDailyResult(
+                        mode = gameMode, completed = won, guessCount = guessCount,
+                        elapsedSeconds = timeSeconds, boardsSolved = boardsSolved,
+                        totalBoards = totalBoards, hintsUsed = hintsUsed, seed = seed,
+                        stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
+                    )
+                }
+                val streakJob = async { MedalService.awardStreakMedals(userId, today) }
+                val perfectJob = async {
+                    MedalService.awardPerfectMedal(
+                        userId, gameMode.name, today,
+                        guessCount = guessCount, boardsSolved = boardsSolved,
+                        totalBoards = totalBoards, completed = won,
+                    )
+                }
+                dailyJob.await(); streakJob.await(); perfectJob.await()
+            }
             val (sweep, flawless) = MedalService.awardDailyBonusesIfComplete(userId)
             if (sweep + flawless > 0) {
                 xp = xp?.let {
