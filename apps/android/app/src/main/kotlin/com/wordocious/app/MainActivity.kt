@@ -18,6 +18,7 @@ import com.wordocious.app.ui.MainScreen
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.app.ui.theme.WordociousTheme
 import com.wordocious.core.generateDailySeed
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -33,6 +34,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         com.wordocious.app.data.ThemePref.load()
+        // Warm the ~635KB word-list JSON decode off-main at launch (iOS parity:
+        // RootTabView.init preloads). DictionaryLoader.ensureLoaded() is
+        // idempotent + thread-safe (double-checked locking), so the synchronous
+        // call in GameViewModel stays as a no-op safety fallback.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            com.wordocious.core.DictionaryLoader.ensureLoaded()
+        }
         AuthService.initialize()
         com.wordocious.app.data.StoreManager.start(this)
         // UMP consent -> Mobile Ads init -> preload the game-start interstitial.
