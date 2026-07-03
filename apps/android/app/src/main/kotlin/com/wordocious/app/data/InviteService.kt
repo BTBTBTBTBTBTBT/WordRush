@@ -40,13 +40,24 @@ object InviteService {
     }.getOrElse { emptyList() }
 
     @Serializable
-    private data class NameRow(val username: String? = null)
+    private data class NameIdRow(val id: String, val username: String? = null)
 
-    suspend fun lookupInviterUsername(inviterId: String): String? = runCatching {
-        client.postgrest["profiles"]
-            .select(Columns.raw("username")) { filter { eq("id", inviterId) }; limit(1) }
-            .decodeSingleOrNull<NameRow>()?.username
-    }.getOrNull()
+    /**
+     * Batched inviter-username lookup: ONE profiles query for all inviter ids
+     * (match_invites.inviter_id references auth.users, not profiles, so a
+     * PostgREST embed isn't possible — this mirrors web/iOS). Returns id → username.
+     */
+    suspend fun lookupInviterUsernames(inviterIds: List<String>): Map<String, String> {
+        val ids = inviterIds.distinct()
+        if (ids.isEmpty()) return emptyMap()
+        return runCatching {
+            client.postgrest["profiles"]
+                .select(Columns.raw("id,username")) { filter { isIn("id", ids) } }
+                .decodeList<NameIdRow>()
+                .mapNotNull { row -> row.username?.let { row.id to it } }
+                .toMap()
+        }.getOrElse { emptyMap() }
+    }
 
     suspend fun markInviteDeclined(inviteId: String) {
         runCatching {

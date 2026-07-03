@@ -504,14 +504,13 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
     var invites by remember {
         mutableStateOf<List<com.wordocious.app.data.InviteService.MatchInvite>>(emptyList())
     }
-    var inviterName by remember { mutableStateOf<String?>(null) }
+    var inviterNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     androidx.compose.runtime.LaunchedEffect(userId) {
         if (userId == null) return@LaunchedEffect
         val list = com.wordocious.app.data.InviteService.fetchPendingInvitesForUser(userId)
         invites = list
-        list.firstOrNull()?.let {
-            inviterName = com.wordocious.app.data.InviteService.lookupInviterUsername(it.inviterId)
-        }
+        // One batched profiles query for every inviter (not one per invite).
+        inviterNames = com.wordocious.app.data.InviteService.lookupInviterUsernames(list.map { it.inviterId })
     }
     val top = invites.firstOrNull() ?: return
     val scope = androidx.compose.runtime.rememberCoroutineScope()
@@ -534,7 +533,7 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(
-                "@${inviterName ?: "A friend"} invited you to $modeTitle",
+                "@${inviterNames[top.inviterId] ?: "A friend"} invited you to $modeTitle",
                 fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
@@ -563,9 +562,7 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
                     scope.launch {
                         com.wordocious.app.data.InviteService.markInviteDeclined(top.id)
                         invites = invites.filter { it.id != top.id }
-                        invites.firstOrNull()?.let {
-                            inviterName = com.wordocious.app.data.InviteService.lookupInviterUsername(it.inviterId)
-                        }
+                        // Next inviter's name is already in the batched map — no extra query.
                     }
                 },
             contentAlignment = Alignment.Center,
