@@ -247,140 +247,111 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // ── Solo/VS toggle (web profile/page.tsx §D) ────────────────
         item { SoloVsToggle(activeTab) { activeTab = it } }
 
-        // VS RECORD summary card (VS tab only) — aggregated across all modes.
-        if (activeTab == "vs") {
-            item { VsRecordCard(stats) }
-            // Rivalries — most-faced opponents with head-to-head bars (Pro),
-            // only once there's an actual VS record (web parity).
-            val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
-            if (vsTotal > 0) {
-                item { RivalriesCard(isPro = isProActive, onGoPro = onGoPro) }
+        // Tab-specific summary cards (VS record / Rivalries / CPU record) —
+        // F1: fade+rise on each Solo/VS/VS CPU swap instead of snapping. One
+        // AnimatedContent item keyed on activeTab drives the transition.
+        item {
+            SwapFade(targetState = activeTab) { tab ->
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (tab == "vs") {
+                        VsRecordCard(stats)
+                        // Rivalries — most-faced opponents with head-to-head bars
+                        // (Pro), only once there's an actual VS record (web parity).
+                        val vsTotal = stats.filter { it.playType == "vs" }.sumOf { it.wins + it.losses }
+                        if (vsTotal > 0) RivalriesCard(isPro = isProActive, onGoPro = onGoPro)
+                    }
+                    if (tab == "vs_cpu") CpuRecordCard(stats)
+                }
             }
-        }
-        if (activeTab == "vs_cpu") {
-            item { CpuRecordCard(stats) }
         }
 
         // ── Dashboard: per-mode picker + charts ────────────────────
+        // The mode picker itself does NOT re-animate (web/iOS parity); only the
+        // content below it fades on swap.
         item {
             val filtered = stats.filter { it.playType == activeTab }
             val gamesPerMode = filtered.groupBy { it.gameMode }.mapValues { (_, rows) -> rows.sumOf { it.totalGames } }
             ProfileModePicker(selected = selectedMode, gamesPerMode = gamesPerMode, onSelect = { selectedMode = it })
         }
-        if (selectedMode == null) {
-            // ── "All" global view — web Trends order (restat R1): activity
-            // calendar → last-7 → guess dist → solve time → daily points → top
-            // words → Opener Lab → Weekday Form → Insights → Pro Stats → Radar.
-            // CPU practice records totals only — the per-game charts below draw
-            // from match rows that CPU games never write (restat B1).
-            if (activeTab == "vs_cpu") {
-                item {
-                    Text(
-                        "CPU practice records totals only — charts track Solo and VS matches.",
-                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
-            if (activityCal.any { it.played > 0 }) {
-                item { DailyCalendarCard(activityCal) }
-            }
-            if (activity7.isNotEmpty()) {
-                item { ActivityCard(activity7) }
-            }
-            // All view hides empty charts (web profile/page.tsx gates on data).
-            if (guessDist.any { it.count > 0 }) {
-                item { GuessDistributionCard(guessDist) }
-            }
-            if (solveTimes.size >= 2) {
-                item { SolveTimeCard(solveTimes) }
-            }
-            // Daily points trend (sweep/flawless days marked). The sweep COUNTS
-            // card moved to Records → You — trend vs record split.
-            item { DailyPointsChartCard(sweepPoints) }
-            if (topWords.isNotEmpty()) {
-                item { TopWordsCard(topWords) }
-            }
-            // Opener Lab (basic): favorite starting words + how they convert.
-            item { OpenerLabCard(playType = activeTab) }
-            // Weekday form: your best day of the week.
-            item { WeekdayFormCard(playType = activeTab) }
-            // Insights — up to two derived one-liners (web `insights` IIFE).
-            val insights = profileInsights(stats, activity7, profile, todayDailies)
-            if (insights.isNotEmpty()) {
-                item { InsightsCard(insights) }
-            }
-            // Pro Stats (global view; SOLO rows only, web pro-stats.tsx parity).
-            if (!isProActive || stats.isNotEmpty()) {
-                item { ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro) }
-            }
-            // Skill Radar — the five-axis signature chart (Pro).
-            item { SkillRadarCard(isPro = isProActive, onGoPro = onGoPro) }
-        } else {
-            // ── Mode-detail view (web mode-detail-panel.tsx) — header row with
-            // a READ-ONLY play-type chip (the page-level toggle drives it; the
-            // panel has no toggle of its own), then stats + charts + insights.
-            val m = selectedMode!!
-            item { ModeDetailHeader(m, activeTab) }
-            val tabStats = stats.filter { it.playType == activeTab && it.gameMode == m }
-            if (tabStats.isEmpty()) {
-                item {
-                    Box(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(24.dp),
-                        Alignment.Center,
-                    ) {
-                        Text(
-                            "No ${if (activeTab == "solo") "solo" else if (activeTab == "vs") "VS" else "VS CPU"} games played in this mode yet",
-                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                        )
+        // F1: dashboard content eases in on mode / play-type swap. One
+        // AnimatedContent item keyed on (activeTab, selectedMode).
+        item {
+            SwapFade(targetState = activeTab to selectedMode) { (tab, mode) ->
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (mode == null) {
+                        // ── "All" global view — web Trends order (restat R1).
+                        // CPU practice records totals only — per-game charts draw
+                        // from match rows CPU games never write (restat B1).
+                        if (tab == "vs_cpu") {
+                            Text(
+                                "CPU practice records totals only — charts track Solo and VS matches.",
+                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                        if (activityCal.any { it.played > 0 }) DailyCalendarCard(activityCal)
+                        if (activity7.isNotEmpty()) ActivityCard(activity7)
+                        // All view hides empty charts (web gates on data).
+                        if (guessDist.any { it.count > 0 }) GuessDistributionCard(guessDist)
+                        if (solveTimes.size >= 2) SolveTimeCard(solveTimes)
+                        // Daily points trend (sweep/flawless days marked).
+                        DailyPointsChartCard(sweepPoints)
+                        if (topWords.isNotEmpty()) TopWordsCard(topWords)
+                        // Opener Lab (basic): favorite starting words + conversion.
+                        OpenerLabCard(playType = tab)
+                        // Weekday form: your best day of the week.
+                        WeekdayFormCard(playType = tab)
+                        // Insights — up to two derived one-liners.
+                        val insights = profileInsights(stats, activity7, profile, todayDailies)
+                        if (insights.isNotEmpty()) InsightsCard(insights)
+                        // Pro Stats (global view; SOLO rows only).
+                        if (!isProActive || stats.isNotEmpty()) {
+                            ProStatsCard(stats.filter { it.playType == "solo" }, isProActive, onGoPro)
+                        }
+                        // Skill Radar — the five-axis signature chart (Pro).
+                        SkillRadarCard(isPro = isProActive, onGoPro = onGoPro)
+                    } else {
+                        // ── Mode-detail view (web mode-detail-panel.tsx). ──
+                        ModeDetailHeader(mode, tab)
+                        val tabStats = stats.filter { it.playType == tab && it.gameMode == mode }
+                        if (tabStats.isEmpty()) {
+                            Box(
+                                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(24.dp),
+                                Alignment.Center,
+                            ) {
+                                Text(
+                                    "No ${if (tab == "solo") "solo" else if (tab == "vs") "VS" else "VS CPU"} games played in this mode yet",
+                                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                                )
+                            }
+                        } else {
+                            ModeStatsGrid(tabStats, modeStreaks[mode])
+                        }
+                        // Gauntlet: 50 guesses across 21 boards — histogram meaningless.
+                        if (mode != "GAUNTLET") GuessDistributionCard(guessDist)
+                        if (solveTimes.size >= 2) SolveTimeCard(solveTimes)
+                        if (topWords.isNotEmpty()) TopWordsCard(topWords)
+                        // WHEN YOU PLAY (time-of-day) — standalone here (Android extra).
+                        if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
+                        // Per-mode Pro Insights — self-gates.
+                        if (!isProActive || proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
+                            ProInsightsCard(proInsights, isProActive, onGoPro)
+                        }
+                        // Deep Insights (restat R4). Hidden on vs_cpu (restat B1).
+                        if (tab != "vs_cpu") {
+                            val accent = runCatching { modeAccent(GameMode.valueOf(mode)) }.getOrDefault(WTheme.primary)
+                            ProDeepModeCard(gameMode = mode, isPro = isProActive, accent = accent, onGoPro = onGoPro, playType = tab)
+                        } else {
+                            Text(
+                                "CPU practice records totals only — per-game charts track Solo and VS matches.",
+                                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
-                }
-            } else {
-                item { ModeStatsGrid(tabStats, modeStreaks[m]) }
-            }
-            // Gauntlet: up to 50 guesses across 21 boards — histogram meaningless.
-            // These charts keep their own empty copy in the mode view (web
-            // GuessDistribution/SolveTimeChart components).
-            if (m != "GAUNTLET") {
-                item { GuessDistributionCard(guessDist) }
-            }
-            if (solveTimes.size >= 2) {
-                item { SolveTimeCard(solveTimes) }
-            }
-            if (topWords.isNotEmpty()) {
-                item { TopWordsCard(topWords) }
-            }
-            // WHEN YOU PLAY (time-of-day) — on web it lives inside the per-mode
-            // ProInsights card; standalone here (Android extra, kept).
-            if (timeOfDay.any { it.played > 0 }) {
-                item { WhenYouPlayCard(timeOfDay) }
-            }
-            // Per-mode Pro Insights — self-gates: locked teaser for free users;
-            // a Pro user with no data sees NOTHING here (web returns null).
-            item {
-                if (!isProActive || proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
-                    ProInsightsCard(proInsights, isProActive, onGoPro)
-                }
-            }
-            // Deep Insights (restat R4): opener yield, position accuracy, stage
-            // breakdown (Gauntlet), hints, Word Almanac. Pro-gated w/ preview.
-            // Hidden entirely on vs_cpu — no per-game rows exist for CPU
-            // practice; the "totals only" note below explains why (restat B1).
-            if (activeTab != "vs_cpu") {
-                item {
-                    val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
-                    ProDeepModeCard(gameMode = m, isPro = isProActive, accent = accent, onGoPro = onGoPro, playType = activeTab)
-                }
-            } else {
-                item {
-                    Text(
-                        "CPU practice records totals only — per-game charts track Solo and VS matches.",
-                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        textAlign = TextAlign.Center,
-                    )
                 }
             }
         }
@@ -530,7 +501,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
             Row(
                 modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
                     .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                    .clickableNoRipple(onEditProfile).padding(horizontal = 12.dp, vertical = 6.dp),
+                    .pressScale { onEditProfile() }.padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Icon(Icons.Filled.Edit, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
@@ -539,7 +510,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
             Row(
                 modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
                     .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                    .clickableNoRipple(onShare).padding(horizontal = 12.dp, vertical = 6.dp),
+                    .pressScale { onShare() }.padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Icon(Icons.Filled.Share, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
@@ -1175,7 +1146,7 @@ private fun SoloVsToggle(active: String, onSelect: (String) -> Unit) {
                 Modifier.clip(RoundedCornerShape(12.dp))
                     .background(if (isActive) WTheme.surface else WTheme.surfaceHover)
                     .border(1.5.dp, if (isActive) Color(0xFF7C3AED) else WTheme.border, RoundedCornerShape(12.dp))
-                    .clickableNoRipple { onSelect(key) }
+                    .pressScale { onSelect(key) }
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1290,7 +1261,7 @@ private fun ModeChip(label: String, modeId: String?, accent: Color, count: Int, 
         Modifier.width(56.dp).clip(RoundedCornerShape(12.dp))
             .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
             .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
-            .clickableNoRipple(onClick).padding(horizontal = 6.dp, vertical = 4.dp),
+            .pressScale { onClick() }.padding(horizontal = 6.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {

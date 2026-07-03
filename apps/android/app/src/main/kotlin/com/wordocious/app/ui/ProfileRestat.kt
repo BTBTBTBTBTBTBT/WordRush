@@ -74,10 +74,11 @@ fun SnapshotHero(
     val winRate = if (totalGames > 0) Math.round(totalWins.toFloat() / totalGames * 100) else 0
     KitCard {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            StatCell(Icons.Filled.EmojiEvents, "Wins", "$totalWins", color = Color(0xFF7C3AED), modifier = Modifier.weight(1f))
-            StatCell(Icons.Filled.TrackChanges, "Win Rate", "$winRate%", color = Color(0xFF2563EB), modifier = Modifier.weight(1f))
-            StatCell(Icons.Filled.Bolt, "Streak", "$currentStreak", sub = "Best: $bestStreak", color = WTheme.primary, modifier = Modifier.weight(1f))
-            StatCell(Icons.Filled.LocalFireDepartment, "Daily", "$dailyStreak", sub = "Best: $bestDailyStreak", color = Color(0xFFF97316), modifier = Modifier.weight(1f))
+            // F4: marquee numbers count up from 0 on first appear (Win Rate keeps "%").
+            StatCell(Icons.Filled.EmojiEvents, "Wins", "$totalWins", color = Color(0xFF7C3AED), modifier = Modifier.weight(1f), countUp = totalWins)
+            StatCell(Icons.Filled.TrackChanges, "Win Rate", "$winRate%", color = Color(0xFF2563EB), modifier = Modifier.weight(1f), countUp = winRate, countSuffix = "%")
+            StatCell(Icons.Filled.Bolt, "Streak", "$currentStreak", sub = "Best: $bestStreak", color = WTheme.primary, modifier = Modifier.weight(1f), countUp = currentStreak)
+            StatCell(Icons.Filled.LocalFireDepartment, "Daily", "$dailyStreak", sub = "Best: $bestDailyStreak", color = Color(0xFFF97316), modifier = Modifier.weight(1f), countUp = dailyStreak)
         }
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))

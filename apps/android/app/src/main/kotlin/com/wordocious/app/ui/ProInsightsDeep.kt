@@ -81,6 +81,15 @@ private fun RadarChart(data: StatsDeepService.SkillRadarData) {
     val measurer = rememberTextMeasurer()
     val labelStyle = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = labelColor)
 
+    // F4: the value shape grows out from the center (0→1) on first appear.
+    var appeared by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { appeared = true }
+    val draw by androidx.compose.animation.core.animateFloatAsState(
+        if (appeared || WTheme.reducedMotion) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(if (WTheme.reducedMotion) 0 else 600),
+        label = "radarDraw",
+    )
+
     Canvas(Modifier.fillMaxWidth().height(240.dp).padding(horizontal = 8.dp)) {
         val r = 84.dp.toPx()
         val cx = size.width / 2f
@@ -103,8 +112,8 @@ private fun RadarChart(data: StatsDeepService.SkillRadarData) {
         for (i in 0 until 5) {
             drawLine(border, Offset(cx, cy), pt(i, r), strokeWidth = 1.dp.toPx())
         }
-        // Value shape.
-        val shape = poly { i -> r * maxOf(0.04f, values[i] / 100f) }
+        // Value shape (F4: radii scaled by the 0→1 draw factor so it grows out).
+        val shape = poly { i -> r * maxOf(0.04f, values[i] / 100f) * draw }
         drawPath(shape, primary.copy(alpha = 0.2f))
         drawPath(shape, primary, style = Stroke(width = 2.dp.toPx(), join = StrokeJoin.Round))
         // Edge-aware labels at R+16.
@@ -131,6 +140,8 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
     // Locked preview uses the web's static sample so free users see the shape.
     val d = if (isPro) data else StatsDeepService.SkillRadarData(62, 74, 55, 40, 68)
     if (d == null) return
+    // F3: fade+rise when the fetch lands (static sample for free users → instant).
+    AsyncEntrance(visible = true) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Skill Radar", accent = WTheme.primary)
         val card: @Composable () -> Unit = {
@@ -144,6 +155,7 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
             }
         }
         if (isPro) card() else ProLockOverlay("Unlock Skill Radar with Pro", onGoPro) { card() }
+    }
     }
 }
 
@@ -161,6 +173,9 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
         StatsDeepService.Rivalry("2", "LexiconLou", 1, 3, 1, 5),
     )
     if (isPro && display.isEmpty()) return
+    // F3: fade+rise when the fetch lands (row-count gate means this only renders
+    // once rows exist, so the entrance runs on first appear).
+    AsyncEntrance(visible = true) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Rivalries", accent = Color(0xFFEC4899))
         val card: @Composable () -> Unit = {
@@ -171,6 +186,7 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
             }
         }
         if (isPro) card() else ProLockOverlay("Unlock Rivalries with Pro", onGoPro) { card() }
+    }
     }
 }
 
@@ -248,6 +264,8 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
     if (playType == "vs_cpu") return
     val d = if (isPro) data else DEEP_SAMPLE
     if (d == null || !d.hasAny) return
+    // F3: fade+rise when the fetch lands (only renders once data has rows).
+    AsyncEntrance(visible = true) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Deep Insights", accent = accent)
         val inner: @Composable () -> Unit = {
@@ -260,6 +278,7 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
             }
         }
         if (isPro) inner() else ProLockOverlay("Unlock Deep Insights with Pro", onGoPro) { inner() }
+    }
     }
 }
 
