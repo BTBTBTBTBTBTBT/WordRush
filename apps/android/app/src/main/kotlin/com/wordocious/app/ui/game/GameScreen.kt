@@ -353,7 +353,12 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         val playedToday = com.wordocious.app.data.DailyCompletionsService.readCache().containsKey(mode.name) ||
             com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions().containsKey(mode.name)
         if (!playedToday) return@LaunchedEffect
-        val row = com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) ?: return@LaunchedEffect
+        // G6: the recorded row is usually already warmed in-session (prefetched
+        // when DailyCompletionsService saw this mode played today) — instant
+        // replay, no empty-board flash. Miss → network fetch, unchanged.
+        val row = com.wordocious.app.data.GameResultsService.prefetchedDailyMatch(seed)
+            ?: com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed)
+            ?: return@LaunchedEffect
         // Gauntlet: rebuild the finished run from the persisted per-stage
         // breakdown. player1_guesses only holds the FINAL stage, so the generic
         // guess-replay below can't reconstruct the earlier stages — gauntlet_stages

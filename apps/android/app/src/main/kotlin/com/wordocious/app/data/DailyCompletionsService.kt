@@ -3,6 +3,7 @@ package com.wordocious.app.data
 import com.wordocious.app.todayLocalDate
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -85,9 +86,23 @@ object DailyCompletionsService {
             val merged = map.toMutableMap()
             for ((k, v) in readCache()) if (k !in merged) merged[k] = v
             writeCache(merged)
+            // G6: fire-and-forget AFTER the completions map is ready (never
+            // delays the return/publication) — warm the recorded-match row for
+            // every daily already played today, so opening one on this device
+            // replays instantly instead of flashing an empty board while
+            // GameScreen's network fetch runs. Idempotent per seed per session.
+            prefetchScope.launch {
+                for (modeName in merged.keys) {
+                    GameResultsService.prefetchRecordedDailyMatch(com.wordocious.app.todayLocalSeed(modeName))
+                }
+            }
             merged
         }.getOrElse { readCache() }   // transient failure → keep cached state
     }
+
+    private val prefetchScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO
+    )
 
     // ── Day-keyed cache (web sessionStorage parity) — seeds the home grid's
     // first render so cold launches don't flash unbadged cards while the
@@ -120,6 +135,8 @@ object DailyCompletionsService {
      *  different account) never seeds the home grid from the prior user's data. */
     fun clearCache() {
         runCatching { prefs.edit().remove(CACHE_KEY).remove(CACHE_DAY_KEY).apply() }
+        // Prefetched replay rows are per-user too — never leak across accounts.
+        GameResultsService.clearPrefetchedDailyMatches()
     }
 
     private fun writeCache(map: Map<String, Completion>) {

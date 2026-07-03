@@ -151,6 +151,34 @@ object GameResultsService {
         @SerialName("winner_id") val winnerId: String? = null,
     )
 
+    // ── G6: session prefetch of recorded daily matches ────────────────────────────
+    // When DailyCompletionsService learns a daily was already played today (e.g.
+    // on another device), it warms the recorded matches row here so GameScreen's
+    // replay path finds it instantly instead of showing an empty board for the
+    // 200-500ms network fetch. Pure cache: GameScreen falls back to the network
+    // fetch unchanged on a miss, and a recorded daily row never changes for a
+    // given seed (one play per day), so serving the cached copy is exact.
+    private val prefetchedMatches = java.util.concurrent.ConcurrentHashMap<String, RecordedDailyMatch>()
+    private val prefetchRequested: MutableSet<String> =
+        java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
+
+    /** Cached recorded-match row for [seed], if the prefetch already landed. */
+    fun prefetchedDailyMatch(seed: String): RecordedDailyMatch? = prefetchedMatches[seed]
+
+    /** Warm the recorded-match row for [seed] (idempotent; retries on failure). */
+    suspend fun prefetchRecordedDailyMatch(seed: String) {
+        if (!prefetchRequested.add(seed)) return
+        val row = fetchRecordedDailyMatch(seed)
+        if (row != null) prefetchedMatches[seed] = row
+        else prefetchRequested.remove(seed) // fetch failed/none yet — allow a later retry
+    }
+
+    /** Drop prefetched rows — called on sign-out (rows are per-user). */
+    fun clearPrefetchedDailyMatches() {
+        prefetchedMatches.clear()
+        prefetchRequested.clear()
+    }
+
     /** Newest `matches` row this user recorded for [seed] (null if none / signed out). */
     suspend fun fetchRecordedDailyMatch(seed: String): RecordedDailyMatch? {
         val uid = AuthService.userId ?: return null
