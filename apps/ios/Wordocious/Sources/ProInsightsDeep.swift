@@ -65,6 +65,8 @@ private struct RadarChartView: View {
     let data: StatsDeepService.SkillRadarData
     private let radius: CGFloat = 84
     private let axes = ["Speed", "Accuracy", "Consistency", "Endurance", "Versatility"]
+    // F4: the shape grows out from the center (0→1) on first appear.
+    @State private var draw: CGFloat = 0
 
     private var values: [Int] {
         [data.speed, data.accuracy, data.consistency, data.endurance, data.versatility]
@@ -80,9 +82,9 @@ private struct RadarChartView: View {
                         RadarRing(fraction: f, radius: radius).stroke(Theme.border, lineWidth: 1)
                     }
                     RadarSpokes(radius: radius).stroke(Theme.border, lineWidth: 1)
-                    RadarShape(values: values.map { Double($0) / 100 }, radius: radius)
+                    RadarShape(values: values.map { Double($0) / 100 * Double(draw) }, radius: radius)
                         .fill(Theme.primary.opacity(0.2))
-                    RadarShape(values: values.map { Double($0) / 100 }, radius: radius)
+                    RadarShape(values: values.map { Double($0) / 100 * Double(draw) }, radius: radius)
                         .stroke(Theme.primary, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
                 }
                 .offset(y: 8)   // web cy = H/2 + 8
@@ -108,6 +110,10 @@ private struct RadarChartView: View {
             }
         }
         .frame(height: 240)
+        .onAppear {
+            guard !Theme.reduceMotion else { draw = 1; return }
+            withAnimation(.easeOut(duration: 0.6)) { draw = 1 }
+        }
     }
 }
 
@@ -181,6 +187,7 @@ struct RivalriesCard: View {
                         ProLockOverlay(label: "Unlock Rivalries with Pro") { card }
                     }
                 }
+                .asyncEntrance(rows.count)   // F3: fade+rise when the fetch lands
             }
         }
         .task(id: isPro) { if isPro { rows = await StatsDeepService.rivalries(limit: 5) } }

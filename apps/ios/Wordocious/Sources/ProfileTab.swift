@@ -114,15 +114,23 @@ struct ProfileTab: View {
                 SnapshotHero(profile: p, gamesThisWeek: gamesThisWeek, isPro: auth.isProActive)
                 DailyStandingStrip(reloadToken: reloadToken)
                 soloVsToggle
-                if activeTab == "vs" {
-                    vsRecordCard
-                    // Rivalries — most-faced opponents with head-to-head bars (Pro).
-                    if UserStatsService.vsRecord(statRows).total > 0 {
-                        RivalriesCard(isPro: auth.isProActive)
+                // F1: the tab-specific cards fade+rise on each Solo/VS/VS CPU
+                // swap (.id change → .transition) instead of snapping in.
+                Group {
+                    if activeTab == "vs" {
+                        vsRecordCard
+                        // Rivalries — most-faced opponents with head-to-head bars (Pro).
+                        if UserStatsService.vsRecord(statRows).total > 0 {
+                            RivalriesCard(isPro: auth.isProActive)
+                        }
                     }
+                    if activeTab == "vs_cpu" { cpuRecordCard }
                 }
-                if activeTab == "vs_cpu" { cpuRecordCard }
+                .id("tabcards-\(activeTab)")
+                .transition(.opacity.combined(with: .offset(y: 6)))
                 ProfileModePicker(modes: dailyModes, games: UserStatsService.gamesPerMode(filteredStats), selected: $selectedMode)
+                // F1: dashboard content eases in on mode / play-type swap.
+                Group {
                 if let mode = selectedMode {
                     // Mode-detail view — header row carries the read-only
                     // play-type chip (the page-level toggle drives it; the panel
@@ -157,6 +165,9 @@ struct ProfileTab: View {
                     ProStatsCard(statRows: statRows)
                     SkillRadarCard(isPro: auth.isProActive)
                 }
+                }
+                .id("dash-\(activeTab)-\(selectedMode?.rawValue ?? "all")")
+                .transition(.opacity.combined(with: .offset(y: 6)))
                 // Progression: medals + achievements under one banner, shown in
                 // BOTH the All and per-mode views (web parity).
                 SectionHeader("Progression", accent: Color(hex: 0xF59E0B))
@@ -169,6 +180,9 @@ struct ProfileTab: View {
             // custom bottom nav and stays tappable (Account actions live in
             // Settings now, not here).
             .padding(.bottom, 72)
+            // F1: drives the .id-swap transitions on the tab cards + dashboard.
+            .animation(Theme.animation(.easeOut(duration: 0.22)), value: activeTab)
+            .animation(Theme.animation(.easeOut(duration: 0.22)), value: selectedMode)
         }
     }
 
@@ -322,6 +336,7 @@ struct ProfileTab: View {
                     .background(Capsule().fill(Theme.surfaceHover))
                     .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
             }
+            .buttonStyle(PressableStyle())
             .padding(.top, 2)
             .sheet(isPresented: $showEditProfile) { EditProfileView() }
             Button {
@@ -340,6 +355,7 @@ struct ProfileTab: View {
                     .background(Capsule().fill(Theme.surfaceHover))
                     .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
             }
+            .buttonStyle(PressableStyle())
             .padding(.top, 2)
             socialLinksRow()
             if !auth.isProActive {
@@ -699,7 +715,7 @@ struct ProfileTab: View {
                     .padding(.horizontal, 14).padding(.vertical, 8)
                     .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surface : Theme.surfaceHover))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
-                }.buttonStyle(.plain)
+                }.buttonStyle(PressableStyle())
             }
             Spacer()
         }
@@ -874,7 +890,7 @@ private struct ProfileModePicker: View {
             .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Theme.primary : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        }.buttonStyle(PressableStyle())
     }
 
     private func modeChip(_ m: HomeMode) -> some View {
@@ -893,7 +909,7 @@ private struct ProfileModePicker: View {
             .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        }.buttonStyle(PressableStyle())
     }
 }
 

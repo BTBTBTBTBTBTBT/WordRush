@@ -67,6 +67,10 @@ struct StatCell: View {
     let value: String
     var sub: String? = nil
     var color: Color? = nil
+    /// When set, the big value counts up from 0 on appear (F4). `value` stays
+    /// the fallback for Reduced Motion / non-integer cells.
+    var countUp: Int? = nil
+    var countSuffix: String = ""
 
     var body: some View {
         VStack(spacing: 2) {
@@ -74,8 +78,13 @@ struct StatCell: View {
                 Image(systemName: icon).font(.system(size: 16))
                     .foregroundStyle(color ?? Theme.textMuted)
             }
-            Text(value).font(Brand.font(18, .black))
-                .foregroundStyle(icon == nil ? (color ?? Theme.textPrimary) : Theme.textPrimary)
+            if let n = countUp {
+                CountUpNumber(value: n, suffix: countSuffix, font: Brand.font(18, .black),
+                              color: icon == nil ? (color ?? Theme.textPrimary) : Theme.textPrimary)
+            } else {
+                Text(value).font(Brand.font(18, .black))
+                    .foregroundStyle(icon == nil ? (color ?? Theme.textPrimary) : Theme.textPrimary)
+            }
             Text(label.uppercased()).font(Brand.font(9, .bold)).tracking(0.4)
                 .foregroundStyle(Theme.textMuted)
             // Always reserve the sub line so grids of cells stay equal-height.
@@ -171,5 +180,58 @@ struct ProLockOverlay<Content: View>: View {
             .buttonStyle(.plain)
         }
         .sheet(isPresented: $showPro) { ProView() }
+    }
+}
+
+/// Tactile press feedback (F2): a subtle scale-down + light haptic on touch,
+/// so profile buttons/chips feel responsive like the game keyboard. Reusable
+/// across the app via `.buttonStyle(PressableStyle())`.
+struct PressableStyle: ButtonStyle {
+    var scale: CGFloat = 0.96
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1)
+            .animation(Theme.animation(.easeOut(duration: 0.12)), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { pressed in
+                if pressed { Haptics.tap() }
+            }
+    }
+}
+
+/// A number that counts up from 0 to `value` on first appear (F4). For the
+/// marquee profile stats — respects Reduced Motion (snaps to final).
+struct CountUpNumber: View {
+    let value: Int
+    var suffix: String = ""
+    var font: Font
+    var color: Color
+    @State private var shown = 0
+
+    var body: some View {
+        Text("\(shown)\(suffix)")
+            .font(font).foregroundStyle(color)
+            .monospacedDigit()
+            .onAppear {
+                guard !Theme.reduceMotion, value > 0 else { shown = value; return }
+                let steps = min(value, 24)
+                let stepDur = 0.5 / Double(steps)
+                for i in 1...steps {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + stepDur * Double(i)) {
+                        shown = Int((Double(value) * Double(i) / Double(steps)).rounded())
+                    }
+                }
+            }
+            .onChange(of: value) { shown = $0 }   // toggle/refresh → snap, no re-count
+    }
+}
+
+/// F3: fades + rises a self-fetching card in the moment its data lands, instead
+/// of popping. Drive with a token that changes when loading completes (e.g.
+/// `loaded` bool or row count). Reserves nothing — pair with a min-height
+/// placeholder where layout shift matters.
+extension View {
+    func asyncEntrance(_ token: some Equatable) -> some View {
+        self.transition(.opacity.combined(with: .offset(y: 8)))
+            .animation(Theme.animation(.easeOut(duration: 0.3)), value: token)
     }
 }
