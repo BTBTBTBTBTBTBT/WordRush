@@ -51,8 +51,11 @@ final class LeaderboardCache {
     private var store: [String: Snapshot] = [:]
     private init() {}
 
-    static func key(mode: GameMode, userId: String?) -> String {
-        "\(mode.rawValue):\(LeaderboardService.todayLocal()):\(userId ?? "anon")"
+    static func key(mode: GameMode, userId: String?, playType: String = "solo") -> String {
+        // playType defaults to "solo" so the daily-leaderboard call sites keep
+        // compiling unchanged; Records passes its Solo|VS toggle value so the
+        // two play types never overwrite each other's snapshot.
+        "\(mode.rawValue):\(LeaderboardService.todayLocal()):\(userId ?? "anon"):\(playType)"
     }
 
     subscript(key: String) -> Snapshot? {

@@ -332,10 +332,40 @@ struct DailyRecordsView: View {
     }
 
     private func load() async {
-        loading = true
-        entries = (try? await LeaderboardService.fetch(gameMode: mode, playType: playType)) ?? []
-        if let uid = auth.profile?.id { userRank = await LeaderboardService.userRank(gameMode: mode, userId: uid, playType: playType) }
+        // P3: same L1/L2/L3 treatment as LeaderboardTab.load() —
+        // stale-while-revalidate cache paint, rows painted the moment the
+        // fetch lands (rank banner fills in after), index fast-path rank.
+        let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id, playType: playType)
+        if let cached = LeaderboardCache.shared[cacheKey] {
+            entries = cached.entries
+            userRank = cached.userRank
+            loading = false
+        } else {
+            loading = true
+            userRank = nil
+            entries = []
+        }
+
+        let fetchedOpt = try? await LeaderboardService.fetch(gameMode: mode, playType: playType)
+        // .task(id:) cancels on mode/playType switch — bail before assigning
+        // so a slow prior response can't overwrite the new selection's rows.
+        guard !Task.isCancelled else { return }
+        // Network error (nil, not an empty day): keep whatever is showing and
+        // never cache the failure.
+        guard let fetched = fetchedOpt else { loading = false; return }
+        entries = fetched
         loading = false
+
+        var rank: (rank: Int, total: Int)? = nil
+        if let uid = auth.profile?.id {
+            rank = await LeaderboardService.userRank(gameMode: mode, userId: uid, playType: playType, topEntries: fetched)
+            guard !Task.isCancelled else { return }
+            userRank = rank
+        }
+        // Records never shows playerCount — preserve any value the daily
+        // leaderboard tab cached under the same (solo) key rather than zeroing it.
+        let pc = LeaderboardCache.shared[cacheKey]?.playerCount ?? 0
+        LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: pc, userRank: rank)
     }
 }
 
