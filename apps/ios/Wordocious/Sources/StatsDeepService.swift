@@ -197,9 +197,14 @@ enum StatsDeepService {
     }
 
     /// Info yield of each starting word — avg greens/yellows on guess 1.
-    static func openerDeep(gameMode: String, limit: Int = 5, playType: String = "solo") async -> [OpenerDeepStat] {
+    /// `rows` (P4): pass pre-fetched guess rows to skip the shared 400-row
+    /// query when a caller fetches once for several sections; nil = self-fetch.
+    static func openerDeep(gameMode: String, limit: Int = 5, playType: String = "solo",
+                           rows providedRows: [GuessRow]? = nil) async -> [OpenerDeepStat] {
         if playType == "vs_cpu" { return [] }
-        let rows = await myGuessRows(gameMode: gameMode, playType: playType)
+        let rows: [GuessRow]
+        if let providedRows { rows = providedRows }
+        else { rows = await myGuessRows(gameMode: gameMode, playType: playType) }
         var map: [String: (count: Int, greens: Int, yellows: Int, wins: Int)] = [:]
         for r in rows {
             guard let first = r.guesses.first, let sol = r.solutions.first,
@@ -232,9 +237,13 @@ enum StatsDeepService {
     }
 
     /// How often each letter slot comes up green across all guesses.
-    static func positionAccuracy(gameMode: String, playType: String = "solo") async -> PositionAccuracy? {
+    /// `rows` (P4): optional pre-fetched guess rows — see openerDeep.
+    static func positionAccuracy(gameMode: String, playType: String = "solo",
+                                 rows providedRows: [GuessRow]? = nil) async -> PositionAccuracy? {
         if playType == "vs_cpu" { return nil }
-        let rows = await myGuessRows(gameMode: gameMode, playType: playType)
+        let rows: [GuessRow]
+        if let providedRows { rows = providedRows }
+        else { rows = await myGuessRows(gameMode: gameMode, playType: playType) }
         guard let firstSolution = rows.first?.solutions.first else { return nil }
         let wordLength = firstSolution.count
         var correct = [Int](repeating: 0, count: wordLength)
@@ -265,9 +274,14 @@ enum StatsDeepService {
     }
 
     /// Recent solutions faced (first board), with result + pace.
-    static func wordAlmanac(gameMode: String, limit: Int = 24, playType: String = "solo") async -> [AlmanacEntry] {
+    /// `rows` (P4): optional pre-fetched guess rows (callers pass a
+    /// prefix(limit) slice of the same-ordered shared query) — see openerDeep.
+    static func wordAlmanac(gameMode: String, limit: Int = 24, playType: String = "solo",
+                            rows providedRows: [GuessRow]? = nil) async -> [AlmanacEntry] {
         if playType == "vs_cpu" { return [] }
-        let rows = await myGuessRows(gameMode: gameMode, limit: limit, playType: playType)
+        let rows: [GuessRow]
+        if let providedRows { rows = providedRows }
+        else { rows = await myGuessRows(gameMode: gameMode, limit: limit, playType: playType) }
         return rows.compactMap { r in
             guard let sol = r.solutions.first else { return nil }
             return AlmanacEntry(word: sol.uppercased(), won: r.won,
@@ -334,9 +348,13 @@ enum StatsDeepService {
     }
 
     /// Hint usage honesty card (Six/Seven/ProperNoundle — hints_used is stored).
-    static func hintHonesty(gameMode: String, playType: String = "solo") async -> HintHonesty? {
+    /// `rows` (P4): optional pre-fetched guess rows — see openerDeep.
+    static func hintHonesty(gameMode: String, playType: String = "solo",
+                            rows providedRows: [GuessRow]? = nil) async -> HintHonesty? {
         if playType == "vs_cpu" { return nil }
-        let rows = await myGuessRows(gameMode: gameMode, playType: playType)
+        let rows: [GuessRow]
+        if let providedRows { rows = providedRows }
+        else { rows = await myGuessRows(gameMode: gameMode, playType: playType) }
         guard !rows.isEmpty else { return nil }
         let wins = rows.filter(\.won)
         guard !wins.isEmpty else { return nil }

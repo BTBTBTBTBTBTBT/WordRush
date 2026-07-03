@@ -278,13 +278,21 @@ struct ProDeepModeCard: View {
         .task(id: "\(gameMode)-\(isPro)-\(playType)") {
             guard isPro, playType != "vs_cpu" else { return }
             data = nil
-            async let openers = StatsDeepService.openerDeep(gameMode: gameMode, limit: 4, playType: playType)
-            async let positions = StatsDeepService.positionAccuracy(gameMode: gameMode, playType: playType)
-            async let almanac = StatsDeepService.wordAlmanac(gameMode: gameMode, limit: 24, playType: playType)
-            let hints = HINT_MODES.contains(gameMode) ? await StatsDeepService.hintHonesty(gameMode: gameMode, playType: playType) : nil
-            let gauntlet = gameMode == "GAUNTLET" ? await StatsDeepService.gauntletStageStats(playType: playType) : []
+            // P4: one shared 400-row guess-log fetch feeds every section (was
+            // 4 identical `matches` reads). wordAlmanac takes a prefix(24)
+            // slice — its own query is identical (same filters, same
+            // created_at-desc order), only the limit differs.
+            async let sharedRows = StatsDeepService.myGuessRows(gameMode: gameMode, limit: 400, playType: playType)
+            async let gauntletF = gameMode == "GAUNTLET" ? StatsDeepService.gauntletStageStats(playType: playType) : []
+            let rows = await sharedRows
+            async let openers = StatsDeepService.openerDeep(gameMode: gameMode, limit: 4, playType: playType, rows: rows)
+            async let positions = StatsDeepService.positionAccuracy(gameMode: gameMode, playType: playType, rows: rows)
+            async let almanac = StatsDeepService.wordAlmanac(gameMode: gameMode, limit: 24, playType: playType,
+                                                             rows: Array(rows.prefix(24)))
+            let hints = HINT_MODES.contains(gameMode)
+                ? await StatsDeepService.hintHonesty(gameMode: gameMode, playType: playType, rows: rows) : nil
             data = DeepData(openers: await openers, positions: await positions,
-                            almanac: await almanac, hints: hints, gauntlet: gauntlet)
+                            almanac: await almanac, hints: hints, gauntlet: await gauntletF)
         }
     }
 
