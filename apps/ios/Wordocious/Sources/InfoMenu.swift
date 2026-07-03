@@ -221,18 +221,30 @@ struct StrategyArticleModel: Decodable, Identifiable {
 @MainActor
 final class StrategyService: ObservableObject {
     static let shared = StrategyService()
-    private init() {}
     @Published private(set) var articles: [StrategyArticleModel] = []
+    private static let cacheKey = "strategy-cache-v1"
     private var loaded = false
+    private struct Payload: Decodable { let articles: [StrategyArticleModel] }
 
+    /// Seed from the UserDefaults cache so the screen renders instantly on
+    /// every open after the first-ever fetch (ContentService pattern).
+    private init() {
+        if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
+           let payload = try? JSONDecoder().decode(Payload.self, from: data) {
+            articles = payload.articles
+        }
+    }
+
+    /// Fetch once per launch; cached copy shows immediately, this silently
+    /// refreshes it in the background and persists the fresh payload.
     func load() async {
         guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/strategy") else { return }
-        struct Payload: Decodable { let articles: [StrategyArticleModel] }
         guard let (data, _) = try? await URLSession.shared.data(from: url),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         articles = payload.articles
         loaded = true
+        UserDefaults.standard.set(data, forKey: Self.cacheKey)
     }
 }
 
@@ -324,18 +336,30 @@ struct WordArchiveEntry: Decodable, Identifiable {
 @MainActor
 final class WordsService: ObservableObject {
     static let shared = WordsService()
-    private init() {}
     @Published private(set) var words: [WordArchiveEntry] = []
+    private static let cacheKey = "words-cache-v1"
     private var loaded = false
+    private struct Payload: Decodable { let words: [WordArchiveEntry] }
 
+    /// Seed from the UserDefaults cache so the archive renders instantly on
+    /// every open after the first-ever fetch (ContentService pattern).
+    private init() {
+        if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
+           let payload = try? JSONDecoder().decode(Payload.self, from: data) {
+            words = payload.words
+        }
+    }
+
+    /// Fetch once per launch; cached copy shows immediately, this silently
+    /// refreshes it in the background and persists the fresh payload.
     func load() async {
         guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/words") else { return }
-        struct Payload: Decodable { let words: [WordArchiveEntry] }
         guard let (data, _) = try? await URLSession.shared.data(from: url),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         words = payload.words
         loaded = true
+        UserDefaults.standard.set(data, forKey: Self.cacheKey)
     }
 }
 

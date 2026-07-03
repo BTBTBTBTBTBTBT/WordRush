@@ -21,18 +21,30 @@ struct HTPTileRow: Decodable { let letters: [HTPLetter]; let strong: String; let
 @MainActor
 final class HowToPlayService: ObservableObject {
     static let shared = HowToPlayService()
-    private init() {}
     @Published private(set) var sections: [HTPSection] = []
+    private static let cacheKey = "howtoplay-cache-v1"
     private var loaded = false
+    private struct Payload: Decodable { let sections: [HTPSection] }
 
+    /// Seed from the UserDefaults cache so the screen renders instantly on
+    /// every open after the first-ever fetch (ContentService pattern).
+    private init() {
+        if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
+           let payload = try? JSONDecoder().decode(Payload.self, from: data) {
+            sections = payload.sections
+        }
+    }
+
+    /// Fetch once per launch; cached copy shows immediately, this silently
+    /// refreshes it in the background and persists the fresh payload.
     func load() async {
         guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/howtoplay") else { return }
-        struct Payload: Decodable { let sections: [HTPSection] }
         guard let (data, _) = try? await URLSession.shared.data(from: url),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         sections = payload.sections
         loaded = true
+        UserDefaults.standard.set(data, forKey: Self.cacheKey)
     }
 }
 
