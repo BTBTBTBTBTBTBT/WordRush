@@ -1237,6 +1237,272 @@ export async function fetchHeadToHeadRecord(userId: string, gameMode: string) {
   return { wins, losses, total, winRate: total > 0 ? Math.round((wins / total) * 100) : 0 };
 }
 
+/**
+ * Consolidated per-mode detail (P6) — ONE matches query feeds the eight
+ * derivations that each used to fire their own round-trip from
+ * ModeDetailPanel (fetchGuessDistribution, fetchSolveTimeHistory,
+ * fetchModeWinStreak, fetchTimeOfDayHeatmap, the matches half of
+ * fetchImprovementTrend, fetchConsistencyScore, fetchTopWords,
+ * fetchWordInsights). Fetches the newest 2000 in-scope rows (the widest
+ * original cap) with every needed column, then computes each stat with the
+ * exact same logic as the standalone fetchers — users past 2000 matches in
+ * a single mode see the same tail-truncation those fetchers already had.
+ * Kept as separate queries inside the same Promise.all:
+ *  - fetchPersonalBests: two global-min orderings (player1_time /
+ *    player1_score ASC, limit 1) — a lifetime best can live outside any
+ *    recent-first slice, so it is NOT derivable from the shared rows.
+ *  - fetchPerfectGameCount: exact head-count over ALL rows (uncapped).
+ *  - fetchHeadToHeadRecord: always vs-scoped (needs opponent rows even
+ *    when the panel is on the Solo tab, matching the old behavior).
+ *  - the user_stats average_time read feeding the improvement trend
+ *    (different table).
+ * vs_cpu games have no match rows, so that branch skips the matches +
+ * user_stats reads entirely (the originals early-returned empty).
+ */
+export async function fetchModeDetail(userId: string, gameMode: string, playType: StatsPlayType = 'solo') {
+  const cpu = playType === 'vs_cpu';
+
+  const [rowsRes, statsRes, personalBests, perfectGames, headToHead] = await Promise.all([
+    cpu
+      ? Promise.resolve({ data: null } as { data: any[] | null })
+      : (supabase as any)
+          .from('matches')
+          .select('created_at, winner_id, player1_id, player2_id, game_mode, player1_score, player1_time, player1_guesses, solutions')
+          .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+          .eq('game_mode', gameMode)
+          .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(2000) as Promise<{ data: any[] | null }>,
+    cpu
+      ? Promise.resolve({ data: null } as { data: any })
+      : (supabase as any)
+          .from('user_stats')
+          .select('average_time')
+          .eq('user_id', userId)
+          .eq('game_mode', gameMode)
+          .eq('play_type', 'solo')
+          .maybeSingle() as Promise<{ data: any }>,
+    fetchPersonalBests(userId, gameMode, playType),
+    fetchPerfectGameCount(userId, gameMode, playType),
+    fetchHeadToHeadRecord(userId, gameMode),
+  ]);
+
+  const rows: Array<{
+    created_at: string; winner_id: string | null; player1_id: string; player2_id: string | null;
+    game_mode: string; player1_score: number; player1_time: number;
+    player1_guesses: string[] | null; solutions: string[] | null;
+  }> = rowsRes.data || [];
+
+  // ── Guess distribution (fetchGuessDistribution — gameMode always set) ──
+  const MAX_BUCKET: Record<string, number> = {
+    DUEL: 6, RESCUE: 6, PROPERNOUNDLE: 6, DUEL_6: 7, DUEL_7: 8,
+    QUORDLE: 9, SEQUENCE: 10, OCTORDLE: 13, GAUNTLET: 13,
+  };
+  const maxBucket = MAX_BUCKET[gameMode] ?? 6;
+  const clampable = gameMode === 'GAUNTLET';
+  const dist: Record<number, number> = {};
+  for (let g = 1; g <= maxBucket; g++) dist[g] = 0;
+  for (const row of rows) {
+    if (row.winner_id == null) continue; // original query: .not('winner_id','is',null)
+    const isP1 = row.player1_id === userId;
+    const won = row.winner_id === userId;
+    if (!won) continue;
+    const score = isP1 ? row.player1_score : 0;
+    if (score <= 0) continue;
+    const bucket = Math.min(score, maxBucket);
+    dist[bucket] = (dist[bucket] || 0) + 1;
+  }
+  const guessDist = cpu ? [] : Object.entries(dist).map(([g, c]) => ({
+    guesses: Number(g),
+    count: c,
+    label: `${g}${clampable && Number(g) === maxBucket ? '+' : ''}`,
+  }));
+
+  // ── Solve-time history (fetchSolveTimeHistory, limit 30, oldest→newest) ──
+  const solveHistory = cpu ? [] : rows
+    .filter((r) => r.player1_id === userId && r.winner_id === userId && (r.player1_time ?? 0) > 0)
+    .slice(0, 30)
+    .reverse()
+    .map((r) => ({
+      date: r.created_at.slice(0, 10),
+      timeSeconds: Math.round(r.player1_time),
+      mode: r.game_mode,
+    }));
+
+  // ── Win streak (fetchModeWinStreak — newest 200 in-scope rows) ──
+  let current = 0;
+  let best = 0;
+  let streak = 0;
+  let foundFirstLoss = false;
+  for (const row of rows.slice(0, 200)) {
+    if (row.winner_id === userId) {
+      streak++;
+      best = Math.max(best, streak);
+      if (!foundFirstLoss) current = streak;
+    } else {
+      if (!foundFirstLoss) foundFirstLoss = true;
+      streak = 0;
+    }
+  }
+  const winStreak = cpu ? { current: 0, best: 0 } : { current, best };
+
+  // ── Time-of-day heatmap (fetchTimeOfDayHeatmap — all in-scope rows) ──
+  let timeOfDay: Array<{ hour: number; gamesPlayed: number; gamesWon: number }> = [];
+  if (!cpu) {
+    const hours: Array<{ hour: number; gamesPlayed: number; gamesWon: number }> = [];
+    for (let h = 0; h < 24; h++) hours.push({ hour: h, gamesPlayed: 0, gamesWon: 0 });
+    for (const row of rows) {
+      const h = new Date(row.created_at).getHours();
+      hours[h].gamesPlayed++;
+      if (row.winner_id === userId) hours[h].gamesWon++;
+    }
+    timeOfDay = hours;
+  }
+
+  // ── Improvement trend (fetchImprovementTrend — last 10 win times vs
+  //    user_stats average; NOTE the original reads play_type='solo' stats
+  //    regardless of the toggle — preserved verbatim in the query above) ──
+  let improvement: { recentAvg: number; overallAvg: number; percentChange: number; improving: boolean } | null = null;
+  if (!cpu) {
+    const times: number[] = rows
+      .filter((r) => r.player1_id === userId && r.winner_id === userId && (r.player1_time ?? 0) > 0)
+      .slice(0, 10)
+      .map((r) => r.player1_time);
+    if (times.length === 0) {
+      improvement = { recentAvg: 0, overallAvg: 0, percentChange: 0, improving: false };
+    } else {
+      const recentAvg = Math.round(times.reduce((a: number, b: number) => a + b, 0) / times.length);
+      const overallAvg = statsRes.data?.average_time || recentAvg;
+      const percentChange = overallAvg > 0 ? Math.round(((overallAvg - recentAvg) / overallAvg) * 100) : 0;
+      improvement = { recentAvg, overallAvg, percentChange, improving: recentAvg < overallAvg };
+    }
+  }
+
+  // ── Consistency score (fetchConsistencyScore — last 20 win times) ──
+  let consistency: { score: number; sampleSize: number } | null = null;
+  if (!cpu) {
+    const times = rows
+      .filter((r) => r.player1_id === userId && r.winner_id === userId && (r.player1_time ?? 0) > 0)
+      .slice(0, 20)
+      .map((r) => r.player1_time);
+    if (times.length < 3) {
+      consistency = { score: 0, sampleSize: times.length };
+    } else {
+      const avg = times.reduce((a, b) => a + b, 0) / times.length;
+      const variance = times.reduce((sum, t) => sum + (t - avg) ** 2, 0) / times.length;
+      const stdDev = Math.sqrt(variance);
+      const cv = avg > 0 ? stdDev / avg : 0;
+      const score = Math.max(0, Math.round(100 - cv * 100));
+      consistency = { score, sampleSize: times.length };
+    }
+  }
+
+  // ── Top words (fetchTopWords — newest 500 rows where the user is P1
+  //    with non-null guesses, top 5 by frequency) ──
+  let topWords: Array<{ word: string; count: number; wins: number }> = [];
+  if (!cpu) {
+    const wordMap = new Map<string, { count: number; wins: number }>();
+    const wordRows = rows
+      .filter((r) => r.player1_id === userId && r.player1_guesses != null)
+      .slice(0, 500);
+    for (const row of wordRows) {
+      if (!Array.isArray(row.player1_guesses)) continue;
+      const won = row.winner_id === userId;
+      for (const word of row.player1_guesses) {
+        const w = word.toUpperCase();
+        const entry = wordMap.get(w) || { count: 0, wins: 0 };
+        entry.count++;
+        if (won) entry.wins++;
+        wordMap.set(w, entry);
+      }
+    }
+    topWords = Array.from(wordMap.entries())
+      .map(([word, stats]) => ({ word, count: stats.count, wins: stats.wins }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }
+
+  // ── Word insights (fetchWordInsights — newest 500 rows where the user
+  //    is P1 with non-null solutions) ──
+  let wordInsights: {
+    nemesis: { word: string; losses: number } | null;
+    luckyWord: { word: string; time: number } | null;
+    avgGuesses: number;
+    firstTryRate: number;
+  } | null = null;
+  if (!cpu) {
+    const insightRows = rows
+      .filter((r) => r.player1_id === userId && r.solutions != null)
+      .slice(0, 500);
+    const lossMap = new Map<string, number>();
+    const speedMap = new Map<string, { bestTime: number; guesses: number }>();
+    let totalGuesses = 0;
+    let totalWins = 0;
+    let firstTryWins = 0;
+
+    for (const row of insightRows) {
+      if (!Array.isArray(row.solutions)) continue;
+      const won = row.winner_id === userId;
+      if (won) {
+        totalWins++;
+        if (row.player1_score === 1) firstTryWins++;
+        totalGuesses += row.player1_score || 0;
+        for (const word of row.solutions) {
+          const w = word.toUpperCase();
+          const existing = speedMap.get(w);
+          if (!existing || (row.player1_time > 0 && row.player1_time < existing.bestTime)) {
+            speedMap.set(w, { bestTime: row.player1_time, guesses: row.player1_score });
+          }
+        }
+      } else {
+        for (const word of row.solutions) {
+          const w = word.toUpperCase();
+          lossMap.set(w, (lossMap.get(w) || 0) + 1);
+        }
+      }
+    }
+
+    let nemesis: { word: string; losses: number } | null = null;
+    let maxLosses = 0;
+    for (const [word, losses] of lossMap) {
+      if (losses > maxLosses) {
+        maxLosses = losses;
+        nemesis = { word, losses };
+      }
+    }
+
+    let luckyWord: { word: string; time: number } | null = null;
+    let bestTime = Infinity;
+    for (const [word, stats] of speedMap) {
+      if (stats.bestTime > 0 && stats.bestTime < bestTime) {
+        bestTime = stats.bestTime;
+        luckyWord = { word, time: stats.bestTime };
+      }
+    }
+
+    wordInsights = {
+      nemesis,
+      luckyWord,
+      avgGuesses: totalWins > 0 ? Math.round((totalGuesses / totalWins) * 10) / 10 : 0,
+      firstTryRate: totalWins > 0 ? Math.round((firstTryWins / totalWins) * 100) : 0,
+    };
+  }
+
+  return {
+    guessDist,
+    solveHistory,
+    winStreak,
+    timeOfDay,
+    improvement,
+    personalBests,
+    perfectGames,
+    consistency,
+    headToHead,
+    topWords,
+    wordInsights,
+  };
+}
+
 // ── Daily Sweep / Flawless Victory stats (profile "All" view) ──────────────
 // Source of truth: daily_bonuses (sweep/flawless flags per day) ⨝ daily_results
 // (per-mode time + composite_score per day). All aggregation is client-side.

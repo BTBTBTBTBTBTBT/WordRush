@@ -13,19 +13,7 @@ import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { createInvite, vsHrefForMode } from '@/lib/invite-service';
 import { useAuth } from '@/lib/auth-context';
 import { ProDeepModeCard } from './pro-insights-deep';
-import {
-  fetchGuessDistribution,
-  fetchSolveTimeHistory,
-  fetchModeWinStreak,
-  fetchTimeOfDayHeatmap,
-  fetchImprovementTrend,
-  fetchPersonalBests,
-  fetchPerfectGameCount,
-  fetchConsistencyScore,
-  fetchHeadToHeadRecord,
-  fetchTopWords,
-  fetchWordInsights,
-} from '@/lib/stats-service';
+import { fetchModeDetail } from '@/lib/stats-service';
 
 interface ModeData {
   guessDist: Array<{ guesses: number; count: number }>;
@@ -70,22 +58,10 @@ export function ModeDetailPanel({ userId, gameMode, isPro, stats, playType = 'so
   const { data, isLoading: loading } = useSWR(
     ['mode-detail', userId, gameMode, playType],
     async () => {
-      // Every per-game fetcher is scoped to the page-level play-type toggle
+      // Every per-game stat is scoped to the page-level play-type toggle
       // (restat B1) — previously these silently mixed solo + VS matches.
-      const [guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights] = await Promise.all([
-        fetchGuessDistribution(userId, gameMode, playType),
-        fetchSolveTimeHistory(userId, 30, gameMode, playType),
-        fetchModeWinStreak(userId, gameMode, playType),
-        fetchTimeOfDayHeatmap(userId, gameMode, playType),
-        fetchImprovementTrend(userId, gameMode, playType),
-        fetchPersonalBests(userId, gameMode, playType),
-        fetchPerfectGameCount(userId, gameMode, playType),
-        fetchConsistencyScore(userId, gameMode, playType),
-        fetchHeadToHeadRecord(userId, gameMode),
-        fetchTopWords(userId, gameMode, 5, playType),
-        fetchWordInsights(userId, gameMode, playType),
-      ]);
-      return { guessDist, solveHistory, winStreak, timeOfDay, improvement, personalBests, perfectGames, consistency, headToHead, topWords, wordInsights } as ModeData;
+      // P6: one consolidated matches read replaces the old 11-fetcher burst.
+      return (await fetchModeDetail(userId, gameMode, playType)) as ModeData;
     },
     { revalidateOnFocus: true },
   );
