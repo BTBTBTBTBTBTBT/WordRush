@@ -15,6 +15,10 @@ final class LivePlayerCount: ObservableObject {
         guard task == nil, let base = VSConfig.serverURL else { return }
         let url = base.appendingPathComponent("presence")
         task = Task { [weak self] in
+            // Defer the first poll ~2s so a cold launch spends its first
+            // seconds fetching content, not the vanity live count (the banner
+            // shows "Players online" until the first success anyway).
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
             while !Task.isCancelled {
                 if let (data, resp) = try? await URLSession.shared.data(from: url),
                    (resp as? HTTPURLResponse)?.statusCode == 200,
