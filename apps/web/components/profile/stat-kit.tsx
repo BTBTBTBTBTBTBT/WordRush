@@ -1,8 +1,34 @@
 'use client';
 
 import type { ReactNode, ComponentType } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
+
+/** Counts from 0 to `target` over ~500ms on mount (F4). Snaps under
+ *  prefers-reduced-motion. Re-snaps (no re-count) when the target changes. */
+export function CountUp({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const [n, setN] = useState(target);
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) { setN(target); return; }
+    started.current = true;
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setN(target); return;
+    }
+    if (target <= 0) { setN(target); return; }
+    const steps = Math.min(target, 24);
+    let i = 0;
+    setN(0);
+    const id = setInterval(() => {
+      i++;
+      setN(Math.round((target * i) / steps));
+      if (i >= steps) clearInterval(id);
+    }, 500 / steps);
+    return () => clearInterval(id);
+  }, [target]);
+  return <>{n}{suffix}</>;
+}
 
 // Shared visual grammar for the Profile + Records stat pages. Every section
 // uses SectionHeader; every stat cell uses StatCell inside a StatGrid; every

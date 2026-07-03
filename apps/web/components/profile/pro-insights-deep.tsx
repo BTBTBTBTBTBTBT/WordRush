@@ -43,7 +43,9 @@ function RadarSvg({ data }: { data: SkillRadarData }) {
         const [x, y] = pt(i, R);
         return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--color-border)" strokeWidth={1} />;
       })}
-      <polygon points={shape} fill="#7c3aed33" stroke="#7c3aed" strokeWidth={2} strokeLinejoin="round" />
+      {/* F4: the shape grows out from the center on first render. */}
+      <polygon points={shape} fill="#7c3aed33" stroke="#7c3aed" strokeWidth={2} strokeLinejoin="round"
+        className="radar-draw-in" style={{ transformOrigin: `${cx}px ${cy}px` }} />
       {RADAR_AXES.map((ax, i) => {
         const [x, y] = pt(i, R + 16);
         // Anchor side labels away from the edge: right-side points anchor at
@@ -73,10 +75,10 @@ export function SkillRadarCard({ userId, isPro }: { userId: string; isPro: boole
     </KitCard>
   );
   return (
-    <>
+    <div className="animate-fade-in-up">
       <SectionHeader label="Skill Radar" accent="#7c3aed" />
       {isPro ? card : <ProLockOverlay label="Unlock Skill Radar with Pro">{card}</ProLockOverlay>}
-    </>
+    </div>
   );
 }
 
@@ -113,10 +115,10 @@ export function RivalriesCard({ userId, isPro }: { userId: string; isPro: boolea
     </KitCard>
   );
   return (
-    <>
+    <div className="animate-fade-in-up">
       <SectionHeader label="Rivalries" accent="#ec4899" />
       {isPro ? card : <ProLockOverlay label="Unlock Rivalries with Pro">{card}</ProLockOverlay>}
-    </>
+    </div>
   );
 }
 
@@ -268,7 +270,7 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
   );
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 animate-fade-in-up">
       <SectionHeader label="Deep Insights" accent={accentColor} />
       {isPro ? inner : <ProLockOverlay label="Unlock Deep Insights with Pro">{inner}</ProLockOverlay>}
     </div>

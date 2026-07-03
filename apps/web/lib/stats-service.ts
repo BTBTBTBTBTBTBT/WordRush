@@ -833,6 +833,83 @@ export async function fetchDailyCalendar(userId: string, days: number = 90) {
 }
 
 /**
+ * Consolidated profile "All"-view trends (restat B4) — ONE matches query
+ * feeds five derivations that each used to fire their own round-trip
+ * (fetchActivityByDay, fetchDailyCalendar, fetchGuessDistribution,
+ * fetchSolveTimeHistory, fetchTopWordsAllTime). Fetches the newest 2000 rows
+ * (the widest original cap) with every needed column, then computes each stat
+ * client-side with the exact same logic. Users past 2000 lifetime matches see
+ * the same tail-truncation the standalone fetchers already had.
+ * Play-type scoping matches B1: activity/calendar count ALL games; the
+ * win/word stats respect `playType` (vs_cpu → empty, since no match rows).
+ */
+export async function fetchProfileTrends(userId: string, playType: StatsPlayType = 'solo') {
+  const { data } = await (supabase as any)
+    .from('matches')
+    .select('created_at, winner_id, player1_id, player2_id, player1_score, player1_time, player1_guesses, player2_guesses, game_mode')
+    .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
+    .order('created_at', { ascending: false })
+    .limit(2000) as {
+    data: Array<{ created_at: string; winner_id: string | null; player1_id: string; player2_id: string | null;
+      player1_score: number; player1_time: number | null; player1_guesses: string[] | null;
+      player2_guesses: string[] | null; game_mode: string }> | null;
+  };
+  const rows = data || [];
+  const cpu = playType === 'vs_cpu';
+  const inScope = (r: { player2_id: string | null }) => playType === 'vs' ? r.player2_id != null : r.player2_id == null;
+
+  // Activity (last 7 local-UTC days) + Calendar (last 90) — ALL games.
+  const mkBuckets = (days: number) => {
+    const since = new Date(); since.setUTCHours(0, 0, 0, 0); since.setUTCDate(since.getUTCDate() - (days - 1));
+    const m = new Map<string, { gamesPlayed: number; gamesWon: number }>();
+    for (let i = 0; i < days; i++) { const d = new Date(since); d.setUTCDate(since.getUTCDate() + i); m.set(d.toISOString().slice(0, 10), { gamesPlayed: 0, gamesWon: 0 }); }
+    return m;
+  };
+  const cal = mkBuckets(90), act = mkBuckets(7);
+  for (const r of rows) {
+    const key = r.created_at.slice(0, 10);
+    for (const b of [cal, act]) { const e = b.get(key); if (e) { e.gamesPlayed++; if (r.winner_id === userId) e.gamesWon++; } }
+  }
+  const activity = Array.from(act.entries()).map(([day, s]) => ({ day, count: s.gamesPlayed }));
+  const calendar = Array.from(cal.entries()).map(([day, s]) => ({ day, ...s }));
+
+  // Guess distribution (play-type-scoped solo/vs wins, All-view → 6+ bucket).
+  const maxBucket = 6;
+  const dist: Record<number, number> = {};
+  for (let g = 1; g <= maxBucket; g++) dist[g] = 0;
+  if (!cpu) for (const r of rows) {
+    if (!inScope(r) || r.winner_id !== userId || r.player1_id !== userId) continue;
+    if (!(r.player1_score > 0)) continue;
+    const bucket = Math.min(r.player1_score, maxBucket);
+    dist[bucket] = (dist[bucket] || 0) + 1;
+  }
+  const guessDist = Object.entries(dist).map(([g, c]) => ({
+    guesses: Number(g), count: c, label: `${g}${Number(g) === maxBucket ? '+' : ''}`,
+  }));
+
+  // Solve-time history (last 30 play-type-scoped wins, oldest→newest).
+  const solveHistory = cpu ? [] : rows
+    .filter((r) => inScope(r) && r.player1_id === userId && r.winner_id === userId && (r.player1_time ?? 0) > 0)
+    .slice(0, 30).reverse()
+    .map((r) => ({ date: r.created_at.slice(0, 10), timeSeconds: Math.round(r.player1_time!), mode: r.game_mode }));
+
+  // Top words (play-type-scoped, top 5 by frequency + win share).
+  const wordMap = new Map<string, { count: number; wins: number }>();
+  if (!cpu) for (const r of rows.slice(0, 1000)) {
+    if (!inScope(r)) continue;
+    const guesses = r.player1_id === userId ? r.player1_guesses : r.player2_guesses;
+    if (!Array.isArray(guesses)) continue;
+    const won = r.winner_id === userId;
+    for (const w0 of guesses) { const w = w0.toUpperCase(); const e = wordMap.get(w) || { count: 0, wins: 0 }; e.count++; if (won) e.wins++; wordMap.set(w, e); }
+  }
+  const topWordsAllTime = Array.from(wordMap.entries())
+    .map(([word, s]) => ({ word, count: s.count, wins: s.wins }))
+    .sort((a, b) => b.count - a.count).slice(0, 5);
+
+  return { activity, calendar, guessDist, solveHistory, topWordsAllTime };
+}
+
+/**
  * Fetch current and best win streak for a specific game mode.
  */
 export async function fetchModeWinStreak(userId: string, gameMode: string, playType: StatsPlayType = 'solo') {

@@ -35,7 +35,7 @@ const ProStats = dynamic(() => import('@/components/profile/pro-stats').then(m =
 import { SocialLinksDisplay, type SocialLinks } from '@/components/profile/social-links';
 import { ProfileEditModal, EditProfileButton } from '@/components/profile/profile-edit-modal';
 import { fetchUserMedals, fetchTodayDailyCompletions, type Medal as MedalType, type DailyCompletion } from '@/lib/daily-service';
-import { fetchActivityByDay, fetchGuessDistribution, fetchSolveTimeHistory, fetchDailyCalendar, fetchTopWordsAllTime, fetchDailyPointsOverTime, fetchOpenerStats, fetchWeekdayForm, fetchTodayDailyStanding } from '@/lib/stats-service';
+import { fetchProfileTrends, fetchDailyPointsOverTime, fetchOpenerStats, fetchWeekdayForm, fetchTodayDailyStanding } from '@/lib/stats-service';
 import { PointsChart } from '@/components/profile/sweep-stats';
 import { GuessDistribution } from '@/components/profile/guess-distribution';
 import { SolveTimeChart } from '@/components/profile/solve-time-chart';
@@ -108,7 +108,7 @@ export default function ProfilePage() {
   const { data: profileData, isLoading: loadingStats } = useSWR(
     profile ? ['profile-data', profile.id, activeTab] : null,
     async () => {
-      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, activityRes, guessDistRes, solveRes, calendarRes, topWordsRes, sweepPointsRes, openersRes, weekdayRes, standingRes] = await Promise.all([
+      const [statsRes, matchesRes, medalsRes, achievementsRes, dailiesRes, trendsRes, sweepPointsRes, openersRes, weekdayRes, standingRes] = await Promise.all([
         supabase.from('user_stats').select('*').eq('user_id', profile!.id).then(r => r.data || []),
         supabase.from('matches')
           .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit')
@@ -119,11 +119,7 @@ export default function ProfilePage() {
         fetchUserMedals(profile!.id, 120),
         fetchUserAchievements(profile!.id),
         fetchTodayDailyCompletions(profile!.id),
-        fetchActivityByDay(profile!.id, 7),
-        fetchGuessDistribution(profile!.id, undefined, activeTab),
-        fetchSolveTimeHistory(profile!.id, 30, undefined, activeTab),
-        fetchDailyCalendar(profile!.id, 90),
-        fetchTopWordsAllTime(profile!.id, 5, activeTab),
+        fetchProfileTrends(profile!.id, activeTab),   // B4: one query → activity+calendar+dist+solve+topwords
         fetchDailyPointsOverTime(profile!.id, 30),
         fetchOpenerStats(profile!.id, 5, activeTab),
         fetchWeekdayForm(profile!.id, activeTab),
@@ -153,11 +149,11 @@ export default function ProfilePage() {
         medals: medalsRes,
         userAchievements: new Set(achievementsRes.map(a => a.key)),
         todayDailies: dailiesRes,
-        activity: activityRes,
-        guessDist: guessDistRes,
-        solveHistory: solveRes,
-        calendar: calendarRes,
-        topWordsAllTime: topWordsRes,
+        activity: trendsRes.activity,
+        guessDist: trendsRes.guessDist,
+        solveHistory: trendsRes.solveHistory,
+        calendar: trendsRes.calendar,
+        topWordsAllTime: trendsRes.topWordsAllTime,
         sweepPoints: sweepPointsRes,
         openers: openersRes,
         weekdayForm: weekdayRes,

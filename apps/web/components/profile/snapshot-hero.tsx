@@ -3,7 +3,7 @@
 import { Trophy, Target, Zap, Flame, TrendingUp, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { WIN_FG } from '@/lib/tile-theme';
-import { KitCard, StatCell } from './stat-kit';
+import { KitCard, StatCell, CountUp } from './stat-kit';
 
 // Snapshot hero — merges the old Global Summary Row + "This Week" recap into
 // ONE card: lifetime headline stats up top, the week strip underneath. Kills
@@ -32,10 +32,11 @@ export function SnapshotHero({
   return (
     <KitCard>
       <div className="grid grid-cols-4 gap-y-3 gap-x-2">
-        <StatCell icon={Trophy} label="Wins" value={totalWins} color={WIN_FG} />
-        <StatCell icon={Target} label="Win Rate" value={`${winRate}%`} color="#2563eb" />
-        <StatCell icon={Zap} label="Streak" value={currentStreak} sub={`Best: ${bestStreak}`} color="#7c3aed" />
-        <StatCell icon={Flame} label="Daily" value={dailyStreak} sub={`Best: ${bestDailyStreak}`} color="#f97316" />
+        {/* F4: marquee numbers count up on mount. */}
+        <StatCell icon={Trophy} label="Wins" value={<CountUp target={totalWins} />} color={WIN_FG} />
+        <StatCell icon={Target} label="Win Rate" value={<CountUp target={winRate} suffix="%" />} color="#2563eb" />
+        <StatCell icon={Zap} label="Streak" value={<CountUp target={currentStreak} />} sub={`Best: ${bestStreak}`} color="#7c3aed" />
+        <StatCell icon={Flame} label="Daily" value={<CountUp target={dailyStreak} />} sub={`Best: ${bestDailyStreak}`} color="#f97316" />
       </div>
       <div className="flex items-center justify-between gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
         <div className="flex items-center gap-1.5 min-w-0">
