@@ -221,6 +221,10 @@ struct ProDeepModeCard: View {
     let gameMode: String
     let isPro: Bool
     let accent: Color
+    /// Page-level Solo/VS/VS-CPU toggle (restat B1). No per-game rows exist for
+    /// CPU practice — the card hides entirely on vs_cpu (the panel shows a
+    /// "totals only" note instead), matching pro-insights-deep.tsx.
+    var playType: String = "solo"
 
     private struct DeepData {
         var openers: [StatsDeepService.OpenerDeepStat] = []
@@ -248,7 +252,7 @@ struct ProDeepModeCard: View {
     var body: some View {
         let d = isPro ? data : Self.sample
         Group {
-            if let d, d.hasAny {
+            if let d, d.hasAny, playType != "vs_cpu" {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Deep Insights", accent: accent)
                     let inner = VStack(spacing: 12) {
@@ -264,13 +268,14 @@ struct ProDeepModeCard: View {
                 }
             }
         }
-        .task(id: "\(gameMode)-\(isPro)") {
-            guard isPro else { return }
-            async let openers = StatsDeepService.openerDeep(gameMode: gameMode, limit: 4)
-            async let positions = StatsDeepService.positionAccuracy(gameMode: gameMode)
-            async let almanac = StatsDeepService.wordAlmanac(gameMode: gameMode, limit: 24)
-            let hints = HINT_MODES.contains(gameMode) ? await StatsDeepService.hintHonesty(gameMode: gameMode) : nil
-            let gauntlet = gameMode == "GAUNTLET" ? await StatsDeepService.gauntletStageStats() : []
+        .task(id: "\(gameMode)-\(isPro)-\(playType)") {
+            guard isPro, playType != "vs_cpu" else { return }
+            data = nil
+            async let openers = StatsDeepService.openerDeep(gameMode: gameMode, limit: 4, playType: playType)
+            async let positions = StatsDeepService.positionAccuracy(gameMode: gameMode, playType: playType)
+            async let almanac = StatsDeepService.wordAlmanac(gameMode: gameMode, limit: 24, playType: playType)
+            let hints = HINT_MODES.contains(gameMode) ? await StatsDeepService.hintHonesty(gameMode: gameMode, playType: playType) : nil
+            let gauntlet = gameMode == "GAUNTLET" ? await StatsDeepService.gauntletStageStats(playType: playType) : []
             data = DeepData(openers: await openers, positions: await positions,
                             almanac: await almanac, hints: hints, gauntlet: gauntlet)
         }

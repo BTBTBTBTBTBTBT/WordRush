@@ -23,6 +23,18 @@ import kotlin.math.sqrt
  * iOS Calendar.current) so the activity calendar and time-of-day buckets line up
  * with the user's wall clock.
  */
+// -- Play-type scoping (restat B1, ports stats-service.ts StatsPlayType) --
+// `matches` has NO play_type column: solo = no opponent (player2_id null),
+// vs = has opponent, and vs_cpu games are NEVER recorded as match rows
+// (practice writes user_stats aggregates only). Per-game stat fetchers take
+// a playType ("solo" | "vs" | "vs_cpu") so the profile toggle scopes charts
+// honestly; the vs_cpu branch returns empty and callers show a 'totals
+// only' note instead. Shared with StatsDeepService (same package).
+internal fun io.github.jan.supabase.postgrest.query.filter.PostgrestFilterBuilder.scopeToPlayType(playType: String) {
+    if (playType == "vs") filterNot("player2_id", FilterOperator.IS, null)
+    else exact("player2_id", null)
+}
+
 object MatchStatsService {
     private val client get() = SupabaseConfig.client
     private val localZone: ZoneId get() = ZoneId.systemDefault()
@@ -119,11 +131,13 @@ object MatchStatsService {
         "QUORDLE" to 9, "SEQUENCE" to 10, "OCTORDLE" to 13, "GAUNTLET" to 13,
     )
 
-    /** Guess-distribution buckets 1..modeMax over the user's solo wins (GAUNTLET/All clamp into "N+"). */
-    suspend fun guessDistribution(userId: String, mode: String? = null): List<GuessBucket> = runCatching {
+    /** Guess-distribution buckets 1..modeMax over the user's wins, scoped to the
+     *  play-type toggle (GAUNTLET/All clamp into "N+"). */
+    suspend fun guessDistribution(userId: String, mode: String? = null, playType: String = "solo"): List<GuessBucket> = runCatching {
+        if (playType == "vs_cpu") return emptyList()
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_score,game_mode,winner_id")) {
-                filter { eq("player1_id", userId); eq("winner_id", userId); mode?.let { eq("game_mode", it) } }
+                filter { eq("player1_id", userId); eq("winner_id", userId); scopeToPlayType(playType); mode?.let { eq("game_mode", it) } }
                 limit(2000)
             }
             .decodeList<ScoreRow>()
@@ -197,11 +211,12 @@ object MatchStatsService {
     }.getOrElse { emptyList() }
 
     // ── Solve times ──────────────────────────────────────────────────────────────
-    /** Recent solo wins' solve times, oldest→newest (solve-time line chart). */
-    suspend fun solveTimes(userId: String, mode: String? = null, limit: Int = 30): List<SolvePoint> = runCatching {
+    /** Recent wins' solve times (play-type scoped), oldest→newest (solve-time line chart). */
+    suspend fun solveTimes(userId: String, mode: String? = null, limit: Int = 30, playType: String = "solo"): List<SolvePoint> = runCatching {
+        if (playType == "vs_cpu") return emptyList()
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_time,game_mode,created_at")) {
-                filter { eq("player1_id", userId); eq("winner_id", userId); gt("player1_time", 0); mode?.let { eq("game_mode", it) } }
+                filter { eq("player1_id", userId); eq("winner_id", userId); gt("player1_time", 0); scopeToPlayType(playType); mode?.let { eq("game_mode", it) } }
                 order("created_at", Order.DESCENDING)
                 limit(limit.toLong())
             }
@@ -214,10 +229,11 @@ object MatchStatsService {
 
     // ── Time of day ──────────────────────────────────────────────────────────────
     /** Games played + won per local hour (0–23) — time-of-day heatmap. */
-    suspend fun timeOfDay(userId: String, mode: String? = null): List<HourBucket> = runCatching {
+    suspend fun timeOfDay(userId: String, mode: String? = null, playType: String = "solo"): List<HourBucket> = runCatching {
+        if (playType == "vs_cpu") return (0..23).map { HourBucket(it, 0, 0) }
         val rows = client.postgrest["matches"]
             .select(Columns.raw("created_at,winner_id")) {
-                filter { eq("player1_id", userId); mode?.let { eq("game_mode", it) } }
+                filter { eq("player1_id", userId); scopeToPlayType(playType); mode?.let { eq("game_mode", it) } }
                 limit(2000)
             }
             .decodeList<DateRow>()
@@ -231,11 +247,12 @@ object MatchStatsService {
     }.getOrElse { (0..23).map { HourBucket(it, 0, 0) } }
 
     // ── Top words ────────────────────────────────────────────────────────────────
-    /** Top-[limit] most-guessed words (+ win counts). */
-    suspend fun topWords(userId: String, mode: String? = null, limit: Int = 5): List<TopWord> = runCatching {
+    /** Top-[limit] most-guessed words (+ win counts), scoped to the play-type toggle. */
+    suspend fun topWords(userId: String, mode: String? = null, limit: Int = 5, playType: String = "solo"): List<TopWord> = runCatching {
+        if (playType == "vs_cpu") return emptyList()
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_guesses,winner_id,game_mode")) {
-                filter { eq("player1_id", userId); mode?.let { eq("game_mode", it) } }
+                filter { eq("player1_id", userId); scopeToPlayType(playType); mode?.let { eq("game_mode", it) } }
                 order("created_at", Order.DESCENDING)
                 limit(1000)
             }
@@ -252,12 +269,13 @@ object MatchStatsService {
     }.getOrElse { emptyList() }
 
     // ── Pro insights (per-mode) ────────────────────────────────────────────────────
-    suspend fun proInsights(userId: String, mode: String): ProInsights = runCatching {
+    suspend fun proInsights(userId: String, mode: String, playType: String = "solo"): ProInsights = runCatching {
+        if (playType == "vs_cpu") return ProInsights()
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_time,player1_score,created_at")) {
                 filter {
                     eq("player1_id", userId); eq("winner_id", userId); eq("game_mode", mode)
-                    exact("player2_id", null); gt("player1_time", 0)
+                    scopeToPlayType(playType); gt("player1_time", 0)
                 }
                 order("created_at", Order.DESCENDING)
                 limit(200)
@@ -289,9 +307,9 @@ object MatchStatsService {
             percentChange = if (overallAvg > 0) ((overallAvg - recentAvg).toDouble() / overallAvg * 100).roundToInt() else 0
         }
 
-        val w = wordInsights(userId, mode)
-        val st = modeWinStreak(userId, mode)
-        val ph = peakHour(userId, mode)
+        val w = wordInsights(userId, mode, playType)
+        val st = modeWinStreak(userId, mode, playType)
+        val ph = peakHour(userId, mode, playType)
         val vs = headToHead(userId, mode)
 
         ProInsights(
@@ -312,10 +330,10 @@ object MatchStatsService {
     )
 
     /** Nemesis (most-lost solution), lucky word (fastest solve), avg guesses, first-try rate. */
-    private suspend fun wordInsights(userId: String, mode: String): WordResult = runCatching {
+    private suspend fun wordInsights(userId: String, mode: String, playType: String = "solo"): WordResult = runCatching {
         val rows = client.postgrest["matches"]
             .select(Columns.raw("solutions,winner_id,player1_time,player1_score")) {
-                filter { eq("player1_id", userId); eq("game_mode", mode); filterNot("solutions", FilterOperator.IS, null) }
+                filter { eq("player1_id", userId); eq("game_mode", mode); scopeToPlayType(playType); filterNot("solutions", FilterOperator.IS, null) }
                 order("created_at", Order.DESCENDING)
                 limit(500)
             }
@@ -370,10 +388,11 @@ object MatchStatsService {
         row.player1Score to row.player1Time * 1000.0
     }.getOrNull()
 
-    suspend fun modeWinStreak(userId: String, mode: String): Pair<Int, Int> = runCatching {
+    suspend fun modeWinStreak(userId: String, mode: String, playType: String = "solo"): Pair<Int, Int> = runCatching {
+        if (playType == "vs_cpu") return 0 to 0
         val rows = client.postgrest["matches"]
             .select(Columns.raw("winner_id")) {
-                filter { or { eq("player1_id", userId); eq("player2_id", userId) }; eq("game_mode", mode) }
+                filter { or { eq("player1_id", userId); eq("player2_id", userId) }; eq("game_mode", mode); scopeToPlayType(playType) }
                 order("created_at", Order.DESCENDING)
                 limit(200)
             }
@@ -389,8 +408,8 @@ object MatchStatsService {
     }.getOrElse { 0 to 0 }
 
     /** Hour (0–23) with the best win-rate among hours with ≥3 games. */
-    private suspend fun peakHour(userId: String, mode: String): Int? {
-        val buckets = timeOfDay(userId, mode)
+    private suspend fun peakHour(userId: String, mode: String, playType: String = "solo"): Int? {
+        val buckets = timeOfDay(userId, mode, playType)
         var bestHour: Int? = null; var bestRate = -1.0; var bestCount = 0
         buckets.filter { it.played >= 3 }.forEach { b ->
             val rate = b.won.toDouble() / b.played

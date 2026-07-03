@@ -127,15 +127,32 @@ struct ProfileTab: View {
                     // Mode-detail view — header row carries the read-only
                     // play-type chip (the page-level toggle drives it; the panel
                     // has no toggle of its own, matching mode-detail-panel.tsx).
+                    // Every per-game chart is scoped to activeTab (restat B1).
                     modeDetailHeader(mode)
                     modeStats(p, mode: mode)
-                    ProfileDashboard(mode: mode)
+                    ProfileDashboard(mode: mode, playType: activeTab)
                     ProDeepModeCard(gameMode: mode.rawValue, isPro: auth.isProActive,
-                                    accent: ModeStyle.accent(mode))
+                                    accent: ModeStyle.accent(mode), playType: activeTab)
+                    // CPU practice writes aggregate totals only — per-game charts
+                    // have no data to draw from, so say so instead of blanks.
+                    if activeTab == "vs_cpu" {
+                        Text("CPU practice records totals only — per-game charts track Solo and VS matches.")
+                            .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                            .frame(maxWidth: .infinity).multilineTextAlignment(.center)
+                            .padding(.vertical, 8)
+                    }
                 } else {
                     // "All" global view — Trends charts (web order inside
                     // ProfileDashboard), then Insights, Pro Stats, Skill Radar.
-                    ProfileDashboard(mode: nil)
+                    // CPU practice records totals only — the per-game charts
+                    // below draw from match rows that CPU games never write.
+                    if activeTab == "vs_cpu" {
+                        Text("CPU practice records totals only — charts track Solo and VS matches.")
+                            .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                            .frame(maxWidth: .infinity).multilineTextAlignment(.center)
+                            .padding(.vertical, 4)
+                    }
+                    ProfileDashboard(mode: nil, playType: activeTab)
                     ProfileInsightsCard(insights: allViewInsights(p))
                     ProStatsCard(statRows: statRows)
                     SkillRadarCard(isPro: auth.isProActive)
@@ -803,12 +820,13 @@ struct ProfileTab: View {
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         // Fetch the per-mode win streak from match history whenever the selected
-        // mode changes (web mode-detail-panel parity). Reset first so a stale
+        // mode OR the play-type toggle changes (web mode-detail-panel parity —
+        // restat B1 scopes the streak to the toggle). Reset first so a stale
         // value from the previous mode never flashes.
-        .task(id: mode.rawValue) {
+        .task(id: "\(mode.rawValue)-\(activeTab)") {
             modeWinStreak = (0, 0)
             if let uid = auth.profile?.id {
-                modeWinStreak = await MatchStatsService.modeWinStreak(uid: uid, mode: mode)
+                modeWinStreak = await MatchStatsService.modeWinStreak(uid: uid, mode: mode, playType: activeTab)
             }
         }
     }

@@ -229,20 +229,23 @@ private val DEEP_SAMPLE = DeepData(
  * Pro-gated with a static sample preview for free users.
  */
 @Composable
-fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: () -> Unit) {
+fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: () -> Unit, playType: String = "solo") {
     var data by remember { mutableStateOf<DeepData?>(null) }
-    LaunchedEffect(gameMode, isPro) {
-        if (!isPro) return@LaunchedEffect
+    LaunchedEffect(gameMode, isPro, playType) {
+        if (!isPro || playType == "vs_cpu") return@LaunchedEffect
         data = null
         val uid = AuthService.userId ?: return@LaunchedEffect
         data = DeepData(
-            openers = StatsDeepService.openerDeep(uid, gameMode, 4),
-            positions = StatsDeepService.positionAccuracy(uid, gameMode),
-            almanac = StatsDeepService.wordAlmanac(uid, gameMode, 24),
-            hints = if (gameMode in HINT_MODES) StatsDeepService.hintHonesty(uid, gameMode) else null,
-            gauntlet = if (gameMode == "GAUNTLET") StatsDeepService.gauntletStageStats(uid) else emptyList(),
+            openers = StatsDeepService.openerDeep(uid, gameMode, 4, playType),
+            positions = StatsDeepService.positionAccuracy(uid, gameMode, playType),
+            almanac = StatsDeepService.wordAlmanac(uid, gameMode, 24, playType),
+            hints = if (gameMode in HINT_MODES) StatsDeepService.hintHonesty(uid, gameMode, playType) else null,
+            gauntlet = if (gameMode == "GAUNTLET") StatsDeepService.gauntletStageStats(uid, playType) else emptyList(),
         )
     }
+    // No per-game rows exist for CPU practice — hide the deep card entirely
+    // (the panel shows a "totals only" note instead; restat B1).
+    if (playType == "vs_cpu") return
     val d = if (isPro) data else DEEP_SAMPLE
     if (d == null || !d.hasAny) return
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

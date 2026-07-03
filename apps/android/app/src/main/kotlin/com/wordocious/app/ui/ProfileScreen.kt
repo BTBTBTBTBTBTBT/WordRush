@@ -109,8 +109,8 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     // Solo/VS toggle (web profile/page.tsx) — filters user_stats by play_type.
     var activeTab by remember { mutableStateOf("solo") }
     // Per-mode win streak (current, best) from match history — mirrors web
-    // mode-stats-card / iOS mode-detail streak. Not play_type-scoped, so the
-    // same value shows on both Solo and VS tabs.
+    // mode-stats-card / iOS mode-detail streak. Play-type-scoped (restat B1),
+    // so it reloads when the Solo/VS/VS-CPU toggle changes.
     var modeStreaks by remember { mutableStateOf<Map<String, Pair<Int, Int>>>(emptyMap()) }
     var loading by remember { mutableStateOf(true) }
     // Account section (web §H) — Delete Account inline confirm + error/in-flight state.
@@ -133,9 +133,6 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     LaunchedEffect(userId, tick) {
         if (userId != null) {
             stats = ProfileService.fetchUserStats(userId)
-            // Per-mode win streak for each mode the player has stats in.
-            modeStreaks = stats.map { it.gameMode }.distinct()
-                .associateWith { com.wordocious.app.data.MatchStatsService.modeWinStreak(userId, it) }
             recentMatches = ProfileService.fetchRecentMatches(userId)
             val oppIds = recentMatches.filter { it.player2Id != null }
                 .map { if (it.player1Id == userId) it.player2Id!! else it.player1Id }
@@ -149,20 +146,26 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         }
         loading = false
     }
-    // Mode-scoped chart data — reloads whenever the picker changes.
+    // Mode-scoped chart data — reloads whenever the picker OR the play-type
+    // toggle changes (restat B1: every per-game stat is scoped to the toggle;
+    // vs_cpu fetchers return empty and a "totals only" note shows instead).
     val isProActive = AuthService.isProActive
-    LaunchedEffect(userId, selectedMode, isProActive) {
+    LaunchedEffect(userId, selectedMode, isProActive, activeTab, tick) {
         val uid = userId ?: return@LaunchedEffect
         val m = selectedMode
-        guessDist = com.wordocious.app.data.MatchStatsService.guessDistribution(uid, m)
-        // LAST 7 DAYS is GLOBAL (web fetchActivityByDay takes no mode) and only
-        // rendered in the All view — load it unfiltered.
+        guessDist = com.wordocious.app.data.MatchStatsService.guessDistribution(uid, m, activeTab)
+        // LAST 7 DAYS is GLOBAL (web fetchActivityByDay takes no mode and no
+        // play-type) and only rendered in the All view — load it unfiltered.
         activity7 = com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = null)
-        solveTimes = com.wordocious.app.data.MatchStatsService.solveTimes(uid, m)
-        timeOfDay = com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m)
-        topWords = com.wordocious.app.data.MatchStatsService.topWords(uid, m)
-        proInsights = if (m != null && isProActive) com.wordocious.app.data.MatchStatsService.proInsights(uid, m)
+        solveTimes = com.wordocious.app.data.MatchStatsService.solveTimes(uid, m, playType = activeTab)
+        timeOfDay = com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m, activeTab)
+        topWords = com.wordocious.app.data.MatchStatsService.topWords(uid, m, playType = activeTab)
+        proInsights = if (m != null && isProActive) com.wordocious.app.data.MatchStatsService.proInsights(uid, m, activeTab)
         else com.wordocious.app.data.MatchStatsService.ProInsights()
+        // Per-mode win streak for each mode the player has stats in (scoped to
+        // the toggle — waits on `stats` from the main effect via the tick key).
+        modeStreaks = ProfileService.fetchUserStats(uid).map { it.gameMode }.distinct()
+            .associateWith { com.wordocious.app.data.MatchStatsService.modeWinStreak(uid, it, activeTab) }
     }
 
     val isGuest by AuthService.isGuest.collectAsState()
@@ -268,6 +271,18 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             // ── "All" global view — web Trends order (restat R1): activity
             // calendar → last-7 → guess dist → solve time → daily points → top
             // words → Opener Lab → Weekday Form → Insights → Pro Stats → Radar.
+            // CPU practice records totals only — the per-game charts below draw
+            // from match rows that CPU games never write (restat B1).
+            if (activeTab == "vs_cpu") {
+                item {
+                    Text(
+                        "CPU practice records totals only — charts track Solo and VS matches.",
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
             if (activityCal.any { it.played > 0 }) {
                 item { DailyCalendarCard(activityCal) }
             }
@@ -288,9 +303,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 item { TopWordsCard(topWords) }
             }
             // Opener Lab (basic): favorite starting words + how they convert.
-            item { OpenerLabCard() }
+            item { OpenerLabCard(playType = activeTab) }
             // Weekday form: your best day of the week.
-            item { WeekdayFormCard() }
+            item { WeekdayFormCard(playType = activeTab) }
             // Insights — up to two derived one-liners (web `insights` IIFE).
             val insights = profileInsights(stats, activity7, profile, todayDailies)
             if (insights.isNotEmpty()) {
@@ -351,9 +366,22 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             }
             // Deep Insights (restat R4): opener yield, position accuracy, stage
             // breakdown (Gauntlet), hints, Word Almanac. Pro-gated w/ preview.
-            item {
-                val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
-                ProDeepModeCard(gameMode = m, isPro = isProActive, accent = accent, onGoPro = onGoPro)
+            // Hidden entirely on vs_cpu — no per-game rows exist for CPU
+            // practice; the "totals only" note below explains why (restat B1).
+            if (activeTab != "vs_cpu") {
+                item {
+                    val accent = runCatching { modeAccent(GameMode.valueOf(m)) }.getOrDefault(WTheme.primary)
+                    ProDeepModeCard(gameMode = m, isPro = isProActive, accent = accent, onGoPro = onGoPro, playType = activeTab)
+                }
+            } else {
+                item {
+                    Text(
+                        "CPU practice records totals only — per-game charts track Solo and VS matches.",
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
 

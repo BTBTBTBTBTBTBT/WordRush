@@ -12,6 +12,10 @@ struct ProfileDashboard: View {
     /// self-fetch could permanently early-return when auth.profile hydrated a
     /// frame late, silently emptying the charts). Empty for the per-mode view.
     var statRows: [UserStatRow] = []
+    /// Page-level Solo/VS/VS-CPU toggle (restat B1) — scopes every per-game
+    /// chart below; vs_cpu fetchers return empty and ProfileTab shows the
+    /// "totals only" note instead. Activity/daily-points stay unscoped (web).
+    var playType: String = "solo"
 
     var body: some View {
         VStack(spacing: 12) {
@@ -23,23 +27,23 @@ struct ProfileDashboard: View {
                 // stays here. Time-of-day is an iOS-only extra kept at the end.
                 ActivityCalendarView(mode: nil)
                 SevenDayActivityCard()
-                GuessDistributionChart(mode: nil)
-                SolveTimeChart(mode: nil)
+                GuessDistributionChart(mode: nil, playType: playType)
+                SolveTimeChart(mode: nil, playType: playType)
                 DailyPointsChartCard()
-                TopWordsCard(mode: nil)
-                OpenerLabCard()
-                WeekdayFormCard()
-                TimeOfDayHeatmap(mode: nil)
+                TopWordsCard(mode: nil, playType: playType)
+                OpenerLabCard(playType: playType)
+                WeekdayFormCard(playType: playType)
+                TimeOfDayHeatmap(mode: nil, playType: playType)
             } else {
-                GuessDistributionChart(mode: mode)
+                GuessDistributionChart(mode: mode, playType: playType)
                 ActivityCalendarView(mode: mode)
-                SolveTimeChart(mode: mode)
-                TimeOfDayHeatmap(mode: mode)
-                TopWordsCard(mode: mode)
+                SolveTimeChart(mode: mode, playType: playType)
+                TimeOfDayHeatmap(mode: mode, playType: playType)
+                TopWordsCard(mode: mode, playType: playType)
                 // Per-mode Pro insights (selected mode). On the All view the
                 // global Pro Stats card is rendered by ProfileTab AFTER the
                 // Insights section, to match the web All-view order.
-                ProInsightsCard(mode: mode!)
+                ProInsightsCard(mode: mode!, playType: playType)
             }
         }
     }
@@ -76,6 +80,7 @@ private struct EmptyChart: View {
 
 private struct GuessDistributionChart: View {
     let mode: GameMode?
+    var playType: String = "solo"
     @State private var data: [MatchStatsService.GuessBucket] = []
 
     private func color(_ g: Int) -> Color {
@@ -103,7 +108,7 @@ private struct GuessDistributionChart: View {
                 Text("\(totalWins) win\(totalWins == 1 ? "" : "s")").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
             }
         }
-        .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.guessDistribution(mode: mode) }
+        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") { data = await MatchStatsService.guessDistribution(mode: mode, playType: playType) }
         }
     }
 }
@@ -273,6 +278,7 @@ struct ProfileInsightsCard: View {
 
 private struct SolveTimeChart: View {
     let mode: GameMode?
+    var playType: String = "solo"
     @State private var data: [MatchStatsService.SolvePoint] = []
 
     private func modeColor(_ raw: String) -> Color {
@@ -311,7 +317,7 @@ private struct SolveTimeChart: View {
                 }
             }
         }
-        .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.solveTimes(mode: mode) }
+        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") { data = await MatchStatsService.solveTimes(mode: mode, playType: playType) }
     }
 
     private func timeStat(_ label: String, _ seconds: Int, _ color: Color) -> some View {
@@ -327,6 +333,7 @@ private struct SolveTimeChart: View {
 
 private struct TimeOfDayHeatmap: View {
     let mode: GameMode?
+    var playType: String = "solo"
     @State private var data: [MatchStatsService.HourBucket] = []
 
     var body: some View {
@@ -357,7 +364,7 @@ private struct TimeOfDayHeatmap: View {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
-        .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.timeOfDay(mode: mode) }
+        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") { data = await MatchStatsService.timeOfDay(mode: mode, playType: playType) }
     }
 
     private func hourLabel(_ h: Int) -> String {
@@ -371,6 +378,7 @@ private struct TimeOfDayHeatmap: View {
 
 private struct TopWordsCard: View {
     let mode: GameMode?
+    var playType: String = "solo"
     @State private var data: [MatchStatsService.TopWord] = []
 
     var body: some View {
@@ -405,7 +413,7 @@ private struct TopWordsCard: View {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
-        .task(id: mode?.rawValue ?? "all") { data = await MatchStatsService.topWords(mode: mode) }
+        .task(id: "\(mode?.rawValue ?? "all")-\(playType)") { data = await MatchStatsService.topWords(mode: mode, playType: playType) }
     }
 }
 
@@ -413,6 +421,7 @@ private struct TopWordsCard: View {
 
 private struct ProInsightsCard: View {
     let mode: GameMode
+    var playType: String = "solo"
     @ObservedObject private var auth = AuthService.shared
     @State private var s = MatchStatsService.ProInsights()
     @State private var showPro = false
@@ -474,8 +483,9 @@ private struct ProInsightsCard: View {
                 }
             }
         }
-        .task(id: "\(mode.rawValue)-\(auth.isProActive)") {
-            if auth.isProActive { s = await MatchStatsService.proInsights(mode: mode) }
+        .task(id: "\(mode.rawValue)-\(auth.isProActive)-\(playType)") {
+            s = MatchStatsService.ProInsights()
+            if auth.isProActive { s = await MatchStatsService.proInsights(mode: mode, playType: playType) }
         }
         .sheet(isPresented: $showPro) { ProView() }
     }

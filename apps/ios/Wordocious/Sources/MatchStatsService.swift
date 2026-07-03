@@ -8,6 +8,19 @@ import WordociousCore
 /// GameResultsService.recordSoloMatch, so every chart filters on player1_id.
 enum MatchStatsService {
 
+    // -- Play-type scoping (restat B1, ports stats-service.ts StatsPlayType) --
+    // `matches` has NO play_type column: solo = no opponent (player2_id null),
+    // vs = has opponent, and vs_cpu games are NEVER recorded as match rows
+    // (practice writes user_stats aggregates only). Per-game stat fetchers take
+    // a playType ("solo" | "vs" | "vs_cpu") so the profile toggle scopes charts
+    // honestly; the vs_cpu branch returns empty and callers show a 'totals
+    // only' note instead.
+    static func scopeToPlayType(_ q: PostgrestFilterBuilder, _ playType: String) -> PostgrestFilterBuilder {
+        playType == "vs"
+            ? q.not("player2_id", operator: .is, value: "null")
+            : q.is("player2_id", value: nil)
+    }
+
     // MARK: Result models
     struct GuessBucket: Identifiable { let guesses: Int; let count: Int; var label: String = ""; var id: Int { guesses } }
     struct DayActivity: Identifiable { let day: Date; let played: Int; let won: Int; var id: Date { day } }
@@ -49,12 +62,14 @@ enum MatchStatsService {
     }
 
     /// Wins bucketed by guess count (1–6) — guess-distribution bar chart.
-    static func guessDistribution(mode: GameMode? = nil) async -> [GuessBucket] {
+    static func guessDistribution(mode: GameMode? = nil, playType: String = "solo") async -> [GuessBucket] {
+        if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
         var q = AuthService.shared.client.from("matches")
             .select("player1_score,game_mode,winner_id")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("winner_id", value: uid)
+        q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [ScoreRow] = (try? await q.execute().value) ?? []
         // Bucket range follows the mode's real max guesses — a 7/13 OctoWord win
@@ -104,13 +119,15 @@ enum MatchStatsService {
     }
 
     /// Recent solo wins' solve times, oldest→newest (solve-time line chart).
-    static func solveTimes(mode: GameMode? = nil, limit: Int = 30) async -> [SolvePoint] {
+    static func solveTimes(mode: GameMode? = nil, limit: Int = 30, playType: String = "solo") async -> [SolvePoint] {
+        if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
         var q = AuthService.shared.client.from("matches")
             .select("player1_time,game_mode,created_at")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("winner_id", value: uid)
             .gt("player1_time", value: 0)
+        q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [TimeRow] = (try? await q.order("created_at", ascending: false).limit(limit).execute().value) ?? []
         // Reverse to chronological order, then index for the X axis.
@@ -121,11 +138,13 @@ enum MatchStatsService {
     }
 
     /// Games played + won per local hour (0–23) — time-of-day heatmap.
-    static func timeOfDay(mode: GameMode? = nil) async -> [HourBucket] {
+    static func timeOfDay(mode: GameMode? = nil, playType: String = "solo") async -> [HourBucket] {
+        if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
         var q = AuthService.shared.client.from("matches")
             .select("created_at,winner_id,game_mode")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
+        q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [DateWinRow] = (try? await q.limit(2000).execute().value) ?? []
         var played = [Int: Int](), won = [Int: Int]()
@@ -184,11 +203,13 @@ enum MatchStatsService {
     }
 
     /// Top-5 most-guessed words (+ win counts) — ports fetchTopWordsAllTime.
-    static func topWords(mode: GameMode? = nil, limit: Int = 5) async -> [TopWord] {
+    static func topWords(mode: GameMode? = nil, limit: Int = 5, playType: String = "solo") async -> [TopWord] {
+        if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
         var q = AuthService.shared.client.from("matches")
             .select("player1_guesses,winner_id,game_mode")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
+        q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [GuessesRow] = (try? await q.order("created_at", ascending: false).limit(1000).execute().value) ?? []
         var counts = [String: (count: Int, wins: Int)]()
@@ -209,15 +230,17 @@ enum MatchStatsService {
 
     /// Pro per-mode insights (personal bests, perfect games, consistency,
     /// improvement trend) — ports the fetch* helpers in stats-service.ts.
-    static func proInsights(mode: GameMode) async -> ProInsights {
+    static func proInsights(mode: GameMode, playType: String = "solo") async -> ProInsights {
+        if playType == "vs_cpu" { return ProInsights() }
         guard let uid = await userId() else { return ProInsights() }
-        let rows: [InsightRow] = (try? await AuthService.shared.client.from("matches")
+        var q = AuthService.shared.client.from("matches")
             .select("player1_time,player1_score,created_at")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("winner_id", value: uid)
             .eq("game_mode", value: mode.rawValue)
-            .is("player2_id", value: nil)
             .gt("player1_time", value: 0)
+        q = scopeToPlayType(q, playType)
+        let rows: [InsightRow] = (try? await q
             .order("created_at", ascending: false)
             .limit(200).execute().value) ?? []
 
@@ -254,9 +277,9 @@ enum MatchStatsService {
 
         // Word insights (nemesis / lucky / avg guesses / first-try rate), win
         // streak, peak hour, and VS head-to-head — fetched alongside in parallel.
-        async let words = wordInsights(uid: uid, mode: mode)
-        async let streak = modeWinStreak(uid: uid, mode: mode)
-        async let peak = peakHour(uid: uid, mode: mode)
+        async let words = wordInsights(uid: uid, mode: mode, playType: playType)
+        async let streak = modeWinStreak(uid: uid, mode: mode, playType: playType)
+        async let peak = peakHour(uid: uid, mode: mode, playType: playType)
         async let h2h = headToHead(uid: uid, mode: mode)
         let w = await words, st = await streak, ph = await peak, vs = await h2h
         out.avgGuesses = w.avgGuesses; out.firstTryRate = w.firstTryRate
@@ -272,14 +295,17 @@ enum MatchStatsService {
 
     /// Nemesis (most-lost solution), lucky word (fastest solve), avg guesses,
     /// first-try rate — ports fetchWordInsights.
-    private static func wordInsights(uid: String, mode: GameMode)
+    private static func wordInsights(uid: String, mode: GameMode, playType: String = "solo")
         async -> (nemesisWord: String?, nemesisLosses: Int, luckyWord: String?, luckyTime: Int, avgGuesses: Double, firstTryRate: Int) {
         struct Row: Decodable { let solutions: [String]?; let winner_id: String?; let player1_time: Double?; let player1_score: Int? }
-        let rows: [Row] = (try? await AuthService.shared.client.from("matches")
+        if playType == "vs_cpu" { return (nil, 0, nil, 0, 0, 0) }
+        var q = AuthService.shared.client.from("matches")
             .select("solutions,winner_id,player1_time,player1_score")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("game_mode", value: mode.rawValue)
             .not("solutions", operator: .is, value: "null")
+        q = scopeToPlayType(q, playType)
+        let rows: [Row] = (try? await q
             .order("created_at", ascending: false)
             .limit(500).execute().value) ?? []
         var lossMap = [String: Int]()
@@ -329,12 +355,15 @@ enum MatchStatsService {
         return (r.player1_score, Double(r.player1_time) * 1000)
     }
 
-    static func modeWinStreak(uid: String, mode: GameMode) async -> (current: Int, best: Int) {
+    static func modeWinStreak(uid: String, mode: GameMode, playType: String = "solo") async -> (current: Int, best: Int) {
         struct Row: Decodable { let winner_id: String? }
-        let rows: [Row] = (try? await AuthService.shared.client.from("matches")
+        if playType == "vs_cpu" { return (0, 0) }
+        var q = AuthService.shared.client.from("matches")
             .select("winner_id")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("game_mode", value: mode.rawValue)
+        q = scopeToPlayType(q, playType)
+        let rows: [Row] = (try? await q
             .order("created_at", ascending: false)
             .limit(200).execute().value) ?? []
         var current = 0, best = 0, streak = 0, foundFirstLoss = false
@@ -348,8 +377,8 @@ enum MatchStatsService {
     }
 
     /// Hour (0–23) with the best win-rate among hours with ≥3 games — ports peakHourLabel.
-    private static func peakHour(uid: String, mode: GameMode) async -> Int? {
-        let buckets = await timeOfDay(mode: mode)
+    private static func peakHour(uid: String, mode: GameMode, playType: String = "solo") async -> Int? {
+        let buckets = await timeOfDay(mode: mode, playType: playType)
         var bestHour: Int?, bestRate = -1.0, bestCount = 0
         for b in buckets where b.played >= 3 {
             let rate = Double(b.won) / Double(b.played)

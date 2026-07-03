@@ -148,10 +148,10 @@ fun DailyStandingStrip(reloadToken: Int = 0) {
 /** Favorite starting words + how they convert (win rate of games opened with
  *  each word). Free-tier card — the deep yield version lives in Deep Insights. */
 @Composable
-fun OpenerLabCard() {
+fun OpenerLabCard(playType: String = "solo") {
     var openers by remember { mutableStateOf<List<StatsDeepService.OpenerStat>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        AuthService.userId?.let { openers = StatsDeepService.openerStats(it, 5) }
+    LaunchedEffect(playType) {
+        openers = AuthService.userId?.let { StatsDeepService.openerStats(it, 5, playType) } ?: emptyList()
     }
     if (openers.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -188,10 +188,10 @@ fun OpenerLabCard() {
 
 /** Win rate by day of week — highlights your best day (gold bar). */
 @Composable
-fun WeekdayFormCard() {
+fun WeekdayFormCard(playType: String = "solo") {
     var days by remember { mutableStateOf<List<StatsDeepService.WeekdayFormDay>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        AuthService.userId?.let { days = StatsDeepService.weekdayForm(it) }
+    LaunchedEffect(playType) {
+        days = AuthService.userId?.let { StatsDeepService.weekdayForm(it, playType) } ?: emptyList()
     }
     if (days.none { it.played > 0 }) return
     val labels = listOf("S", "M", "T", "W", "T", "F", "S")

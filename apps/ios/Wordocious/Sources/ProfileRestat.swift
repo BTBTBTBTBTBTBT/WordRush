@@ -103,6 +103,8 @@ struct DailyStandingStrip: View {
 /// Favorite starting words + how they convert (win rate of games opened with
 /// each word). Free-tier card — the deep yield version lives in Deep Insights.
 struct OpenerLabCard: View {
+    /// Play-type scope from the page toggle (restat B1); vs_cpu → empty → hidden.
+    var playType: String = "solo"
     @State private var openers: [StatsDeepService.OpenerStat] = []
 
     var body: some View {
@@ -137,7 +139,7 @@ struct OpenerLabCard: View {
                 }
             }
         }
-        .task { openers = await StatsDeepService.openerStats(limit: 5) }
+        .task(id: playType) { openers = await StatsDeepService.openerStats(limit: 5, playType: playType) }
     }
 }
 
@@ -145,6 +147,8 @@ struct OpenerLabCard: View {
 
 /// Win rate by day of week — highlights your best day (gold bar).
 struct WeekdayFormCard: View {
+    /// Play-type scope from the page toggle (restat B1); vs_cpu → zero days → hidden.
+    var playType: String = "solo"
     @State private var days: [StatsDeepService.WeekdayFormDay] = []
 
     private let labels = ["S", "M", "T", "W", "T", "F", "S"]
@@ -188,7 +192,7 @@ struct WeekdayFormCard: View {
                 }
             }
         }
-        .task { days = await StatsDeepService.weekdayForm() }
+        .task(id: playType) { days = await StatsDeepService.weekdayForm(playType: playType) }
     }
 }
 

@@ -50,12 +50,15 @@ enum StatsDeepService {
     }
 
     /// Rows of (my guesses, solutions, won, time) for a mode — shared loader.
-    static func myGuessRows(gameMode: String? = nil, limit: Int = 400) async -> [GuessRow] {
+    /// Play-type-scoped (restat B1): solo = player2_id null, vs = not null;
+    /// vs_cpu callers early-return (CPU games never write match rows).
+    static func myGuessRows(gameMode: String? = nil, limit: Int = 400, playType: String = "solo") async -> [GuessRow] {
         guard let uid = await userId() else { return [] }
         var q = client.from("matches")
             .select("player1_id, player1_guesses, player2_guesses, solutions, winner_id, player1_time, player2_time, created_at, game_mode, hints_used")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .not("solutions", operator: .is, value: "null")
+        q = MatchStatsService.scopeToPlayType(q, playType)
         if let gameMode { q = q.eq("game_mode", value: gameMode) }
         let rows: [MatchRow] = (try? await q.order("created_at", ascending: false).limit(limit).execute().value) ?? []
         return rows.compactMap { r in
@@ -80,7 +83,8 @@ enum StatsDeepService {
     }
 
     /// Most-used STARTING words and how often games opened with them were won.
-    static func openerStats(limit: Int = 5) async -> [OpenerStat] {
+    static func openerStats(limit: Int = 5, playType: String = "solo") async -> [OpenerStat] {
+        if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
         struct Row: Decodable {
             let player1_id: String
@@ -88,10 +92,12 @@ enum StatsDeepService {
             let player2_guesses: [String]?
             let winner_id: String?
         }
-        let rows: [Row] = (try? await client.from("matches")
+        var q = client.from("matches")
             .select("player1_id, player1_guesses, player2_guesses, winner_id")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .not("player1_guesses", operator: .is, value: "null")
+        q = MatchStatsService.scopeToPlayType(q, playType)
+        let rows: [Row] = (try? await q
             .order("created_at", ascending: false)
             .limit(1000).execute().value) ?? []
         var map: [String: (count: Int, wins: Int)] = [:]
@@ -120,15 +126,18 @@ enum StatsDeepService {
     }
 
     /// Win rate by LOCAL day of week (last 500 games) — "your best day" card.
-    static func weekdayForm() async -> [WeekdayFormDay] {
+    static func weekdayForm(playType: String = "solo") async -> [WeekdayFormDay] {
+        var days = (0..<7).map { WeekdayFormDay(dow: $0, played: 0, won: 0) }
+        if playType == "vs_cpu" { return days }
         guard let uid = await userId() else { return [] }
         struct Row: Decodable { let winner_id: String?; let created_at: String }
-        let rows: [Row] = (try? await client.from("matches")
+        var q = client.from("matches")
             .select("player1_id, winner_id, created_at")
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
+        q = MatchStatsService.scopeToPlayType(q, playType)
+        let rows: [Row] = (try? await q
             .order("created_at", ascending: false)
             .limit(500).execute().value) ?? []
-        var days = (0..<7).map { WeekdayFormDay(dow: $0, played: 0, won: 0) }
         let cal = Calendar.current
         for r in rows {
             guard let d = parseTimestamp(r.created_at) else { continue }
@@ -188,8 +197,9 @@ enum StatsDeepService {
     }
 
     /// Info yield of each starting word — avg greens/yellows on guess 1.
-    static func openerDeep(gameMode: String, limit: Int = 5) async -> [OpenerDeepStat] {
-        let rows = await myGuessRows(gameMode: gameMode)
+    static func openerDeep(gameMode: String, limit: Int = 5, playType: String = "solo") async -> [OpenerDeepStat] {
+        if playType == "vs_cpu" { return [] }
+        let rows = await myGuessRows(gameMode: gameMode, playType: playType)
         var map: [String: (count: Int, greens: Int, yellows: Int, wins: Int)] = [:]
         for r in rows {
             guard let first = r.guesses.first, let sol = r.solutions.first,
@@ -222,8 +232,9 @@ enum StatsDeepService {
     }
 
     /// How often each letter slot comes up green across all guesses.
-    static func positionAccuracy(gameMode: String) async -> PositionAccuracy? {
-        let rows = await myGuessRows(gameMode: gameMode)
+    static func positionAccuracy(gameMode: String, playType: String = "solo") async -> PositionAccuracy? {
+        if playType == "vs_cpu" { return nil }
+        let rows = await myGuessRows(gameMode: gameMode, playType: playType)
         guard let firstSolution = rows.first?.solutions.first else { return nil }
         let wordLength = firstSolution.count
         var correct = [Int](repeating: 0, count: wordLength)
@@ -254,8 +265,9 @@ enum StatsDeepService {
     }
 
     /// Recent solutions faced (first board), with result + pace.
-    static func wordAlmanac(gameMode: String, limit: Int = 24) async -> [AlmanacEntry] {
-        let rows = await myGuessRows(gameMode: gameMode, limit: limit)
+    static func wordAlmanac(gameMode: String, limit: Int = 24, playType: String = "solo") async -> [AlmanacEntry] {
+        if playType == "vs_cpu" { return [] }
+        let rows = await myGuessRows(gameMode: gameMode, limit: limit, playType: playType)
         return rows.compactMap { r in
             guard let sol = r.solutions.first else { return nil }
             return AlmanacEntry(word: sol.uppercased(), won: r.won,
@@ -275,7 +287,8 @@ enum StatsDeepService {
     }
 
     /// Gauntlet stage analytics from stored gauntlet_stages.stageResults.
-    static func gauntletStageStats() async -> [GauntletStageStat] {
+    static func gauntletStageStats(playType: String = "solo") async -> [GauntletStageStat] {
+        if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
         struct StageResult: Decodable {
             let name: String?
@@ -284,11 +297,13 @@ enum StatsDeepService {
         }
         struct Stages: Decodable { let stageResults: [StageResult]? }
         struct Row: Decodable { let gauntlet_stages: Stages? }
-        let rows: [Row] = (try? await client.from("matches")
+        var q = client.from("matches")
             .select("gauntlet_stages")
             .eq("player1_id", value: uid)
             .eq("game_mode", value: "GAUNTLET")
             .not("gauntlet_stages", operator: .is, value: "null")
+        q = MatchStatsService.scopeToPlayType(q, playType)
+        let rows: [Row] = (try? await q
             .order("created_at", ascending: false)
             .limit(200).execute().value) ?? []
 
@@ -319,8 +334,9 @@ enum StatsDeepService {
     }
 
     /// Hint usage honesty card (Six/Seven/ProperNoundle — hints_used is stored).
-    static func hintHonesty(gameMode: String) async -> HintHonesty? {
-        let rows = await myGuessRows(gameMode: gameMode)
+    static func hintHonesty(gameMode: String, playType: String = "solo") async -> HintHonesty? {
+        if playType == "vs_cpu" { return nil }
+        let rows = await myGuessRows(gameMode: gameMode, playType: playType)
         guard !rows.isEmpty else { return nil }
         let wins = rows.filter(\.won)
         guard !wins.isEmpty else { return nil }

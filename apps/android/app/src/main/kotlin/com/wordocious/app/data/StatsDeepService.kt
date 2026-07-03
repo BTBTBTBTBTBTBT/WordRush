@@ -60,12 +60,15 @@ object StatsDeepService {
         @SerialName("hints_used") val hintsUsed: Int? = null,
     )
 
-    /** Rows of (my guesses, solutions, won, time) for a mode — shared loader. */
-    suspend fun myGuessRows(userId: String, gameMode: String? = null, limit: Int = 400): List<GuessRow> = runCatching {
+    /** Rows of (my guesses, solutions, won, time) for a mode — shared loader.
+     *  Play-type-scoped (restat B1): solo = player2_id null, vs = not null;
+     *  vs_cpu callers early-return (CPU games never write match rows). */
+    suspend fun myGuessRows(userId: String, gameMode: String? = null, limit: Int = 400, playType: String = "solo"): List<GuessRow> = runCatching {
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_id,player1_guesses,player2_guesses,solutions,winner_id,player1_time,player2_time,created_at,game_mode,hints_used")) {
                 filter {
                     or { eq("player1_id", userId); eq("player2_id", userId) }
+                    scopeToPlayType(playType)
                     filterNot("solutions", FilterOperator.IS, null)
                     gameMode?.let { eq("game_mode", it) }
                 }
@@ -99,11 +102,13 @@ object StatsDeepService {
     )
 
     /** Most-used STARTING words and how often games opened with them were won. */
-    suspend fun openerStats(userId: String, limit: Int = 5): List<OpenerStat> = runCatching {
+    suspend fun openerStats(userId: String, limit: Int = 5, playType: String = "solo"): List<OpenerStat> = runCatching {
+        if (playType == "vs_cpu") return emptyList()
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_id,player1_guesses,player2_guesses,winner_id")) {
                 filter {
                     or { eq("player1_id", userId); eq("player2_id", userId) }
+                    scopeToPlayType(playType)
                     filterNot("player1_guesses", FilterOperator.IS, null)
                 }
                 order("created_at", Order.DESCENDING)
@@ -134,10 +139,11 @@ object StatsDeepService {
     )
 
     /** Win rate by LOCAL day of week (last 500 games) — "your best day" card. */
-    suspend fun weekdayForm(userId: String): List<WeekdayFormDay> = runCatching {
+    suspend fun weekdayForm(userId: String, playType: String = "solo"): List<WeekdayFormDay> = runCatching {
+        if (playType == "vs_cpu") return (0..6).map { WeekdayFormDay(it, 0, 0) }
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_id,winner_id,created_at")) {
-                filter { or { eq("player1_id", userId); eq("player2_id", userId) } }
+                filter { or { eq("player1_id", userId); eq("player2_id", userId) }; scopeToPlayType(playType) }
                 order("created_at", Order.DESCENDING)
                 limit(500)
             }
@@ -206,8 +212,9 @@ object StatsDeepService {
     )
 
     /** Info yield of each starting word — avg greens/yellows on guess 1. */
-    suspend fun openerDeep(userId: String, gameMode: String, limit: Int = 5): List<OpenerDeepStat> {
-        val rows = myGuessRows(userId, gameMode)
+    suspend fun openerDeep(userId: String, gameMode: String, limit: Int = 5, playType: String = "solo"): List<OpenerDeepStat> {
+        if (playType == "vs_cpu") return emptyList()
+        val rows = myGuessRows(userId, gameMode, playType = playType)
         val map = HashMap<String, IntArray>()  // word -> [count, greens, yellows, wins]
         for (r in rows) {
             val first = r.guesses.firstOrNull() ?: continue
@@ -236,8 +243,9 @@ object StatsDeepService {
     data class PositionAccuracy(val wordLength: Int, val pct: List<Int>, val sampleGuesses: Int)
 
     /** How often each letter slot comes up green across all guesses. */
-    suspend fun positionAccuracy(userId: String, gameMode: String): PositionAccuracy? {
-        val rows = myGuessRows(userId, gameMode)
+    suspend fun positionAccuracy(userId: String, gameMode: String, playType: String = "solo"): PositionAccuracy? {
+        if (playType == "vs_cpu") return null
+        val rows = myGuessRows(userId, gameMode, playType = playType)
         val wordLength = rows.firstOrNull()?.solutions?.firstOrNull()?.length ?: return null
         val correct = IntArray(wordLength)
         var total = 0
@@ -263,8 +271,9 @@ object StatsDeepService {
     data class AlmanacEntry(val word: String, val won: Boolean, val guesses: Int, val time: Int, val date: String)
 
     /** Recent solutions faced (first board), with result + pace. */
-    suspend fun wordAlmanac(userId: String, gameMode: String, limit: Int = 24): List<AlmanacEntry> =
-        myGuessRows(userId, gameMode, limit).mapNotNull { r ->
+    suspend fun wordAlmanac(userId: String, gameMode: String, limit: Int = 24, playType: String = "solo"): List<AlmanacEntry> =
+        if (playType == "vs_cpu") emptyList()
+        else myGuessRows(userId, gameMode, limit, playType).mapNotNull { r ->
             val sol = r.solutions.firstOrNull() ?: return@mapNotNull null
             AlmanacEntry(sol.uppercase(), r.won, r.guesses.size, r.time, r.createdAt)
         }
@@ -299,11 +308,13 @@ object StatsDeepService {
     private data class GauntletRow(@SerialName("gauntlet_stages") val gauntletStages: StagesObj? = null)
 
     /** Gauntlet stage analytics from stored gauntlet_stages.stageResults. */
-    suspend fun gauntletStageStats(userId: String): List<GauntletStageStat> = runCatching {
+    suspend fun gauntletStageStats(userId: String, playType: String = "solo"): List<GauntletStageStat> = runCatching {
+        if (playType == "vs_cpu") return emptyList()
         val rows = client.postgrest["matches"]
             .select(Columns.raw("gauntlet_stages")) {
                 filter {
                     eq("player1_id", userId); eq("game_mode", "GAUNTLET")
+                    scopeToPlayType(playType)
                     filterNot("gauntlet_stages", FilterOperator.IS, null)
                 }
                 order("created_at", Order.DESCENDING)
@@ -341,8 +352,9 @@ object StatsDeepService {
     data class HintHonesty(val hintlessWinRate: Int, val avgHintsPerGame: Double, val gamesCounted: Int)
 
     /** Hint usage honesty card (Six/Seven/ProperNoundle — hints_used is stored). */
-    suspend fun hintHonesty(userId: String, gameMode: String): HintHonesty? {
-        val rows = myGuessRows(userId, gameMode)
+    suspend fun hintHonesty(userId: String, gameMode: String, playType: String = "solo"): HintHonesty? {
+        if (playType == "vs_cpu") return null
+        val rows = myGuessRows(userId, gameMode, playType = playType)
         if (rows.isEmpty()) return null
         val wins = rows.filter { it.won }
         if (wins.isEmpty()) return null
