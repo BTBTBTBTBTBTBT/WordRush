@@ -70,6 +70,11 @@ final class DailyCompletionsStore: ObservableObject {
     private static let cacheKey = "daily-completions-cache"
 
     var completedCount: Int { byMode.count }
+
+    /// Today's cached completion count without spinning up a store — lets
+    /// NotificationService decide whether tonight's reminder is still needed.
+    /// The cache is day-keyed, so a stale (yesterday's) cache reads as 0.
+    static func cachedTodayCount() -> Int { readCache()?.count ?? 0 }
     var wonCount: Int { byMode.values.filter { $0.completed }.count }
     var allDone: Bool { completedCount >= Self.totalDailyModes }
     var flawless: Bool { allDone && wonCount >= Self.totalDailyModes }

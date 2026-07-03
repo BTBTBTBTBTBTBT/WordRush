@@ -28,9 +28,17 @@ struct WordociousApp: App {
                 // foregrounded + signed in, so the LIVE count reflects real
                 // active players (mirrors the web SitePresenceProvider).
                 .onChange(of: scenePhase) { phase in
-                    if phase == .active { PresenceService.shared.start() }
-                    else if phase == .background { PresenceService.shared.stop() }
+                    if phase == .active {
+                        PresenceService.shared.start()
+                        // Recompute the daily reminder: if today's 9 dailies are
+                        // done (or it's past 18:00) it rolls to tomorrow, so a
+                        // finished day never gets tonight's nudge.
+                        Task { await NotificationService.reschedule() }
+                    } else if phase == .background { PresenceService.shared.stop() }
                 }
+                // Every daily completion re-evaluates the reminder — completing
+                // the 9th daily flips tonight's reminder to tomorrow 18:00.
+                .onDailyCompletion { Task { await NotificationService.reschedule() } }
                 .onChange(of: auth.profile?.id) { id in
                     if id != nil { PresenceService.shared.start() } else { PresenceService.shared.stop() }
                 }
