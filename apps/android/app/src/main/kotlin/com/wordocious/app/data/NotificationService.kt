@@ -12,6 +12,7 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.wordocious.app.App
 import com.wordocious.app.R
+import io.github.jan.supabase.auth.auth
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
@@ -71,16 +72,60 @@ object NotificationService {
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
     }
 
+    /**
+     * U1: how many of today's 9 dailies are already done, checked AT fire time
+     * (Android advantage over iOS's schedule-ahead local notifications).
+     * Order: day-keyed SharedPreferences cache first (free), then a short
+     * network fetch (the worker often runs in a cold process, so the Supabase
+     * session is restored first so AuthService.userId resolves). ANY error or
+     * timeout FAILS OPEN to 0 — a redundant reminder beats a silently missed
+     * one; only a positively-confirmed full sweep skips the post.
+     */
+    private fun completedDailiesToday(): Int {
+        val cached = runCatching { DailyCompletionsService.readCache() }.getOrElse { emptyMap() }
+        if (cached.size >= DailyCompletionsService.TOTAL_DAILY_MODES) return cached.size
+        val fetched = runCatching {
+            kotlinx.coroutines.runBlocking {
+                kotlinx.coroutines.withTimeoutOrNull(6_000L) {
+                    val client = SupabaseConfig.client
+                    client.auth.awaitInitialization()
+                    val uid = client.auth.currentUserOrNull()?.id
+                    // Cold process: profile (→ AuthService.userId) isn't loaded;
+                    // fetchTodayCompletions needs it. Also refreshes the cached
+                    // daily streak used for the reminder copy below.
+                    if (uid != null && AuthService.userId == null) AuthService.loadProfile(uid)
+                    DailyCompletionsService.fetchTodayCompletions()
+                }
+            }
+        }.getOrNull()
+        return maxOf(cached.size, fetched?.size ?: 0)
+    }
+
     class ReminderWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
         override fun doWork(): Result {
             // Respect the toggle even if a stale work request fires — and stop
             // the chain (Settings re-calls schedule() when toggled back on).
             if (!SettingsPref.get(SettingsPref.DAILY_REMINDER, false)) return Result.success()
+            // U1: all 9 dailies already done today → nothing to nudge about.
+            // Skip the post but STILL reschedule tomorrow's check.
+            if (completedDailiesToday() >= DailyCompletionsService.TOTAL_DAILY_MODES) {
+                schedule(applicationContext)
+                return Result.success()
+            }
+            // U1: name the daily-login streak when it's worth protecting (>= 3) —
+            // same field the profile SnapshotHero "Daily" stat shows. In-memory
+            // profile first, then the persisted copy (cold process).
+            val streak = AuthService.profile.value?.dailyLoginStreak
+                ?: SettingsPref.get(AuthService.CACHED_DAILY_STREAK, 0)
+            val body = if (streak >= 3)
+                "Don't lose your $streak-day streak! Today's puzzles are waiting. 🔥"
+            else
+                "Your daily puzzles are ready — keep your streak alive! 🔥"
             ensureChannel(applicationContext)
             val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Wordocious")
-                .setContentText("Your daily puzzles are ready — keep your streak alive! 🔥")
+                .setContentText(body)
                 .setAutoCancel(true)
                 .setContentIntent(
                     android.app.PendingIntent.getActivity(

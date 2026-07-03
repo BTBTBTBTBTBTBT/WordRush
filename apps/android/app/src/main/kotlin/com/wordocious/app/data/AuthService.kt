@@ -211,7 +211,14 @@ object AuthService {
         _isAuthenticated.value = false
         _isGuest.value = false
         SettingsPref.set(HAD_SESSION, false)
+        SettingsPref.set(CACHED_DAILY_STREAK, 0)
     }
+
+    /** Persisted copy of the profile's daily-login streak (the SnapshotHero
+     *  "Daily" stat) — lets the 18:00 ReminderWorker personalize its copy even
+     *  in a cold process where the in-memory profile hasn't restored yet.
+     *  Refreshed on every loadProfile; zeroed on sign-out. */
+    const val CACHED_DAILY_STREAK = "cached-daily-streak"
 
     /** Persisted hint that the LAST run had a real session — lets MainActivity
      *  render the home immediately on the next launch (while the session quietly
@@ -264,6 +271,7 @@ object AuthService {
                 }
                 .decodeSingleOrNull<Profile>()
             _profile.value = result
+            result?.let { SettingsPref.set(CACHED_DAILY_STREAK, it.dailyLoginStreak) }
         } catch (e: Exception) {
             // Profile might not exist yet for new sign-ups — that's fine
         }
