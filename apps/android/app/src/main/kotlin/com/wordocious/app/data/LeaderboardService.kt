@@ -41,7 +41,8 @@ object LeaderboardService {
         val rank: RankInfo?,
     )
     private val boardCache = mutableMapOf<String, CachedBoard>()
-    fun cacheKey(gameMode: String, day: String, userId: String?) = "$gameMode:$day:${userId ?: "anon"}"
+    fun cacheKey(gameMode: String, day: String, userId: String?, playType: String = "solo") =
+        "$gameMode:$day:$playType:${userId ?: "anon"}"
     fun cachedBoard(key: String): CachedBoard? = boardCache[key]
     fun cacheBoard(key: String, board: CachedBoard) { boardCache[key] = board }
 

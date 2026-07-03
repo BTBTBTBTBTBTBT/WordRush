@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.LeaderboardService
 import com.wordocious.app.ui.theme.WTheme
+import kotlinx.coroutines.async
+import kotlinx.coroutines.ensureActive
 
 /**
  * Records screen — ported from web /records/page.tsx.
@@ -121,20 +123,57 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     var playType by remember { mutableStateOf("solo") }
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var playerCount by remember { mutableIntStateOf(0) }
-    var userRank by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var userRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
     // Re-fetch the instant a daily is recorded (completionTick) so a finished
     // puzzle appears here immediately, without a tab round-trip.
+    // L1/L2/L3 (mirrors LeaderboardScreen): session cache paints instantly,
+    // rows + count fetch in parallel and paint immediately, rank fills in
+    // after without blocking, and a failed fetch keeps whatever is showing.
     val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
     LaunchedEffect(selectedMode, playType, tick) {
-        loading = true
-        userRank = null
-        entries = LeaderboardService.fetchDailyLeaderboard(selectedMode, playType)
-        playerCount = LeaderboardService.playerCount(selectedMode)
-        if (userId != null) userRank = LeaderboardService.userRankAndTotal(userId, selectedMode, playType)
+        val mode = selectedMode
+        val pt = playType
+        val day = com.wordocious.app.todayLocalDate()
+        // Stale-while-revalidate: a chip/toggle tap or screen re-entry paints the
+        // last-known rows instantly; the skeleton only shows on a true first load.
+        val key = LeaderboardService.cacheKey(mode, day, userId, pt)
+        val cached = LeaderboardService.cachedBoard(key)
+        if (cached != null) {
+            entries = cached.entries
+            playerCount = cached.playerCount
+            userRank = cached.rank
+            loading = false
+        } else {
+            loading = true
+            entries = emptyList()
+            userRank = null
+        }
+        // Rows + "{n} players today" in parallel — paint the rows the moment they
+        // land; the rank line fills in on its own instead of holding the list.
+        val (lbOpt, count) = kotlinx.coroutines.coroutineScope {
+            val lbD = async { LeaderboardService.fetchDailyLeaderboardOrNull(mode, pt, day = day) }
+            val countD = async { LeaderboardService.playerCount(mode) }
+            lbD.await() to countD.await()
+        }
+        // Race guard: a mode/toggle switch cancels this effect; never let a late
+        // response from the old selection overwrite the new selection's rows.
+        ensureActive()
+        // Network error (null, not an empty day): keep whatever is showing —
+        // cached rows beat clobbering them with a blank list; never cache the failure.
+        if (lbOpt == null) { loading = false; return@LaunchedEffect }
+        val lb = lbOpt
+        entries = lb
+        playerCount = count
         loading = false
+        val rank = if (userId != null) {
+            LeaderboardService.getUserDailyRank(userId, mode, pt, day = day, topEntries = lb)
+        } else null
+        ensureActive()
+        userRank = rank
+        LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank))
     }
 
     Column {
@@ -151,7 +190,9 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                 Text("$playerCount player${if (playerCount == 1) "" else "s"} today", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
             Spacer(Modifier.weight(1f))
-            userRank?.let { (rank, total) ->
+            userRank?.let { r ->
+                val rank = r.rank
+                val total = r.totalPlayers
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text("Your rank:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     Text("#$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
