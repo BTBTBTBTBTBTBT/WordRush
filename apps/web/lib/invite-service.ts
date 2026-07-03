@@ -95,6 +95,22 @@ export async function lookupInviterUsername(inviterId: string): Promise<string |
   return data?.username ?? null;
 }
 
+/** Batched username lookup — one .in() query instead of one per inviter.
+ *  (match_invites.inviter_id references auth.users, not profiles, so a
+ *  PostgREST embed isn't available on the invites query itself.) */
+export async function lookupUsernames(ids: string[]): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+  const { data } = await (supabase as any)
+    .from('profiles')
+    .select('id, username')
+    .in('id', ids);
+  const map: Record<string, string> = {};
+  for (const p of (data as Array<{ id: string; username: string | null }> | null) || []) {
+    if (p.username) map[p.id] = p.username;
+  }
+  return map;
+}
+
 export async function fetchPendingInvitesForUser(userId: string): Promise<MatchInvite[]> {
   const { data } = await (supabase as any)
     .from('match_invites')

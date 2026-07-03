@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, X as XIcon } from 'lucide-react';
-import { fetchPendingInvitesForUser, lookupInviterUsername, markInviteDeclined, type MatchInvite } from '@/lib/invite-service';
+import { fetchPendingInvitesForUser, lookupUsernames, markInviteDeclined, type MatchInvite } from '@/lib/invite-service';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 
 interface Props {
@@ -22,14 +22,8 @@ export function PendingInvitesBanner({ userId }: Props) {
       const list = await fetchPendingInvitesForUser(userId);
       if (cancelled) return;
       setInvites(list);
-      // Resolve inviter usernames in parallel.
-      const names: Record<string, string> = {};
-      await Promise.all(
-        list.map(async (inv) => {
-          const n = await lookupInviterUsername(inv.inviter_id);
-          if (n) names[inv.inviter_id] = n;
-        }),
-      );
+      // One batched lookup for all inviter usernames (was one query each).
+      const names = await lookupUsernames(Array.from(new Set(list.map((i) => i.inviter_id))));
       if (!cancelled) setInviterNames(names);
     })();
     return () => { cancelled = true; };

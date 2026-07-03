@@ -37,6 +37,20 @@ function WordOfTheDay() {
     const now = new Date();
     const daysSinceEpoch = Math.floor(now.getTime() / 86400000);
 
+    // H1: the word only changes at midnight, but this used to re-run the
+    // definition scan (up to 20 serial external API calls) on EVERY home
+    // visit. Cache the day's result — including the no-definition fallback,
+    // so a flaky API day doesn't retrigger the scan per visit.
+    const cacheKey = `wordocious-wotd-${daysSinceEpoch}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) { setInfo(JSON.parse(cached)); return; }
+    } catch {}
+    const saveAndSet = (v: WordDefinition) => {
+      setInfo(v);
+      try { localStorage.setItem(cacheKey, JSON.stringify(v)); } catch {}
+    };
+
     async function findWordWithDefinition() {
       // Lazy-load solutions list (shared chunk with game pages)
       const solutions = (await import('@/data/solutions.json')).default;
@@ -54,7 +68,7 @@ function WordOfTheDay() {
               const partOfSpeech = meaning?.partOfSpeech || '';
               const definition = meaning?.definitions?.[0]?.definition || '';
               if (definition) {
-                setInfo({ word, phonetic, partOfSpeech, definition });
+                saveAndSet({ word, phonetic, partOfSpeech, definition });
                 return;
               }
             }
@@ -63,7 +77,7 @@ function WordOfTheDay() {
       }
       // Fallback: show the original daily word without definition
       const fallback = solutions[daysSinceEpoch % solutions.length];
-      setInfo({ word: fallback });
+      saveAndSet({ word: fallback });
     }
 
     findWordWithDefinition();
