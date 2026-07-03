@@ -459,6 +459,14 @@ final class GameViewModel: ObservableObject {
         let stagesCompletedCount = stagesCompletedForScore
         let bestCorrect = bestCorrectLettersForScore
         Task {
+            // The matches insert touches a different table than record()'s
+            // user_stats/profiles/daily_results writes, so run them CONCURRENTLY
+            // — the XP toast (xpResult) lands as soon as record() returns instead
+            // of waiting behind the match-history insert.
+            async let matchWrite: Void = GameResultsService.recordSoloMatch(
+                gameMode: modeRaw, won: completed, score: guesses, timeSeconds: secs,
+                seed: theSeed, solutions: solutionWords, guesses: guessWords, hintsUsed: hintsCount
+            )
             let xp = await GameResultsService.record(
                 gameMode: modeRaw, won: completed, guessCount: guesses,
                 timeSeconds: secs, boardsSolved: solved, totalBoards: total,
@@ -466,12 +474,11 @@ final class GameViewModel: ObservableObject {
                 stagesCompleted: stagesCompletedCount, bestCorrectLetters: bestCorrect
             )
             self.xpResult = xp
-            await GameResultsService.recordSoloMatch(
-                gameMode: modeRaw, won: completed, score: guesses, timeSeconds: secs,
-                seed: theSeed, solutions: solutionWords, guesses: guessWords, hintsUsed: hintsCount
-            )
+            await matchWrite
             // Gauntlet: persist the per-stage breakdown so the results screen
             // shows full detail (incl. per-stage times) on any device.
+            // MUST stay after recordSoloMatch — it UPDATEs the matches row that
+            // recordSoloMatch inserts (matched by player1_id + mode + seed).
             if isGauntlet, let g = state.gauntlet {
                 await GameResultsService.recordGauntletStages(
                     seed: theSeed,

@@ -691,22 +691,36 @@ final class VSMatchViewModel: ObservableObject {
             return
         }
 
+        let theMode = mode
+        let isDraw = data.winner == "draw"
+        let shouldRecordMatch = data.recordMatch == true
+        let oppId = data.opponentId
+        let mySolutions = data.solutions ?? []
+        let myWords = myGuessLog.map(\.guess)
+        let theirWords = (data.opponentGuessLog ?? []).map(\.guess)
+        let forfeit = data.forfeit == true
         Task {
-            xpResult = await GameResultsService.record(
-                gameMode: mode, playType: "vs", won: won, guessCount: data.playerGuesses,
-                timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
             // Match-history row so this VS battle shows in Recent Matches. Only the
             // server-designated writer (recordMatch) inserts, so there's one shared row.
-            if data.recordMatch == true, let opp = data.opponentId {
-                await GameResultsService.recordVsMatch(
-                    gameMode: mode, opponentId: opp, won: won, isDraw: data.winner == "draw",
-                    playerGuesses: data.playerGuesses, opponentGuesses: data.opponentGuesses,
-                    playerTimeSec: secs, opponentTimeSec: opponentSecs, seed: theSeed,
-                    solutions: data.solutions ?? [],
-                    myGuesses: myGuessLog.map(\.guess),
-                    theirGuesses: (data.opponentGuessLog ?? []).map(\.guess),
-                    forfeit: data.forfeit == true)
-            }
+            // The matches insert is independent of record()'s user_stats/profiles/
+            // daily_results writes, so run them CONCURRENTLY — the XP toast lands
+            // as soon as record() returns instead of waiting behind the insert.
+            async let matchWrite: Void = {
+                if shouldRecordMatch, let opp = oppId {
+                    await GameResultsService.recordVsMatch(
+                        gameMode: theMode, opponentId: opp, won: won, isDraw: isDraw,
+                        playerGuesses: data.playerGuesses, opponentGuesses: data.opponentGuesses,
+                        playerTimeSec: secs, opponentTimeSec: opponentSecs, seed: theSeed,
+                        solutions: mySolutions,
+                        myGuesses: myWords,
+                        theirGuesses: theirWords,
+                        forfeit: forfeit)
+                }
+            }()
+            xpResult = await GameResultsService.record(
+                gameMode: theMode, playType: "vs", won: won, guessCount: data.playerGuesses,
+                timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
+            await matchWrite
             if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
                 await AchievementService.checkAchievements(
                     userId: uid, gameMode: mode.rawValue, playType: "vs", won: won,
