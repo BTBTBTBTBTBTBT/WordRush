@@ -91,6 +91,19 @@ fun HomeScreen(
     ) {
         value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
     }
+    // A home screen kept composed across LOCAL midnight must refetch the new
+    // day's (empty) completions — otherwise yesterday's badges linger. On resume,
+    // bump the tick if the local day rolled over (iOS build-99 parity).
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                com.wordocious.app.data.DailyCompletionsService.refreshIfDayChanged()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
+    }
     // Today's daily VS outcome (true=won, false=lost, null=not played) → drives
     // the VS card's W/L badge + tint, since VS has no solo daily_results row.
     val vsDailyWon by androidx.compose.runtime.produceState<Boolean?>(initialValue = null, key1 = tick) {

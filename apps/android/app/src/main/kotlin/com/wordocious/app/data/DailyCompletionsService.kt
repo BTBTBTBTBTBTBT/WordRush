@@ -64,8 +64,22 @@ object DailyCompletionsService {
         return Totals(byMode.size, won, TOTAL_DAILY_MODES, guesses, time, Math.round(score).toInt())
     }
 
+    /** The local day the last fetch served — lets [refreshIfDayChanged] detect a
+     *  midnight rollover on a home screen left composed overnight. */
+    private var lastServedDay: String? = null
+
+    /** Bump the tick if the local day rolled over since the last fetch, so a home
+     *  screen kept composed across midnight refetches the new day's (empty)
+     *  completions instead of showing yesterday's. Call from an ON_RESUME hook. */
+    fun refreshIfDayChanged() {
+        val today = todayLocalDate()
+        if (lastServedDay != null && lastServedDay != today) _completionTick.value++
+        lastServedDay = today
+    }
+
     /** Map of game_mode → completion for today's daily (solo). Empty if not signed in. */
     suspend fun fetchTodayCompletions(): Map<String, Completion> {
+        lastServedDay = todayLocalDate()
         val userId = AuthService.userId ?: return emptyMap()
         return runCatching {
             val map = client.postgrest["daily_results"]
