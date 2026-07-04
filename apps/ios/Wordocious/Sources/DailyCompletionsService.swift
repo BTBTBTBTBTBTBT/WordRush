@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import UIKit
 
 /// One mode's daily result for today (for the completed-card state).
 /// Codable so the store can cache today's completions on-device (web parity:
@@ -88,6 +89,15 @@ final class DailyCompletionsStore: ObservableObject {
     /// next tab switch.
     static let completionPosted = Notification.Name("wordocious.daily-completion")
 
+    /// Finishes recorded during THIS session for the current local day (from the
+    /// completionPosted note). Merged into a load() result to cover the
+    /// read-after-write race where a just-INSERTed row isn't queryable yet.
+    /// Day-scoped and cleared the moment the local day rolls over, so a finish
+    /// from yesterday can never be carried into today — the bug that made a
+    /// session left open across midnight show yesterday's sweep as today's.
+    private var optimistic: [String: DailyCompletion] = [:]
+    private var optimisticDay: String = LeaderboardService.todayLocal()
+
     init() {
         byMode = Self.readCache() ?? [:]
         NotificationCenter.default.addObserver(forName: Self.completionPosted, object: nil, queue: .main) { [weak self] note in
@@ -95,33 +105,49 @@ final class DailyCompletionsStore: ObservableObject {
             // Best-result semantics: never downgrade a recorded win on replay.
             if let existing = self.byMode[c.gameMode], existing.completed && !c.completed { return }
             self.byMode[c.gameMode] = c
+            self.optimistic[c.gameMode] = c
+            self.optimisticDay = LeaderboardService.todayLocal()
             Self.writeCache(self.byMode)
             WidgetBridge.update(completions: self.byMode)
         }
+        // A session left open across LOCAL midnight must refresh to the new day's
+        // (empty) completions. Without this, yesterday's byMode lingered and — via
+        // the old in-memory merge — got re-stamped onto today, so the home grid
+        // showed yesterday's sweep as done with no board behind it. Reload on
+        // foreground + on the system day change, mirroring web daily-boundary-reload.
+        let reload: (Notification) -> Void = { [weak self] _ in Task { await self?.load() } }
+        NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main, using: reload)
+        NotificationCenter.default.addObserver(forName: .NSCalendarDayChanged, object: nil, queue: .main, using: reload)
     }
 
     func load() async {
+        let today = LeaderboardService.todayLocal()
+        // Day rolled over since our last optimistic finish → those finishes are
+        // yesterday's; drop them before they can be re-merged onto today.
+        if optimisticDay != today { optimistic = [:]; optimisticDay = today }
+
         let client = AuthService.shared.client
         guard (try? await client.auth.session) != nil,
               let userId = try? await client.auth.session.user.id.uuidString else {
-            byMode = [:]; Self.writeCache(nil); return
+            byMode = [:]; optimistic = [:]; Self.writeCache(nil); return
         }
         do {
             let rows: [DailyCompletion] = try await client.from("daily_results")
                 .select("game_mode, completed, guess_count, time_seconds, composite_score")
                 .eq("user_id", value: userId)
-                .eq("day", value: LeaderboardService.todayLocal())
+                .eq("day", value: today)
                 .eq("play_type", value: "solo")
                 .execute().value
+            // The SERVER is authoritative for today. Re-add ONLY this-session
+            // optimistic finishes the server hasn't surfaced yet (the read-after-
+            // write race: `.onDailyCompletion` calls load() the instant a daily
+            // finishes, before the INSERT is queryable — a blind replace would drop
+            // it and show a real Flawless as N-1/9). Crucially we NO LONGER merge
+            // stale in-memory/cached state, which is how yesterday's completions
+            // leaked into today. A day rollover clears `optimistic`, so a fetch
+            // that returns nothing correctly yields an empty (fresh) board.
             var merged = Dictionary(rows.map { ($0.gameMode, $0) }, uniquingKeysWith: { a, _ in a })
-            // Read-after-write race: `.onDailyCompletion` calls load() the instant
-            // a daily finishes, but the row we just INSERTed may not be queryable
-            // yet — a blind replace would drop the just-finished mode, making a
-            // real Flawless show as an N-1/9 Sweep with that mode missing. Keep any
-            // locally-known finish (from the optimistic completionPosted note) the
-            // server response is still missing — won OR lost, since the all-9 count
-            // needs losses too; daily rows are permanent once written.
-            for (k, v) in byMode where merged[k] == nil { merged[k] = v }
+            for (k, v) in optimistic where merged[k] == nil { merged[k] = v }
             byMode = merged
             Self.writeCache(byMode)
             WidgetBridge.update(completions: byMode)
