@@ -1117,7 +1117,7 @@ struct LeaderboardTab: View {
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                 }
 
-                Button { showYesterday.toggle(); if showYesterday { Task { await loadYesterday() } } } label: {
+                Button { showYesterday.toggle() } label: {
                     HStack(spacing: 6) {
                         Text("Yesterday's Winners").font(Brand.font(12, .heavy))
                         Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
@@ -1145,6 +1145,14 @@ struct LeaderboardTab: View {
             .padding(.horizontal, 12).padding(.vertical, 8)
         }
         .task(id: "\(mode.rawValue)-\(reloadToken)") { await load() }
+        // Yesterday's Winners keys on the MODE too (web/Android parity) — it
+        // used to fetch only on toggle-open, so switching chips while the
+        // dropdown was expanded kept showing the previous mode's podium until
+        // you closed and reopened it.
+        .task(id: "yesterday-\(mode.rawValue)-\(showYesterday)") {
+            guard showYesterday else { return }
+            await loadYesterday()
+        }
         .task { await completions.load() }
         .onDailyCompletion { Task { await completions.load() } }
         .onDailyCompletion { reloadToken += 1 }
@@ -1270,7 +1278,11 @@ struct LeaderboardTab: View {
     }
 
     private func loadYesterday() async {
-        yesterday = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 3)) ?? []
+        let rows = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 3)) ?? []
+        // .task(id:) cancels this on a mode switch — don't let the previous
+        // mode's slow response overwrite the new mode's podium.
+        guard !Task.isCancelled else { return }
+        yesterday = rows
     }
 }
 
