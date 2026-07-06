@@ -990,6 +990,9 @@ private fun SectionLabel(text: String) {
 @Composable
 private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchStatsService.GuessBucket>) {
     val max = (buckets.maxOfOrNull { it.count } ?: 1).coerceAtLeast(1)
+    val totalWins = buckets.sumOf { it.count }
+    // Tap a row -> "N guesses · X wins · Y% of wins" detail (iOS parity).
+    var selected by remember { mutableStateOf<String?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("GUESS DISTRIBUTION")
         Column(
@@ -1008,18 +1011,34 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
                 return@Column
             }
             buckets.forEach { b ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val dimmed = selected != null && selected != b.label
+                Row(
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.clickableNoRipple {
+                        selected = if (selected == b.label || b.count == 0) null else b.label
+                    },
+                ) {
                     Text(b.label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(24.dp))
                     Box(Modifier.weight(1f).height(20.dp), contentAlignment = Alignment.CenterStart) {
                         val frac = (b.count.toFloat() / max).coerceIn(0f, 1f)
                         Box(
                             Modifier.fillMaxWidth(frac.coerceAtLeast(if (b.count > 0) 0.06f else 0f)).height(20.dp)
-                                .clip(RoundedCornerShape(4.dp)).background(WTheme.correct),
+                                .clip(RoundedCornerShape(4.dp)).background(if (dimmed) WTheme.correct.copy(alpha = 0.35f) else WTheme.correct),
                             contentAlignment = Alignment.CenterEnd,
                         ) {
                             if (b.count > 0) Text("${b.count}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White, modifier = Modifier.padding(end = 6.dp))
                         }
                     }
+                }
+            }
+            selected?.let { sel ->
+                buckets.firstOrNull { it.label == sel && it.count > 0 }?.let { b ->
+                    val pct = (b.count * 100f / totalWins.coerceAtLeast(1)).toInt()
+                    Text(
+                        "$sel guess${if (sel == "1") "" else "es"} · ${b.count} win${if (b.count == 1) "" else "s"} · $pct% of wins",
+                        fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
                 }
             }
         }
@@ -1066,6 +1085,8 @@ private fun ActivityCard(activity: List<com.wordocious.app.data.MatchStatsServic
 @Composable
 private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsService.DayActivity>) {
     if (data.isEmpty()) return
+    // Tap a day -> "Jul 3 · 12 games · 9 wins" detail in the footer (iOS parity).
+    var selected by remember { mutableStateOf<com.wordocious.app.data.MatchStatsService.DayActivity?>(null) }
     val maxGames = (data.maxOfOrNull { it.played } ?: 1).coerceAtLeast(1)
     val totalDaysPlayed = data.count { it.played > 0 }
     val totalGames = data.sumOf { it.played }
@@ -1111,23 +1132,44 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
             androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val n = weeks.size.coerceAtLeast(1)
                 val gap = 3.dp
-                val cell = ((maxWidth - gap * (n - 1)) / n).coerceAtLeast(6.dp)
+                val labelW = 26.dp
+                val cell = ((maxWidth - labelW - 4.dp - gap * (n - 1)) / n).coerceAtLeast(6.dp)
                 Column {
                     if (monthLabels.isNotEmpty()) {
                         Box(Modifier.fillMaxWidth().height(14.dp)) {
                             monthLabels.forEach { (label, wi) ->
                                 Text(
                                     label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                                    modifier = Modifier.offset(x = (cell + gap) * wi),
+                                    modifier = Modifier.offset(x = labelW + 4.dp + (cell + gap) * wi),
                                 )
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                        weeks.forEach { week ->
-                            Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-                                week.forEach { d ->
-                                    Box(Modifier.size(cell).clip(RoundedCornerShape(2.dp)).background(cellColor(d)))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // Weekday guide (rows are Sun->Sat; label Mon/Wed/Fri).
+                        Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                            (0..6).forEach { r ->
+                                Box(Modifier.width(labelW).height(cell), contentAlignment = Alignment.CenterStart) {
+                                    Text(
+                                        when (r) { 1 -> "Mon"; 3 -> "Wed"; 5 -> "Fri"; else -> "" },
+                                        fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                                    )
+                                }
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+                            weeks.forEach { week ->
+                                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                                    week.forEach { d ->
+                                        val isSel = selected != null && d != null && selected?.day == d.day
+                                        Box(
+                                            Modifier.size(cell).clip(RoundedCornerShape(2.dp)).background(cellColor(d))
+                                                .then(if (isSel) Modifier.border(1.5.dp, Color(0xFF7C3AED), RoundedCornerShape(2.dp)) else Modifier)
+                                                .clickableNoRipple {
+                                                    selected = if (d != null && d.played > 0 && selected?.day != d.day) d else null
+                                                },
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1135,6 +1177,16 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
                 }
             }
             Spacer(Modifier.height(8.dp))
+            selected?.let { s2 ->
+                val md = runCatching {
+                    java.time.LocalDate.parse(s2.day).format(java.time.format.DateTimeFormatter.ofPattern("MMM d", java.util.Locale.US))
+                }.getOrDefault(s2.day)
+                Text(
+                    "$md · ${s2.played} game${if (s2.played == 1) "" else "s"} · ${s2.won} win${if (s2.won == 1) "" else "s"}",
+                    fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("Less", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)

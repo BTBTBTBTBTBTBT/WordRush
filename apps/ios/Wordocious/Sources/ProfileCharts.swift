@@ -82,11 +82,16 @@ private struct GuessDistributionChart: View {
     let mode: GameMode?
     var playType: String = "solo"
     @State private var data: [MatchStatsService.GuessBucket] = []
+    /// Tapped bar's label — shows "N guesses · X wins · Y% of wins".
+    @State private var selected: String?
 
     private func color(_ g: Int) -> Color {
         g <= 2 ? Color(hex: 0x7C3AED) : g <= 4 ? Color(hex: 0xF59E0B) : Color(hex: 0x9CA3AF)
     }
     private var totalWins: Int { data.reduce(0) { $0 + $1.count } }
+    private func barLabel(_ b: MatchStatsService.GuessBucket) -> String {
+        b.label.isEmpty ? "\(b.guesses)" : b.label
+    }
 
     var body: some View {
         // Gauntlet runs can take up to 50 guesses across 21 boards — a guess
@@ -97,15 +102,23 @@ private struct GuessDistributionChart: View {
                 EmptyChart(copy: "Win a game to see your guess distribution")
             } else {
                 Chart(data) { b in
-                    BarMark(x: .value("Guesses", b.label.isEmpty ? "\(b.guesses)" : b.label), y: .value("Wins", b.count))
+                    BarMark(x: .value("Guesses", barLabel(b)), y: .value("Wins", b.count))
                         .foregroundStyle(color(b.guesses))
+                        .opacity(selected == nil || selected == barLabel(b) ? 1 : 0.35)
                         .annotation(position: .top) {
                             if b.count > 0 { Text("\(b.count)").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted) }
                         }
                 }
                 .chartYAxis(.hidden)
                 .frame(height: 130)
-                Text("\(totalWins) win\(totalWins == 1 ? "" : "s")").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                .chartTapSelection(bars: data.map(barLabel), selection: $selected)
+                // Footer: tapped-bar detail (wins share) or the plain total.
+                if let sel = selected, let b = data.first(where: { barLabel($0) == sel }), b.count > 0 {
+                    Text("\(sel) guess\(sel == "1" ? "" : "es") · \(b.count) win\(b.count == 1 ? "" : "s") · \(Int((Double(b.count) / Double(max(1, totalWins)) * 100).rounded()))% of wins")
+                        .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                } else {
+                    Text("\(totalWins) win\(totalWins == 1 ? "" : "s")").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                }
             }
         }
         .task(id: "\(mode?.rawValue ?? "all")-\(playType)") {
@@ -126,6 +139,13 @@ private struct GuessDistributionChart: View {
 private struct ActivityCalendarView: View {
     let mode: GameMode?
     @State private var data: [MatchStatsService.DayActivity] = []
+    /// Tapped day — shows "Jul 3 · 12 games · 9 wins" in the footer.
+    @State private var selected: MatchStatsService.DayActivity?
+    /// Measured card content width (drives the fill-width cell size).
+    @State private var gridW: CGFloat = 0
+
+    private let gap: CGFloat = 3
+    private let dayLabelW: CGFloat = 26
 
     var body: some View {
         // Web parity: DailyCalendar returns null when there are no games —
@@ -135,32 +155,24 @@ private struct ActivityCalendarView: View {
                 LegacyChartCard(title: "ACTIVITY (LAST 90 DAYS)") {
                 let weeks = makeWeeks()
                 let maxPlayed = max(1, data.map(\.played).max() ?? 1)
-                // Cells scale to FILL the card's width (the fixed 11pt grid left
-                // a big dead zone on the right). The whole 11pt-cell/3pt-gap
-                // design scales uniformly, so the grid's aspect ratio is exact:
-                // width units = 11n+3(n-1) = 14n−3, height units = 7·11+6·3 = 95.
-                let n = max(1, CGFloat(weeks.count))
-                GeometryReader { geo in
-                    let unit = geo.size.width / (14 * n - 3)
-                    let cell = 11 * unit
-                    let spacing = 3 * unit
-                    HStack(spacing: spacing) {
-                        ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
-                            VStack(spacing: spacing) {
-                                ForEach(Array(week.enumerated()), id: \.offset) { _, cellDay in
-                                    RoundedRectangle(cornerRadius: 2 * unit)
-                                        .fill(cellColor(cellDay, maxPlayed: maxPlayed))
-                                        .frame(width: cell, height: cell)
-                                }
-                            }
-                        }
+                let n = CGFloat(max(1, weeks.count))
+                // Cells scale to FILL the card's width, minus the weekday-label
+                // column (the fixed 11pt grid left a dead zone on the right).
+                let cell = gridW > 0 ? max(6, (gridW - dayLabelW - 4 - gap * (n - 1)) / n) : 11
+
+                VStack(alignment: .leading, spacing: 4) {
+                    monthRow(weeks: weeks, cell: cell)
+                    HStack(alignment: .top, spacing: 4) {
+                        weekdayGuide(cell: cell)
+                        grid(weeks: weeks, maxPlayed: maxPlayed, cell: cell)
                     }
+                    footer
                 }
-                .aspectRatio((14 * n - 3) / 95, contentMode: .fit)
-                let totalDays = data.filter { $0.played > 0 }.count
-                let totalGames = data.reduce(0) { $0 + $1.played }
-                Text("\(totalDays) day\(totalDays == 1 ? "" : "s") played · \(totalGames) games")
-                    .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                .background(GeometryReader { g in
+                    Color.clear
+                        .onAppear { gridW = g.size.width }
+                        .onChange(of: g.size.width) { gridW = $0 }
+                })
                 }
             } else {
                 Color.clear.frame(height: 0)   // concrete child so .task fires when empty
@@ -173,6 +185,106 @@ private struct ActivityCalendarView: View {
             data = fresh
             StatsMemo.shared.set(key, fresh)
         }
+    }
+
+    /// Month labels over the week-column where each month first appears —
+    /// says "this axis is time".
+    private func monthRow(weeks: [[MatchStatsService.DayActivity?]], cell: CGFloat) -> some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(monthLabels(weeks: weeks), id: \.week) { m in
+                Text(m.name).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                    .offset(x: dayLabelW + 4 + CGFloat(m.week) * (cell + gap))
+            }
+        }
+        .frame(height: 12, alignment: .topLeading)
+    }
+
+    /// Weekday guide (rows are Sun→Sat; label Mon/Wed/Fri).
+    private func weekdayGuide(cell: CGFloat) -> some View {
+        VStack(spacing: gap) {
+            ForEach(0..<7, id: \.self) { r in
+                Text(r == 1 ? "Mon" : r == 3 ? "Wed" : r == 5 ? "Fri" : "")
+                    .font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
+                    .frame(width: dayLabelW, height: cell, alignment: .leading)
+            }
+        }
+    }
+
+    private func grid(weeks: [[MatchStatsService.DayActivity?]], maxPlayed: Int, cell: CGFloat) -> some View {
+        HStack(spacing: gap) {
+            ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
+                VStack(spacing: gap) {
+                    ForEach(Array(week.enumerated()), id: \.offset) { _, cellDay in
+                        dayCell(cellDay, maxPlayed: maxPlayed, cell: cell)
+                    }
+                }
+            }
+        }
+    }
+
+    private func dayCell(_ cellDay: MatchStatsService.DayActivity?, maxPlayed: Int, cell: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(cellColor(cellDay, maxPlayed: maxPlayed))
+            .overlay(
+                RoundedRectangle(cornerRadius: 2)
+                    .stroke(Color(hex: 0x7C3AED), lineWidth: isSelected(cellDay) ? 1.5 : 0)
+            )
+            .frame(width: cell, height: cell)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if let d = cellDay, d.played > 0 {
+                    selected = isSelected(d) ? nil : d
+                } else { selected = nil }
+            }
+    }
+
+    /// Tapped-day detail when selected, totals otherwise; Less→More legend
+    /// explains the shading either way.
+    private var footer: some View {
+        HStack {
+            if let s = selected {
+                Text("\(Self.dayFmt.string(from: s.day)) · \(s.played) game\(s.played == 1 ? "" : "s") · \(s.won) win\(s.won == 1 ? "" : "s")")
+                    .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+            } else {
+                let totalDays = data.filter { $0.played > 0 }.count
+                let totalGames = data.reduce(0) { $0 + $1.played }
+                Text("\(totalDays) day\(totalDays == 1 ? "" : "s") played · \(totalGames) games")
+                    .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+            }
+            Spacer()
+            HStack(spacing: 2) {
+                Text("Less").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+                ForEach([UInt(0xF3F0FF), 0xC4B5FD, 0xA78BFA, 0x7C3AED, 0x6D28D9], id: \.self) { c in
+                    RoundedRectangle(cornerRadius: 2).fill(Color(hex: c)).frame(width: 8, height: 8)
+                }
+                Text("More").font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func isSelected(_ d: MatchStatsService.DayActivity?) -> Bool {
+        guard let d, let s = selected else { return false }
+        return Calendar.current.isDate(d.day, inSameDayAs: s.day)
+    }
+
+    private static let dayFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "MMM d"; return f
+    }()
+
+    /// (short month name, week-column index) where each month first appears.
+    private func monthLabels(weeks: [[MatchStatsService.DayActivity?]]) -> [(name: String, week: Int)] {
+        let f = DateFormatter(); f.dateFormat = "MMM"
+        var out: [(String, Int)] = []
+        var last = ""
+        for (wi, week) in weeks.enumerated() {
+            guard let first = week.compactMap({ $0 }).first else { continue }
+            let m = f.string(from: first.day)
+            if m != last { out.append((m, wi)); last = m }
+        }
+        // Drop a first label that would collide with the second one column over.
+        if out.count >= 2, out[1].1 - out[0].1 < 3 { out.removeFirst() }
+        return out
     }
 
     /// Group the last 90 days into Sunday-aligned week columns of 7 cells.
