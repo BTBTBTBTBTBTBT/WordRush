@@ -19,7 +19,9 @@ enum DictionaryLoader {
         }
 
         let dict = GameDictionary.shared
-        dict.initDictionary(allowed: load("allowed"), solutions: load("solutions"))
+        // legacy list feeds the pre-cutover answer pool (date-gated in core).
+        dict.initDictionary(allowed: load("allowed"), solutions: load("solutions"),
+                            legacySolutions: load("solutions-legacy"))
         dict.initDictionaryForLength(6, allowed: load("allowed-6"), solutions: load("solutions-6"))
         dict.initDictionaryForLength(7, allowed: load("allowed-7"), solutions: load("solutions-7"))
         initialized = true

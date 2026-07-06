@@ -1,4 +1,6 @@
+import { SOLUTIONS_CUTOVER_DATE } from '@wordle-duel/core';
 import solutions from '@/data/solutions.json';
+import legacySolutions from '@/data/solutions-legacy.json';
 
 /**
  * Word of the Day — the deterministic daily word (from the shared solutions list,
@@ -32,10 +34,20 @@ export function parseDateKey(key: string): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * Answer list governing a given archive date — legacy for dates before the
+ * cutover (so Past Words keeps showing what was actually played), curated
+ * after. Keyed on the same UTC dateKey the archive uses.
+ */
+export function solutionsForDate(date: Date): string[] {
+  return dateKey(date) < SOLUTIONS_CUTOVER_DATE ? legacySolutions : solutions;
+}
+
 /** Deterministic candidate words for a date: today's index + the next 19 offsets. */
 export function candidateWords(date: Date): string[] {
+  const list = solutionsForDate(date);
   const idx = daysSinceEpoch(date);
-  return Array.from({ length: 20 }, (_, o) => solutions[(idx + o) % solutions.length]);
+  return Array.from({ length: 20 }, (_, o) => list[(idx + o) % list.length]);
 }
 
 /**

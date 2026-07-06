@@ -27,15 +27,28 @@ mkdirSync(outDir, { recursive: true });
 // The logic must match packages/core/src exactly.
 
 // === dictionary.ts ===
+// Keep in lockstep with packages/core dictionary.ts SOLUTIONS_CUTOVER_DATE.
+const SOLUTIONS_CUTOVER_DATE = '2026-07-08';
+
 let allowedWords = new Set();
 let allowedWordsArray = [];
 let solutionWords = [];
+let legacySolutionWords = [];
 const lengthDictionaries = new Map();
 
-function initDictionary(allowed, solutions) {
+function initDictionary(allowed, solutions, legacySolutions = []) {
   allowedWords = new Set(allowed.map(w => w.toUpperCase()));
   allowedWordsArray = allowed.map(w => w.toUpperCase());
   solutionWords = solutions.map(w => w.toUpperCase());
+  legacySolutionWords = legacySolutions.map(w => w.toUpperCase());
+}
+
+function solutionPoolForDate(dateKey) {
+  if (dateKey !== null && dateKey < SOLUTIONS_CUTOVER_DATE) {
+    if (legacySolutionWords.length === 0) throw new Error('Legacy solutions not initialized');
+    return legacySolutionWords;
+  }
+  return solutionWords;
 }
 
 function initDictionaryForLength(length, allowed, solutions) {
@@ -119,7 +132,8 @@ function simpleHash(str) {
 
 function generateSolutionsFromSeed(seed, count) {
   const solutions = [];
-  const solCount = getSolutionCount();
+  const pool = solutionPoolForDate(getDailySeedDate(seed));
+  const solCount = pool.length;
   const used = new Set();
   for (let i = 0; i < count; i++) {
     const seedWithIndex = `${seed}-${i}`;
@@ -131,7 +145,7 @@ function generateSolutionsFromSeed(seed, count) {
     }
     const index = hash % solCount;
     used.add(index);
-    solutions.push(getSolutionWord(index));
+    solutions.push(pool[index]);
   }
   return solutions;
 }
@@ -157,6 +171,11 @@ function generateSolutionsFromSeedForLength(seed, count, wordLength) {
 
 function generateDailySeed(date, gameMode) { return `daily-${date}-${gameMode}`; }
 function isDailySeed(seed) { return seed.startsWith('daily-'); }
+function getDailySeedDate(seed) {
+  if (!isDailySeed(seed)) return null;
+  const parts = seed.split('-');
+  return parts.length >= 4 ? `${parts[1]}-${parts[2]}-${parts[3]}` : null;
+}
 
 // === prefill.ts ===
 function generatePrefillWords(seed, solutions, allowed) {
@@ -210,12 +229,13 @@ function calculateScore(result) {
 // ============================================================
 const allowed = JSON.parse(readFileSync(join(dataDir, 'allowed.json'), 'utf-8'));
 const solutions = JSON.parse(readFileSync(join(dataDir, 'solutions.json'), 'utf-8'));
+const legacySolutions = JSON.parse(readFileSync(join(dataDir, 'solutions-legacy.json'), 'utf-8'));
 const allowed6 = JSON.parse(readFileSync(join(dataDir, 'allowed-6.json'), 'utf-8'));
 const solutions6 = JSON.parse(readFileSync(join(dataDir, 'solutions-6.json'), 'utf-8'));
 const allowed7 = JSON.parse(readFileSync(join(dataDir, 'allowed-7.json'), 'utf-8'));
 const solutions7 = JSON.parse(readFileSync(join(dataDir, 'solutions-7.json'), 'utf-8'));
 
-initDictionary(allowed, solutions);
+initDictionary(allowed, solutions, legacySolutions);
 initDictionaryForLength(6, allowed6, solutions6);
 initDictionaryForLength(7, allowed7, solutions7);
 
@@ -274,11 +294,18 @@ const seedCases = [
   { seed: 'test', count: 1 },
   { seed: 'test', count: 4 },
   { seed: 'test', count: 8 },
+  // Pre-cutover daily seeds → legacy answer pool (date-gated).
   { seed: 'daily-2026-01-15-DUEL', count: 1 },
   { seed: 'daily-2026-01-15-QUORDLE', count: 4 },
   { seed: 'daily-2026-01-15-OCTORDLE', count: 8 },
   { seed: 'daily-2026-01-15-SEQUENCE', count: 4 },
   { seed: 'daily-2026-01-15-RESCUE', count: 4 },
+  // Post-cutover daily seeds → curated answer pool. Locks the gate switch
+  // into the cross-engine parity contract (all engines must pick the same
+  // pool for a given seed date).
+  { seed: 'daily-2026-08-01-DUEL', count: 1 },
+  { seed: 'daily-2026-08-01-QUORDLE', count: 4 },
+  { seed: 'daily-2026-08-01-OCTORDLE', count: 8 },
   { seed: 'gauntlet-abc-123', count: 21 },  // GAUNTLET_TOTAL_SOLUTIONS = 1+4+4+4+8 = 21
   { seed: 'match-seed-xyz', count: 1 },
   { seed: 'match-seed-xyz', count: 2 },

@@ -91,12 +91,14 @@ final class EngineParityTests: XCTestCase {
         // Load word lists from the bundle (copied from apps/web/data/)
         let allowed: [String] = loadJSON("allowed")
         let solutions: [String] = loadJSON("solutions")
+        let legacySolutions: [String] = loadJSON("solutions-legacy")
         let allowed6: [String] = loadJSON("allowed-6")
         let solutions6: [String] = loadJSON("solutions-6")
         let allowed7: [String] = loadJSON("allowed-7")
         let solutions7: [String] = loadJSON("solutions-7")
 
-        dict.initDictionary(allowed: allowed, solutions: solutions)
+        // legacy list required so pre-cutover daily seed fixtures resolve.
+        dict.initDictionary(allowed: allowed, solutions: solutions, legacySolutions: legacySolutions)
         dict.initDictionaryForLength(6, allowed: allowed6, solutions: solutions6)
         dict.initDictionaryForLength(7, allowed: allowed7, solutions: solutions7)
     }

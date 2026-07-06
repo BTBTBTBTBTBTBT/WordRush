@@ -1,4 +1,4 @@
-import { getSolutionWord, getSolutionCount, getSolutionWordForLength, getSolutionCountForLength } from './dictionary';
+import { getSolutionPoolForDate, getSolutionWordForLength, getSolutionCountForLength } from './dictionary';
 
 function simpleHash(str: string): number {
   let hash = 0;
@@ -12,7 +12,11 @@ function simpleHash(str: string): number {
 
 export function generateSolutionsFromSeed(seed: string, count: number): string[] {
   const solutions: string[] = [];
-  const solutionCount = getSolutionCount();
+  // Answer pool is chosen by the DATE embedded in the seed (never wall clock),
+  // so every client resolves the same seed to the same pool: pre-cutover daily
+  // dates → legacy list, post-cutover dailies + all non-daily seeds → curated.
+  const pool = getSolutionPoolForDate(getDailySeedDate(seed));
+  const solutionCount = pool.length;
   const used = new Set<number>();
 
   for (let i = 0; i < count; i++) {
@@ -27,7 +31,7 @@ export function generateSolutionsFromSeed(seed: string, count: number): string[]
 
     const index = hash % solutionCount;
     used.add(index);
-    solutions.push(getSolutionWord(index));
+    solutions.push(pool[index % solutionCount]);
   }
 
   return solutions;

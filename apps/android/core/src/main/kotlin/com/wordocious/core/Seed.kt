@@ -44,7 +44,11 @@ fun getDailySeedDate(seed: String): String? {
  * Requires [GameDictionary] to be initialized ([DictionaryLoader.ensureLoaded]).
  */
 fun generateSolutionsFromSeed(seed: String, count: Int): List<String> {
-    val solutionCount = GameDictionary.getSolutionCount()
+    // Answer pool chosen by the DATE embedded in the seed (never wall clock),
+    // so every client resolves the same seed identically: pre-cutover daily
+    // dates → legacy list, post-cutover dailies + all non-daily seeds → curated.
+    val pool = GameDictionary.solutionPool(getDailySeedDate(seed))
+    val solutionCount = pool.size
     val solutions = ArrayList<String>(count)
     val used = HashSet<Int>()
     for (i in 0 until count) {
@@ -57,7 +61,7 @@ fun generateSolutionsFromSeed(seed: String, count: Int): List<String> {
         }
         val index = hash % solutionCount
         used.add(index)
-        solutions.add(GameDictionary.getSolutionWord(index))
+        solutions.add(pool[index])
     }
     return solutions
 }

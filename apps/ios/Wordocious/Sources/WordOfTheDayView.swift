@@ -165,7 +165,9 @@ struct WordOfTheDayView: View {
     }
 
     private func fetch() async -> WordInfo {
-        let solutions = GameDictionary.shared.allSolutions()
+        // Pool for THIS displayed local date — pre-cutover dates keep the legacy
+        // word (matches the archive), curated after.
+        let solutions = GameDictionary.shared.solutionPool(forDateKey: LeaderboardService.todayLocal())
         let daysSinceEpoch = todayIndex
         guard !solutions.isEmpty else { return WordInfo(word: "WORDS") }
 

@@ -441,12 +441,15 @@ private fun DailyHero(
 private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
     val word by produceState<String?>(initialValue = null) {
         DictionaryLoader.ensureLoaded()
-        val sols = GameDictionary.allSolutions()
+        // Pool for THIS displayed local date — pre-cutover dates keep the legacy
+        // word (matches the archive), curated after.
+        val localDay = com.wordocious.app.todayLocalDate()
+        val sols = GameDictionary.solutionPool(localDay)
         // Day index of the LOCAL calendar date (not currentTimeMillis/86400000,
         // which rolls at UTC midnight — 7 PM Central — and flipped the card to
         // tomorrow's word mid-evening). LocalDate.toEpochDay() is exactly the
         // local date's UTC-midnight day index, matching web (commit ad2ef44).
-        val daysSinceEpoch = java.time.LocalDate.parse(com.wordocious.app.todayLocalDate()).toEpochDay().toInt()
+        val daysSinceEpoch = java.time.LocalDate.parse(localDay).toEpochDay().toInt()
         value = if (sols.isNotEmpty()) sols[daysSinceEpoch % sols.size] else null
     }
     // Definition from dictionaryapi.dev (same source as the post-game card).

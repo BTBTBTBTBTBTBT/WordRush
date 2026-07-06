@@ -22,6 +22,7 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { shareDailySweep } from '@/lib/daily-share';
 import { MODES } from '@/lib/modes.generated';
+import { SOLUTIONS_CUTOVER_DATE } from '@wordle-duel/core';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 interface WordDefinition {
@@ -42,6 +43,11 @@ function WordOfTheDay() {
     // local Y/M/D gives the same index the /word/[date] archive derives for
     // this date, so the card and the archive always agree, all local day.
     const daysSinceEpoch = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
+    // Answer pool for THIS displayed date — pre-cutover dates keep the legacy
+    // word (matches the /word/[date] archive); curated after. YYYY-MM-DD of the
+    // local displayed date vs the cutover.
+    const displayedKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const useLegacy = displayedKey < SOLUTIONS_CUTOVER_DATE;
 
     // H1: the word only changes at midnight, but this used to re-run the
     // definition scan (up to 20 serial external API calls) on EVERY home
@@ -58,8 +64,10 @@ function WordOfTheDay() {
     };
 
     async function findWordWithDefinition() {
-      // Lazy-load solutions list (shared chunk with game pages)
-      const solutions = (await import('@/data/solutions.json')).default;
+      // Lazy-load the governing list (shared chunk with game pages).
+      const solutions = useLegacy
+        ? (await import('@/data/solutions-legacy.json')).default
+        : (await import('@/data/solutions.json')).default;
       // Try up to 20 words starting from today's index until we find one with a definition
       for (let offset = 0; offset < 20; offset++) {
         const word = solutions[(daysSinceEpoch + offset) % solutions.length];

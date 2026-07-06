@@ -1,5 +1,10 @@
 import Foundation
 
+/// First daily date (YYYY-MM-DD) governed by the curated answer list. Daily
+/// seeds strictly before this use the legacy list. Plain string compare.
+/// Mirrors packages/core SOLUTIONS_CUTOVER_DATE — keep in lockstep.
+public let SOLUTIONS_CUTOVER_DATE = "2026-07-08"
+
 public final class GameDictionary {
     public static let shared = GameDictionary()
 
@@ -8,13 +13,31 @@ public final class GameDictionary {
     private var allowedWords: Set<String> = []
     private var allowedWordsArray: [String] = []
     private var solutionWords: [String] = []
+    // Pre-curation 5-letter answer bank (see the TS gate). Pre-cutover daily
+    // dates resolve against this so replays + the Past Words archive keep
+    // producing the words that were actually played.
+    private var legacySolutionWords: [String] = []
     private var lengthDictionaries: [Int: (allowed: Set<String>, solutions: [String])] = [:]
     private var lengthAllowedArrays: [Int: [String]] = [:]
 
-    public func initDictionary(allowed: [String], solutions: [String]) {
+    public func initDictionary(allowed: [String], solutions: [String], legacySolutions: [String] = []) {
         allowedWords = Set(allowed.map { $0.uppercased() })
         allowedWordsArray = allowed.map { $0.uppercased() }
         solutionWords = solutions.map { $0.uppercased() }
+        legacySolutionWords = legacySolutions.map { $0.uppercased() }
+    }
+
+    /// 5-letter answer pool for a daily date (or nil for non-daily seeds).
+    /// Pre-cutover daily dates → legacy list; else curated. Traps if a
+    /// pre-cutover date is requested with no legacy list loaded — silently
+    /// falling through would corrupt pre-cutover replays/archive invisibly.
+    public func solutionPool(forDateKey dateKey: String?) -> [String] {
+        if let dateKey, dateKey < SOLUTIONS_CUTOVER_DATE {
+            precondition(!legacySolutionWords.isEmpty,
+                         "Legacy solutions not initialized — pre-cutover seed cannot be resolved")
+            return legacySolutionWords
+        }
+        return solutionWords
     }
 
     public func initDictionaryForLength(_ length: Int, allowed: [String], solutions: [String]) {

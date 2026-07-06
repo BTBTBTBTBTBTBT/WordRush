@@ -8,7 +8,11 @@ import { Match, Player, QueueEntry, ClientToServerEvents, ServerToClientEvents }
 
 const allowedWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/allowed.json'), 'utf-8'));
 const solutionWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions.json'), 'utf-8'));
-initDictionary(allowedWords, solutionWords);
+// Legacy list feeds the pre-cutover answer pool (date-gated in core). The
+// server only creates non-daily (random/VS) matches, which always use the
+// curated list, but core init requires legacy so pre-cutover seeds resolve.
+const legacySolutionWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions-legacy.json'), 'utf-8'));
+initDictionary(allowedWords, solutionWords, legacySolutionWords);
 
 // ProperNoundle puzzle data
 interface ProperNoundlePuzzle {

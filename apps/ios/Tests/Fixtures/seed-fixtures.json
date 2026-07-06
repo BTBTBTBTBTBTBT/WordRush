@@ -83,6 +83,37 @@
       ]
     },
     {
+      "seed": "daily-2026-08-01-DUEL",
+      "count": 1,
+      "solutions": [
+        "TANGY"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-01-QUORDLE",
+      "count": 4,
+      "solutions": [
+        "SOBER",
+        "AUDIO",
+        "FLASH",
+        "BOWED"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-01-OCTORDLE",
+      "count": 8,
+      "solutions": [
+        "BURLY",
+        "CARGO",
+        "LIMEY",
+        "FIRED",
+        "DANDY",
+        "HAZEL",
+        "LOATH",
+        "DEITY"
+      ]
+    },
+    {
       "seed": "gauntlet-abc-123",
       "count": 21,
       "solutions": [

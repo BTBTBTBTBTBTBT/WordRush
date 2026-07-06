@@ -20,7 +20,11 @@ func simpleHash(_ str: String) -> Int {
 
 public func generateSolutionsFromSeed(_ seed: String, count: Int) -> [String] {
     let dict = GameDictionary.shared
-    let solutionCount = dict.getSolutionCount()
+    // Answer pool chosen by the DATE embedded in the seed (never wall clock),
+    // so every client resolves the same seed identically: pre-cutover daily
+    // dates → legacy list, post-cutover dailies + all non-daily seeds → curated.
+    let pool = dict.solutionPool(forDateKey: getDailySeedDate(seed))
+    let solutionCount = pool.count
     var solutions: [String] = []
     var used: Set<Int> = []
 
@@ -36,7 +40,7 @@ public func generateSolutionsFromSeed(_ seed: String, count: Int) -> [String] {
 
         let index = hash % solutionCount
         used.insert(index)
-        solutions.append(dict.getSolutionWord(at: index))
+        solutions.append(pool[index])
     }
 
     return solutions
