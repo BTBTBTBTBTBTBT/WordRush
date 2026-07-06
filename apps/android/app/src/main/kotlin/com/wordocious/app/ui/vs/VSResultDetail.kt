@@ -180,20 +180,35 @@ private fun tileBrush(state: TileState): Brush = when (state) {
 }
 
 @Composable
-private fun LetterBoard(rows: List<EvaluatedRow>) {
+private fun LetterBoard(rows: List<EvaluatedRow>, wordGroups: List<Int>? = null) {
     // Shrink tiles for long words so two boards still fit side-by-side (web: 24/21/18).
     val wordLen = rows.firstOrNull()?.letters?.size ?: 5
     val tile = if (wordLen <= 5) 24.dp else if (wordLen == 6) 21.dp else 18.dp
+    // ProperNoundle multi-word answers ("TRAE YOUNG") get a wider gap between
+    // word groups — same grouping the solo ProperNoundleMiniBoard uses — so
+    // the recap rows don't read as one unbroken letter run. Only applied when
+    // the group lengths add up to the row length (defensive: mismatched
+    // metadata falls back to the flat run rather than misaligned gaps).
+    val groups = if (wordGroups != null && wordGroups.size > 1 && wordGroups.sum() == wordLen) wordGroups else listOf(wordLen)
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         rows.forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                row.letters.forEachIndexed { ci, letter ->
-                    Box(
-                        Modifier.size(tile).clip(RoundedCornerShape(4.dp))
-                            .background(tileBrush(row.states.getOrNull(ci) ?: TileState.ABSENT)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(letter, fontSize = (tile.value * 0.5f).sp, fontWeight = FontWeight.Black, color = Color.White)
+            var idx = 0
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                groups.forEach { len ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        repeat(len) {
+                            val ci = idx++
+                            Box(
+                                Modifier.size(tile).clip(RoundedCornerShape(4.dp))
+                                    .background(tileBrush(row.states.getOrNull(ci) ?: TileState.ABSENT)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    row.letters.getOrNull(ci) ?: "",
+                                    fontSize = (tile.value * 0.5f).sp, fontWeight = FontWeight.Black, color = Color.White,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -299,6 +314,9 @@ fun FinalBoards(
     /** Per-side elapsed (ms) — feeds the Gauntlet stage review's TIME stat. */
     myTimeMs: Int = 0,
     opponentTimeMs: Int = 0,
+    /** ProperNoundle: the answer's spaced display ("TRAE YOUNG") from the
+     *  match's puzzleMetadata — a fallback for the local seed→puzzle lookup. */
+    answerDisplay: String? = null,
 ) {
     val mine = remember(myGuessLog, solutions) { evaluateLog(myGuessLog, solutions) }
     val theirs = remember(opponentGuessLog, solutions) { evaluateLog(opponentGuessLog, solutions) }
@@ -339,20 +357,39 @@ fun FinalBoards(
     }
 
     // ── Single board (Classic/Six/Seven/ProperNoundle): side-by-side letters. ─
+    // ProperNoundle: recover the answer's REAL spacing ("TRAE YOUNG", not
+    // "TRAEYOUNG") — local seed→puzzle lookup (same daily/seed chain the
+    // in-match GameViewModel.pnPuzzle uses), metadata display as fallback —
+    // only trusted when its normalized letters match the recorded solution.
+    val pn = com.wordocious.core.ProperNoundle
+    val pnDisplay = remember(mode, seed, solutions, answerDisplay) {
+        val sol = solutions.firstOrNull()
+        if (mode != GameMode.PROPERNOUNDLE || sol == null) null
+        else {
+            val seedPuzzle = com.wordocious.core.getDailySeedDate(seed)?.let { pn.dailyPuzzle(it) }
+                ?: pn.puzzleForSeed(seed)
+            listOfNotNull(seedPuzzle?.display, answerDisplay)
+                .firstOrNull { pn.normalize(it) == pn.normalize(sol) }
+        }
+    }
+    // Word-group tile gaps for the recap rows (same grouping the solo
+    // ProperNoundleMiniBoard derives from the display).
+    val pnGroups = pnDisplay?.let { pn.wordGroups(it) }
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            FinalBoardsSide(myName, mine, Color(0xFF7C3AED), mySolved, Modifier.weight(1f))
+            FinalBoardsSide(myName, mine, Color(0xFF7C3AED), mySolved, Modifier.weight(1f), pnGroups)
             Box(Modifier.width(1.dp).fillMaxHeight().background(WTheme.border))
-            FinalBoardsSide(opponentName, theirs, Color(0xFFEC4899), oppSolved, Modifier.weight(1f))
+            FinalBoardsSide(opponentName, theirs, Color(0xFFEC4899), oppSolved, Modifier.weight(1f), pnGroups)
         }
-        // Reveal the answer so a missed board isn't a mystery.
+        // Reveal the answer so a missed board isn't a mystery — with its real
+        // spacing for ProperNoundle.
         solutions.firstOrNull()?.let { answer ->
             Text(
-                "Answer: ${answer.uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                "Answer: ${(pnDisplay ?: answer).uppercase()}", fontSize = 11.sp, fontWeight = FontWeight.Black,
                 letterSpacing = 1.sp, color = WTheme.textSecondary,
             )
         }
@@ -418,7 +455,10 @@ private fun MultiBoardRecapSection(
 }
 
 @Composable
-private fun FinalBoardsSide(label: String, boards: Map<Int, List<EvaluatedRow>>, accent: Color, solved: Boolean, modifier: Modifier) {
+private fun FinalBoardsSide(
+    label: String, boards: Map<Int, List<EvaluatedRow>>, accent: Color, solved: Boolean,
+    modifier: Modifier, wordGroups: List<Int>? = null,
+) {
     val indices = boards.keys.sorted()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -431,7 +471,7 @@ private fun FinalBoardsSide(label: String, boards: Map<Int, List<EvaluatedRow>>,
             Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 12.dp))
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                indices.forEach { idx -> LetterBoard(boards[idx] ?: emptyList()) }
+                indices.forEach { idx -> LetterBoard(boards[idx] ?: emptyList(), wordGroups) }
             }
         }
     }

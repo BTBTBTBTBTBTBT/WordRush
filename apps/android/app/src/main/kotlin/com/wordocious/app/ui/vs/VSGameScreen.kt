@@ -876,6 +876,7 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                         myWords = vm.myGuessLog.toList(),
                         myTimeMs = (vm.result?.playerTime ?: 0.0).toInt(),
                         opponentTimeMs = (vm.result?.opponentTime ?: 0.0).toInt(),
+                        answerDisplay = vm.puzzleDisplay,
                     )
                 }
             }

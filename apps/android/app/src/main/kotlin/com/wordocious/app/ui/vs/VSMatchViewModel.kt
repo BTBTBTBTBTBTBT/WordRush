@@ -158,6 +158,10 @@ class VSMatchViewModel(
     // recaps from the match seed (iOS build-87 parity).
     var seed = ""
         private set
+    /** ProperNoundle: the answer's spaced display from match_start metadata —
+     *  the result recap's fallback when the seed→puzzle lookup misses. */
+    var puzzleDisplay: String? = null
+        private set
     private var matchStartMs = 0.0
     private var resultRecorded = false
     private var countdownJob: Job? = null
@@ -322,13 +326,19 @@ class VSMatchViewModel(
             typingHideJob?.cancel()
             typingHideJob = viewModelScope.launch { delay(2000); opponentTyping = false }
         }
-        service.onMatchStart = { beginMatch(it.seed, it.startTime) }
+        service.onMatchStart = {
+            puzzleDisplay = it.puzzleMetadata?.display
+            beginMatch(it.seed, it.startTime)
+        }
         service.onOpponentProgress = { applyOpponentProgress(it) }
         service.onOpponentStageCompleted = { opponent.stagesCleared = max(opponent.stagesCleared, it.stageIndex + 1) }
         service.onMatchEnded = { handleMatchEnded(it) }
         service.onRematchOffered = { rematch = RematchState.RECEIVED }
         service.onRematchDeclined = { rematch = RematchState.DECLINED }
-        service.onRematchStart = { beginRematch(it.seed) }
+        service.onRematchStart = {
+            puzzleDisplay = it.puzzleMetadata?.display
+            beginRematch(it.seed)
+        }
         service.onOpponentLeft = { message = "Opponent left the match"; screen = VSScreen.OPPONENT_LEFT }
         service.onServerError = { message = it.message }
     }
