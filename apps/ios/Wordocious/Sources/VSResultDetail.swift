@@ -435,6 +435,18 @@ struct VSFinalBoards: View {
 
     // MARK: Single board (Classic/Six/Seven/ProperNoundle)
 
+    /// ProperNoundle puzzle for this match's seed — gives us the `display`
+    /// string ("Trae Young") whose spaces the raw solution lacks ("TRAEYOUNG",
+    /// which is what the guess log / solutions carry and what the recap used
+    /// to render verbatim). Guarded against a seed-lookup mismatch: only used
+    /// when the looked-up answer actually matches the revealed solution.
+    private var pnPuzzle: NPuzzle? {
+        guard mode == .propernoundle, let p = ProperNoundle.puzzle(forSeed: seed),
+              let solution = solutions.first,
+              ProperNoundle.normalize(p.answer) == ProperNoundle.normalize(solution) else { return nil }
+        return p
+    }
+
     @ViewBuilder private var singleBoardComparison: some View {
         let mine = VSResultBoards.evaluate(log: myGuessLog, solutions: solutions)
         let theirs = VSResultBoards.evaluate(log: opponentGuessLog, solutions: solutions)
@@ -449,9 +461,11 @@ struct VSFinalBoards: View {
                     Rectangle().fill(Theme.border).frame(width: 1)
                     side(label: opponentName, boards: theirs, accent: Color(hex: 0xEC4899), solved: oppSolved)
                 }
-                // Reveal the answer so a missed board isn't a mystery.
+                // Reveal the answer so a missed board isn't a mystery. For
+                // ProperNoundle use the puzzle's display so multi-word answers
+                // keep their real spacing ("TRAE YOUNG", not "TRAEYOUNG").
                 if let answer = solutions.first {
-                    Text("Answer: \(answer.uppercased())")
+                    Text("Answer: \((pnPuzzle?.display ?? answer).uppercased())")
                         .font(Brand.font(11, .black)).tracking(1)
                         .foregroundStyle(Theme.textSecondary)
                 }
@@ -477,6 +491,18 @@ struct VSFinalBoards: View {
             if indices.isEmpty {
                 Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     .padding(.vertical, 12)
+            } else if let puzzle = pnPuzzle {
+                // ProperNoundle: reuse the solo completed mini-board so the
+                // recap rows carry the answer's word-group gaps (TRAE ⌷ YOUNG)
+                // instead of one unbroken letter run. Only the guessed rows —
+                // matches what letterBoard showed for this recap.
+                VStack(spacing: 12) {
+                    ForEach(indices, id: \.self) { idx in
+                        let words = (boards[idx] ?? []).map { $0.letters.joined() }
+                        CompletedProperNoundleMiniBoard(guesses: words, puzzle: puzzle,
+                                                        maxGuesses: max(1, words.count))
+                    }
+                }
             } else {
                 VStack(spacing: 12) {
                     ForEach(indices, id: \.self) { idx in
