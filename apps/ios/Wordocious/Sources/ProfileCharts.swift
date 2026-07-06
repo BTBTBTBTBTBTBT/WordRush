@@ -135,19 +135,28 @@ private struct ActivityCalendarView: View {
                 LegacyChartCard(title: "ACTIVITY (LAST 90 DAYS)") {
                 let weeks = makeWeeks()
                 let maxPlayed = max(1, data.map(\.played).max() ?? 1)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 3) {
+                // Cells scale to FILL the card's width (the fixed 11pt grid left
+                // a big dead zone on the right). The whole 11pt-cell/3pt-gap
+                // design scales uniformly, so the grid's aspect ratio is exact:
+                // width units = 11n+3(n-1) = 14n−3, height units = 7·11+6·3 = 95.
+                let n = max(1, CGFloat(weeks.count))
+                GeometryReader { geo in
+                    let unit = geo.size.width / (14 * n - 3)
+                    let cell = 11 * unit
+                    let spacing = 3 * unit
+                    HStack(spacing: spacing) {
                         ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
-                            VStack(spacing: 3) {
-                                ForEach(Array(week.enumerated()), id: \.offset) { _, cell in
-                                    RoundedRectangle(cornerRadius: 2)
-                                        .fill(cellColor(cell, maxPlayed: maxPlayed))
-                                        .frame(width: 11, height: 11)
+                            VStack(spacing: spacing) {
+                                ForEach(Array(week.enumerated()), id: \.offset) { _, cellDay in
+                                    RoundedRectangle(cornerRadius: 2 * unit)
+                                        .fill(cellColor(cellDay, maxPlayed: maxPlayed))
+                                        .frame(width: cell, height: cell)
                                 }
                             }
                         }
                     }
                 }
+                .aspectRatio((14 * n - 3) / 95, contentMode: .fit)
                 let totalDays = data.filter { $0.played > 0 }.count
                 let totalGames = data.reduce(0) { $0 + $1.played }
                 Text("\(totalDays) day\(totalDays == 1 ? "" : "s") played · \(totalGames) games")
@@ -595,6 +604,9 @@ struct ProStatsCard: View {
     let statRows: [UserStatRow]
     @ObservedObject private var auth = AuthService.shared
     @State private var showPro = false
+    // Tap-to-reveal (web-parity tooltip): the selected bar's label per chart.
+    @State private var selectedWin: String?
+    @State private var selectedTime: String?
 
     struct ModeBar: Identifiable { var id: String { label }; let label: String; let winRate: Double; let avgTime: Int }
 
@@ -630,24 +642,46 @@ struct ProStatsCard: View {
                 locked
             } else {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("Win Rate by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                    HStack {
+                        Text("Win Rate by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                        Spacer()
+                        // Web-parity tooltip line: tap a bar → mode + exact value.
+                        if let sel = selectedWin, let b = bars.first(where: { $0.label == sel }) {
+                            Text("\(fullName(sel)) · \(Int(b.winRate.rounded()))%")
+                                .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0xD97706))
+                        }
+                    }
                     Chart(bars) { b in
                         BarMark(x: .value("Mode", b.label), y: .value("Win %", b.winRate))
                             .foregroundStyle(Color(hex: 0xFACC15)).cornerRadius(3)
+                            .opacity(selectedWin == nil || selectedWin == b.label ? 1 : 0.35)
                     }
                     .chartYScale(domain: 0...100)
+                    // Web parity (pro-stats.tsx): no gridlines — labels only.
+                    .chartXAxis { AxisMarks { _ in AxisValueLabel() } }
                     .chartYAxis { AxisMarks(values: [0, 50, 100]) { v in
-                        AxisGridLine(); AxisValueLabel { if let i = v.as(Int.self) { Text("\(i)%").font(Brand.font(9, .bold)) } } } }
+                        AxisValueLabel { if let i = v.as(Int.self) { Text("\(i)%").font(Brand.font(9, .bold)) } } } }
                     .frame(height: 150)
+                    .chartTapSelection(bars: bars.map(\.label), selection: $selectedWin)
 
-                    Text("Avg Solve Time by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                    HStack {
+                        Text("Avg Solve Time by Mode").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                        Spacer()
+                        if let sel = selectedTime, let b = bars.first(where: { $0.label == sel }) {
+                            Text("\(fullName(sel)) · \(fmt(b.avgTime))")
+                                .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                        }
+                    }
                     Chart(bars) { b in
                         BarMark(x: .value("Mode", b.label), y: .value("Seconds", b.avgTime))
                             .foregroundStyle(Color(hex: 0xA78BFA)).cornerRadius(3)
+                            .opacity(selectedTime == nil || selectedTime == b.label ? 1 : 0.35)
                     }
+                    .chartXAxis { AxisMarks { _ in AxisValueLabel() } }
                     .chartYAxis { AxisMarks { v in
-                        AxisGridLine(); AxisValueLabel { if let s = v.as(Int.self) { Text(fmt(s)).font(Brand.font(9, .bold)) } } } }
+                        AxisValueLabel { if let s = v.as(Int.self) { Text(fmt(s)).font(Brand.font(9, .bold)) } } } }
                     .frame(height: 150)
+                    .chartTapSelection(bars: bars.map(\.label), selection: $selectedTime)
                 }
             }
                 }
@@ -679,4 +713,32 @@ struct ProStatsCard: View {
     }
 
     private func fmt(_ s: Int) -> String { s < 60 ? "\(s)s" : "\(s/60)m \(s%60)s" }
+
+    /// Short bar label → full mode title for the tooltip line.
+    private func fullName(_ short: String) -> String {
+        ["Classic": "Classic", "Quad": "QuadWord", "Octo": "OctoWord", "Succ": "Succession",
+         "Deliv": "Deliverance", "Six": "Six", "Seven": "Seven", "Gaunt": "Gauntlet",
+         "Proper": "ProperNoundle"][short] ?? short
+    }
+}
+
+private extension View {
+    /// Tap a bar to select it (tap again to clear) — the Swift Charts analogue
+    /// of the web chart's tap/hover tooltip. Maps the tap's x position to the
+    /// categorical value via the chart proxy.
+    func chartTapSelection(bars: [String], selection: Binding<String?>) -> some View {
+        chartOverlay { proxy in
+            GeometryReader { geo in
+                Rectangle().fill(.clear).contentShape(Rectangle())
+                    .gesture(SpatialTapGesture().onEnded { value in
+                        let origin = geo[proxy.plotAreaFrame].origin
+                        if let label: String = proxy.value(atX: value.location.x - origin.x) {
+                            selection.wrappedValue = (selection.wrappedValue == label) ? nil : label
+                        } else {
+                            selection.wrappedValue = nil
+                        }
+                    })
+            }
+        }
+    }
 }

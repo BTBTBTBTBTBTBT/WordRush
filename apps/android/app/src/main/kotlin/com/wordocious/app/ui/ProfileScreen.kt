@@ -1106,24 +1106,30 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
         ) {
-            if (monthLabels.isNotEmpty()) {
-                Box(Modifier.fillMaxWidth().height(14.dp)) {
-                    monthLabels.forEach { (label, wi) ->
-                        Text(
-                            label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                            modifier = Modifier.offset(x = (wi * 13).dp),
-                        )
+            // Cells scale to FILL the card's width (the fixed 10dp grid left a
+            // big dead zone on the right and needed a scroll). iOS parity.
+            androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val n = weeks.size.coerceAtLeast(1)
+                val gap = 3.dp
+                val cell = ((maxWidth - gap * (n - 1)) / n).coerceAtLeast(6.dp)
+                Column {
+                    if (monthLabels.isNotEmpty()) {
+                        Box(Modifier.fillMaxWidth().height(14.dp)) {
+                            monthLabels.forEach { (label, wi) ->
+                                Text(
+                                    label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                                    modifier = Modifier.offset(x = (cell + gap) * wi),
+                                )
+                            }
+                        }
                     }
-                }
-            }
-            Row(
-                Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                weeks.forEach { week ->
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        week.forEach { d ->
-                            Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(cellColor(d)))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                        weeks.forEach { week ->
+                            Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                                week.forEach { d ->
+                                    Box(Modifier.size(cell).clip(RoundedCornerShape(2.dp)).background(cellColor(d)))
+                                }
+                            }
                         }
                     }
                 }
