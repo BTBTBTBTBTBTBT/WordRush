@@ -458,7 +458,9 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
             opponentTyping = vm.opponentTyping,
             modifier = Modifier.padding(top = 6.dp),
         )
-        OpponentStrip(vm.opponent, game.maxGuesses, game.wordLength, Modifier.padding(top = 6.dp), totalBoards = vm.totalBoards)
+        // Full-frame opponent board from match start — the STARTING row budget
+        // (live maxGuesses can shrink, e.g. Gauntlet steal-guess).
+        OpponentStrip(vm.opponent, game.initialMaxGuesses, game.wordLength, Modifier.padding(top = 6.dp), totalBoards = vm.totalBoards)
 
         // Gauntlet VS: the 5-node stage stepper (parity with the solo header).
         if (vm.mode == GameMode.GAUNTLET) {
@@ -562,8 +564,11 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
     val totalBoardsLocal = vm.game?.boardCount ?: 1
     val liveTotalBoards = if (vm.opponent.totalBoards > 0) vm.opponent.totalBoards else totalBoardsLocal
     val oppRowsUsed = vm.opponent.tiles.values.maxOfOrNull { it.size } ?: 0
-    // Cap rendered empty rows so Gauntlet's 50-guess budget doesn't blow up the layout.
-    val spectatorRows = minOf(vm.modeMaxGuesses, maxOf(6, oppRowsUsed + 1))
+    // Full empty frame from match start (per-board row budget from the engine's
+    // initial board state) — guessed rows fill in place instead of appending.
+    // oppRowsUsed keeps a filled row from ever clipping (Gauntlet stages can
+    // outrun the stage-0 budget).
+    val spectatorRows = maxOf(vm.game?.initialMaxGuesses ?: 6, oppRowsUsed)
 
     // Live m:ss clock since match start.
     var tick by remember { mutableStateOf(0) }

@@ -94,7 +94,9 @@ fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength:
     val gap = if (cell >= 12.dp) 2.dp else 1.dp
     val radius = maxOf(2.dp, (cell.value * 0.16f).dp)
     Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-        repeat(maxOf(maxGuesses, 1)) { r ->
+        // Always the full frame; tiles.size guards against clipping a filled row
+        // if the opponent somehow exceeds the frame budget.
+        repeat(maxOf(maxGuesses, tiles.size, 1)) { r ->
             val isNew = r == tiles.size - 1 && tiles.getOrNull(r) != null
             Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                 repeat(maxOf(wordLength, 1)) { c ->

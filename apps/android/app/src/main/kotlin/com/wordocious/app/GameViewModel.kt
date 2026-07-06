@@ -51,6 +51,10 @@ class GameViewModel(
     val boardCount: Int get() = _state.value.boards.size
     val boardsSolvedCount: Int get() = _state.value.boards.count { it.status == GameStatus.WON }
     val maxGuesses: Int get() = _state.value.boards[_state.value.currentBoardIndex].maxGuesses
+    /** The mode's starting per-board row budget, captured before any play — VS
+     *  opponent frames render this many empty rows from match start (the live
+     *  maxGuesses can shrink mid-game, e.g. Gauntlet steal-guess). */
+    val initialMaxGuesses: Int = _state.value.boards.firstOrNull()?.maxGuesses ?: 6
     /** Total guesses used — web parity: MAX across boards (a solved board stops
      *  accumulating, so boards[0] underreports when it solves early). */
     val rowsUsed: Int get() = _state.value.boards.maxOfOrNull { it.guesses.size } ?: 0
