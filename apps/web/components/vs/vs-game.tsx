@@ -203,6 +203,24 @@ const MODE_WORD_LEN: Record<string, number> = {
   [GameMode.DUEL_7]: 7,
 };
 
+// Per-BOARD full-frame rows for the spectator live board. The complete empty
+// frame renders from the moment you start watching — guessed rows fill in
+// top-down instead of the board growing row by row. For every mode this is
+// the per-board maxGuesses; Gauntlet is the exception because its 50 is a
+// TOTAL guess budget shared across 21 stage boards, so its frame starts at
+// the stage-1 board height and only grows if a board accumulates more rows.
+const VS_MODE_FRAME_ROWS: Record<string, number> = {
+  [GameMode.DUEL]: 6,
+  [GameMode.QUORDLE]: 9,
+  [GameMode.OCTORDLE]: 13,
+  [GameMode.SEQUENCE]: 10,
+  [GameMode.RESCUE]: 6,
+  [GameMode.GAUNTLET]: 6,
+  [GameMode.PROPERNOUNDLE]: 6,
+  [GameMode.DUEL_6]: 7,
+  [GameMode.DUEL_7]: 8,
+};
+
 /**
  * Tug-of-war lead metric: boards solved dominate (weight 0.7); best-row
  * greens add the within-board signal (weight 0.3). For single-board modes
@@ -1333,8 +1351,13 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     const oppName = opponentInfo?.username || 'Opponent';
     const liveTotalBoards = opponentProgress.totalBoards || totalBoards;
     const oppRowsUsed = Math.max(0, ...Object.values(opponentTiles).map((rows) => rows.length));
-    // Cap rendered empty rows so Gauntlet's 50-guess budget doesn't blow up the layout.
-    const spectatorRows = Math.min(modeMaxGuesses, Math.max(6, oppRowsUsed + 1));
+    // Full static frame from the start (no row-by-row growth); the min() cap
+    // only matters for Gauntlet, whose 50-guess TOTAL budget would otherwise
+    // blow up the layout — its frame grows past 6 only when a board does.
+    const spectatorRows = Math.min(modeMaxGuesses, Math.max(VS_MODE_FRAME_ROWS[mode] || 6, oppRowsUsed));
+    // ProperNoundle's answer length varies per puzzle (MODE_WORD_LEN says 5) —
+    // size the frame columns to the real answer so opponent rows aren't cut off.
+    const specWordLen = mode === GameMode.PROPERNOUNDLE ? (puzzleMetadata?.answerLength || wordLen) : wordLen;
     // Bigger board so it fills the space and the flip-in reveal reads clearly.
     const specTile = liveTotalBoards <= 1 ? 34 : liveTotalBoards <= 4 ? 24 : 14;
     const clockStr = `${Math.floor(waitingClock / 60)}:${(waitingClock % 60).toString().padStart(2, '0')}`;
@@ -1430,7 +1453,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               <OpponentMiniBoard
                 tiles={opponentTiles[0] || []}
                 maxGuesses={spectatorRows}
-                wordLength={wordLen}
+                wordLength={specWordLen}
                 tileSize={specTile}
               />
             ) : (
@@ -1438,7 +1461,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 opponentTiles={opponentTiles}
                 totalBoards={liveTotalBoards}
                 maxGuesses={spectatorRows}
-                wordLength={wordLen}
+                wordLength={specWordLen}
                 tileSize={specTile}
               />
             )}
