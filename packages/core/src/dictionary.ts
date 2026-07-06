@@ -3,7 +3,7 @@ let allowedWordsArray: string[] = [];
 let solutionWords: string[] = [];
 
 // Multi-length dictionaries (for 6-letter, 7-letter, etc.)
-const lengthDictionaries: Map<number, { allowed: Set<string>, solutions: string[] }> = new Map();
+const lengthDictionaries: Map<number, { allowed: Set<string>, allowedArray: string[], solutions: string[] }> = new Map();
 
 export function initDictionary(allowed: string[], solutions: string[]): void {
   allowedWords = new Set(allowed.map(w => w.toUpperCase()));
@@ -12,14 +12,29 @@ export function initDictionary(allowed: string[], solutions: string[]): void {
 }
 
 export function initDictionaryForLength(length: number, allowed: string[], solutions: string[]): void {
+  const allowedArray = allowed.map(w => w.toUpperCase());
   lengthDictionaries.set(length, {
-    allowed: new Set(allowed.map(w => w.toUpperCase())),
+    allowed: new Set(allowedArray),
+    allowedArray,
     solutions: solutions.map(w => w.toUpperCase()),
   });
 }
 
 export function getAllowedWords(): string[] {
   return allowedWordsArray;
+}
+
+/**
+ * Full allowed list for a word length. Uses the length-keyed dictionary
+ * (initDictionaryForLength — the real 6/7-letter lists) when one is loaded;
+ * otherwise filters the default dictionary. The default allowed list is
+ * ~9.3k FIVE-letter words plus a couple of stray 6/7-letter entries, so
+ * callers needing 6/7-letter words MUST use this, not getAllowedWords().
+ */
+export function getAllowedWordsForLength(length: number): string[] {
+  const dict = lengthDictionaries.get(length);
+  if (dict) return dict.allowedArray;
+  return allowedWordsArray.filter(w => w.length === length);
 }
 
 export function isValidWord(word: string): boolean {

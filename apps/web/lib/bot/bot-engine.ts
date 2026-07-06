@@ -16,7 +16,7 @@ import {
   GameMode,
   createInitialState,
   evaluateGuess,
-  getAllowedWords,
+  getAllowedWordsForLength,
   generateSolutionsFromSeed,
   GAUNTLET_STAGES,
   GAUNTLET_TOTAL_SOLUTIONS,
@@ -130,23 +130,38 @@ function greens(word: string, solution: string): number {
  * when `willSolve`, otherwise a near-miss (len-1 greens) so it looks like the
  * bot ran out of guesses one letter short.
  */
-function realWordPath(solution: string, steps: number, willSolve: boolean, exclude?: string[]): string[] {
+function realWordPath(
+  solution: string,
+  steps: number,
+  willSolve: boolean,
+  exclude?: string[],
+  usedWords?: Set<string>,
+): string[] {
   const len = solution.length;
   // `exclude` (restat B3): shared-guess fillers must never equal ANOTHER
   // board's solution — post-filtering shrank the sequence below the intended
   // budget, making the bot slightly stronger than its difficulty tuning.
+  // `usedWords` is the MATCH-wide played set: the bot must never resubmit a
+  // word it already played this match (any board, any stage).
   const ex = new Set((exclude ?? []).map((w) => w.toUpperCase()));
-  const pool = getAllowedWords()
-    .map((w) => w.toUpperCase())
-    .filter((w) => w.length === len && w !== solution && !ex.has(w));
+  // Length-keyed pool: getAllowedWords() is the 5-letter list (its only 6/7
+  // strays were HACKERS/NOODLES etc.), which made Six/Seven filler pools
+  // 1–2 words deep and the bot repeated them (HACKERS x4 in a Seven match).
+  const pool = getAllowedWordsForLength(len)
+    .filter((w) => w !== solution && !ex.has(w) && !usedWords?.has(w));
   if (pool.length === 0) return fabricatedPath(solution, steps, willSolve);
 
   const path: string[] = [];
   const used = new Set<string>();
+  const record = (word: string) => {
+    used.add(word);
+    usedWords?.add(word);
+    path.push(word);
+  };
   const solvingIndex = willSolve ? steps - 1 : -1;
   for (let i = 0; i < steps; i++) {
     if (i === solvingIndex) {
-      path.push(solution);
+      record(solution);
       break;
     }
     // Ramp target greens from ~0 up toward len-1 across the earlier rows.
@@ -165,9 +180,19 @@ function realWordPath(solution: string, steps: number, willSolve: boolean, exclu
         if (delta === 0) break;
       }
     }
-    const word = best ?? pick(pool);
-    used.add(word);
-    path.push(word);
+    if (best) {
+      record(best);
+      continue;
+    }
+    // All 60 samples hit already-used words (tiny/exhausted pool): pick from
+    // the unused remainder — never resubmit a played word. If the pool is
+    // truly spent, stop the filler path short rather than repeat.
+    const fresh = pool.filter((w) => !used.has(w));
+    if (fresh.length === 0) {
+      if (willSolve) record(solution);
+      break;
+    }
+    record(pick(fresh));
   }
   return path;
 }
@@ -285,6 +310,9 @@ export function buildBotPlan(
   const events: BotProgressEvent[] = [];
   const stageEvents: { atMs: number; stageIndex: number }[] = [];
   const guessLog: { boardIndex: number; guess: string }[] = [];
+  // Every word the bot plays this match (fillers AND solutions) — passed to
+  // realWordPath so the bot never resubmits a word, across boards and stages.
+  const usedWords = new Set<string>();
   let cumulativeAttempts = 0;
   let boardsSolved = 0;
   let lastAtMs = 0;
@@ -326,9 +354,11 @@ export function buildBotPlan(
         randInt(Math.max(0, params.minGuesses - 2), Math.max(1, params.maxGuesses - 2)),
       ));
     }
-    // Fillers must not accidentally solve a board they weren't credited for.
+    // Fillers must not accidentally solve a board they weren't credited for —
+    // exclude the WHOLE match's solutions (not just this segment's), or a
+    // Gauntlet stage-1 filler can equal a stage-4 solution and force a repeat.
     const fillers = fillerCount > 0
-      ? realWordPath(sols[n - 1], fillerCount, false, sols)
+      ? realWordPath(sols[n - 1], fillerCount, false, solutions, usedWords)
       : [];
     const solvedLocal = new Set<number>();
     const solveOrder = shuffle([...Array(n).keys()]).slice(0, solveCount);
@@ -337,6 +367,7 @@ export function buildBotPlan(
       ...solveOrder.map((i) => ({ word: sols[i], solves: i as number | null })),
     ];
     for (const { word, solves } of sequence) {
+      usedWords.add(word);
       if (solves != null) { solvedLocal.add(solves); boardsSolved += 1; }
       const entries: LatestGuess[] = [];
       for (let li = 0; li < n; li++) {
@@ -362,7 +393,9 @@ export function buildBotPlan(
       const steps = fails
         ? remaining
         : Math.max(1, Math.min(remaining - reserve, randInt(1, Math.max(1, Math.min(3, params.maxGuesses - 2)))));
-      const path = realWordPath(sol, steps, !fails);
+      // Exclude every match solution: a filler equal to a LATER board's (or
+      // later stage's) solution would force a repeat when that board is solved.
+      const path = realWordPath(sol, steps, !fails, solutions, usedWords);
       for (let i = 0; i < path.length; i++) {
         const solving = !fails && i === path.length - 1;
         if (solving) boardsSolved += 1;
@@ -409,7 +442,7 @@ export function buildBotPlan(
       const steps = Math.min(cap, opts.targetGuesses ?? randInt(params.minGuesses, params.maxGuesses));
       const path = mode === GameMode.PROPERNOUNDLE
         ? fabricatedPath(solution, willSolveAll ? steps : cap, willSolveAll)
-        : realWordPath(solution, willSolveAll ? steps : cap, willSolveAll);
+        : realWordPath(solution, willSolveAll ? steps : cap, willSolveAll, undefined, usedWords);
       for (let i = 0; i < path.length; i++) {
         if (willSolveAll && i === path.length - 1) boardsSolved += 1;
         emit(path[i], [], 0, { boardIndex: 0, tiles: tilesFor(solution, path[i]) });
