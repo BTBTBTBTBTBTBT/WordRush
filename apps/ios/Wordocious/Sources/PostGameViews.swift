@@ -242,6 +242,13 @@ struct NextDailyCTA: View {
     /// RootTabView observes and presents that mode's daily.
     static let playNextDaily = Notification.Name("wordocious.play-next-daily")
 
+    /// The dbKey of the game THIS results screen belongs to. Excluded
+    /// explicitly (web parity): its own recording can lag the render —
+    /// Gauntlet's multi-write chain especially — so without this the CTA
+    /// suggested the mode the player JUST finished, and tapping it re-opened
+    /// the same results screen.
+    var currentMode: String? = nil
+
     /// Seeds instantly from the day-keyed cache (which already includes the
     /// just-finished game via completionPosted); load() confirms from the server.
     @StateObject private var completions = DailyCompletionsStore()
@@ -251,7 +258,7 @@ struct NextDailyCTA: View {
     /// daily row — dbKey nil — so it's skipped automatically).
     private var nextMode: HomeMode? {
         homeModes.first { m in
-            guard let key = m.dbKey else { return false }
+            guard let key = m.dbKey, key != currentMode else { return false }
             return completions.byMode[key] == nil
         }
     }

@@ -91,7 +91,7 @@ struct GameScreen: View {
                                                totalBoards: vm.boardCount, hintsUsed: vm.hintsUsed,
                                                stagesCompleted: vm.stagesCompletedForScore,
                                                bestCorrectLetters: vm.bestCorrectLettersForScore)
-                            if vm.isDaily { NextDailyCTA() }
+                            if vm.isDaily { NextDailyCTA(currentMode: mode.rawValue) }
                             if vm.boardCount == 1 {
                                 DefinitionCard(solution: vm.boards[0].solution, showWord: false)
                             }

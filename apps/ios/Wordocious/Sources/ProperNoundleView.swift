@@ -466,7 +466,7 @@ struct ProperNoundleView: View {
                                guessCount: vm.guesses.count, timeSeconds: secs,
                                boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,
                                bestCorrectLetters: vm.guesses.reduce(0) { max($0, $1.tiles.filter { $0 == .correct }.count) })
-            if vm.isDaily && !vm.isVersus { NextDailyCTA() }
+            if vm.isDaily && !vm.isVersus { NextDailyCTA(currentMode: "PROPERNOUNDLE") }
         }
         .padding(.vertical, 12)
         .task { await vm.loadWikiImage(); await vm.loadResultClue() }

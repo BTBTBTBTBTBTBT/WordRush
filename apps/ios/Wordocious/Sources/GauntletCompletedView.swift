@@ -244,7 +244,7 @@ struct GauntletResultsView: View {
                     .modifier(RiseIn(appeared: appeared, delay: 0.5))
 
                 if isDaily && showNextDaily {
-                    NextDailyCTA().modifier(RiseIn(appeared: appeared, delay: 0.55))
+                    NextDailyCTA(currentMode: "GAUNTLET").modifier(RiseIn(appeared: appeared, delay: 0.55))
                 }
 
                 GauntletCompletedView(progress: progress, totalTimeMs: totalTimeMs, showSummary: false, showStageHeader: true)
