@@ -11,8 +11,22 @@ struct WordOfTheDayView: View {
     @State private var showWords = false
     @Environment(\.scenePhase) private var scenePhase
 
-    /// UTC day index — matches the web's `Math.floor(Date.now()/86400000)`.
-    private var todayIndex: Int { Int(Date().timeIntervalSince1970 / 86400) }
+    /// Day index of the LOCAL calendar date (not Date()/86400, which rolls at
+    /// UTC midnight — 7 PM Central — and flipped the home card to tomorrow's
+    /// word mid-evening while the Words archive still showed today's). Parse
+    /// todayLocal() (yyyy-MM-dd) with a UTC formatter — the same idiom as
+    /// ProperNoundleEngine.daysSinceEpoch; matches web commit ad2ef44.
+    private var todayIndex: Int {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
+        guard let d = f.date(from: LeaderboardService.todayLocal()) else {
+            return Int(Date().timeIntervalSince1970 / 86400)
+        }
+        return Int(d.timeIntervalSince1970 / 86400)
+    }
 
     struct WordInfo {
         let word: String
