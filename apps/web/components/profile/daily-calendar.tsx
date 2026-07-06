@@ -1,17 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import { CALENDAR_RAMP } from '@/lib/tile-theme';
 
 interface DailyCalendarProps {
   data: Array<{ day: string; gamesPlayed: number; gamesWon: number }>;
 }
 
+const DAY_LABEL_W = 26;
+
+function formatDay(day: string): string {
+  return new Date(day + 'T00:00:00Z').toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 export function DailyCalendar({ data }: DailyCalendarProps) {
+  // Tapped day — shows "Jul 3 · 12 games · 9 wins" in the footer.
+  const [selected, setSelected] = useState<string | null>(null);
+
   if (data.length === 0) return null;
 
   const maxGames = Math.max(1, ...data.map((d) => d.gamesPlayed));
   const totalDaysPlayed = data.filter((d) => d.gamesPlayed > 0).length;
   const totalGames = data.reduce((s, d) => s + d.gamesPlayed, 0);
+  const selectedDay = selected ? data.find((d) => d.day === selected) : undefined;
 
   const weeks: Array<Array<typeof data[number] | null>> = [];
   let currentWeek: Array<typeof data[number] | null> = [];
@@ -63,7 +78,7 @@ export function DailyCalendar({ data }: DailyCalendarProps) {
       style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
     >
       {months.length > 0 && (
-        <div className="flex gap-0 mb-1 relative" style={{ height: '14px' }}>
+        <div className="flex gap-0 mb-1 relative" style={{ height: '14px', marginLeft: `${DAY_LABEL_W}px` }}>
           {months.map((m, i) => (
             <span
               key={i}
@@ -79,27 +94,49 @@ export function DailyCalendar({ data }: DailyCalendarProps) {
         </div>
       )}
 
-      <div className="flex gap-[3px] overflow-x-auto">
-        {weeks.map((week, wi) => (
-          <div key={wi} className="flex flex-col gap-[3px]">
-            {week.map((d, di) => (
-              <div
-                key={di}
-                className="rounded-sm"
-                style={{
-                  width: '10px',
-                  height: '10px',
-                  background: getCellColor(d),
-                }}
-                title={
-                  d
-                    ? `${d.day}: ${d.gamesPlayed} game${d.gamesPlayed !== 1 ? 's' : ''}, ${d.gamesWon} won`
-                    : ''
-                }
-              />
-            ))}
-          </div>
-        ))}
+      <div className="flex gap-1">
+        {/* Weekday guide (rows are Sun→Sat; label Mon/Wed/Fri). */}
+        <div className="flex flex-col gap-[3px] shrink-0" style={{ width: `${DAY_LABEL_W - 4}px` }}>
+          {Array.from({ length: 7 }, (_, r) => (
+            <span
+              key={r}
+              className="text-[8px] font-bold leading-none flex items-center"
+              style={{ color: 'var(--color-text-muted)', height: '10px' }}
+            >
+              {r === 1 ? 'Mon' : r === 3 ? 'Wed' : r === 5 ? 'Fri' : ''}
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-[3px] overflow-x-auto">
+          {weeks.map((week, wi) => (
+            <div key={wi} className="flex flex-col gap-[3px]">
+              {week.map((d, di) => (
+                <div
+                  key={di}
+                  className={`rounded-sm ${d && d.gamesPlayed > 0 ? 'cursor-pointer' : ''}`}
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    background: getCellColor(d),
+                    boxShadow: d && selected === d.day ? 'inset 0 0 0 1.5px #7C3AED' : undefined,
+                  }}
+                  onClick={() => {
+                    if (d && d.gamesPlayed > 0) {
+                      setSelected(selected === d.day ? null : d.day);
+                    } else {
+                      setSelected(null);
+                    }
+                  }}
+                  title={
+                    d
+                      ? `${d.day}: ${d.gamesPlayed} game${d.gamesPlayed !== 1 ? 's' : ''}, ${d.gamesWon} won`
+                      : ''
+                  }
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center justify-between mt-2">
@@ -114,9 +151,16 @@ export function DailyCalendar({ data }: DailyCalendarProps) {
           ))}
           <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>More</span>
         </div>
-        <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          {totalDaysPlayed} days · {totalGames} games
-        </span>
+        {/* Tapped-day detail when selected, totals otherwise. */}
+        {selectedDay ? (
+          <span className="text-[9px] font-black" style={{ color: '#7C3AED' }}>
+            {formatDay(selectedDay.day)} · {selectedDay.gamesPlayed} game{selectedDay.gamesPlayed === 1 ? '' : 's'} · {selectedDay.gamesWon} win{selectedDay.gamesWon === 1 ? '' : 's'}
+          </span>
+        ) : (
+          <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            {totalDaysPlayed} days · {totalGames} games
+          </span>
+        )}
       </div>
     </div>
   );

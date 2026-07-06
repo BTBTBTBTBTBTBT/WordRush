@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { MODES } from '@/lib/modes.generated';
+
 interface SolveTimeChartProps {
   data: Array<{ date: string; timeSeconds: number; mode: string }>;
   accentColor?: string;
@@ -22,7 +25,28 @@ function formatTime(s: number): string {
   return sec > 0 ? `${m}m${sec}s` : `${m}m`;
 }
 
+// Exact time for the tapped-win detail — "1:24" (native parity).
+function formatTimeExact(s: number): string {
+  if (s < 60) return `${s}s`;
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function modeTitle(dbKey: string): string {
+  return MODES.find((m) => m.dbKey === dbKey)?.title ?? dbKey;
+}
+
+function formatDay(date: string): string {
+  return new Date(date + 'T00:00:00Z').toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 export function SolveTimeChart({ data, accentColor: customColor }: SolveTimeChartProps) {
+  // Tapped point's index — shows "Jul 3 · Classic · 1:24".
+  const [selected, setSelected] = useState<number | null>(null);
+
   if (data.length < 2) {
     return (
       <div
@@ -60,12 +84,30 @@ export function SolveTimeChart({ data, accentColor: customColor }: SolveTimeChar
 
   const avgY = padY + (1 - (avgTime - minTime) / range) * usableH;
 
+  const selectedPoint = selected !== null ? points[selected] : undefined;
+
+  // Click snaps to the nearest win along the x axis; click it again to clear.
+  function handleClick(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * chartW;
+    let nearest = 0;
+    for (let i = 1; i < points.length; i++) {
+      if (Math.abs(points[i].x - x) < Math.abs(points[nearest].x - x)) nearest = i;
+    }
+    setSelected(selected === nearest ? null : nearest);
+  }
+
   return (
     <div
       className="p-4"
       style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
     >
-      <svg viewBox={`0 0 ${chartW} ${chartH}`} className="w-full" style={{ height: '120px' }}>
+      <svg
+        viewBox={`0 0 ${chartW} ${chartH}`}
+        className="w-full cursor-pointer"
+        style={{ height: '120px' }}
+        onClick={handleClick}
+      >
         <defs>
           <linearGradient id="timeGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={customColor || '#a78bfa'} stopOpacity="0.3" />
@@ -82,19 +124,39 @@ export function SolveTimeChart({ data, accentColor: customColor }: SolveTimeChar
           strokeWidth="1"
           strokeDasharray="4,3"
         />
+        {selectedPoint && (
+          <line
+            x1={selectedPoint.x}
+            y1={0}
+            x2={selectedPoint.x}
+            y2={chartH}
+            stroke={MODE_COLORS[selectedPoint.mode] || '#7c3aed'}
+            strokeOpacity="0.6"
+            strokeWidth="1"
+            strokeDasharray="3,3"
+          />
+        )}
         <path d={linePath} fill="none" stroke={customColor || '#7c3aed'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p, i) => (
           <circle
             key={i}
             cx={p.x}
             cy={p.y}
-            r="3"
+            r={selected === i ? 5 : 3}
             fill={MODE_COLORS[p.mode] || '#7c3aed'}
+            fillOpacity={selected === null || selected === i ? 1 : 0.4}
             stroke="var(--color-surface)"
             strokeWidth="1.5"
           />
         ))}
       </svg>
+
+      {/* Tapped-win detail: date, mode, exact time. */}
+      {selectedPoint && (
+        <p className="text-[10px] font-black text-center mt-1" style={{ color: MODE_COLORS[selectedPoint.mode] || '#7c3aed' }}>
+          {formatDay(selectedPoint.date)} · {modeTitle(selectedPoint.mode)} · {formatTimeExact(selectedPoint.timeSeconds)}
+        </p>
+      )}
 
       <div className="flex justify-between mt-2">
         <div className="text-center">
