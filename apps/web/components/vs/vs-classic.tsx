@@ -8,6 +8,7 @@ import { OpponentHUD } from './opponent-hud';
 import { Clock } from 'lucide-react';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { useClassicHints } from '@/hooks/use-classic-hints';
+import type { EvaluatedRow } from './vs-result-detail';
 
 export interface VsGameComponentProps {
   seed: string;
@@ -20,9 +21,17 @@ export interface VsGameComponentProps {
   startTime: number;
   /** Fired on letter entry — vs-game throttles + relays to the server as a typing ping. */
   onTyping?: () => void;
+  /**
+   * Fired once at game end (before onCompleted) with the final board rows as
+   * they actually rendered in-game — INCLUDING hint rows/tiles, which never
+   * enter the guess log. The result screen uses this snapshot for MY side of
+   * the recap so hints show; the log rebuild remains the fallback.
+   * Single-board modes only (Classic/Six/Seven/ProperNoundle).
+   */
+  onFinalBoard?: (rows: EvaluatedRow[]) => void;
 }
 
-export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
+export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping, onFinalBoard }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(gameReducer, createInitialState(seed, mode));
   const [currentGuess, setCurrentGuess] = useState('');
   const [message, setMessage] = useState('');
@@ -67,17 +76,34 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
     }
   }, [state.status, startTime]);
 
+  // Snapshot of the final board exactly as it rendered — hint rows keep their
+  // stored HINT_USED evaluation (blank tiles for unrevealed letters), normal
+  // rows re-evaluate. Threaded up to the result screen's recap.
+  const captureFinalBoard = useCallback(() => {
+    if (!onFinalBoard) return;
+    const rows: EvaluatedRow[] = currentBoard.guesses.map((g, i) => {
+      const ev = currentBoard.hintEvaluations?.[i] ?? evaluateGuess(currentBoard.solution, g);
+      return {
+        letters: ev.tiles.map(t => t.letter.trim().toUpperCase()),
+        states: ev.tiles.map(t => String(t.state)),
+      };
+    });
+    onFinalBoard(rows);
+  }, [onFinalBoard, currentBoard.guesses, currentBoard.hintEvaluations, currentBoard.solution]);
+
   useEffect(() => {
     if (hasReported) return;
     if (state.status === GameStatus.WON) {
       setHasReported(true);
+      captureFinalBoard();
       onBoardSolved(0);
       onCompleted('won', currentBoard.guesses.length, Date.now() - startTime);
     } else if (state.status === GameStatus.LOST) {
       setHasReported(true);
+      captureFinalBoard();
       onCompleted('lost', currentBoard.guesses.length, Date.now() - startTime);
     }
-  }, [state.status, hasReported, currentBoard.guesses.length, startTime, onBoardSolved, onCompleted]);
+  }, [state.status, hasReported, currentBoard.guesses.length, startTime, onBoardSolved, onCompleted, captureFinalBoard]);
 
   const handleKey = useCallback((key: string) => {
     if (currentBoard.status !== GameStatus.PLAYING) return;

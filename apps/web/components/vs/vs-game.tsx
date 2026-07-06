@@ -30,7 +30,7 @@ import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
 import { MatchIntro, headToHeadLine } from './match-intro';
 import { VsMatchHeader } from './vs-match-header';
-import { FinalBoards, ScoreCard, logSolved } from './vs-result-detail';
+import { FinalBoards, ScoreCard, logSolved, type EvaluatedRow } from './vs-result-detail';
 import { generateVsShareImage, logToGrids } from '@/lib/vs-share-image';
 import { OpponentMiniBoard, OpponentMultiMiniBoard } from './opponent-mini-board';
 import {
@@ -362,6 +362,10 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const [myTiles, setMyTiles] = useState<Record<number, string[][]>>({});
   const [myGuessLog, setMyGuessLog] = useState<OpponentGuessLogEntry[]>([]);
   const myGuessLogRef = useRef<OpponentGuessLogEntry[]>([]);
+  // Final snapshot of MY board rows at game end, captured by the mode
+  // component (single-board modes). Unlike myGuessLog it includes hint
+  // rows/tiles (Six/Seven/ProperNoundle), so the result recap can show them.
+  const [myFinalRows, setMyFinalRows] = useState<EvaluatedRow[] | null>(null);
   const [myBoardsSolved, setMyBoardsSolved] = useState(0);
   const [myStatus, setMyStatus] = useState<'won' | 'lost' | null>(null);
   const [callout, setCallout] = useState<{ id: number; text: string } | null>(null);
@@ -407,6 +411,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     setMyTiles({});
     setMyGuessLog([]);
     myGuessLogRef.current = [];
+    setMyFinalRows(null);
     setMyBoardsSolved(0);
     setMyStatus(null);
     setCallout(null);
@@ -716,6 +721,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const handleStageCompleted = useCallback((stageIndex: number) => {
     matchService.reportStageCompleted(stageIndex);
   }, [matchService]);
+
+  // Final-state snapshot from the mode component (fired at game end, before
+  // any reset) — feeds MY side of the result recap so hint rows/tiles show.
+  const handleFinalBoard = useCallback((rows: EvaluatedRow[]) => {
+    setMyFinalRows(rows);
+  }, []);
 
   const handleGuessSubmitted = useCallback((guess: string, boardIndex: number) => {
     matchService.submitGuess(guess, boardIndex);
@@ -1302,6 +1313,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               myTimeMs={matchResult?.playerTime ?? 0}
               opponentTimeMs={matchResult?.opponentTime ?? 0}
               answerDisplay={puzzleMetadata?.display}
+              myFinalRows={myFinalRows ?? undefined}
             />
           )}
         </div>
@@ -1502,6 +1514,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       opponentTiles,
       startTime,
       onTyping: handleTyping,
+      onFinalBoard: handleFinalBoard,
     };
 
     switch (mode) {

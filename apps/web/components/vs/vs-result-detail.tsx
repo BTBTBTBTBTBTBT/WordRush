@@ -24,9 +24,9 @@ const TILE_BG: Record<string, string> = {
   ABSENT: 'var(--color-text-muted)',
 };
 
-interface EvaluatedRow {
+export interface EvaluatedRow {
   letters: string[];
-  states: string[]; // CORRECT | PRESENT | ABSENT
+  states: string[]; // CORRECT | PRESENT | ABSENT | HINT_USED
 }
 
 function evaluateLog(
@@ -154,20 +154,27 @@ function LetterBoard({ rows, wordGroups }: { rows: EvaluatedRow[]; wordGroups?: 
     wordGroups && wordGroups.length > 1 && wordGroups.reduce((a, b) => a + b, 0) === wordLen
       ? wordGroups
       : [wordLen];
-  const tileAt = (row: EvaluatedRow, ci: number) => (
-    <div
-      key={ci}
-      className="rounded-[4px] flex items-center justify-center text-white font-black"
-      style={{
-        width: tile,
-        height: tile,
-        fontSize: tile * 0.5,
-        background: TILE_BG[row.states[ci]] || TILE_BG.ABSENT,
-      }}
-    >
-      {row.letters[ci]}
-    </div>
-  );
+  const tileAt = (row: EvaluatedRow, ci: number) => {
+    // Hint rows/tiles (Six/Seven SUBMIT_HINT rows, ProperNoundle reveals)
+    // render in the same light-gray "hint used" style as the solo board.
+    const isHint = row.states[ci] === 'HINT_USED';
+    return (
+      <div
+        key={ci}
+        className="rounded-[4px] flex items-center justify-center font-black"
+        style={{
+          width: tile,
+          height: tile,
+          fontSize: tile * 0.5,
+          background: isHint ? '#e5e7eb' : TILE_BG[row.states[ci]] || TILE_BG.ABSENT,
+          border: isHint ? '1.5px solid #d1d5db' : undefined,
+          color: isHint ? '#9ca3af' : '#ffffff',
+        }}
+      >
+        {row.letters[ci]}
+      </div>
+    );
+  };
   return (
     <div className="flex flex-col gap-[3px]">
       {rows.map((row, ri) => {
@@ -203,6 +210,17 @@ interface FinalBoardsProps {
    *  match's puzzleMetadata. Falls back to the seed→puzzle lookup (same
    *  hash the server uses) so BOT matches, which have no metadata, work. */
   answerDisplay?: string;
+  /**
+   * Snapshot of MY final board rows captured from the ACTUAL game state at
+   * match end (single-board modes: Classic/Six/Seven/ProperNoundle). Unlike
+   * the guess log, this includes hint rows (Six/Seven SUBMIT_HINT) and
+   * hint-revealed tiles (ProperNoundle), so the recap matches what the
+   * player saw in-game. Log-based re-evaluation is the fallback.
+   * KNOWN LIMITATION: the opponent side stays log-based — bots don't hint
+   * and human hints aren't relayed over the wire, so their hint rows can't
+   * be reconstructed.
+   */
+  myFinalRows?: EvaluatedRow[];
 }
 
 /**
@@ -311,7 +329,7 @@ function gauntletReconstruct(
 export function FinalBoards({
   myName, opponentName, myGuessLog, opponentGuessLog, solutions,
   mode = GameMode.DUEL, seed = '', myTimeMs = 0, opponentTimeMs = 0,
-  answerDisplay,
+  answerDisplay, myFinalRows,
 }: FinalBoardsProps) {
   const mine = useMemo(() => evaluateLog(myGuessLog, solutions), [myGuessLog, solutions]);
   const theirs = useMemo(() => evaluateLog(opponentGuessLog, solutions), [opponentGuessLog, solutions]);
@@ -335,7 +353,12 @@ export function FinalBoards({
     [pnDisplay],
   );
 
-  if (mine.size === 0 && theirs.size === 0) return null;
+  // MY side of a single-board recap prefers the final-state snapshot (has
+  // hint rows/tiles the guess log lacks); log-based `mine` is the fallback.
+  const mineDisplay: Map<number, EvaluatedRow[]> =
+    myFinalRows && myFinalRows.length > 0 ? new Map([[0, myFinalRows]]) : mine;
+
+  if (mineDisplay.size === 0 && theirs.size === 0) return null;
 
   const mySolved = logSolved(myGuessLog, solutions);
   const oppSolved = logSolved(opponentGuessLog, solutions);
@@ -470,7 +493,9 @@ export function FinalBoards({
       style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
     >
       <div className="flex items-start gap-4">
-        {renderSide(myName, mine, '#7c3aed', mySolved)}
+        {renderSide(myName, mineDisplay, '#7c3aed', mySolved)}
+        {/* Opponent stays log-based (no hint rows): bots don't hint and human
+            hints aren't relayed to the opponent — known limitation. */}
         <div className="w-px self-stretch" style={{ background: 'var(--color-border)' }} />
         {renderSide(opponentName, theirs, '#ec4899', oppSolved)}
       </div>

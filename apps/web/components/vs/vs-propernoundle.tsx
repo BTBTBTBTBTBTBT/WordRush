@@ -10,6 +10,7 @@ import { Guess, TileState, type Puzzle } from '@/components/propernoundle/types'
 import { normalizeString, evaluateGuess, checkWin } from '@/components/propernoundle/game-logic';
 import { useHints } from '@/components/propernoundle/use-hints';
 import type { VsGameComponentProps } from './vs-classic';
+import type { EvaluatedRow } from './vs-result-detail';
 
 const MAX_GUESSES = 6;
 
@@ -32,6 +33,7 @@ export function VsProperNoundle({
   opponentTiles,
   startTime,
   onTyping,
+  onFinalBoard,
   puzzleMetadata,
 }: VsProperNoundleProps) {
   const [guesses, setGuesses] = useState<Guess[]>([]);
@@ -100,17 +102,34 @@ export function VsProperNoundle({
     }
   }, [gameStatus, startTime]);
 
+  // Snapshot of the final board exactly as it rendered — hint rows/tiles keep
+  // their 'hint-used' (→ HINT_USED) state and blank/underscore letters, same
+  // as the in-game NoundleBoard. Threaded up to the result screen's recap.
+  const captureFinalBoard = useCallback(() => {
+    if (!onFinalBoard) return;
+    const rows: EvaluatedRow[] = guesses.map((g) => ({
+      letters: g.tiles.map((_, i) => {
+        const ch = g.word[i] ?? '';
+        return ch === '_' ? '' : ch.toUpperCase();
+      }),
+      states: g.tiles.map((t) => (t === 'hint-used' ? 'HINT_USED' : t.toUpperCase())),
+    }));
+    onFinalBoard(rows);
+  }, [onFinalBoard, guesses]);
+
   useEffect(() => {
     if (hasReported) return;
     if (gameStatus === 'won') {
       setHasReported(true);
+      captureFinalBoard();
       onBoardSolved(0);
       onCompleted('won', guesses.length, Date.now() - startTime);
     } else if (gameStatus === 'lost') {
       setHasReported(true);
+      captureFinalBoard();
       onCompleted('lost', guesses.length, Date.now() - startTime);
     }
-  }, [gameStatus, hasReported, guesses.length, startTime, onBoardSolved, onCompleted]);
+  }, [gameStatus, hasReported, guesses.length, startTime, onBoardSolved, onCompleted, captureFinalBoard]);
 
   const handleKey = useCallback((key: string) => {
     if (gameStatus !== 'playing') return;
