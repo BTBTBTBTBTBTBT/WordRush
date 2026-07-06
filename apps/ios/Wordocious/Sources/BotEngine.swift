@@ -90,7 +90,11 @@ enum BotEngine {
     private static func realWordPath(_ solution: String, steps: Int, willSolve: Bool, excluding: [String] = []) -> [String] {
         let len = solution.count
         let ex = Set(excluding.map { $0.uppercased() })
-        let pool = GameDictionary.shared.getAllowedWords().filter { $0.count == len && $0 != solution && !ex.contains($0.uppercased()) }
+        // Draw from the length-specific allowed dictionary — the flat 5-letter
+        // list held only 2 stray 7-letter entries (HACKERS/NOODLES), so the
+        // Six/Seven bot's "pool" was two words and it visibly cycled them.
+        let pool = GameDictionary.shared.getAllowedWordsForLength(len)
+            .filter { $0.count == len && $0 != solution && !ex.contains($0.uppercased()) }
         if pool.isEmpty { return fabricatedPath(solution, steps: steps, willSolve: willSolve) }
         var path: [String] = []
         var used = Set<String>()
@@ -107,11 +111,29 @@ enum BotEngine {
                 let delta = abs(greens(cand, solution) - targetGreens)
                 if delta < bestDelta { bestDelta = delta; best = cand; if delta == 0 { break } }
             }
-            let word = best ?? pool.randomElement()!
+            // NEVER repeat a word the bot already played (the server rejects a
+            // human's duplicate guesses, so a repeating bot reads broken): the
+            // fallback scans for ANY unused pool word; only a fully exhausted
+            // pool fabricates a unique filler.
+            let word = best
+                ?? pool.first { !used.contains($0) }
+                ?? fabricatedUniqueWord(solution, avoiding: used)
             used.insert(word)
             path.append(word)
         }
         return path
+    }
+
+    /// Last-resort filler when the real pool is exhausted: scrambled letters at
+    /// the solution's length, guaranteed distinct from everything in `avoiding`.
+    private static func fabricatedUniqueWord(_ solution: String, avoiding: Set<String>) -> String {
+        let len = max(1, solution.replacingOccurrences(of: " ", with: "").count)
+        let letters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        for _ in 0..<50 {
+            let w = String((0..<len).map { _ in letters.randomElement()! })
+            if !avoiding.contains(w) && w != solution.uppercased() { return w }
+        }
+        return String((0..<len).map { _ in letters.randomElement()! })
     }
 
     /// Fabricated converging path for ProperNoundle / any mode without a matching
@@ -121,13 +143,21 @@ enum BotEngine {
         let len = bare.count
         let letters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         var path: [String] = []
+        var used = Set<String>()
         let solvingIndex = willSolve ? steps - 1 : -1
         for i in 0..<steps {
             if i == solvingIndex { path.append(String(bare)); break }
             let frac = steps > 1 ? Double(i) / Double(steps - 1) : 0
             let keep = min(len - 1, Int((frac * Double(len - 1)).rounded()))
+            // Regenerate on the (rare) collision so even fabricated rows never
+            // repeat a word already played this match.
             var w = ""
-            for p in 0..<len { w.append(p < keep ? bare[p] : letters.randomElement()!) }
+            for _ in 0..<20 {
+                w = ""
+                for p in 0..<len { w.append(p < keep ? bare[p] : letters.randomElement()!) }
+                if !used.contains(w) && w != String(bare) { break }
+            }
+            used.insert(w)
             path.append(w)
         }
         return path
@@ -219,6 +249,11 @@ enum BotEngine {
         /// order, one at a time, sharing one guess budget.
         func sequentialSegment(offset: Int, sols: [String], budget: Int, solveAll: Bool, stageIndex: Int? = nil) {
             var remaining = budget
+            // One shared no-repeat set across ALL the segment's boards: they
+            // share a match, and a human can't resubmit a word the server
+            // already accepted. Seeding it with every solution also stops a
+            // filler from accidentally pre-solving a later board.
+            var played: [String] = sols
             for (li, sol) in sols.enumerated() {
                 guard remaining > 0 else { return }
                 let isLast = li == sols.count - 1
@@ -241,7 +276,8 @@ enum BotEngine {
                     let hi = max(lo, min(maxSteps, max(1, min(3, p.maxGuesses - 2))))
                     steps = Int.random(in: lo...hi)
                 }
-                let path = realWordPath(sol, steps: steps, willSolve: !fails)
+                let path = realWordPath(sol, steps: steps, willSolve: !fails, excluding: played)
+                played.append(contentsOf: path)
                 for (i, word) in path.enumerated() {
                     let solving = !fails && i == path.count - 1
                     if solving { boardsSolved += 1 }

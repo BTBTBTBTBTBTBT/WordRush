@@ -9,6 +9,7 @@ public final class GameDictionary {
     private var allowedWordsArray: [String] = []
     private var solutionWords: [String] = []
     private var lengthDictionaries: [Int: (allowed: Set<String>, solutions: [String])] = [:]
+    private var lengthAllowedArrays: [Int: [String]] = [:]
 
     public func initDictionary(allowed: [String], solutions: [String]) {
         allowedWords = Set(allowed.map { $0.uppercased() })
@@ -17,10 +18,12 @@ public final class GameDictionary {
     }
 
     public func initDictionaryForLength(_ length: Int, allowed: [String], solutions: [String]) {
+        let upper = allowed.map { $0.uppercased() }
         lengthDictionaries[length] = (
-            allowed: Set(allowed.map { $0.uppercased() }),
+            allowed: Set(upper),
             solutions: solutions.map { $0.uppercased() }
         )
+        lengthAllowedArrays[length] = upper
     }
 
     public func isValidWord(_ word: String) -> Bool {
@@ -55,6 +58,14 @@ public final class GameDictionary {
 
     public func getAllowedWords() -> [String] {
         return allowedWordsArray
+    }
+
+    /// Allowed guess list for a specific word length — the length-specific
+    /// dictionary when one is loaded (6/7-letter modes), else the flat
+    /// (5-letter) list. Callers should still filter by count: the flat list
+    /// carries a few stray non-5-letter entries.
+    public func getAllowedWordsForLength(_ length: Int) -> [String] {
+        return lengthAllowedArrays[length] ?? allowedWordsArray
     }
 
     /// Full 5-letter solutions list (uppercased) — used for Word of the Day.
