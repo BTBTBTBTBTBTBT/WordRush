@@ -126,6 +126,17 @@ final class VSMatchViewModel: ObservableObject {
     /// My own guess words (boardIndex + word), mirrored locally so the result
     /// screen can render my final board with letters.
     @Published var myGuessLog: [VSGuessLogEntry] = []
+    /// Snapshot of MY final board state (guesses + per-row hintEvaluations +
+    /// statuses), captured at match end BEFORE anything resets. The result
+    /// recap renders MY side from this so hint rows survive — re-evaluating
+    /// myGuessLog loses them (Six/Seven hints go through .submitHint and never
+    /// hit onGuessCommitted, so the log shows 3 rows while the score says 4).
+    /// The OPPONENT side stays log-based: bots never use hints, and a human
+    /// opponent's hints aren't relayed by the server (known limitation).
+    @Published var myFinalBoards: [BoardState]?
+    /// ProperNoundle VS: my final rows (raw words + REAL tiles, which carry
+    /// .hintUsed states the recorded word list can't reproduce).
+    @Published var myFinalPNRows: [VSPNRecapRow]?
     /// Boards I have solved this match (drives the tug-of-war bar).
     @Published var myBoardsSolved = 0
     /// My finished status ('won'/'lost') once I complete — drives stakes copy.
@@ -478,6 +489,8 @@ final class VSMatchViewModel: ObservableObject {
         }
         // Per-match VS-experience state (web resetPerMatchState).
         myGuessLog = []
+        myFinalBoards = nil
+        myFinalPNRows = nil
         myBoardsSolved = 0
         myStatus = nil
         myFinalGuesses = nil
@@ -646,6 +659,11 @@ final class VSMatchViewModel: ObservableObject {
         // Guard against a duplicate/replayed match_ended firing the transition twice.
         guard !matchCompletionHandled else { return }
         matchCompletionHandled = true
+        // Snapshot MY final board state before anything can reset it — the
+        // recap renders my side from this (hint rows included). See the
+        // myFinalBoards doc comment.
+        myFinalBoards = game?.state.boards
+        myFinalPNRows = proper.map { p in p.guesses.map { VSPNRecapRow(word: $0.word, tiles: $0.tiles) } }
         result = data
         screen = .result
         recordResult(data)

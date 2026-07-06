@@ -221,6 +221,11 @@ struct CompletedProperNoundleMiniBoard: View {
     let guesses: [String]   // raw recorded guess words (matches row)
     let puzzle: NPuzzle
     var maxGuesses: Int = 6
+    /// Optional REAL rows (per-index letters + tiles) — the VS recap passes
+    /// the live PN view model's final rows so hint rows render as they did
+    /// in-game (gray .hintUsed tiles, green revealed letters). Re-evaluating
+    /// the recorded word list can't reproduce them: a clue row has no word.
+    var realRows: [(letters: [String], tiles: [NTile])]? = nil
 
     private var groups: [Int] { ProperNoundle.wordGroups(puzzle.display) }
     private var totalLetters: Int { max(1, groups.reduce(0, +)) }
@@ -235,19 +240,23 @@ struct CompletedProperNoundleMiniBoard: View {
 
     private func mapTile(_ t: NTile) -> TileState {
         switch t {
-        case .correct: return .correct
-        case .present: return .present
-        case .absent:  return .absent
-        default:       return .empty
+        case .correct:  return .correct
+        case .present:  return .present
+        case .absent:   return .absent
+        case .hintUsed: return .hintUsed   // only reachable via realRows
+        default:        return .empty
         }
     }
 
     var body: some View {
         VStack(spacing: tileSize * 0.16) {
             ForEach(0..<maxGuesses, id: \.self) { r in
-                let isPast = r < guesses.count
-                let letters = isPast ? Array(ProperNoundle.normalize(guesses[r])) : []
-                let tiles = isPast ? ProperNoundle.evaluate(guess: guesses[r], answer: puzzle.answer) : []
+                let real = realRows?[safe: r]
+                let isPast = real != nil || r < guesses.count
+                let letters: [String] = real?.letters
+                    ?? (isPast ? Array(ProperNoundle.normalize(guesses[r])).map(String.init) : [])
+                let tiles = real?.tiles
+                    ?? (isPast ? ProperNoundle.evaluate(guess: guesses[r], answer: puzzle.answer) : [])
                 HStack(spacing: 6) {
                     ForEach(Array(ranges().enumerated()), id: \.offset) { _, range in
                         HStack(spacing: tileSize * 0.12) {

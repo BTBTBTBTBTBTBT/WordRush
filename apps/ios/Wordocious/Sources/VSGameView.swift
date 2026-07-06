@@ -800,7 +800,12 @@ struct VSGameView: View {
                                       opponentGuessLog: r.opponentGuessLog ?? [],
                                       solutions: solutions,
                                       mode: mode, seed: vm.seed,
-                                      myTimeMs: Int(r.playerTime), opponentTimeMs: Int(r.opponentTime))
+                                      myTimeMs: Int(r.playerTime), opponentTimeMs: Int(r.opponentTime),
+                                      // Final-state snapshots so MY side keeps its
+                                      // hint rows (Six/Seven/PN) — the guess log
+                                      // alone can't reproduce them.
+                                      myFinalBoards: vm.myFinalBoards,
+                                      myFinalPNRows: vm.myFinalPNRows)
                     }
                 }
                 .padding(.horizontal, 24).padding(.bottom, 24)

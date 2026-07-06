@@ -4,6 +4,15 @@ import WordociousCore
 import UIKit
 #endif
 
+/// One ProperNoundle row (raw word + REAL tile states) snapshotted from the
+/// live PN view model at match end — carries hint rows (.hintUsed tiles, or a
+/// letterless clue row) that re-evaluating the recorded word list can't
+/// reproduce.
+struct VSPNRecapRow: Equatable {
+    let word: String
+    let tiles: [NTile]
+}
+
 /// Result-screen detail blocks — ports apps/web/components/vs/vs-result-detail.tsx:
 /// FinalBoards (both players' boards WITH letters, the opponent's reconstructed
 /// from the match-end guess log + solutions) and ComparisonBars (you = purple,
@@ -327,6 +336,16 @@ struct VSFinalBoards: View {
     /// Per-side elapsed (ms) — feeds the Gauntlet stage review's TIME stat.
     var myTimeMs: Int = 0
     var opponentTimeMs: Int = 0
+    /// MY final board state snapshotted at match end (VSMatchViewModel
+    /// .myFinalBoards). When present, MY side renders from it — preserving
+    /// hint rows (Six/Seven .submitHint rows stored in hintEvaluations) that
+    /// the log-based reconstruction loses. Nil (e.g. state lost) falls back to
+    /// re-evaluating myGuessLog. The opponent side is ALWAYS log-based: bots
+    /// never hint and human opponents' hints aren't relayed by the server —
+    /// a known limitation, not worth a protocol change.
+    var myFinalBoards: [BoardState]? = nil
+    /// ProperNoundle VS: my final rows with REAL tiles (.hintUsed included).
+    var myFinalPNRows: [VSPNRecapRow]? = nil
 
     var body: some View {
         if mode == .gauntlet {
@@ -447,8 +466,35 @@ struct VSFinalBoards: View {
         return p
     }
 
+    /// MY rows rebuilt from the final board snapshot — hint rows use their
+    /// stored hintEvaluations (revealed letter green, the rest gray .hintUsed),
+    /// normal rows re-evaluate. Mirrors GameViewModel.recomputeEvaluations.
+    /// Nil when no snapshot survived (fall back to the log reconstruction).
+    private var snapshotRows: [Int: [VSResultBoards.EvaluatedRow]]? {
+        guard let boards = myFinalBoards else { return nil }
+        var byBoard: [Int: [VSResultBoards.EvaluatedRow]] = [:]
+        for (bi, board) in boards.enumerated() {
+            let solution = board.solution.uppercased()
+            for (i, g) in board.guesses.enumerated() {
+                let row: VSResultBoards.EvaluatedRow
+                if let he = board.hintEvaluations?[String(i)] {
+                    row = .init(letters: he.tiles.map { $0.letter.uppercased() },
+                                states: he.tiles.map(\.state))
+                } else {
+                    let word = g.uppercased()
+                    let states: [TileState] = (solution.count == word.count && !word.isEmpty)
+                        ? evaluateGuess(solution: solution, guess: word).tiles.map(\.state)
+                        : Array(repeating: .absent, count: word.count)
+                    row = .init(letters: word.map(String.init), states: states)
+                }
+                byBoard[bi, default: []].append(row)
+            }
+        }
+        return byBoard.isEmpty ? nil : byBoard
+    }
+
     @ViewBuilder private var singleBoardComparison: some View {
-        let mine = VSResultBoards.evaluate(log: myGuessLog, solutions: solutions)
+        let mine = snapshotRows ?? VSResultBoards.evaluate(log: myGuessLog, solutions: solutions)
         let theirs = VSResultBoards.evaluate(log: opponentGuessLog, solutions: solutions)
 
         let mySolved = VSResultBoards.solved(log: myGuessLog, solutions: solutions)
@@ -457,7 +503,8 @@ struct VSFinalBoards: View {
         if !(mine.isEmpty && theirs.isEmpty) {
             VStack(spacing: 12) {
                 HStack(alignment: .top, spacing: 16) {
-                    side(label: myName, boards: mine, accent: Color(hex: 0x7C3AED), solved: mySolved)
+                    side(label: myName, boards: mine, accent: Color(hex: 0x7C3AED), solved: mySolved,
+                         pnRealRows: myFinalPNRows)
                     Rectangle().fill(Theme.border).frame(width: 1)
                     side(label: opponentName, boards: theirs, accent: Color(hex: 0xEC4899), solved: oppSolved)
                 }
@@ -476,7 +523,8 @@ struct VSFinalBoards: View {
         }
     }
 
-    private func side(label: String, boards: [Int: [VSResultBoards.EvaluatedRow]], accent: Color, solved: Bool) -> some View {
+    private func side(label: String, boards: [Int: [VSResultBoards.EvaluatedRow]], accent: Color, solved: Bool,
+                      pnRealRows: [VSPNRecapRow]? = nil) -> some View {
         let indices = boards.keys.sorted()
         return VStack(spacing: 8) {
             Text(label.uppercased())
@@ -488,7 +536,19 @@ struct VSFinalBoards: View {
                 Text(solved ? "Solved" : "Not solved").font(Brand.font(9, .heavy))
             }
             .foregroundStyle(solved ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))
-            if indices.isEmpty {
+            if let puzzle = pnPuzzle, let rows = pnRealRows, !rows.isEmpty {
+                // ProperNoundle, MY side with a final-state snapshot: feed the
+                // REAL rows (words + tiles) so hint rows render exactly as they
+                // did in-game — gray .hintUsed tiles, green revealed letters.
+                // The guess log can't reproduce them (clue rows have no word).
+                CompletedProperNoundleMiniBoard(
+                    guesses: rows.map(\.word), puzzle: puzzle,
+                    maxGuesses: max(1, rows.count),
+                    realRows: rows.map { row in
+                        (letters: row.word.map { $0 == " " ? "" : String($0).uppercased() },
+                         tiles: row.tiles)
+                    })
+            } else if indices.isEmpty {
                 Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     .padding(.vertical, 12)
             } else if let puzzle = pnPuzzle {
@@ -540,6 +600,10 @@ struct VSFinalBoards: View {
         case .present:
             return AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
+        case .hintUsed:
+            // Hint-row filler tile — same light gray as the in-game board
+            // (BoardView), so a hint row reads distinctly from an absent guess.
+            return AnyShapeStyle(Color(hex: 0xE5E7EB))
         default:
             return AnyShapeStyle(Theme.textMuted)
         }
