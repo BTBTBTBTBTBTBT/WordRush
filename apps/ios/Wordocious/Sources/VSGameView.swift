@@ -435,8 +435,17 @@ struct VSGameView: View {
                 }
                 tugOfWarHeader
                     .padding(.horizontal, 10).padding(.top, 6)
+                // Succession: don't render the full 10-row budget as empty tiles
+                // in the strip — four 10-row mini-boards ate ~45pt of height and
+                // crushed the player's own 2x2 boards below. Show 6 rows, growing
+                // with the opponent's deepest board (same idea as spectatorRows).
+                // Other modes keep their exact row count.
                 OpponentStrip(opponent: vm.opponent, gradient: gradient,
-                              maxGuesses: game.maxGuesses, wordLength: game.wordLength,
+                              maxGuesses: mode == .sequence
+                                  ? min(game.maxGuesses,
+                                        max(6, (vm.opponent.tiles.values.map(\.count).max() ?? 0) + 1))
+                                  : game.maxGuesses,
+                              wordLength: game.wordLength,
                               totalBoards: vm.totalBoards,
                               stageName: mode == .gauntlet ? game.gauntletStageName(at: vm.opponent.stagesCleared) : nil,
                               stageGradient: mode == .gauntlet ? GameScreen.gauntletStageGradient(game.gauntletStageName(at: vm.opponent.stagesCleared)) : [])
