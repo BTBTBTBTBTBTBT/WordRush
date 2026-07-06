@@ -63,6 +63,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.DailyCompletionsService
 import com.wordocious.app.data.ProfileService
@@ -1424,6 +1426,8 @@ private fun SolveTimeCard(points: List<com.wordocious.app.data.MatchStatsService
     val secs = points.map { it.seconds }
     val avg = if (secs.isEmpty()) 0 else secs.sum() / secs.size
     val maxV = (secs.maxOrNull() ?: 1).coerceAtLeast(1)
+    // Tap the chart -> nearest win's detail: "Win #12 · Classic · 1:24" (iOS parity).
+    var selected by remember(points) { mutableStateOf<Int?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("SOLVE TIME — LAST ${points.size} WINS")
         Column(
@@ -1441,7 +1445,16 @@ private fun SolveTimeCard(points: List<com.wordocious.app.data.MatchStatsService
                 )
                 return@Column
             }
-            androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(120.dp)) {
+            androidx.compose.foundation.Canvas(
+                Modifier.fillMaxWidth().height(120.dp)
+                    .pointerInput(points) {
+                        detectTapGestures { off ->
+                            val i = ((off.x / size.width) * (points.size - 1)).toInt()
+                                .coerceIn(0, points.size - 1)
+                            selected = if (selected == i) null else i
+                        }
+                    }
+            ) {
                 if (points.size < 2) return@Canvas
                 val w = size.width; val h = size.height
                 fun x(i: Int) = w * i / (points.size - 1)
@@ -1466,6 +1479,26 @@ private fun SolveTimeCard(points: List<com.wordocious.app.data.MatchStatsService
                 }
                 drawPath(linePath, WTheme.primary, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f))
                 points.forEachIndexed { i, p -> drawCircle(WTheme.primary, radius = 4f, center = androidx.compose.ui.geometry.Offset(x(i), y(p.seconds))) }
+                selected?.let { si ->
+                    points.getOrNull(si)?.let { p ->
+                        drawLine(
+                            Color(0xFF7C3AED).copy(alpha = 0.6f),
+                            androidx.compose.ui.geometry.Offset(x(si), 0f),
+                            androidx.compose.ui.geometry.Offset(x(si), h), strokeWidth = 1.5f,
+                            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f, 6f)),
+                        )
+                        drawCircle(Color(0xFF7C3AED), radius = 7f, center = androidx.compose.ui.geometry.Offset(x(si), y(p.seconds)))
+                    }
+                }
+            }
+            // Tapped-win detail: which win, mode, exact time.
+            selected?.let { si ->
+                points.getOrNull(si)?.let { p ->
+                    Text(
+                        "Win #${si + 1} · ${modeLabel(p.mode)} · ${fmtTime(p.seconds)}",
+                        fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                    )
+                }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 TimeStat("Fastest", secs.minOrNull() ?: 0, WTheme.correct)
@@ -1489,6 +1522,8 @@ private fun TimeStat(label: String, seconds: Int, color: Color) {
 private fun WhenYouPlayCard(hours: List<com.wordocious.app.data.MatchStatsService.HourBucket>) {
     val maxPlayed = (hours.maxOfOrNull { it.played } ?: 1).coerceAtLeast(1)
     val peak = hours.maxByOrNull { it.played }?.takeIf { it.played > 0 }
+    // Tap an hour -> "8am · 65 games · 52 wins" instead of the peak line (iOS parity).
+    var selected by remember { mutableStateOf<Int?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("WHEN YOU PLAY")
         Column(
@@ -1499,7 +1534,11 @@ private fun WhenYouPlayCard(hours: List<com.wordocious.app.data.MatchStatsServic
             Row(Modifier.fillMaxWidth().height(40.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Bottom) {
                 hours.forEach { h ->
                     val alpha = if (h.played == 0) 0.08f else 0.2f + (h.played.toFloat() / maxPlayed) * 0.8f
-                    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(WTheme.primary.copy(alpha = alpha)))
+                    Box(
+                        Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(WTheme.primary.copy(alpha = alpha))
+                            .then(if (selected == h.hour) Modifier.border(1.5.dp, Color(0xFF7C3AED), RoundedCornerShape(2.dp)) else Modifier)
+                            .clickableNoRipple { selected = if (selected == h.hour || h.played == 0) null else h.hour },
+                    )
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1507,7 +1546,13 @@ private fun WhenYouPlayCard(hours: List<com.wordocious.app.data.MatchStatsServic
                     Text(it, fontSize = 8.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
             }
-            if (peak != null) {
+            val sel = selected?.let { si -> hours.firstOrNull { it.hour == si && it.played > 0 } }
+            if (sel != null) {
+                Text(
+                    "${hourLabelLower(sel.hour)} · ${sel.played} game${if (sel.played == 1) "" else "s"} · ${sel.won} win${if (sel.won == 1) "" else "s"}",
+                    fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                )
+            } else if (peak != null) {
                 Text("Peak: ${hourLabelLower(peak.hour)} · ${peak.played} games", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
         }

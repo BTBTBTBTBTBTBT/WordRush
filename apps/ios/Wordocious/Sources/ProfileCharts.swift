@@ -421,11 +421,19 @@ private struct SolveTimeChart: View {
     let mode: GameMode?
     var playType: String = "solo"
     @State private var data: [MatchStatsService.SolvePoint] = []
+    /// Tapped point's index — shows "Jul 3 · Classic · 1m 24s".
+    @State private var selected: Int?
 
     private func modeColor(_ raw: String) -> Color {
         GameMode(rawValue: raw).map { ModeStyle.accent($0) } ?? Theme.primary
     }
+    private func modeTitle(_ raw: String) -> String {
+        homeModes.first { $0.dbKey == raw }?.title ?? raw
+    }
     private var avg: Double { data.isEmpty ? 0 : Double(data.reduce(0) { $0 + $1.seconds }) / Double(data.count) }
+    private static let dayFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "MMM d"; return f
+    }()
 
     var body: some View {
         LegacyChartCard(title: "SOLVE TIME — LAST \(data.count) WINS") {
@@ -442,6 +450,13 @@ private struct SolveTimeChart: View {
                             .interpolationMethod(.catmullRom)
                         PointMark(x: .value("#", p.index), y: .value("Seconds", p.seconds))
                             .foregroundStyle(modeColor(p.mode))
+                            .symbolSize(selected == p.index ? 90 : 36)
+                            .opacity(selected == nil || selected == p.index ? 1 : 0.4)
+                    }
+                    if let sel = selected, let p = data.first(where: { $0.index == sel }) {
+                        RuleMark(x: .value("#", p.index))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                            .foregroundStyle(modeColor(p.mode).opacity(0.6))
                     }
                     RuleMark(y: .value("Average", avg))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
@@ -449,6 +464,23 @@ private struct SolveTimeChart: View {
                 }
                 .chartXAxis(.hidden)
                 .frame(height: 140)
+                .chartOverlay { proxy in
+                    GeometryReader { geo in
+                        Rectangle().fill(.clear).contentShape(Rectangle())
+                            .gesture(SpatialTapGesture().onEnded { value in
+                                let origin = geo[proxy.plotAreaFrame].origin
+                                if let x: Double = proxy.value(atX: value.location.x - origin.x),
+                                   let nearest = data.min(by: { abs(Double($0.index) - x) < abs(Double($1.index) - x) }) {
+                                    selected = (selected == nearest.index) ? nil : nearest.index
+                                } else { selected = nil }
+                            })
+                    }
+                }
+                // Tapped-win detail: date, mode, exact time.
+                if let sel = selected, let p = data.first(where: { $0.index == sel }) {
+                    Text("\(Self.dayFmt.string(from: p.date)) · \(modeTitle(p.mode)) · \(fmt(p.seconds))")
+                        .font(Brand.font(11, .black)).foregroundStyle(modeColor(p.mode))
+                }
                 HStack {
                     timeStat("Fastest", data.map(\.seconds).min() ?? 0, Color(hex: 0x7C3AED))
                     Spacer()
@@ -482,6 +514,8 @@ private struct TimeOfDayHeatmap: View {
     let mode: GameMode?
     var playType: String = "solo"
     @State private var data: [MatchStatsService.HourBucket] = []
+    /// Tapped hour — shows "8am · 65 games · 52 wins" instead of the peak line.
+    @State private var selected: Int?
 
     var body: some View {
         // Web parity: time-of-day-heatmap.tsx returns null when empty — hide.
@@ -493,7 +527,15 @@ private struct TimeOfDayHeatmap: View {
                         ForEach(data) { h in
                             RoundedRectangle(cornerRadius: 2)
                                 .fill(Theme.primary.opacity(h.played == 0 ? 0.08 : 0.2 + (Double(h.played) / Double(maxPlayed)) * 0.8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .stroke(Color(hex: 0x7C3AED), lineWidth: selected == h.hour ? 1.5 : 0)
+                                )
                                 .frame(height: 40)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selected = (selected == h.hour || h.played == 0) ? nil : h.hour
+                                }
                         }
                     }
                     HStack(spacing: 0) {
@@ -502,7 +544,11 @@ private struct TimeOfDayHeatmap: View {
                             if i < 4 { Spacer() }
                         }
                     }
-                    if let peak = data.max(by: { $0.played < $1.played }), peak.played > 0 {
+                    // Tapped-hour detail when selected; the peak line otherwise.
+                    if let sel = selected, let h = data.first(where: { $0.hour == sel }), h.played > 0 {
+                        Text("\(hourLabel(h.hour)) · \(h.played) game\(h.played == 1 ? "" : "s") · \(h.won) win\(h.won == 1 ? "" : "s")")
+                            .font(Brand.font(11, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                    } else if let peak = data.max(by: { $0.played < $1.played }), peak.played > 0 {
                         Text("Peak: \(hourLabel(peak.hour)) · \(peak.played) games")
                             .font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
                     }
