@@ -94,10 +94,16 @@ object BotEngine {
     // `excluding` (restat B3): shared-guess fillers must never equal ANOTHER
     // board's solution — post-filtering shrank the sequence below the intended
     // budget, making the bot slightly stronger than its difficulty tuning.
-    private fun realWordPath(solution: String, steps: Int, willSolve: Boolean, excluding: List<String> = emptyList()): List<String> {
+    // Callers also pass every word already played this match, so the bot never
+    // repeats a word across boards/segments.
+    private fun realWordPath(solution: String, steps: Int, willSolve: Boolean, excluding: Collection<String> = emptyList()): List<String> {
         val ex = excluding.map { it.uppercase() }.toSet()
         val len = solution.length
-        val pool = GameDictionary.getAllowedWords().filter { it.length == len && it != solution && it.uppercase() !in ex }
+        // Length-keyed pool: Six/Seven have their own allowed dictionaries — the
+        // master (5-letter) list has only ~2 seven-letter strays, whose tiny
+        // pool made the bot submit the same word over and over (HACKERS x4).
+        val pool = GameDictionary.getAllowedWordsForLength(len)
+            .filter { it.length == len && it != solution && it !in ex }
         if (pool.isEmpty()) return fabricatedPath(solution, steps, willSolve)
         val path = ArrayList<String>()
         val used = HashSet<String>()
@@ -115,7 +121,11 @@ object BotEngine {
                     if (delta < bestDelta) { bestDelta = delta; best = cand }
                 }
             }
-            val word = best ?: pool.random()
+            // Fallback must ALSO respect `used` — the old pool.random() ignored
+            // it, so a small pool degenerated into repeated words.
+            val word = best
+                ?: pool.filter { it !in used }.randomOrNull()
+                ?: pool.random()
             used.add(word)
             path.add(word)
         }
@@ -127,14 +137,24 @@ object BotEngine {
         val len = bare.length
         val letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         val path = ArrayList<String>()
+        val used = HashSet<String>()
         val solvingIndex = if (willSolve) steps - 1 else -1
         for (i in 0 until steps) {
             if (i == solvingIndex) { path.add(bare); break }
             val frac = if (steps > 1) i.toDouble() / (steps - 1) else 0.0
             val keep = min(len - 1, (frac * (len - 1)).roundToInt())
-            val sb = StringBuilder()
-            for (p in 0 until len) sb.append(if (p < keep) bare[p] else letters[Random.nextInt(26)])
-            path.add(sb.toString())
+            // Retry on collision — short answers can produce duplicate rows
+            // (same kept prefix + same random suffix), and the bot must never
+            // repeat a word.
+            var word = ""
+            for (attempt in 0 until 12) {
+                val sb = StringBuilder()
+                for (p in 0 until len) sb.append(if (p < keep) bare[p] else letters[Random.nextInt(26)])
+                word = sb.toString()
+                if (word !in used && word != bare) break
+            }
+            used.add(word)
+            path.add(word)
         }
         return path
     }
@@ -180,8 +200,12 @@ object BotEngine {
         var cumulativeAttempts = 0
         var boardsSolved = 0
         var lastAtMs = 0.0
+        // Every word the bot has submitted this match — fed back into
+        // realWordPath's `excluding` so no word is ever played twice.
+        val playedWords = HashSet<String>()
 
         fun emit(word: String, entries: List<VSOpponentLatestGuess>, logBoard: Int, single: VSOpponentLatestGuess? = null) {
+            playedWords.add(word.uppercase())
             lastAtMs += p.perGuessMinMs + Random.nextDouble() * (max(p.perGuessMinMs, p.perGuessMaxMs) - p.perGuessMinMs)
             cumulativeAttempts += 1
             events.add(Event(max(0.0, lastAtMs - 1100), true, null))
@@ -211,7 +235,7 @@ object BotEngine {
             }
             // Fillers must not accidentally solve a board they weren't credited for.
             val fillers = if (fillerCount > 0)
-                realWordPath(sols[n - 1], fillerCount, false, excluding = sols)
+                realWordPath(sols[n - 1], fillerCount, false, excluding = sols + playedWords)
             else emptyList()
             val solvedLocal = HashSet<Int>()
             val solveOrder = (0 until n).shuffled().take(solveCount)
@@ -241,7 +265,9 @@ object BotEngine {
                 val reserve = sols.size - 1 - li // ≥1 guess for each later board
                 val steps = if (fails) remaining
                 else max(1, min(remaining - reserve, Random.nextInt(1, max(1, min(3, p.maxGuesses - 2)) + 1)))
-                val path = realWordPath(sol, steps, !fails)
+                // Exclude the other boards' solutions too: a filler that equals a
+                // later board's solution would repeat when that board is solved.
+                val path = realWordPath(sol, steps, !fails, excluding = sols.filter { it != sol } + playedWords)
                 for ((i, word) in path.withIndex()) {
                     val solving = !fails && i == path.size - 1
                     if (solving) boardsSolved += 1
@@ -282,7 +308,7 @@ object BotEngine {
                     ?: Random.nextInt(p.minGuesses, max(p.minGuesses, p.maxGuesses) + 1))
                 val path = if (mode == GameMode.PROPERNOUNDLE)
                     fabricatedPath(solution, if (willSolveAll) steps else cap, willSolveAll)
-                else realWordPath(solution, if (willSolveAll) steps else cap, willSolveAll)
+                else realWordPath(solution, if (willSolveAll) steps else cap, willSolveAll, excluding = playedWords)
                 for ((i, word) in path.withIndex()) {
                     if (willSolveAll && i == path.size - 1) boardsSolved += 1
                     emit(word, emptyList(), 0, VSOpponentLatestGuess(0, tiles(solution, word)))

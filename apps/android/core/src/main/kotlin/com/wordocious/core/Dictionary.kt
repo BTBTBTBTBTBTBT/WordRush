@@ -27,9 +27,19 @@ object GameDictionary {
     fun getAllowedWords(): List<String> = allowedWordsList
 
     fun initForLength(length: Int, allowed: List<String>, solutions: List<String>) {
-        lengthDictionaries[length] =
-            allowed.mapTo(HashSet()) { it.uppercase() } to solutions.map { it.uppercase() }
+        val up = allowed.map { it.uppercase() }
+        lengthDictionaries[length] = up.toHashSet() to solutions.map { it.uppercase() }
+        lengthAllowedLists[length] = up
     }
+
+    private val lengthAllowedLists = HashMap<Int, List<String>>()
+
+    /** Length-keyed allowed list (6/7 have their own dictionaries); falls back
+     *  to the master 5-letter list. The bot draws real fillers from this — the
+     *  master list has only a couple of 6/7-letter strays, which made Six/Seven
+     *  bots repeat the same word. */
+    fun getAllowedWordsForLength(length: Int): List<String> =
+        lengthAllowedLists[length] ?: allowedWordsList
 
     fun isValidWord(word: String): Boolean {
         val u = word.uppercase()
