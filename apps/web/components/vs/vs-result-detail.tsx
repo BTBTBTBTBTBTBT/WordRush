@@ -15,6 +15,8 @@ import {
   GauntletStageBreakdown,
   type RecapBoard,
 } from '@/components/game/completed-mini-board';
+import { getPuzzleForSeed } from '@/components/propernoundle/puzzle-service';
+import { normalizeString } from '@/components/propernoundle/game-logic';
 
 const TILE_BG: Record<string, string> = {
   CORRECT: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
@@ -139,30 +141,47 @@ export function ScoreCard({ me, opponent, isDraw }: { me: ScoreCardPlayer; oppon
   );
 }
 
-function LetterBoard({ rows }: { rows: EvaluatedRow[] }) {
+function LetterBoard({ rows, wordGroups }: { rows: EvaluatedRow[]; wordGroups?: number[] }) {
   // Shrink tiles for long words so two boards still fit side-by-side.
   const wordLen = rows[0]?.letters.length ?? 5;
   const tile = wordLen <= 5 ? 24 : wordLen === 6 ? 21 : 18;
+  // ProperNoundle multi-word answers ("TRAE YOUNG") get a wider gap between
+  // word groups — same approach as CompletedProperNoundleMiniBoard — so the
+  // recap rows don't read as one unbroken letter run. Only applied when the
+  // group lengths actually add up to the row length (defensive: mismatched
+  // metadata falls back to the flat run rather than misaligned gaps).
+  const groups =
+    wordGroups && wordGroups.length > 1 && wordGroups.reduce((a, b) => a + b, 0) === wordLen
+      ? wordGroups
+      : [wordLen];
+  const tileAt = (row: EvaluatedRow, ci: number) => (
+    <div
+      key={ci}
+      className="rounded-[4px] flex items-center justify-center text-white font-black"
+      style={{
+        width: tile,
+        height: tile,
+        fontSize: tile * 0.5,
+        background: TILE_BG[row.states[ci]] || TILE_BG.ABSENT,
+      }}
+    >
+      {row.letters[ci]}
+    </div>
+  );
   return (
     <div className="flex flex-col gap-[3px]">
-      {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-[3px]">
-          {row.letters.map((letter, ci) => (
-            <div
-              key={ci}
-              className="rounded-[4px] flex items-center justify-center text-white font-black"
-              style={{
-                width: tile,
-                height: tile,
-                fontSize: tile * 0.5,
-                background: TILE_BG[row.states[ci]] || TILE_BG.ABSENT,
-              }}
-            >
-              {letter}
-            </div>
-          ))}
-        </div>
-      ))}
+      {rows.map((row, ri) => {
+        let idx = 0;
+        return (
+          <div key={ri} className="flex gap-[7px]">
+            {groups.map((len, gi) => (
+              <div key={gi} className="flex gap-[3px]">
+                {Array.from({ length: len }).map(() => tileAt(row, idx++))}
+              </div>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -180,6 +199,10 @@ interface FinalBoardsProps {
   /** Per-side elapsed (ms) — feeds the Gauntlet stage review's TIME stat. */
   myTimeMs?: number;
   opponentTimeMs?: number;
+  /** ProperNoundle: the answer's spaced display ("TRAE YOUNG") from the
+   *  match's puzzleMetadata. Falls back to the seed→puzzle lookup (same
+   *  hash the server uses) so BOT matches, which have no metadata, work. */
+  answerDisplay?: string;
 }
 
 /**
@@ -288,9 +311,29 @@ function gauntletReconstruct(
 export function FinalBoards({
   myName, opponentName, myGuessLog, opponentGuessLog, solutions,
   mode = GameMode.DUEL, seed = '', myTimeMs = 0, opponentTimeMs = 0,
+  answerDisplay,
 }: FinalBoardsProps) {
   const mine = useMemo(() => evaluateLog(myGuessLog, solutions), [myGuessLog, solutions]);
   const theirs = useMemo(() => evaluateLog(opponentGuessLog, solutions), [opponentGuessLog, solutions]);
+
+  // ProperNoundle: recover the answer's REAL spacing ("TRAE YOUNG", not
+  // "TRAEYOUNG") — metadata display first, seed→puzzle lookup for BOT
+  // matches — but only trust it when its letters match the recorded
+  // solution (stale/mismatched metadata falls back to the flat answer).
+  const pnDisplay = useMemo(() => {
+    if (mode !== GameMode.PROPERNOUNDLE || !solutions[0]) return null;
+    const display = answerDisplay || (seed ? getPuzzleForSeed(seed)?.display : null) || '';
+    if (!display) return null;
+    return normalizeString(display).toUpperCase() === normalizeString(solutions[0]).toUpperCase()
+      ? display
+      : null;
+  }, [mode, answerDisplay, seed, solutions]);
+  // Word-group tile gaps for the recap rows (same grouping the solo
+  // CompletedProperNoundleMiniBoard derives from the display).
+  const pnWordGroups = useMemo(
+    () => (pnDisplay ? pnDisplay.split(' ').map(w => normalizeString(w).length).filter(n => n > 0) : undefined),
+    [pnDisplay],
+  );
 
   if (mine.size === 0 && theirs.size === 0) return null;
 
@@ -413,7 +456,7 @@ export function FinalBoards({
         ) : (
           <div className="flex flex-col items-center gap-3">
             {indices.map((idx) => (
-              <LetterBoard key={idx} rows={boards.get(idx)!} />
+              <LetterBoard key={idx} rows={boards.get(idx)!} wordGroups={pnWordGroups} />
             ))}
           </div>
         )}
@@ -434,7 +477,7 @@ export function FinalBoards({
       {/* Reveal the answer so a missed board isn't a mystery. */}
       {solutions[0] && (
         <div className="text-[11px] font-black tracking-widest text-center mt-3" style={{ color: 'var(--color-text)' }}>
-          Answer: {solutions[0].toUpperCase()}
+          Answer: {(pnDisplay ?? solutions[0]).toUpperCase()}
         </div>
       )}
     </div>

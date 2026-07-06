@@ -1301,6 +1301,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
               seed={seed}
               myTimeMs={matchResult?.playerTime ?? 0}
               opponentTimeMs={matchResult?.opponentTime ?? 0}
+              answerDisplay={puzzleMetadata?.display}
             />
           )}
         </div>
