@@ -1,0 +1,64 @@
+# Hand-confirmed 5-letter PROPER NOUNS (first names / surnames / places /
+# brands) that are NOT common English words — curated down from the raw NLTK
+# first-names dump (names-nltk-raw.txt) because that dump over-cuts ~60 real
+# common words (HAPPY, STORM, CAMEL, PRICE, GOOSE...). Conservative: when a
+# word doubles as a real common word (BARON, DERBY, ROMAN, MASON, RAVEN), it
+# is KEPT, not listed here. One uppercase word per line; # and blanks ignored.
+ABBEY
+ABBOT
+ARIEL
+BIDDY
+BROCK
+BURKE
+CHEVY
+CLARY
+CLINT
+CORKY
+DEBBY
+DIXIE
+DOLLY
+DONNA
+EMERY
+EMMET
+ESTER
+GARTH
+GOMER
+GRIFF
+HOGAN
+HORST
+KITTY
+LAIRD
+LANCE
+LAZAR
+LEVIN
+LIANA
+LOLLY
+LORRY
+MANNY
+MARGE
+MAVIS
+MIDGE
+MISSY
+MOMMY
+MONTE
+MORSE
+NANNY
+NEDDY
+PADDY
+PATSY
+PATTY
+PIGGY
+RABBI
+RALPH
+RILEY
+ROCKY
+SISSY
+SLADE
+SONNY
+SPIRO
+TABOR
+TAMMY
+TANIA
+WALLY
+WEBER
+WILLY

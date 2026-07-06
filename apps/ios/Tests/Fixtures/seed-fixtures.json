@@ -4,31 +4,31 @@
       "seed": "test",
       "count": 1,
       "solutions": [
-        "WRECK"
+        "CAUSE"
       ]
     },
     {
       "seed": "test",
       "count": 4,
       "solutions": [
-        "WRECK",
-        "ADORN",
-        "TRIED",
-        "BITCH"
+        "CAUSE",
+        "EMBER",
+        "BEAST",
+        "SUCRE"
       ]
     },
     {
       "seed": "test",
       "count": 8,
       "solutions": [
-        "WRECK",
-        "ADORN",
-        "TRIED",
-        "BITCH",
-        "FORTE",
-        "BLUFF",
-        "ASHES",
-        "LEERY"
+        "CAUSE",
+        "EMBER",
+        "BEAST",
+        "SUCRE",
+        "RESET",
+        "CINCH",
+        "RELAY",
+        "LOATH"
       ]
     },
     {
@@ -86,73 +86,73 @@
       "seed": "daily-2026-08-01-DUEL",
       "count": 1,
       "solutions": [
-        "TANGY"
+        "YAHOO"
       ]
     },
     {
       "seed": "daily-2026-08-01-QUORDLE",
       "count": 4,
       "solutions": [
-        "SOBER",
-        "AUDIO",
-        "FLASH",
-        "BOWED"
+        "MOTTO",
+        "SCRAP",
+        "DRAWN",
+        "FLAIR"
       ]
     },
     {
       "seed": "daily-2026-08-01-OCTORDLE",
       "count": 8,
       "solutions": [
-        "BURLY",
-        "CARGO",
-        "LIMEY",
-        "FIRED",
-        "DANDY",
-        "HAZEL",
-        "LOATH",
-        "DEITY"
+        "TIPPY",
+        "AVIAN",
+        "WIDOW",
+        "NITRO",
+        "CATER",
+        "SNIDE",
+        "EMPTY",
+        "VIXEN"
       ]
     },
     {
       "seed": "gauntlet-abc-123",
       "count": 21,
       "solutions": [
-        "ACHED",
-        "DRAFT",
-        "SPOUT",
-        "MUZZY",
-        "POOCH",
-        "BULGE",
-        "OVERT",
-        "PLAIN",
-        "JELLY",
-        "ALBUM",
-        "TIRED",
-        "OILED",
-        "GNOME",
-        "RIVAL",
-        "STINT",
-        "CADRE",
-        "MIRED",
-        "BLARE",
-        "SHREW",
-        "LINER",
-        "ALOOF"
+        "CRORE",
+        "LATHE",
+        "LOOSE",
+        "CASTE",
+        "AFORE",
+        "VAGUE",
+        "JUNTA",
+        "BOOZE",
+        "CRIED",
+        "WOMAN",
+        "ROBIN",
+        "ACTOR",
+        "BEECH",
+        "BRACE",
+        "ADOPT",
+        "SENSE",
+        "MOLDY",
+        "VYING",
+        "FAMED",
+        "GLEAM",
+        "CARER"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 1,
       "solutions": [
-        "BUSHY"
+        "STAIR"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 2,
       "solutions": [
-        "BUSHY",
-        "SNOWY"
+        "STAIR",
+        "BLADE"
       ]
     }
   ],

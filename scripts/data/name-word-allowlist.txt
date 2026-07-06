@@ -1,0 +1,48 @@
+# Words that are ALSO first names but are perfectly good common-word answers —
+# these are KEPT even though they appear in the NLTK names blocklist. One
+# uppercase word per line; # comments and blanks ignored. Grow this from
+# cut.txt review (reason=name for a word that's really a common noun).
+ROBIN
+HAZEL
+PEARL
+DAISY
+HEATH
+CAROL
+PENNY
+IVORY
+AMBER
+ANGEL
+BASIL
+BELLE
+BERRY
+BRIDE
+BUDDY
+BUNNY
+DAWN
+FAITH
+FERN
+GRACE
+HOLLY
+IRIS
+IVY
+JEWEL
+JOLLY
+MARSH
+OLIVE
+POPPY
+REED
+RUBY
+SANDY
+SUNNY
+CLIFF
+DALE
+DEAN
+DREW
+DUKE
+EARL
+GALE
+GLEN
+HANK
+JACK
+MARK
+RUSTY

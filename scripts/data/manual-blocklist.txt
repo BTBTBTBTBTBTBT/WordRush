@@ -1,0 +1,5 @@
+# Manual 5-letter answer blocklist — proper nouns / names / regionalisms that
+# frequency + the NLTK first-names list miss. One uppercase word per line;
+# blank lines and # comments ignored. Grow this from cut.txt review.
+MALIK
+HAKIM
