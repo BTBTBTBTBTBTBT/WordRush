@@ -223,9 +223,24 @@ enum BotEngine {
                 guard remaining > 0 else { return }
                 let isLast = li == sols.count - 1
                 let fails = !solveAll && isLast
-                let reserve = sols.count - 1 - li     // ≥1 guess for each later board
-                let steps = fails ? remaining
-                    : max(1, min(remaining - reserve, Int.random(in: 1...max(1, min(3, p.maxGuesses - 2)))))
+                // Reserve 2 guesses per later board (was 1) so later boards
+                // aren't budget-starved into the same lone-solve look.
+                let reserve = 2 * (sols.count - 1 - li)
+                // At least 2 guesses per board when the budget allows: the old
+                // 1...3 roll routinely "solved" a board on its very first guess,
+                // so the opponent strip showed boards holding a single solved
+                // row — impossible-looking, and nothing like a real relay
+                // (user report: Succession vs Nova, boards 2-3 were lone green
+                // rows). 1-guess solves now only happen when budget-starved.
+                let steps: Int
+                if fails {
+                    steps = remaining
+                } else {
+                    let maxSteps = max(1, remaining - reserve)
+                    let lo = min(2, maxSteps)
+                    let hi = max(lo, min(maxSteps, max(1, min(3, p.maxGuesses - 2))))
+                    steps = Int.random(in: lo...hi)
+                }
                 let path = realWordPath(sol, steps: steps, willSolve: !fails)
                 for (i, word) in path.enumerated() {
                     let solving = !fails && i == path.count - 1
