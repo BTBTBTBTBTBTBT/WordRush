@@ -36,7 +36,12 @@ function WordOfTheDay() {
 
   useEffect(() => {
     const now = new Date();
-    const daysSinceEpoch = Math.floor(now.getTime() / 86400000);
+    // Day index of the LOCAL calendar date (not Date.now()/86400000, which
+    // rolls at UTC midnight — 7 PM Central — and made the home card show
+    // tomorrow's word while the archive still said today's). Date.UTC on the
+    // local Y/M/D gives the same index the /word/[date] archive derives for
+    // this date, so the card and the archive always agree, all local day.
+    const daysSinceEpoch = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000);
 
     // H1: the word only changes at midnight, but this used to re-run the
     // definition scan (up to 20 serial external API calls) on EVERY home
