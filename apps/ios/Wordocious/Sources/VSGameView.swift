@@ -435,16 +435,12 @@ struct VSGameView: View {
                 }
                 tugOfWarHeader
                     .padding(.horizontal, 10).padding(.top, 6)
-                // Succession: don't render the full 10-row budget as empty tiles
-                // in the strip — four 10-row mini-boards ate ~45pt of height and
-                // crushed the player's own 2x2 boards below. Show 6 rows, growing
-                // with the opponent's deepest board (same idea as spectatorRows).
-                // Other modes keep their exact row count.
+                // Always the FULL empty frame (all maxGuesses rows) from match
+                // start — a growing board hid what turn the opponent was on and
+                // how many guesses they had left. Succession's 10-row frame fits
+                // because the strip shrinks its cell for >9-row budgets.
                 OpponentStrip(opponent: vm.opponent, gradient: gradient,
-                              maxGuesses: mode == .sequence
-                                  ? min(game.maxGuesses,
-                                        max(6, (vm.opponent.tiles.values.map(\.count).max() ?? 0) + 1))
-                                  : game.maxGuesses,
+                              maxGuesses: game.maxGuesses,
                               wordLength: game.wordLength,
                               totalBoards: vm.totalBoards,
                               stageName: mode == .gauntlet ? game.gauntletStageName(at: vm.opponent.stagesCleared) : nil,
@@ -569,9 +565,11 @@ struct VSGameView: View {
     private var waitingScreen: some View {
         let oppName = vm.opponentName
         let liveTotalBoards = vm.opponent.totalBoards > 0 ? vm.opponent.totalBoards : vm.totalBoards
-        let oppRowsUsed = vm.opponent.tiles.values.map(\.count).max() ?? 0
-        // Cap rendered empty rows so Gauntlet's 50-guess budget doesn't blow up the layout.
-        let spectatorRows = min(vm.modeMaxGuesses, max(6, oppRowsUsed + 1))
+        // Full frame from the start (all maxGuesses rows) so you can tell how
+        // many guesses the opponent has left; it's inside a ScrollView so even
+        // OctoWord's 13-row frames are fine. Gauntlet (50-guess budget) never
+        // reads this — it spectates via GauntletSpectatorView below.
+        let spectatorRows = vm.modeMaxGuesses
 
         return ScrollView {
             VStack(spacing: 18) {
@@ -1102,10 +1100,12 @@ private struct GauntletSpectatorView: View {
     }
 
     @ViewBuilder private func boardsGrid(_ stage: GauntletStageConfig, offset: Int, active: Bool) -> some View {
-        // Cap rows to what's actually used (+1 while active) so a cleared OctoWord
-        // stage doesn't render 8 towers of empty rows.
+        // The ACTIVE stage renders its full frame (all maxGuesses rows) so you
+        // can tell how many guesses the opponent has left; CLEARED stages are
+        // over, so they compact to the rows actually used — a cleared OctoWord
+        // stage shouldn't render 8 towers of empty rows.
         let used = (0..<stage.boardCount).map { opponent.tiles[offset + $0]?.count ?? 0 }.max() ?? 0
-        let rows = min(stage.maxGuesses, max(1, used + (active ? 1 : 0)))
+        let rows = active ? stage.maxGuesses : min(stage.maxGuesses, max(1, used))
         let cell: CGFloat = stage.boardCount == 1 ? 22 : stage.boardCount <= 4 ? 16 : 11
         let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: min(stage.boardCount, 4))
         LazyVGrid(columns: columns, spacing: 8) {
@@ -1170,7 +1170,9 @@ private struct OpponentStrip: View {
                 // Bigger cells so the opponent board uses the space around it and
                 // the live flip-in reveal is easy to follow (single board gets the
                 // most room; multi-board stays compact so 4 grids still fit).
-                let cell: CGFloat = total > 1 ? 10 : 14
+                // Succession's 10-row full frame drops to cell 8 so its strip is
+                // no taller than QuadWord's 9-row one (10×8+gaps ≈ 9×10+gaps).
+                let cell: CGFloat = total > 1 ? (maxGuesses > 9 ? 8 : 10) : 14
                 HStack(spacing: 8) {
                     ForEach(boards, id: \.self) { i in
                         OpponentMiniBoard(tiles: opponent.tiles[i] ?? [], maxGuesses: maxGuesses, wordLength: wordLength, cell: cell)
