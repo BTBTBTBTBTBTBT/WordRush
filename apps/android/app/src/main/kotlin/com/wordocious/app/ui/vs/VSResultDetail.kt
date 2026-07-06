@@ -85,6 +85,24 @@ private fun evaluateLog(log: List<GuessLogEntry>, solutions: List<String>): Map<
     return byBoard
 }
 
+/** Rows straight from a final BoardState — submitted guesses evaluated
+ *  normally, hint rows (row-index key in `hintEvaluations`) rendered from
+ *  their STORED evaluation so HINT_USED ghost tiles + revealed letters
+ *  survive into the recap (Six/Seven/ProperNoundle hints; a log
+ *  re-evaluation only sees submitted words and drops them). */
+private fun boardToRows(board: BoardState): List<EvaluatedRow> =
+    board.guesses.mapIndexed { idx, guess ->
+        val hint = board.hintEvaluations?.get(idx.toString())
+        if (hint != null) {
+            EvaluatedRow(hint.tiles.map { it.letter.uppercase() }, hint.tiles.map { it.state })
+        } else {
+            val word = guess.uppercase()
+            val states = runCatching { evaluateGuess(board.solution.uppercase(), word).tiles.map { it.state } }
+                .getOrElse { word.map { TileState.ABSENT } }
+            EvaluatedRow(word.map { it.toString() }, states)
+        }
+    }
+
 /** Guess log → per-board grids of tile states (colors only), sorted by board.
  *  Used by the VS share card (ShareImage.renderVs). */
 fun logToGrids(log: List<GuessLogEntry>, solutions: List<String>): List<List<List<TileState>>> {
@@ -176,6 +194,8 @@ private fun ScoreColumn(p: ScoreCardPlayer, accent: Color, isDraw: Boolean, cloc
 private fun tileBrush(state: TileState): Brush = when (state) {
     TileState.CORRECT -> Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)))
     TileState.PRESENT -> Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706)))
+    // Solo hint style: faint gray-100 ghost tile (TileView / WTheme.hintUsed).
+    TileState.HINT_USED -> Brush.linearGradient(listOf(Color(0xFFF3F4F6), Color(0xFFF3F4F6)))
     else -> Brush.linearGradient(listOf(Color(0xFF9CA3AF), Color(0xFF9CA3AF)))
 }
 
@@ -198,14 +218,17 @@ private fun LetterBoard(rows: List<EvaluatedRow>, wordGroups: List<Int>? = null)
                     Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                         repeat(len) {
                             val ci = idx++
+                            val state = row.states.getOrNull(ci) ?: TileState.ABSENT
                             Box(
                                 Modifier.size(tile).clip(RoundedCornerShape(4.dp))
-                                    .background(tileBrush(row.states.getOrNull(ci) ?: TileState.ABSENT)),
+                                    .background(tileBrush(state)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     row.letters.getOrNull(ci) ?: "",
-                                    fontSize = (tile.value * 0.5f).sp, fontWeight = FontWeight.Black, color = Color.White,
+                                    fontSize = (tile.value * 0.5f).sp, fontWeight = FontWeight.Black,
+                                    // Hint-revealed letters read gray-on-ghost (solo TileView parity).
+                                    color = if (state == TileState.HINT_USED) Color(0xFFD1D5DB) else Color.White,
                                 )
                             }
                         }
@@ -317,11 +340,25 @@ fun FinalBoards(
     /** ProperNoundle: the answer's spaced display ("TRAE YOUNG") from the
      *  match's puzzleMetadata — a fallback for the local seed→puzzle lookup. */
     answerDisplay: String? = null,
+    /** MY actual final board state, snapshotted at match_ended — when present,
+     *  my side renders from it so hint rows/tiles (Six/Seven/ProperNoundle)
+     *  appear in the recap; the log-based rebuild is the fallback. */
+    myFinalBoards: List<BoardState>? = null,
 ) {
-    val mine = remember(myGuessLog, solutions) { evaluateLog(myGuessLog, solutions) }
+    val myBoards = myFinalBoards?.takeIf { it.isNotEmpty() }
+    // MY side from the real final board state when we have it (hint rows kept);
+    // log re-evaluation otherwise. The OPPONENT side stays log-based — bots
+    // never hint and human hint rows aren't relayed over the wire, so their
+    // recap can only show submitted guesses (known limitation).
+    val mine = remember(myGuessLog, solutions, myBoards) {
+        myBoards?.let { boards -> boards.indices.associateWith { boardToRows(boards[it]) } }
+            ?: evaluateLog(myGuessLog, solutions)
+    }
     val theirs = remember(opponentGuessLog, solutions) { evaluateLog(opponentGuessLog, solutions) }
     if (mine.isEmpty() && theirs.isEmpty()) return
-    val mySolved = remember(myGuessLog, solutions) { logSolved(myGuessLog, solutions) }
+    val mySolved = remember(myGuessLog, solutions, myBoards) {
+        myBoards?.any { it.status == GameStatus.WON } ?: logSolved(myGuessLog, solutions)
+    }
     val oppSolved = remember(opponentGuessLog, solutions) { logSolved(opponentGuessLog, solutions) }
     val myFlatWords = myWords ?: myGuessLog.map { it.guess }
     val oppFlatWords = opponentGuessLog.map { it.guess }
@@ -349,7 +386,9 @@ fun FinalBoards(
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            MultiBoardRecapSection(myName, myFlatWords, Color(0xFF7C3AED), mode, seed, solutions)
+            // My side uses the actual final boards when snapshotted (no replay
+            // drift); the opponent's is always a seed replay of their log.
+            MultiBoardRecapSection(myName, myFlatWords, Color(0xFF7C3AED), mode, seed, solutions, finalBoards = myBoards)
             Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
             MultiBoardRecapSection(opponentName, oppFlatWords, Color(0xFFEC4899), mode, seed, solutions)
         }
@@ -424,8 +463,12 @@ private fun GauntletRecapSection(label: String, words: List<String>, accent: Col
 private fun MultiBoardRecapSection(
     label: String, words: List<String>, accent: Color,
     mode: GameMode, seed: String, solutions: List<String>,
+    /** The ACTUAL final boards (my side's match_ended snapshot) — skips the
+     *  guess-log replay entirely when present. */
+    finalBoards: List<BoardState>? = null,
 ) {
-    val boards = remember(mode, seed, solutions, words) { reconstructRecapBoards(mode, seed, solutions, words) }
+    val boards = finalBoards
+        ?: remember(mode, seed, solutions, words) { reconstructRecapBoards(mode, seed, solutions, words) }
     // Honest per-board tally from the replayed boards — a binary
     // Solved/Not-solved here contradicted the frames (7 purple + 1 red
     // under a "Solved" badge).

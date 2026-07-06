@@ -877,6 +877,9 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                         myTimeMs = (vm.result?.playerTime ?: 0.0).toInt(),
                         opponentTimeMs = (vm.result?.opponentTime ?: 0.0).toInt(),
                         answerDisplay = vm.puzzleDisplay,
+                        // My ACTUAL final board state (match_ended snapshot) —
+                        // keeps Six/Seven/PN hint rows in the recap.
+                        myFinalBoards = vm.myFinalBoards,
                     )
                 }
             }

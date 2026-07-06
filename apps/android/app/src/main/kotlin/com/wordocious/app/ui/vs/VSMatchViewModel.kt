@@ -30,6 +30,7 @@ import com.wordocious.app.data.VSPlayLimit
 import com.wordocious.app.data.tileStates
 import com.wordocious.app.todayLocalDate
 import com.wordocious.app.todayUTCDate
+import com.wordocious.core.BoardState
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameStatus
 import com.wordocious.core.TileState
@@ -80,6 +81,15 @@ class VSMatchViewModel(
     var game by mutableStateOf<GameViewModel?>(null)
     val opponent = OpponentProgressState()
     var result by mutableStateOf<VSMatchEnded?>(null)
+    /** Snapshot of MY final board state, captured at match_ended BEFORE any
+     *  reset — the result recap renders my side from it so hint rows/tiles
+     *  (Six/Seven/ProperNoundle) survive. The guess log alone can't reproduce
+     *  them: it only has submitted words, while hint rows live in the board's
+     *  guesses + hintEvaluations (reducer SubmitHint). Android's PN rides the
+     *  same BoardState path, so one snapshot covers all modes. Cleared on
+     *  rematch (beginMatch). */
+    var myFinalBoards by mutableStateOf<List<BoardState>?>(null)
+        private set
     var playerTimeMs by mutableStateOf(0)
     var rematch by mutableStateOf(RematchState.IDLE)
     var message by mutableStateOf<String?>(null)
@@ -420,6 +430,7 @@ class VSMatchViewModel(
         opponent.boardsSolved = 0; opponent.totalBoards = 0
         opponent.stagesCleared = 0; opponent.tiles = emptyMap()
         result = null
+        myFinalBoards = null
         rematch = RematchState.IDLE
         resultRecorded = false
         // 3-2-1-GO: if a countdown was running, flash "GO!" over the board's
@@ -538,6 +549,9 @@ class VSMatchViewModel(
     }
 
     private fun handleMatchEnded(data: VSMatchEnded) {
+        // Capture my ACTUAL final board state (immutable data classes — a plain
+        // reference is a safe snapshot) before anything can reset the game.
+        myFinalBoards = game?.state?.value?.boards
         result = data
         screen = VSScreen.RESULT
         recordResult(data)
