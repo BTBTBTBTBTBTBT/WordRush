@@ -317,8 +317,8 @@ export default function HomePage() {
   // Prefetch VS routes so the initial tap is instant (mode cards already
   // prefetch via <Link>, but the VS button uses router.push).
   useEffect(() => {
-    router.prefetch('/practice/vs');
-    router.prefetch('/practice/vs?daily=true');
+    router.prefetch('/vs');                       // VS lobby (both toggles)
+    router.prefetch('/practice/vs?daily=true');   // free daily VS CTA
   }, [router]);
 
   // Countdown for locked cards — uses shared global timer via useCountdown
@@ -478,9 +478,11 @@ export default function HomePage() {
             const isLocked = !isPro && user && (isDailyDone || hasPlayedModeToday(mode.id));
 
             // In Unlimited mode (Pro-only), route to the non-daily
-            // variant so each tap lands on a fresh random seed.
+            // variant so each tap lands on a fresh random seed. VS goes to
+            // the VS lobby in BOTH toggles (native parity — the lobby is the
+            // mode-selection screen; this used to hardcode /practice/vs).
             const effectiveHref = playMode === 'unlimited'
-              ? (mode.id === 'vs' ? '/practice/vs' : mode.href.split('?')[0])
+              ? (mode.id === 'vs' ? '/vs' : mode.href.split('?')[0])
               : mode.href;
 
             const handleCardClick = (e: React.MouseEvent) => {
