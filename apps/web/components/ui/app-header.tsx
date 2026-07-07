@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import Link from 'next/link';
 import { Flame, HelpCircle, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
@@ -15,6 +15,52 @@ function ShieldIcon({ className }: { className?: string }) {
       <path d="M10 2L3 5.5V10C3 14.5 6 17.5 10 19C14 17.5 17 14.5 17 10V5.5L10 2Z" fill="#A78BFA" stroke="#8B5CF6" strokeWidth="1"/>
       <path d="M8.5 10.5L9.5 11.5L12 9" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
+  );
+}
+
+/**
+ * Wordmark that SCALES its font down to fit the space left of the header
+ * controls — the web equivalent of the native header's minimumScaleFactor.
+ * "WORDOCIOUS" (+ PRO badge) must always show in full: an ellipsized
+ * wordmark or a badge clipping into the help button are both unacceptable.
+ * Measured with a ResizeObserver so streak/shield digit growth, rotation,
+ * and font load all re-fit; 11px floor, then ellipsis as a never-in-practice
+ * fallback.
+ */
+function FitWordmark() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.fontSize = '20px';
+      const scale = el.clientWidth / Math.max(1, el.scrollWidth);
+      if (scale < 1) el.style.fontSize = `${Math.max(10, Math.floor(20 * scale * 10) / 10)}px`;
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    if (el.parentElement) ro.observe(el.parentElement);
+    // Nunito loads async — the fallback font measures differently.
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(fit).catch(() => {});
+    }
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <span
+      ref={ref}
+      className="font-black truncate min-w-0"
+      style={{
+        fontSize: '20px',
+        backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+        color: 'transparent',
+      }}
+    >
+      WORDOCIOUS
+    </span>
   );
 }
 
@@ -43,26 +89,14 @@ export function AppHeader() {
   return (
     <>
       <header className="flex items-center justify-between gap-2 px-4 py-3">
-        {/* min-w-0 + truncate lets the wordmark give way on narrow screens —
-            without it the left group overflowed and the PRO badge clipped
-            into the help button. The badge itself never shrinks. */}
         <Link href="/" className="flex items-center gap-1.5 min-w-0 shrink overflow-hidden">
-          <span
-            className="text-xl font-black truncate min-w-0"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              color: 'transparent',
-            }}
-          >
-            WORDOCIOUS
-          </span>
+          <FitWordmark />
           {isPro && <span className="shrink-0 flex items-center"><ProBadge size="sm" /></span>}
         </Link>
 
-        <div className="flex items-center gap-2 relative shrink-0">
+        {/* gap-1.5 matches the native header's spacing(6) — the extra 2px per
+            gap was part of what squeezed the wordmark into truncating. */}
+        <div className="flex items-center gap-1.5 relative shrink-0">
           {/* Help button — always visible */}
           <button
             onClick={() => setHelpOpen(true)}
@@ -123,7 +157,7 @@ export function AppHeader() {
               {/* Shield pill */}
               <button
                 onClick={openShield}
-                className="flex items-center gap-1.5 px-3 py-1.5 font-extrabold text-sm transition-transform active:scale-95"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 font-extrabold text-sm transition-transform active:scale-95"
                 style={{
                   background: 'var(--color-surface-hover)',
                   border: '1.5px solid #c4b5fd',
