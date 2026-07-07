@@ -143,7 +143,16 @@ final class GameViewModel: ObservableObject {
     }
     var bestCorrectLettersForScore: Int? {
         guard !isGauntlet, boardCount == 1 else { return nil }
-        return (evaluations.first ?? []).reduce(0) { max($0, $1.tiles.filter { $0.state == .correct }.count) }
+        // Hint rows are stored in `evaluations` too (their revealed letter is a
+        // .correct tile) — exclude them so a hint can't inflate the near-miss
+        // credit. Web (practice-game) and Android (GameScreen) already exclude
+        // hint rows; counting them here over-credited iOS losses.
+        let hintRows = state.boards.first?.hintEvaluations
+        return (evaluations.first ?? []).enumerated().reduce(0) { best, pair in
+            hintRows?[String(pair.offset)] != nil
+                ? best
+                : max(best, pair.element.tiles.filter { $0.state == .correct }.count)
+        }
     }
 
     /// The currently-active Gauntlet stage config (nil outside Gauntlet). Drives

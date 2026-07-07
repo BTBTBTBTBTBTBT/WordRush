@@ -121,6 +121,13 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
     const guardKey = `wordocious-rerecord-${mode}-${gameSeed}`;
     try { if (sessionStorage.getItem(guardKey)) return; } catch {}
     const guesses = currentBoard.guesses.length;
+    // Same near-miss credit as the live-finish path — without it a restored
+    // LOSS re-recorded here scored completionBonus=0 (bestCorrectLetters
+    // arrived undefined), diverging from the score recorded at play time.
+    const bestCorrectLetters = evaluations.reduce((best, e, i) =>
+      currentBoard.hintEvaluations?.[i]
+        ? best
+        : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0);
     recordDailyResult(
       profile.id, mode, 'solo',
       state.status === GameStatus.WON, guesses, savedSession?.elapsedTime ?? 0,
@@ -128,6 +135,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       // Day derived from the daily seed so a re-record that happens after
       // local midnight still lands on the day the puzzle was issued for.
       getDailySeedDate(gameSeed) ?? undefined,
+      undefined, bestCorrectLetters,
     ).catch(() => {});
     // Ensure freemium lock shows correctly for this mode
     const modePlayId = mode === GameMode.DUEL_6 ? 'six' : mode === GameMode.DUEL_7 ? 'seven' : 'practice';

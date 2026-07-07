@@ -456,8 +456,12 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             val stagesCompleted = if (isGauntletRun) g!!.stageResults.count { it.status == GameStatus.WON } else null
             val board0 = state.boards.firstOrNull()
             val bestCorrectLetters = if (!isGauntletRun && runTotal == 1 && board0 != null) {
-                board0.guesses.fold(0) { best, gw ->
-                    if (board0.hintEvaluations?.containsKey(gw) == true) best
+                // hintEvaluations is keyed by ROW INDEX (Reducer.kt hintKey), not by
+                // the guess word — the old containsKey(gw) check never matched, so
+                // hint rows (whose revealed letters evaluate CORRECT) inflated the
+                // near-miss credit. Key by index like web/iOS.
+                board0.guesses.foldIndexed(0) { i, best, gw ->
+                    if (board0.hintEvaluations?.containsKey(i.toString()) == true) best
                     else maxOf(best, com.wordocious.core.evaluateGuess(board0.solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
                 }
             } else null
