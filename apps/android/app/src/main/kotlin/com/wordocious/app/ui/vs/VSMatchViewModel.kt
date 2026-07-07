@@ -282,7 +282,9 @@ class VSMatchViewModel(
         // opponent the win + writes the shared match row; this records OUR side
         // (user_stats VS loss + daily loss) since we leave before match_ended.
         // Bailing from the queue (no match yet) records nothing.
-        if ((screen == VSScreen.MATCH || screen == VSScreen.WAITING) && !resultRecorded) {
+        // CPU practice is never a ranked loss: quitting a bot match records
+        // nothing (parity with the clean-end CPU path / iOS / web).
+        if ((screen == VSScreen.MATCH || screen == VSScreen.WAITING) && !resultRecorded && !isCpu) {
             resultRecorded = true
             val secs = if (matchStartMs > 0) max(0, ((System.currentTimeMillis() - matchStartMs) / 1000).toInt()) else 0
             val gc = game?.rowsUsed ?: 0
@@ -299,7 +301,10 @@ class VSMatchViewModel(
                     solutions = game?.state?.value?.boards?.map { it.solution } ?: emptyList(),
                     guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(),
                 )
-                if (daily) DailyResultsService.recordDailyVsResult(m, false)
+                // EVERY completed VS match (incl. a forfeit loss) accumulates on
+                // the daily VS leaderboard — iOS/web parity (the daily-only gate
+                // here skipped non-daily forfeits).
+                DailyResultsService.recordDailyVsResult(m, false)
             }
         }
         service.abandonMatch()

@@ -329,7 +329,11 @@ final class VSMatchViewModel: ObservableObject {
         // credits the opponent the win + writes the shared match row; this records
         // OUR side (user_stats VS loss + daily_results loss) since we leave before
         // match_ended arrives. Bailing from the queue (no match yet) records nothing.
-        if (screen == .match || screen == .waiting), !resultRecorded {
+        // CPU practice is never a ranked loss: quitting a bot match records
+        // nothing (parity with the clean-end CPU path, which only writes the
+        // separate vs_cpu bucket — and with the web, where a CPU abandon is a
+        // pure teardown).
+        if (screen == .match || screen == .waiting), !resultRecorded, !isCpu {
             resultRecorded = true
             let secs = matchStartMs > 0 ? Int(max(0, Date().timeIntervalSince1970 * 1000 - matchStartMs) / 1000) : 0
             let gc = game?.rowsUsed ?? 0
@@ -340,10 +344,11 @@ final class VSMatchViewModel: ObservableObject {
             let m = mode
             if daily { VSPlayLimit.markPlayedToday() }
             Task {
+                // record()'s vs branch also writes the daily_results vs row —
+                // a second explicit recordVs here double-counted the loss.
                 _ = await GameResultsService.record(
                     gameMode: m, playType: "vs", won: false, guessCount: gc,
                     timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
-                if daily { await DailyResultsService.recordVs(gameMode: m, won: false) }
             }
         }
         service.abandonMatch()
@@ -748,11 +753,10 @@ final class VSMatchViewModel: ObservableObject {
                     userId: uid, gameMode: mode.rawValue, playType: "vs", won: won,
                     guessCount: data.playerGuesses, timeSeconds: secs, seed: theSeed, hintsUsed: 0)
             }
-            // Daily VS: write the daily_results row (play_type='vs') so the daily
-            // VS leaderboard, the "already played" server check, and the 3-wins-a-day
-            // achievement all see it — web (stats-service) and Android
-            // (VSMatchViewModel) both record this; iOS only did it on forfeit.
-            if dailyVsActive { await DailyResultsService.recordVs(gameMode: mode, won: won) }
+            // daily_results (play_type='vs') is written INSIDE record() — its
+            // unconditional vs branch covers daily and non-daily matches alike.
+            // An explicit second call here double-incremented vs_wins/vs_games
+            // for daily VS (a single win scored as 2-0 on the VS leaderboard).
         }
     }
 }

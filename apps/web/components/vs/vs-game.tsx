@@ -904,11 +904,26 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     setRematchState('declined');
   }, [matchService]);
 
-  const handleForfeit = useCallback(() => {
+  const handleForfeit = useCallback(async () => {
+    // Forfeiting an IN-PROGRESS human match counts as a loss and (for daily
+    // VS) consumes today's play — native parity: iOS/Android record their own
+    // side before leaving. The web used to record NOTHING here, so the
+    // forfeiter kept a clean record and could replay the daily VS. CPU
+    // practice records nothing (bot abandon is a pure teardown). Awaited so
+    // the hard navigation below can't kill the in-flight writes.
+    const me = profileRef.current;
+    if ((screen === 'match' || screen === 'waiting') && !resultRecordedRef.current && !isCpuRef.current && me) {
+      resultRecordedRef.current = true;
+      if (dailyVsActive) recordModePlayed('vs');
+      const timeMs = startTime > 0 ? Math.max(0, Date.now() - startTime) : 0;
+      try {
+        await recordGameResult(me.id, mode, 'vs', false, 0, timeMs, seedRef.current);
+      } catch { /* best effort — leaving anyway */ }
+    }
     matchService.abandonMatch();
     matchService.disconnect();
     window.location.href = '/';
-  }, [matchService]);
+  }, [matchService, screen, dailyVsActive, mode, startTime]);
 
   // "Already played today" screen — shown when a freemium user
   // revisits /practice/vs?daily=true after using their free daily VS
