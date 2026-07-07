@@ -164,7 +164,14 @@ struct GameScreen: View {
             if showVictory {
                 VictoryOverlay(
                     won: vm.status == .won,
-                    guesses: vm.rowsUsed, maxGuesses: vm.maxGuesses, timeSeconds: vm.elapsedSeconds,
+                    guesses: vm.rowsUsed, maxGuesses: vm.maxGuesses,
+                    // Gauntlet: the overlay celebrates the FINAL STAGE (its boards/
+                    // guesses are stage-scoped) — so its time must be the stage's
+                    // time, not the whole run's (web parity: gauntlet-game feeds
+                    // VictoryAnimation the last stageResult.timeMs).
+                    timeSeconds: vm.isGauntlet
+                        ? (vm.state.gauntlet?.stageResults.last.map { $0.timeMs / 1000 } ?? vm.elapsedSeconds)
+                        : vm.elapsedSeconds,
                     boardsSolved: vm.boards.filter { $0.status == .won }.count, totalBoards: vm.boardCount,
                     solution: vm.boardCount == 1 ? vm.boards.first?.solution : nil,
                     solutions: vm.boardCount > 1 ? vm.boards.map(\.solution) : [],

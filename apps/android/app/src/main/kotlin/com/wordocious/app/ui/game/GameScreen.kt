@@ -502,7 +502,13 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
             }
             Box(modifier = Modifier.fillMaxSize()) {
                 VictoryOverlay(
-                    state = state, mode = mode, elapsedSeconds = elapsed,
+                    state = state, mode = mode,
+                    // Gauntlet: the overlay celebrates the FINAL STAGE, so show the
+                    // stage's time, not the whole run's (web parity: the last
+                    // stageResult.timeMs feeds VictoryAnimation).
+                    elapsedSeconds = if (mode == GameMode.GAUNTLET)
+                        state.gauntlet?.stageResults?.lastOrNull()?.let { it.timeMs / 1000 } ?: elapsed
+                    else elapsed,
                     onContinue = { dismissedVictory = true },
                 )
                 xpResult?.let { XpToast(it) { xpResult = null } }
