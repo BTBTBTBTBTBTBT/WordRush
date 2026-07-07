@@ -193,8 +193,13 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
         />
       </div>
 
-      {/* Board */}
-      <div className="flex-1 flex items-center justify-center px-4 min-h-0">
+      {/* Board. absolute-inset wrapper: iOS Safari doesn't resolve
+          percentage heights (Board's max-h-full) against nested flex-1
+          items — the board rendered at its natural aspect height and
+          overflowed under the hints/keyboard. An absolutely-positioned box
+          has a definite height, so the clamp works on WebKit too. */}
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0 flex items-center justify-center px-4">
         <Board
           guesses={currentBoard.guesses}
           currentGuess={currentGuess}
@@ -208,6 +213,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           wordLength={currentBoard.solution.length}
           isInvalidWord={currentGuess.length === currentBoard.solution.length && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
+        </div>
       </div>
 
       {/* Hint buttons — Six/Seven only, hidden once the board is finished. */}
