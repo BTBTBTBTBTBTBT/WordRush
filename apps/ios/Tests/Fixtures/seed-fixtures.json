@@ -161,7 +161,7 @@
       "seed": "test",
       "count": 1,
       "solutions": [
-        "UNTIDY"
+        "PARDON"
       ]
     },
     {
@@ -175,14 +175,14 @@
       "seed": "match-6-abc",
       "count": 1,
       "solutions": [
-        "ANTLER"
+        "BRIDLE"
       ]
     },
     {
       "seed": "daily-2026-08-01-DUEL_6",
       "count": 1,
       "solutions": [
-        "PUPPET"
+        "RISING"
       ]
     }
   ],
@@ -191,7 +191,7 @@
       "seed": "test",
       "count": 1,
       "solutions": [
-        "DISRUPT"
+        "PATTERN"
       ]
     },
     {
@@ -205,14 +205,14 @@
       "seed": "match-7-abc",
       "count": 1,
       "solutions": [
-        "CONCISE"
+        "SETTLED"
       ]
     },
     {
       "seed": "daily-2026-08-01-DUEL_7",
       "count": 1,
       "solutions": [
-        "CERAMIC"
+        "NOWHERE"
       ]
     }
   ]

@@ -2,10 +2,10 @@
   {
     "seed": "test",
     "solutions": [
-      "WRECK",
-      "ADORN",
-      "TRIED",
-      "BITCH"
+      "CAUSE",
+      "EMBER",
+      "BEAST",
+      "SUCRE"
     ],
     "prefillWords": [
       "MAZER",
@@ -14,7 +14,7 @@
     ],
     "boardPrefills": [
       {
-        "solution": "WRECK",
+        "solution": "CAUSE",
         "prefillGuesses": [
           {
             "word": "MAZER",
@@ -26,7 +26,7 @@
                 },
                 {
                   "letter": "A",
-                  "state": "ABSENT"
+                  "state": "CORRECT"
                 },
                 {
                   "letter": "Z",
@@ -38,7 +38,7 @@
                 },
                 {
                   "letter": "R",
-                  "state": "PRESENT"
+                  "state": "ABSENT"
                 }
               ],
               "isCorrect": false
@@ -58,96 +58,7 @@
                 },
                 {
                   "letter": "E",
-                  "state": "CORRECT"
-                },
-                {
-                  "letter": "A",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "FLAVO",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "V",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "O",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          }
-        ]
-      },
-      {
-        "solution": "ADORN",
-        "prefillGuesses": [
-          {
-            "word": "MAZER",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "M",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
                   "state": "PRESENT"
-                },
-                {
-                  "letter": "Z",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "E",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "R",
-                  "state": "PRESENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "IDEAL",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "I",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "D",
-                  "state": "CORRECT"
-                },
-                {
-                  "letter": "E",
-                  "state": "ABSENT"
                 },
                 {
                   "letter": "A",
@@ -183,7 +94,7 @@
                 },
                 {
                   "letter": "O",
-                  "state": "PRESENT"
+                  "state": "ABSENT"
                 }
               ],
               "isCorrect": false
@@ -192,7 +103,7 @@
         ]
       },
       {
-        "solution": "TRIED",
+        "solution": "EMBER",
         "prefillGuesses": [
           {
             "word": "MAZER",
@@ -200,7 +111,7 @@
               "tiles": [
                 {
                   "letter": "M",
-                  "state": "ABSENT"
+                  "state": "PRESENT"
                 },
                 {
                   "letter": "A",
@@ -216,7 +127,7 @@
                 },
                 {
                   "letter": "R",
-                  "state": "PRESENT"
+                  "state": "CORRECT"
                 }
               ],
               "isCorrect": false
@@ -228,11 +139,11 @@
               "tiles": [
                 {
                   "letter": "I",
-                  "state": "PRESENT"
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "D",
-                  "state": "PRESENT"
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "E",
@@ -281,7 +192,96 @@
         ]
       },
       {
-        "solution": "BITCH",
+        "solution": "BEAST",
+        "prefillGuesses": [
+          {
+            "word": "MAZER",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "Z",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "IDEAL",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "I",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "D",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "FLAVO",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "F",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "V",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      },
+      {
+        "solution": "SUCRE",
         "prefillGuesses": [
           {
             "word": "MAZER",
@@ -301,11 +301,11 @@
                 },
                 {
                   "letter": "E",
-                  "state": "ABSENT"
+                  "state": "PRESENT"
                 },
                 {
                   "letter": "R",
-                  "state": "ABSENT"
+                  "state": "PRESENT"
                 }
               ],
               "isCorrect": false
@@ -317,7 +317,7 @@
               "tiles": [
                 {
                   "letter": "I",
-                  "state": "PRESENT"
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "D",
@@ -325,7 +325,7 @@
                 },
                 {
                   "letter": "E",
-                  "state": "ABSENT"
+                  "state": "PRESENT"
                 },
                 {
                   "letter": "A",

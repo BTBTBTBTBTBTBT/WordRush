@@ -1,0 +1,20 @@
+# Words that score below the zipf threshold but are well known to players —
+# kept as answers regardless of frequency (user-approved 2026-07-07).
+# Six
+BILLOW
+COBWEB
+DRAFTY
+ELAPSE
+EYELET
+GURGLE
+GUZZLE
+JOSTLE
+MUFFLE
+NIMBLY
+WRITHE
+# Seven
+AGONIZE
+CROUTON
+GLISTEN
+HORRIFY
+NARWHAL

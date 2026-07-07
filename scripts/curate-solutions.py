@@ -157,11 +157,14 @@ def write_bundles(kept):
 
 def curate_length(n, threshold):
     """Curate the 6/7-letter bank: legacy-only, zipf filter + manual blocklist.
-    (Names were a non-issue in the 6/7 scan; the manual blocklist still applies.)"""
+    (Names were a non-issue in the 6/7 scan; the manual blocklist still applies.)
+    rescue-allowlist.txt words bypass the frequency cut — well-known words that
+    just score low in the corpora (user-approved)."""
     z = zipf()
     legacy = load_json_list(os.path.join(DATA, f'solutions-{n}-legacy.json'))
     allowed = set(load_json_list(os.path.join(DATA, f'allowed-{n}.json')))
     manual = load_wordset(os.path.join(SCRIPT_DATA, 'manual-blocklist.txt'))
+    rescue = load_wordset(os.path.join(SCRIPT_DATA, 'rescue-allowlist.txt'))
     pat = re.compile(rf'^[A-Z]{{{n}}}$')
 
     kept, cut = [], []
@@ -173,7 +176,7 @@ def curate_length(n, threshold):
             reason = 'not-in-allowed'
         elif w in manual:
             reason = 'manual'
-        elif z(w) < threshold:
+        elif w not in rescue and z(w) < threshold:
             reason = f'freq<{threshold}({round(z(w), 2)})'
         if reason is None:
             kept.append(w)
