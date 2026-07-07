@@ -96,12 +96,14 @@ struct VSShareCardView: View {
         ZStack {
             bg
             VStack(spacing: 0) {
+                // Hero wordmark — the brand is the headline of the share (user
+                // feedback: 56pt read as an afterthought on the 1080 canvas).
                 Text("WORDOCIOUS")
-                    .font(Brand.font(56, .black))
+                    .font(Brand.font(92, .black)).tracking(1)
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                     startPoint: .leading, endPoint: .trailing))
-                    .padding(.top, 44)
-                Text(modeLabel).font(Brand.font(38, .black)).foregroundStyle(accent).padding(.top, 10)
+                    .padding(.top, 48)
+                Text(modeLabel).font(Brand.font(40, .black)).foregroundStyle(accent).padding(.top, 6)
                 // Stats line + result pill (same row shape as the daily card).
                 HStack(spacing: 12) {
                     Text("\(fmt(me.score)) vs \(fmt(opponent.score)) · \(dateStr)")
@@ -112,12 +114,20 @@ struct VSShareCardView: View {
                         .padding(.horizontal, 16).padding(.vertical, 8)
                         .background(RoundedRectangle(cornerRadius: 10).fill(isDraw ? drawBG : isWin ? winBG : lossBG))
                 }
-                .padding(.top, 22)
+                .padding(.top, 18)
 
                 Spacer()
-                HStack(alignment: .top, spacing: 44) {
+                HStack(alignment: .top, spacing: 40) {
                     sideColumn(me, accent: mePurple)
-                    Text("VS").font(Brand.font(34, .black)).foregroundStyle(textMuted).padding(.top, 120)
+                    // VS sits centered BETWEEN THE BOARDS: a spacer the height of
+                    // the name/score/solved header, then a frame the height of the
+                    // board block (both sides render identical board sizes, so the
+                    // block height is deterministic).
+                    VStack(spacing: 0) {
+                        Color.clear.frame(width: 10, height: Self.headerBlockHeight)
+                        Text("VS").font(Brand.font(44, .black)).foregroundStyle(textMuted)
+                            .frame(height: boardsBlockHeight)
+                    }
                     sideColumn(opponent, accent: oppPink)
                 }
                 .padding(.horizontal, 50)
@@ -146,19 +156,44 @@ struct VSShareCardView: View {
     }
     private var multiBoard: Bool { me.grids.count > 1 || opponent.grids.count > 1 }
 
+    /// Fixed height of the name/score/solved block above each side's boards —
+    /// lets the center VS column line up with the board region exactly.
+    static let headerBlockHeight: CGFloat = 158
+
+    /// Height of one board card, from the same shared-grid math boardCard uses.
+    private var boardCardHeight: CGFloat {
+        let maxSide: CGFloat = multiBoard ? 260 : 380
+        let cols = CGFloat(sharedCols), rows = CGFloat(sharedRows)
+        let gap = max(3, maxSide * 0.012)
+        let pad = maxSide * 0.04
+        let inner = maxSide - pad * 2
+        let tile = floor(min((inner - gap * (cols - 1)) / cols, (inner - gap * (rows - 1)) / rows))
+        return tile * rows + gap * (rows - 1) + pad * 2
+    }
+
+    /// Height of the taller side's shown board stack (boards + 14pt spacing).
+    private var boardsBlockHeight: CGFloat {
+        let shown = CGFloat(min(max(me.grids.count, opponent.grids.count), 2))
+        return boardCardHeight * shown + 14 * (shown - 1)
+    }
+
     private func sideColumn(_ side: Side, accent: Color) -> some View {
         let highlighted = side.won || isDraw
-        return VStack(spacing: 10) {
-            HStack(spacing: 6) {
-                if side.won && !isDraw { Text("👑").font(.system(size: 24)) }
-                Text(side.name).font(Brand.font(28, .black)).foregroundStyle(accent).lineLimit(1)
+        return VStack(spacing: 0) {
+            // Fixed-height header so the center VS column can align on the boards.
+            VStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    if side.won && !isDraw { Text("👑").font(.system(size: 24)) }
+                    Text(side.name).font(Brand.font(28, .black)).foregroundStyle(accent).lineLimit(1)
+                }
+                Text(fmt(side.score))
+                    .font(Brand.font(52, .black)).monospacedDigit()
+                    .foregroundStyle(highlighted ? accent : textMuted)
+                Text(side.solved ? "✓ Solved" : "✗ Not solved")
+                    .font(Brand.font(20, .bold))
+                    .foregroundStyle(side.solved ? Color(hex: 0x16A34A) : lossFG)
             }
-            Text(fmt(side.score))
-                .font(Brand.font(52, .black)).monospacedDigit()
-                .foregroundStyle(highlighted ? accent : textMuted)
-            Text(side.solved ? "✓ Solved" : "✗ Not solved")
-                .font(Brand.font(20, .bold))
-                .foregroundStyle(side.solved ? Color(hex: 0x16A34A) : lossFG)
+            .frame(height: Self.headerBlockHeight, alignment: .top)
             VStack(spacing: 14) {
                 ForEach(0..<min(side.grids.count, 2), id: \.self) { i in
                     boardCard(grid: side.grids[i], tinted: side.won, maxSide: multiBoard ? 260 : 380)
@@ -166,6 +201,7 @@ struct VSShareCardView: View {
             }
             if side.grids.count > 2 {
                 Text("+\(side.grids.count - 2) more").font(Brand.font(18, .bold)).foregroundStyle(textMuted)
+                    .padding(.top, 10)
             }
         }
         .frame(maxWidth: .infinity)

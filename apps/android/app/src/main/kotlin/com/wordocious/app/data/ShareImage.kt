@@ -381,24 +381,25 @@ object ShareImage {
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
 
-        // Header — identical geometry to render().
-        p.typeface = black; p.textSize = 56f; p.isFakeBoldText = true
-        p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
-        c.drawText("WORDOCIOUS", cx, 92f, p)
+        // Header — hero wordmark (iOS VSShareCardView parity: the brand is the
+        // headline of the share, 92pt on the 1080 canvas).
+        p.typeface = black; p.textSize = 92f; p.isFakeBoldText = true
+        p.shader = LinearGradient(cx - 330f, 0f, cx + 330f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
+        c.drawText("WORDOCIOUS", cx, 128f, p)
         p.shader = null
-        p.textSize = 38f; p.color = accent
-        c.drawText(modeLabel.uppercase(), cx, 152f, p)
+        p.textSize = 40f; p.color = accent
+        c.drawText(modeLabel.uppercase(), cx, 192f, p)
 
         val date = SimpleDateFormat("MMM d, yyyy", Locale.US).format(Date())
         p.typeface = bold; p.textSize = 24f; p.color = TEXT_MUTED
-        c.drawText("%.2f vs %.2f · %s".format(me.score, opp.score, date), cx, 200f, p)
+        c.drawText("%.2f vs %.2f · %s".format(me.score, opp.score, date), cx, 244f, p)
 
         // Victory / Defeat / Draw pill.
         run {
             p.textSize = 22f
             val label = if (isDraw) "Draw" else if (isWin) "Victory" else "Defeat"
             val tw = p.measureText(label)
-            val rect = RectF(cx - tw / 2 - 16f, 218f, cx + tw / 2 + 16f, 256f)
+            val rect = RectF(cx - tw / 2 - 16f, 262f, cx + tw / 2 + 16f, 300f)
             val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = (if (isDraw) 0xFFFEF3C7 else if (isWin) 0xFFF5F3FF else 0xFFFEE2E2).toInt()
             }
@@ -414,9 +415,28 @@ object ShareImage {
         val sharedRows = maxOf(1, allShown.maxOfOrNull { it.size } ?: 1)
         val sharedCols = maxOf(1, allShown.maxOfOrNull { it.firstOrNull()?.size ?: 5 } ?: 5)
         val multiBoard = me.grids.size > 1 || opp.grids.size > 1
+
+        // Deterministic block geometry (same math as drawVsBoard) so the
+        // head-to-head centers in the space under the header and the VS mark
+        // can sit exactly between the two boards (iOS parity).
+        val maxSideB = if (multiBoard) 250f else 380f
+        val gapB = maxOf(3f, maxSideB * 0.012f)
+        val padB = maxSideB * 0.04f
+        val innerB = maxSideB - padB * 2
+        val tileB = minOf((innerB - gapB * (sharedCols - 1)) / sharedCols, (innerB - gapB * (sharedRows - 1)) / sharedRows)
+        val cardH = tileB * sharedRows + gapB * (sharedRows - 1) + padB * 2
+        val shownN = minOf(maxOf(me.grids.size, opp.grids.size), 2)
+        val boardsBlockH = cardH * shownN + 14f * (shownN - 1)
+        val headerBlockH = 158f            // name/score/solved block above the boards
+        val contentTop = 316f              // below the pill
+        val contentBottom = 990f           // above the footer
+        val blockH = headerBlockH + boardsBlockH
+        val blockTop = contentTop + maxOf(0f, (contentBottom - contentTop - blockH) / 2f)
+        val nameBaseline = blockTop + 28f
+
         fun side(s: VsShareSide, sideAccent: Int, scx: Float) {
             val highlighted = s.won || isDraw
-            var y = 340f
+            var y = nameBaseline
             p.typeface = black; p.textSize = 28f; p.color = sideAccent
             val crown = if (s.won && !isDraw) "👑 " else ""
             c.drawText((crown + s.name).take(22), scx, y, p)
@@ -429,9 +449,8 @@ object ShareImage {
             c.drawText(if (s.solved) "✓ Solved" else "✗ Not solved", scx, y, p)
             y += 32f
             val shown = s.grids.take(2)
-            val maxSide = if (multiBoard) 250f else 380f
             for (grid in shown) {
-                y += drawVsBoard(c, grid, scx, y, maxSide, s.won, sharedRows, sharedCols) + 14f
+                y += drawVsBoard(c, grid, scx, y, maxSideB, s.won, sharedRows, sharedCols) + 14f
             }
             if (s.grids.size > 2) {
                 p.typeface = bold; p.textSize = 18f; p.color = TEXT_MUTED
@@ -440,8 +459,9 @@ object ShareImage {
         }
         side(me, 0xFF7C3AED.toInt(), W * 0.28f)
         side(opp, 0xFFEC4899.toInt(), W * 0.72f)
-        p.typeface = black; p.textSize = 34f; p.color = TEXT_MUTED
-        c.drawText("VS", cx, 480f, p)
+        // VS centered between the two boards (vertically on the board block).
+        p.typeface = black; p.textSize = 44f; p.color = TEXT_MUTED
+        c.drawText("VS", cx, blockTop + headerBlockH + boardsBlockH / 2f + 15f, p)
 
         p.typeface = bold; p.textSize = 22f; p.color = FOOT
         c.drawText("wordocious.com", cx, 1080f - 40f, p)
