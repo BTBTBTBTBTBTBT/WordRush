@@ -78,10 +78,11 @@ function PlayerCard({ player, side }: { player: IntroPlayer; side: 'left' | 'rig
  */
 export function VsOverlayWordmark() {
   return (
-    <div className="absolute top-14 left-0 right-0 text-center pointer-events-none select-none">
+    <div className="absolute left-0 right-0 text-center pointer-events-none select-none" style={{ top: '20vh' }}>
       <span
-        className="text-4xl font-black tracking-tight"
+        className="font-black tracking-tight px-3"
         style={{
+          fontSize: 'clamp(44px, 13.5vw, 72px)',
           backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',

@@ -7,13 +7,18 @@ import WordociousCore
 /// transition. Shared by VSMatchIntroView and VSGameView.countdownOverlay.
 struct VSOverlayWordmark: View {
     var body: some View {
-        VStack {
+        GeometryReader { geo in
             Text("WORDOCIOUS")
-                .font(Brand.font(34, .black)).tracking(-0.5)
+                .font(Brand.font(58, .black)).tracking(-0.5)
+                .lineLimit(1).minimumScaleFactor(0.6)
                 .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
                                                 startPoint: .leading, endPoint: .trailing))
-                .padding(.top, 24)
-            Spacer()
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity)
+                // Centered ~1/4 down the overlay (user-specified placement) —
+                // identical on the clash splash and the countdown so it reads
+                // as pinned across the transition.
+                .position(x: geo.size.width / 2, y: geo.size.height * 0.24)
         }
         .allowsHitTesting(false)
     }

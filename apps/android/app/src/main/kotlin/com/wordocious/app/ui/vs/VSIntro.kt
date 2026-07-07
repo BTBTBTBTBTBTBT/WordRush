@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -62,12 +64,19 @@ private const val INTRO_DURATION_MS = 2500L
  *  transition (iOS VSOverlayWordmark / web VsOverlayWordmark parity). */
 @Composable
 fun VSOverlayWordmark(boxScope: androidx.compose.foundation.layout.BoxScope) = with(boxScope) {
-    Text(
-        "WORDOCIOUS",
-        fontSize = 34.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp,
-        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))),
-        modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp),
-    )
+    // Centered ~1/4 down the overlay (user-specified placement) — identical on
+    // the clash splash and the countdown so it reads as pinned across the
+    // transition.
+    Column(Modifier.fillMaxSize()) {
+        Spacer(Modifier.fillMaxHeight(0.19f))
+        Text(
+            "WORDOCIOUS",
+            fontSize = 52.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp,
+            maxLines = 1,
+            style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+    }
 }
 
 @Composable
