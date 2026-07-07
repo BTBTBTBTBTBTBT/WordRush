@@ -25,9 +25,14 @@ interface BoardProps {
   isInvalidWord?: boolean;
   isShaking?: boolean;
   wordLength?: number;
+  /** Explicit pixel size (from a measured container). iOS Safari fails to
+   *  clamp percentage max-height on aspect-ratio boxes inside flex chains —
+   *  callers that must fit a bounded area measure it and pass exact pixels,
+   *  which resolve on every browser. */
+  sizePx?: { w: number; h: number };
 }
 
-export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode, isInvalidWord, isShaking, wordLength = 5 }: BoardProps) {
+export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution, showSolution, darkMode, isInvalidWord, isShaking, wordLength = 5, sizePx }: BoardProps) {
   const emptyRows = Math.max(0, maxGuesses - guesses.length - 1);
 
   const lastEval = evaluations[evaluations.length - 1];
@@ -40,8 +45,8 @@ export function Board({ guesses, currentGuess, maxGuesses, evaluations, solution
 
   return (
     <div
-      className="w-full max-w-[400px] mx-auto max-h-full"
-      style={{ aspectRatio: `${wordLength} / ${maxGuesses}` }}
+      className={sizePx ? 'mx-auto' : 'w-full max-w-[400px] mx-auto max-h-full'}
+      style={sizePx ? { width: sizePx.w, height: sizePx.h } : { aspectRatio: `${wordLength} / ${maxGuesses}` }}
       role="grid"
       aria-label="Game board"
     >

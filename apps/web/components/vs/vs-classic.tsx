@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useState, useEffect, useMemo, useCallback } from 'react';
+import { useReducer, useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
 import { GameMode, GameStatus, evaluateGuess, gameReducer, createInitialState, isValidWord } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { Keyboard } from '@/components/game/keyboard';
@@ -166,6 +166,29 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
   const guessesUsed = currentBoard.guesses.length;
   const maxGuesses = currentBoard.maxGuesses;
 
+  // Measured board sizing: fit the (cols x rows) grid inside whatever height
+  // is left between the opponent panel and the keyboard. Explicit pixels —
+  // iOS Safari doesn't honor percentage max-height on aspect-ratio boxes in
+  // flex chains, which let the board overflow under the keyboard.
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  const [boardSize, setBoardSize] = useState<{ w: number; h: number } | null>(null);
+  const cols = currentBoard.solution.length;
+  useLayoutEffect(() => {
+    const el = boardAreaRef.current;
+    if (!el) return;
+    const fit = () => {
+      const r = el.getBoundingClientRect();
+      const availW = Math.min(400, Math.max(0, r.width - 32));
+      const availH = Math.max(0, r.height - 8);
+      const w = Math.min(availW, (availH * cols) / maxGuesses);
+      if (w > 40) setBoardSize({ w, h: (w * maxGuesses) / cols });
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [cols, maxGuesses]);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header */}
@@ -198,9 +221,10 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           items — the board rendered at its natural aspect height and
           overflowed under the hints/keyboard. An absolutely-positioned box
           has a definite height, so the clamp works on WebKit too. */}
-      <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 relative" ref={boardAreaRef}>
         <div className="absolute inset-0 flex items-center justify-center px-4">
-        <Board
+        {boardSize && <Board
+          sizePx={boardSize}
           guesses={currentBoard.guesses}
           currentGuess={currentGuess}
           maxGuesses={currentBoard.maxGuesses}
@@ -212,7 +236,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           // grid for the mode) and a 5-row aspect ratio that oversized it.
           wordLength={currentBoard.solution.length}
           isInvalidWord={currentGuess.length === currentBoard.solution.length && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
-        />
+        />}
         </div>
       </div>
 
