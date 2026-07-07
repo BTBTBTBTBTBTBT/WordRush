@@ -203,6 +203,9 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           showSolution={currentBoard.status === GameStatus.LOST}
           solution={currentBoard.solution}
           darkMode
+          // Six/Seven: without this the Board defaulted to 5 columns (wrong
+          // grid for the mode) and a 5-row aspect ratio that oversized it.
+          wordLength={currentBoard.solution.length}
           isInvalidWord={currentGuess.length === currentBoard.solution.length && (!isValidWord(currentGuess) || hasDuplicateGuess(state.boards, currentGuess))}
         />
       </div>

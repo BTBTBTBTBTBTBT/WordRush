@@ -1709,7 +1709,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       )}
 
       {/* Game content fills remaining space */}
-      <div className="flex-1 min-h-0">
+      {/* MUST be a flex column: every mode component's root is
+          'flex-1 min-h-0 flex flex-col' — inside a plain block that flex-1
+          is inert, the height chain breaks, and the board renders at its
+          natural aspect height instead of shrinking to fit, pushing the
+          keyboard below the fold. */}
+      <div className="flex-1 min-h-0 flex flex-col">
         {renderModeComponent()}
       </div>
 
