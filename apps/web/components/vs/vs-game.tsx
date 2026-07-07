@@ -1669,6 +1669,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
   return (
     <div className="h-screen-stable flex flex-col relative" style={{ backgroundColor: 'var(--color-bg)' }}>
+      {/* 3-2-1-GO: the screen flips to 'match' the moment the count hits 0,
+          so the overlay must render HERE too — otherwise the "GO!" beat
+          (held ~600ms over the board, native parity) never showed and the
+          countdown appeared to end at 1. */}
+      {countdownOverlayEl}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
       {/* Match Header. The Home button forfeits the match first so the
           server can end it cleanly and credit the opponent — just navigating
