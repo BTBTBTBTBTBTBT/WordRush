@@ -155,6 +155,46 @@ def write_bundles(kept):
         print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, "solutions.json"), REPO)}')
 
 
+def curate_length(n, threshold):
+    """Curate the 6/7-letter bank: legacy-only, zipf filter + manual blocklist.
+    (Names were a non-issue in the 6/7 scan; the manual blocklist still applies.)"""
+    z = zipf()
+    legacy = load_json_list(os.path.join(DATA, f'solutions-{n}-legacy.json'))
+    allowed = set(load_json_list(os.path.join(DATA, f'allowed-{n}.json')))
+    manual = load_wordset(os.path.join(SCRIPT_DATA, 'manual-blocklist.txt'))
+    pat = re.compile(rf'^[A-Z]{{{n}}}$')
+
+    kept, cut = [], []
+    for w in sorted(set(legacy)):
+        reason = None
+        if not pat.match(w):
+            reason = 'bad-shape'
+        elif w not in allowed:
+            reason = 'not-in-allowed'
+        elif w in manual:
+            reason = 'manual'
+        elif z(w) < threshold:
+            reason = f'freq<{threshold}({round(z(w), 2)})'
+        if reason is None:
+            kept.append(w)
+        else:
+            cut.append((w, reason))
+
+    kept.sort()
+    random.Random(SHUFFLE_SEED + f'-{n}').shuffle(kept)
+    assert all(pat.match(w) for w in kept) and len(kept) == len(set(kept))
+    assert all(w in allowed for w in kept)
+    return kept, cut
+
+
+def write_length_bundles(n, kept):
+    blob = json.dumps(kept, indent=2) + '\n'
+    for d in BUNDLE_DIRS:
+        with open(os.path.join(d, f'solutions-{n}.json'), 'w') as f:
+            f.write(blob)
+        print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, f"solutions-{n}.json"), REPO)}')
+
+
 def scan_lengths():
     z = zipf()
     names = load_wordset(os.path.join(SCRIPT_DATA, 'names-blocklist.txt'))
@@ -177,10 +217,27 @@ def main():
     ap.add_argument('--write', action='store_true')
     ap.add_argument('--promote', action='store_true', help='also promote 5-letter allowed words (adds proper-noun risk)')
     ap.add_argument('--scan-only', action='store_true')
+    ap.add_argument('--curate-length', type=int, choices=(6, 7),
+                    help='curate the 6- or 7-letter bank instead of the 5-letter one')
     args = ap.parse_args()
 
     if args.scan_only:
         scan_lengths()
+        return
+
+    if args.curate_length:
+        n = args.curate_length
+        kept, cut = curate_length(n, args.threshold)
+        os.makedirs(OUT, exist_ok=True)
+        with open(os.path.join(OUT, f'kept-{n}.txt'), 'w') as f:
+            f.write('\n'.join(sorted(kept)) + '\n')
+        with open(os.path.join(OUT, f'cut-{n}.txt'), 'w') as f:
+            f.write('\n'.join(f'{w}\t{r}' for w, r in sorted(cut)) + '\n')
+        print(f'{n}-letter: kept={len(kept)} cut={len(cut)} (review scripts/out/kept-{n}.txt, cut-{n}.txt)')
+        if args.write:
+            write_length_bundles(n, kept)
+        else:
+            print('(dry run — no bundles written)')
         return
 
     print('threshold sweep (kept counts):')

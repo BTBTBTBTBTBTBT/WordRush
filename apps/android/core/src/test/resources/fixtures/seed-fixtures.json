@@ -177,6 +177,13 @@
       "solutions": [
         "ANTLER"
       ]
+    },
+    {
+      "seed": "daily-2026-08-01-DUEL_6",
+      "count": 1,
+      "solutions": [
+        "PUPPET"
+      ]
     }
   ],
   "sevenLetter": [
@@ -199,6 +206,13 @@
       "count": 1,
       "solutions": [
         "CONCISE"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-01-DUEL_7",
+      "count": 1,
+      "solutions": [
+        "CERAMIC"
       ]
     }
   ]

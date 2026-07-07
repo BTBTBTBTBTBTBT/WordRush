@@ -17,7 +17,7 @@ public final class GameDictionary {
     // dates resolve against this so replays + the Past Words archive keep
     // producing the words that were actually played.
     private var legacySolutionWords: [String] = []
-    private var lengthDictionaries: [Int: (allowed: Set<String>, solutions: [String])] = [:]
+    private var lengthDictionaries: [Int: (allowed: Set<String>, solutions: [String], legacySolutions: [String])] = [:]
     private var lengthAllowedArrays: [Int: [String]] = [:]
 
     public func initDictionary(allowed: [String], solutions: [String], legacySolutions: [String] = []) {
@@ -40,13 +40,28 @@ public final class GameDictionary {
         return solutionWords
     }
 
-    public func initDictionaryForLength(_ length: Int, allowed: [String], solutions: [String]) {
+    public func initDictionaryForLength(_ length: Int, allowed: [String], solutions: [String], legacySolutions: [String] = []) {
         let upper = allowed.map { $0.uppercased() }
         lengthDictionaries[length] = (
             allowed: Set(upper),
-            solutions: solutions.map { $0.uppercased() }
+            solutions: solutions.map { $0.uppercased() },
+            legacySolutions: legacySolutions.map { $0.uppercased() }
         )
         lengthAllowedArrays[length] = upper
+    }
+
+    /// Length-keyed analogue of solutionPool(forDateKey:) — pre-cutover daily
+    /// dates use that length's legacy list; else the curated. Same fail-loud rule.
+    public func solutionPool(forLength length: Int, dateKey: String?) -> [String] {
+        guard let dict = lengthDictionaries[length], !dict.solutions.isEmpty else {
+            fatalError("No dictionary initialized for length \(length)")
+        }
+        if let dateKey, dateKey < SOLUTIONS_CUTOVER_DATE {
+            precondition(!dict.legacySolutions.isEmpty,
+                         "Legacy \(length)-letter solutions not initialized — pre-cutover seed cannot be resolved")
+            return dict.legacySolutions
+        }
+        return dict.solutions
     }
 
     public func isValidWord(_ word: String) -> Bool {

@@ -24,7 +24,7 @@ object GameDictionary {
     // Pre-curation 5-letter answer bank (see the TS gate). Pre-cutover daily
     // dates resolve against this so replays + the archive keep the played words.
     private var legacySolutionWords: List<String> = emptyList()
-    private val lengthDictionaries = HashMap<Int, Pair<Set<String>, List<String>>>()
+    private val lengthDictionaries = HashMap<Int, Triple<Set<String>, List<String>, List<String>>>()
 
     fun init(allowed: List<String>, solutions: List<String>, legacySolutions: List<String> = emptyList()) {
         val up = allowed.map { it.uppercase() }
@@ -51,10 +51,23 @@ object GameDictionary {
     /** Ordered allowed-words list (uppercased) — prefill indexes into it. */
     fun getAllowedWords(): List<String> = allowedWordsList
 
-    fun initForLength(length: Int, allowed: List<String>, solutions: List<String>) {
+    fun initForLength(length: Int, allowed: List<String>, solutions: List<String>, legacySolutions: List<String> = emptyList()) {
         val up = allowed.map { it.uppercase() }
-        lengthDictionaries[length] = up.toHashSet() to solutions.map { it.uppercase() }
+        lengthDictionaries[length] = Triple(up.toHashSet(), solutions.map { it.uppercase() }, legacySolutions.map { it.uppercase() })
         lengthAllowedLists[length] = up
+    }
+
+    /** Length-keyed analogue of [solutionPool] — pre-cutover daily dates use
+     *  that length's legacy list; else the curated. Same fail-loud rule. */
+    fun solutionPoolForLength(length: Int, dateKey: String?): List<String> {
+        val dict = lengthDictionaries[length] ?: error("No dictionary for length $length")
+        if (dateKey != null && dateKey < SOLUTIONS_CUTOVER_DATE) {
+            check(dict.third.isNotEmpty()) {
+                "Legacy $length-letter solutions not initialized — pre-cutover seed cannot be resolved"
+            }
+            return dict.third
+        }
+        return dict.second
     }
 
     private val lengthAllowedLists = HashMap<Int, List<String>>()
@@ -98,8 +111,8 @@ object DictionaryLoader {
             if (loaded) return
             // legacy list feeds the pre-cutover answer pool (date-gated).
             GameDictionary.init(read("data/allowed.json"), read("data/solutions.json"), read("data/solutions-legacy.json"))
-            GameDictionary.initForLength(6, read("data/allowed-6.json"), read("data/solutions-6.json"))
-            GameDictionary.initForLength(7, read("data/allowed-7.json"), read("data/solutions-7.json"))
+            GameDictionary.initForLength(6, read("data/allowed-6.json"), read("data/solutions-6.json"), read("data/solutions-6-legacy.json"))
+            GameDictionary.initForLength(7, read("data/allowed-7.json"), read("data/solutions-7.json"), read("data/solutions-7-legacy.json"))
             loaded = true
         }
     }

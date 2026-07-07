@@ -99,8 +99,10 @@ final class EngineParityTests: XCTestCase {
 
         // legacy list required so pre-cutover daily seed fixtures resolve.
         dict.initDictionary(allowed: allowed, solutions: solutions, legacySolutions: legacySolutions)
-        dict.initDictionaryForLength(6, allowed: allowed6, solutions: solutions6)
-        dict.initDictionaryForLength(7, allowed: allowed7, solutions: solutions7)
+        let legacySolutions6: [String] = loadJSON("solutions-6-legacy")
+        let legacySolutions7: [String] = loadJSON("solutions-7-legacy")
+        dict.initDictionaryForLength(6, allowed: allowed6, solutions: solutions6, legacySolutions: legacySolutions6)
+        dict.initDictionaryForLength(7, allowed: allowed7, solutions: solutions7, legacySolutions: legacySolutions7)
     }
 
     private func loadFixture<T: Decodable>(_ filename: String) -> T {

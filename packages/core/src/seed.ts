@@ -1,4 +1,4 @@
-import { getSolutionPoolForDate, getSolutionWordForLength, getSolutionCountForLength } from './dictionary';
+import { getSolutionPoolForDate, getSolutionPoolForLengthAndDate } from './dictionary';
 
 function simpleHash(str: string): number {
   let hash = 0;
@@ -39,7 +39,10 @@ export function generateSolutionsFromSeed(seed: string, count: number): string[]
 
 export function generateSolutionsFromSeedForLength(seed: string, count: number, wordLength: number): string[] {
   const solutions: string[] = [];
-  const solutionCount = getSolutionCountForLength(wordLength);
+  // Same date-gate as the 5-letter path — pre-cutover Six/Seven dailies keep
+  // their legacy words; new dailies + non-daily seeds use the curated list.
+  const pool = getSolutionPoolForLengthAndDate(wordLength, getDailySeedDate(seed));
+  const solutionCount = pool.length;
   const used = new Set<number>();
 
   for (let i = 0; i < count; i++) {
@@ -54,7 +57,7 @@ export function generateSolutionsFromSeedForLength(seed: string, count: number, 
 
     const index = hash % solutionCount;
     used.add(index);
-    solutions.push(getSolutionWordForLength(wordLength, index));
+    solutions.push(pool[index % solutionCount]);
   }
 
   return solutions;

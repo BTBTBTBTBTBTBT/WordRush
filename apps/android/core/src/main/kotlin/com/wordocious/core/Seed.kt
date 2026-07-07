@@ -68,7 +68,10 @@ fun generateSolutionsFromSeed(seed: String, count: Int): List<String> {
 
 /** Length-specific variant (Six/Seven) — uses that length's solution pool. */
 fun generateSolutionsFromSeedForLength(seed: String, count: Int, wordLength: Int): List<String> {
-    val solutionCount = GameDictionary.getSolutionCountForLength(wordLength)
+    // Same date-gate as the 5-letter path — pre-cutover Six/Seven dailies keep
+    // their legacy words; new dailies + non-daily seeds use the curated list.
+    val pool = GameDictionary.solutionPoolForLength(wordLength, getDailySeedDate(seed))
+    val solutionCount = pool.size
     val solutions = ArrayList<String>(count)
     val used = HashSet<Int>()
     for (i in 0 until count) {
@@ -81,7 +84,7 @@ fun generateSolutionsFromSeedForLength(seed: String, count: Int, wordLength: Int
         }
         val index = hash % solutionCount
         used.add(index)
-        solutions.add(GameDictionary.getSolutionWordForLength(wordLength, index))
+        solutions.add(pool[index])
     }
     return solutions
 }

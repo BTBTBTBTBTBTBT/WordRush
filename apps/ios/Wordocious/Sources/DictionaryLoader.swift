@@ -22,8 +22,10 @@ enum DictionaryLoader {
         // legacy list feeds the pre-cutover answer pool (date-gated in core).
         dict.initDictionary(allowed: load("allowed"), solutions: load("solutions"),
                             legacySolutions: load("solutions-legacy"))
-        dict.initDictionaryForLength(6, allowed: load("allowed-6"), solutions: load("solutions-6"))
-        dict.initDictionaryForLength(7, allowed: load("allowed-7"), solutions: load("solutions-7"))
+        dict.initDictionaryForLength(6, allowed: load("allowed-6"), solutions: load("solutions-6"),
+                                     legacySolutions: load("solutions-6-legacy"))
+        dict.initDictionaryForLength(7, allowed: load("allowed-7"), solutions: load("solutions-7"),
+                                     legacySolutions: load("solutions-7-legacy"))
         initialized = true
     }
 }

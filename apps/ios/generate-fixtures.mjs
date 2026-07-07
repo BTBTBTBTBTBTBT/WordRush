@@ -51,11 +51,21 @@ function solutionPoolForDate(dateKey) {
   return solutionWords;
 }
 
-function initDictionaryForLength(length, allowed, solutions) {
+function initDictionaryForLength(length, allowed, solutions, legacySolutions = []) {
   lengthDictionaries.set(length, {
     allowed: new Set(allowed.map(w => w.toUpperCase())),
     solutions: solutions.map(w => w.toUpperCase()),
+    legacySolutions: legacySolutions.map(w => w.toUpperCase()),
   });
+}
+
+function solutionPoolForLengthAndDate(length, dateKey) {
+  const dict = lengthDictionaries.get(length);
+  if (dateKey !== null && dateKey < SOLUTIONS_CUTOVER_DATE) {
+    if (!dict.legacySolutions.length) throw new Error(`Legacy ${length}-letter solutions not initialized`);
+    return dict.legacySolutions;
+  }
+  return dict.solutions;
 }
 
 function isValidWord(word) {
@@ -152,7 +162,8 @@ function generateSolutionsFromSeed(seed, count) {
 
 function generateSolutionsFromSeedForLength(seed, count, wordLength) {
   const solutions = [];
-  const solCount = getSolutionCountForLength(wordLength);
+  const pool = solutionPoolForLengthAndDate(wordLength, getDailySeedDate(seed));
+  const solCount = pool.length;
   const used = new Set();
   for (let i = 0; i < count; i++) {
     const seedWithIndex = `${seed}-${i}`;
@@ -164,7 +175,7 @@ function generateSolutionsFromSeedForLength(seed, count, wordLength) {
     }
     const index = hash % solCount;
     used.add(index);
-    solutions.push(getSolutionWordForLength(wordLength, index));
+    solutions.push(pool[index]);
   }
   return solutions;
 }
@@ -234,10 +245,12 @@ const allowed6 = JSON.parse(readFileSync(join(dataDir, 'allowed-6.json'), 'utf-8
 const solutions6 = JSON.parse(readFileSync(join(dataDir, 'solutions-6.json'), 'utf-8'));
 const allowed7 = JSON.parse(readFileSync(join(dataDir, 'allowed-7.json'), 'utf-8'));
 const solutions7 = JSON.parse(readFileSync(join(dataDir, 'solutions-7.json'), 'utf-8'));
+const legacySolutions6 = JSON.parse(readFileSync(join(dataDir, 'solutions-6-legacy.json'), 'utf-8'));
+const legacySolutions7 = JSON.parse(readFileSync(join(dataDir, 'solutions-7-legacy.json'), 'utf-8'));
 
 initDictionary(allowed, solutions, legacySolutions);
-initDictionaryForLength(6, allowed6, solutions6);
-initDictionaryForLength(7, allowed7, solutions7);
+initDictionaryForLength(6, allowed6, solutions6, legacySolutions6);
+initDictionaryForLength(7, allowed7, solutions7, legacySolutions7);
 
 // ============================================================
 // FIXTURE 1: simpleHash parity (most critical)
@@ -317,10 +330,10 @@ for (const { seed, count } of seedCases) {
 // 6/7 letter seeds
 const seed6Fixtures = [];
 const seed7Fixtures = [];
-for (const seed of ['test', 'daily-2026-01-15-DUEL_6', 'match-6-abc']) {
+for (const seed of ['test', 'daily-2026-01-15-DUEL_6', 'match-6-abc', 'daily-2026-08-01-DUEL_6']) {
   seed6Fixtures.push({ seed, count: 1, solutions: generateSolutionsFromSeedForLength(seed, 1, 6) });
 }
-for (const seed of ['test', 'daily-2026-01-15-DUEL_7', 'match-7-abc']) {
+for (const seed of ['test', 'daily-2026-01-15-DUEL_7', 'match-7-abc', 'daily-2026-08-01-DUEL_7']) {
   seed7Fixtures.push({ seed, count: 1, solutions: generateSolutionsFromSeedForLength(seed, 1, 7) });
 }
 

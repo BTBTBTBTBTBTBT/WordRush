@@ -48,7 +48,10 @@ public func generateSolutionsFromSeed(_ seed: String, count: Int) -> [String] {
 
 public func generateSolutionsFromSeedForLength(_ seed: String, count: Int, wordLength: Int) -> [String] {
     let dict = GameDictionary.shared
-    let solutionCount = dict.getSolutionCountForLength(wordLength)
+    // Same date-gate as the 5-letter path — pre-cutover Six/Seven dailies keep
+    // their legacy words; new dailies + non-daily seeds use the curated list.
+    let pool = dict.solutionPool(forLength: wordLength, dateKey: getDailySeedDate(seed))
+    let solutionCount = pool.count
     var solutions: [String] = []
     var used: Set<Int> = []
 
@@ -64,7 +67,7 @@ public func generateSolutionsFromSeedForLength(_ seed: String, count: Int, wordL
 
         let index = hash % solutionCount
         used.insert(index)
-        solutions.append(dict.getSolutionWordForLength(wordLength, at: index))
+        solutions.append(pool[index])
     }
 
     return solutions
