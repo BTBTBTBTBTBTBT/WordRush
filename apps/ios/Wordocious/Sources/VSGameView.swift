@@ -52,7 +52,10 @@ struct VSGameView: View {
             // Show it only once the intro is gone (clean dark intro → colored count).
             if vm.countdown != nil && !vm.showIntro {
                 countdownOverlay
-                    .transition(.opacity)
+                    // Instant IN, fade OUT: the intro splash drops the same frame
+                    // the countdown mounts, and a fade-in let the bright queue
+                    // screen flash through between the two dark overlays.
+                    .transition(.asymmetric(insertion: .identity, removal: .opacity))
                     .zIndex(6)
             }
 

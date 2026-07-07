@@ -796,6 +796,13 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     setShowCpuChooser(false);
     setCpuAutoOffer(false);
     setMessage('');
+    // The intro splash + countdown only render on the queue screen. The
+    // entry-screen Bot Match chooser used to leave `screen` on 'entry', so
+    // picking a difficulty just closed the chooser (read as "went back") and
+    // the whole intro/countdown played invisibly — the match never appeared
+    // to start. The queue-screen auto-offer path always worked because it was
+    // already there.
+    setScreen('queue');
     // Adaptive: shadow the player's recent form (higher CPU streak → tougher).
     const config: { opponentId: string; adaptive?: { winRate: number }; ghost?: GhostRun; fixedSeed?: string } = { opponentId: oppId };
     if (kind === 'adaptive') config.adaptive = { winRate: Math.min(0.9, 0.4 + loadCpuProgression().streak * 0.05) };
@@ -881,8 +888,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // "Match Found / Matching you with…" no longer bleeds through, and
   // intro → countdown reads as one continuous scene.
   const countdownOverlayEl = showCountdown ? (
+    // No fade-in on the ROOT: the intro splash unmounts the same frame this
+    // mounts, and a fade-in let the bright queue screen flash through between
+    // the two dark overlays (the inner elements keep their entrances).
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'radial-gradient(circle at center, #1e1b3a, #0a0a12)' }}
     >
       <div className="text-center space-y-4">
