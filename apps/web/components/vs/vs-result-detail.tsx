@@ -141,10 +141,10 @@ export function ScoreCard({ me, opponent, isDraw }: { me: ScoreCardPlayer; oppon
   );
 }
 
-function LetterBoard({ rows, wordGroups }: { rows: EvaluatedRow[]; wordGroups?: number[] }) {
+function LetterBoard({ rows, wordGroups, tileSize }: { rows: EvaluatedRow[]; wordGroups?: number[]; tileSize?: number }) {
   // Shrink tiles for long words so two boards still fit side-by-side.
   const wordLen = rows[0]?.letters.length ?? 5;
-  const tile = wordLen <= 5 ? 24 : wordLen === 6 ? 21 : 18;
+  const tile = tileSize ?? (wordLen <= 5 ? 24 : wordLen === 6 ? 21 : 18);
   // ProperNoundle multi-word answers ("TRAE YOUNG") get a wider gap between
   // word groups — same approach as CompletedProperNoundleMiniBoard — so the
   // recap rows don't read as one unbroken letter run. Only applied when the
@@ -486,6 +486,47 @@ export function FinalBoards({
       </div>
     );
   };
+
+  // Long answers (ProperNoundle names run 8-14 letters): two boards side by
+  // side don't fit a phone even at tiny tiles — the rows collided. Stack the
+  // two boards vertically instead, full width with comfortable tiles.
+  const recapWordLen =
+    mineDisplay.get(0)?.[0]?.letters.length ??
+    theirs.get(0)?.[0]?.letters.length ??
+    solutions[0]?.length ?? 5;
+  if (recapWordLen > 7) {
+    const stackTile = Math.min(24, Math.max(14, Math.floor(320 / recapWordLen)));
+    const stackSide = (label: string, boardsMap: Map<number, EvaluatedRow[]>, accent: string, solved: boolean) => (
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider" style={{ color: accent }}>{label}</span>
+          <SolveBadge solved={solved} size={9} />
+        </div>
+        {Array.from(boardsMap.keys()).sort((a, b) => a - b).length === 0 ? (
+          <div className="text-[10px] font-bold py-2" style={{ color: 'var(--color-text-muted)' }}>No guesses</div>
+        ) : (
+          Array.from(boardsMap.keys()).sort((a, b) => a - b).map((idx) => (
+            <LetterBoard key={idx} rows={boardsMap.get(idx)!} wordGroups={pnWordGroups} tileSize={stackTile} />
+          ))
+        )}
+      </div>
+    );
+    return (
+      <div
+        className="rounded-2xl p-4 space-y-3 animate-fade-in-up"
+        style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+      >
+        {stackSide(myName, mineDisplay, '#7c3aed', mySolved)}
+        <div className="h-px" style={{ background: 'var(--color-border)' }} />
+        {stackSide(opponentName, theirs, '#ec4899', oppSolved)}
+        {answerDisplay && (
+          <div className="text-center text-xs font-black pt-1" style={{ color: 'var(--color-text)' }}>
+            Answer: {answerDisplay.toUpperCase()}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { GameMode } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
+import { categoryLabel, CATEGORY_COLORS, CATEGORY_EMOJI } from '@/components/propernoundle/categories';
 import { Clock, Lightbulb, Eye, Hash, Loader2 } from 'lucide-react';
 import NoundleBoard from '@/components/propernoundle/noundle-board';
 import { Guess, TileState, type Puzzle } from '@/components/propernoundle/types';
@@ -204,8 +205,11 @@ export function VsProperNoundle({
       <div className="text-center py-2 px-2 shrink-0">
         <div className="flex justify-center items-center gap-3 mt-1">
           {puzzleMetadata?.themeCategory && (
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white bg-red-500">
-              {puzzleMetadata.themeCategory}
+            <span
+              className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white"
+              style={{ background: CATEGORY_COLORS[puzzleMetadata.themeCategory] || '#ef4444' }}
+            >
+              {CATEGORY_EMOJI[puzzleMetadata.themeCategory] ? `${CATEGORY_EMOJI[puzzleMetadata.themeCategory]} ` : ''}{categoryLabel(puzzleMetadata.themeCategory)}
             </span>
           )}
           <span className="text-gray-400 text-xs font-bold">{answerLength} letters</span>

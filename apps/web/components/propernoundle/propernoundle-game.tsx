@@ -36,35 +36,7 @@ const DAILY_STORAGE_KEY = 'wordocious-propernoundle-daily';
 const PRACTICE_STORAGE_KEY = 'wordocious-propernoundle-practice';
 const PRACTICE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
-const CATEGORY_LABELS: Record<string, string> = {
-  music: 'Music',
-  videogames: 'Video Games',
-  movies: 'Movies & TV',
-  sports: 'Sports',
-  history: 'History',
-  science: 'Science',
-  currentevents: 'Current Events',
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  music: '#ec4899',
-  videogames: '#8b5cf6',
-  movies: '#f59e0b',
-  sports: '#10b981',
-  history: '#6366f1',
-  science: '#06b6d4',
-  currentevents: '#ef4444',
-};
-
-const CATEGORY_EMOJI: Record<string, string> = {
-  music: '\u{1F3B5}',
-  videogames: '\u{1F3AE}',
-  movies: '\u{1F3AC}',
-  sports: '\u{26BD}',
-  history: '\u{1F3DB}',
-  science: '\u{1F52C}',
-  currentevents: '\u{1F4F0}',
-};
+import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_EMOJI } from './categories';
 
 type GameMode = 'daily' | 'practice';
 
