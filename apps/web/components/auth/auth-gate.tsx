@@ -54,6 +54,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (mounted && hasPersistedSession()) {
       return <>{children}</>;
     }
+    // On the homepage, the pre-auth render is the public Landing, not the
+    // skeleton — it's what a signed-out visitor lands on anyway, and it's the
+    // only render crawlers index (AdSense rejected the site as "low value
+    // content" because the served HTML was a 7-word skeleton). The static
+    // #app-loader overlay covers this until hydration, so signed-in users
+    // never see it flash. Depends only on pathname → no hydration mismatch.
+    if (pathname === '/') {
+      return <Landing />;
+    }
     return (
       <div
         className="fixed inset-0 flex flex-col"
