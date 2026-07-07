@@ -91,6 +91,7 @@ enum PublicProfileService {
             let won = r.winner_id == id
             for w in guesses {
                 let key = w.uppercased()
+                guard MatchStatsService.isRealGuessWord(key) else { continue }
                 var e = counts[key] ?? (0, 0)
                 e.count += 1; if won { e.wins += 1 }
                 counts[key] = e

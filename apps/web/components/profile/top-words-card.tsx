@@ -65,12 +65,14 @@ export function TopWordsCard({ words, accentColor }: TopWordsCardProps) {
                   </div>
                 </div>
               </div>
-              <div className="text-right shrink-0 flex items-center gap-2">
-                <span className="text-[10px] font-black" style={{ color: 'var(--color-text)' }}>
+              {/* Fixed-width columns so counts and % badges align down the
+                  list regardless of digit count (34x vs 686x, 87% vs 100%). */}
+              <div className="shrink-0 flex items-center gap-2">
+                <span className="text-[10px] font-black w-8 text-right" style={{ color: 'var(--color-text)' }}>
                   {w.count}x
                 </span>
                 <span
-                  className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                  className="text-[9px] font-bold py-0.5 rounded w-10 text-center"
                   style={{
                     background: winRate >= 50 ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
                     color: winRate >= 50 ? 'var(--color-win-text)' : 'var(--color-loss-text)',

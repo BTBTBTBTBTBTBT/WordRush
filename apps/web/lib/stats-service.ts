@@ -833,6 +833,16 @@ export async function fetchDailyCalendar(userId: string, days: number = 90) {
 }
 
 /**
+ * A recorded guess entry is a real typed word only if it's all letters.
+ * Hint rows are stored in the guess log as space-padded strings ("  A  " —
+ * revealed letter + spaces, see buildHintRow), and they must not surface in
+ * word-frequency stats (they rendered as blank rows in Top Words/Opener Lab).
+ */
+function isRealGuessWord(w: string): boolean {
+  return /^[A-Z]+$/.test(w);
+}
+
+/**
  * Consolidated profile "All"-view trends (restat B4) — ONE matches query
  * feeds five derivations that each used to fire their own round-trip
  * (fetchActivityByDay, fetchDailyCalendar, fetchGuessDistribution,
@@ -900,7 +910,7 @@ export async function fetchProfileTrends(userId: string, playType: StatsPlayType
     const guesses = r.player1_id === userId ? r.player1_guesses : r.player2_guesses;
     if (!Array.isArray(guesses)) continue;
     const won = r.winner_id === userId;
-    for (const w0 of guesses) { const w = w0.toUpperCase(); const e = wordMap.get(w) || { count: 0, wins: 0 }; e.count++; if (won) e.wins++; wordMap.set(w, e); }
+    for (const w0 of guesses) { const w = String(w0).toUpperCase(); if (!isRealGuessWord(w)) continue; const e = wordMap.get(w) || { count: 0, wins: 0 }; e.count++; if (won) e.wins++; wordMap.set(w, e); }
   }
   const topWordsAllTime = Array.from(wordMap.entries())
     .map(([word, s]) => ({ word, count: s.count, wins: s.wins }))
@@ -1409,7 +1419,8 @@ export async function fetchModeDetail(userId: string, gameMode: string, playType
       if (!Array.isArray(row.player1_guesses)) continue;
       const won = row.winner_id === userId;
       for (const word of row.player1_guesses) {
-        const w = word.toUpperCase();
+        const w = String(word).toUpperCase();
+        if (!isRealGuessWord(w)) continue;
         const entry = wordMap.get(w) || { count: 0, wins: 0 };
         entry.count++;
         if (won) entry.wins++;
@@ -1718,7 +1729,9 @@ export async function fetchOpenerStats(userId: string, limit: number = 5, playTy
   for (const row of data || []) {
     const guesses = row.player1_id === userId ? row.player1_guesses : row.player2_guesses;
     if (!Array.isArray(guesses) || guesses.length === 0) continue;
-    const opener = String(guesses[0]).toUpperCase();
+    // First TYPED word — skip leading hint rows (space-padded strings).
+    const opener = guesses.map((g) => String(g).toUpperCase()).find(isRealGuessWord);
+    if (!opener) continue;
     const entry = map.get(opener) || { count: 0, wins: 0 };
     entry.count++;
     if (row.winner_id === userId) entry.wins++;
@@ -1865,7 +1878,8 @@ export async function fetchOpenerDeep(userId: string, gameMode: string, limit = 
   const rows = await fetchMyGuessRows(userId, gameMode, 400, playType);
   const map = new Map<string, { count: number; greens: number; yellows: number; wins: number }>();
   for (const r of rows) {
-    const opener = String(r.guesses[0]).toUpperCase();
+    const opener = r.guesses.map((g) => String(g).toUpperCase()).find(isRealGuessWord);
+    if (!opener) continue;
     const states = safeEval(r.solutions[0], opener);
     if (!states) continue;
     const e = map.get(opener) || { count: 0, greens: 0, yellows: 0, wins: 0 };

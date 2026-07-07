@@ -246,6 +246,11 @@ object MatchStatsService {
         (0..23).map { HourBucket(it, played[it] ?: 0, won[it] ?: 0) }
     }.getOrElse { (0..23).map { HourBucket(it, 0, 0) } }
 
+    /** A recorded guess entry is a real typed word only if it's all letters.
+     *  Hint rows live in the guess log as space-padded strings ("  A  ") and
+     *  must not surface in word stats (they rendered as blank rows). */
+    fun isRealGuessWord(w: String): Boolean = w.isNotEmpty() && w.all { it.isLetter() }
+
     // ── Top words ────────────────────────────────────────────────────────────────
     /** Top-[limit] most-guessed words (+ win counts), scoped to the play-type toggle. */
     suspend fun topWords(userId: String, mode: String? = null, limit: Int = 5, playType: String = "solo"): List<TopWord> = runCatching {
@@ -261,7 +266,9 @@ object MatchStatsService {
         rows.forEach { r ->
             val won = r.winnerId == userId
             r.player1Guesses?.forEach { w ->
-                val e = counts.getOrPut(w.uppercase()) { intArrayOf(0, 0) }
+                val key = w.uppercase()
+                if (!isRealGuessWord(key)) return@forEach
+                val e = counts.getOrPut(key) { intArrayOf(0, 0) }
                 e[0]++; if (won) e[1]++
             }
         }

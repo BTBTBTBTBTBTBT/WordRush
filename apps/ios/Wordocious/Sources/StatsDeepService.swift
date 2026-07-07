@@ -103,8 +103,9 @@ enum StatsDeepService {
         var map: [String: (count: Int, wins: Int)] = [:]
         for r in rows {
             let guesses = (r.player1_id == uid ? r.player1_guesses : r.player2_guesses) ?? []
-            guard let first = guesses.first else { continue }
-            let opener = first.uppercased()
+            // First TYPED word — skip hint rows (space-padded strings).
+            guard let opener = guesses.map({ $0.uppercased() })
+                .first(where: MatchStatsService.isRealGuessWord) else { continue }
             var e = map[opener] ?? (0, 0)
             e.count += 1
             if r.winner_id == uid { e.wins += 1 }
@@ -207,9 +208,10 @@ enum StatsDeepService {
         else { rows = await myGuessRows(gameMode: gameMode, playType: playType) }
         var map: [String: (count: Int, greens: Int, yellows: Int, wins: Int)] = [:]
         for r in rows {
-            guard let first = r.guesses.first, let sol = r.solutions.first,
-                  let states = safeEval(solution: sol, guess: first) else { continue }
-            let opener = first.uppercased()
+            guard let opener = r.guesses.map({ $0.uppercased() })
+                      .first(where: MatchStatsService.isRealGuessWord),
+                  let sol = r.solutions.first,
+                  let states = safeEval(solution: sol, guess: opener) else { continue }
             var e = map[opener] ?? (0, 0, 0, 0)
             e.count += 1
             e.greens += states.filter { $0 == .correct }.count

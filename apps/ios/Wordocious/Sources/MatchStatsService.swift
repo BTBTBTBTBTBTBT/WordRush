@@ -202,6 +202,13 @@ enum MatchStatsService {
                            hintsUsed: row.hints_used ?? 0)
     }
 
+    /// A recorded guess entry is a real typed word only if it's all letters.
+    /// Hint rows live in the guess log as space-padded strings ("  A  ") and
+    /// must not surface in word stats (they rendered as blank rows).
+    static func isRealGuessWord(_ w: String) -> Bool {
+        !w.isEmpty && w.allSatisfy { $0.isLetter }
+    }
+
     /// Top-5 most-guessed words (+ win counts) — ports fetchTopWordsAllTime.
     static func topWords(mode: GameMode? = nil, limit: Int = 5, playType: String = "solo") async -> [TopWord] {
         if playType == "vs_cpu" { return [] }
@@ -218,6 +225,7 @@ enum MatchStatsService {
             let won = r.winner_id == uid
             for w in guesses {
                 let key = w.uppercased()
+                guard isRealGuessWord(key) else { continue }
                 var e = counts[key] ?? (0, 0)
                 e.count += 1; if won { e.wins += 1 }
                 counts[key] = e

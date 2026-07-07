@@ -43,9 +43,12 @@ export function AppHeader() {
   return (
     <>
       <header className="flex items-center justify-between gap-2 px-4 py-3">
-        <Link href="/" className="flex items-center gap-1.5 min-w-0 shrink">
+        {/* min-w-0 + truncate lets the wordmark give way on narrow screens —
+            without it the left group overflowed and the PRO badge clipped
+            into the help button. The badge itself never shrinks. */}
+        <Link href="/" className="flex items-center gap-1.5 min-w-0 shrink overflow-hidden">
           <span
-            className="text-xl font-black"
+            className="text-xl font-black truncate min-w-0"
             style={{
               backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
               WebkitBackgroundClip: 'text',
@@ -56,7 +59,7 @@ export function AppHeader() {
           >
             WORDOCIOUS
           </span>
-          {isPro && <ProBadge size="sm" />}
+          {isPro && <span className="shrink-0 flex items-center"><ProBadge size="sm" /></span>}
         </Link>
 
         <div className="flex items-center gap-2 relative shrink-0">

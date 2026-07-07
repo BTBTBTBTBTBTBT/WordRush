@@ -94,29 +94,33 @@ export function DailyCalendar({ data }: DailyCalendarProps) {
         </div>
       )}
 
+      {/* Cells scale to fill the card (flex-1 columns + square aspect) so the
+          heatmap spans the full width — and the %-positioned month labels
+          above actually line up with their columns (they drifted when the
+          grid was fixed 10px cells). Mirrors the native full-width fix. */}
       <div className="flex gap-1">
-        {/* Weekday guide (rows are Sun→Sat; label Mon/Wed/Fri). */}
+        {/* Weekday guide (rows are Sun→Sat; label Mon/Wed/Fri). flex-1 rows
+            track the scaled cell height so labels stay row-aligned. */}
         <div className="flex flex-col gap-[3px] shrink-0" style={{ width: `${DAY_LABEL_W - 4}px` }}>
           {Array.from({ length: 7 }, (_, r) => (
             <span
               key={r}
-              className="text-[8px] font-bold leading-none flex items-center"
-              style={{ color: 'var(--color-text-muted)', height: '10px' }}
+              className="text-[8px] font-bold leading-none flex items-center flex-1"
+              style={{ color: 'var(--color-text-muted)' }}
             >
               {r === 1 ? 'Mon' : r === 3 ? 'Wed' : r === 5 ? 'Fri' : ''}
             </span>
           ))}
         </div>
-        <div className="flex gap-[3px] overflow-x-auto">
+        <div className="flex gap-[3px] flex-1 min-w-0">
           {weeks.map((week, wi) => (
-            <div key={wi} className="flex flex-col gap-[3px]">
+            <div key={wi} className="flex flex-col gap-[3px] flex-1 min-w-0">
               {week.map((d, di) => (
                 <div
                   key={di}
-                  className={`rounded-sm ${d && d.gamesPlayed > 0 ? 'cursor-pointer' : ''}`}
+                  className={`rounded-sm w-full ${d && d.gamesPlayed > 0 ? 'cursor-pointer' : ''}`}
                   style={{
-                    width: '10px',
-                    height: '10px',
+                    aspectRatio: '1 / 1',
                     background: getCellColor(d),
                     boxShadow: d && selected === d.day ? 'inset 0 0 0 1.5px #7C3AED' : undefined,
                   }}

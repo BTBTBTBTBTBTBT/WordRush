@@ -748,8 +748,9 @@ export default function ProfilePage() {
                       <div key={o.word} className="flex items-center gap-2.5 p-2" style={{ background: 'var(--color-bg)', borderRadius: '10px' }}>
                         <span className="text-[10px] font-black w-4 text-center" style={{ color: 'var(--color-text-muted)' }}>{i + 1}</span>
                         <span className="text-sm font-black tracking-wider flex-1" style={{ color: 'var(--color-text)' }}>{o.word}</span>
-                        <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{o.count}×</span>
-                        <span className="text-xs font-black w-12 text-right" style={{ color: o.winRate >= 50 ? WIN_FG : '#dc2626' }}>{o.winRate}% W</span>
+                        <span className="text-[10px] font-bold w-8 text-right" style={{ color: 'var(--color-text-muted)' }}>{o.count}×</span>
+                        {/* w-14 + nowrap: "100% W" is wider than the old w-12 and wrapped the W onto its own line */}
+                        <span className="text-xs font-black w-14 text-right whitespace-nowrap" style={{ color: o.winRate >= 50 ? WIN_FG : '#dc2626' }}>{o.winRate}% W</span>
                       </div>
                     ))}
                   </div>

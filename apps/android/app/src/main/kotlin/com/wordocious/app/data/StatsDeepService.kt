@@ -118,7 +118,8 @@ object StatsDeepService {
         val map = HashMap<String, IntArray>()  // word -> [count, wins]
         rows.forEach { r ->
             val guesses = (if (r.player1Id == userId) r.player1Guesses else r.player2Guesses) ?: return@forEach
-            val opener = guesses.firstOrNull()?.uppercase() ?: return@forEach
+            // First TYPED word — skip hint rows (space-padded strings).
+            val opener = guesses.map { it.uppercase() }.firstOrNull(MatchStatsService::isRealGuessWord) ?: return@forEach
             val e = map.getOrPut(opener) { intArrayOf(0, 0) }
             e[0]++; if (r.winnerId == userId) e[1]++
         }
@@ -219,10 +220,9 @@ object StatsDeepService {
         val rows = preloaded ?: myGuessRows(userId, gameMode, playType = playType)
         val map = HashMap<String, IntArray>()  // word -> [count, greens, yellows, wins]
         for (r in rows) {
-            val first = r.guesses.firstOrNull() ?: continue
+            val opener = r.guesses.map { it.uppercase() }.firstOrNull(MatchStatsService::isRealGuessWord) ?: continue
             val sol = r.solutions.firstOrNull() ?: continue
-            val states = safeEval(sol, first) ?: continue
-            val opener = first.uppercase()
+            val states = safeEval(sol, opener) ?: continue
             val e = map.getOrPut(opener) { intArrayOf(0, 0, 0, 0) }
             e[0]++
             e[1] += states.count { it == TileState.CORRECT }
