@@ -142,12 +142,13 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, W, H);
 
-  // Wordmark
-  const wordmarkY = 72;
-  ctx.font = font(900, 56);
+  // Hero wordmark — the brand is the headline of the share (native parity:
+  // 92px on the 1080 canvas; 56 read as an afterthought).
+  const wordmarkY = 128;
+  ctx.font = font(900, 92);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  const grad = ctx.createLinearGradient(W / 2 - 200, wordmarkY - 48, W / 2 + 200, wordmarkY + 8);
+  const grad = ctx.createLinearGradient(W / 2 - 330, wordmarkY - 70, W / 2 + 330, wordmarkY + 8);
   grad.addColorStop(0, WORDMARK[0]);
   grad.addColorStop(1, WORDMARK[1]);
   ctx.fillStyle = grad;
@@ -155,13 +156,13 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
 
   // Mode label (VS gets the wordmark gradient accent look via mode label color —
   // keep it simple: pink→purple midpoint reads as the VS brand)
-  const modeY = wordmarkY + 60;
-  ctx.font = font(900, 38);
+  const modeY = wordmarkY + 64;
+  ctx.font = font(900, 40);
   ctx.fillStyle = '#0d9488';
   ctx.fillText(input.modeLabel.toUpperCase(), W / 2, modeY);
 
   // Stats line + result pill
-  const metaY = modeY + 48;
+  const metaY = modeY + 52;
   const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const statsText = `${input.me.score.toFixed(2)} vs ${input.opponent.score.toFixed(2)} · ${dateStr}`;
   const pillLabel = input.isDraw ? 'Draw' : input.isWin ? 'Victory' : 'Defeat';
@@ -189,11 +190,29 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
 
   // Head-to-head columns — boards on BOTH sides share one grid size.
   const sideCX = [W * 0.28, W * 0.72];
-  const topY = metaY + 80;
   const allShown = [...input.me.grids.slice(0, 2), ...input.opponent.grids.slice(0, 2)];
   const sharedRows = Math.max(1, ...allShown.map((g) => g.length));
   const sharedCols = Math.max(1, ...allShown.map((g) => g[0]?.length ?? 5));
   const multiBoard = input.me.grids.length > 1 || input.opponent.grids.length > 1;
+
+  // Deterministic block geometry (same math as drawBoard) so the head-to-head
+  // centers in the space under the header and the VS mark sits exactly
+  // between the two boards (native parity).
+  const maxSideB = multiBoard ? 250 : 380;
+  const gapB = Math.max(3, maxSideB * 0.012);
+  const padB = maxSideB * 0.04;
+  const innerB = maxSideB - padB * 2;
+  const tileB = Math.floor(Math.min((innerB - gapB * (sharedCols - 1)) / sharedCols, (innerB - gapB * (sharedRows - 1)) / sharedRows));
+  const cardH = tileB * sharedRows + gapB * (sharedRows - 1) + padB * 2;
+  const shownN = Math.min(Math.max(input.me.grids.length, input.opponent.grids.length), 2);
+  const boardsBlockH = cardH * shownN + 14 * (shownN - 1);
+  const headerBlockH = 158;          // name/score/solved block above the boards
+  const contentTop = metaY + 52;     // below the pill
+  const contentBottom = H - 90;      // above the footer
+  const blockH = headerBlockH + boardsBlockH;
+  const blockTop = contentTop + Math.max(0, (contentBottom - contentTop - blockH) / 2);
+  const topY = blockTop + 28;        // first baseline (player name)
+
   const drawSide = (side: VsShareSide, accent: string, cx: number) => {
     const highlighted = side.won || input.isDraw;
     let y = topY;
@@ -211,11 +230,10 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
     ctx.font = font(700, 20);
     ctx.fillStyle = side.solved ? SOLVED_FG : LOSS_FG;
     ctx.fillText(side.solved ? '✓ Solved' : '✗ Not solved', cx, y);
-    y += 28;
+    y += 34;   // boards start at blockTop + headerBlockH (28+56+40+34 = 158)
     const shown = side.grids.slice(0, 2);
-    const maxSide = multiBoard ? 250 : 380;
     for (const grid of shown) {
-      const h = drawBoard(ctx, grid, cx, y, maxSide, side.won, sharedRows, sharedCols);
+      const h = drawBoard(ctx, grid, cx, y, maxSideB, side.won, sharedRows, sharedCols);
       y += h + 14;
     }
     if (side.grids.length > 2) {
@@ -227,11 +245,11 @@ export async function generateVsShareImage(input: VsShareInput): Promise<Blob | 
   drawSide(input.me, ME_ACCENT, sideCX[0]);
   drawSide(input.opponent, OPP_ACCENT, sideCX[1]);
 
-  // Center VS
-  ctx.font = font(900, 34);
+  // Center VS — vertically centered between the two boards.
+  ctx.font = font(900, 44);
   ctx.fillStyle = TEXT_MUTED;
   ctx.textAlign = 'center';
-  ctx.fillText('VS', W / 2, topY + 140);
+  ctx.fillText('VS', W / 2, blockTop + headerBlockH + boardsBlockH / 2 + 15);
 
   // Footer
   ctx.font = font(700, 22);
