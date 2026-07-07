@@ -16,13 +16,18 @@ let legacySolutionWords: string[] = [];
 export const SOLUTIONS_CUTOVER_DATE = '2026-07-08';
 
 // Multi-length dictionaries (for 6-letter, 7-letter, etc.)
-const lengthDictionaries: Map<number, { allowed: Set<string>, allowedArray: string[], solutions: string[] }> = new Map();
+const lengthDictionaries: Map<number, { allowed: Set<string>, allowedArray: string[], solutions: string[], legacySolutions: string[] }> = new Map();
 
 export function initDictionary(allowed: string[], solutions: string[], legacySolutions?: string[]): void {
   allowedWords = new Set(allowed.map(w => w.toUpperCase()));
   allowedWordsArray = allowed.map(w => w.toUpperCase());
   solutionWords = solutions.map(w => w.toUpperCase());
-  legacySolutionWords = (legacySolutions ?? []).map(w => w.toUpperCase());
+  // Defense: a 2-arg re-init (e.g. a page pre-warm) must never WIPE an
+  // already-loaded legacy list — that made every pre-cutover daily throw
+  // (production incident 2026-07-06). Omitted = keep whatever is loaded.
+  if (legacySolutions !== undefined) {
+    legacySolutionWords = legacySolutions.map(w => w.toUpperCase());
+  }
 }
 
 /**
@@ -42,13 +47,33 @@ export function getSolutionPoolForDate(dateKey: string | null): string[] {
   return solutionWords;
 }
 
-export function initDictionaryForLength(length: number, allowed: string[], solutions: string[]): void {
+export function initDictionaryForLength(length: number, allowed: string[], solutions: string[], legacySolutions?: string[]): void {
   const allowedArray = allowed.map(w => w.toUpperCase());
   lengthDictionaries.set(length, {
     allowed: new Set(allowedArray),
     allowedArray,
     solutions: solutions.map(w => w.toUpperCase()),
+    legacySolutions: (legacySolutions ?? []).map(w => w.toUpperCase()),
   });
+}
+
+/**
+ * Length-keyed analogue of getSolutionPoolForDate — pre-cutover daily dates
+ * resolve against that length's legacy list (Six/Seven history stays pinned),
+ * everything else against the curated list. Same fail-loud rule.
+ */
+export function getSolutionPoolForLengthAndDate(length: number, dateKey: string | null): string[] {
+  const dict = lengthDictionaries.get(length);
+  if (!dict || dict.solutions.length === 0) {
+    throw new Error(`Dictionary not initialized for ${length}-letter words`);
+  }
+  if (dateKey !== null && dateKey < SOLUTIONS_CUTOVER_DATE) {
+    if (dict.legacySolutions.length === 0) {
+      throw new Error(`Legacy ${length}-letter solutions not initialized — pre-cutover seed cannot be resolved`);
+    }
+    return dict.legacySolutions;
+  }
+  return dict.solutions;
 }
 
 export function getAllowedWords(): string[] {

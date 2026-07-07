@@ -285,25 +285,12 @@ export default function HomePage() {
   // home page only uses them for pre-warming and Word of the Day — both can wait.
   useEffect(() => {
     cleanupOldPlayData();
-    Promise.all([
-      import('@/data/allowed.json').then(m => m.default),
-      import('@/data/solutions.json').then(m => m.default),
-      import('@wordle-duel/core'),
-    ]).then(([allowed, solutions, core]) => {
-      core.initDictionary(allowed, solutions);
-      // G5: also pre-warm the Six/Seven lists (200-300KB chunks) so a first
-      // open of those modes doesn't pay the download. After the 5-letter
-      // warm so it never competes with the primary path.
-      Promise.all([
-        import('@/data/allowed-6.json').then(m => m.default),
-        import('@/data/solutions-6.json').then(m => m.default),
-        import('@/data/allowed-7.json').then(m => m.default),
-        import('@/data/solutions-7.json').then(m => m.default),
-      ]).then(([a6, s6, a7, s7]) => {
-        core.initDictionaryForLength(6, a6, s6);
-        core.initDictionaryForLength(7, a7, s7);
-      }).catch(() => {});
-    });
+    // Pre-warm via the central loader — it loads ALL lists (5/6/7 + the
+    // legacy answer banks the date-gate needs). A hand-rolled 2-arg init here
+    // once wiped the legacy list and crashed every pre-cutover daily.
+    import('@/lib/init-dictionary')
+      .then((m) => m.ensureDictionaryInitialized())
+      .catch(() => {});
   }, []);
 
   // Hydrate the play-limits localStorage cache from the DB so freshly-

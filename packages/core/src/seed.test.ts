@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { generateSolutionsFromSeed } from './seed';
-import { initDictionary } from './dictionary';
+import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from './seed';
+import { initDictionary, initDictionaryForLength } from './dictionary';
 
 // ── Pin tests: the REAL solutions bank must keep producing the SAME words for
 // pre-cutover daily seeds through the solutions-curation change (date-gated
@@ -33,6 +33,61 @@ describe('solutions bank — pre-cutover pin (real list)', () => {
   });
   it('legacy list is the expected size', () => {
     expect(legacy.length).toBe(2594);
+  });
+});
+
+// Six/Seven pre-cutover pins — captured from the pre-curation 6/7 lists on
+// 2026-07-06; must stay identical through the 6/7 curation (per-length gate).
+describe('6/7-letter banks — pre-cutover pin (real lists)', () => {
+  const dataDir = join(__dirname, '../../../apps/web/data');
+  const legacy6: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions-6-legacy.json'), 'utf-8'));
+  const legacy7: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions-7-legacy.json'), 'utf-8'));
+  const allowed6: string[] = JSON.parse(readFileSync(join(dataDir, 'allowed-6.json'), 'utf-8'));
+  const allowed7: string[] = JSON.parse(readFileSync(join(dataDir, 'allowed-7.json'), 'utf-8'));
+
+  beforeAll(() => {
+    initDictionaryForLength(6, allowed6, legacy6, legacy6);
+    initDictionaryForLength(7, allowed7, legacy7, legacy7);
+  });
+
+  it('DUEL_6 2026-07-01 → unchanged', () => {
+    expect(generateSolutionsFromSeedForLength('daily-2026-07-01-DUEL_6', 2, 6)).toEqual(['WINNER', 'WINTER']);
+  });
+  it('DUEL_7 2026-07-01 → unchanged', () => {
+    expect(generateSolutionsFromSeedForLength('daily-2026-07-01-DUEL_7', 2, 7)).toEqual(['PROTECT', 'PROTEST']);
+  });
+  it('legacy 6/7 lists are the expected sizes', () => {
+    expect(legacy6.length).toBe(1745);
+    expect(legacy7.length).toBe(1211);
+  });
+  it('per-length gate switches pools by date', () => {
+    initDictionaryForLength(6, allowed6, ['ABASED', 'ABATED', 'ABBEYS'], legacy6);
+    const pre = generateSolutionsFromSeedForLength('daily-2026-07-01-DUEL_6', 1, 6);
+    const post = generateSolutionsFromSeedForLength('daily-2026-08-01-DUEL_6', 1, 6);
+    expect(legacy6.map(w => w.toUpperCase())).toContain(pre[0]);
+    expect(['ABASED', 'ABATED', 'ABBEYS']).toContain(post[0]);
+    // restore for any later suites
+    initDictionaryForLength(6, allowed6, legacy6, legacy6);
+  });
+});
+
+// Regression: the 2026-07-06 production incident. Game pages called the 2-arg
+// initDictionary after the central loader had loaded legacy — the re-init
+// WIPED the legacy list and every pre-cutover daily seed threw ("Something
+// went wrong" for real users). A legacy-less re-init must PRESERVE the loaded
+// legacy list.
+describe('2-arg re-init must not wipe legacy (prod incident 2026-07-06)', () => {
+  it('pre-cutover daily still resolves after a 2-arg re-init', () => {
+    const dataDir = join(__dirname, '../../../apps/web/data');
+    const legacy: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions-legacy.json'), 'utf-8'));
+    const curated: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions.json'), 'utf-8'));
+    const allowed: string[] = JSON.parse(readFileSync(join(dataDir, 'allowed.json'), 'utf-8'));
+    initDictionary(allowed, curated, legacy);   // central loader
+    initDictionary(allowed, curated);           // page pre-warm (2-arg) — used to wipe legacy
+    const words = generateSolutionsFromSeed('daily-2026-07-06-QUORDLE', 4);
+    const legacySet = new Set(legacy.map(w => w.toUpperCase()));
+    expect(words).toHaveLength(4);
+    words.forEach(w => expect(legacySet.has(w)).toBe(true));
   });
 });
 

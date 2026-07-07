@@ -1,15 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useSearchParams } from 'next/navigation';
 import { OctordleGame } from '@/components/octordle/octordle-game';
 import { AdGate } from '@/components/ads/ad-gate';
 import { UnlimitedGate } from '@/components/game/unlimited-gate';
-import { initDictionary } from '@wordle-duel/core';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
-import allowedWords from '@/data/allowed.json';
-import solutionWords from '@/data/solutions.json';
 
 export default function OctordlePage() {
   const [ready, setReady] = useState(false);
@@ -17,7 +15,7 @@ export default function OctordlePage() {
   const isDaily = searchParams.get('daily') === 'true';
 
   useEffect(() => {
-    initDictionary(allowedWords, solutionWords);
+    ensureDictionaryInitialized();
     setReady(true);
   }, []);
 
