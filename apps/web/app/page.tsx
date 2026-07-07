@@ -211,7 +211,7 @@ function formatShortTime(seconds: number): string {
 // accent/romanNumeral come from the single-source catalog (modes.generated).
 const MODE_CHROME: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> | null; href: string; vsHref: string }> = {
   practice: { icon: WordleGridIcon, href: '/practice?daily=true', vsHref: '/practice/vs' },
-  vs: { icon: Swords, href: '/vs', vsHref: '/vs' },   // VS lobby (native VSLobbyView parity)
+  vs: { icon: Swords, href: '/practice/vs?daily=true', vsHref: '/practice/vs?daily=true' },   // daily toggle → shared daily VS
   quordle: { icon: null, href: '/quordle?daily=true', vsHref: '/quordle/vs' },
   octordle: { icon: null, href: '/octordle?daily=true', vsHref: '/octordle/vs' },
   sequence: { icon: TrendingUp, href: '/sequence?daily=true', vsHref: '/sequence/vs' },
@@ -478,9 +478,10 @@ export default function HomePage() {
             const isLocked = !isPro && user && (isDailyDone || hasPlayedModeToday(mode.id));
 
             // In Unlimited mode (Pro-only), route to the non-daily
-            // variant so each tap lands on a fresh random seed. VS goes to
-            // the VS lobby in BOTH toggles (native parity — the lobby is the
-            // mode-selection screen; this used to hardcode /practice/vs).
+            // variant so each tap lands on a fresh random seed. VS: the
+            // DAILY toggle goes straight into the shared daily VS puzzle
+            // (same seed for every player); the UNLIMITED toggle opens the
+            // mode-selection lobby (/vs, native VSLobbyView parity).
             const effectiveHref = playMode === 'unlimited'
               ? (mode.id === 'vs' ? '/vs' : mode.href.split('?')[0])
               : mode.href;
