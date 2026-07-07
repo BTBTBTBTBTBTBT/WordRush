@@ -1672,7 +1672,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       {/* Match Header. The Home button forfeits the match first so the
           server can end it cleanly and credit the opponent — just navigating
           away mid-VS leaves a dangling match. */}
-      <div className="text-center py-2 shrink-0 relative">
+      {/* min-h-[56px]: the 44px home button (top-2 + 44) overflowed the
+          ~48px title row and clipped into the match-header card below. */}
+      <div className="text-center py-2 shrink-0 relative min-h-[56px] flex items-center justify-center">
         <GameHomeButton accentColor={accentColor} onClick={handleForfeit} />
         <h1 className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
           VS {label}

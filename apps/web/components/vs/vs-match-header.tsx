@@ -97,9 +97,11 @@ export function VsMatchHeader({ me, opponent, opponentTyping }: VsMatchHeaderPro
           />
         </div>
 
-        {/* Typing indicator — visible while opponent pings arrive */}
-        {opponentTyping && (
-          <div className="flex items-center justify-end gap-1 mt-1">
+        {/* Typing indicator — the ROW IS ALWAYS RENDERED (opacity toggle):
+            mounting it on demand grew the header and shifted the board
+            below every time the opponent typed. */}
+        {(
+          <div className={`flex items-center justify-end gap-1 mt-1 h-3 transition-opacity duration-200 ${opponentTyping ? 'opacity-100' : 'opacity-0'}`}>
             <span className="text-[9px] font-bold" style={{ color: '#ec4899' }}>
               {opponent.username} is typing
             </span>
