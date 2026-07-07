@@ -4,11 +4,28 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { usePathname } from 'next/navigation';
 import { Landing } from './landing';
+import { ModeLanding } from './mode-landing';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
 // Public (no login) so AdSense / search crawlers can index real content —
 // not just the login wall. These are static content pages.
 const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about', '/faq', '/guides', '/pro', '/word', '/strategy'];
+
+// Game routes → their guide slug. Signed-out visitors (and crawlers) on these
+// URLs get a mode-specific public landing built from the guide content, so
+// each game URL serves UNIQUE indexable content instead of the one generic
+// Landing (which read as ~10 duplicate pages to AdSense).
+const MODE_LANDING_PATHS: Record<string, string> = {
+  '/practice': 'classic',
+  '/six': 'six',
+  '/seven': 'seven',
+  '/quordle': 'quadword',
+  '/octordle': 'octoword',
+  '/sequence': 'succession',
+  '/rescue': 'deliverance',
+  '/gauntlet': 'gauntlet',
+  '/propernoundle': 'propernoundle',
+};
 
 /**
  * Returning-user heuristic: a persisted Supabase session token (`sb-*-auth-token`)
@@ -42,8 +59,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     ensureDictionaryInitialized();
   }, []);
 
-  // Let public pages through without auth
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  // Let public pages through without auth. Segment-boundary match — a bare
+  // startsWith let '/pro' swallow '/propernoundle', which skipped the gate
+  // (and its mode landing) entirely.
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'))) {
     return <>{children}</>;
   }
 
@@ -54,14 +73,18 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     if (mounted && hasPersistedSession()) {
       return <>{children}</>;
     }
-    // On the homepage, the pre-auth render is the public Landing, not the
-    // skeleton — it's what a signed-out visitor lands on anyway, and it's the
-    // only render crawlers index (AdSense rejected the site as "low value
-    // content" because the served HTML was a 7-word skeleton). The static
-    // #app-loader overlay covers this until hydration, so signed-in users
-    // never see it flash. Depends only on pathname → no hydration mismatch.
+    // On the homepage and game routes, the pre-auth render is the public
+    // (mode) landing, not the skeleton — it's what a signed-out visitor lands
+    // on anyway, and it's the only render crawlers index (AdSense rejected
+    // the site as "low value content" because the served HTML was a 7-word
+    // skeleton). The static #app-loader overlay covers this until hydration,
+    // so signed-in users never see it flash. Depends only on pathname → no
+    // hydration mismatch.
     if (pathname === '/') {
       return <Landing />;
+    }
+    if (MODE_LANDING_PATHS[pathname]) {
+      return <ModeLanding guideSlug={MODE_LANDING_PATHS[pathname]} />;
     }
     return (
       <div
@@ -107,8 +130,12 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   // Not authenticated and not a guest — show the public marketing landing
   // (content-rich, with a "Sign in to play" CTA that reveals the login form).
-  // Gives crawlers/AdSense real content instead of a bare login wall.
+  // Gives crawlers/AdSense real content instead of a bare login wall. Game
+  // URLs get their mode-specific landing (unique content per route).
   if (!user && !isGuest) {
+    if (MODE_LANDING_PATHS[pathname]) {
+      return <ModeLanding guideSlug={MODE_LANDING_PATHS[pathname]} />;
+    }
     return <Landing />;
   }
 
