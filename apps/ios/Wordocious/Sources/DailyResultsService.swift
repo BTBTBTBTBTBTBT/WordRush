@@ -123,6 +123,10 @@ enum DailyResultsService {
                                       vs_games: 1, composite_score: vsCompositeScore(wins: w, losses: l, games: 1))
                 try await client.from("daily_results").insert(insert).execute()
             }
+            // Server row written — refresh server-backed surfaces (VS records).
+            await MainActor.run {
+                NotificationCenter.default.post(name: DailyCompletionsStore.completionRecorded, object: nil)
+            }
         } catch {}
     }
 
@@ -201,6 +205,12 @@ enum DailyResultsService {
                     composite_score: composite, hints_used: hintsUsed
                 )
                 try await client.from("daily_results").insert(insert).execute()
+            }
+            // The row is now on the server — tell server-backed surfaces
+            // (leaderboard, records, completed card) to refetch. Posted before
+            // the medal awards so the rank appears as fast as possible.
+            await MainActor.run {
+                NotificationCenter.default.post(name: DailyCompletionsStore.completionRecorded, object: nil)
             }
             // Award streak-milestone + perfect-game medals (web recordDailyResult parity).
             await MedalService.awardStreakMedals(client, userId: userId, day: day)

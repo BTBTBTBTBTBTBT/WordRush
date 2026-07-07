@@ -152,9 +152,11 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     ) { granted -> if (granted) com.wordocious.app.data.NotificationService.schedule(context) }
 
     val userId = profile?.id
-    // Re-run the instant a daily is recorded (completionTick) so Today's Dailies
-    // + stats update immediately, without a tab round-trip.
-    val tick by DailyCompletionsService.completionTick.collectAsState()
+    // Re-run once a daily result row has LANDED on the server (recordedTick) so
+    // Today's Dailies + stats update immediately, without a tab round-trip —
+    // these are server fetches, and the optimistic completionTick fired before
+    // the insert (stale refetch).
+    val tick by DailyCompletionsService.recordedTick.collectAsState()
     LaunchedEffect(userId, tick) {
         if (userId != null) {
             // P-cache: seed from the session memo for an INSTANT repaint on

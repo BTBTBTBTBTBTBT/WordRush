@@ -79,9 +79,11 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     // true total even past a full page, and a computed rank when the user
     // sits outside the top 50.
     var userRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
-    // Reload when mode changes OR the instant a daily is recorded (completionTick)
-    // so a just-finished puzzle shows on the board without a tab round-trip.
-    val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
+    // Reload when mode changes OR once a daily result row has LANDED on the
+    // server (recordedTick) so a just-finished puzzle shows on the board
+    // without a tab round-trip. The optimistic completionTick fires BEFORE the
+    // insert — keying on it fetched (and cached) the pre-result leaderboard.
+    val tick by com.wordocious.app.data.DailyCompletionsService.recordedTick.collectAsState()
     LaunchedEffect(selectedMode, tick) {
         val mode = selectedMode
         val day = com.wordocious.app.todayLocalDate()

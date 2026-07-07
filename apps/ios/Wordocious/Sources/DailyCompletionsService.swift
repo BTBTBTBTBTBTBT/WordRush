@@ -88,6 +88,12 @@ final class DailyCompletionsStore: ObservableObject {
     /// flips to "completed" instantly instead of waiting for a refetch on the
     /// next tab switch.
     static let completionPosted = Notification.Name("wordocious.daily-completion")
+    /// Posted AFTER the daily_results row is actually written to the server
+    /// (completionPosted fires optimistically BEFORE the network call, so
+    /// server-backed surfaces that refetch on it raced the insert and cached
+    /// the pre-result leaderboard — the "rank doesn't show until I switch
+    /// modes and back" bug).
+    static let completionRecorded = Notification.Name("wordocious.daily-recorded")
 
     /// Finishes recorded during THIS session for the current local day (from the
     /// completionPosted note). Merged into a load() result to cover the
@@ -202,5 +208,14 @@ extension View {
     /// so by the time the user navigates over, the data is already current.
     func onDailyCompletion(_ action: @escaping () -> Void) -> some View {
         onReceive(NotificationCenter.default.publisher(for: DailyCompletionsStore.completionPosted)) { _ in action() }
+    }
+
+    /// Re-run `action` once the daily result row has LANDED on the server —
+    /// the right trigger for surfaces that refetch server data (leaderboard
+    /// rows/rank, records, completed-daily card). Listening to the optimistic
+    /// completionPosted instead re-fetched BEFORE the insert and cached stale
+    /// pre-result data.
+    func onDailyRecorded(_ action: @escaping () -> Void) -> some View {
+        onReceive(NotificationCenter.default.publisher(for: DailyCompletionsStore.completionRecorded)) { _ in action() }
     }
 }

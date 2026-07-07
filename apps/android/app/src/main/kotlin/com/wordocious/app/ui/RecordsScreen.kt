@@ -127,12 +127,13 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
-    // Re-fetch the instant a daily is recorded (completionTick) so a finished
-    // puzzle appears here immediately, without a tab round-trip.
+    // Re-fetch once a daily result row has LANDED on the server (recordedTick)
+    // so a finished puzzle appears here immediately, without a tab round-trip
+    // (the optimistic completionTick fires before the insert and cached stale).
     // L1/L2/L3 (mirrors LeaderboardScreen): session cache paints instantly,
     // rows + count fetch in parallel and paint immediately, rank fills in
     // after without blocking, and a failed fetch keeps whatever is showing.
-    val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
+    val tick by com.wordocious.app.data.DailyCompletionsService.recordedTick.collectAsState()
     LaunchedEffect(selectedMode, playType, tick) {
         val mode = selectedMode
         val pt = playType

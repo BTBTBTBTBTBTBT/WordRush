@@ -291,7 +291,7 @@ struct DailyRecordsView: View {
             YesterdayPodiumCard(mode: mode, playType: playType, accent: accent)
         }
         .task(id: "\(mode.rawValue)-\(playType)-\(reloadToken)") { await load() }
-        .onDailyCompletion { reloadToken += 1 }
+        .onDailyRecorded { reloadToken += 1 }
     }
 
     @ViewBuilder private func rankIcon(_ rank: Int) -> some View {

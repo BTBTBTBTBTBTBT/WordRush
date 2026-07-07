@@ -150,7 +150,7 @@ struct CompletedDailyCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
         }
-        .onDailyCompletion { reloadToken += 1 }
+        .onDailyRecorded { reloadToken += 1 }
         .task(id: "\(mode.rawValue)-\(reloadToken)") {
             // Reset per-mode state up front — otherwise a previously-viewed mode's
             // data (notably the Gauntlet stage breakdown) leaks into this mode when

@@ -27,6 +27,15 @@ object DailyCompletionsService {
     private val _completionTick = kotlinx.coroutines.flow.MutableStateFlow(0)
     val completionTick: kotlinx.coroutines.flow.StateFlow<Int> = _completionTick
 
+    /** Bumped AFTER the daily_results row is written to the server (iOS
+     *  completionRecorded parity). completionTick fires optimistically BEFORE
+     *  the network call — server-backed screens (leaderboard, records, profile
+     *  daily strips) that refetched on it raced the insert and cached the
+     *  pre-result board, so the new rank only appeared after a chip round-trip. */
+    private val _recordedTick = kotlinx.coroutines.flow.MutableStateFlow(0)
+    val recordedTick: kotlinx.coroutines.flow.StateFlow<Int> = _recordedTick
+    fun noteRecorded() { _recordedTick.value++ }
+
     @Serializable
     data class Completion(
         @SerialName("game_mode") val gameMode: String,

@@ -60,7 +60,7 @@ struct ProfileTab: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .onDailyCompletion { reloadToken += 1 }
+            .onDailyRecorded { reloadToken += 1 }
             .task(id: "\(auth.profile?.id ?? "")-\(reloadToken)") {
                 // P1: every independent fetch runs concurrently (was 8+ serial
                 // round trips). Only the opponent-name lookup chains off
@@ -1155,7 +1155,7 @@ struct LeaderboardTab: View {
         }
         .task { await completions.load() }
         .onDailyCompletion { Task { await completions.load() } }
-        .onDailyCompletion { reloadToken += 1 }
+        .onDailyRecorded { reloadToken += 1 }
         .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
     }
 

@@ -106,6 +106,7 @@ object DailyResultsService {
                     )
                 )
             }
+            DailyCompletionsService.noteRecorded()
         }
     }
 
@@ -174,7 +175,7 @@ object DailyResultsService {
 
             if (existing != null) {
                 // Only update if new score is better (web behavior: best score wins)
-                if (score <= existing.compositeScore) return
+                if (score <= existing.compositeScore) { DailyCompletionsService.noteRecorded(); return }
                 client.postgrest["daily_results"].update({
                     set("completed", completed)
                     set("guess_count", guessCount)
@@ -194,6 +195,8 @@ object DailyResultsService {
                     )
                 )
             }
+            // Row is on the server — let server-backed screens refetch now.
+            DailyCompletionsService.noteRecorded()
             AuthService.refreshProfile()
         } catch (_: Exception) {
             // Network/auth failure — silent (game result still local)
