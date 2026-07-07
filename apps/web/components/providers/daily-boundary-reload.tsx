@@ -41,13 +41,15 @@ export function DailyBoundaryReload() {
     };
 
     const onPageShow = (e: PageTransitionEvent) => {
-      // `persisted` means the browser served the page from bfcache.
-      // Always force a full reload — bfcache restores a frozen DOM with
-      // stale React state, which produces a broken half-rendered page
-      // (e.g. header visible but content empty). This also handles the
-      // day-boundary case since the fresh page will read the current day.
+      // `persisted` means the browser served the page from bfcache. The
+      // restore brings back the FULL JS heap (not just the DOM), so the app
+      // resumes exactly where it was — reload ONLY if the local day changed
+      // while frozen. The old unconditional reload here rebooted the whole
+      // app through the loading screen on EVERY return to the Safari tab
+      // (and occasionally froze on it) — far worse than the stale-state
+      // edge it guarded against, which the day check still covers.
       if (e.persisted) {
-        window.location.reload();
+        maybeReload();
         return;
       }
     };

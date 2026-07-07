@@ -119,6 +119,21 @@ export default function RootLayout({
             transition: opacity 0.3s ease;
           }
         ` }} />
+        {/* Stuck-loader watchdog — runs independently of React. If hydration
+            hasn't dismissed the overlay within 8s (dead chunk after a deploy,
+            wedged resume, etc.), force ONE reload (sessionStorage guard stops
+            loops) so nobody sits frozen on the loading screen. */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          setTimeout(function () {
+            var el = document.getElementById('app-loader');
+            if (!el || el.classList.contains('loaded')) return;
+            try {
+              if (sessionStorage.getItem('wr-loader-retry')) return;
+              sessionStorage.setItem('wr-loader-retry', '1');
+            } catch (e) {}
+            window.location.reload();
+          }, 8000);
+        ` }} />
         {/* Google AdSense — deferred until after page is interactive and idle */}
         <Script
           async

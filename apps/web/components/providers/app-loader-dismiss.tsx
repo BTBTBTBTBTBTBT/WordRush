@@ -15,6 +15,9 @@ export function AppLoaderDismiss() {
       // Remove from DOM after fade-out completes
       setTimeout(() => el.remove(), 400);
     }
+    // Hydration succeeded — re-arm the stuck-loader watchdog (layout.tsx)
+    // for any future load in this tab.
+    try { sessionStorage.removeItem('wr-loader-retry'); } catch {}
   }, []);
   return null;
 }
