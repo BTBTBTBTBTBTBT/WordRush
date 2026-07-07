@@ -1,6 +1,24 @@
 import SwiftUI
 import WordociousCore
 
+/// WORDOCIOUS wordmark for the dark VS overlays (clash splash + countdown) —
+/// the header wordmark's gradient/weight, rendered at the SAME fixed position
+/// on both overlays so it appears not to move across the clash → countdown
+/// transition. Shared by VSMatchIntroView and VSGameView.countdownOverlay.
+struct VSOverlayWordmark: View {
+    var body: some View {
+        VStack {
+            Text("WORDOCIOUS")
+                .font(Brand.font(34, .black)).tracking(-0.5)
+                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)],
+                                                startPoint: .leading, endPoint: .trailing))
+                .padding(.top, 24)
+            Spacer()
+        }
+        .allowsHitTesting(false)
+    }
+}
+
 /// Full-screen 2.5s match-intro splash shown when a match is found — ports
 /// apps/web/components/vs/match-intro.tsx. Both avatar cards slam in from
 /// opposite sides with overshoot, a rotated gradient "VS" pops in, the
@@ -36,6 +54,8 @@ struct VSMatchIntroView: View {
             RadialGradient(colors: [Color(hex: 0x1E1B3A).opacity(0.96), Color.black.opacity(0.92)],
                            center: .center, startRadius: 60, endRadius: 520)
                 .ignoresSafeArea()
+
+            VSOverlayWordmark()
 
             VStack(spacing: 24) {
                 HStack(spacing: 12) {

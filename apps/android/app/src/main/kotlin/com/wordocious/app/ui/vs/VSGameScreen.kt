@@ -364,6 +364,7 @@ private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, i
             colors = listOf(Color(0xFF1E1B3A), Color(0xFF0A0A12)))),
         Alignment.Center,
     ) {
+        VSOverlayWordmark(this)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
             Text(label.uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))

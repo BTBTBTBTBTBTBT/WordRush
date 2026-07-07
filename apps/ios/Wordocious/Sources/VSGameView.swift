@@ -392,6 +392,7 @@ struct VSGameView: View {
             RadialGradient(colors: [Color(hex: 0x1E1B3A), Color(hex: 0x0A0A12)],
                            center: .center, startRadius: 60, endRadius: 520)
                 .ignoresSafeArea()
+            VSOverlayWordmark()
             VStack(spacing: 16) {
                 Text(vm.countdownIsRematch ? "REMATCH STARTING IN" : "MATCH FOUND")
                     .font(Brand.font(15, .heavy)).tracking(3).foregroundStyle(.white.opacity(0.7))

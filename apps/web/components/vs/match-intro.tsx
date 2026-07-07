@@ -71,6 +71,31 @@ function PlayerCard({ player, side }: { player: IntroPlayer; side: 'left' | 'rig
 }
 
 /**
+ * WORDOCIOUS wordmark for the dark VS overlays (clash splash + countdown) —
+ * same gradient/weight as the app-header wordmark, rendered at the SAME fixed
+ * position on both overlays so it appears not to move across the clash →
+ * countdown transition. Shared by MatchIntro and the vs-game countdown.
+ */
+export function VsOverlayWordmark() {
+  return (
+    <div className="absolute top-14 left-0 right-0 text-center pointer-events-none select-none">
+      <span
+        className="text-4xl font-black tracking-tight"
+        style={{
+          backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          color: 'transparent',
+        }}
+      >
+        WORDOCIOUS
+      </span>
+    </div>
+  );
+}
+
+/**
  * Full-screen 2.5s splash shown when a match is found, before the
  * countdown finishes. Skippable on tap. Anonymous opponents render as
  * "Anonymous" with the default-initials avatar and no head-to-head line.
@@ -99,6 +124,7 @@ export function MatchIntro({ me, opponent, headToHead, onDone }: MatchIntroProps
       style={{ background: 'radial-gradient(circle at center, rgba(30,27,58,0.96), rgba(0,0,0,0.92))' }}
       onClick={finish}
     >
+      <VsOverlayWordmark />
       <style>{`
         @keyframes vs-slam-left {
           0% { transform: translateX(-130%); opacity: 0; }

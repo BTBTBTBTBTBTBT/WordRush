@@ -55,6 +55,21 @@ private const val INTRO_DURATION_MS = 2500L
  * Anonymous opponents (null) render as "Anonymous" with the initials avatar
  * and no head-to-head line.
  */
+
+/** WORDOCIOUS wordmark for the dark VS overlays (clash splash + countdown) —
+ *  the header wordmark's gradient/weight, rendered at the SAME fixed position
+ *  on both overlays so it appears not to move across the clash → countdown
+ *  transition (iOS VSOverlayWordmark / web VsOverlayWordmark parity). */
+@Composable
+fun VSOverlayWordmark(boxScope: androidx.compose.foundation.layout.BoxScope) = with(boxScope) {
+    Text(
+        "WORDOCIOUS",
+        fontSize = 34.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp,
+        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))),
+        modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp),
+    )
+}
+
 @Composable
 fun MatchIntro(
     me: IntroPlayer,
@@ -76,6 +91,7 @@ fun MatchIntro(
                 colors = listOf(Color(0xF51E1B3A), Color(0xEB000000)))).clickableNoRipple(onDone),
         contentAlignment = Alignment.Center,
     ) {
+        VSOverlayWordmark(this)
         Column(
             Modifier.padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

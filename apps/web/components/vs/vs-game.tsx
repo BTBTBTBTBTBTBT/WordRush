@@ -28,7 +28,7 @@ import { playOpponentThunk } from '@/lib/sounds';
 import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords, Bot, Lock, Users, ChevronLeft } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
-import { MatchIntro, headToHeadLine } from './match-intro';
+import { MatchIntro, headToHeadLine , VsOverlayWordmark } from './match-intro';
 import { VsMatchHeader } from './vs-match-header';
 import { FinalBoards, ScoreCard, logSolved, type EvaluatedRow } from './vs-result-detail';
 import { generateVsShareImage, logToGrids } from '@/lib/vs-share-image';
@@ -957,6 +957,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: 'radial-gradient(circle at center, #1e1b3a, #0a0a12)' }}
     >
+      <VsOverlayWordmark />
       <div className="text-center space-y-4">
         <div className="text-gray-400 text-lg font-bold uppercase tracking-widest animate-fade-in-scale">
           {countdownIsRematch ? 'Rematch starting in' : 'Match Found'}
