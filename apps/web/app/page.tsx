@@ -211,7 +211,7 @@ function formatShortTime(seconds: number): string {
 // accent/romanNumeral come from the single-source catalog (modes.generated).
 const MODE_CHROME: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> | null; href: string; vsHref: string }> = {
   practice: { icon: WordleGridIcon, href: '/practice?daily=true', vsHref: '/practice/vs' },
-  vs: { icon: Swords, href: '/practice/vs?daily=true', vsHref: '/practice/vs?daily=true' },
+  vs: { icon: Swords, href: '/vs', vsHref: '/vs' },   // VS lobby (native VSLobbyView parity)
   quordle: { icon: null, href: '/quordle?daily=true', vsHref: '/quordle/vs' },
   octordle: { icon: null, href: '/octordle?daily=true', vsHref: '/octordle/vs' },
   sequence: { icon: TrendingUp, href: '/sequence?daily=true', vsHref: '/sequence/vs' },

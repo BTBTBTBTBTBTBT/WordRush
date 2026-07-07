@@ -1106,6 +1106,36 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
             )}
           </div>
 
+          {/* Private match: surface the shareable code/link so the host can
+              actually invite someone from the queue screen (native VSGameView
+              parity — the lobby's create flow lands here with the code). */}
+          {inviteCode && !isCpu && (
+            <div className="w-full max-w-xs mx-auto rounded-2xl border p-4 space-y-2"
+                 style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
+              <div className="text-[11px] font-extrabold tracking-widest uppercase" style={{ color: 'var(--color-text-muted)' }}>
+                Private match
+              </div>
+              <div className="text-3xl font-black tracking-[6px]" style={{ color: 'var(--color-text)' }}>{inviteCode}</div>
+              <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                Share this code — the match starts when your friend joins.
+              </p>
+              <button
+                onClick={async () => {
+                  const url = `${window.location.origin}/vs/join/${inviteCode}`;
+                  const text = `Join my Wordocious VS match — code ${inviteCode}`;
+                  if ('share' in navigator) {
+                    try { await (navigator as any).share({ title: 'Wordocious VS', text, url }); return; } catch {}
+                  }
+                  try { await navigator.clipboard.writeText(url); setMessage('Invite link copied'); } catch {}
+                }}
+                className="w-full rounded-xl py-2.5 text-sm font-black text-white"
+                style={{ background: '#7c3aed' }}
+              >
+                Share invite
+              </button>
+            </div>
+          )}
+
           {/* Auto-offer the CPU once the human queue has sat quiet for a bit.
               The explicit Bot Match choice now lives on the entry chooser. */}
           {!showIntro && !showCountdown && !isCpu && cpuSupported && cpuAutoOffer && (
