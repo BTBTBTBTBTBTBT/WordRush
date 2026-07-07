@@ -23,17 +23,19 @@ import { BottomNav } from '@/components/ui/bottom-nav';
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001';
 
-/** All VS-capable modes, in the native lobby's order. */
+/** All VS-capable modes, in the native lobby's order. Titles are the
+ *  UPPERCASED share labels — exact native parity (iOS ModeStyle.title =
+ *  shareLabel.uppercased(): CLASSIC SIX, QUADWORD, …). */
 const MODES: Array<{ gm: string; title: string; gradient: string }> = [
-  { gm: GameMode.DUEL, title: 'Classic', gradient: 'from-cyan-500 via-blue-500 to-teal-500' },
-  { gm: GameMode.DUEL_6, title: 'Six', gradient: 'from-cyan-500 via-teal-500 to-sky-500' },
-  { gm: GameMode.DUEL_7, title: 'Seven', gradient: 'from-lime-500 via-green-500 to-emerald-500' },
-  { gm: GameMode.QUORDLE, title: 'QuadWord', gradient: 'from-yellow-500 via-pink-500 to-purple-500' },
-  { gm: GameMode.OCTORDLE, title: 'OctoWord', gradient: 'from-cyan-500 via-purple-500 to-pink-500' },
-  { gm: GameMode.SEQUENCE, title: 'Succession', gradient: 'from-yellow-500 via-orange-500 to-red-500' },
-  { gm: GameMode.RESCUE, title: 'Deliverance', gradient: 'from-indigo-500 via-purple-500 to-fuchsia-500' },
-  { gm: GameMode.GAUNTLET, title: 'Gauntlet', gradient: 'from-amber-500 via-orange-500 to-red-500' },
-  { gm: GameMode.PROPERNOUNDLE, title: 'ProperNoundle', gradient: 'from-red-500 via-rose-500 to-orange-500' },
+  { gm: GameMode.DUEL, title: 'CLASSIC', gradient: 'from-cyan-500 via-blue-500 to-teal-500' },
+  { gm: GameMode.DUEL_6, title: 'CLASSIC SIX', gradient: 'from-cyan-500 via-teal-500 to-sky-500' },
+  { gm: GameMode.DUEL_7, title: 'CLASSIC SEVEN', gradient: 'from-lime-500 via-green-500 to-emerald-500' },
+  { gm: GameMode.QUORDLE, title: 'QUADWORD', gradient: 'from-yellow-500 via-pink-500 to-purple-500' },
+  { gm: GameMode.OCTORDLE, title: 'OCTOWORD', gradient: 'from-cyan-500 via-purple-500 to-pink-500' },
+  { gm: GameMode.SEQUENCE, title: 'SUCCESSION', gradient: 'from-yellow-500 via-orange-500 to-red-500' },
+  { gm: GameMode.RESCUE, title: 'DELIVERANCE', gradient: 'from-indigo-500 via-purple-500 to-fuchsia-500' },
+  { gm: GameMode.GAUNTLET, title: 'GAUNTLET', gradient: 'from-amber-500 via-orange-500 to-red-500' },
+  { gm: GameMode.PROPERNOUNDLE, title: 'PROPERNOUNDLE', gradient: 'from-red-500 via-rose-500 to-orange-500' },
 ];
 
 interface VsCount { waiting: number; playing: number }
