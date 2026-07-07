@@ -40,7 +40,7 @@ import {
   formatCountdown,
 } from '@/lib/play-limit-service';
 import { VsLimitModal } from '@/components/modals/vs-limit-modal';
-import { getTodayUTC } from '@/lib/daily-service';
+import { getTodayUTC, fetchDailyVsResult } from '@/lib/daily-service';
 
 import { VsClassic } from './vs-classic';
 import { VsQuadword } from './vs-quadword';
@@ -284,6 +284,41 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const [alreadyPlayedDaily, setAlreadyPlayedDaily] = useState(
     () => dailyVsActive && hasPlayedModeToday('vs'),
   );
+  // Today's daily VS outcome (server-backed) — drives the YOU WON / YOU LOST
+  // pill on the already-played screen (iOS/Android parity).
+  const [dailyWon, setDailyWon] = useState<boolean | null>(null);
+  // Daily gate: the local play-limit cache answers instantly, but a daily VS
+  // played on ANOTHER device only exists on the server — mirror the native
+  // flow (local check, else server check) before joining the daily queue.
+  // 'play' is the only state that queues.
+  const [dailyGate, setDailyGate] = useState<'checking' | 'play' | 'played'>(
+    () => (!dailyVsActive ? 'play' : hasPlayedModeToday('vs') ? 'played' : 'checking'),
+  );
+  useEffect(() => {
+    if (!dailyVsActive) return;
+    const me = profile;
+    if (alreadyPlayedDaily) {
+      // Locally known as played — fetch the W/L for the pill.
+      if (me) fetchDailyVsResult(me.id).then(setDailyWon).catch(() => {});
+      return;
+    }
+    if (!me) { setDailyGate('play'); return; }
+    let cancelled = false;
+    fetchDailyVsResult(me.id)
+      .then((won) => {
+        if (cancelled) return;
+        if (won !== null) {
+          setDailyWon(won);
+          setAlreadyPlayedDaily(true);
+          setDailyGate('played');
+        } else {
+          setDailyGate('play');
+        }
+      })
+      .catch(() => { if (!cancelled) setDailyGate('play'); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dailyVsActive, profile?.id]);
   // Shown if a freemium user tries to rematch after their daily game.
   const [vsLimitOpen, setVsLimitOpen] = useState(false);
   // Standard "tap a VS mode" flow now opens an entry chooser (Quick Match / Bot
@@ -694,12 +729,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // normally, passing the daily seed only when this is the daily flow.
     // Only auto-join for specific intents (daily VS / accepted invite). The
     // standard flow waits on the entry chooser and joins via handleQuickMatch.
-    if (!alreadyPlayedDaily && autoJoin) {
-      // Re-derive at join time: the todayDailySeed memo only recomputes on
-      // dailyVsActive, so a tab left open across midnight queued with
-      // YESTERDAY'S seed and could only ever pair with other stale tabs.
-      const queueSeed = dailyVsActive ? generateDailySeed(getTodayUTC(), 'DUEL_VS') : undefined;
-      matchService.joinQueue(mode, queueSeed, inviteCode);
+    // Daily VS waits for the played-today gate (local OR server) to resolve —
+    // the dedicated effect below joins once it says 'play'. Invite links and
+    // other auto-join intents queue immediately as before.
+    if (!alreadyPlayedDaily && autoJoin && !dailyVsActive) {
+      matchService.joinQueue(mode, undefined, inviteCode);
     }
 
     return () => {
@@ -710,6 +744,18 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // torn down mid-match. Only matchService/presenceId (stable) gate the effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchService, presenceId]);
+
+  // Daily VS: join the shared-seed queue only once the played-today gate says
+  // 'play' (native parity — iOS awaits hasPlayedDailyVS before queueing, so a
+  // daily finished on another device can't be replayed here).
+  useEffect(() => {
+    if (!dailyVsActive || dailyGate !== 'play' || alreadyPlayedDaily) return;
+    // Re-derive at join time: a tab left open across midnight must queue with
+    // TODAY'S seed, not the seed memoized at mount.
+    const queueSeed = generateDailySeed(getTodayUTC(), 'DUEL_VS');
+    matchService.joinQueue(mode, queueSeed, inviteCode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dailyGate]);
 
   // Live clock while spectating the opponent finish their game.
   useEffect(() => {
@@ -876,6 +922,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
         answer={todayDailyAnswer}
         titleGradient={titleGradient}
         isPro={isPro}
+        won={dailyWon}
       />
     );
   }
@@ -1673,10 +1720,12 @@ function DailyVsAlreadyPlayed({
   answer,
   titleGradient,
   isPro,
+  won = null,
 }: {
   answer: string;
   titleGradient: string;
   isPro: boolean;
+  won?: boolean | null;
 }) {
   const [countdown, setCountdown] = useState('');
 
@@ -1710,6 +1759,16 @@ function DailyVsAlreadyPlayed({
             Already Played
           </h1>
         </div>
+
+        {/* Today's outcome — W/L pill (iOS/Android parity). */}
+        {won !== null && (
+          <div
+            className="inline-block px-4 py-1.5 rounded-full text-xs font-black text-white tracking-widest animate-fade-in-scale"
+            style={{ background: won ? '#7c3aed' : '#dc2626' }}
+          >
+            {won ? 'YOU WON' : 'YOU LOST'}
+          </div>
+        )}
 
         {/* Answer tiles */}
         {letters.length > 0 && (

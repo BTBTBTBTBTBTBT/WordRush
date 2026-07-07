@@ -207,6 +207,25 @@ export async function recordDailyResult(
 /**
  * Record or update a daily VS result (accumulates wins/losses for the day).
  */
+/**
+ * Today's daily VS outcome for the home-card badge and the already-played
+ * screen (iOS DailyResultsService.dailyVSResult parity). null = not played
+ * today; true/false = won/lost. Server-backed, so a daily VS played on any
+ * device shows correctly everywhere.
+ */
+export async function fetchDailyVsResult(userId: string): Promise<boolean | null> {
+  const { data } = await (supabase as any)
+    .from('daily_results')
+    .select('vs_wins')
+    .eq('user_id', userId)
+    .eq('day', getTodayLocal())
+    .eq('game_mode', 'DUEL')
+    .eq('play_type', 'vs')
+    .limit(1);
+  const row = data?.[0];
+  return row ? ((row.vs_wins ?? 0) > 0) : null;
+}
+
 export async function recordDailyVsResult(
   userId: string,
   gameMode: string,

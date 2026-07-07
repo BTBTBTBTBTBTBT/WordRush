@@ -17,7 +17,7 @@ import { FirstGameCard } from '@/components/ui/first-game-card';
 import { PlayModeToggle, UnlimitedHero, type PlayMode } from '@/components/ui/play-mode-toggle';
 import { useLivePlayerCount } from '@/hooks/use-live-player-count';
 import { useCountdown } from '@/hooks/use-countdown';
-import { getSecondsUntilMidnightLocal, computeDailyTotals, getTodayLocal, type DailyCompletion } from '@/lib/daily-service';
+import { getSecondsUntilMidnightLocal, computeDailyTotals, getTodayLocal, fetchDailyVsResult, type DailyCompletion } from '@/lib/daily-service';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { shareDailySweep } from '@/lib/daily-share';
@@ -243,6 +243,11 @@ export default function HomePage() {
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
   const { todayDailies } = useDailyCompletions();
   const [sweepCeleb, setSweepCeleb] = useState(false);
+  // Today's daily VS outcome (server-backed, iOS vsDailyWon parity) — the VS
+  // Battle card greys with a W/L badge like every other completed daily.
+  // null = not played today. Home remounts on every return from a game, so a
+  // just-finished daily VS refetches naturally.
+  const [vsDailyWon, setVsDailyWon] = useState<boolean | null>(null);
   const router = useRouter();
 
   const isPro = isProActive;
@@ -320,6 +325,13 @@ export default function HomePage() {
     router.prefetch('/vs');                       // VS lobby (both toggles)
     router.prefetch('/practice/vs?daily=true');   // free daily VS CTA
   }, [router]);
+
+  useEffect(() => {
+    if (!user?.id) { setVsDailyWon(null); return; }
+    let cancelled = false;
+    fetchDailyVsResult(user.id).then((w) => { if (!cancelled) setVsDailyWon(w); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Countdown for locked cards — uses shared global timer via useCountdown
   const resetSecs = useCountdown(getResetSeconds);
@@ -470,7 +482,11 @@ export default function HomePage() {
             const dailyResult = playMode === 'daily' && dbKey ? todayDailies.get(dbKey) : undefined;
             // VS has no daily_results row; reflect its completed state from the
             // play-limit cache so the card shows "played" like other modes.
-            const isDailyDone = !!dailyResult || (mode.id === 'vs' && playMode === 'daily' && hasPlayedModeToday('vs'));
+            const isDailyDone = !!dailyResult
+              || (mode.id === 'vs' && playMode === 'daily' && (vsDailyWon !== null || hasPlayedModeToday('vs')));
+            // VS has no solo daily_results row — its W/L comes from the
+            // play_type='vs' row (vsDailyWon).
+            const vsBadge = mode.id === 'vs' ? vsDailyWon : null;
 
             // Freemium users: lock card once the daily is done OR the
             // play-limit cache says played. isDailyDone covers modes
@@ -534,10 +550,14 @@ export default function HomePage() {
                   {isDailyDone && (
                     <div
                       className="absolute top-2.5 right-2.5 w-5 h-5 rounded-md flex items-center justify-center"
-                      style={{ background: dailyResult ? (dailyResult.won ? '#7c3aed' : '#dc2626') : '#7c3aed' }}
+                      style={{ background: dailyResult
+                        ? (dailyResult.won ? '#7c3aed' : '#dc2626')
+                        : vsBadge !== null ? (vsBadge ? '#7c3aed' : '#dc2626') : '#7c3aed' }}
                     >
                       <span className="text-[10px] font-black text-white leading-none">
-                        {dailyResult ? (dailyResult.won ? 'W' : 'L') : '✓'}
+                        {dailyResult
+                          ? (dailyResult.won ? 'W' : 'L')
+                          : vsBadge !== null ? (vsBadge ? 'W' : 'L') : '✓'}
                       </span>
                     </div>
                   )}
