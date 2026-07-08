@@ -336,6 +336,21 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     });
   }, [session, solution, modeId, isGauntlet]);
 
+  // Display guesses for the single-board render. For HINT rows the letter is
+  // taken from the evaluation tiles (letter + state travel together) rather
+  // than the stored guess string — some recorded hint rows stored the revealed
+  // letter left-aligned ("A     ") while the evaluation was positioned, which
+  // rendered the letter at slot 0 in gray instead of its real slot in purple.
+  // Board pairs guess[i] (letter) with evaluations[i].state, so they MUST align.
+  const singleDisplayGuesses = useMemo(() => {
+    if (!session || !solution || MULTI_BOARD_MODES.has(modeId) || isGauntlet) return [] as string[];
+    const board = boards[0];
+    return board.guesses.map((g, i) => {
+      const he = board.hintEvaluations?.[i];
+      return he ? he.tiles.map(t => (t.letter && t.letter !== ' ' ? t.letter : ' ')).join('') : g;
+    });
+  }, [session, solution, modeId, isGauntlet]);
+
   const { definition, loaded: defLoaded } = useWordDefinition(
     (MULTI_BOARD_MODES.has(modeId) || isProperNoundle || isGauntlet) ? null : solution
   );
@@ -619,7 +634,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           {/* Compact board */}
           <div className="mx-auto" style={{ maxWidth: '200px' }}>
             <Board
-              guesses={boards[0]?.guesses ?? []}
+              guesses={singleDisplayGuesses}
               currentGuess=""
               maxGuesses={singleMaxGuesses}
               evaluations={evaluations}

@@ -80,8 +80,12 @@ export function CompletedMiniBoard({ solution, guesses, maxGuesses, won, hintEva
                 : evaluateGuessTiles(guess, solution))
             : Array(wordLen).fill(TileState.EMPTY);
 
+          // Hint rows: take the letter from the evaluation tiles (letter +
+          // state travel together) so a left-aligned stored hint guess can't
+          // render its letter at slot 0 while the color sits at the real slot.
+          const heTiles = isPast ? hintEvaluations?.[rowIndex]?.tiles : undefined;
           return Array.from({ length: wordLen }).map((_, li) => {
-            const letter = guess[li] || '';
+            const letter = (heTiles ? (heTiles[li]?.letter ?? '').trim() : guess[li]) || '';
             const tileState = isPast ? tiles[li] : TileState.EMPTY;
             return (
               <div
