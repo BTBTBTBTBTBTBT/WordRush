@@ -85,14 +85,33 @@ object WikipediaHint {
         hint = hint.replace("###", ".")
         // Post-game (redact=false) keeps the answer in the text.
         if (!redact) return hint
-        // Redact full name, then each word > 2 chars.
+        // Redact full name, then each word > 2 chars. Match diacritic-
+        // insensitively: the display name is plain ASCII ("Shogun") but the
+        // Wikipedia extract often carries the accented spelling ("Shōgun") — a
+        // literal match misses it and the clue leaks the answer. Decompose the
+        // hint to NFD (accents → base + combining mark) and build each pattern
+        // to tolerate combining marks between letters (web/iOS parity).
+        hint = java.text.Normalizer.normalize(hint, java.text.Normalizer.Form.NFD)
         val parts = displayName.split(Regex("\\s+")).filter { it.length > 2 }
         for (pattern in listOf(displayName) + parts) {
-            hint = Regex(Regex.escape(pattern), RegexOption.IGNORE_CASE).replace(hint, "______")
+            hint = Regex(diacriticTolerantPattern(pattern), RegexOption.IGNORE_CASE).replace(hint, "______")
         }
+        hint = java.text.Normalizer.normalize(hint, java.text.Normalizer.Form.NFC)
         hint = Regex("(______\\s*)+").replace(hint, "______")
         hint = Regex("______(\\w)").replace(hint, "______ $1")
         return hint
+    }
+
+    /** Build a regex matching [name] ignoring diacritics: strip accents from
+     *  the name, then allow a run of combining marks between letters (so
+     *  "Shogun" matches the NFD form of "Shōgun"). Whitespace matches any run. */
+    private fun diacriticTolerantPattern(name: String): String {
+        val combining = "[\\u0300-\\u036f]*"
+        val base = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD)
+            .replace(Regex("[\\u0300-\\u036f]"), "")
+        return base.map { ch ->
+            if (ch.isWhitespace()) "\\s+" else Regex.escape(ch.toString()) + combining
+        }.joinToString("")
     }
 
     /** Replace every "." with "###" inside each match of [pattern]. */

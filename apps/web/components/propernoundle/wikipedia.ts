@@ -102,11 +102,24 @@ function sanitizeHint(extract: string, displayName: string, redact = true): stri
   const nameParts = displayName.split(/\s+/).filter(p => p.length > 2);
   const patterns = [displayName, ...nameParts];
 
+  // Match diacritic-insensitively: the answer/display name is plain ASCII
+  // ("Shogun") but the Wikipedia extract often carries the accented spelling
+  // ("Shōgun") — a literal match misses it and the clue leaks the answer.
+  // Decompose the hint to NFD (accents → base char + combining mark) and build
+  // each pattern to tolerate combining marks between letters, so "Shogun"
+  // matches "Sho\u0304gun".
+  const COMBINING = '[\u0300-\u036f]*';
+  hint = hint.normalize('NFD');
   for (const pattern of patterns) {
-    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escaped, 'gi');
-    hint = hint.replace(regex, '______');
+    const re = pattern
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')       // strip any accents from the pattern itself
+      .split('')
+      .map(ch => (/\s/.test(ch) ? '\\s+' : ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + COMBINING))
+      .join('');
+    hint = hint.replace(new RegExp(re, 'gi'), '______');
   }
+  hint = hint.normalize('NFC');
 
   // Collapse consecutive redactions
   hint = hint.replace(/(______\s*)+/g, '______');

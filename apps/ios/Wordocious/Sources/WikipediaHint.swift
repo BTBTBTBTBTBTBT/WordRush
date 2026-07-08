@@ -84,12 +84,18 @@ enum WikipediaHint {
         hint = hint.replacingOccurrences(of: "###", with: ".")
         // Post-game (redact=false) keeps the answer in the text.
         guard redact else { return hint }
-        // Redact the full name, then each word > 2 chars.
+        // Redact the full name, then each word > 2 chars. Match diacritic-
+        // insensitively: the display name is plain ASCII ("Shogun") but the
+        // Wikipedia extract often carries the accented spelling ("Shōgun") — a
+        // literal match misses it and the clue leaks the answer. Decompose the
+        // hint to NFD (accents → base + combining mark) and build each pattern
+        // to tolerate combining marks between letters (web wikipedia.ts parity).
+        hint = hint.decomposedStringWithCanonicalMapping   // NFD
         let parts = displayName.split { $0.isWhitespace }.map(String.init).filter { $0.count > 2 }
         for pattern in ([displayName] + parts) {
-            let escaped = NSRegularExpression.escapedPattern(for: pattern)
-            hint = regexReplace(hint, escaped, "______", options: [.caseInsensitive])
+            hint = regexReplace(hint, diacriticTolerantPattern(pattern), "______", options: [.caseInsensitive])
         }
+        hint = hint.precomposedStringWithCanonicalMapping  // NFC
         // Collapse consecutive redactions, then re-space a redaction glued to a word.
         hint = regexReplace(hint, "(______\\s*)+", "______")
         hint = regexReplace(hint, "______(\\w)", "______ $1")
@@ -117,6 +123,21 @@ enum WikipediaHint {
         let ns = s as NSString
         return re.matches(in: s, range: NSRange(location: 0, length: ns.length))
             .map { ns.substring(with: $0.range) }
+    }
+
+    /// Build a regex that matches `name` ignoring diacritics: strip accents
+    /// from the name, then between each letter allow a run of combining marks
+    /// (so "Shogun" matches the NFD form of "Shōgun" = "Sho\u{0304}gun").
+    /// Whitespace in a multi-word name matches any whitespace run.
+    private static func diacriticTolerantPattern(_ name: String) -> String {
+        let combining = "[\\u0300-\\u036f]*"
+        let base = name.folding(options: .diacriticInsensitive, locale: nil)
+        var out = ""
+        for ch in base {
+            if ch.isWhitespace { out += "\\s+" }
+            else { out += NSRegularExpression.escapedPattern(for: String(ch)) + combining }
+        }
+        return out
     }
 
     private static func regexReplace(_ s: String, _ pattern: String, _ template: String,
