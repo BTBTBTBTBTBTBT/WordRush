@@ -3,3 +3,31 @@
 # blank lines and # comments ignored. Grow this from cut.txt review.
 MALIK
 HAKIM
+# Round 2 (2026-07-08, user-reviewed) — HAFIZ-class survivors: names / brands /
+# proper nouns that scored above the zipf floor and weren't on the NLTK
+# first-names list. Surfaced by a no-WordNet + names scan of the curated bank.
+HAMZA
+RISHI
+HAFIZ
+TULSI
+BODHI
+DHONI
+DIDDY
+SMITH
+PURDY
+POSEY
+SNELL
+HURST
+MASSA
+CHING
+MERLE
+BRANT
+THANE
+SULLY
+KODAK
+BILBO
+DOBBY
+BARDO
+MUNGO
+ROQUE
+GAULT
