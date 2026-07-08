@@ -124,8 +124,14 @@ fun MiniBoardView(
                     isCurrentRow -> currentGuess
                     else -> ""
                 }
-                val eval = if (isPastGuess) evaluateGuess(board.solution, board.guesses[rowIdx]) else null
-                val isLastSubmitted = isPastGuess && rowIdx == lastSubmittedRow
+                // Hint rows (Six/Seven) carry a stored evaluation keyed by row
+                // index — use it (letter + state travel together) so a hint tile
+                // never renders its letter in the wrong slot or the wrong color.
+                // Re-evaluating the space-padded hint string dropped the hint
+                // styling and could misplace the letter.
+                val hintEval = if (isPastGuess) board.hintEvaluations?.get(rowIdx.toString()) else null
+                val eval = hintEval ?: if (isPastGuess) evaluateGuess(board.solution, board.guesses[rowIdx]) else null
+                val isLastSubmitted = isPastGuess && rowIdx == lastSubmittedRow && hintEval == null
 
                 Row(
                     modifier = Modifier.weight(1f).fillMaxWidth()
@@ -138,6 +144,10 @@ fun MiniBoardView(
                         val masked = locked && isPastGuess
                         val letter = when {
                             masked -> "•"
+                            // Hint row: letter from the evaluation tile so it lands
+                            // in the revealed letter's real slot regardless of how
+                            // the guess string was stored.
+                            hintEval != null -> hintEval.tiles.getOrNull(col)?.letter?.takeIf { it.isNotBlank() } ?: ""
                             else -> guess.getOrNull(col)?.toString() ?: ""
                         }
                         val state = if (masked) TileState.EMPTY else (eval?.tiles?.getOrNull(col)?.state ?: TileState.EMPTY)

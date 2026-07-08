@@ -315,7 +315,21 @@ enum CompletedBoardReconstruct {
             for g in guesses {
                 guard state.status == .playing, safety < 200 else { break }
                 safety += 1
-                if mode == .sequence {
+                // Hint rows (Six/Seven) are recorded as space-padded strings
+                // (the revealed letter in its real slot, blanks elsewhere).
+                // .submitGuess would reject them (not a valid word) and drop
+                // the row — rebuild the stored hint evaluation instead, so the
+                // completed-board dropdown shows hint tiles cross-device, in
+                // their real positions (web replayRecordedGuesses parity).
+                if g.contains(where: { !$0.isLetter }) {
+                    let tiles = g.map { ch -> TileResult in
+                        ch.isLetter
+                            ? TileResult(letter: String(ch).uppercased(), state: .correct)
+                            : TileResult(letter: "", state: .hintUsed)
+                    }
+                    state = gameReducer(state: state, action: .submitHint(
+                        hintWord: g, hintEvaluation: GuessResult(tiles: tiles, isCorrect: false), boardIndex: nil))
+                } else if mode == .sequence {
                     // Web shape: flat per-board concatenation — each entry goes
                     // to the first still-PLAYING board (use-game-snapshot parity).
                     guard let idx = state.boards.firstIndex(where: { $0.status == .playing }) else { break }

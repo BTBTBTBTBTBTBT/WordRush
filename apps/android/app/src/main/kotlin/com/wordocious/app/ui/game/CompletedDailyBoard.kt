@@ -105,7 +105,17 @@ fun CompletedDailyBoard(modeId: String) {
         val applyAll = replayed.boards.size > 1 && mode != GameMode.SEQUENCE
         for (g in row.player1Guesses.take(200)) {
             if (replayed.status != GameStatus.PLAYING) break
-            replayed = if (mode == GameMode.SEQUENCE) {
+            replayed = if (g.any { !it.isLetter() }) {
+                // Hint row (Six/Seven): a space-padded string SubmitGuess would
+                // reject as an invalid word (dropping the row). Rebuild the
+                // stored hint evaluation so the reconstructed board shows hint
+                // tiles in their real positions cross-device (web parity).
+                val tiles = g.map { ch ->
+                    if (ch.isLetter()) com.wordocious.core.TileResult(ch.uppercase(), com.wordocious.core.TileState.CORRECT)
+                    else com.wordocious.core.TileResult("", com.wordocious.core.TileState.HINT_USED)
+                }
+                gameReducer(replayed, GameAction.SubmitHint(g, com.wordocious.core.GuessResult(tiles, false)))
+            } else if (mode == GameMode.SEQUENCE) {
                 val idx = replayed.boards.indexOfFirst { it.status == GameStatus.PLAYING }
                 if (idx < 0) break
                 gameReducer(replayed, GameAction.SubmitGuess(g, boardIndex = idx, applyToAll = false))
