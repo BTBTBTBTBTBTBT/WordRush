@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { GameMode, gameReducer, initializeGame, isWordValid } from '@wordle-duel/core';
+import { GameMode, gameReducer, getDailySeedDate, initializeGame, isWordValid } from '@wordle-duel/core';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '../game/multi-board';
 import { CompletedBoardsRecap, toRecapBoards } from '../game/completed-mini-board';
 import Link from 'next/link';
@@ -227,6 +227,7 @@ export function OctordleGame({ initialSeed, isDaily }: OctordleGameProps = {}) {
             timeSeconds={elapsedTime}
             boardsSolved={state.boards.filter(b => b.status === 'WON').length}
             totalBoards={8}
+            day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
           />
         )}
         {state.status !== 'PLAYING' && isDaily && <NextDailyCta currentMode="OCTORDLE" />}

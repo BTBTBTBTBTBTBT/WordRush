@@ -22,6 +22,9 @@ interface GauntletResultsProps {
    *  showing a cross-device revisit (the run wasn't played on this device, so
    *  re-recording would inflate the local games-played count). */
   recordOnMount?: boolean;
+  /** The daily puzzle's day (YYYY-MM-DD) — picks the scoring formula on the
+   *  breakdown card (pre-cutover days render with the frozen V1 formula). */
+  day?: string;
 }
 
 function formatTime(ms: number): string {
@@ -41,6 +44,7 @@ export function GauntletResults({
   showPlayAgain = true,
   isDaily,
   recordOnMount = true,
+  day,
 }: GauntletResultsProps) {
   const totalGuesses = stageResults.reduce((sum, r) => sum + r.guesses, 0);
   const stagesCompleted = stageResults.filter(r => r.status === GameStatus.WON).length;
@@ -188,6 +192,7 @@ export function GauntletResults({
             boardsSolved={cumulativeBoardsSolved}
             totalBoards={cumulativeTotalBoards}
             stagesCompleted={stagesCompleted}
+            day={day}
           />
           {isDaily && <NextDailyCta currentMode="GAUNTLET" />}
         </div>

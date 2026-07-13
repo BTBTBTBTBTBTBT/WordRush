@@ -93,7 +93,8 @@ struct CompletedDailyCard: View {
                                 // Score breakdown underneath, matching every other completed screen.
                                 ScoreBreakdownView(gameMode: "GAUNTLET", completed: won, guessCount: totalGuesses,
                                                    timeSeconds: totalMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal,
-                                                   stagesCompleted: g.stageResults.filter { $0.status == .won }.count)
+                                                   stagesCompleted: g.stageResults.filter { $0.status == .won }.count,
+                                                   day: LeaderboardService.todayLocal())
                             }
                             .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         } else if mode != .gauntlet {
@@ -139,7 +140,8 @@ struct CompletedDailyCard: View {
                                                    guessCount: d.guessCount, timeSeconds: d.timeSeconds,
                                                    boardsSolved: won ? boardCount : 0, totalBoards: boardCount,
                                                    hintsUsed: d.hintsUsed,
-                                                   bestCorrectLetters: bestCorrect)
+                                                   bestCorrectLetters: bestCorrect,
+                                                   day: LeaderboardService.todayLocal())
                             }
                             .padding(.horizontal, 14).padding(.bottom, 14).padding(.top, 4)
                         }

@@ -835,6 +835,7 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
                 totalBoards={1}
                 hintsUsed={hintsUsed}
                 bestCorrectLetters={guesses.reduce((best, g) => Math.max(best, g.tiles.filter(t => t === 'correct').length), 0)}
+                day={mode === 'daily' ? getTodayLocal() : undefined}
               />
               {mode === 'daily' && <NextDailyCta currentMode="PROPERNOUNDLE" />}
             </div>

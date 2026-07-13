@@ -153,11 +153,13 @@ enum DailyResultsService {
         guard DailyScoring.config[gameMode.rawValue] != nil else { return nil }
         // The puzzle's calendar day comes from the seed, NOT the finish time.
         let day = seed.flatMap(getDailySeedDate) ?? LeaderboardService.todayLocal()
+        // The puzzle's day also picks the scoring formula (pre-cutover days keep
+        // the frozen V1 formula so a day's leaderboard never mixes formulas).
         let composite = DailyScoring.compositeScore(
             gameMode: gameMode.rawValue, completed: completed, guessCount: guessCount,
             timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
             hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
-            bestCorrectLetters: bestCorrectLetters
+            bestCorrectLetters: bestCorrectLetters, dateKey: day
         )
         // Optimistic local update FIRST (before any network) so the home grid's
         // completed state flips the instant the game ends (web parity: the

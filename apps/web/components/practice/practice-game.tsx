@@ -424,6 +424,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
                 hintsUsed={hintsUsed}
                 bestCorrectLetters={evaluations.reduce((best, e, i) =>
                   currentBoard.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)}
+                day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
               />
               <PostGameSummary solution={currentBoard.solution} />
               {isDaily && <NextDailyCta currentMode={mode} />}

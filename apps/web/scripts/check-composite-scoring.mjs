@@ -20,7 +20,7 @@ let failures = 0;
 for (const { name, input: i, expectedTotal } of fixtures) {
   const got = calculateCompositeScore(
     i.gameMode, i.completed, i.guessCount, i.timeSeconds, i.boardsSolved, i.totalBoards, i.hintsUsed,
-    i.stagesCompleted ?? undefined, i.bestCorrectLetters ?? undefined,
+    i.stagesCompleted ?? undefined, i.bestCorrectLetters ?? undefined, i.dateKey ?? undefined,
   );
   if (got !== expectedTotal) {
     failures++;

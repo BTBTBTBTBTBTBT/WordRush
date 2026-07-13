@@ -1,6 +1,6 @@
 [
   {
-    "name": "classic win, 27s",
+    "name": "classic win, 27s [v1]",
     "input": {
       "gameMode": "DUEL",
       "completed": true,
@@ -10,12 +10,13 @@
       "totalBoards": 1,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 1473
   },
   {
-    "name": "quadword win",
+    "name": "quadword win [v1]",
     "input": {
       "gameMode": "QUORDLE",
       "completed": true,
@@ -25,12 +26,13 @@
       "totalBoards": 4,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 1680
   },
   {
-    "name": "octoword win",
+    "name": "octoword win [v1]",
     "input": {
       "gameMode": "OCTORDLE",
       "completed": true,
@@ -40,12 +42,13 @@
       "totalBoards": 8,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 1800
   },
   {
-    "name": "deliverance win",
+    "name": "deliverance win [v1]",
     "input": {
       "gameMode": "RESCUE",
       "completed": true,
@@ -55,12 +58,13 @@
       "totalBoards": 4,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 1580
   },
   {
-    "name": "six win, no hints",
+    "name": "six win, no hints [v1]",
     "input": {
       "gameMode": "DUEL_6",
       "completed": true,
@@ -70,12 +74,13 @@
       "totalBoards": 1,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 1770
   },
   {
-    "name": "six win, one hint penalty",
+    "name": "six win, one hint penalty [v1]",
     "input": {
       "gameMode": "DUEL_6",
       "completed": true,
@@ -85,12 +90,13 @@
       "totalBoards": 1,
       "hintsUsed": 1,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 1620
   },
   {
-    "name": "gauntlet win (sweep run)",
+    "name": "gauntlet win (sweep run) [v1]",
     "input": {
       "gameMode": "GAUNTLET",
       "completed": true,
@@ -100,12 +106,13 @@
       "totalBoards": 21,
       "hintsUsed": 0,
       "stagesCompleted": 5,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 2400
   },
   {
-    "name": "quadword loss 2/4",
+    "name": "quadword loss 2/4 [v1]",
     "input": {
       "gameMode": "QUORDLE",
       "completed": false,
@@ -115,12 +122,13 @@
       "totalBoards": 4,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 100
   },
   {
-    "name": "quadword loss 3/4",
+    "name": "quadword loss 3/4 [v1]",
     "input": {
       "gameMode": "QUORDLE",
       "completed": false,
@@ -130,12 +138,13 @@
       "totalBoards": 4,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 150
   },
   {
-    "name": "octoword loss 4/8",
+    "name": "octoword loss 4/8 [v1]",
     "input": {
       "gameMode": "OCTORDLE",
       "completed": false,
@@ -145,12 +154,13 @@
       "totalBoards": 8,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 100
   },
   {
-    "name": "octoword loss 6/8",
+    "name": "octoword loss 6/8 [v1]",
     "input": {
       "gameMode": "OCTORDLE",
       "completed": false,
@@ -160,12 +170,13 @@
       "totalBoards": 8,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 150
   },
   {
-    "name": "succession loss 1/4",
+    "name": "succession loss 1/4 [v1]",
     "input": {
       "gameMode": "SEQUENCE",
       "completed": false,
@@ -175,12 +186,13 @@
       "totalBoards": 4,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 50
   },
   {
-    "name": "classic loss, whiff",
+    "name": "classic loss, whiff [v1]",
     "input": {
       "gameMode": "DUEL",
       "completed": false,
@@ -190,12 +202,13 @@
       "totalBoards": 1,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": 0
+      "bestCorrectLetters": 0,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 0
   },
   {
-    "name": "classic loss, 2 greens",
+    "name": "classic loss, 2 greens [v1]",
     "input": {
       "gameMode": "DUEL",
       "completed": false,
@@ -205,12 +218,13 @@
       "totalBoards": 1,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": 2
+      "bestCorrectLetters": 2,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 24
   },
   {
-    "name": "classic loss, one away (4)",
+    "name": "classic loss, one away (4) [v1]",
     "input": {
       "gameMode": "DUEL",
       "completed": false,
@@ -220,12 +234,13 @@
       "totalBoards": 1,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": 4
+      "bestCorrectLetters": 4,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 48
   },
   {
-    "name": "six loss, 3 greens",
+    "name": "six loss, 3 greens [v1]",
     "input": {
       "gameMode": "DUEL_6",
       "completed": false,
@@ -235,12 +250,13 @@
       "totalBoards": 1,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": 3
+      "bestCorrectLetters": 3,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 36
   },
   {
-    "name": "proper loss, 2 greens",
+    "name": "proper loss, 2 greens [v1]",
     "input": {
       "gameMode": "PROPERNOUNDLE",
       "completed": false,
@@ -250,12 +266,13 @@
       "totalBoards": 1,
       "hintsUsed": 0,
       "stagesCompleted": null,
-      "bestCorrectLetters": 2
+      "bestCorrectLetters": 2,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 24
   },
   {
-    "name": "gauntlet loss, fail stage 1",
+    "name": "gauntlet loss, fail stage 1 [v1]",
     "input": {
       "gameMode": "GAUNTLET",
       "completed": false,
@@ -265,12 +282,13 @@
       "totalBoards": 21,
       "hintsUsed": 0,
       "stagesCompleted": 0,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 0
   },
   {
-    "name": "gauntlet loss, reach stage 2",
+    "name": "gauntlet loss, reach stage 2 [v1]",
     "input": {
       "gameMode": "GAUNTLET",
       "completed": false,
@@ -280,12 +298,13 @@
       "totalBoards": 21,
       "hintsUsed": 0,
       "stagesCompleted": 2,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 55
   },
   {
-    "name": "gauntlet loss, stage 2 w/ 3 boards",
+    "name": "gauntlet loss, stage 2 w/ 3 boards [v1]",
     "input": {
       "gameMode": "GAUNTLET",
       "completed": false,
@@ -295,12 +314,13 @@
       "totalBoards": 21,
       "hintsUsed": 0,
       "stagesCompleted": 2,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 73
   },
   {
-    "name": "gauntlet loss, reach stage 4",
+    "name": "gauntlet loss, reach stage 4 [v1]",
     "input": {
       "gameMode": "GAUNTLET",
       "completed": false,
@@ -310,12 +330,13 @@
       "totalBoards": 21,
       "hintsUsed": 0,
       "stagesCompleted": 4,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
     },
     "expectedTotal": 150
   },
   {
-    "name": "gauntlet loss, stage 4 w/ 6 boards",
+    "name": "gauntlet loss, stage 4 w/ 6 boards [v1]",
     "input": {
       "gameMode": "GAUNTLET",
       "completed": false,
@@ -325,7 +346,360 @@
       "totalBoards": 21,
       "hintsUsed": 0,
       "stagesCompleted": 4,
-      "bestCorrectLetters": null
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-13"
+    },
+    "expectedTotal": 186
+  },
+  {
+    "name": "classic win, 27s [v2]",
+    "input": {
+      "gameMode": "DUEL",
+      "completed": true,
+      "guessCount": 3,
+      "timeSeconds": 27,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2318.4
+  },
+  {
+    "name": "quadword win [v2]",
+    "input": {
+      "gameMode": "QUORDLE",
+      "completed": true,
+      "guessCount": 6,
+      "timeSeconds": 120,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1746
+  },
+  {
+    "name": "octoword win [v2]",
+    "input": {
+      "gameMode": "OCTORDLE",
+      "completed": true,
+      "guessCount": 9,
+      "timeSeconds": 300,
+      "boardsSolved": 8,
+      "totalBoards": 8,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1608
+  },
+  {
+    "name": "deliverance win [v2]",
+    "input": {
+      "gameMode": "RESCUE",
+      "completed": true,
+      "guessCount": 5,
+      "timeSeconds": 100,
+      "boardsSolved": 4,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 1592
+  },
+  {
+    "name": "six win, no hints [v2]",
+    "input": {
+      "gameMode": "DUEL_6",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 60,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2190
+  },
+  {
+    "name": "six win, one hint penalty [v2]",
+    "input": {
+      "gameMode": "DUEL_6",
+      "completed": true,
+      "guessCount": 4,
+      "timeSeconds": 60,
+      "boardsSolved": 1,
+      "totalBoards": 1,
+      "hintsUsed": 1,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2115
+  },
+  {
+    "name": "gauntlet win (sweep run) [v2]",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": true,
+      "guessCount": 30,
+      "timeSeconds": 600,
+      "boardsSolved": 21,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 5,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 2072
+  },
+  {
+    "name": "quadword loss 2/4 [v2]",
+    "input": {
+      "gameMode": "QUORDLE",
+      "completed": false,
+      "guessCount": 9,
+      "timeSeconds": 300,
+      "boardsSolved": 2,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 100
+  },
+  {
+    "name": "quadword loss 3/4 [v2]",
+    "input": {
+      "gameMode": "QUORDLE",
+      "completed": false,
+      "guessCount": 9,
+      "timeSeconds": 300,
+      "boardsSolved": 3,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 150
+  },
+  {
+    "name": "octoword loss 4/8 [v2]",
+    "input": {
+      "gameMode": "OCTORDLE",
+      "completed": false,
+      "guessCount": 13,
+      "timeSeconds": 600,
+      "boardsSolved": 4,
+      "totalBoards": 8,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 100
+  },
+  {
+    "name": "octoword loss 6/8 [v2]",
+    "input": {
+      "gameMode": "OCTORDLE",
+      "completed": false,
+      "guessCount": 13,
+      "timeSeconds": 600,
+      "boardsSolved": 6,
+      "totalBoards": 8,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 150
+  },
+  {
+    "name": "succession loss 1/4 [v2]",
+    "input": {
+      "gameMode": "SEQUENCE",
+      "completed": false,
+      "guessCount": 10,
+      "timeSeconds": 300,
+      "boardsSolved": 1,
+      "totalBoards": 4,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 50
+  },
+  {
+    "name": "classic loss, whiff [v2]",
+    "input": {
+      "gameMode": "DUEL",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 120,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 0,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 0
+  },
+  {
+    "name": "classic loss, 2 greens [v2]",
+    "input": {
+      "gameMode": "DUEL",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 120,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 2,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 24
+  },
+  {
+    "name": "classic loss, one away (4) [v2]",
+    "input": {
+      "gameMode": "DUEL",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 200,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 4,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 48
+  },
+  {
+    "name": "six loss, 3 greens [v2]",
+    "input": {
+      "gameMode": "DUEL_6",
+      "completed": false,
+      "guessCount": 7,
+      "timeSeconds": 200,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 3,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 36
+  },
+  {
+    "name": "proper loss, 2 greens [v2]",
+    "input": {
+      "gameMode": "PROPERNOUNDLE",
+      "completed": false,
+      "guessCount": 6,
+      "timeSeconds": 200,
+      "boardsSolved": 0,
+      "totalBoards": 1,
+      "hintsUsed": 0,
+      "stagesCompleted": null,
+      "bestCorrectLetters": 2,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 24
+  },
+  {
+    "name": "gauntlet loss, fail stage 1 [v2]",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 4,
+      "timeSeconds": 60,
+      "boardsSolved": 0,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 0,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 0
+  },
+  {
+    "name": "gauntlet loss, reach stage 2 [v2]",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 14,
+      "timeSeconds": 300,
+      "boardsSolved": 5,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 2,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 55
+  },
+  {
+    "name": "gauntlet loss, stage 2 w/ 3 boards [v2]",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 18,
+      "timeSeconds": 400,
+      "boardsSolved": 8,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 2,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 73
+  },
+  {
+    "name": "gauntlet loss, reach stage 4 [v2]",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 30,
+      "timeSeconds": 700,
+      "boardsSolved": 13,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 4,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
+    },
+    "expectedTotal": 150
+  },
+  {
+    "name": "gauntlet loss, stage 4 w/ 6 boards [v2]",
+    "input": {
+      "gameMode": "GAUNTLET",
+      "completed": false,
+      "guessCount": 40,
+      "timeSeconds": 900,
+      "boardsSolved": 19,
+      "totalBoards": 21,
+      "hintsUsed": 0,
+      "stagesCompleted": 4,
+      "bestCorrectLetters": null,
+      "dateKey": "2026-07-14"
     },
     "expectedTotal": 186
   }

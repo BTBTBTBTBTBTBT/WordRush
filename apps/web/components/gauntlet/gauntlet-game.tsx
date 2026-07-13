@@ -10,6 +10,7 @@ import {
   GAUNTLET_STAGES,
   isValidWord,
   evaluateGuess,
+  getDailySeedDate,
 } from '@wordle-duel/core';
 import { Board } from '@/components/game/board';
 import { MultiBoard, computeActiveLetterStates, computePerBoardLetterStates } from '@/components/game/multi-board';
@@ -392,6 +393,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           showPlayAgain={false}
           isDaily={isDaily}
           recordOnMount={false}
+          day={isDaily ? getDailySeedDate(seed) ?? undefined : undefined}
         />
         <BottomNav />
       </>
@@ -411,6 +413,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
           onHome={handleHome}
           showPlayAgain={!isDaily && isPro}
           isDaily={isDaily}
+          day={isDaily ? getDailySeedDate(seed) ?? undefined : undefined}
         />
         {/* Keep bottom navigation available on the results screen so
             players can jump to Home / Leaderboard / Profile / Records

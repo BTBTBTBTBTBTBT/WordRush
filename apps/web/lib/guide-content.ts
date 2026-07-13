@@ -41,8 +41,8 @@ export const MODE_GUIDES: ModeGuide[] = [
       'One handy detail: repeated letters are scored one at a time. If the answer has only one E but your guess has two, only one of your E tiles will color — the extra E shows gray. That gray duplicate is itself a clue: it tells you the letter appears just once.',
     ],
     scoring: [
-      'A win is worth a 1,000-point base. You then earn one point for every second left under the five-minute cap — solve in 1:30 and the time bonus is 210. Completing the board adds a flat 200. There is no separate guess bonus in Classic; fewer guesses pay off indirectly because they make you faster.',
-      'A typical strong Classic score lands between 1,350 and 1,450: solve in three or four guesses inside two minutes and you are competitive on the daily leaderboard, where everyone worldwide plays the same word.',
+      'A win is worth a 1,000-point base, and guesses are what separate players: every guess you do not need is worth 300 points, so a three-guess solve banks 900 in guess bonus alone. Speed is the tiebreaker — up to 240 points scaled by how far under the five-minute cap you finish. Because the speed bonus maxes out below the value of a single guess, a faster solve can never outrank a more efficient one. Completing the board adds a flat 200.',
+      'A typical strong Classic score lands between 2,100 and 2,400: solve in three or four guesses inside two minutes and you are competitive on the daily leaderboard, where everyone worldwide plays the same word.',
     ],
     tips: [
       {
@@ -74,20 +74,20 @@ export const MODE_GUIDES: ModeGuide[] = [
     accent: '#06b6d4',
     tagline: '6-letter words, 7 guesses, and a hint system with real costs',
     metaDescription:
-      'Wordocious Six mode guide: solving 6-letter words in 7 guesses, when the 150-point hints are worth it, and the affix strategy longer words reward.',
+      'Wordocious Six mode guide: solving 6-letter words in 7 guesses, when hints are worth their cost, and the affix strategy longer words reward.',
     facts: [
       { label: 'Boards', value: '1' },
       { label: 'Guesses', value: '7' },
       { label: 'Word length', value: '6 letters' },
-      { label: 'Hints', value: 'Vowel + consonant, −150 pts each' },
+      { label: 'Hints', value: 'Vowel + consonant, −75 pts each' },
     ],
     rules: [
       'Guess a hidden 6-letter word in seven tries. Type any real 6-letter word and press enter, and each tile changes color to guide you: PURPLE means the letter is correct and in the right spot, AMBER means it is in the word but a different spot, and GRAY means it is not in the word at all. Read those colors to sharpen your next guess, and keep going until the whole row turns purple.',
-      'Six also gives you two optional hints. You can reveal one vowel and one consonant from the answer — each shows up as an extra row with that letter already in its correct spot. Hints do not use up any of your seven guesses, but each one subtracts 150 points from your score, so only use them when you are truly stuck.',
+      'Six also gives you two optional hints. You can reveal one vowel and one consonant from the answer — each shows up as an extra row with that letter already in its correct spot. Hints add an extra row to your board and each one subtracts 75 points from your score, so only use them when you are truly stuck.',
     ],
     scoring: [
-      'Win base 1,000, plus one point per second under the six-minute cap, plus 200 for completion. Six also pays a guess bonus: 90 points for every guess you did not need. Solve in four of your seven and you bank 270 on top of everything else.',
-      'Hints subtract 150 each at the end. The math matters: a hint that saves you two full guesses usually nets positive (180 guess bonus plus faster time vs. 150 cost), while a hint taken out of mild frustration on row two almost never pays for itself.',
+      'Win base 1,000, plus 270 points for every guess you did not need — solve in four of your seven and you bank 810 in guess bonus. Speed adds up to 216 more, scaled by how far under the six-minute cap you finish; it is always worth less than one guess, so efficiency outranks pace. Completion adds a flat 200.',
+      'Hints subtract 75 each at the end — but the real cost is the board row a hint occupies, which is a full 270-point guess step. A hint that saves you two rows of flailing still nets positive; one taken out of mild frustration on row two almost never pays for itself.',
     ],
     tips: [
       {
@@ -104,7 +104,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Use row seven as a free shot',
-        body: 'With seven guesses and a 90-point-per-guess bonus, rows one and two can be pure information plays. Burning both on coverage words that share no letters still leaves you five full rows to actually close out the answer.',
+        body: 'With seven guesses and a 270-point-per-guess bonus, information plays are expensive — but a coverage row that closes the answer two rows sooner still pays for itself. Burning rows one and two on words that share no letters leaves five full rows to actually close out the answer.',
       },
     ],
     related: ['seven', 'classic', 'propernoundle'],
@@ -115,19 +115,19 @@ export const MODE_GUIDES: ModeGuide[] = [
     accent: '#84cc16',
     tagline: '7-letter words and 8 guesses — the long-word endgame',
     metaDescription:
-      'Wordocious Seven mode guide: strategy for 7-letter words, the 80-point guess bonus, hint economics, and why structure beats letter frequency at this length.',
+      'Wordocious Seven mode guide: strategy for 7-letter words, the 240-point guess bonus, hint economics, and why structure beats letter frequency at this length.',
     facts: [
       { label: 'Boards', value: '1' },
       { label: 'Guesses', value: '8' },
       { label: 'Word length', value: '7 letters' },
-      { label: 'Hints', value: 'Vowel + consonant, −150 pts each' },
+      { label: 'Hints', value: 'Vowel + consonant, −75 pts each' },
     ],
     rules: [
       'Guess a hidden 7-letter word in eight tries — the longest solo word in Wordocious. Type a real word and press enter; each tile changes color to help you: PURPLE means the letter is correct and in the right spot, AMBER means it is in the word but a different spot, and GRAY means it is not in the word. Keep guessing until the row turns all purple.',
-      'You also get two optional hints — reveal one vowel and one consonant from the answer. Each appears as an extra row with the letter already in its correct spot, does not use up any of your eight guesses, and subtracts 150 points from your score, so save them for when you are truly stuck.',
+      'You also get two optional hints — reveal one vowel and one consonant from the answer. Each appears as an extra row with the letter already in its correct spot, adds an extra row to your board, and subtracts 75 points from your score, so save them for when you are truly stuck.',
     ],
     scoring: [
-      'Win base 1,000, one point per second under the seven-minute cap, 200 completion, and an 80-point bonus per unused guess. An efficient five-guess solve carries a 240-point guess bonus.',
+      'Win base 1,000, a 240-point bonus per unused guess, and up to 192 speed points scaled by how far under the seven-minute cap you finish — always worth less than one guess, so efficiency outranks pace. Completion adds 200. An efficient five-guess solve carries a 720-point guess bonus.',
       'Because the time cap is generous (7:00), Seven rewards methodical play more than raw speed — a careful 3:00 solve in five guesses beats a frantic 1:30 solve in eight.',
     ],
     tips: [
@@ -168,7 +168,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       'Because one guess feeds four boards, your on-screen keyboard shows what you have learned for each board separately — each key is split into four small parts, one per board, colored by what that letter did there. It looks busy at first, but it just lets you see all four boards\' clues at a glance.',
     ],
     scoring: [
-      'Win base 1,000 plus one point per second under the ten-minute cap. The completion bonus scales: each solved board contributes 50 points (4/4 = 200), and you keep that partial credit even on a loss — solving three of four scores far better than solving one.',
+      'Win base 1,000 plus 150 points for every unused row of your nine — row efficiency dominates the leaderboard. Speed adds up to 120 more under the ten-minute cap, always worth less than one row. The completion bonus scales: each solved board contributes 50 points (4/4 = 200), and you keep that partial credit even on a loss — solving three of four scores far better than solving one.',
       'Nine guesses for four words means your average solve must take 2.25 rows. The information you extract per row, not your vocabulary, is what decides QuadWord games.',
     ],
     tips: [
@@ -209,7 +209,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       'Since one guess feeds eight boards, your keyboard shows what you have learned for each board separately (each key is split into eight small parts). With only thirteen guesses for eight words, your first few guesses matter a lot — use them to test many common letters before you start locking in answers.',
     ],
     scoring: [
-      'Win base 1,000, one point per second under the fifteen-minute cap, and 25 points per solved board (8/8 = 200, partial credit on losses). Guess count still matters for the leaderboard and your records: it is measured as total rows used, not per-board.',
+      'Win base 1,000, 90 points per unused row of your thirteen, up to 72 speed points under the fifteen-minute cap (a tiebreaker — never worth a full row), and 25 points per solved board (8/8 = 200, partial credit on losses). Guess count is measured as total rows used, not per-board — every row you save is worth more than any amount of speed.',
       'Because the time cap is long, OctoWord actually pays deliberation. A patient 9-minute clear outscores a sloppy 6-minute loss with six boards solved by hundreds of points.',
     ],
     tips: [
@@ -250,7 +250,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       'Here is the twist that makes Succession special: when you finish one word and move to the next, that next board already has all of your earlier guesses filled in for you. So the guesses you "spent" on board one keep working on boards two, three, and four. The keyboard colors only follow the board you are currently on, even though your guess history carries forward the whole way.',
     ],
     scoring: [
-      'Win base 1,000, one point per second under the eight-minute cap, 50 points per solved board. The recorded guess count is the total rows the run consumed — board one solved in row six and board four solved in row ten records as a ten-guess game.',
+      'Win base 1,000, 180 points per unused row of your ten, up to 144 speed points under the eight-minute cap (a tiebreaker — never worth a full row), and 50 points per solved board. The recorded guess count is the total rows the run consumed — board one solved in row six and board four solved in row ten records as a ten-guess game.',
       'Losses keep partial completion credit, so pushing deep into the chain always beats stalling on an early board.',
     ],
     tips: [
@@ -291,7 +291,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       'Everyone gets the exact same starting position each day, so the daily leaderboard comes down to who reads the clues best. Your keyboard is already colored from those three opening guesses the moment the puzzle loads, so start by studying it before you type.',
     ],
     scoring: [
-      'Win base 1,000, one point per second under the eight-minute cap, 50 points per solved board. The recorded guess count covers only YOUR guesses — the three prefilled rows are free.',
+      'Win base 1,000, 240 points per unused guess of your six, up to 192 speed points under the eight-minute cap (a tiebreaker — never worth a full guess), and 50 points per solved board. The recorded guess count covers only YOUR guesses — the three prefilled rows are free.',
       'Six own-guesses for four boards is the tightest budget of any multi-board mode. The compensation: you start with a mountain of information already on the table.',
     ],
     tips: [
@@ -332,7 +332,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       'Between stages you get a quick recap of what you cleared and what is coming next. Your guesses, time, and score add up across all five stages — the Gauntlet is scored as one long game, not five short ones — so pace yourself.',
     ],
     scoring: [
-      'Win base 1,000, one point per second under the thirty-minute cap, and completion credit proportional to boards cleared across the entire run: each of the 21 boards is worth about 9.5 points of the 200-point completion pool, and partial runs keep partial credit.',
+      'Win base 1,000, 60 points per unused row of your forty-four across the whole run, up to 48 speed points under the thirty-minute cap (a tiebreaker — never worth a full row), and completion credit proportional to boards cleared: each of the 21 boards is worth about 9.5 points of the 200-point completion pool, and partial runs keep partial credit.',
       'The recorded guess count is the sum across every stage, which is why an efficient early stage matters: a three-guess stage one and a five-guess stage one look identical on your screen at the time, but they are 2 guesses apart on the leaderboard forever.',
     ],
     tips: [
@@ -350,7 +350,7 @@ export const MODE_GUIDES: ModeGuide[] = [
       },
       {
         heading: 'Pace for thirty minutes',
-        body: 'The time cap covers the entire run. A relaxed two minutes on early stages costs little, but aim to bank at least fifteen minutes for the multi-board finale — running dry on time bonus during stage five erases the careful play that got you there.',
+        body: 'The time cap covers the entire run, but speed is only a tiebreaker now — rows are the currency. Take the time you need to solve efficiently; a deliberate run that saves three rows beats a rushed one that finishes ten minutes faster, every time.',
       },
     ],
     related: ['octoword', 'quadword', 'seven'],
@@ -366,15 +366,15 @@ export const MODE_GUIDES: ModeGuide[] = [
       { label: 'Boards', value: '1' },
       { label: 'Guesses', value: '6' },
       { label: 'Answers', value: 'Proper nouns (can be multi-word)' },
-      { label: 'Hints', value: 'Clue / vowel / consonant, −120 pts each' },
+      { label: 'Hints', value: 'Clue / vowel / consonant, −60 pts each' },
     ],
     rules: [
       'Instead of an everyday word, the answer here is a famous name — a person, place, brand, character, or title (these are called proper nouns). A label at the top tells you which kind you are guessing. You have six tries. Type a guess of the right length, press enter, and the tiles color to guide you: PURPLE for a letter that is correct and in the right spot, AMBER for a letter in the name but a different spot, GRAY for a letter that is not in it. Two things set this apart from a normal word puzzle: the answer can be more than one word (a "first last" name shows a gap), and your guesses do NOT have to be real dictionary words — any sequence of letters of the right length is allowed, since you are spelling a name.',
-      'Stuck? Three optional hints are available, each costing 120 points: a short clue sentence about the answer (drawn from Wikipedia), a revealed vowel, and a revealed consonant. Each hint shows up as an extra row on the board, so use them sparingly.',
+      'Stuck? Three optional hints are available, each costing 60 points: a short clue sentence about the answer (drawn from Wikipedia), a revealed vowel, and a revealed consonant. Each hint shows up as an extra row on the board, so use them sparingly.',
     ],
     scoring: [
-      'Win base 1,000, one point per second under the five-minute cap, 200 completion, plus a 100-point bonus per unused guess — the richest guess bonus in the game, because names can be genuinely hard.',
-      'Hints subtract 120 each. Taking all three costs 360 points but frequently converts a loss into a win — and a hinted win at ~1,000 points still beats a hintless loss at a few hundred.',
+      'Win base 1,000, a 300-point bonus per unused guess — tied for the richest guess bonus in the game, because names can be genuinely hard — up to 240 speed points under the five-minute cap (a tiebreaker — never worth a full guess), plus 200 completion.',
+      'Hints subtract 60 each, but each one also occupies a board row worth a full 300-point guess step, so the real cost is steeper than the sticker price. Taking all three still frequently converts a loss into a win — and a hinted win above 1,000 points beats a hintless loss at a few hundred.',
     ],
     tips: [
       {

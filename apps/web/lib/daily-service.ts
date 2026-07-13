@@ -139,9 +139,11 @@ export async function recordDailyResult(
   bestCorrectLetters?: number,
 ) {
   const targetDay = day || getTodayLocal();
+  // The puzzle's day also picks the scoring formula (pre-cutover days keep
+  // the frozen V1 formula so a day's leaderboard never mixes formulas).
   const compositeScore = calculateCompositeScore(
     gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
-    stagesCompleted, bestCorrectLetters,
+    stagesCompleted, bestCorrectLetters, targetDay,
   );
 
   try {

@@ -52,14 +52,23 @@ const CASES = [
   ['gauntlet loss, stage 4 w/ 6 boards', 'GAUNTLET', false, 40, 900, 19, 21, 0, 4, null],
 ];
 
-const fixtures = CASES.map(([name, gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters]) => ({
-  name,
-  input: { gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters },
-  expectedTotal: calculateCompositeScore(
-    gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
-    stagesCompleted ?? undefined, bestCorrectLetters ?? undefined,
-  ),
-}));
+// Every case is emitted TWICE: once with a pre-cutover dateKey (frozen V1
+// formula) and once with a post-cutover dateKey (current V2 guess-first
+// formula), so all three ports are pinned on both sides of the scoring gate.
+const DATE_VARIANTS = [
+  ['v1', '2026-07-13'], // day before SCORING_CUTOVER_DATE → legacy formula
+  ['v2', '2026-07-14'], // cutover day → guess-first formula
+];
+
+const fixtures = DATE_VARIANTS.flatMap(([tag, dateKey]) =>
+  CASES.map(([name, gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters]) => ({
+    name: `${name} [${tag}]`,
+    input: { gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters, dateKey },
+    expectedTotal: calculateCompositeScore(
+      gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
+      stagesCompleted ?? undefined, bestCorrectLetters ?? undefined, dateKey,
+    ),
+  })));
 
 const json = JSON.stringify(fixtures, null, 2) + '\n';
 const targets = [

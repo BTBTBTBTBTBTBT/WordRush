@@ -14,6 +14,10 @@ interface ScoreBreakdownCardProps {
   stagesCompleted?: number;
   /** Single-board loss: best green-letter count (drives near-miss credit). */
   bestCorrectLetters?: number;
+  /** The PUZZLE's day (YYYY-MM-DD). Pre-cutover days render with the frozen
+   *  V1 formula so the card always matches the score that was recorded.
+   *  Omit for practice/undated games (current formula). */
+  day?: string;
 }
 
 const fmtTime = (s: number) => {
@@ -34,11 +38,11 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
   const {
     gameMode, completed, guessCount, timeSeconds,
     boardsSolved, totalBoards, hintsUsed = 0,
-    stagesCompleted, bestCorrectLetters,
+    stagesCompleted, bestCorrectLetters, day,
   } = props;
   const b = computeScoreBreakdown(
     gameMode, completed, guessCount, timeSeconds, boardsSolved, totalBoards, hintsUsed,
-    stagesCompleted, bestCorrectLetters,
+    stagesCompleted, bestCorrectLetters, day,
   );
 
   const guessesLeft = Math.max(0, b.maxGuesses - guessCount);
@@ -67,7 +71,7 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
         detail={completed ? '' : 'no win bonus'}
         value={b.basePoints}
       />
-      {completed && b.hasHints && (
+      {completed && b.guessBonusApplies && (
         <Row
           label="Guess bonus"
           detail={`${guessesLeft} unused × ${b.guessWeight}`}
@@ -76,7 +80,7 @@ export function ScoreBreakdownCard(props: ScoreBreakdownCardProps) {
       )}
       {completed && (
         <Row
-          label="Time bonus"
+          label="Speed bonus"
           detail={`${fmtTime(timeUnder)} under ${fmtTime(b.timeCap)}`}
           value={b.timeBonus}
         />

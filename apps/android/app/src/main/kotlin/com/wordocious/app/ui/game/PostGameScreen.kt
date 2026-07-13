@@ -222,6 +222,7 @@ fun PostGameScreen(
                 mode = mode, won = won, guessCount = guessCount, elapsedSeconds = elapsedSeconds,
                 boardsSolved = cardBoardsSolved, totalBoards = cardTotalBoards, hintsUsed = hintsUsed,
                 stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
+                day = seed?.let { com.wordocious.core.getDailySeedDate(it) },
             )
 
             // U3: next-daily handoff — DAILY games only (seed == today's daily
@@ -362,8 +363,11 @@ internal fun ScoreBreakdownCard(
     mode: GameMode, won: Boolean, guessCount: Int, elapsedSeconds: Int,
     boardsSolved: Int, totalBoards: Int, hintsUsed: Int,
     stagesCompleted: Int? = null, bestCorrectLetters: Int? = null,
+    // The PUZZLE's day (YYYY-MM-DD) — pre-cutover days render with the frozen
+    // V1 formula so the card always matches the recorded score. null = current.
+    day: String? = null,
 ) {
-    val b = DailyScoring.breakdown(mode.name, won, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters)
+    val b = DailyScoring.breakdown(mode.name, won, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters, day)
     val guessesLeft = max(0, b.maxGuesses - guessCount)
     val timeUnder = max(0, b.timeCap - elapsedSeconds)
 
@@ -378,8 +382,8 @@ internal fun ScoreBreakdownCard(
             Text("${b.total.toInt()} pts", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         }
         ScoreRow(if (won) "Win bonus" else "Did not finish", if (won) "" else "no win bonus", b.basePoints)
-        if (won && b.hasHints) ScoreRow("Guess bonus", "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
-        if (won) ScoreRow("Time bonus", "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
+        if (won && b.guessBonusApplies) ScoreRow("Guess bonus", "$guessesLeft unused × ${b.guessWeight}", b.guessBonus)
+        if (won) ScoreRow("Speed bonus", "${fmtSecs(timeUnder)} under ${fmtSecs(b.timeCap)}", b.timeBonus)
         if (b.completionBonus > 0) {
             val (compLabel, compDetail) = when {
                 won -> "Completion bonus" to (if (totalBoards > 1) "$boardsSolved/$totalBoards boards" else "puzzle solved")

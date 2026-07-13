@@ -465,7 +465,8 @@ struct ProperNoundleView: View {
             ScoreBreakdownView(gameMode: GameMode.propernoundle.rawValue, completed: vm.status == .won,
                                guessCount: vm.guesses.count, timeSeconds: secs,
                                boardsSolved: vm.status == .won ? 1 : 0, totalBoards: 1, hintsUsed: vm.hintsUsed,
-                               bestCorrectLetters: vm.guesses.reduce(0) { max($0, $1.tiles.filter { $0 == .correct }.count) })
+                               bestCorrectLetters: vm.guesses.reduce(0) { max($0, $1.tiles.filter { $0 == .correct }.count) },
+                               day: vm.isDaily ? LeaderboardService.todayLocal() : nil)
             if vm.isDaily && !vm.isVersus { NextDailyCTA(currentMode: "PROPERNOUNDLE") }
         }
         .padding(.vertical, 12)

@@ -292,6 +292,7 @@ function GauntletCompletedCard({
           boardsSolved={cumulativeBoardsSolved}
           totalBoards={cumulativeTotalBoards}
           stagesCompleted={stagesCleared}
+          day={getTodayLocal()}
         />
       </div>
     </CollapsibleCompletedCard>
@@ -547,6 +548,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
           totalBoards={1}
           hintsUsed={pnHints}
           bestCorrectLetters={pnBestCorrect}
+          day={getTodayLocal()}
         />
       </CollapsibleCompletedCard>
     );
@@ -724,6 +726,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         // reconstructed grid (empty / 0 for multi-board modes, which ignore it).
         bestCorrectLetters={evaluations.reduce((best, e, i) =>
           boards[0]?.hintEvaluations?.[i] ? best : Math.max(best, e.tiles.filter(t => t.state === 'CORRECT').length), 0)}
+        day={getTodayLocal()}
       />
     </CollapsibleCompletedCard>
   );

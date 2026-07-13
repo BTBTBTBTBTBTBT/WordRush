@@ -240,7 +240,8 @@ struct GauntletResultsView: View {
 
                 ScoreBreakdownView(gameMode: "GAUNTLET", completed: won, guessCount: totalGuesses,
                                    timeSeconds: totalTimeMs / 1000, boardsSolved: cumBoards, totalBoards: cumTotal,
-                                   stagesCompleted: cleared)
+                                   stagesCompleted: cleared,
+                                   day: isDaily ? LeaderboardService.todayLocal() : nil)
                     .modifier(RiseIn(appeared: appeared, delay: 0.5))
 
                 if isDaily && showNextDaily {

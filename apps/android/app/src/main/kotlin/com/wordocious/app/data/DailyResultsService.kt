@@ -162,7 +162,9 @@ object DailyResultsService {
         val userId = AuthService.userId ?: return
         val day = seed?.let { com.wordocious.core.getDailySeedDate(it) } ?: todayLocalDate()
         val gameModeStr = mode.name
-        val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters)
+        // The puzzle's day also picks the scoring formula (pre-cutover days keep
+        // the frozen V1 formula so a day's leaderboard never mixes formulas).
+        val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters, day)
         // Optimistic local update FIRST so the home card flips to completed the
         // instant the game ends (web 'daily-completion' event parity).
         DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds, score)
@@ -217,5 +219,6 @@ object DailyResultsService {
         hintsUsed: Int,
         stagesCompleted: Int? = null,
         bestCorrectLetters: Int? = null,
-    ): Double = DailyScoring.compositeScore(gameMode, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters)
+        dateKey: String? = null,
+    ): Double = DailyScoring.compositeScore(gameMode, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters, dateKey)
 }

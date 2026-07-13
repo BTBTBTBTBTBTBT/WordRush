@@ -162,12 +162,15 @@ struct ScoreBreakdownView: View {
     var hintsUsed: Int = 0
     var stagesCompleted: Int? = nil
     var bestCorrectLetters: Int? = nil
+    /// The PUZZLE's day (YYYY-MM-DD) — pre-cutover days render with the frozen
+    /// V1 formula so the card always matches the recorded score. nil = current.
+    var day: String? = nil
 
     var body: some View {
         let b = DailyScoring.breakdown(gameMode: gameMode, completed: completed, guessCount: guessCount,
                                        timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
                                        hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
-                                       bestCorrectLetters: bestCorrectLetters)
+                                       bestCorrectLetters: bestCorrectLetters, dateKey: day)
         let guessesLeft = max(0, b.maxGuesses - guessCount)
         let timeUnder = max(0, b.timeCap - timeSeconds)
         return VStack(spacing: 2) {
@@ -178,8 +181,8 @@ struct ScoreBreakdownView: View {
             }
             .padding(.bottom, 4)
             row(completed ? "Win bonus" : "Did not finish", completed ? "" : "no win bonus", b.basePoints)
-            if completed && b.hasHints { row("Guess bonus", "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
-            if completed { row("Time bonus", "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
+            if completed && b.guessBonusApplies { row("Guess bonus", "\(guessesLeft) unused × \(b.guessWeight)", b.guessBonus) }
+            if completed { row("Speed bonus", "\(fmt(timeUnder)) under \(fmt(b.timeCap))", b.timeBonus) }
             if b.completionBonus > 0 { completionRow(b.completionBonus) }
             if b.hasHints {
                 let detail = hintsUsed > 0 ? "\(hintsUsed) hint\(hintsUsed == 1 ? "" : "s") × \(Int(b.hintPenalty) / max(1, hintsUsed))" : "no hints — full credit"

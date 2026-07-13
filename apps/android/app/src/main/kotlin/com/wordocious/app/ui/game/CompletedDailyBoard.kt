@@ -234,6 +234,7 @@ fun CompletedDailyBoard(modeId: String) {
                     mode = mode, won = won, guessCount = guesses, elapsedSeconds = timeSeconds,
                     boardsSolved = boardsSolved, totalBoards = totalBoards, hintsUsed = hints,
                     bestCorrectLetters = bestCorrect,
+                    day = com.wordocious.app.todayLocalDate(),
                 )
             }
         }
@@ -373,6 +374,7 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
                     mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses, elapsedSeconds = totalSecs,
                     boardsSolved = cumBoards, totalBoards = cumTotal, hintsUsed = 0,
                     stagesCompleted = cleared,
+                    day = com.wordocious.app.todayLocalDate(),
                 )
             }
         }
@@ -493,6 +495,7 @@ private fun ProperNoundleCompletedDailyCard(
                     bestCorrectLetters = guesses.fold(0) { best, gw ->
                         maxOf(best, com.wordocious.core.ProperNoundle.evaluate(gw, puzzle.answer).count { it == com.wordocious.core.TileState.CORRECT })
                     },
+                    day = com.wordocious.app.todayLocalDate(),
                 )
             }
         }

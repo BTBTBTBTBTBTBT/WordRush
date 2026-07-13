@@ -56,7 +56,8 @@ struct SolvedPuzzleView: View {
                         boards(d)
                         ScoreBreakdownView(gameMode: mode.rawValue, completed: d.won,
                                            guessCount: d.guessCount, timeSeconds: d.timeSeconds,
-                                           boardsSolved: d.won ? d.solutions.count : 0, totalBoards: d.solutions.count)
+                                           boardsSolved: d.won ? d.solutions.count : 0, totalBoards: d.solutions.count,
+                                           day: LeaderboardService.todayLocal())
                         // Single-board modes (Classic / Six / Seven): word + definition,
                         // using the actual displayed board's solution (reliable).
                         // ProperNoundle answers are proper nouns (not in the dictionary)

@@ -18,6 +18,7 @@ final class CompositeScoringFixtureTests: XCTestCase {
         let hintsUsed: Int
         let stagesCompleted: Int?
         let bestCorrectLetters: Int?
+        let dateKey: String?
     }
     private struct Fixture: Decodable {
         let name: String
@@ -38,7 +39,7 @@ final class CompositeScoringFixtureTests: XCTestCase {
                 guessCount: c.input.guessCount, timeSeconds: c.input.timeSeconds,
                 boardsSolved: c.input.boardsSolved, totalBoards: c.input.totalBoards,
                 hintsUsed: c.input.hintsUsed, stagesCompleted: c.input.stagesCompleted,
-                bestCorrectLetters: c.input.bestCorrectLetters)
+                bestCorrectLetters: c.input.bestCorrectLetters, dateKey: c.input.dateKey)
             XCTAssertEqual(got, c.expectedTotal, accuracy: 0.001, c.name)
         }
     }

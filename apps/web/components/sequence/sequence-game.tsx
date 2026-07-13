@@ -1,7 +1,7 @@
 'use client';
 
 import { useReducer, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { GameMode, GameStatus, gameReducer, initializeGame, isValidWord, evaluateGuess, TileState } from '@wordle-duel/core';
+import { GameMode, GameStatus, gameReducer, getDailySeedDate, initializeGame, isValidWord, evaluateGuess, TileState } from '@wordle-duel/core';
 import { Keyboard } from '../game/keyboard';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -330,6 +330,7 @@ export function SequenceGame({ initialSeed, isDaily }: SequenceGameProps = {}) {
               timeSeconds={elapsedTime}
               boardsSolved={state.boards.filter(b => b.status === GameStatus.WON).length}
               totalBoards={4}
+              day={isDaily ? getDailySeedDate(gameSeed) ?? undefined : undefined}
             />
           )}
           {state.status !== 'PLAYING' && isDaily && <NextDailyCta currentMode="SEQUENCE" />}

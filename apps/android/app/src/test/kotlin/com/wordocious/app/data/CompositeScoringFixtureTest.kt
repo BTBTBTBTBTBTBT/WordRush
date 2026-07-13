@@ -25,6 +25,7 @@ class CompositeScoringFixtureTest {
         val hintsUsed: Int,
         val stagesCompleted: Int? = null,
         val bestCorrectLetters: Int? = null,
+        val dateKey: String? = null,
     )
 
     @Serializable
@@ -40,7 +41,7 @@ class CompositeScoringFixtureTest {
             val got = DailyScoring.compositeScore(
                 c.input.gameMode, c.input.completed, c.input.guessCount, c.input.timeSeconds,
                 c.input.boardsSolved, c.input.totalBoards, c.input.hintsUsed,
-                c.input.stagesCompleted, c.input.bestCorrectLetters,
+                c.input.stagesCompleted, c.input.bestCorrectLetters, c.input.dateKey,
             )
             assertEquals(c.name, c.expectedTotal, got, 0.001)
         }
