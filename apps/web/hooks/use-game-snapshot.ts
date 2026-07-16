@@ -343,15 +343,40 @@ export function replayRecordedGuesses(
     if (!guess) continue;
 
     if (/[^A-Z]/.test(guess)) {
-      // Hint row (Six/Seven only): rebuild the stored hint evaluation.
-      const tiles: TileResult[] = [...guess].map(ch =>
-        /[A-Z]/.test(ch)
-          ? { letter: ch, state: TileState.CORRECT }
-          : { letter: ' ', state: TileState.HINT_USED },
-      );
+      // Hint row (Six/Seven only). The recorded string carries the revealed
+      // letter with the other slots padded ("  A   "). Derive the revealed
+      // POSITIONS from the solution rather than trusting the string's padding:
+      // a row recorded left-aligned ("A     ") — the legacy shape that caused
+      // the original slot-0 hint bug — would otherwise replay a CORRECT tile at
+      // slot 0 and render the hint in the wrong column. Mirrors
+      // useClassicHints' buildHintRow: EVERY occurrence of the revealed letter
+      // is CORRECT, everything else HINT_USED.
+      const board = state.boards[state.currentBoardIndex];
+      const solutionUpper = (board?.solution ?? '').toUpperCase();
+      const revealed = new Set(guess.replace(/[^A-Z]/g, ''));
+      const derived = [...solutionUpper].map(ch => revealed.has(ch));
+      const usable = solutionUpper.length > 0 && derived.some(Boolean);
+
+      const tiles: TileResult[] = usable
+        ? [...solutionUpper].map((ch, i) =>
+            derived[i]
+              ? { letter: ch, state: TileState.CORRECT }
+              : { letter: ' ', state: TileState.HINT_USED },
+          )
+        // Unmatchable row (corrupt data — a real hint only ever reveals a
+        // letter that IS in the answer): fall back to the recorded positions,
+        // which is no worse than the previous behaviour.
+        : [...guess].map(ch =>
+            /[A-Z]/.test(ch)
+              ? { letter: ch, state: TileState.CORRECT }
+              : { letter: ' ', state: TileState.HINT_USED },
+          );
+      // Re-derive the stored word too, so board.guesses agrees with the tiles.
+      const hintWord = tiles.map(t => (t.state === TileState.CORRECT ? t.letter : ' ')).join('');
+
       state = gameReducer(state, {
         type: 'SUBMIT_HINT',
-        hintWord: guess,
+        hintWord,
         hintEvaluation: { tiles, isCorrect: false },
       });
     } else if (mode === GameMode.SEQUENCE) {
