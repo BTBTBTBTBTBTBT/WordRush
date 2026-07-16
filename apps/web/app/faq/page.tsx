@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import { FAQ_SECTIONS as SECTIONS } from '@/lib/content/static-content';
+import { InfoPageHeader } from '@/components/ui/info-page-header';
 
 export const metadata: Metadata = {
   title: 'Wordocious FAQ & Strategy — Tips for Every Word Game Mode',
@@ -12,13 +12,8 @@ export const metadata: Metadata = {
 export default function FaqPage() {
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-6" style={{ color: '#7c3aed' }}>
-          <ArrowLeft className="w-4 h-4" />
-          Back to Wordocious
-        </Link>
-
-        <h1 className="text-3xl font-black uppercase mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>FAQ &amp; Strategy</h1>
+      <InfoPageHeader title="FAQ & Strategy" />
+      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>
           Everything you need to start winning at Wordocious
         </p>

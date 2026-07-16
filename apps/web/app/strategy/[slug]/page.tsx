@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { STRATEGY_ARTICLES, getArticle } from '@/lib/strategy-content';
+import { InfoPageHeader } from '@/components/ui/info-page-header';
 
 export function generateStaticParams() {
   return STRATEGY_ARTICLES.map((a) => ({ slug: a.slug }));
@@ -24,11 +24,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen pb-16" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <article className="max-w-2xl mx-auto px-4 pt-6">
-        <Link href="/strategy" className="inline-flex items-center gap-1 text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>
-          <ArrowLeft className="w-4 h-4" /> All strategy
-        </Link>
-
+      <InfoPageHeader title="Strategy" backHref="/strategy" titleTag="div" />
+      <article className="max-w-2xl mx-auto px-4 pt-1">
         <p className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{ color: '#7c3aed' }}>
           Strategy · {a.minutes} min read
         </p>

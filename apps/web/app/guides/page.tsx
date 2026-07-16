@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { MODE_GUIDES } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
+import { InfoPageHeader } from '@/components/ui/info-page-header';
 
 export const metadata: Metadata = {
   title: 'Wordocious Mode Guides — Rules, Scoring & Strategy for All 9 Modes',
@@ -13,13 +14,8 @@ export const metadata: Metadata = {
 export default function GuidesIndexPage() {
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-6" style={{ color: '#7c3aed' }}>
-          <ArrowLeft className="w-4 h-4" />
-          Back to Wordocious
-        </Link>
-
-        <h1 className="text-3xl font-black uppercase mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Mode Guides</h1>
+      <InfoPageHeader title="Mode Guides" />
+      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>
           Every Wordocious mode, explained properly — exact rules, the real scoring math, and the strategy that separates the leaderboard from the middle of the pack.
         </p>

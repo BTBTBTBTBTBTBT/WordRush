@@ -1,18 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { InfoPageHeader } from '@/components/ui/info-page-header';
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-bold mb-6" style={{ color: '#7c3aed' }}>
-          <ArrowLeft className="w-4 h-4" />
-          Back to Wordocious
-        </Link>
-
-        <h1 className="text-3xl font-black uppercase mb-1 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Privacy Policy</h1>
+      <InfoPageHeader title="Privacy Policy" />
+      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         <p className="text-xs font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Effective April 14, 2026</p>
 
         <div className="space-y-4">

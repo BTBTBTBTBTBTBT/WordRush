@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { MODE_GUIDES, getGuide } from '@/lib/guide-content';
 import { GuideIcon } from '@/components/guides/guide-icon';
+import { InfoPageHeader } from '@/components/ui/info-page-header';
 
 export function generateStaticParams() {
   return MODE_GUIDES.map((g) => ({ slug: g.slug }));
@@ -30,12 +30,8 @@ export default function GuidePage({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <Link href="/guides" className="inline-flex items-center gap-1.5 text-sm font-bold mb-6" style={{ color: '#7c3aed' }}>
-          <ArrowLeft className="w-4 h-4" />
-          All mode guides
-        </Link>
-
+      <InfoPageHeader title="Guides" backHref="/guides" titleTag="div" />
+      <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
         <div className="flex items-center gap-2.5 mb-1">
           <span className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${guide.accent}15` }}>
             <GuideIcon slug={guide.slug} accent={guide.accent} className="w-5 h-5" />

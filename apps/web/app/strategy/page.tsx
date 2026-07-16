@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { STRATEGY_ARTICLES } from '@/lib/strategy-content';
+import { InfoPageHeader } from '@/components/ui/info-page-header';
 
 export const metadata: Metadata = {
   title: 'Word Puzzle Strategy — Tips & Guides | Wordocious',
@@ -13,12 +14,8 @@ export const metadata: Metadata = {
 export default function StrategyIndexPage() {
   return (
     <div className="min-h-screen pb-16" style={{ backgroundColor: 'var(--color-bg)' }}>
-      <div className="max-w-2xl mx-auto px-4 pt-6">
-        <Link href="/" className="inline-flex items-center gap-1 text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>
-          <ArrowLeft className="w-4 h-4" /> Home
-        </Link>
-
-        <h1 className="text-3xl font-black uppercase mb-2 text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Word Puzzle Strategy</h1>
+      <InfoPageHeader title="Word Puzzle Strategy" />
+      <div className="max-w-2xl mx-auto px-4 pt-1">
         <p className="text-base leading-relaxed mb-6" style={{ color: 'var(--color-text-muted)' }}>
           Practical, original strategy for solving daily word puzzles faster and in fewer guesses — the thinking behind a
           good opening word, how to read every tile, and what each Wordocious mode actually asks of you. Pair these with our{' '}
