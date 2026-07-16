@@ -69,6 +69,8 @@ struct FinishedStatsHeader: View {
     var onPlayAgain: (() -> Void)? = nil
 
     @State private var showShareOptions = false
+    /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
+    @State private var shareReveal: Bool?
 
     private var timeStr: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
     private var isMulti: Bool { totalBoards > 1 }
@@ -100,10 +102,9 @@ struct FinishedStatsHeader: View {
                         if shareHasSpoilers { showShareOptions = true } else { onShare(false) }
                     }
                     .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
-                    .confirmationDialog("Share your result", isPresented: $showShareOptions, titleVisibility: .visible) {
-                        Button("No spoilers (colors only)") { onShare(false) }
-                        Button("Full results (letters revealed)") { onShare(true) }
-                        Button("Cancel", role: .cancel) {}
+                    .sheet(isPresented: $showShareOptions,
+                           onDismiss: { if let r = shareReveal { shareReveal = nil; onShare(r) } }) {
+                        ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
                     }
                 }
                 if let onPlayAgain {

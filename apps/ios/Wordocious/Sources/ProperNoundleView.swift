@@ -316,6 +316,8 @@ struct ProperNoundleView: View {
     @State private var showVictory = false
     @State private var showGuide = false
     @State private var showShareOptions = false
+    /// The chooser's pick, consumed by the sheet's onDismiss (see ShareVariantSheet).
+    @State private var shareReveal: Bool?
 
     init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: ProperNoundleVM(seed: seed))
@@ -466,10 +468,9 @@ struct ProperNoundleView: View {
             HStack(spacing: 18) {
                 Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
                 Button { showShareOptions = true } label: { Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(13, .black)) }
-                    .confirmationDialog("Share your result", isPresented: $showShareOptions, titleVisibility: .visible) {
-                        Button("No spoilers (colors only)") { shareResult(reveal: false) }
-                        Button("Full results (letters revealed)") { shareResult(reveal: true) }
-                        Button("Cancel", role: .cancel) {}
+                    .sheet(isPresented: $showShareOptions,
+                           onDismiss: { if let r = shareReveal { shareReveal = nil; shareResult(reveal: r) } }) {
+                        ShareVariantSheet(selection: $shareReveal).presentationDetents([.height(260)])
                     }
                 // Pro Unlimited only (web: Play Again on non-daily ProperNoundle).
                 if let onPlayAgain, !vm.isDaily, !vm.isVersus, AuthService.shared.isProActive {
