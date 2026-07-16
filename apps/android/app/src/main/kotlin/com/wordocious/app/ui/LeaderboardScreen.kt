@@ -460,7 +460,7 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         }
         // Right column: score over detail line
         Column(horizontalAlignment = Alignment.End) {
-            Text("${entry.compositeScore.toInt()}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(formatScore(entry.compositeScore), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (playType == "vs") {
                     // VS records show the head-to-head W/L tally instead of the
@@ -484,7 +484,7 @@ private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry) 
         RankIcon(rank)
         Text(entry.username ?: "Player", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f), maxLines = 1)
         WinLossPill(entry.completed, abbrev = true)
-        Text("${entry.compositeScore.toInt()}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+        Text(formatScore(entry.compositeScore), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
 }
 

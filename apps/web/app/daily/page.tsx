@@ -5,6 +5,7 @@ import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, P
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { formatScore } from '@/lib/composite-scoring';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -328,7 +329,7 @@ export default function DailyPage() {
                       </Link>
                     </div>
                     <div className="text-right">
-                      <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{entry.composite_score}</div>
+                      <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.composite_score)}</div>
                       <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                         <span>
                           {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
@@ -399,7 +400,7 @@ export default function DailyPage() {
                     >
                       {entry.completed ? 'W' : 'L'}
                     </span>
-                    <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{entry.composite_score}</span>
+                    <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{formatScore(entry.composite_score)}</span>
                   </div>
                 ))}
               </div>

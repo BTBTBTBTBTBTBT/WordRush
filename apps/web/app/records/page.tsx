@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { formatScore } from '@/lib/composite-scoring';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
@@ -345,7 +346,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                     </Link>
                   </div>
                   <div className="text-right">
-                    <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{entry.composite_score}</div>
+                    <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.composite_score)}</div>
                     <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                       {playType === 'solo' ? (
                         <>
@@ -420,7 +421,7 @@ function YesterdayPodium({ mode, playType, color }: { mode: string; playType: 's
             <div key={e.user_id} className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: i < top3.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
               <Medal className="w-4 h-4 shrink-0" style={{ color: medalColor[i] }} />
               <Link href={`/profile/${e.user_id}`} className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80" style={{ color: 'var(--color-text)' }}>{e.username}</Link>
-              <span className="font-black text-xs" style={{ color }}>{e.composite_score}</span>
+              <span className="font-black text-xs" style={{ color }}>{formatScore(e.composite_score)}</span>
             </div>
           ))}
         </div>

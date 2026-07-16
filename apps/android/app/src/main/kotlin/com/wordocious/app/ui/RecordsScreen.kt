@@ -261,7 +261,7 @@ private fun YesterdayPodium(mode: String, playType: String, onOpenProfile: (Stri
                 ) {
                     Icon(Icons.Filled.EmojiEvents, null, tint = medalColors[minOf(i, 2)], modifier = Modifier.size(18.dp))
                     Text(e.username ?: "", modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(e.userId) }, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
-                    Text("${e.compositeScore.toInt()}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = accent)
+                    Text(formatScore(e.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = accent)
                 }
             }
         }

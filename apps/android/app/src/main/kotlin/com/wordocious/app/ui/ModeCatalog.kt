@@ -107,3 +107,16 @@ fun ModeGlyph(card: ModeCard, tint: Color, glyphSize: TextUnit, iconSize: Dp) {
 fun ModeGlyph(mode: GameMode, tint: Color, glyphSize: TextUnit, iconSize: Dp) {
     modeCardFor(mode)?.let { ModeGlyph(it, tint, glyphSize, iconSize) }
 }
+
+/**
+ * A composite score for display. The stored score is fractional (the speed
+ * bonus carries 2 decimals) but no surface shows the decimal — rows read
+ * "2,332".
+ *
+ * TRUNCATES rather than rounds, matching web (Math.trunc) and iOS
+ * (Int(score)): the same result must never read 2,332 on iOS and 2,333 here.
+ * Grouping is pinned to US so the three platforms agree digit-for-digit.
+ * Ordering is unaffected — leaderboards sort on the stored value.
+ */
+fun formatScore(score: Double): String =
+    java.text.NumberFormat.getIntegerInstance(java.util.Locale.US).format(score.toLong())

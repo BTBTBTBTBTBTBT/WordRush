@@ -199,6 +199,21 @@ export function formatHintsLabel(gameMode: string, hintsUsed: number): string | 
   return `${hintsUsed} hint${hintsUsed === 1 ? '' : 's'}`;
 }
 
+/**
+ * A composite score for display. The stored score is fractional (the speed
+ * bonus carries 2 decimals), but no surface shows the decimal — leaderboard
+ * rows read "2,332", not "2332.8".
+ *
+ * TRUNCATES rather than rounds, matching the native ports (iOS `Int(score)`,
+ * Android `.toInt()`): the same result must never read 2,332 on a phone and
+ * 2,333 on the web. Ordering is unaffected — every leaderboard sorts on the
+ * stored float, so two rows sharing a displayed score keep their true order.
+ * Locale is pinned so the server-rendered HTML and the client agree.
+ */
+export function formatScore(score: number): string {
+  return Math.trunc(score).toLocaleString('en-US');
+}
+
 export function calculateCompositeScore(
   gameMode: string,
   completed: boolean,
