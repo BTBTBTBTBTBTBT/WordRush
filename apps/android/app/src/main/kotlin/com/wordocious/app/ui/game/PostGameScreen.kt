@@ -136,9 +136,9 @@ fun PostGameScreen(
     var showShareChooser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val onSharePressed = { if (mode == GameMode.GAUNTLET) share(false) else showShareChooser = true }
     if (showShareChooser) {
-        ShareVariantDialog(
+        com.wordocious.app.ui.ShareVariantSheet(
             onPick = { reveal -> showShareChooser = false; share(reveal) },
-            onClose = { showShareChooser = false },
+            onDismiss = { showShareChooser = false },
         )
     }
 
@@ -522,50 +522,6 @@ private fun DefinitionCard(word: String) {
                 "No definition available for this word.",
                 fontSize = 13.sp, fontWeight = FontWeight.Medium, fontStyle = FontStyle.Italic, color = WTheme.textMuted,
             )
-        }
-    }
-}
-
-/**
- * Two-option share chooser (web ShareVariantHost / iOS confirmationDialog
- * parity): "No spoilers" = today's color-only card, "Full results" = same
- * card with the guessed letters revealed.
- */
-@Composable
-private fun ShareVariantDialog(onPick: (Boolean) -> Unit, onClose: () -> Unit) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = onClose) {
-        Column(
-            Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color.White)
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text("Share your result", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A1A2E))
-            Column(
-                Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF7C3AED))
-                    .clickableNoRipple { onPick(false) }
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text("No spoilers", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
-                Text("Colors only", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
-            }
-            Column(
-                Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF8F7FF))
-                    .border(1.5.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
-                    .clickableNoRipple { onPick(true) }
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text("Full results", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A1A2E))
-                Text("Letters revealed", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280))
-            }
         }
     }
 }

@@ -2,9 +2,22 @@
 
 import { useEffect, useState } from 'react';
 
-import { X, EyeOff, Eye } from 'lucide-react';
+import { X, EyeOff, Eye, ChevronRight } from 'lucide-react';
 
 export type ShareVariant = 'clean' | 'full';
+
+// Same shape as the menu-modal rows (and the native ShareVariantSheet /
+// InfoMenuSheet): accent-tinted icon tile, uppercase title, muted subtitle.
+const VARIANTS: {
+  variant: ShareVariant;
+  title: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  accent: string;
+}[] = [
+  { variant: 'clean', title: 'No spoilers', subtitle: 'Colors only', icon: EyeOff, accent: '#7C3AED' },
+  { variant: 'full', title: 'Full results', subtitle: 'Letters revealed', icon: Eye, accent: '#EC4899' },
+];
 
 interface VariantModalState {
   open: boolean;
@@ -63,60 +76,71 @@ export function ShareVariantHost() {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-sm p-5 animate-modal-content"
+        className="relative w-full max-w-sm animate-modal-content"
         style={{
           background: 'var(--color-surface)',
-          borderRadius: '24px',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
+          border: '1.5px solid var(--color-border)',
+          borderRadius: '20px',
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
         }}
         role="dialog"
         aria-modal="true"
         aria-label="Share options"
       >
-        <button
-          onClick={() => settle(null)}
-          aria-label="Close"
-          className="absolute top-3 right-3 p-1.5 rounded-full transition-colors hover:bg-gray-100"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Top accent bar */}
+        <div
+          className="h-1.5 flex-shrink-0"
+          style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24)' }}
+        />
 
-        <h3 className="text-lg font-black text-center mb-3" style={{ color: 'var(--color-text)' }}>
-          Share your result
-        </h3>
-
-        <div className="space-y-2">
-          <button
-            onClick={() => settle('clean')}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm text-white btn-3d"
-            style={{
-              background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-              boxShadow: '0 4px 0 #4c1d95',
-            }}
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+          <h2
+            className="text-xl font-black uppercase text-transparent bg-clip-text"
+            style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
           >
-            <EyeOff className="w-4 h-4" />
-            <span>
-              No spoilers
-              <span className="block text-[11px] font-bold opacity-80">Colors only</span>
-            </span>
-          </button>
-
+            Share
+          </h2>
           <button
-            onClick={() => settle('full')}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-extrabold text-sm transition-colors"
-            style={{
-              background: 'var(--color-bg)',
-              border: '1.5px solid var(--color-border)',
-              color: 'var(--color-text)',
-            }}
+            onClick={() => settle(null)}
+            className="flex items-center justify-center w-[30px] h-[30px] rounded-full transition-opacity hover:opacity-80"
+            style={{ background: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}
+            aria-label="Close"
           >
-            <Eye className="w-4 h-4" />
-            <span>
-              Full results
-              <span className="block text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Letters revealed</span>
-            </span>
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
+        </div>
+
+        {/* Variant rows */}
+        <div className="px-4 pb-5 space-y-2">
+          {VARIANTS.map((v) => {
+            const Icon = v.icon;
+            return (
+              <button
+                key={v.variant}
+                onClick={() => settle(v.variant)}
+                className="w-full flex items-center gap-3 p-3 rounded-2xl transition-transform active:scale-[0.98]"
+                style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)' }}
+              >
+                <span
+                  className="flex-shrink-0 w-10 h-10 rounded-[11px] flex items-center justify-center"
+                  style={{ background: `${v.accent}24` }}
+                >
+                  <Icon className="w-4 h-4" style={{ color: v.accent }} />
+                </span>
+                <span className="min-w-0 flex flex-col items-start">
+                  <span className="text-[15px] font-black uppercase leading-tight" style={{ color: 'var(--color-text)' }}>
+                    {v.title}
+                  </span>
+                  <span className="text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    {v.subtitle}
+                  </span>
+                </span>
+                <ChevronRight className="w-[13px] h-[13px] ml-auto flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

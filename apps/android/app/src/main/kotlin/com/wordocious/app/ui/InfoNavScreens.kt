@@ -22,6 +22,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
@@ -111,6 +113,50 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+/**
+ * The Share chooser — "No spoilers" vs "Full results".
+ *
+ * Same chrome and row anatomy as [InfoMenuSheet] (accent bar, wordmark-gradient
+ * uppercase title, close X, accent-tinted icon tiles) rather than a plain
+ * AlertDialog, which looked nothing like the app. iOS/web parity:
+ * ShareVariantSheet.swift / share-variant-modal.tsx.
+ *
+ * onPick(true) = "Full results" (letters revealed); false = the spoiler-free card.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ShareVariantSheet(onPick: (Boolean) -> Unit, onDismiss: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
+        Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
+        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("SHARE", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDismiss))
+        }
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ShareVariantRow(Icons.Filled.VisibilityOff, Color(0xFF7C3AED), "No spoilers", "Colors only") { onPick(false) }
+            ShareVariantRow(Icons.Filled.Visibility, Color(0xFFEC4899), "Full results", "Letters revealed") { onPick(true) }
+        }
+    }
+}
+
+/** 1:1 with the InfoMenuSheet row. */
+@Composable
+private fun ShareVariantRow(
+    icon: ImageVector, accent: Color, title: String, subtitle: String, onClick: () -> Unit,
+) {
+    Row(infoCardMod().clickableNoRipple(onClick).padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(accent.copy(alpha = 0.14f)), Alignment.Center) {
+            Icon(icon, null, tint = accent, modifier = Modifier.size(20.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(title.uppercase(), fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(subtitle, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
+        Icon(Icons.Filled.ChevronRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
     }
 }
 
