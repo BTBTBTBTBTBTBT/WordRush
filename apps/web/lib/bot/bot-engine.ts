@@ -16,7 +16,8 @@ import {
   GameMode,
   createInitialState,
   evaluateGuess,
-  getAllowedWordsForLength,
+  getSolutionPoolForDate,
+  getSolutionPoolForLengthAndDate,
   generateSolutionsFromSeed,
   GAUNTLET_STAGES,
   GAUNTLET_TOTAL_SOLUTIONS,
@@ -144,10 +145,13 @@ function realWordPath(
   // `usedWords` is the MATCH-wide played set: the bot must never resubmit a
   // word it already played this match (any board, any stage).
   const ex = new Set((exclude ?? []).map((w) => w.toUpperCase()));
-  // Length-keyed pool: getAllowedWords() is the 5-letter list (its only 6/7
-  // strays were HACKERS/NOODLES etc.), which made Six/Seven filler pools
-  // 1–2 words deep and the bot repeated them (HACKERS x4 in a Seven match).
-  const pool = getAllowedWordsForLength(len)
+  // Filler words are SHOWN to the opponent at match end, so they come from the
+  // curated answer banks (always-common vocabulary), never the permissive
+  // guess dictionary — allowed-6/7 held zipf-0 junk the bot would visibly play.
+  const bank = len === 6 || len === 7
+    ? getSolutionPoolForLengthAndDate(len, null)
+    : getSolutionPoolForDate(null).filter((w) => w.length === len);
+  const pool = bank
     .filter((w) => w !== solution && !ex.has(w) && !usedWords?.has(w));
   if (pool.length === 0) return fabricatedPath(solution, steps, willSolve);
 

@@ -90,10 +90,14 @@ enum BotEngine {
     private static func realWordPath(_ solution: String, steps: Int, willSolve: Bool, excluding: [String] = []) -> [String] {
         let len = solution.count
         let ex = Set(excluding.map { $0.uppercased() })
-        // Draw from the length-specific allowed dictionary — the flat 5-letter
-        // list held only 2 stray 7-letter entries (HACKERS/NOODLES), so the
-        // Six/Seven bot's "pool" was two words and it visibly cycled them.
-        let pool = GameDictionary.shared.getAllowedWordsForLength(len)
+        // Filler words are SHOWN to the opponent at match end, so they come
+        // from the curated answer banks (always-common vocabulary), never the
+        // permissive guess dictionary — allowed-6/7 held zipf-0 junk the bot
+        // would visibly play.
+        let bank = (len == 6 || len == 7)
+            ? GameDictionary.shared.solutionPool(forLength: len, dateKey: nil)
+            : GameDictionary.shared.solutionPool(forDateKey: nil)
+        let pool = bank
             .filter { $0.count == len && $0 != solution && !ex.contains($0.uppercased()) }
         if pool.isEmpty { return fabricatedPath(solution, steps: steps, willSolve: willSolve) }
         var path: [String] = []

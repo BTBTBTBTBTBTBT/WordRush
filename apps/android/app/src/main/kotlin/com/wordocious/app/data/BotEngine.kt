@@ -99,10 +99,13 @@ object BotEngine {
     private fun realWordPath(solution: String, steps: Int, willSolve: Boolean, excluding: Collection<String> = emptyList()): List<String> {
         val ex = excluding.map { it.uppercase() }.toSet()
         val len = solution.length
-        // Length-keyed pool: Six/Seven have their own allowed dictionaries — the
-        // master (5-letter) list has only ~2 seven-letter strays, whose tiny
-        // pool made the bot submit the same word over and over (HACKERS x4).
-        val pool = GameDictionary.getAllowedWordsForLength(len)
+        // Filler words are SHOWN to the opponent at match end, so they come
+        // from the curated answer banks (always-common vocabulary), never the
+        // permissive guess dictionary — allowed-6/7 held zipf-0 junk the bot
+        // would visibly play.
+        val bank = if (len == 6 || len == 7) GameDictionary.solutionPoolForLength(len, null)
+        else GameDictionary.solutionPool(null)
+        val pool = bank
             .filter { it.length == len && it != solution && it !in ex }
         if (pool.isEmpty()) return fabricatedPath(solution, steps, willSolve)
         val path = ArrayList<String>()

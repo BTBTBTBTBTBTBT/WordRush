@@ -29,6 +29,16 @@ Usage:
   python3 scripts/curate-solutions.py --threshold 3.2
   python3 scripts/curate-solutions.py --scan-only    # 6/7-letter name/weak report
   python3 scripts/curate-solutions.py --write        # sync curated list to bundles
+  python3 scripts/curate-solutions.py --curate-allowed 6 [--write]
+                                                     # curate the GUESS list (see below)
+
+--curate-allowed curates allowed-{6,7}.json — the guess-validation dictionary,
+NOT the answer bank. That list was a raw scrape of a ~1913 dictionary and half
+of it had zero modern-corpus presence (TUZZLE, BUZZLE, BEGNAW…). Rule: keep a
+word iff zipf >= ALLOWED_THRESHOLD (any real corpus presence) OR it is a
+current/legacy answer (every past + future daily must stay guessable). Guesses
+stay a permissive superset of the answers on purpose: the answer bank cuts at
+zipf 2.3, so real-but-obscure words (EVINCE, PARSEC) remain valid guesses.
 """
 import argparse
 import json
@@ -43,6 +53,7 @@ SCRIPT_DATA = os.path.join(REPO, 'scripts', 'data')
 OUT = os.path.join(REPO, 'scripts', 'out')
 SHUFFLE_SEED = 'wordocious-2026-07-08'
 DEFAULT_THRESHOLD = 2.3
+ALLOWED_THRESHOLD = 1.0  # guess list: any corpus presence at all
 MIN_COUNT, MAX_COUNT = 2100, 3000
 
 # Every bundle location that ships solutions.json (server reads the web copy).
@@ -50,6 +61,12 @@ BUNDLE_DIRS = [
     os.path.join(REPO, 'apps', 'web', 'data'),
     os.path.join(REPO, 'apps', 'ios', 'Wordocious', 'Resources'),
     os.path.join(REPO, 'apps', 'android', 'core', 'src', 'main', 'resources', 'data'),
+]
+
+# Test-fixture copies of the word lists (kept as exact copies of the bundles).
+FIXTURE_DIRS = [
+    os.path.join(REPO, 'apps', 'ios', 'Tests', 'Fixtures'),
+    os.path.join(REPO, 'apps', 'android', 'core', 'src', 'test', 'resources', 'fixtures'),
 ]
 
 FIVE = re.compile(r'^[A-Z]{5}$')
@@ -198,6 +215,35 @@ def write_length_bundles(n, kept):
         print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, f"solutions-{n}.json"), REPO)}')
 
 
+def curate_allowed(n):
+    """Curate the n-letter GUESS list: keep iff zipf >= ALLOWED_THRESHOLD or the
+    word is a current/legacy answer. Answers are kept unconditionally so every
+    shipped daily stays guessable (invariant: solutions ∪ legacy ⊆ allowed)."""
+    z = zipf()
+    allowed = load_json_list(os.path.join(DATA, f'allowed-{n}.json'))
+    must = set(load_json_list(os.path.join(DATA, f'solutions-{n}.json'))) | \
+        set(load_json_list(os.path.join(DATA, f'solutions-{n}-legacy.json')))
+    pat = re.compile(rf'^[A-Z]{{{n}}}$')
+
+    kept, cut = [], []
+    for w in sorted(set(allowed)):
+        if w in must or (pat.match(w) and z(w) >= ALLOWED_THRESHOLD):
+            kept.append(w)
+        else:
+            cut.append((w, f'freq<{ALLOWED_THRESHOLD}({round(z(w), 2)})'))
+    assert must <= set(kept), 'an answer fell out of the allowed list'
+    assert len(kept) == len(set(kept))
+    return kept, cut
+
+
+def write_allowed_bundles(n, kept):
+    blob = json.dumps(kept, indent=2) + '\n'
+    for d in BUNDLE_DIRS + FIXTURE_DIRS:
+        with open(os.path.join(d, f'allowed-{n}.json'), 'w') as f:
+            f.write(blob)
+        print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, f"allowed-{n}.json"), REPO)}')
+
+
 def scan_lengths():
     z = zipf()
     names = load_wordset(os.path.join(SCRIPT_DATA, 'names-blocklist.txt'))
@@ -222,10 +268,28 @@ def main():
     ap.add_argument('--scan-only', action='store_true')
     ap.add_argument('--curate-length', type=int, choices=(6, 7),
                     help='curate the 6- or 7-letter bank instead of the 5-letter one')
+    ap.add_argument('--curate-allowed', type=int, choices=(6, 7),
+                    help='curate the 6- or 7-letter GUESS list (allowed-N.json)')
     args = ap.parse_args()
 
     if args.scan_only:
         scan_lengths()
+        return
+
+    if args.curate_allowed:
+        n = args.curate_allowed
+        kept, cut = curate_allowed(n)
+        os.makedirs(OUT, exist_ok=True)
+        with open(os.path.join(OUT, f'allowed-{n}-kept.txt'), 'w') as f:
+            f.write('\n'.join(sorted(kept)) + '\n')
+        with open(os.path.join(OUT, f'allowed-{n}-cut.txt'), 'w') as f:
+            f.write('\n'.join(f'{w}\t{r}' for w, r in sorted(cut)) + '\n')
+        print(f'allowed-{n}: kept={len(kept)} cut={len(cut)} '
+              f'(review scripts/out/allowed-{n}-kept.txt, allowed-{n}-cut.txt)')
+        if args.write:
+            write_allowed_bundles(n, kept)
+        else:
+            print('(dry run — no bundles written)')
         return
 
     if args.curate_length:
