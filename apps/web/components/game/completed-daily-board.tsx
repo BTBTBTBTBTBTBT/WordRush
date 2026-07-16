@@ -16,8 +16,9 @@ import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { fetchGauntletStages } from '@/lib/stats-service';
 import { getDailyPuzzle } from '@/components/propernoundle/puzzle-service';
-import { normalizeString, evaluateGuess as evaluatePNGuess, checkWin as pnCheckWin } from '@/components/propernoundle/game-logic';
+import { normalizeString, checkWin as pnCheckWin } from '@/components/propernoundle/game-logic';
 import type { Guess as ProperNoundleGuess, TileState as PNTileState } from '@/components/propernoundle/types';
+import { rebuildPNRow, PN_PLACEHOLDER } from '@/components/propernoundle/reconstruct';
 
 const MULTI_BOARD_MODES = new Set(['QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE']);
 
@@ -181,43 +182,6 @@ interface CompletedDailyBoardProps {
 // completed-mini-board.tsx so the post-game + VS result recaps share it.
 
 // ── ProperNoundle mini board with variable-length word groups ──
-/** A recorded ProperNoundle guess-row placeholder: iOS pads a hint row with
- *  spaces, the web with underscores. */
-const PN_PLACEHOLDER = /[ _]/;
-
-/**
- * Rebuild ONE recorded ProperNoundle row for the cross-device card.
- *
- * Hint rows are recorded POSITIONALLY so the revealed letter sits at its real
- * index — iOS writes "     i  " (space-padded, ProperNoundleView.reveal), the
- * web writes "_____i__" (underscore-padded, use-hints). Feeding either through
- * normalizeString()/evaluateGuess() destroyed that: normalizeString trims and
- * strips whitespace, collapsing the iOS shape to a bare "i", and evaluateGuess
- * then compared length 1 against the 8-letter answer and returned a single
- * `absent` tile — so the letter rendered at slot 0 in gray instead of at its
- * real slot in purple (the same letter/color-disagreement class as the
- * Six/Seven fix above). Hint rows are rebuilt from their own positions here
- * and never re-evaluated; only real guesses go through the evaluator.
- */
-function rebuildPNRow(recordedWord: string, answer: string): ProperNoundleGuess {
-  const answerLen = normalizeString(answer).length;
-  const raw = recordedWord.toLowerCase();
-  const revealed = raw.replace(/[ _]/g, '');
-
-  // Clue hint: consumes a row without revealing any letter (iOS stores "").
-  if (revealed.length === 0) {
-    return { word: ' '.repeat(answerLen), tiles: Array(answerLen).fill('hint-used') as PNTileState[] };
-  }
-  // Vowel/consonant hint: placeholders around the revealed letter(s).
-  if (raw.length === answerLen && PN_PLACEHOLDER.test(raw)) {
-    return {
-      word: [...raw].map(c => (PN_PLACEHOLDER.test(c) ? ' ' : c)).join(''),
-      tiles: [...raw].map(c => (PN_PLACEHOLDER.test(c) ? 'hint-used' : 'correct')) as PNTileState[],
-    };
-  }
-  return { word: normalizeString(recordedWord), tiles: evaluatePNGuess(recordedWord, answer) };
-}
-
 function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }: {
   guesses: ProperNoundleGuess[];
   maxGuesses: number;
