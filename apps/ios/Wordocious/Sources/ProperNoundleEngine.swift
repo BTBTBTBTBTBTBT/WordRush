@@ -42,6 +42,45 @@ enum ProperNoundle {
 
     static func isWin(_ tiles: [NTile]) -> Bool { !tiles.isEmpty && tiles.allSatisfy { $0 == .correct } }
 
+    /// A recorded hint-row placeholder: this app pads with spaces, the web with
+    /// underscores. Both mean "slot not revealed".
+    private static func isPlaceholder(_ c: Character) -> Bool { c == " " || c == "_" }
+
+    /**
+     Rebuild ONE recorded ProperNoundle row (letters + tiles) for the completed
+     cards. Port of the web `rebuildPNRow` (components/propernoundle/reconstruct.ts).
+
+     Hint rows are recorded POSITIONALLY so the revealed letter sits at its real
+     index — this app writes "     i  " (see ProperNoundleView.reveal), the web
+     "_____i__". Running either through `normalize` + `evaluate` destroys that:
+     `normalize` keeps only alphanumerics, collapsing "     i  " to "i", and
+     `evaluate`'s length gate (1 vs 8) then returns a single `.absent` — so the
+     letter rendered at slot 0 in gray instead of at its real slot in purple.
+     Hint rows are rebuilt from their own positions here and never re-evaluated;
+     only real guesses reach the evaluator.
+
+     `letters` uses "" for an unrevealed slot, matching what the mini-board
+     expects (see VSResultDetail's realRows mapping).
+     */
+    static func rebuildRow(recorded: String, answer: String) -> (letters: [String], tiles: [NTile]) {
+        let answerLen = normalize(answer).count
+        let raw = Array(recorded.lowercased())
+        let revealed = raw.filter { !isPlaceholder($0) }
+
+        // Clue hint: consumes a row without revealing any letter (recorded as "").
+        if revealed.isEmpty {
+            return (Array(repeating: "", count: answerLen),
+                    Array(repeating: .hintUsed, count: answerLen))
+        }
+        // Vowel/consonant hint: placeholders around the revealed letter(s).
+        if raw.count == answerLen, raw.contains(where: isPlaceholder) {
+            return (raw.map { isPlaceholder($0) ? "" : String($0).uppercased() },
+                    raw.map { isPlaceholder($0) ? .hintUsed : .correct })
+        }
+        return (Array(normalize(recorded)).map { String($0).uppercased() },
+                evaluate(guess: recorded, answer: answer))
+    }
+
     /// Word lengths from the display string (for the tile layout gaps).
     static func wordGroups(_ display: String) -> [Int] {
         let groups = display.split(separator: " ").map { normalize(String($0)).count }.filter { $0 > 0 }

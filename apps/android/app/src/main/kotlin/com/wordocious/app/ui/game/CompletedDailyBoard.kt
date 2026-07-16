@@ -108,13 +108,32 @@ fun CompletedDailyBoard(modeId: String) {
             replayed = if (g.any { !it.isLetter() }) {
                 // Hint row (Six/Seven): a space-padded string SubmitGuess would
                 // reject as an invalid word (dropping the row). Rebuild the
-                // stored hint evaluation so the reconstructed board shows hint
-                // tiles in their real positions cross-device (web parity).
-                val tiles = g.map { ch ->
-                    if (ch.isLetter()) com.wordocious.core.TileResult(ch.uppercase(), com.wordocious.core.TileState.CORRECT)
-                    else com.wordocious.core.TileResult("", com.wordocious.core.TileState.HINT_USED)
+                // stored hint evaluation instead — deriving the revealed
+                // POSITIONS from the solution rather than trusting the recorded
+                // string's padding, so a row recorded left-aligned ("A     ")
+                // can't replay a CORRECT tile at slot 0 and render the hint in
+                // the wrong column. Mirrors how the row is built in-game (every
+                // occurrence of the revealed letter is CORRECT) — web
+                // use-game-snapshot parity.
+                val solution = replayed.boards[replayed.currentBoardIndex].solution.uppercase()
+                val revealed = g.uppercase().filter { it.isLetter() }.toSet()
+                val usable = solution.isNotEmpty() && solution.any { it in revealed }
+                val tiles = if (usable) {
+                    solution.map { ch ->
+                        if (ch in revealed) com.wordocious.core.TileResult(ch.toString(), com.wordocious.core.TileState.CORRECT)
+                        else com.wordocious.core.TileResult("", com.wordocious.core.TileState.HINT_USED)
+                    }
+                } else {
+                    // Unmatchable row (corrupt — a real hint only reveals a
+                    // letter that IS in the answer): keep what was recorded.
+                    g.map { ch ->
+                        if (ch.isLetter()) com.wordocious.core.TileResult(ch.uppercase(), com.wordocious.core.TileState.CORRECT)
+                        else com.wordocious.core.TileResult("", com.wordocious.core.TileState.HINT_USED)
+                    }
                 }
-                gameReducer(replayed, GameAction.SubmitHint(g, com.wordocious.core.GuessResult(tiles, false)))
+                // Re-derive the stored word too, so guesses agree with tiles.
+                val hintWord = tiles.joinToString("") { if (it.state == com.wordocious.core.TileState.CORRECT) it.letter else " " }
+                gameReducer(replayed, GameAction.SubmitHint(hintWord, com.wordocious.core.GuessResult(tiles, false)))
             } else if (mode == GameMode.SEQUENCE) {
                 val idx = replayed.boards.indexOfFirst { it.status == GameStatus.PLAYING }
                 if (idx < 0) break
@@ -511,14 +530,18 @@ private fun ProperNoundleMiniBoard(guesses: List<String>, puzzle: com.wordocious
     Column(verticalArrangement = Arrangement.spacedBy(3.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         for (r in 0 until 6) {
             val isPast = r < guesses.size
-            val letters = if (isPast) com.wordocious.core.ProperNoundle.normalize(guesses[r]) else ""
-            val tiles = if (isPast) com.wordocious.core.ProperNoundle.evaluate(guesses[r], puzzle.answer) else emptyList()
+            // rebuildRow keeps a hint row's revealed letter at its real slot —
+            // normalize+evaluate collapsed the recorded padding and put it at
+            // slot 0 in gray (web reconstruct.ts / iOS rebuildRow parity).
+            val row = if (isPast) com.wordocious.core.ProperNoundle.rebuildRow(guesses[r], puzzle.answer) else null
+            val letters = row?.letters ?: emptyList()
+            val tiles = row?.tiles ?: emptyList()
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 groups.forEachIndexed { gi, len ->
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         for (k in 0 until len) {
                             val i = starts[gi] + k
-                            val letter = if (isPast && i < letters.length) letters[i].toString().uppercase() else ""
+                            val letter = if (isPast && i < letters.size) letters[i] else ""
                             val state = if (isPast && i < tiles.size) tiles[i] else TileState.EMPTY
                             TileView(letter = letter, state = state, cornerRadius = 3.dp, fontSize = 8f, square = true, modifier = Modifier.size(tileSize))
                         }

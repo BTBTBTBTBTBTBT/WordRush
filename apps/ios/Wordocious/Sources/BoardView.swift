@@ -322,13 +322,34 @@ enum CompletedBoardReconstruct {
                 // completed-board dropdown shows hint tiles cross-device, in
                 // their real positions (web replayRecordedGuesses parity).
                 if g.contains(where: { !$0.isLetter }) {
-                    let tiles = g.map { ch -> TileResult in
-                        ch.isLetter
-                            ? TileResult(letter: String(ch).uppercased(), state: .correct)
-                            : TileResult(letter: "", state: .hintUsed)
-                    }
+                    // Derive the revealed POSITIONS from the solution rather than
+                    // trusting the recorded string's padding: a row recorded
+                    // left-aligned ("A     ") would otherwise replay a .correct
+                    // tile at slot 0 and render the hint in the wrong column.
+                    // Mirrors how the row is built in-game (every occurrence of
+                    // the revealed letter is .correct) — web use-game-snapshot
+                    // parity.
+                    let solution = Array(state.boards[state.currentBoardIndex].solution.uppercased())
+                    let revealed = Set(g.uppercased().filter { $0.isLetter })
+                    let derived = solution.map { revealed.contains($0) }
+                    let usable = !solution.isEmpty && derived.contains(true)
+                    let tiles: [TileResult] = usable
+                        ? solution.enumerated().map { i, ch in
+                            derived[i]
+                                ? TileResult(letter: String(ch), state: .correct)
+                                : TileResult(letter: "", state: .hintUsed)
+                        }
+                        // Unmatchable row (corrupt — a real hint only reveals a
+                        // letter that IS in the answer): keep what was recorded.
+                        : g.map { ch -> TileResult in
+                            ch.isLetter
+                                ? TileResult(letter: String(ch).uppercased(), state: .correct)
+                                : TileResult(letter: "", state: .hintUsed)
+                        }
+                    // Re-derive the stored word too, so guesses agree with tiles.
+                    let hintWord = tiles.map { $0.state == .correct ? $0.letter : " " }.joined()
                     state = gameReducer(state: state, action: .submitHint(
-                        hintWord: g, hintEvaluation: GuessResult(tiles: tiles, isCorrect: false), boardIndex: nil))
+                        hintWord: hintWord, hintEvaluation: GuessResult(tiles: tiles, isCorrect: false), boardIndex: nil))
                 } else if mode == .sequence {
                     // Web shape: flat per-board concatenation — each entry goes
                     // to the first still-PLAYING board (use-game-snapshot parity).

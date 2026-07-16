@@ -66,6 +66,48 @@ object ProperNoundle {
 
     fun isWin(tiles: List<TileState>): Boolean = tiles.isNotEmpty() && tiles.all { it == TileState.CORRECT }
 
+    /** One rebuilt recorded row: `letters` uses "" for an unrevealed slot. */
+    data class RebuiltRow(val letters: List<String>, val tiles: List<TileState>)
+
+    /** A recorded hint-row placeholder: native pads with spaces, the web with
+     *  underscores. Both mean "slot not revealed". */
+    private fun isPlaceholder(c: Char): Boolean = c == ' ' || c == '_'
+
+    /**
+     * Rebuild ONE recorded ProperNoundle row (letters + tiles) for the completed
+     * cards. Port of web `rebuildPNRow` (components/propernoundle/reconstruct.ts)
+     * and iOS `ProperNoundle.rebuildRow`.
+     *
+     * Hint rows are recorded POSITIONALLY so the revealed letter sits at its real
+     * index — native writes "     i  ", the web "_____i__". Running either through
+     * [normalize] + [evaluate] destroys that: normalize keeps only alphanumerics,
+     * collapsing "     i  " to "i", and evaluate's length gate (1 vs 8) then
+     * returns a single ABSENT — so the letter rendered at slot 0 in gray instead
+     * of at its real slot in purple. Hint rows are rebuilt from their own
+     * positions here and never re-evaluated; only real guesses reach the evaluator.
+     */
+    fun rebuildRow(recorded: String, answer: String): RebuiltRow {
+        val answerLen = normalize(answer).length
+        val raw = recorded.lowercase()
+        val revealed = raw.filterNot { isPlaceholder(it) }
+
+        // Clue hint: consumes a row without revealing any letter (recorded as "").
+        if (revealed.isEmpty()) {
+            return RebuiltRow(List(answerLen) { "" }, List(answerLen) { TileState.HINT_USED })
+        }
+        // Vowel/consonant hint: placeholders around the revealed letter(s).
+        if (raw.length == answerLen && raw.any { isPlaceholder(it) }) {
+            return RebuiltRow(
+                raw.map { if (isPlaceholder(it)) "" else it.uppercase() },
+                raw.map { if (isPlaceholder(it)) TileState.HINT_USED else TileState.CORRECT },
+            )
+        }
+        return RebuiltRow(
+            normalize(recorded).map { it.uppercase() },
+            evaluate(recorded, answer),
+        )
+    }
+
     /** Word lengths from the display string (for the tile-group layout). */
     fun wordGroups(display: String): List<Int> {
         val groups = display.split(" ").map { normalize(it).length }.filter { it > 0 }

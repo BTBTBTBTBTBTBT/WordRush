@@ -245,7 +245,7 @@ struct CompletedProperNoundleMiniBoard: View {
         case .correct:  return .correct
         case .present:  return .present
         case .absent:   return .absent
-        case .hintUsed: return .hintUsed   // only reachable via realRows
+        case .hintUsed: return .hintUsed   // realRows, or a rebuilt hint row
         default:        return .empty
         }
     }
@@ -255,10 +255,15 @@ struct CompletedProperNoundleMiniBoard: View {
             ForEach(0..<maxGuesses, id: \.self) { r in
                 let real = realRows?[safe: r]
                 let isPast = real != nil || r < guesses.count
-                let letters: [String] = real?.letters
-                    ?? (isPast ? Array(ProperNoundle.normalize(guesses[r])).map(String.init) : [])
-                let tiles = real?.tiles
-                    ?? (isPast ? ProperNoundle.evaluate(guess: guesses[r], answer: puzzle.answer) : [])
+                // Without a final-state snapshot, rebuild the row from what was
+                // recorded. rebuildRow keeps a hint row's revealed letter at its
+                // real slot — normalize+evaluate collapsed the padding and put
+                // it at slot 0 in gray (web reconstruct.ts parity).
+                let rebuilt: (letters: [String], tiles: [NTile])? = real == nil && r < guesses.count
+                    ? ProperNoundle.rebuildRow(recorded: guesses[r], answer: puzzle.answer)
+                    : nil
+                let letters: [String] = real?.letters ?? rebuilt?.letters ?? []
+                let tiles = real?.tiles ?? rebuilt?.tiles ?? []
                 HStack(spacing: 6) {
                     ForEach(Array(ranges().enumerated()), id: \.offset) { _, range in
                         HStack(spacing: tileSize * 0.12) {
