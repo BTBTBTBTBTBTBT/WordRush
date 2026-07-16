@@ -35,13 +35,15 @@ enum ShareService {
     static func share(
         kind: ShareCardView.Kind, mode: GameMode, modeLabel: String, accent: Color, won: Bool,
         guesses: Int, maxGuesses: Int, timeSeconds: Int,
-        category: String? = nil, wordGroups: [Int]? = nil
+        category: String? = nil, wordGroups: [Int]? = nil,
+        reveal: Bool = false, letters: [[String]]? = nil, solutionDisplay: String? = nil
     ) {
         #if canImport(UIKit)
         let card = ShareCardView(
             kind: kind, modeLabel: modeLabel, accent: accent, won: won, guesses: guesses,
             maxGuesses: maxGuesses, timeSeconds: timeSeconds, dateStr: shortDate(),
-            category: category, wordGroups: wordGroups
+            category: category, wordGroups: wordGroups,
+            reveal: reveal, letters: letters, solutionDisplay: solutionDisplay
         )
         let renderer = ImageRenderer(content: card)
         renderer.proposedSize = .init(card.size)
@@ -55,7 +57,7 @@ enum ShareService {
         Task {
             let url = await uploadAndBuildURL(png: png, kind: kind, mode: mode,
                                               won: won, guesses: guesses, maxGuesses: maxGuesses,
-                                              timeSeconds: timeSeconds)
+                                              timeSeconds: timeSeconds, reveal: reveal)
             await MainActor.run {
                 var items: [Any] = [image]
                 if let url { items.append(url) }
@@ -70,18 +72,23 @@ enum ShareService {
     /// the result stats in its query (consumed by app/s/[...key]).
     private static func uploadAndBuildURL(
         png: Data, kind: ShareCardView.Kind, mode: GameMode,
-        won: Bool, guesses: Int, maxGuesses: Int, timeSeconds: Int
+        won: Bool, guesses: Int, maxGuesses: Int, timeSeconds: Int,
+        reveal: Bool = false
     ) async -> URL? {
         let client = AuthService.shared.client
         // RLS keys the folder on auth.uid()::text, which is lowercase.
         guard let uid = (try? await client.auth.session.user.id.uuidString)?.lowercased() else { return nil }
 
         let sm = shareMode(mode)
+        // "Full results" gets its own object + URL so sharing both variants on
+        // the same day never overwrites the other's OG image. The `m` query
+        // param stays the plain mode — only the storage key carries -full.
+        let keyMode = reveal ? "\(sm)-full" : sm
         let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX")
         f.calendar = Calendar(identifier: .gregorian)
         f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
         let dateStr = f.string(from: Date())
-        let key = "\(uid)/\(sm)-\(dateStr)"
+        let key = "\(uid)/\(keyMode)-\(dateStr)"
         let path = "\(key).png"
 
         do {
@@ -97,7 +104,7 @@ enum ShareService {
             "m": sm, "won": won ? "1" : "0",
             "g": "\(guesses)", "mg": "\(maxGuesses)", "t": "\(timeSeconds)",
             "w": "1080", "h": isVertical ? "1350" : "1080",
-            "v": "\(won ? "w" : "x")\(guesses)-\(timeSeconds)",
+            "v": "\(reveal ? "f" : "")\(won ? "w" : "x")\(guesses)-\(timeSeconds)",
         ]
         switch kind {
         case let .multi(_, boardsSolved, totalBoards):

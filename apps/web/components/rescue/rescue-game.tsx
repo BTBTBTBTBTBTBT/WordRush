@@ -18,7 +18,8 @@ import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-se
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
-import { boardToGrid } from '@/lib/share-image';
+import { chooseShareVariant } from '@/components/share/share-variant-modal';
+import { boardToGrid, boardToLetters } from '@/lib/share-image';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
@@ -145,7 +146,9 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   const handleShare = useCallback(async () => {
-    const boards = state.boards.map(b => ({ grid: boardToGrid(b), won: b.status === 'WON' }));
+    const variant = await chooseShareVariant();
+    if (!variant) return;
+    const boards = state.boards.map(b => ({ grid: boardToGrid(b), letters: boardToLetters(b), won: b.status === 'WON', solution: b.solution }));
     const out = await shareResult({
       layout: 'multi',
       mode: 'Deliverance',
@@ -156,6 +159,7 @@ export function RescueGame({ initialSeed, isDaily }: RescueGameProps = {}) {
       boards,
       boardsSolved: completedBoards,
       totalBoards: 4,
+      reveal: variant === 'full',
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [state, guessesUsed, maxGuesses, elapsedTime, completedBoards]);

@@ -60,9 +60,15 @@ struct FinishedStatsHeader: View {
     let boardsSolved: Int
     let totalBoards: Int
     var onHome: () -> Void
-    var onShare: (() -> Void)? = nil
+    /// Bool = "Full results" (letters revealed); false = spoiler-free card.
+    var onShare: ((Bool) -> Void)? = nil
+    /// False for shares with no tiles to spoil (Gauntlet's stage-chip card) —
+    /// the Share link then skips the variant chooser and shares directly.
+    var shareHasSpoilers: Bool = true
     /// Pro Unlimited only (web: amber "Play Again" on non-daily games).
     var onPlayAgain: (() -> Void)? = nil
+
+    @State private var showShareOptions = false
 
     private var timeStr: String { "\(timeSeconds / 60):\(String(format: "%02d", timeSeconds % 60))" }
     private var isMulti: Bool { totalBoards > 1 }
@@ -90,8 +96,15 @@ struct FinishedStatsHeader: View {
                 Button("Home", action: onHome)
                     .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted).underline()
                 if let onShare {
-                    Button("Share", action: onShare)
-                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
+                    Button("Share") {
+                        if shareHasSpoilers { showShareOptions = true } else { onShare(false) }
+                    }
+                    .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x3B82F6)).underline()
+                    .confirmationDialog("Share your result", isPresented: $showShareOptions, titleVisibility: .visible) {
+                        Button("No spoilers (colors only)") { onShare(false) }
+                        Button("Full results (letters revealed)") { onShare(true) }
+                        Button("Cancel", role: .cancel) {}
+                    }
                 }
                 if let onPlayAgain {
                     Button(won ? "Play Again" : "Try Again", action: onPlayAgain)

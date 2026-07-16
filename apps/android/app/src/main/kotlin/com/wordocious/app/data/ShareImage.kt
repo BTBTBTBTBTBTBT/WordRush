@@ -80,7 +80,10 @@ object ShareImage {
 
     private fun fmtTime(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
 
-    /** Render the share card. wordGroups (ProperNoundle): letters per word. */
+    /** Render the share card. wordGroups (ProperNoundle): letters per word.
+     *  reveal = the "Full results" variant: guessed letters drawn in the tiles
+     *  and the answer under lost boards; false keeps today's spoiler-free card.
+     *  solutionDisplay overrides the caption text (ProperNoundle display form). */
     fun render(
         context: Context,
         state: GameState,
@@ -89,6 +92,8 @@ object ShareImage {
         elapsedSeconds: Int,
         category: String? = null,
         wordGroups: List<Int>? = null,
+        reveal: Boolean = false,
+        solutionDisplay: String? = null,
     ): Bitmap {
         val height = if (mode == GameMode.OCTORDLE || mode == GameMode.GAUNTLET) 1350 else 1080
         val bmp = Bitmap.createBitmap(W, height, Bitmap.Config.ARGB_8888)
@@ -162,12 +167,15 @@ object ShareImage {
         val areaBottom = height - 80f
         when {
             mode == GameMode.GAUNTLET -> drawGauntlet(c, p, state, areaTop, areaBottom, black)
-            state.boards.size > 1 -> drawMulti(c, state, areaTop, areaBottom)
+            state.boards.size > 1 -> drawMulti(c, state, areaTop, areaBottom, reveal, black)
             else -> drawBoardCard(
                 c, board0, cx, (areaTop + areaBottom) / 2,
                 maxW = W - 200f, maxH = areaBottom - areaTop,
                 won = if (board0.status == GameStatus.PLAYING) null else board0.status == GameStatus.WON,
                 wordGroups = wordGroups,
+                reveal = reveal,
+                answerCaption = if (reveal && board0.status == GameStatus.LOST) solutionDisplay ?: board0.solution else null,
+                letterFace = black,
             )
         }
 
@@ -182,17 +190,25 @@ object ShareImage {
      * cardPad 12 + 3px border when won != null, gap 4, tile radius 12% of size,
      * ProperNoundle two-pass wordGroups gaps (groupGap = max(4·gap, tileSize)).
      */
+    private const val ANSWER_CAPTION_H = 44f
+
     private fun drawBoardCard(
         c: Canvas, board: BoardState, cx: Float, cy: Float,
         maxW: Float, maxH: Float, won: Boolean?, wordGroups: List<Int>? = null,
+        reveal: Boolean = false, answerCaption: String? = null,
+        reserveCaption: Boolean = false, letterFace: Typeface? = null,
     ) {
         val gap = 4f
         val cardPad = if (won != null) 12f else 0f
         val borderW = if (won != null) 3f else 0f
         val cols = board.solution.length
         val rows = board.maxGuesses
+        // "Full results": shift the board up by half the caption strip and draw
+        // the answer underneath — grid+caption stay centered where the grid was.
+        val captionH = if (answerCaption != null || reserveCaption) ANSWER_CAPTION_H else 0f
+        val boardCy = cy - captionH / 2
         val innerMaxW = maxW - 2 * (cardPad + borderW)
-        val innerMaxH = maxH - 2 * (cardPad + borderW)
+        val innerMaxH = maxH - captionH - 2 * (cardPad + borderW)
 
         // Two-pass sizing for word-group gaps (ProperNoundle multi-word names).
         val groups = wordGroups?.takeIf { it.size > 1 && it.sum() == cols }
@@ -207,7 +223,7 @@ object ShareImage {
         val totalW = cols * tile + gap * (cols - 1) + extraGroupWidth
         val totalH = rows * tile + gap * (rows - 1)
         val left = cx - totalW / 2
-        val top = cy - totalH / 2
+        val top = boardCy - totalH / 2
 
         // Card frame (win/loss tint + border)
         if (won != null) {
@@ -229,6 +245,13 @@ object ShareImage {
 
         val tilePaint = Paint(Paint.ANTI_ALIAS_FLAG)
         val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+        val letterPaint = if (reveal) Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textAlign = Paint.Align.CENTER
+            typeface = letterFace ?: Typeface.DEFAULT_BOLD
+            isFakeBoldText = true
+            color = Color.WHITE
+            textSize = max(10f, tile * 0.55f)
+        } else null
         val radius = max(4f, tile * 0.12f)
         for (r in 0 until rows) {
             val guess = board.guesses.getOrNull(r)
@@ -246,13 +269,40 @@ object ShareImage {
                     strokePaint.strokeWidth = max(1f, tile * 0.025f)
                     c.drawRoundRect(rect, radius, radius, strokePaint)
                 }
+                if (letterPaint != null && st != TileState.EMPTY) {
+                    val letter = eval?.tiles?.getOrNull(col)?.letter?.uppercase()
+                    if (!letter.isNullOrEmpty()) {
+                        val baseline = rect.centerY() - (letterPaint.ascent() + letterPaint.descent()) / 2
+                        c.drawText(letter, rect.centerX(), baseline, letterPaint)
+                    }
+                }
                 x += tile + gap
             }
         }
+
+        // Revealed loss: the answer never appears in the tiles, so spell it
+        // out under the board — same treatment as the completed-puzzle page.
+        if (answerCaption != null) {
+            val capPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textAlign = Paint.Align.CENTER
+                typeface = letterFace ?: Typeface.DEFAULT_BOLD
+                isFakeBoldText = true
+                color = 0xFFDC2626.toInt()
+                textSize = min(30f, max(16f, tile * 0.6f))
+            }
+            val capCy = boardCy + totalH / 2 + cardPad + borderW + ANSWER_CAPTION_H / 2 + 2f
+            val baseline = capCy - (capPaint.ascent() + capPaint.descent()) / 2
+            c.drawText(answerCaption.uppercase(), cx, baseline, capPaint)
+        }
     }
 
-    /** Multi-board grid — web drawMulti: 2×2 (≤4 boards) or 4×2, rowGap 20 colGap 16. */
-    private fun drawMulti(c: Canvas, state: GameState, areaTop: Float, areaBottom: Float) {
+    /** Multi-board grid — web drawMulti: 2×2 (≤4 boards) or 4×2, rowGap 20 colGap 16.
+     *  When revealing, every cell reserves a uniform caption strip (answer only
+     *  drawn under lost boards) so won/lost boards keep identical tile sizes. */
+    private fun drawMulti(
+        c: Canvas, state: GameState, areaTop: Float, areaBottom: Float,
+        reveal: Boolean = false, letterFace: Typeface? = null,
+    ) {
         val boards = state.boards
         val cols = if (boards.size <= 4) 2 else 4
         val rows = (boards.size + cols - 1) / cols
@@ -265,9 +315,14 @@ object ShareImage {
             val r = i / cols; val col = i % cols
             val cx = minPadH + col * (cellW + colGap) + cellW / 2
             val cy = areaTop + padV + r * (cellH + rowGap) + cellH / 2
+            val boardWon = if (b.status == GameStatus.PLAYING) false else b.status == GameStatus.WON
             drawBoardCard(
                 c, b, cx, cy, maxW = cellW, maxH = cellH,
-                won = if (b.status == GameStatus.PLAYING) false else b.status == GameStatus.WON,
+                won = boardWon,
+                reveal = reveal,
+                answerCaption = if (reveal && !boardWon) b.solution else null,
+                reserveCaption = reveal,
+                letterFace = letterFace,
             )
         }
     }
@@ -321,6 +376,7 @@ object ShareImage {
     fun share(
         context: Context, bitmap: Bitmap, text: String,
         state: GameState, mode: GameMode, elapsedSeconds: Int,
+        reveal: Boolean = false,
     ) {
         val uri = runCatching {
             val dir = File(context.cacheDir, "share").apply { mkdirs() }
@@ -331,7 +387,7 @@ object ShareImage {
         if (uri == null) { ShareHelper.share(context, text); return }
 
         CoroutineScope(Dispatchers.IO).launch {
-            val url = uploadAndBuildUrl(bitmap, state, mode, elapsedSeconds)
+            val url = uploadAndBuildUrl(bitmap, state, mode, elapsedSeconds, reveal)
             val finalText = if (url != null) "$text\n$url" else text
             withContext(Dispatchers.Main) {
                 runCatching {
@@ -547,13 +603,17 @@ object ShareImage {
      */
     private suspend fun uploadAndBuildUrl(
         bitmap: Bitmap, state: GameState, mode: GameMode, elapsedSeconds: Int,
+        reveal: Boolean = false,
     ): String? = runCatching {
         // RLS keys the folder on auth.uid()::text, which is lowercase.
         val uid = AuthService.userId?.lowercase() ?: return null
 
         val sm = shareMode(mode)
         val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-        val key = "$uid/$sm-$dateStr"
+        // "Full results" gets its own object + URL so sharing both variants on
+        // the same day never overwrites the other's OG image.
+        val keyMode = if (reveal) "$sm-full" else sm
+        val key = "$uid/$keyMode-$dateStr"
 
         val png = ByteArrayOutputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it); it.toByteArray() }
         SupabaseConfig.client.storage.from("share-images").upload("$key.png", png) { upsert = true }
@@ -569,7 +629,7 @@ object ShareImage {
             "m" to sm, "won" to if (won) "1" else "0",
             "g" to "$guesses", "mg" to "$maxGuesses", "t" to "$elapsedSeconds",
             "w" to "1080", "h" to if (isVertical) "1350" else "1080",
-            "v" to "${if (won) "w" else "x"}$guesses-$elapsedSeconds",
+            "v" to "${if (reveal) "f" else ""}${if (won) "w" else "x"}$guesses-$elapsedSeconds",
         )
         val gauntlet = state.gauntlet
         if (gauntlet != null) {

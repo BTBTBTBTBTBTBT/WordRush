@@ -65,15 +65,30 @@ final class GameViewModel: ObservableObject {
         return rows
     }
 
-    /// Per-board share grids (multi-board), each padded to prefill+maxGuesses.
-    func shareBoards() -> [(grid: [[TileState]], won: Bool)] {
+    /// Letter grid matching shareGrid row-for-row ('' pads empty rows) — only
+    /// consumed by the "Full results" share variant.
+    func shareLetters() -> [[String]] {
+        let b = state.boards[0]
+        var rows: [[String]] = evaluations.first?.map { $0.tiles.map { $0.letter.uppercased() } } ?? []
+        let width = b.solution.count
+        while rows.count < b.maxGuesses { rows.append(Array(repeating: "", count: width)) }
+        return rows
+    }
+
+    /// Per-board share boards (multi-board), each padded to prefill+maxGuesses.
+    /// Carries letters + solution for the "Full results" variant (the default
+    /// spoiler-free card ignores them).
+    func shareBoards() -> [ShareBoard] {
         state.boards.enumerated().map { i, b in
             var rows: [[TileState]] = (b.prefilledGuesses ?? []).map { $0.evaluation.tiles.map(\.state) }
+            var letters: [[String]] = (b.prefilledGuesses ?? []).map { $0.evaluation.tiles.map { $0.letter.uppercased() } }
             rows += (evaluations[safe: i] ?? []).map { $0.tiles.map(\.state) }
+            letters += (evaluations[safe: i] ?? []).map { $0.tiles.map { $0.letter.uppercased() } }
             let total = (b.prefilledGuesses?.count ?? 0) + b.maxGuesses
             let width = b.solution.count
             while rows.count < total { rows.append(Array(repeating: .empty, count: width)) }
-            return (rows, b.status == .won)
+            while letters.count < total { letters.append(Array(repeating: "", count: width)) }
+            return ShareBoard(grid: rows, letters: letters, won: b.status == .won, solution: b.solution)
         }
     }
 

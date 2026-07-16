@@ -112,7 +112,7 @@ fun PostGameScreen(
     // the best-score upsert — removed.
 
     val accent = modeAccent(mode)
-    val share = {
+    val share = { reveal: Boolean ->
         val text = com.wordocious.app.data.ShareHelper.buildShareText(state, mode, elapsedSeconds)
         // Render the web-parity share card (1080px PNG) and share image + text.
         val pn = if (mode == GameMode.PROPERNOUNDLE)
@@ -124,10 +124,22 @@ fun PostGameScreen(
                 elapsedSeconds = elapsedSeconds,
                 category = pn?.themeCategory,
                 wordGroups = pn?.display?.split(" ")?.map { it.length }?.takeIf { it.size > 1 },
+                reveal = reveal,
+                solutionDisplay = pn?.display,
             )
         }.getOrNull()
-        if (bitmap != null) com.wordocious.app.data.ShareImage.share(context, bitmap, text, state, mode, elapsedSeconds)
+        if (bitmap != null) com.wordocious.app.data.ShareImage.share(context, bitmap, text, state, mode, elapsedSeconds, reveal)
         else com.wordocious.app.data.ShareHelper.share(context, text)
+    }
+    // Gauntlet's card is stage chips (zero tiles — already spoiler-free), so it
+    // shares directly; every other mode gets the two-option chooser.
+    var showShareChooser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val onSharePressed = { if (mode == GameMode.GAUNTLET) share(false) else showShareChooser = true }
+    if (showShareChooser) {
+        ShareVariantDialog(
+            onPick = { reveal -> showShareChooser = false; share(reveal) },
+            onClose = { showShareChooser = false },
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
@@ -193,7 +205,7 @@ fun PostGameScreen(
             FinishedStatsHeader(
                 mode = mode, won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
                 timeSeconds = elapsedSeconds, boardsSolved = boardsSolved, totalBoards = totalBoards,
-                onHome = onBack, onShare = share,
+                onHome = onBack, onShare = onSharePressed,
                 // Web parity: Play Again only on non-daily (Unlimited) games for Pro.
                 onPlayAgain = if (seed.startsWith("unlimited-") &&
                     com.wordocious.app.data.AuthService.isProActive
@@ -510,6 +522,50 @@ private fun DefinitionCard(word: String) {
                 "No definition available for this word.",
                 fontSize = 13.sp, fontWeight = FontWeight.Medium, fontStyle = FontStyle.Italic, color = WTheme.textMuted,
             )
+        }
+    }
+}
+
+/**
+ * Two-option share chooser (web ShareVariantHost / iOS confirmationDialog
+ * parity): "No spoilers" = today's color-only card, "Full results" = same
+ * card with the guessed letters revealed.
+ */
+@Composable
+private fun ShareVariantDialog(onPick: (Boolean) -> Unit, onClose: () -> Unit) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onClose) {
+        Column(
+            Modifier.fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("Share your result", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A1A2E))
+            Column(
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFF7C3AED))
+                    .clickableNoRipple { onPick(false) }
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("No spoilers", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+                Text("Colors only", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.8f))
+            }
+            Column(
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF8F7FF))
+                    .border(1.5.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
+                    .clickableNoRipple { onPick(true) }
+                    .padding(vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("Full results", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A1A2E))
+                Text("Letters revealed", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280))
+            }
         }
     }
 }

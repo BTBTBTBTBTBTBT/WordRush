@@ -251,6 +251,17 @@ final class ProperNoundleVM: ObservableObject {
         return rows
     }
 
+    /// Letter grid matching shareGrid row-for-row ('' pads empty rows) — only
+    /// consumed by the "Full results" share variant. Guess words are stored
+    /// normalized (spaces/diacritics stripped), one letter per tile.
+    func shareLetters() -> [[String]] {
+        var rows: [[String]] = guesses.map { g in
+            Array(ProperNoundle.normalize(g.word).uppercased()).map(String.init)
+        }
+        while rows.count < maxGuesses { rows.append(Array(repeating: "", count: answerLen)) }
+        return rows
+    }
+
     private func finish() {
         finalTimeSeconds = elapsed
         if status == .won { Haptics.success(); SoundManager.shared.playSuccess() }
@@ -304,6 +315,7 @@ struct ProperNoundleView: View {
     @State private var adShown = false
     @State private var showVictory = false
     @State private var showGuide = false
+    @State private var showShareOptions = false
 
     init(seed: String? = nil, onPlayAgain: (() -> Void)? = nil) {
         _vm = StateObject(wrappedValue: ProperNoundleVM(seed: seed))
@@ -453,7 +465,12 @@ struct ProperNoundleView: View {
             // Home / Share row (web parity).
             HStack(spacing: 18) {
                 Button { dismiss() } label: { Label("Home", systemImage: "house.fill").font(Brand.font(13, .black)) }
-                Button { shareResult() } label: { Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(13, .black)) }
+                Button { showShareOptions = true } label: { Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(13, .black)) }
+                    .confirmationDialog("Share your result", isPresented: $showShareOptions, titleVisibility: .visible) {
+                        Button("No spoilers (colors only)") { shareResult(reveal: false) }
+                        Button("Full results (letters revealed)") { shareResult(reveal: true) }
+                        Button("Cancel", role: .cancel) {}
+                    }
                 // Pro Unlimited only (web: Play Again on non-daily ProperNoundle).
                 if let onPlayAgain, !vm.isDaily, !vm.isVersus, AuthService.shared.isProActive {
                     Button(action: onPlayAgain) { Label("Play Again", systemImage: "arrow.clockwise").font(Brand.font(13, .black)) }
@@ -478,7 +495,7 @@ struct ProperNoundleView: View {
         s >= 60 ? "\(s / 60):\(String(format: "%02d", s % 60))" : "\(s)s"
     }
 
-    private func shareResult() {
+    private func shareResult(reveal: Bool = false) {
         // Category pill + multi-word name gaps in the share image (web parity).
         let p = vm.puzzle
         ShareService.share(kind: .single(grid: vm.shareGrid()), mode: .propernoundle,
@@ -486,7 +503,10 @@ struct ProperNoundleView: View {
                            guesses: vm.guesses.count, maxGuesses: vm.maxGuesses,
                            timeSeconds: vm.finalTimeSeconds ?? vm.elapsed,
                            category: p.map { categoryLabel($0.themeCategory) },
-                           wordGroups: p.map { ProperNoundle.wordGroups($0.display) })
+                           wordGroups: p.map { ProperNoundle.wordGroups($0.display) },
+                           reveal: reveal,
+                           letters: vm.shareLetters(),
+                           solutionDisplay: p?.display)
     }
 }
 

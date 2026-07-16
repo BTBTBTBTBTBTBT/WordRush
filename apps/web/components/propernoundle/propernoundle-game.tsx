@@ -19,6 +19,7 @@ import Image from 'next/image';
 import { fetchWikipediaImage, fetchWikipediaHint } from './wikipedia';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
+import { chooseShareVariant } from '@/components/share/share-variant-modal';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
@@ -585,6 +586,8 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
 
   const handleShare = useCallback(async () => {
     if (!puzzle) return;
+    const variant = await chooseShareVariant();
+    if (!variant) return;
     // ProperNoundle tile states are lowercase internally; normalize to the
     // uppercase form the share image expects. Pad to MAX_GUESSES with
     // empty rows sized to the puzzle's normalized answer length.
@@ -597,6 +600,12 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       ...Array(Math.max(0, MAX_GUESSES - played.length)).fill(
         Array(answerLen).fill('EMPTY' as const),
       ),
+    ];
+    // One letter per tile: normalize the guess the same way the evaluator
+    // did (strips spaces/diacritics) so letters align with `grid` columns.
+    const letters: string[][] = [
+      ...guesses.map(g => normalizeString(g.word).toUpperCase().split('').slice(0, answerLen)),
+      ...Array(Math.max(0, MAX_GUESSES - played.length)).fill(Array(answerLen).fill('')),
     ];
     // Letters-per-word, matching the in-game NoundleBoard word-group
     // rendering. For "Kylian Mbappe" → [6, 6], which the share image
@@ -626,6 +635,9 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
       grid,
       category: categoryLabel,
       wordGroups: wordGroups.length > 1 ? wordGroups : undefined,
+      reveal: variant === 'full',
+      letters,
+      solutionDisplay: puzzle.display,
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [puzzle, guesses, gameStatus, elapsedTime]);

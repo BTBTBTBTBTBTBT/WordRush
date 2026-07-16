@@ -35,12 +35,22 @@ interface ShareBase {
   maxGuesses: number;
   /** Defaults to today's local date. */
   date?: Date;
+  /**
+   * "Full results" variant: draw the guessed letters inside the tiles (and
+   * the answer under lost boards) instead of the spoiler-free color-only
+   * treatment. Off by default — the default output stays byte-identical.
+   */
+  reveal?: boolean;
 }
 
 export interface ShareSingleInput extends ShareBase {
   layout: 'single';
   /** Rows of evaluated tiles, one row per guess. Empty rows are padded automatically. */
   grid: TileStateString[][];
+  /** Per-row letters matching `grid` ('' for empty tiles). Required for `reveal`. */
+  letters?: string[][];
+  /** Answer in display form (ProperNoundle keeps its space) — drawn under a lost board when revealing. */
+  solutionDisplay?: string;
   /** Optional category pill (ProperNoundle only). */
   category?: string;
   /**
@@ -56,8 +66,12 @@ export interface ShareSingleInput extends ShareBase {
 
 export interface ShareMultiBoard {
   grid: TileStateString[][];
+  /** Per-row letters matching `grid` ('' for empty tiles). Required for `reveal`. */
+  letters?: string[][];
   /** Whether this specific board was solved — drives its green/red border + tint. */
   won: boolean;
+  /** The board's answer — drawn under the board when revealing a loss. */
+  solution?: string;
 }
 
 export interface ShareMultiInput extends ShareBase {
@@ -217,6 +231,31 @@ export function boardToGrid(board: BoardState): TileStateString[][] {
   return rows;
 }
 
+/**
+ * Letter grid matching boardToGrid row-for-row — same prefill-first order and
+ * the same pad target, with '' for empty tiles so drawTile draws no glyph.
+ * Only consumed by the "Full results" (reveal) share variant.
+ */
+export function boardToLetters(board: BoardState): string[][] {
+  const width = board.solution.length;
+  const rows: string[][] = [];
+  const prefillCount = board.prefilledGuesses?.length ?? 0;
+
+  if (board.prefilledGuesses?.length) {
+    for (const p of board.prefilledGuesses) {
+      rows.push(p.evaluation.tiles.map(t => (t.letter ?? '').toUpperCase()));
+    }
+  }
+  for (const guess of board.guesses) {
+    rows.push(guess.toUpperCase().split(''));
+  }
+  const totalRows = prefillCount + board.maxGuesses;
+  while (rows.length < totalRows) {
+    rows.push(Array(width).fill(''));
+  }
+  return rows;
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Drawing primitives
 // ──────────────────────────────────────────────────────────────────────────
@@ -249,6 +288,7 @@ function drawTile(
   y: number,
   size: number,
   state: TileStateString,
+  letter?: string,
 ): void {
   drawRoundRect(ctx, x, y, size, size, Math.max(4, size * 0.12));
   ctx.fillStyle = TILE_COLORS[state];
@@ -258,6 +298,18 @@ function drawTile(
     ctx.lineWidth = Math.max(1, size * 0.025);
     ctx.stroke();
   }
+  // "Full results" variant: glyph centered in the tile. EMPTY tiles never
+  // carry a letter (boardToLetters pads with ''), so this only fires on
+  // evaluated rows.
+  if (letter && state !== 'EMPTY') {
+    ctx.save();
+    ctx.font = `900 ${Math.max(10, Math.floor(size * 0.55))}px "Nunito", system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(letter.toUpperCase(), x + size / 2, y + size / 2 + 1);
+    ctx.restore();
+  }
 }
 
 /**
@@ -266,6 +318,9 @@ function drawTile(
  * When `won` is null the card is omitted — used for single-board layouts that
  * rely on the header Win/Loss pill instead.
  */
+/** Height reserved under a board for the revealed-loss answer caption. */
+const ANSWER_CAPTION_H = 44;
+
 function drawBoardCard(
   ctx: CanvasRenderingContext2D,
   grid: TileStateString[][],
@@ -275,6 +330,15 @@ function drawBoardCard(
   maxHeight: number,
   won: boolean | null,
   wordGroups?: number[],
+  reveal?: {
+    /** Per-row letters matching `grid`; '' entries draw no glyph. */
+    letters?: string[][];
+    /** Answer text drawn under the board (lost boards only). */
+    answerCaption?: string;
+    /** Reserve the caption strip even without a caption — keeps every board
+     *  in a multi grid the same height whether it was won or lost. */
+    reserveCaption?: boolean;
+  },
 ): void {
   if (!grid.length) return;
   const rows = grid.length;
@@ -287,8 +351,13 @@ function drawBoardCard(
   const gap = 4;
   const groups = wordGroups && wordGroups.length > 1 ? wordGroups : null;
 
+  // "Full results": shift the board up by half the caption strip and draw the
+  // answer underneath, so grid+caption stay centered where the grid alone was.
+  const captionH = reveal && (reveal.answerCaption || reveal.reserveCaption) ? ANSWER_CAPTION_H : 0;
+  const boardCenterY = centerY - captionH / 2;
+
   const innerMaxW = maxWidth - cardPad * 2 - borderWidth * 2;
-  const innerMaxH = maxHeight - cardPad * 2 - borderWidth * 2;
+  const innerMaxH = maxHeight - captionH - cardPad * 2 - borderWidth * 2;
 
   // ProperNoundle multi-word answers need a *visible* break between
   // first and last name. Prior iterations scaled the gap at 3×, then
@@ -318,7 +387,7 @@ function drawBoardCard(
     const cardW = totalW + cardPad * 2;
     const cardH = totalH + cardPad * 2;
     const cardX = centerX - cardW / 2;
-    const cardY = centerY - cardH / 2;
+    const cardY = boardCenterY - cardH / 2;
     drawRoundRect(ctx, cardX, cardY, cardW, cardH, 18);
     ctx.fillStyle = won ? BOARD_WIN_TINT : BOARD_LOSS_TINT;
     ctx.fill();
@@ -354,11 +423,24 @@ function drawBoardCard(
   }
 
   const x0 = centerX - totalW / 2;
-  const y0 = centerY - totalH / 2;
+  const y0 = boardCenterY - totalH / 2;
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      drawTile(ctx, x0 + xOffsets[c], y0 + r * (tile + gap), tile, grid[r][c]);
+      drawTile(ctx, x0 + xOffsets[c], y0 + r * (tile + gap), tile, grid[r][c], reveal?.letters?.[r]?.[c]);
     }
+  }
+
+  // Revealed loss: the answer never appears in the tiles, so spell it out
+  // under the board — same treatment as the completed-puzzle page.
+  if (reveal?.answerCaption) {
+    const captionY = boardCenterY + totalH / 2 + cardPad + borderWidth + ANSWER_CAPTION_H / 2 + 2;
+    ctx.save();
+    ctx.font = `900 ${Math.min(30, Math.max(16, Math.floor(tile * 0.6)))}px "Nunito", system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = LOSS_FG;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(reveal.answerCaption.toUpperCase(), centerX, captionY);
+    ctx.restore();
   }
 }
 
@@ -550,7 +632,13 @@ function drawSingle(
   // echoes the result in the body too — same treatment as multi-board.
   // wordGroups is only populated for multi-word ProperNoundle answers; every
   // other caller leaves it undefined and the tiles render uniformly spaced.
-  drawBoardCard(ctx, input.grid, centerX, centerY, maxWidth, maxHeight, input.won, input.wordGroups);
+  const reveal = input.reveal
+    ? {
+        letters: input.letters,
+        answerCaption: !input.won ? input.solutionDisplay : undefined,
+      }
+    : undefined;
+  drawBoardCard(ctx, input.grid, centerX, centerY, maxWidth, maxHeight, input.won, input.wordGroups, reveal);
 }
 
 function drawMulti(
@@ -597,12 +685,17 @@ function drawMulti(
 
   const areaHeight = footerTop - headerBottom - verticalPad * 2;
 
+  // "Full results": every cell reserves a uniform caption strip under its
+  // board (the answer is only drawn under lost boards) so won and lost
+  // boards keep identical tile sizes and vertical rhythm.
+  const captionH = input.reveal ? ANSWER_CAPTION_H : 0;
+
   // Tile size derives from whichever axis is tighter. Boards are typically
   // tall-and-narrow (5×9, 5×10, 5×13), so the row budget binds — the width
   // clamp is only there for defensive over-wide inputs.
   const perRowHeight = (areaHeight - rowGap * (rows - 1)) / rows;
   const tileFromHeight =
-    (perRowHeight - cardPad * 2 - borderWidth * 2 - tileGap * (boardRows - 1)) / boardRows;
+    (perRowHeight - captionH - cardPad * 2 - borderWidth * 2 - tileGap * (boardRows - 1)) / boardRows;
   const availW = width - minHorizontalPad * 2 - colGap * (cols - 1);
   const perColWidth = availW / cols;
   const tileFromWidth =
@@ -611,9 +704,10 @@ function drawMulti(
 
   const boardW = boardCols * tile + (boardCols - 1) * tileGap + cardPad * 2 + borderWidth * 2;
   const boardH = boardRows * tile + (boardRows - 1) * tileGap + cardPad * 2 + borderWidth * 2;
+  const cellH = boardH + captionH;
 
   const totalW = cols * boardW + (cols - 1) * colGap;
-  const totalH = rows * boardH + (rows - 1) * rowGap;
+  const totalH = rows * cellH + (rows - 1) * rowGap;
   const startX = (width - totalW) / 2;
   const startY = headerBottom + verticalPad + (areaHeight - totalH) / 2;
 
@@ -621,9 +715,16 @@ function drawMulti(
     const col = i % cols;
     const row = Math.floor(i / cols);
     const cellCenterX = startX + col * (boardW + colGap) + boardW / 2;
-    const cellCenterY = startY + row * (boardH + rowGap) + boardH / 2;
+    const cellCenterY = startY + row * (cellH + rowGap) + cellH / 2;
     const board = input.boards[i];
-    drawBoardCard(ctx, board.grid, cellCenterX, cellCenterY, boardW, boardH, board.won);
+    const reveal = input.reveal
+      ? {
+          letters: board.letters,
+          answerCaption: !board.won ? board.solution : undefined,
+          reserveCaption: true,
+        }
+      : undefined;
+    drawBoardCard(ctx, board.grid, cellCenterX, cellCenterY, boardW, cellH, board.won, undefined, reveal);
   }
 }
 

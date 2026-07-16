@@ -117,7 +117,11 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
     // days on distinct URLs so social scrapers never serve a stale image.
     // The all-dailies card is keyed by a synthetic mode so it never collides
     // with a single-mode share on the same day.
-    const keyMode = input.layout === 'daily-sweep' ? 'DailySweep' : input.layout === 'profile' ? 'Profile' : input.mode;
+    let keyMode = input.layout === 'daily-sweep' ? 'DailySweep' : input.layout === 'profile' ? 'Profile' : input.mode;
+    // "Full results" variant gets its own object + URL so sharing both
+    // variants on the same day never overwrites the other's OG image.
+    const reveal = (input.layout === 'single' || input.layout === 'multi') && input.reveal;
+    if (reveal) keyMode = `${keyMode}-full`;
     const key = `${user.id}/${keyMode}-${dateStr}`;
     const path = `${key}.png`;
 
@@ -165,7 +169,7 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
     }
     // Distinguishes distinct results on the same URL so a social re-scrape
     // never serves a cached preview from an earlier attempt that day.
-    params.set('v', `${input.won ? 'w' : 'x'}${input.guesses}-${input.timeSeconds}`);
+    params.set('v', `${reveal ? 'f' : ''}${input.won ? 'w' : 'x'}${input.guesses}-${input.timeSeconds}`);
 
     return `https://wordocious.com/s/${key}?${params.toString()}`;
   } catch {

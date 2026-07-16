@@ -64,7 +64,7 @@ struct GameScreen: View {
                                 timeSeconds: vm.elapsedSeconds,
                                 boardsSolved: vm.boards.filter { $0.status == .won }.count,
                                 totalBoards: vm.boardCount,
-                                onHome: { dismiss() }, onShare: { share() },
+                                onHome: { dismiss() }, onShare: { reveal in share(reveal: reveal) },
                                 onPlayAgain: playAgainAction)
                             if vm.isDaily { DailyRankBadge(gameMode: mode) }
                             if vm.boardCount > 1 {
@@ -430,7 +430,7 @@ struct GameScreen: View {
 
     // MARK: Post-game share
 
-    private func share() {
+    private func share(reveal: Bool = false) {
         let kind: ShareCardView.Kind
         if vm.isGauntlet {
             let stages = vm.gauntletStagesShare()
@@ -446,9 +446,13 @@ struct GameScreen: View {
         // totalGuesses for both guesses and maxGuesses), not the last stage's.
         let shareGuesses = vm.isGauntlet ? vm.gauntletTotalGuesses : vm.rowsUsed
         let shareMax = vm.isGauntlet ? vm.gauntletTotalGuesses : vm.maxGuesses
+        let single = !vm.isGauntlet && vm.boardCount == 1
         ShareService.share(kind: kind, mode: mode, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
                            won: vm.status == .won, guesses: shareGuesses, maxGuesses: shareMax,
-                           timeSeconds: vm.elapsedSeconds)
+                           timeSeconds: vm.elapsedSeconds,
+                           reveal: reveal,
+                           letters: single ? vm.shareLetters() : nil,
+                           solutionDisplay: single ? vm.state.boards[0].solution : nil)
     }
 
     // MARK: Gauntlet stage-clear

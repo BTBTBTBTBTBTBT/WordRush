@@ -51,7 +51,7 @@ struct SolvedPuzzleView: View {
                             timeSeconds: d.timeSeconds,
                             boardsSolved: d.won ? d.solutions.count : solvedCount(d),
                             totalBoards: d.solutions.count,
-                            onHome: { dismiss() }, onShare: { share() })
+                            onHome: { dismiss() }, onShare: { reveal in share(reveal: reveal) })
                         DailyRankBadge(gameMode: mode)
                         boards(d)
                         ScoreBreakdownView(gameMode: mode.rawValue, completed: d.won,
@@ -196,9 +196,24 @@ struct SolvedPuzzleView: View {
         return rows
     }
 
+    /// Letter grid matching `grid(_:)` row-for-row ('' pads empty rows) — only
+    /// consumed by the "Full results" share variant.
+    private func letters(_ b: BoardState) -> [[String]] {
+        var rows: [[String]] = []
+        for p in b.prefilledGuesses ?? [] { rows.append(p.evaluation.tiles.map { $0.letter.uppercased() }) }
+        for g in b.guesses {
+            let ev = b.hintEvaluations?[g] ?? evaluateGuess(solution: b.solution, guess: g)
+            rows.append(ev.tiles.map { $0.letter.uppercased() })
+        }
+        let total = (b.prefilledGuesses?.count ?? 0) + b.maxGuesses
+        let w = b.solution.count
+        while rows.count < total { rows.append(Array(repeating: "", count: w)) }
+        return rows
+    }
+
     /// Build the share card from the completed data and present the share sheet
     /// (same ShareService the live post-game screen uses → identical image).
-    private func share() {
+    private func share(reveal: Bool = false) {
         let kind: ShareCardView.Kind
         if mode == .gauntlet, let g = gauntlet {
             let stages = g.stages.map { st -> GauntletStageShare in
@@ -218,15 +233,23 @@ struct SolvedPuzzleView: View {
         }
         guard let d = data else { return }
         let bs = displayBoards(d)
+        var singleBoard: BoardState? = nil
         if bs.count > 1 {
-            kind = .multi(boards: bs.map { (grid($0), $0.status == .won) },
+            kind = .multi(boards: bs.map { ShareBoard(grid: grid($0), letters: letters($0), won: $0.status == .won, solution: $0.solution) },
                           boardsSolved: d.won ? bs.count : solvedCount(d), totalBoards: bs.count)
         } else if let first = bs.first {
             kind = .single(grid: grid(first))
+            singleBoard = first
         } else {
             return
         }
+        // ProperNoundle: caption the loss with the display form ("Taylor Swift"),
+        // not the normalized board solution.
+        let pnDisplay = mode == .propernoundle ? ProperNoundle.dailyPuzzle()?.display : nil
         ShareService.share(kind: kind, mode: mode, modeLabel: ModeStyle.shareLabel(mode), accent: ModeStyle.accent(mode),
-                           won: d.won, guesses: d.guessCount, maxGuesses: maxGuesses, timeSeconds: d.timeSeconds)
+                           won: d.won, guesses: d.guessCount, maxGuesses: maxGuesses, timeSeconds: d.timeSeconds,
+                           reveal: reveal,
+                           letters: singleBoard.map { letters($0) },
+                           solutionDisplay: pnDisplay ?? singleBoard?.solution)
     }
 }

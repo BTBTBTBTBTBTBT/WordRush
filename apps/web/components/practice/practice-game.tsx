@@ -23,6 +23,7 @@ import { recordModePlayed } from '@/lib/play-limit-service';
 import { XpToast } from '@/components/effects/xp-toast';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { shareResult } from '@/lib/share-utils';
+import { chooseShareVariant } from '@/components/share/share-variant-modal';
 import { playInvalid } from '@/lib/sounds';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
@@ -307,6 +308,8 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
   };
 
   const handleShare = useCallback(async () => {
+    const variant = await chooseShareVariant();
+    if (!variant) return;
     // Rows the player actually guessed, as CORRECT/PRESENT/ABSENT states.
     // Pad to maxGuesses with EMPTY rows so the share image mirrors the
     // full played board instead of floating above empty space.
@@ -316,11 +319,14 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
         return t.state as 'CORRECT' | 'PRESENT' | 'ABSENT';
       }),
     );
+    const padRows = Math.max(0, currentBoard.maxGuesses - played.length);
     const grid: ('CORRECT' | 'PRESENT' | 'ABSENT' | 'EMPTY')[][] = [
       ...played,
-      ...Array(Math.max(0, currentBoard.maxGuesses - played.length)).fill(
-        Array(currentBoard.solution.length).fill('EMPTY' as const),
-      ),
+      ...Array(padRows).fill(Array(currentBoard.solution.length).fill('EMPTY' as const)),
+    ];
+    const letters: string[][] = [
+      ...evaluations.map(e => e.tiles.map(t => (t.letter ?? '').toUpperCase())),
+      ...Array(padRows).fill(Array(currentBoard.solution.length).fill('')),
     ];
     const shareModeMap: Record<string, string> = { DUEL: 'Classic', DUEL_6: 'Six', DUEL_7: 'Seven' };
     const out = await shareResult({
@@ -331,6 +337,9 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
       maxGuesses: currentBoard.maxGuesses,
       timeSeconds: elapsedTime,
       grid,
+      reveal: variant === 'full',
+      letters,
+      solutionDisplay: currentBoard.solution,
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [evaluations, state.status, currentBoard, elapsedTime]);

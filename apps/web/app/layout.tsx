@@ -11,6 +11,7 @@ import { DailyBoundaryReload } from '@/components/providers/daily-boundary-reloa
 import { ProPromptModal } from '@/components/modals/pro-prompt-modal';
 import { WelcomeModal } from '@/components/modals/welcome-modal';
 import { SharePreviewHost } from '@/components/share/share-preview-modal';
+import { ShareVariantHost } from '@/components/share/share-variant-modal';
 import { AuthGate } from '@/components/auth/auth-gate';
 import { RotateOverlay } from '@/components/ui/rotate-overlay';
 import { PwaProvider } from '@/components/providers/pwa-provider';
@@ -158,6 +159,7 @@ export default function RootLayout({
                     <WelcomeModal />
                     <ProPromptModal />
                     <SharePreviewHost />
+                    <ShareVariantHost />
                     <PwaProvider />
                     <Toaster />
                     <AdBanner />

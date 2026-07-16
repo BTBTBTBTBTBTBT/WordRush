@@ -18,7 +18,8 @@ import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-se
 import { XpToast } from '@/components/effects/xp-toast';
 import { recordModePlayed } from '@/lib/play-limit-service';
 import { shareResult } from '@/lib/share-utils';
-import { boardToGrid } from '@/lib/share-image';
+import { chooseShareVariant } from '@/components/share/share-variant-modal';
+import { boardToGrid, boardToLetters } from '@/lib/share-image';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
@@ -143,7 +144,9 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
   const totalGuesses = state.boards.reduce((max, b) => Math.max(max, b.guesses.length), 0);
 
   const handleShare = useCallback(async () => {
-    const boards = state.boards.map(b => ({ grid: boardToGrid(b), won: b.status === 'WON' }));
+    const variant = await chooseShareVariant();
+    if (!variant) return;
+    const boards = state.boards.map(b => ({ grid: boardToGrid(b), letters: boardToLetters(b), won: b.status === 'WON', solution: b.solution }));
     const boardsSolved = boards.filter(b => b.won).length;
     const out = await shareResult({
       layout: 'multi',
@@ -155,6 +158,7 @@ export function QuordleGame({ initialSeed, isDaily }: QuordleGameProps = {}) {
       boards,
       boardsSolved,
       totalBoards: 4,
+      reveal: variant === 'full',
     });
     if (out.via !== 'failed') { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   }, [state, totalGuesses, elapsedTime]);

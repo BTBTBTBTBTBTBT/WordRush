@@ -4,10 +4,20 @@ import WordociousCore
 /// Faithful port of the web share image (lib/share-image.ts) — single, multi,
 /// and gauntlet layouts — rendered to PNG via ImageRenderer. Same palette,
 /// wordmark gradient, mode label, stats line + Win/Loss pill, and footer.
+/// One board of a multi-board share: color grid, optional letters (only used
+/// by the "Full results" variant), win/loss, and the answer (drawn under the
+/// board when revealing a loss).
+struct ShareBoard {
+    let grid: [[TileState]]
+    var letters: [[String]]? = nil
+    let won: Bool
+    var solution: String? = nil
+}
+
 struct ShareCardView: View {
     enum Kind {
         case single(grid: [[TileState]])
-        case multi(boards: [(grid: [[TileState]], won: Bool)], boardsSolved: Int, totalBoards: Int)
+        case multi(boards: [ShareBoard], boardsSolved: Int, totalBoards: Int)
         case gauntlet(stages: [GauntletStageShare], stagesCompleted: Int, totalStages: Int)
     }
 
@@ -24,6 +34,13 @@ struct ShareCardView: View {
     /// full tile-width gap separates first/last names in the grid.
     var category: String? = nil
     var wordGroups: [Int]? = nil
+    /// "Full results" variant: draw the guessed letters in the tiles and the
+    /// answer under lost boards. False = today's spoiler-free color-only card.
+    var reveal: Bool = false
+    /// Single-board letters, row-for-row with the grid ('' = no glyph).
+    var letters: [[String]]? = nil
+    /// Answer in display form (ProperNoundle keeps its space) for a lost single board.
+    var solutionDisplay: String? = nil
 
     private let bg = Color(hex: 0xF8F7FF)
     private let textMuted = Color(hex: 0x6B7280)
@@ -91,13 +108,20 @@ struct ShareCardView: View {
     private func body(for kind: Kind) -> some View {
         switch kind {
         case .single(let grid):
-            boardCard(grid: grid, won: won, maxSide: 760, groups: wordGroups)
+            boardCard(grid: grid, letters: reveal ? letters : nil, won: won,
+                      maxSide: reveal && !won ? 716 : 760, groups: wordGroups,
+                      answerCaption: reveal && !won ? solutionDisplay : nil)
         case .multi(let boards, _, _):
             let cols = boards.count <= 4 ? 2 : 4
-            let side: CGFloat = boards.count <= 4 ? 380 : 220
+            // Revealing reserves a caption strip under every board — shrink the
+            // board budget so cell+caption keeps the original grid footprint.
+            let side: CGFloat = (boards.count <= 4 ? 380 : 220) - (reveal ? 40 : 0)
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(side), spacing: 24), count: cols), spacing: 24) {
                 ForEach(0..<boards.count, id: \.self) { i in
-                    boardCard(grid: boards[i].grid, won: boards[i].won, maxSide: side)
+                    boardCard(grid: boards[i].grid, letters: reveal ? boards[i].letters : nil,
+                              won: boards[i].won, maxSide: side,
+                              answerCaption: reveal && !boards[i].won ? boards[i].solution : nil,
+                              reserveCaption: reveal)
                 }
             }
         case .gauntlet(let stages, _, _):
@@ -108,7 +132,9 @@ struct ShareCardView: View {
         }
     }
 
-    private func boardCard(grid: [[TileState]], won: Bool, maxSide: CGFloat, groups: [Int]? = nil) -> some View {
+    private func boardCard(grid: [[TileState]], letters: [[String]]? = nil, won: Bool,
+                           maxSide: CGFloat, groups: [Int]? = nil,
+                           answerCaption: String? = nil, reserveCaption: Bool = false) -> some View {
         let cols = grid.first?.count ?? 5
         let rows = grid.count
         let gap: CGFloat = max(3, maxSide * 0.012)
@@ -131,25 +157,49 @@ struct ShareCardView: View {
             for size in g { out.append(start..<(start + size)); start += size }
             return out
         }()
-        return VStack(spacing: gap) {
-            ForEach(0..<rows, id: \.self) { r in
-                HStack(spacing: groupGap) {
-                    ForEach(0..<chunks.count, id: \.self) { gi in
-                        HStack(spacing: gap) {
-                            ForEach(chunks[gi], id: \.self) { c in
-                                RoundedRectangle(cornerRadius: max(4, tile * 0.12)).fill(tileColor(grid[r][c]))
-                                    .frame(width: tile, height: tile)
-                                    .overlay(grid[r][c] == .empty ? RoundedRectangle(cornerRadius: max(4, tile * 0.12))
-                                        .stroke(Color(hex: 0xD1D5DB), lineWidth: 1.5) : nil)
+        let captionH: CGFloat = (answerCaption != nil || reserveCaption) ? 44 : 0
+        return VStack(spacing: 0) {
+            VStack(spacing: gap) {
+                ForEach(0..<rows, id: \.self) { r in
+                    HStack(spacing: groupGap) {
+                        ForEach(0..<chunks.count, id: \.self) { gi in
+                            HStack(spacing: gap) {
+                                ForEach(chunks[gi], id: \.self) { c in
+                                    RoundedRectangle(cornerRadius: max(4, tile * 0.12)).fill(tileColor(grid[r][c]))
+                                        .frame(width: tile, height: tile)
+                                        .overlay(grid[r][c] == .empty ? RoundedRectangle(cornerRadius: max(4, tile * 0.12))
+                                            .stroke(Color(hex: 0xD1D5DB), lineWidth: 1.5) : nil)
+                                        .overlay(tileLetter(letters?[safe: r]?[safe: c], state: grid[r][c], tile: tile))
+                                }
                             }
                         }
                     }
                 }
             }
+            .padding(pad)
+            .background(RoundedRectangle(cornerRadius: 18).fill(won ? boardWinTint : boardLossTint))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(won ? winFG : lossFG, lineWidth: 4))
+            // Revealed loss: the answer never appears in the tiles, so spell it
+            // out under the board — same treatment as the completed-puzzle page.
+            if captionH > 0 {
+                Text(answerCaption?.uppercased() ?? " ")
+                    .font(Brand.font(min(30, max(16, tile * 0.6)), .black))
+                    .foregroundStyle(lossFG)
+                    .lineLimit(1).minimumScaleFactor(0.5)
+                    .frame(height: captionH)
+            }
         }
-        .padding(pad)
-        .background(RoundedRectangle(cornerRadius: 18).fill(won ? boardWinTint : boardLossTint))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(won ? winFG : lossFG, lineWidth: 4))
+    }
+
+    /// "Full results" glyph — white, black-weight, centered; EMPTY tiles and
+    /// missing letters draw nothing (the spoiler-free variant passes nil rows).
+    @ViewBuilder
+    private func tileLetter(_ letter: String?, state: TileState, tile: CGFloat) -> some View {
+        if let letter, !letter.isEmpty, state != .empty {
+            Text(letter.uppercased())
+                .font(Brand.font(max(10, tile * 0.55), .black))
+                .foregroundStyle(.white)
+        }
     }
 
     private func gauntletChip(_ index: Int, _ s: GauntletStageShare) -> some View {
