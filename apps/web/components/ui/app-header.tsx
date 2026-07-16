@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Flame, HelpCircle, Settings } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { ProBadge } from '@/components/ui/pro-badge';
-import { HelpModal } from '@/components/modals/help-modal';
+import { MenuModal } from '@/components/modals/menu-modal';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { StatPopover } from '@/components/ui/stat-popover';
 
@@ -97,7 +97,7 @@ export function AppHeader() {
         {/* gap-1.5 matches the native header's spacing(6) — the extra 2px per
             gap was part of what squeezed the wordmark into truncating. */}
         <div className="flex items-center gap-1.5 relative shrink-0">
-          {/* Help button — always visible */}
+          {/* "?" menu — opens the site-nav menu (native MenuSheet parity) */}
           <button
             onClick={() => setHelpOpen(true)}
             className="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
@@ -106,7 +106,7 @@ export function AppHeader() {
               border: '1.5px solid var(--color-border-alt)',
               color: 'var(--color-text-muted)',
             }}
-            aria-label="How to play"
+            aria-label="Menu"
           >
             <HelpCircle className="w-4 h-4" />
           </button>
@@ -221,7 +221,7 @@ export function AppHeader() {
         </div>
       </header>
 
-      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <MenuModal open={helpOpen} onClose={() => setHelpOpen(false)} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
