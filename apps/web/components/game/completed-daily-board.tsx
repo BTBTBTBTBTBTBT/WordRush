@@ -181,6 +181,43 @@ interface CompletedDailyBoardProps {
 // completed-mini-board.tsx so the post-game + VS result recaps share it.
 
 // ── ProperNoundle mini board with variable-length word groups ──
+/** A recorded ProperNoundle guess-row placeholder: iOS pads a hint row with
+ *  spaces, the web with underscores. */
+const PN_PLACEHOLDER = /[ _]/;
+
+/**
+ * Rebuild ONE recorded ProperNoundle row for the cross-device card.
+ *
+ * Hint rows are recorded POSITIONALLY so the revealed letter sits at its real
+ * index — iOS writes "     i  " (space-padded, ProperNoundleView.reveal), the
+ * web writes "_____i__" (underscore-padded, use-hints). Feeding either through
+ * normalizeString()/evaluateGuess() destroyed that: normalizeString trims and
+ * strips whitespace, collapsing the iOS shape to a bare "i", and evaluateGuess
+ * then compared length 1 against the 8-letter answer and returned a single
+ * `absent` tile — so the letter rendered at slot 0 in gray instead of at its
+ * real slot in purple (the same letter/color-disagreement class as the
+ * Six/Seven fix above). Hint rows are rebuilt from their own positions here
+ * and never re-evaluated; only real guesses go through the evaluator.
+ */
+function rebuildPNRow(recordedWord: string, answer: string): ProperNoundleGuess {
+  const answerLen = normalizeString(answer).length;
+  const raw = recordedWord.toLowerCase();
+  const revealed = raw.replace(/[ _]/g, '');
+
+  // Clue hint: consumes a row without revealing any letter (iOS stores "").
+  if (revealed.length === 0) {
+    return { word: ' '.repeat(answerLen), tiles: Array(answerLen).fill('hint-used') as PNTileState[] };
+  }
+  // Vowel/consonant hint: placeholders around the revealed letter(s).
+  if (raw.length === answerLen && PN_PLACEHOLDER.test(raw)) {
+    return {
+      word: [...raw].map(c => (PN_PLACEHOLDER.test(c) ? ' ' : c)).join(''),
+      tiles: [...raw].map(c => (PN_PLACEHOLDER.test(c) ? 'hint-used' : 'correct')) as PNTileState[],
+    };
+  }
+  return { word: normalizeString(recordedWord), tiles: evaluatePNGuess(recordedWord, answer) };
+}
+
 function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }: {
   guesses: ProperNoundleGuess[];
   maxGuesses: number;
@@ -194,6 +231,10 @@ function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }:
       case 'correct': return 'tile-correct';
       case 'present': return 'tile-present';
       case 'absent': return 'tile-absent';
+      // Hint rows: same grey as the in-game NoundleBoard (#e5e7eb/#d1d5db) —
+      // without this they fell through to the white "empty" style and a hint
+      // row was indistinguishable from an unplayed one.
+      case 'hint-used': return 'bg-gray-200 border-gray-300';
       default: return 'bg-white border-gray-300';
     }
   };
@@ -211,13 +252,16 @@ function CompletedProperNoundleMiniBoard({ guesses, maxGuesses, answerDisplay }:
               const groupTiles = [];
               for (let ti = 0; ti < groupLen; ti++) {
                 const idx = letterIdx++;
-                const letter = isPast && guess ? (guess.word[idx] || '') : '';
+                const raw = isPast && guess ? (guess.word[idx] || '') : '';
+                // Placeholders hold a hint row's unrevealed slots — render the
+                // tile, never the ' '/'_' character itself.
+                const letter = PN_PLACEHOLDER.test(raw) ? '' : raw;
                 const tileState = isPast && guess && guess.tiles[idx] ? guess.tiles[idx] : 'empty';
                 groupTiles.push(
                   <div
                     key={`${gi}-${ti}`}
                     className={`flex items-center justify-center border rounded text-[6px] font-bold leading-none ${
-                      tileState === 'empty' ? 'text-gray-800' : 'text-white'
+                      tileState === 'empty' || tileState === 'hint-used' ? 'text-gray-800' : 'text-white'
                     } ${getPNTileColor(tileState)}`}
                     style={{
                       width: `${Math.min(16, Math.floor(200 / totalLetters))}px`,
@@ -430,10 +474,7 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
         if (cancelled || !row) return;
         const words: string[] = Array.isArray(row.player1_guesses) ? row.player1_guesses : [];
         if (words.length === 0) return;
-        const rebuilt: ProperNoundleGuess[] = words.map((w) => ({
-          word: normalizeString(w),
-          tiles: evaluatePNGuess(w, pnPuzzle.answer),
-        }));
+        const rebuilt: ProperNoundleGuess[] = words.map((w) => rebuildPNRow(w, pnPuzzle.answer));
         if (!cancelled) setPnServerGuesses(rebuilt);
       } catch { /* offline / RLS — leave the card hidden, no worse than before */ }
     })();
@@ -486,11 +527,17 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
     // ProperNoundle has three independent hint actions (clue / vowel /
     // consonant); count whichever were used so the summary matches the
     // leaderboard's hint column. Hint detail only exists in the local save.
+    // On the reconstruction path there's no hintState, but hint rows are still
+    // identifiable: the evaluator only ever emits correct/present/absent, so a
+    // 'hint-used' tile can only come from a hint row (clue, vowel, or
+    // consonant — one row each, matching the local count's semantics). Deriving
+    // it stops a cross-device card from claiming "No hints — full credit" over
+    // a board that visibly shows hint rows.
     const pnHints = localValid
       ? (pnSaved!.hintState?.hintUsed ? 1 : 0) +
         (pnSaved!.hintState?.vowelUsed ? 1 : 0) +
         (pnSaved!.hintState?.consonantUsed ? 1 : 0)
-      : 0;
+      : pnGuessRows.filter(g => g.tiles.some(t => t === 'hint-used')).length;
     const pnHintLabel = formatHintsLabel('PROPERNOUNDLE', pnHints);
     // Match the leaderboard row (recorded daily_results), not the local timer.
     const pnTime = recorded?.timeSeconds ?? (localValid ? pnSaved!.elapsedTime : 0);
