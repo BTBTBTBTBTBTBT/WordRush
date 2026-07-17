@@ -145,12 +145,14 @@ struct DailyRankBadge: View {
     var body: some View {
         Group {
             if let r = rank, r.total >= 2 {
-                let percentile = Int((1 - Double(r.rank - 1) / Double(r.total)) * 100)
-                let top = max(1, 100 - percentile)
-                let gold = percentile >= 75
+                // Shared ROUNDING semantics (Core Format.swift) — this badge
+                // truncated where web rounded, so the same rank read
+                // "Top 13%" here and "Top 12%" on wordocious.com.
+                let badge = topPercentLabel(rank: r.rank, totalPlayers: r.total)
+                let gold = badge.gold
                 HStack(spacing: 4) {
                     Image(systemName: "trophy.fill").font(.system(size: 10))
-                    Text("Top \(top)% · #\(r.rank) of \(r.total)").font(Brand.font(10, .black))
+                    Text("\(badge.label) · #\(r.rank) of \(r.total)").font(Brand.font(10, .black))
                 }
                 .foregroundStyle(gold ? Color(hex: 0x92400E) : Theme.textMuted)
                 .padding(.horizontal, 8).padding(.vertical, 3)

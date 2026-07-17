@@ -213,9 +213,12 @@ enum MatchStatsService {
     static func topWords(mode: GameMode? = nil, limit: Int = 5, playType: String = "solo") async -> [TopWord] {
         if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
+        // player1-only, matching web fetchTopWords + Android topWords: this
+        // query reads player1_guesses, so including player2 rows counted the
+        // OPPONENT's words whenever the user was player2 in a VS match.
         var q = AuthService.shared.client.from("matches")
             .select("player1_guesses,winner_id,game_mode")
-            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
+            .eq("player1_id", value: uid)
         q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
         let rows: [GuessesRow] = (try? await q.order("created_at", ascending: false).limit(1000).execute().value) ?? []
@@ -516,6 +519,9 @@ enum MatchStatsService {
         let flawlessSet = Set(bonuses.filter { $0.flawless_awarded == true }.map { $0.day })
 
         var perDay: [String: Int] = [:]
+        // .rounded() is CORRECT here (not the formatScore truncate contract):
+        // the web daily-points chart rounds per row (stats-service.ts
+        // fetchDailyPointsSeries uses Math.round) — keep them matched.
         for r in rows { perDay[r.day, default: 0] += Int((r.composite_score ?? 0).rounded()) }
         return perDay.map { DailyPointsPoint(day: $0.key, totalPoints: $0.value,
             swept: sweptSet.contains($0.key), flawless: flawlessSet.contains($0.key)) }

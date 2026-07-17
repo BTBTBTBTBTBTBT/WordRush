@@ -66,11 +66,14 @@ object DailyCompletionsService {
 
     fun totals(byMode: Map<String, Completion>): Totals {
         var won = 0; var guesses = 0; var time = 0; var score = 0.0
+        // Web parity (daily-service.ts fetchTodayDailyCompletions): each mode's
+        // score is rounded BEFORE summing — sum-of-rounds, not round-of-sum,
+        // or the platforms' sweep totals drift by ±1.
         for (c in byMode.values) {
             if (c.completed) won++
-            guesses += c.guessCount; time += c.timeSeconds; score += c.score
+            guesses += c.guessCount; time += c.timeSeconds; score += Math.round(c.score).toDouble()
         }
-        return Totals(byMode.size, won, TOTAL_DAILY_MODES, guesses, time, Math.round(score).toInt())
+        return Totals(byMode.size, won, TOTAL_DAILY_MODES, guesses, time, score.toInt())
     }
 
     /** The local day the last fetch served — lets [refreshIfDayChanged] detect a

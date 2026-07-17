@@ -57,7 +57,7 @@ struct SweepCelebrationView: View {
                     HStack(spacing: 28) {
                         stat("\(totals.won)/\(totals.total)", "Won")
                         stat(fmt(Int(totals.totalTimeSeconds.rounded())), "Total Time")
-                        stat("\(Int(totals.totalScore.rounded()))", "Total Pts")
+                        stat(formatScore(totals.totalScore), "Total Pts")
                     }
                     .padding(.top, 4)
 

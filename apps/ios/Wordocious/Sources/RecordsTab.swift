@@ -317,7 +317,7 @@ struct DailyRecordsView: View {
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
-                Text("\(Int(e.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text(formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 5) {
                     Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     Text(e.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
@@ -400,7 +400,7 @@ struct YesterdayPodiumCard: View {
                                 Image(systemName: "medal.fill").foregroundStyle(medalColors[min(i, 2)]).frame(width: 20)
                                 NavigationLink(value: e.userId) { Text(e.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1) }.buttonStyle(.plain)
                                 Spacer()
-                                Text("\(Int(e.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(accent)
+                                Text(formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(accent)
                             }
                             .padding(.horizontal, 14).padding(.vertical, 8)
                             if i < top3.count - 1 { Divider().overlay(Theme.border) }

@@ -503,5 +503,6 @@ private fun formatHintsLabel(mode: String, hints: Int): String? {
     return "$hints hint${if (hints == 1) "" else "s"}"
 }
 
-private fun fmtTime(s: Int): String =
-    if (s < 60) "${s}s" else (s % 60).let { sec -> if (sec > 0) "${s / 60}m ${sec}s" else "${s / 60}m" }
+// fmtTime is the shared formatShortTime (ui/Format.kt) — the local copy is
+// what let the t=0 rendering drift across platforms.
+private fun fmtTime(s: Int): String = formatShortTime(s)

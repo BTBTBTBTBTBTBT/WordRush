@@ -7,6 +7,26 @@ final class GamePersistence {
     static let shared = GamePersistence()
     private init() {}
 
+    /// Save-format version, gating schema evolution the way the web's
+    /// SAVE_VERSION does (use-game-snapshot.ts): a decodable-but-older save is
+    /// DISCARDED on mismatch instead of silently restored into a newer
+    /// reducer. Bump when GameState's persisted shape changes meaning.
+    static let saveVersion = 1
+
+    /// A game started close to local midnight can cross the day boundary.
+    /// Keep yesterday's IN-PROGRESS daily loadable for this window instead of
+    /// wiping it at the first launch after midnight (web
+    /// DAILY_CROSS_MIDNIGHT_GRACE_MS parity — 4h).
+    static let crossMidnightGraceSeconds: TimeInterval = 4 * 60 * 60
+
+    /// Versioned on-disk envelope. Legacy files are a bare GameState — decoded
+    /// as v1 by the fallback in load(), so shipping this doesn't wipe anyone's
+    /// in-flight game.
+    private struct VersionedSave: Codable {
+        let version: Int
+        let state: GameState
+    }
+
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
@@ -27,17 +47,65 @@ final class GamePersistence {
     }
 
     func save(_ state: GameState) {
-        guard let data = try? encoder.encode(state) else { return }
+        let envelope = VersionedSave(version: Self.saveVersion, state: state)
+        guard let data = try? encoder.encode(envelope) else { return }
         try? data.write(to: url(seed: state.seed, mode: state.mode), options: .atomic)
     }
 
     func load(seed: String, mode: GameMode) -> GameState? {
         let u = url(seed: seed, mode: mode)
-        guard let data = try? Data(contentsOf: u),
-              let state = try? decoder.decode(GameState.self, from: data) else {
-            return nil
+        guard let data = try? Data(contentsOf: u) else { return nil }
+        if let envelope = try? decoder.decode(VersionedSave.self, from: data) {
+            guard envelope.version == Self.saveVersion else {
+                // Versioned but older/newer: discard rather than restore a
+                // shape this reducer no longer means the same thing by.
+                try? FileManager.default.removeItem(at: u)
+                return nil
+            }
+            return envelope.state
         }
-        return state
+        // Legacy pre-envelope file (bare GameState) — today's shape IS v1.
+        return try? decoder.decode(GameState.self, from: data)
+    }
+
+    /// If today's daily has no save but YESTERDAY's daily for this mode is
+    /// still in progress and was last saved within the cross-midnight grace
+    /// window, return yesterday's seed so the caller can resume it (it records
+    /// to yesterday — the day always derives from the seed, never the clock).
+    /// Web parity: use-game-snapshot.ts's stillPlaying + withinGrace check.
+    func gracedYesterdaySeed(todaySeed: String, mode: GameMode) -> String? {
+        guard let todayStr = getDailySeedDate(todaySeed),
+              let today = dateFromDayString(todayStr),
+              let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)
+        else { return nil }
+        let yesterdayStr = dayString(from: yesterday)
+        let seed = generateDailySeed(date: yesterdayStr, gameMode: mode.rawValue)
+        let u = url(seed: seed, mode: mode)
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: u.path),
+              let modified = attrs[.modificationDate] as? Date,
+              Date().timeIntervalSince(modified) < Self.crossMidnightGraceSeconds,
+              let state = load(seed: seed, mode: mode),
+              state.status == .playing
+        else { return nil }
+        return seed
+    }
+
+    private func dayString(from date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.timeZone = .current
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+
+    private func dateFromDayString(_ s: String) -> Date? {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.calendar = Calendar(identifier: .gregorian)
+        f.timeZone = .current
+        f.dateFormat = "yyyy-MM-dd"
+        return f.date(from: s)
     }
 
     func clear(seed: String, mode: GameMode) {
@@ -81,13 +149,31 @@ final class GamePersistence {
     /// a single per-mode localStorage key.)
     func cleanupStaleDailyGames() {
         let today = LeaderboardService.todayLocal()
+        // Yesterday's saves get the cross-midnight grace: an IN-PROGRESS daily
+        // last touched within the window survives the sweep so
+        // gracedYesterdaySeed can resume it (web parity — this sweep used to
+        // wipe a 11:58pm game at the 12:05am relaunch).
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()).map(dayString(from:))
+        var keptDates: Set<String> = [today]
         let fm = FileManager.default
-        if let files = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) {
+        if let files = try? fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.contentModificationDateKey]) {
             for f in files {
                 let base = f.lastPathComponent.replacingOccurrences(of: ".json", with: "")
                 guard let r = base.range(of: "-daily-") else { continue }
                 let date = String(base[r.upperBound...].prefix(10))   // YYYY-MM-DD
-                if date.count == 10, date != today { try? fm.removeItem(at: f) }
+                guard date.count == 10, date != today else { continue }
+                if date == yesterday,
+                   let attrs = try? fm.attributesOfItem(atPath: f.path),
+                   let modified = attrs[.modificationDate] as? Date,
+                   Date().timeIntervalSince(modified) < Self.crossMidnightGraceSeconds,
+                   let data = try? Data(contentsOf: f),
+                   let state = (try? decoder.decode(VersionedSave.self, from: data))?.state
+                       ?? (try? decoder.decode(GameState.self, from: data)),
+                   state.status == .playing {
+                    keptDates.insert(date)
+                    continue
+                }
+                try? fm.removeItem(at: f)
             }
         }
         let defaults = UserDefaults.standard
@@ -95,7 +181,7 @@ final class GamePersistence {
         where key.contains("-daily-") && (key.hasPrefix("wordocious-elapsed-") || key.hasPrefix("wordocious-hints-")) {
             if let r = key.range(of: "-daily-") {
                 let date = String(key[r.upperBound...].prefix(10))
-                if date.count == 10, date != today { defaults.removeObject(forKey: key) }
+                if date.count == 10, !keptDates.contains(date) { defaults.removeObject(forKey: key) }
             }
         }
     }

@@ -8,6 +8,12 @@ import Supabase
 /// (apps/web/app/api/cron/daily-medals), so they already apply to native; only
 /// these three were web-client-only and missing on native.
 enum MedalService {
+    /// The number of solo daily modes a full sweep requires. Keep in sync with
+    /// web daily-service.ts DAILY_MODE_COUNT and Android MedalService.kt — a
+    /// hardcoded 9 here silently broke sweep detection when the mode count
+    /// changed on only two of the three platforms.
+    static let dailyModeCount = 9
+
     private struct MedalInsert: Encodable {
         let user_id, day, game_mode, play_type, medal_type: String
         let composite_score: Int
@@ -77,7 +83,7 @@ enum MedalService {
         struct R: Decodable { let completed: Bool }
         guard let results: [R] = try? await client.from("daily_results")
             .select("completed").eq("user_id", value: userId).eq("day", value: day)
-            .eq("play_type", value: "solo").execute().value, results.count >= 9 else { return (0, 0) }
+            .eq("play_type", value: "solo").execute().value, results.count >= Self.dailyModeCount else { return (0, 0) }
 
         let wonAll = results.allSatisfy { $0.completed }
         let sweepXp = sweepAlready ? 0 : 200

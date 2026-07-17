@@ -421,7 +421,7 @@ private fun DailyHero(
                 }
             }
             Text(
-                if (flawless) "All $total won · $totalTime · ${totals.totalScore} pts" else "All $total done · $totalTime · ${totals.totalScore} pts",
+                if (flawless) "All $total won · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts" else "All $total done · $totalTime · ${formatScore(totals.totalScore.toDouble())} pts",
                 fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = subColor, modifier = Modifier.padding(top = 2.dp),
             )
             Text("Tap to share · Next in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subColor.copy(alpha = 0.75f), modifier = Modifier.padding(top = 2.dp))

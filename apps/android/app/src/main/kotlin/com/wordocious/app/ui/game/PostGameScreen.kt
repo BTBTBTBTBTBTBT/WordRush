@@ -345,9 +345,10 @@ private fun DailyRankBadge(mode: GameMode) {
     val r = rank ?: return
     val (position, total) = r
     if (total < 2) return
-    val percentile = ((1 - (position - 1).toDouble() / total) * 100).toInt()
-    val top = max(1, 100 - percentile)
-    val gold = percentile >= 75
+    // Shared ROUNDING semantics (ui/Format.kt) — this badge truncated where
+    // web rounded, so the same rank read "Top 13%" here, "Top 12%" on web.
+    val badge = com.wordocious.app.ui.topPercentLabel(position, total)
+    val gold = badge.gold
 
     Row(
         modifier = Modifier
@@ -359,7 +360,7 @@ private fun DailyRankBadge(mode: GameMode) {
     ) {
         Icon(Icons.Filled.EmojiEvents, null, tint = if (gold) Color(0xFF92400E) else WTheme.textMuted, modifier = Modifier.size(10.dp))
         Text(
-            "Top $top% · #$position of $total", fontSize = 10.sp, fontWeight = FontWeight.Black,
+            "${badge.label} · #$position of $total", fontSize = 10.sp, fontWeight = FontWeight.Black,
             color = if (gold) Color(0xFF92400E) else WTheme.textMuted,
         )
     }

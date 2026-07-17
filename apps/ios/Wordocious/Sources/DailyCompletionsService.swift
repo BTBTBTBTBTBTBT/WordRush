@@ -52,7 +52,10 @@ struct DailyTotals {
             if c.completed { won += 1 }
             totalGuesses += c.guessCount
             totalTimeSeconds += c.timeSeconds
-            totalScore += c.score
+            // Web parity (daily-service.ts fetchTodayDailyCompletions): each
+            // mode's score is rounded BEFORE summing — sum-of-rounds, not
+            // round-of-sum, or the two platforms' sweep totals drift by ±1.
+            totalScore += c.score.rounded()
         }
     }
 }
@@ -181,12 +184,8 @@ final class DailyCompletionsStore: ObservableObject {
     }
 }
 
-func formatShortTime(_ seconds: Int) -> String {
-    if seconds <= 0 { return "—" }
-    if seconds < 60 { return "\(seconds)s" }
-    let m = seconds / 60, s = seconds % 60
-    return s == 0 ? "\(m)m" : "\(m)m \(s)s"
-}
+// formatShortTime now comes from WordociousCore (Format.swift) — the local
+// copy rendered "—" at 0s where web/Android render "0s".
 
 /// Seconds until the next LOCAL midnight (puzzles reset locally).
 func secondsUntilLocalMidnight() -> Int {

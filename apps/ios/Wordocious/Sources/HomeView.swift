@@ -231,7 +231,7 @@ struct HomeView: View {
         let subtitleC = flawless ? Color(hex: 0xB45309) : Color(hex: 0x6D28D9)
         let totals = completions.totals
         let totalTime = "\(Int(totals.totalTimeSeconds) / 60):\(String(format: "%02d", Int(totals.totalTimeSeconds) % 60))"
-        let score = Int(totals.totalScore.rounded())
+        let score = formatScore(totals.totalScore)  // grouped, like web toLocaleString()
         return Button {
             ShareService.shareDailySweep(byMode: completions.byMode)
         } label: {

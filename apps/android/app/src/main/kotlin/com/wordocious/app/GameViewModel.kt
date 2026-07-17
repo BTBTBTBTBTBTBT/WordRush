@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
  * forwards immutable state transitions to Compose.
  */
 class GameViewModel(
-    private val seed: String,
+    private var seed: String,
     private val mode: GameMode,
     /** VS mode: relay guesses/solves/completion to the socket; skip local persistence. */
     private val isVersus: Boolean = false,
@@ -43,7 +43,16 @@ class GameViewModel(
         DictionaryLoader.ensureLoaded()
         // VS games are ephemeral (fresh per match) — never resume from persistence.
         if (isVersus) createInitialState(seed, mode)
-        else GamePersistence.load(seed, mode) ?: createInitialState(seed, mode)
+        else {
+            // Cross-midnight grace (web/iOS parity): if today's daily has no
+            // save but yesterday's is still in progress and fresh, adopt ITS
+            // seed — persistence, elapsed time, and the recorded day all
+            // follow, since the day derives from the seed, never the clock.
+            if (com.wordocious.core.isDailySeed(seed) && GamePersistence.load(seed, mode) == null) {
+                GamePersistence.gracedYesterdaySeed(seed, mode)?.let { seed = it }
+            }
+            GamePersistence.load(seed, mode) ?: createInitialState(seed, mode)
+        }
     })
     val state: StateFlow<GameState> = _state.asStateFlow()
 

@@ -1169,7 +1169,7 @@ struct LeaderboardTab: View {
                 .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
                 .padding(.horizontal, 5).padding(.vertical, 1)
                 .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
-            Text("\(Int(entry.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
+            Text(formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -1211,7 +1211,7 @@ struct LeaderboardTab: View {
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text("\(Int(entry.compositeScore))").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text(formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 5) {
                     Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))

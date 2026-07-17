@@ -331,17 +331,27 @@ final class GameViewModel: ObservableObject {
         }
 
         self.isDaily = isDailySeed(seed)
+        // Cross-midnight grace (web parity): if today's daily has no save but
+        // yesterday's is still in progress and fresh, resume IT — the adopted
+        // state carries yesterday's seed, so persistence, elapsed time, and
+        // the recorded day all follow automatically (day derives from seed).
+        var effectiveSeed = seed
+        if !isVersus, isDaily,
+           GamePersistence.shared.load(seed: seed, mode: mode) == nil,
+           let graced = GamePersistence.shared.gracedYesterdaySeed(todaySeed: seed, mode: mode) {
+            effectiveSeed = graced
+        }
         // VS matches are transient (server-supplied seed) — never restore from or
         // write to solo persistence, which would collide with the solo game of
         // the same mode/seed.
-        if !isVersus, let saved = GamePersistence.shared.load(seed: seed, mode: mode) {
+        if !isVersus, let saved = GamePersistence.shared.load(seed: effectiveSeed, mode: mode) {
             state = saved
         } else {
             state = createInitialState(seed: seed, mode: mode)
         }
         recomputeEvaluations()
         restoreHintUI()
-        accumulatedMs = isVersus ? 0 : GamePersistence.shared.loadElapsed(seed: seed, mode: mode)
+        accumulatedMs = isVersus ? 0 : GamePersistence.shared.loadElapsed(seed: effectiveSeed, mode: mode)
         // A game restored from disk that's already finished shouldn't re-post.
         resultRecorded = state.status != .playing
     }
