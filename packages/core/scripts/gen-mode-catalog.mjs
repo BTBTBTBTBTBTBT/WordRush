@@ -105,13 +105,25 @@ export const MODE_BY_DBKEY: Record<string, ModeMeta> = Object.fromEntries(
 export const DAILY_MODES: ModeMeta[] = MODES.filter((m) => m.dailyEligible && m.dbKey);
 `;
 
-const swiftPath = join(root, 'apps/ios/Wordocious/Sources/ModeCatalog.generated.swift');
-const ktPath = join(root, 'apps/android/app/src/main/kotlin/com/wordocious/app/ModeCatalog.generated.kt');
-const tsPath = join(root, 'apps/web/lib/modes.generated.ts');
-writeFileSync(swiftPath, swift);
-writeFileSync(ktPath, kotlin);
-writeFileSync(tsPath, ts);
-console.log(`gen:modes — wrote ${modes.length} modes →`);
-console.log(`  ${swiftPath}`);
-console.log(`  ${ktPath}`);
-console.log(`  ${tsPath}`);
+/** The three generated outputs, exported so the staleness guard
+ *  (apps/web/scripts/modes-codegen.test.ts) can compare rendered-vs-committed
+ *  without writing anything. */
+export const OUTPUTS = [
+  { path: join(root, 'apps/ios/Wordocious/Sources/ModeCatalog.generated.swift'), content: swift },
+  { path: join(root, 'apps/android/app/src/main/kotlin/com/wordocious/app/ModeCatalog.generated.kt'), content: kotlin },
+  { path: join(root, 'apps/web/lib/modes.generated.ts'), content: ts },
+];
+
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain && process.argv.includes('--check')) {
+  // Staleness check: modes.json edited but gen:modes not re-run.
+  let stale = 0;
+  for (const { path, content } of OUTPUTS) {
+    if (readFileSync(path, 'utf8') !== content) { console.error(`STALE: ${path} — run pnpm gen:modes`); stale++; }
+  }
+  process.exit(stale ? 1 : 0);
+} else if (isMain) {
+  for (const { path, content } of OUTPUTS) writeFileSync(path, content);
+  console.log(`gen:modes — wrote ${modes.length} modes →`);
+  for (const { path } of OUTPUTS) console.log(`  ${path}`);
+}

@@ -1,0 +1,158 @@
+{
+  "formatScore": [
+    {
+      "score": 0,
+      "expected": "0"
+    },
+    {
+      "score": 36,
+      "expected": "36"
+    },
+    {
+      "score": 999.99,
+      "expected": "999"
+    },
+    {
+      "score": 1000,
+      "expected": "1,000"
+    },
+    {
+      "score": 1365,
+      "expected": "1,365"
+    },
+    {
+      "score": 1713.6,
+      "expected": "1,713"
+    },
+    {
+      "score": 2332.8,
+      "expected": "2,332"
+    },
+    {
+      "score": 123456.4,
+      "expected": "123,456"
+    },
+    {
+      "score": 1234567.9,
+      "expected": "1,234,567"
+    }
+  ],
+  "formatShortTime": [
+    {
+      "seconds": 0,
+      "expected": "0s"
+    },
+    {
+      "seconds": 1,
+      "expected": "1s"
+    },
+    {
+      "seconds": 9,
+      "expected": "9s"
+    },
+    {
+      "seconds": 59,
+      "expected": "59s"
+    },
+    {
+      "seconds": 60,
+      "expected": "1m"
+    },
+    {
+      "seconds": 61,
+      "expected": "1m 1s"
+    },
+    {
+      "seconds": 119,
+      "expected": "1m 59s"
+    },
+    {
+      "seconds": 120,
+      "expected": "2m"
+    },
+    {
+      "seconds": 125,
+      "expected": "2m 5s"
+    },
+    {
+      "seconds": 599,
+      "expected": "9m 59s"
+    },
+    {
+      "seconds": 3599,
+      "expected": "59m 59s"
+    },
+    {
+      "seconds": 3600,
+      "expected": "60m"
+    }
+  ],
+  "topPercentLabel": [
+    {
+      "rank": 1,
+      "totalPlayers": 2,
+      "expectedLabel": "Top 1%",
+      "expectedGold": true
+    },
+    {
+      "rank": 2,
+      "totalPlayers": 2,
+      "expectedLabel": "Top 50%",
+      "expectedGold": false
+    },
+    {
+      "rank": 1,
+      "totalPlayers": 8,
+      "expectedLabel": "Top 1%",
+      "expectedGold": true
+    },
+    {
+      "rank": 2,
+      "totalPlayers": 8,
+      "expectedLabel": "Top 12%",
+      "expectedGold": true
+    },
+    {
+      "rank": 4,
+      "totalPlayers": 8,
+      "expectedLabel": "Top 37%",
+      "expectedGold": false
+    },
+    {
+      "rank": 8,
+      "totalPlayers": 8,
+      "expectedLabel": "Top 87%",
+      "expectedGold": false
+    },
+    {
+      "rank": 1,
+      "totalPlayers": 100,
+      "expectedLabel": "Top 1%",
+      "expectedGold": true
+    },
+    {
+      "rank": 25,
+      "totalPlayers": 100,
+      "expectedLabel": "Top 24%",
+      "expectedGold": true
+    },
+    {
+      "rank": 26,
+      "totalPlayers": 100,
+      "expectedLabel": "Top 25%",
+      "expectedGold": true
+    },
+    {
+      "rank": 100,
+      "totalPlayers": 100,
+      "expectedLabel": "Top 99%",
+      "expectedGold": false
+    },
+    {
+      "rank": 2,
+      "totalPlayers": 3,
+      "expectedLabel": "Top 33%",
+      "expectedGold": false
+    }
+  ]
+}

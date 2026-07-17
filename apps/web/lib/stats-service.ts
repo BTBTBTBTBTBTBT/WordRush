@@ -1143,6 +1143,9 @@ export async function fetchTopWords(userId: string, gameMode: string, limit: num
     const won = row.winner_id === userId;
     for (const word of row.player1_guesses) {
       const w = word.toUpperCase();
+      // Hint rows ("  A  ", "_____I__") and PN clue rows ("") are in the guess
+      // log but aren't typed words — native's topWords already filters them.
+      if (!isRealGuessWord(w)) continue;
       const entry = wordMap.get(w) || { count: 0, wins: 0 };
       entry.count++;
       if (won) entry.wins++;

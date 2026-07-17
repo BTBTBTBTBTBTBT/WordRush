@@ -573,12 +573,15 @@ export function CompletedDailyBoard({ modeId }: CompletedDailyBoardProps) {
   const isMulti = MULTI_BOARD_MODES.has(modeId);
   const boardsSolved = boards.filter(b => b.status === GameStatus.WON).length;
   const totalBoards = boards.length;
-  const totalGuesses = boards.reduce((sum, b) => sum + b.guesses.length, 0);
+  // Turn count = MAX across boards (shared submissions apply to every board) —
+  // the same semantics every recorder and the native cards use. A per-board
+  // SUM here read ~60g for an OctoWord day whenever the recorded row hadn't
+  // loaded, where iOS/Android read 9g.
+  const totalGuesses = boards.reduce((mx, b) => Math.max(mx, b.guesses.length), 0);
 
   // Prefer the recorded daily_results values (exactly what the leaderboard row
   // shows) over the local session — the live timer can drift ~1s from what was
-  // recorded, and multi-board guess_count is the turn count, not the per-board
-  // sum. Falls back to local session until the recorded row loads.
+  // recorded. Falls back to local session until the recorded row loads.
   const displayTime = recorded?.timeSeconds ?? session.elapsedTime;
   const displayGuesses = recorded?.guesses ?? (isMulti ? totalGuesses : (boards[0]?.guesses.length ?? 0));
 

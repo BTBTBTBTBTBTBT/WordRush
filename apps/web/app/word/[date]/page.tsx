@@ -34,17 +34,21 @@ export default async function WordOfDayPage({ params }: Props) {
   const date = parseDateKey(params.date);
   if (!date) notFound();
 
-  // Don't expose future days (they'd reveal upcoming daily answers).
+  // Don't expose future days. +1 tolerance: this renders on a UTC server, so a
+  // viewer ahead of UTC has a local "today" the server still considers
+  // tomorrow — without the allowance their own featured day 404s every evening.
   const todayIdx = daysSinceEpoch(new Date());
-  if (daysSinceEpoch(date) > todayIdx) notFound();
+  if (daysSinceEpoch(date) > todayIdx + 1) notFound();
 
   const entry = await wordOfDay(date);
   const w = entry.word.toUpperCase();
   const analysis = wordPlayAnalysis(entry.word);
 
-  const prev = dateKey(new Date(date.getTime() - 86400000));
-  const nextDate = new Date(date.getTime() + 86400000);
-  const hasNext = daysSinceEpoch(nextDate) <= todayIdx;
+  // Calendar arithmetic, not ±86400000 — local-midnight dates shift by an hour
+  // across DST, which would flip the neighboring dateKey.
+  const prev = dateKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1));
+  const nextDate = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+  const hasNext = daysSinceEpoch(nextDate) <= todayIdx + 1;
   const next = dateKey(nextDate);
 
   return (

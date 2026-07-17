@@ -166,7 +166,10 @@ def write_review(kept, cut, promoted):
 
 def write_bundles(kept):
     blob = json.dumps(kept, indent=2) + '\n'
-    for d in BUNDLE_DIRS:
+    # FIXTURE_DIRS too: the native test fixtures are exact copies of the
+    # bundles, and skipping them here is how they went stale between curation
+    # runs (word-list-sync.test.ts now fails loudly if any copy drifts).
+    for d in BUNDLE_DIRS + FIXTURE_DIRS:
         with open(os.path.join(d, 'solutions.json'), 'w') as f:
             f.write(blob)
         print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, "solutions.json"), REPO)}')
@@ -209,7 +212,7 @@ def curate_length(n, threshold):
 
 def write_length_bundles(n, kept):
     blob = json.dumps(kept, indent=2) + '\n'
-    for d in BUNDLE_DIRS:
+    for d in BUNDLE_DIRS + FIXTURE_DIRS:  # fixtures = exact bundle copies (see write_bundles)
         with open(os.path.join(d, f'solutions-{n}.json'), 'w') as f:
             f.write(blob)
         print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, f"solutions-{n}.json"), REPO)}')

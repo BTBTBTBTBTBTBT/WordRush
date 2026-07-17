@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore } from '@/lib/composite-scoring';
+import { formatShortTime as formatTime } from '@/lib/format';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -37,12 +38,7 @@ const lbCache = new Map<string, {
   rank: { rank: number; totalPlayers: number } | null;
 }>();
 
-function formatTime(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return s > 0 ? `${m}m ${s}s` : `${m}m`;
-}
+
 
 function CountdownTimer() {
   const [secondsLeft, setSecondsLeft] = useState(getSecondsUntilMidnightLocal());
