@@ -4,31 +4,31 @@
       "seed": "test",
       "count": 1,
       "solutions": [
-        "FEVER"
+        "SENNA"
       ]
     },
     {
       "seed": "test",
       "count": 4,
       "solutions": [
-        "FEVER",
-        "QUEEN",
-        "SALON",
-        "SPOUT"
+        "SENNA",
+        "LUNAR",
+        "VOMIT",
+        "HEAVE"
       ]
     },
     {
       "seed": "test",
       "count": 8,
       "solutions": [
-        "FEVER",
-        "QUEEN",
-        "SALON",
-        "SPOUT",
-        "SAWED",
-        "KIOSK",
-        "LAKER",
-        "POACH"
+        "SENNA",
+        "LUNAR",
+        "VOMIT",
+        "HEAVE",
+        "STENT",
+        "MULCH",
+        "FLOOR",
+        "BEBOP"
       ]
     },
     {
@@ -86,73 +86,73 @@
       "seed": "daily-2026-08-01-DUEL",
       "count": 1,
       "solutions": [
-        "DATED"
+        "DOWRY"
       ]
     },
     {
       "seed": "daily-2026-08-01-QUORDLE",
       "count": 4,
       "solutions": [
-        "SCION",
-        "YUCKY",
-        "THIEF",
-        "FORCE"
+        "PEACH",
+        "CATCH",
+        "SWEEP",
+        "TRACE"
       ]
     },
     {
       "seed": "daily-2026-08-01-OCTORDLE",
       "count": 8,
       "solutions": [
-        "SOUTH",
-        "STASH",
-        "BOARD",
-        "POKED",
-        "FORTH",
-        "PRIMO",
-        "RUMMY",
-        "CHAMP"
+        "BAYOU",
+        "NASTY",
+        "FORAY",
+        "FIVER",
+        "GRASS",
+        "SHALT",
+        "RATIO",
+        "VEGAN"
       ]
     },
     {
       "seed": "gauntlet-abc-123",
       "count": 21,
       "solutions": [
-        "SUING",
-        "GLASS",
-        "SURGE",
-        "TUNED",
-        "MOVIE",
-        "PURER",
-        "CATTY",
-        "ZIPPY",
-        "CLASP",
-        "YEARN",
-        "STOLE",
-        "ABUSE",
-        "LEGIT",
-        "HINGE",
-        "NUTTY",
-        "SHOUT",
-        "ROBIN",
-        "FIEND",
-        "GRAVY",
-        "AIDED",
-        "DEPOT"
+        "DEGAS",
+        "LINEN",
+        "PATIO",
+        "SLICE",
+        "SCALY",
+        "FEAST",
+        "SPORE",
+        "COMFY",
+        "LEAVE",
+        "STILL",
+        "SAFER",
+        "OPTED",
+        "VAULT",
+        "MOGUL",
+        "GAYER",
+        "SCUBA",
+        "MATED",
+        "GLADE",
+        "SWAIN",
+        "WHIFF",
+        "FOYER"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 1,
       "solutions": [
-        "BASIS"
+        "LAMIA"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 2,
       "solutions": [
-        "BASIS",
-        "TAFFY"
+        "LAMIA",
+        "LUMPY"
       ]
     }
   ],

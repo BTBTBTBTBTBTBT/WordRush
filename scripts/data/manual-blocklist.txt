@@ -31,3 +31,16 @@ BARDO
 MUNGO
 ROQUE
 GAULT
+# Crude/adult words — fine to TYPE as guesses (player's own input) but never
+# served as an answer (2026-07-17 sweep, alongside offensive-blocklist.txt).
+BITCH
+BITCHES
+PUSSY
+WHORE
+WHORES
+HOOKER
+INCEST
+MOLEST
+RAPIST
+RAPISTS
+RETARD

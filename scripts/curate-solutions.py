@@ -107,6 +107,7 @@ def curate(threshold, promote=False):
 
     names = load_wordset(os.path.join(SCRIPT_DATA, 'names-blocklist.txt'))
     manual = load_wordset(os.path.join(SCRIPT_DATA, 'manual-blocklist.txt'))
+    offensive = load_wordset(os.path.join(SCRIPT_DATA, 'offensive-blocklist.txt'))
     allow = load_wordset(os.path.join(SCRIPT_DATA, 'name-word-allowlist.txt'))
 
     legacy_set = set(legacy)
@@ -129,6 +130,8 @@ def curate(threshold, promote=False):
         reason = None
         if not FIVE.match(w):
             reason = 'not-5-alpha'
+        elif w in offensive:
+            reason = 'offensive'  # hard ban — the allowlist cannot rescue these
         elif w not in allowed_set:
             reason = 'not-in-allowed'
         elif (w in names or w in manual) and w not in allow:
@@ -184,6 +187,7 @@ def curate_length(n, threshold):
     legacy = load_json_list(os.path.join(DATA, f'solutions-{n}-legacy.json'))
     allowed = set(load_json_list(os.path.join(DATA, f'allowed-{n}.json')))
     manual = load_wordset(os.path.join(SCRIPT_DATA, 'manual-blocklist.txt'))
+    offensive = load_wordset(os.path.join(SCRIPT_DATA, 'offensive-blocklist.txt'))
     rescue = load_wordset(os.path.join(SCRIPT_DATA, 'rescue-allowlist.txt'))
     pat = re.compile(rf'^[A-Z]{{{n}}}$')
 
@@ -192,6 +196,8 @@ def curate_length(n, threshold):
         reason = None
         if not pat.match(w):
             reason = 'bad-shape'
+        elif w in offensive:
+            reason = 'offensive'
         elif w not in allowed:
             reason = 'not-in-allowed'
         elif w in manual:
@@ -220,21 +226,29 @@ def write_length_bundles(n, kept):
 
 def curate_allowed(n):
     """Curate the n-letter GUESS list: keep iff zipf >= ALLOWED_THRESHOLD or the
-    word is a current/legacy answer. Answers are kept unconditionally so every
-    shipped daily stays guessable (invariant: solutions ∪ legacy ⊆ allowed)."""
+    word is a current/legacy answer — and never an offensive-blocklist word
+    (slurs are not guessable, unlike manual-blocklist crude words, which stay
+    typeable and are only banned as answers). Answers are otherwise kept
+    unconditionally so every shipped daily stays guessable (invariant:
+    (solutions ∪ legacy) − offensive ⊆ allowed; a LEGACY answer on the
+    offensive list loses pre-cutover replay for the days it was the answer —
+    accepted pre-release, see bible 129)."""
     z = zipf()
     allowed = load_json_list(os.path.join(DATA, f'allowed-{n}.json'))
+    offensive = load_wordset(os.path.join(SCRIPT_DATA, 'offensive-blocklist.txt'))
     must = set(load_json_list(os.path.join(DATA, f'solutions-{n}.json'))) | \
         set(load_json_list(os.path.join(DATA, f'solutions-{n}-legacy.json')))
     pat = re.compile(rf'^[A-Z]{{{n}}}$')
 
     kept, cut = [], []
     for w in sorted(set(allowed)):
-        if w in must or (pat.match(w) and z(w) >= ALLOWED_THRESHOLD):
+        if w in offensive:
+            cut.append((w, 'offensive'))
+        elif w in must or (pat.match(w) and z(w) >= ALLOWED_THRESHOLD):
             kept.append(w)
         else:
             cut.append((w, f'freq<{ALLOWED_THRESHOLD}({round(z(w), 2)})'))
-    assert must <= set(kept), 'an answer fell out of the allowed list'
+    assert (must - offensive) <= set(kept), 'an answer fell out of the allowed list'
     assert len(kept) == len(set(kept))
     return kept, cut
 

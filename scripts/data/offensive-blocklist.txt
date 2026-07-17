@@ -1,0 +1,11 @@
+# Slurs and similar — NEVER an answer, NEVER a valid guess, any length.
+# Applied by curate-solutions.py to the answer banks AND the allowed lists
+# (unlike manual-blocklist.txt, which only bans words from being answers).
+# Found 2026-07-17 after NEGRO was served as a Gauntlet QuadWord answer.
+NEGRO
+CHINK
+DARKY
+SPICK
+FAGOT
+WETBACK
+TRANNY
