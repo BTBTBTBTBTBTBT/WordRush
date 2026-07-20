@@ -62,6 +62,37 @@ object StoreManager {
     private var billingClient: BillingClient? = null
     private var productDetails: Map<String, ProductDetails> = emptyMap()
 
+    /**
+     * Play orderIds whose one-time effects (+4 sub shields, Day Pass +24h) have
+     * been applied — Android analogue of iOS StoreManager.processedTxIDs. Play
+     * mints a NEW orderId per billing period on the SAME purchaseToken (renewals
+     * are "GPA.xxxx..0", "..1", … on the initial order's base), so an unseen
+     * renewal-shaped orderId at launch reconcile = a new billing period → that's
+     * where renewal shields are granted (the Play webhook grants none — the
+     * client is the single shield authority on mobile, see PAYMENTS_RUNBOOK).
+     * Persisted so relaunches can't re-credit; volume is ~1 orderId per renewal.
+     */
+    private const val PREFS_NAME = "wordocious_store"
+    private const val KEY_SEEN_ORDERS = "seen-order-ids"
+    private var prefs: android.content.SharedPreferences? = null
+    private var seenOrderIds: MutableSet<String> = mutableSetOf()
+
+    private fun markOrderSeen(orderId: String) {
+        seenOrderIds.add(orderId)
+        // putStringSet must get a fresh copy — SharedPreferences may not persist
+        // in-place mutations of the set it handed out.
+        prefs?.edit()?.putStringSet(KEY_SEEN_ORDERS, HashSet(seenOrderIds))?.apply()
+    }
+
+    /** True when [orderId] is a new billing period of a sub we've already
+     *  credited: same base order ("GPA.xxxx" before the ".." renewal suffix) as
+     *  a previously seen orderId. First sight of an entirely unknown order (a
+     *  reinstall / new device) is NOT a renewal — record it, credit nothing. */
+    private fun isRenewalOfSeenOrder(orderId: String): Boolean {
+        val base = orderId.substringBefore("..")
+        return seenOrderIds.any { it != orderId && it.substringBefore("..") == base }
+    }
+
     private val _prices = MutableStateFlow(FALLBACK_PRICES)
     /** productId → localized formattedPrice (falls back to the US prices above). */
     val prices: StateFlow<Map<String, String>> = _prices.asStateFlow()
@@ -88,6 +119,10 @@ object StoreManager {
     /** Call once at launch (next to AuthService.initialize()). Never throws. */
     fun start(context: Context) {
         runCatching {
+            prefs = context.applicationContext
+                .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            seenOrderIds = prefs?.getStringSet(KEY_SEEN_ORDERS, null)?.toMutableSet()
+                ?: mutableSetOf()
             val client = BillingClient.newBuilder(context.applicationContext)
                 .setListener(purchasesListener)
                 .enablePendingPurchases(
@@ -257,14 +292,22 @@ object StoreManager {
                                 .build()
                         )
                     }
-                    val now = Instant.now()
-                    // AuthService.parseTimestamp handles PostgREST's offset format
-                    // — Instant.parse rejected it, so stacking never saw the
-                    // existing window and every Day Pass reset to now+24h.
-                    val existing = AuthService.profile.value?.proExpiresAt
-                        ?.let { AuthService.parseTimestamp(it) }
-                    val base = if (existing != null && existing.isAfter(now)) existing else now
-                    AuthService.applyProGrant(base.plus(Duration.ofDays(1)).toString(), addShields = 0)
+                    // Re-delivery of an already-stacked Day Pass (a consume that
+                    // failed and retried) must not add a second 24h — iOS
+                    // hasProcessed parity.
+                    val dayOrderId = purchase.orderId
+                    if (dayOrderId == null || dayOrderId !in seenOrderIds) {
+                        val now = Instant.now()
+                        // AuthService.parseTimestamp handles PostgREST's offset
+                        // format — Instant.parse rejected it, so stacking never
+                        // saw the existing window and every Day Pass reset to
+                        // now+24h.
+                        val existing = AuthService.profile.value?.proExpiresAt
+                            ?.let { AuthService.parseTimestamp(it) }
+                        val base = if (existing != null && existing.isAfter(now)) existing else now
+                        AuthService.applyProGrant(base.plus(Duration.ofDays(1)).toString(), addShields = 0)
+                        dayOrderId?.let { markOrderSeen(it) }
+                    }
                 }
                 PRO_MONTHLY, PRO_YEARLY -> {
                     if (!purchase.isAcknowledged) {
@@ -295,12 +338,24 @@ object StoreManager {
                         val floor = now.plus(Duration.ofDays(days))
                         if (existing != null && existing.isAfter(floor)) existing else floor
                     }
-                    // Shields only on real new purchases (renewals come through the
-                    // Play RTDN webhook, not this client path — see bible/audit F6).
-                    AuthService.applyProGrant(
-                        expiry.toString(),
-                        addShields = if (isNewPurchase) 4 else 0,
-                    )
+                    // Shields: the CLIENT is the single +4-per-billing-period
+                    // authority on mobile (the Play webhook grants none — see
+                    // PAYMENTS_RUNBOOK "streak shields model"). Credit once per
+                    // orderId: initial purchase now, each renewal when its new
+                    // orderId ("base..N") shows up at launch reconcile. First
+                    // sight of an unknown base order (reinstall / new device) is
+                    // recorded but NOT credited, so a device swap can't re-mint
+                    // shields already granted on the old device.
+                    val orderId = purchase.orderId
+                    val addShields = when {
+                        orderId == null -> if (isNewPurchase) 4 else 0 // no orderId (test store) — old rule
+                        orderId in seenOrderIds -> 0                    // already credited this period
+                        isNewPurchase -> 4                              // initial purchase
+                        isRenewalOfSeenOrder(orderId) -> 4              // new billing period found at reconcile
+                        else -> 0                                       // first sight after reinstall — record only
+                    }
+                    AuthService.applyProGrant(expiry.toString(), addShields = addShields)
+                    orderId?.let { markOrderSeen(it) }
                 }
             }
         }

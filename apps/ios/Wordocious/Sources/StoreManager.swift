@@ -234,13 +234,16 @@ final class StoreManager: ObservableObject {
     }
 
     // Production transactions verify against the live site. Sandbox / Xcode
-    // transactions post to the sandbox base — set `sandboxAPIBase` to a preview
-    // deployment that has APPSTORE_ACCEPT_SANDBOX=true so a sandbox purchase
+    // transactions post to the sandbox base — a Vercel PREVIEW deployment
+    // (Preview env has APPSTORE_ACCEPT_SANDBOX=true) so a sandbox purchase
     // (TestFlight / StoreKit test) verifies end-to-end WITHOUT temporarily
-    // accepting sandbox on production. Defaults to production (behaviour
-    // unchanged) until a sandbox base is configured.
+    // accepting sandbox on production. The alias is stable and re-pointable
+    // (`vercel alias set <new-preview-url> spellstrike-sandbox.vercel.app`), so
+    // refreshing the sandbox deployment never needs an app rebuild. NOTE:
+    // requires Vercel Deployment Protection (Vercel Authentication) to be OFF
+    // for previews, or requests die at Vercel's SSO wall — see PAYMENTS_RUNBOOK.
     private static let prodAPIBase = "https://wordocious.com"
-    private static let sandboxAPIBase = "https://wordocious.com"  // ← set to your APPSTORE_ACCEPT_SANDBOX=true preview alias
+    private static let sandboxAPIBase = "https://spellstrike-sandbox.vercel.app"
     private func apiBase(for transaction: Transaction) -> String {
         transaction.environment == .production ? Self.prodAPIBase : Self.sandboxAPIBase
     }

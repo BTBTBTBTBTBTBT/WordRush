@@ -47,11 +47,13 @@ double-granting:
 - The **verify endpoint never grants shields** (it only writes is_pro/expiry), so
   it can't double with the client on a sub confirm.
 
-⚠️ **Android gap (not live, fix before Android Pro sells):** the Android client
-grants +4 only on the *initial* purchase and the Play webhook grants none, so
-Android *renewal* shields currently land nowhere. Before enabling Android Pro,
-either grant renewal shields in the Android client's reconcile path or add them
-to the Play webhook — pick ONE side, matching the iOS "client-only" model.
+✅ **Android renewal shields — FIXED (client-side, iOS-matching):** Play mints a
+new `orderId` per billing period on the same purchase ("GPA.xxxx..0", "..1", …),
+so `StoreManager.kt` tracks seen orderIds (persisted) and credits +4 when launch
+reconcile finds a new period of an already-known order. First sight of an
+unknown base order (reinstall / new device) records without crediting, so a
+device swap can't re-mint shields. The same ledger de-dupes Day Pass
+re-delivery (+24h once per orderId). Rides the next Android build.
 
 ## ⚠️ The live security hole (do this first)
 
@@ -80,7 +82,24 @@ NOT swept — the lock is the real fix).
 4. **Register the webhook** in App Store Connect → your app → App Information →
    *App Store Server Notifications* → set the Production URL to
    `https://wordocious.com/api/appstore/notifications` and the Sandbox URL to
-   your preview deployment's `/api/appstore/notifications`. Choose **Version 2**.
+   `https://spellstrike-sandbox.vercel.app/api/appstore/notifications`.
+   Choose **Version 2**.
+
+   **The sandbox deployment:** `spellstrike-sandbox.vercel.app` is a stable
+   alias pinned to a Vercel *Preview* deployment (Preview env →
+   `APPSTORE_ACCEPT_SANDBOX=true`). The iOS app's `sandboxAPIBase` points at it
+   too, so sandbox purchases verify there automatically. To refresh it after
+   server-code changes: `vercel deploy --yes` (NO `--prod`) from the repo, then
+   `vercel alias set <new-deployment-url> spellstrike-sandbox.vercel.app` — the
+   alias moves, no app rebuild needed. (Git pushes to non-main branches do NOT
+   auto-build on this project; the CLI is the path.)
+
+   ⚠️ **One-time prerequisite: disable Vercel Authentication for previews.**
+   Vercel → spellstrike → Settings → **Deployment Protection** → set *Vercel
+   Authentication* to **Disabled**. Preview URLs are otherwise behind Vercel's
+   SSO wall (401 before our code runs), which blocks BOTH Apple's sandbox
+   webhook posts and the app's sandbox verify calls. Previews only expose the
+   same app as production, so this is low-risk.
 5. **Sandbox-verify:** make a sandbox purchase of monthly/yearly, watch the
    preview deployment logs — confirm the webhook 200s and the `profiles` row
    flips `is_pro`/`pro_expires_at`. (`streak_shields += 4` comes from the CLIENT,
