@@ -86,11 +86,24 @@ object AuthService {
         get() {
             val p = _profile.value ?: return false
             if (!p.isPro) return false
-            val exp = p.proExpiresAt ?: return true
-            return try {
-                java.time.Instant.parse(exp).isAfter(java.time.Instant.now())
-            } catch (_: Exception) { true }
+            val exp = p.proExpiresAt ?: return true // legacy rows w/o expiry
+            // FAIL CLOSED on an unparseable expiry (matches web lib/pro.ts). The
+            // old `Instant.parse(...) catch → true` did two things wrong: it
+            // rejected PostgREST's offset format (2026-…+00:00, not the …Z
+            // Instant.parse needs) AND treated the resulting exception as
+            // "active" — so any Pro row stayed Pro forever, ads never came back.
+            val instant = parseTimestamp(exp) ?: return false
+            return instant.isAfter(java.time.Instant.now())
         }
+
+    /** Parse a PostgREST `timestamptz` to an Instant, or null if malformed.
+     *  PostgREST returns a numeric offset (…+00:00, possibly with microseconds);
+     *  OffsetDateTime accepts both that and the …Z form the client writes.
+     *  Callers must fail CLOSED on null. */
+    fun parseTimestamp(s: String): java.time.Instant? =
+        runCatching { java.time.OffsetDateTime.parse(s).toInstant() }
+            .recoverCatching { java.time.Instant.parse(s) }
+            .getOrNull()
 
     val userId: String? get() = _profile.value?.id
 

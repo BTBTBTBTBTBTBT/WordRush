@@ -70,7 +70,10 @@ private val BENEFITS = listOf(
 @Composable
 fun ProScreen(onDone: () -> Unit) {
     val profile by AuthService.profile.collectAsState()
-    val isPro = profile?.isPro == true
+    // isProActive, not raw isPro — a lapsed subscriber (is_pro still true, no
+    // server sweep yet) otherwise saw "You're enjoying all Pro benefits!" with
+    // no way to resubscribe. Every other gate already uses isProActive.
+    val isPro = AuthService.isProActive
 
     Column(
         Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover)))

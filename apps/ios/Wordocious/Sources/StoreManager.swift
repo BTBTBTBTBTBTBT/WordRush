@@ -29,6 +29,26 @@ final class StoreManager: ObservableObject {
 
     private var updatesTask: Task<Void, Never>?
 
+    /// Transaction IDs whose one-time effects (shield grant, Day Pass +24h) have
+    /// already been applied — so the .success and Transaction.updates paths
+    /// can't double-apply the same delivery, and a re-delivered consumable
+    /// after a crash can't stack a second 24h. A new billing period carries a
+    /// new transaction.id, so this still grants shields once PER renewal.
+    /// Persisted (bounded) so it survives relaunch.
+    private static let processedKey = "storekit-processed-tx-ids"
+    private var processedTxIDs: Set<UInt64> = {
+        let raw = UserDefaults.standard.array(forKey: processedKey) as? [NSNumber] ?? []
+        return Set(raw.map(\.uint64Value))
+    }()
+
+    private func hasProcessed(_ id: UInt64) -> Bool { processedTxIDs.contains(id) }
+    private func markProcessed(_ id: UInt64) {
+        processedTxIDs.insert(id)
+        // Keep the most recent 500 — unbounded growth is the only downside.
+        if processedTxIDs.count > 500 { processedTxIDs = Set(processedTxIDs.sorted().suffix(500)) }
+        UserDefaults.standard.set(processedTxIDs.map { NSNumber(value: $0) }, forKey: Self.processedKey)
+    }
+
     func product(for plan: Plan) -> Product? { products.first { $0.id == plan.rawValue } }
 
     private init() {}
@@ -102,15 +122,46 @@ final class StoreManager: ObservableObject {
     // MARK: - Transaction handling
 
     private func handle(verification: VerificationResult<Transaction>, isNewPurchase: Bool) async {
-        guard case .verified(let transaction) = verification else { return }
+        // Unverified is never trusted; surface it so a paying user isn't left
+        // staring at a cleared spinner with no explanation.
+        guard case .verified(let transaction) = verification else {
+            if isNewPurchase { lastError = "Your purchase couldn't be verified. Try Restore Purchases." }
+            return
+        }
         guard let plan = Plan(rawValue: transaction.productID) else { await transaction.finish(); return }
 
-        let expiry = expiryDate(for: plan, transaction: transaction)
-        // Shields granted on real purchases/renewals only (never on launch reconcile).
-        let shields = (isNewPurchase && plan.grantsShields) ? 4 : 0
-        await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: shields)
+        // Refund / revocation arrives on Transaction.updates. Revoke Pro rather
+        // than fall through — a refunded sub whose expiry is still in the future
+        // was otherwise re-affirmed as Pro. finish() only after a durable write.
+        if transaction.revocationDate != nil || transaction.isUpgraded {
+            if await AuthService.shared.revokePro() { markProcessed(transaction.id); await transaction.finish() }
+            return
+        }
 
-        await transaction.finish()
+        // The transaction must belong to the signed-in Supabase user. Without
+        // this, account B on a device whose Apple ID owns A's subscription
+        // would have Pro written onto B. Leave unfinished so it can be applied
+        // once the owning account signs in.
+        if !appAccountMatchesCurrentUser(transaction) { return }
+
+        // A Day Pass already applied (crash re-delivery, or the .success/.updates
+        // race) must not stack another 24h. Subscriptions re-reconcile harmlessly.
+        if plan == .day && hasProcessed(transaction.id) { await transaction.finish(); return }
+
+        let expiry = expiryDate(for: plan, transaction: transaction)
+        // Shields once per delivery (per billing period): grant unless this exact
+        // transaction was already processed — covers first purchase, each renewal,
+        // and Ask-to-Buy approvals, without double-granting on the race.
+        let shields = (plan.grantsShields && !hasProcessed(transaction.id)) ? 4 : 0
+        let ok = await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: shields)
+
+        // Only mark + finish once the entitlement is durably written. On failure
+        // the transaction stays unfinished → StoreKit re-delivers it via
+        // Transaction.updates for retry (fixes the paid-but-unfulfilled Day Pass).
+        if ok {
+            markProcessed(transaction.id)
+            await transaction.finish()
+        }
     }
 
     /// On launch / restore: reflect any active auto-renewable entitlement into the
@@ -119,11 +170,20 @@ final class StoreManager: ObservableObject {
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result,
                   let plan = Plan(rawValue: transaction.productID),
-                  transaction.revocationDate == nil else { continue }
+                  transaction.revocationDate == nil,
+                  appAccountMatchesCurrentUser(transaction) else { continue }
             // Skip expired (StoreKit usually omits these, but be safe).
             if let exp = transaction.expirationDate, exp < Date() { continue }
             await AuthService.shared.syncProExpiry(expiresAt: expiryDate(for: plan, transaction: transaction))
         }
+    }
+
+    /// True when the transaction has no appAccountToken (legacy/unmapped — accept,
+    /// matching the webhook's no-token no-op) or it equals the current user's id.
+    private func appAccountMatchesCurrentUser(_ transaction: Transaction) -> Bool {
+        guard let token = transaction.appAccountToken else { return true }
+        guard let uid = AuthService.shared.profile?.id, let current = UUID(uuidString: uid) else { return false }
+        return token == current
     }
 
     private func expiryDate(for plan: Plan, transaction: Transaction) -> Date {

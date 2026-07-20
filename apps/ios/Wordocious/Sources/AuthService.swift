@@ -240,23 +240,59 @@ final class AuthService: ObservableObject {
     /// Write Pro entitlement after a verified StoreKit purchase/renewal — mirrors
     /// apps/web/lib/payment/purchase-service.ts fulfillSubscription (is_pro +
     /// pro_expires_at, plus +`addShields` streak shields for monthly/yearly).
-    func applyProGrant(expiresAt: Date, addShields: Int) async {
-        guard let userId = try? await client.auth.session.user.id.uuidString else { return }
+    ///
+    /// Returns whether the write reached the server. StoreManager MUST NOT
+    /// finish() the transaction on `false` — the network hiccup would otherwise
+    /// leave a paid Day Pass permanently undelivered (consumables never
+    /// re-appear in currentEntitlements). A false return leaves the transaction
+    /// unfinished so StoreKit re-delivers it via Transaction.updates.
+    @discardableResult
+    func applyProGrant(expiresAt: Date, addShields: Int) async -> Bool {
+        guard let userId = try? await client.auth.session.user.id.uuidString else { return false }
         let iso = ISO8601DateFormatter().string(from: expiresAt)
         let body = ProGrant(is_pro: true, pro_expires_at: iso,
                             streak_shields: (profile?.streakShields ?? 0) + max(0, addShields))
-        try? await client.from("profiles").update(body).eq("id", value: userId).execute()
+        do {
+            try await client.from("profiles").update(body).eq("id", value: userId).execute()
+        } catch {
+            return false
+        }
         await refreshProfile()
+        return true
     }
 
     /// Reconcile an active subscription into the profile on launch/restore — no
-    /// shield grant (not a new purchase).
-    func syncProExpiry(expiresAt: Date) async {
-        guard let userId = try? await client.auth.session.user.id.uuidString else { return }
+    /// shield grant (not a new purchase). Returns write success (see applyProGrant).
+    @discardableResult
+    func syncProExpiry(expiresAt: Date) async -> Bool {
+        guard let userId = try? await client.auth.session.user.id.uuidString else { return false }
         let iso = ISO8601DateFormatter().string(from: expiresAt)
-        try? await client.from("profiles").update(ProSync(is_pro: true, pro_expires_at: iso))
-            .eq("id", value: userId).execute()
+        do {
+            try await client.from("profiles").update(ProSync(is_pro: true, pro_expires_at: iso))
+                .eq("id", value: userId).execute()
+        } catch {
+            return false
+        }
         await refreshProfile()
+        return true
+    }
+
+    /// Revoke Pro after a refund or revocation delivered on Transaction.updates.
+    /// Without this, a refunded auto-renewable (expiry still in the future) got
+    /// re-affirmed as Pro. Clears is_pro; leaves pro_expires_at as an audit
+    /// trail (isProActive gates on is_pro AND expiry, so is_pro:false suffices).
+    @discardableResult
+    func revokePro() async -> Bool {
+        guard let userId = try? await client.auth.session.user.id.uuidString else { return false }
+        struct ProRevoke: Encodable { let is_pro: Bool }
+        do {
+            try await client.from("profiles").update(ProRevoke(is_pro: false))
+                .eq("id", value: userId).execute()
+        } catch {
+            return false
+        }
+        await refreshProfile()
+        return true
     }
 
     /// TEST-ONLY: flip the profile's is_pro marker to preview free vs Pro states,

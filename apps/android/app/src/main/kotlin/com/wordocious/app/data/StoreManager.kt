@@ -99,6 +99,12 @@ object StoreManager {
                 override fun onBillingSetupFinished(result: BillingResult) {
                     if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                         scope.launch { runCatching { queryProducts() } }
+                        // Reconcile active subs at launch (iOS
+                        // syncCurrentEntitlements parity). PurchasesUpdatedListener
+                        // only fires on purchase ACTIONS, never on background
+                        // renewals, so without this an Android sub's Pro is set
+                        // once and never re-reflected until the user taps Restore.
+                        scope.launch { runCatching { reconcileActiveSubs() } }
                     }
                 }
 
@@ -211,23 +217,27 @@ object StoreManager {
                     _lastError.value = "Google Play isn't available right now."
                     return@launch
                 }
-                val result = client.queryPurchasesAsync(
-                    QueryPurchasesParams.newBuilder()
-                        .setProductType(BillingClient.ProductType.SUBS)
-                        .build()
-                )
-                val active = result.purchasesList
-                    .filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+                val active = activeSubs(client)
                 if (active.isEmpty()) {
                     _lastError.value = "No active subscription found."
                 } else {
-                    // Reconciliation, not a new purchase — no shield grant (mirrors
-                    // iOS syncCurrentEntitlements).
                     active.forEach { handlePurchase(it, isNewPurchase = false) }
                 }
             }.onFailure { _lastError.value = it.message?.take(120) ?: "Restore failed" }
         }
     }
+
+    /** Silent launch reconcile — same as restore() but no user-facing errors. */
+    private suspend fun reconcileActiveSubs() {
+        val client = billingClient ?: return
+        if (!client.isReady) return
+        activeSubs(client).forEach { runCatching { handlePurchase(it, isNewPurchase = false) } }
+    }
+
+    private suspend fun activeSubs(client: BillingClient): List<Purchase> =
+        client.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
+        ).purchasesList.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
 
     // MARK: Fulfillment
 
@@ -248,8 +258,11 @@ object StoreManager {
                         )
                     }
                     val now = Instant.now()
+                    // AuthService.parseTimestamp handles PostgREST's offset format
+                    // — Instant.parse rejected it, so stacking never saw the
+                    // existing window and every Day Pass reset to now+24h.
                     val existing = AuthService.profile.value?.proExpiresAt
-                        ?.let { runCatching { Instant.parse(it) }.getOrNull() }
+                        ?.let { AuthService.parseTimestamp(it) }
                     val base = if (existing != null && existing.isAfter(now)) existing else now
                     AuthService.applyProGrant(base.plus(Duration.ofDays(1)).toString(), addShields = 0)
                 }
@@ -264,13 +277,28 @@ object StoreManager {
                         }
                     }
                     val days = if (productId == PRO_YEARLY) 365L else 30L
-                    // New purchase: window starts now. Restore/reconcile: anchor on
-                    // the recorded purchase time so a lapsed sub isn't extended.
-                    val base = if (isNewPurchase) Instant.now()
-                    else Instant.ofEpochMilli(purchase.purchaseTime)
-                    // Shields only on real new purchases (mirrors iOS handle()).
+                    val now = Instant.now()
+                    val expiry: Instant = if (isNewPurchase) {
+                        now.plus(Duration.ofDays(days))
+                    } else {
+                        // RECONCILE/RESTORE. Play only returns a sub here while
+                        // it's ACTIVE, but Purchase carries no expiry — purchaseTime
+                        // is the ORIGINAL purchase, so purchaseTime+days is months
+                        // in the PAST for a renewed sub, and the old code wrote that
+                        // → Restore literally revoked Pro (F5). Never write a past
+                        // date: keep an already-future stored expiry, else set a
+                        // conservative now+days (the RTDN webhook / server sweep is
+                        // the real authority once live). max() also prevents this
+                        // launch reconcile from shrinking a good webhook expiry.
+                        val existing = AuthService.profile.value?.proExpiresAt
+                            ?.let { AuthService.parseTimestamp(it) }
+                        val floor = now.plus(Duration.ofDays(days))
+                        if (existing != null && existing.isAfter(floor)) existing else floor
+                    }
+                    // Shields only on real new purchases (renewals come through the
+                    // Play RTDN webhook, not this client path — see bible/audit F6).
                     AuthService.applyProGrant(
-                        base.plus(Duration.ofDays(days)).toString(),
+                        expiry.toString(),
                         addShields = if (isNewPurchase) 4 else 0,
                     )
                 }
