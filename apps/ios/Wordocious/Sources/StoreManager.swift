@@ -160,7 +160,7 @@ final class StoreManager: ObservableObject {
             // endpoint isn't configured yet (pre-lock), and leave the
             // transaction unfinished on a transient failure so StoreKit
             // re-delivers it (a consumable never reappears in currentEntitlements).
-            switch await verifyOnServer(transaction) {
+            switch await verifyOnServer(verification, transaction) {
             case .granted:
                 markProcessed(transaction.id)
                 await AuthService.shared.refreshProfile()   // pull the server-written entitlement
@@ -183,7 +183,7 @@ final class StoreManager: ObservableObject {
         // (service-role, post-lock-safe) so Pro appears the instant the purchase
         // completes. Best-effort — the webhook stays the backstop, so we don't
         // gate finish() on it.
-        _ = await verifyOnServer(transaction)
+        _ = await verifyOnServer(verification, transaction)
 
         // The +4 renewal shields are granted CLIENT-side: streak_shields is a
         // game-mechanic column (spend/earn), deliberately NOT locked, and the
@@ -214,12 +214,14 @@ final class StoreManager: ObservableObject {
     ///   .granted       → server wrote the entitlement (2xx).
     ///   .notConfigured → endpoint not live yet (503) → caller does the client write.
     ///   .failed        → network/4xx/5xx → caller leaves the transaction unfinished.
-    private func verifyOnServer(_ transaction: Transaction) async -> ServerVerifyOutcome {
+    /// NOTE: the JWS lives on the `VerificationResult` wrapper, not the unwrapped
+    /// `Transaction` — hence both parameters.
+    private func verifyOnServer(_ verification: VerificationResult<Transaction>, _ transaction: Transaction) async -> ServerVerifyOutcome {
         guard let url = URL(string: "\(apiBase(for: transaction))/api/appstore/verify-transaction") else { return .notConfigured }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try? JSONSerialization.data(withJSONObject: ["signedTransaction": transaction.jwsRepresentation])
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["signedTransaction": verification.jwsRepresentation])
         do {
             let (_, resp) = try await URLSession.shared.data(for: req)
             guard let http = resp as? HTTPURLResponse else { return .failed }
