@@ -199,6 +199,9 @@ struct DailyRecordsView: View {
     @State private var playType = "solo"
     @State private var entries: [LeaderboardEntry] = []
     @State private var userRank: (rank: Int, total: Int)?
+    // "Your neighborhood" rows when the user placed past the top-50 list
+    // (e.g. #425 sees ~421–429 below a "···" separator, own row highlighted).
+    @State private var rankWindow: (startRank: Int, entries: [LeaderboardEntry])?
     @State private var loading = false
     @State private var reloadToken = 0
 
@@ -282,6 +285,16 @@ struct DailyRecordsView: View {
                         dailyRow(idx + 1, e)
                         if idx < entries.count - 1 { Divider().overlay(Theme.border) }
                     }
+                    if let win = rankWindow {
+                        Divider().overlay(Theme.border)
+                        Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
+                            .frame(maxWidth: .infinity).padding(.vertical, 4)
+                        Divider().overlay(Theme.border)
+                        ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, e in
+                            dailyRow(win.startRank + idx, e)
+                            if idx < win.entries.count - 1 { Divider().overlay(Theme.border) }
+                        }
+                    }
                 }
             }
             .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -339,10 +352,12 @@ struct DailyRecordsView: View {
         if let cached = LeaderboardCache.shared[cacheKey] {
             entries = cached.entries
             userRank = cached.userRank
+            rankWindow = cached.rankWindow
             loading = false
         } else {
             loading = true
             userRank = nil
+            rankWindow = nil
             entries = []
         }
 
@@ -357,15 +372,22 @@ struct DailyRecordsView: View {
         loading = false
 
         var rank: (rank: Int, total: Int)? = nil
+        var win: (startRank: Int, entries: [LeaderboardEntry])? = nil
         if let uid = auth.profile?.id {
             rank = await LeaderboardService.userRank(gameMode: mode, userId: uid, playType: playType, topEntries: fetched)
             guard !Task.isCancelled else { return }
             userRank = rank
+            // Ranked past the visible list → also show the rows around them.
+            if let r = rank, r.rank > 50 {
+                win = await LeaderboardService.fetchRankWindow(gameMode: mode, playType: playType, userRank: r.rank)
+                guard !Task.isCancelled else { return }
+            }
+            rankWindow = win
         }
         // Records never shows playerCount — preserve any value the daily
         // leaderboard tab cached under the same (solo) key rather than zeroing it.
         let pc = LeaderboardCache.shared[cacheKey]?.playerCount ?? 0
-        LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: pc, userRank: rank)
+        LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: pc, userRank: rank, rankWindow: win)
     }
 }
 

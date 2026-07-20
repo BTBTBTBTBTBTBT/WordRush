@@ -47,6 +47,9 @@ final class LeaderboardCache {
         let entries: [LeaderboardEntry]
         let playerCount: Int
         let userRank: (rank: Int, total: Int)?
+        /// "Your neighborhood" rows when the user ranks past the top-50 list
+        /// (web lbCache.win parity). Defaulted so existing call sites compile.
+        var rankWindow: (startRank: Int, entries: [LeaderboardEntry])? = nil
     }
     private var store: [String: Snapshot] = [:]
     private init() {}
@@ -97,7 +100,8 @@ enum LeaderboardService {
         return f.string(from: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date())
     }
 
-    static func fetch(gameMode: GameMode, day: String? = nil, playType: String = "solo", limit: Int = 50) async throws -> [LeaderboardEntry] {
+    static func fetch(gameMode: GameMode, day: String? = nil, playType: String = "solo",
+                      limit: Int = 50, offset: Int = 0) async throws -> [LeaderboardEntry] {
         try await AuthService.shared.client
             .from("daily_results")
             .select("""
@@ -110,9 +114,25 @@ enum LeaderboardService {
             .eq("play_type", value: playType)
             .order("composite_score", ascending: false)
             .order("created_at", ascending: true)
-            .limit(limit)
+            .range(from: offset, to: offset + limit - 1)
             .execute()
             .value
+    }
+
+    /// The rows AROUND the user's rank — the "your neighborhood" section shown
+    /// below the top-50 list when the user placed past it (web
+    /// fetchRankWindow parity). `startRank` is entries[0]'s 1-based rank; the
+    /// window clamps to start after `topLimit` so it never overlaps the list.
+    static func fetchRankWindow(gameMode: GameMode, playType: String = "solo", userRank: Int,
+                                day: String? = nil, radius: Int = 4, topLimit: Int = 50)
+        async -> (startRank: Int, entries: [LeaderboardEntry])? {
+        let startRank = max(topLimit + 1, userRank - radius)
+        let endRank = userRank + radius
+        guard endRank >= startRank else { return nil }
+        guard let entries = try? await fetch(gameMode: gameMode, day: day, playType: playType,
+                                             limit: endRank - startRank + 1, offset: startRank - 1),
+              !entries.isEmpty else { return nil }
+        return (startRank, entries)
     }
 
     private struct ScoreOnly: Decodable { let composite_score: Double }

@@ -39,7 +39,12 @@ object LeaderboardService {
         val entries: List<LeaderboardEntry>,
         val playerCount: Int,
         val rank: RankInfo?,
+        /** "Your neighborhood" rows when the user ranks past the top-50 list
+         *  (web lbCache.win parity). Defaulted so existing call sites compile. */
+        val rankWindow: RankWindow? = null,
     )
+
+    data class RankWindow(val startRank: Int, val entries: List<LeaderboardEntry>)
     private val boardCache = mutableMapOf<String, CachedBoard>()
     fun cacheKey(gameMode: String, day: String, userId: String?, playType: String = "solo") =
         "$gameMode:$day:$playType:${userId ?: "anon"}"
@@ -104,6 +109,9 @@ object LeaderboardService {
         playType: String = "solo",
         day: String = todayLocalDate(),
         limit: Int = 50,
+        /** Row offset into the ranked ordering (0-based) — used by the
+         *  rank-window fetch to read the rows AROUND a deep rank. */
+        offset: Int = 0,
     ): List<LeaderboardEntry>? = runCatching {
         client.postgrest["daily_results"]
             .select(Columns.raw(COLS)) {
@@ -114,26 +122,39 @@ object LeaderboardService {
                 }
                 order("composite_score", Order.DESCENDING)
                 order("created_at", Order.ASCENDING)   // stable tiebreak (earlier finisher first)
-                limit(limit.toLong())
+                range(offset.toLong()..(offset + limit - 1).toLong())
             }
             .decodeList<LeaderboardEntry>()
     }.getOrElseNotCancelled { null }
 
+    /**
+     * The rows AROUND the user's rank — the "your neighborhood" section shown
+     * below the top-50 list when the user placed past it (web fetchRankWindow
+     * parity). `startRank` is entries[0]'s 1-based rank; the window clamps to
+     * start after [topLimit] so it never overlaps the list.
+     */
+    suspend fun fetchRankWindow(
+        gameMode: String,
+        playType: String = "solo",
+        userRank: Int,
+        day: String = todayLocalDate(),
+        radius: Int = 4,
+        topLimit: Int = 50,
+    ): RankWindow? {
+        val startRank = maxOf(topLimit + 1, userRank - radius)
+        val endRank = userRank + radius
+        if (endRank < startRank) return null
+        val entries = fetchDailyLeaderboardOrNull(
+            gameMode, playType, day,
+            limit = endRank - startRank + 1, offset = startRank - 1,
+        ) ?: return null
+        if (entries.isEmpty()) return null
+        return RankWindow(startRank, entries)
+    }
+
     /** Yesterday's top finishers (for the "Yesterday's Winners" card). */
     suspend fun fetchYesterdayWinners(gameMode: String, playType: String = "solo", limit: Int = 3): List<LeaderboardEntry> =
         fetchDailyLeaderboard(gameMode, playType, day = yesterdayLocalDate(), limit = limit)
-
-    /**
-     * Current user's rank + total player count for today (mirrors getUserDailyRank).
-     * Computed over the full unfiltered list (same numbers as the server count).
-     */
-    suspend fun userRankAndTotal(userId: String, gameMode: String, playType: String = "solo"): Pair<Int, Int>? =
-        runCatching {
-            val all = fetchDailyLeaderboard(gameMode, playType, limit = 1000)
-            if (all.isEmpty()) return@runCatching null
-            val idx = all.indexOfFirst { it.userId == userId }
-            (if (idx >= 0) idx + 1 else all.size + 1) to all.size
-        }.getOrNull()
 
     @Serializable
     private data class ScoreRow(@SerialName("composite_score") val compositeScore: Double)

@@ -313,6 +313,9 @@ export async function fetchDailyLeaderboard(
   playType: 'solo' | 'vs',
   day?: string,
   limit: number = 50,
+  /** Row offset into the ranked ordering (0-based) — used by the rank-window
+   *  fetch to read the rows AROUND a deep rank without paging everything. */
+  offset: number = 0,
 ): Promise<LeaderboardEntry[]> {
   const targetDay = day || getTodayLocal();
 
@@ -336,7 +339,7 @@ export async function fetchDailyLeaderboard(
     .eq('play_type', playType)
     .order('composite_score', { ascending: false })
     .order('created_at', { ascending: true })
-    .limit(limit);
+    .range(offset, offset + limit - 1);
 
   if (!data) return [];
 
@@ -417,6 +420,31 @@ export async function getUserDailyRank(
     rank: (higherCount ?? 0) + 1,
     totalPlayers: totalPlayers ?? 0,
   };
+}
+
+/**
+ * The rows AROUND the user's rank, for the "your neighborhood" section shown
+ * below the top-50 list when the user ranks past it (e.g. #425 sees ~421–429).
+ * `startRank` is the 1-based rank of entries[0]; the window is clamped to start
+ * after `topLimit` so it never overlaps the top list. Ranks are offset-derived
+ * from the same ordering as the list, so they agree with it (ties included).
+ */
+export async function fetchRankWindow(
+  gameMode: string,
+  playType: 'solo' | 'vs',
+  userRank: number,
+  day?: string,
+  radius: number = 4,
+  topLimit: number = 50,
+): Promise<{ startRank: number; entries: LeaderboardEntry[] } | null> {
+  const startRank = Math.max(topLimit + 1, userRank - radius);
+  const endRank = userRank + radius;
+  if (endRank < startRank) return null;
+  const entries = await fetchDailyLeaderboard(
+    gameMode, playType, day, endRank - startRank + 1, startRank - 1,
+  );
+  if (entries.length === 0) return null;
+  return { startRank, entries };
 }
 
 /**

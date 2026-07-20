@@ -16,6 +16,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
   fetchDailyLeaderboard,
+  fetchRankWindow,
   getUserDailyRank,
   getDailyPlayerCount,
   getSecondsUntilMidnightLocal,
@@ -36,6 +37,8 @@ const lbCache = new Map<string, {
   lb: LeaderboardEntry[];
   count: number;
   rank: { rank: number; totalPlayers: number } | null;
+  // "Your neighborhood" rows when the user ranks past the top-50 list.
+  win: { startRank: number; entries: LeaderboardEntry[] } | null;
 }>();
 
 
@@ -91,6 +94,7 @@ export default function DailyPage() {
   const [selectedMode, setSelectedMode] = useState('DUEL');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
+  const [rankWindow, setRankWindow] = useState<{ startRank: number; entries: LeaderboardEntry[] } | null>(null);
   const [playerCount, setPlayerCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showYesterday, setShowYesterday] = useState(false);
@@ -123,10 +127,12 @@ export default function DailyPage() {
       setLeaderboard(cached.lb);
       setPlayerCount(cached.count);
       setUserRank(cached.rank);
+      setRankWindow(cached.win);
       setLoading(false);
     } else {
       setLoading(true);
       setUserRank(null);
+      setRankWindow(null);
       setLeaderboard([]);
     }
 
@@ -142,11 +148,17 @@ export default function DailyPage() {
     setLoading(false);
 
     let rank: { rank: number; totalPlayers: number } | null = null;
+    let win: { startRank: number; entries: LeaderboardEntry[] } | null = null;
     if (user) {
       rank = await getUserDailyRank(user.id, selectedMode, 'solo', day, lb, 50);
       if (seq === loadSeq.current) setUserRank(rank);
+      // Ranked past the visible list → also show the rows around them.
+      if (rank && rank.rank > 50) {
+        win = await fetchRankWindow(selectedMode, 'solo', rank.rank, day);
+      }
+      if (seq === loadSeq.current) setRankWindow(win);
     }
-    lbCache.set(cacheKey, { lb, count, rank });
+    lbCache.set(cacheKey, { lb, count, rank, win });
   }, [selectedMode, user]);
 
   useEffect(() => {
@@ -164,6 +176,56 @@ export default function DailyPage() {
   const Icon = mode.icon;
   const modeHref = `/${mode.id}`;
   const playLimitKey = mode.id;
+
+  // One row of the leaderboard — shared by the top-50 list and the
+  // "your neighborhood" rank window so they can never drift apart visually.
+  const renderLbRow = (entry: LeaderboardEntry, rank: number) => {
+    const isCurrentUser = user && entry.user_id === user.id;
+    return (
+      <div
+        key={entry.user_id}
+        className="flex items-center gap-3 px-4 py-3"
+        style={{
+          background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
+          borderBottom: '1px solid var(--color-border)',
+        }}
+      >
+        <RankIcon rank={rank} />
+        <div className="flex-1 min-w-0">
+          <Link
+            href={`/profile/${entry.user_id}`}
+            className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {entry.username}
+            {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
+          </Link>
+        </div>
+        <div className="text-right">
+          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.composite_score)}</div>
+          <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <span>
+              {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
+              {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
+              {(() => {
+                const h = formatHintsLabel(selectedMode, entry.hints_used);
+                return h ? ` · ${h}` : '';
+              })()}
+            </span>
+            <span
+              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+              style={{
+                background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
+                color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
+              }}
+            >
+              {entry.completed ? 'Win' : 'Loss'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const handlePlayDaily = () => {
     if (!user) {
@@ -301,54 +363,21 @@ export default function DailyPage() {
             </div>
           ) : (
             <div>
-              {leaderboard.map((entry, index) => {
-                const rank = index + 1;
-                const isCurrentUser = user && entry.user_id === user.id;
-                return (
+              {leaderboard.map((entry, index) => renderLbRow(entry, index + 1))}
+              {/* "Your neighborhood" — the rows around the user's rank when they
+                  placed past the top 50 (e.g. #425 sees ~421–429, own row
+                  highlighted). Same ordering as the list, so ranks agree. */}
+              {rankWindow && (
+                <>
                   <div
-                    key={entry.user_id}
-                    className="flex items-center gap-3 px-4 py-3"
-                    style={{
-                      background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
-                      borderBottom: '1px solid var(--color-border)',
-                    }}
+                    className="text-center py-1.5 text-sm font-black tracking-widest"
+                    style={{ color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' }}
                   >
-                    <RankIcon rank={rank} />
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        href={`/profile/${entry.user_id}`}
-                        className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
-                        style={{ color: 'var(--color-text)' }}
-                      >
-                        {entry.username}
-                        {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
-                      </Link>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.composite_score)}</div>
-                      <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                        <span>
-                          {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
-                          {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
-                          {(() => {
-                            const h = formatHintsLabel(selectedMode, entry.hints_used);
-                            return h ? ` · ${h}` : '';
-                          })()}
-                        </span>
-                        <span
-                          className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
-                          style={{
-                            background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
-                            color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
-                          }}
-                        >
-                          {entry.completed ? 'Win' : 'Loss'}
-                        </span>
-                      </div>
-                    </div>
+                    ···
                   </div>
-                );
-              })}
+                  {rankWindow.entries.map((entry, index) => renderLbRow(entry, rankWindow.startRank + index))}
+                </>
+              )}
             </div>
           )}
         </div>

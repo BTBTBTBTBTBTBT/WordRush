@@ -79,6 +79,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     // true total even past a full page, and a computed rank when the user
     // sits outside the top 50.
     var userRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    // "Your neighborhood" rows when the user placed past the top-50 list
+    // (e.g. #425 sees ~421–429 below a "···" separator, own row highlighted).
+    var rankWindow by remember { mutableStateOf<LeaderboardService.RankWindow?>(null) }
     // Reload when mode changes OR once a daily result row has LANDED on the
     // server (recordedTick) so a just-finished puzzle shows on the board
     // without a tab round-trip. The optimistic completionTick fires BEFORE the
@@ -95,11 +98,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             entries = cached.entries
             playerCount = cached.playerCount
             userRank = cached.rank
+            rankWindow = cached.rankWindow
             loading = false
         } else {
             loading = true
             entries = emptyList()
             userRank = null
+            rankWindow = null
         }
         // Rows + "{n} players today" (ALL play types, exact server count) in
         // parallel — paint the rows the moment they land; the rank banner fills
@@ -124,7 +129,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         } else null
         ensureActive()
         userRank = rank
-        LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank))
+        // Ranked past the visible list → also fetch the rows around them.
+        val win = if (rank != null && rank.rank > 50) {
+            LeaderboardService.fetchRankWindow(mode, userRank = rank.rank, day = day)
+        } else null
+        ensureActive()
+        rankWindow = win
+        LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank, win))
     }
     LaunchedEffect(selectedMode, showYesterday) {
         yesterday = if (showYesterday) LeaderboardService.fetchYesterdayWinners(selectedMode) else emptyList()
@@ -206,6 +217,26 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 onOpenProfile = onOpenProfile,
                             )
                             if (index < entries.size - 1) Divider()
+                        }
+                        // "Your neighborhood" — rows around the user's rank when
+                        // they placed past the top 50 (web/iOS parity).
+                        rankWindow?.let { win ->
+                            Divider()
+                            Text(
+                                "···", fontSize = 14.sp, fontWeight = FontWeight.Black,
+                                color = WTheme.textMuted,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            )
+                            Divider()
+                            win.entries.forEachIndexed { index, entry ->
+                                LeaderboardRow(
+                                    rank = win.startRank + index, entry = entry, mode = selectedMode,
+                                    isCurrentUser = entry.userId == userId,
+                                    onOpenProfile = onOpenProfile,
+                                )
+                                if (index < win.entries.size - 1) Divider()
+                            }
                         }
                     }
                 }

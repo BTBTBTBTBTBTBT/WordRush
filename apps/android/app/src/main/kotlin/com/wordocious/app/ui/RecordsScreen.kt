@@ -124,6 +124,8 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var playerCount by remember { mutableIntStateOf(0) }
     var userRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    // "Your neighborhood" rows when the user placed past the top-50 list.
+    var rankWindow by remember { mutableStateOf<LeaderboardService.RankWindow?>(null) }
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
 
@@ -146,11 +148,13 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
             entries = cached.entries
             playerCount = cached.playerCount
             userRank = cached.rank
+            rankWindow = cached.rankWindow
             loading = false
         } else {
             loading = true
             entries = emptyList()
             userRank = null
+            rankWindow = null
         }
         // Rows + "{n} players today" in parallel — paint the rows the moment they
         // land; the rank line fills in on its own instead of holding the list.
@@ -174,7 +178,13 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         } else null
         ensureActive()
         userRank = rank
-        LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank))
+        // Ranked past the visible list → also fetch the rows around them.
+        val win = if (rank != null && rank.rank > 50) {
+            LeaderboardService.fetchRankWindow(mode, pt, userRank = rank.rank, day = day)
+        } else null
+        ensureActive()
+        rankWindow = win
+        LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank, win))
     }
 
     Column {
@@ -222,6 +232,23 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                     val rank = entries.indexOf(entry) + 1
                     LeaderboardRow(rank = rank, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, playType = playType)
                     Spacer(Modifier.height(4.dp))
+                }
+                // "Your neighborhood" — rows around the user's rank when they
+                // placed past the top 50 (web/iOS parity).
+                rankWindow?.let { win ->
+                    item {
+                        Text(
+                            "···", fontSize = 14.sp, fontWeight = FontWeight.Black,
+                            color = WTheme.textMuted,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        )
+                    }
+                    items(win.entries) { entry ->
+                        val rank = win.startRank + win.entries.indexOf(entry)
+                        LeaderboardRow(rank = rank, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, playType = playType)
+                        Spacer(Modifier.height(4.dp))
+                    }
                 }
                 item { YesterdayPodium(selectedMode, playType, onOpenProfile) }
                 item { Spacer(Modifier.height(24.dp)) }

@@ -339,8 +339,11 @@ private fun StatItem(icon: androidx.compose.ui.graphics.vector.ImageVector, colo
 @Composable
 private fun DailyRankBadge(mode: GameMode) {
     val userId = AuthService.profile.value?.id
-    val rank by produceState<Pair<Int, Int>?>(initialValue = null, key1 = mode, key2 = userId) {
-        value = if (userId != null) LeaderboardService.userRankAndTotal(userId, mode.name) else null
+    // Count-query rank (web/iOS parity) — replaces the legacy fetch-1000-and-
+    // scan userRankAndTotal, which broke silently past 1,000 players and
+    // labeled a never-played user "rank N+1" instead of showing nothing.
+    val rank by produceState<LeaderboardService.RankInfo?>(initialValue = null, key1 = mode, key2 = userId) {
+        value = if (userId != null) LeaderboardService.getUserDailyRank(userId, mode.name) else null
     }
     val r = rank ?: return
     val (position, total) = r

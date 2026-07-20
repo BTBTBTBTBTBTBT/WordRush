@@ -960,6 +960,8 @@ struct LeaderboardTab: View {
     @State private var yesterday: [LeaderboardEntry] = []
     @State private var reloadToken = 0
     @State private var userRank: (rank: Int, total: Int)?
+    // "Your neighborhood" rows when the user placed past the top-50 list.
+    @State private var rankWindow: (startRank: Int, entries: [LeaderboardEntry])?
     @State private var playerCount = 0
     @State private var loading = false
     @State private var showYesterday = false
@@ -1112,6 +1114,18 @@ struct LeaderboardTab: View {
                             row(rank: idx + 1, entry: entry)
                             if idx < entries.count - 1 { Divider().overlay(Theme.border) }
                         }
+                        // "Your neighborhood" — rows around the user's rank when
+                        // they placed past the top 50 (web daily page parity).
+                        if let win = rankWindow {
+                            Divider().overlay(Theme.border)
+                            Text("···").font(Brand.font(14, .black)).foregroundStyle(Theme.textMuted)
+                                .frame(maxWidth: .infinity).padding(.vertical, 4)
+                            Divider().overlay(Theme.border)
+                            ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
+                                row(rank: win.startRank + idx, entry: entry)
+                                if idx < win.entries.count - 1 { Divider().overlay(Theme.border) }
+                            }
+                        }
                     }
                     .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
@@ -1243,10 +1257,12 @@ struct LeaderboardTab: View {
             entries = cached.entries
             playerCount = cached.playerCount
             userRank = cached.userRank
+            rankWindow = cached.rankWindow
             loading = false
         } else {
             loading = true
             userRank = nil
+            rankWindow = nil
             entries = []
         }
 
@@ -1269,12 +1285,19 @@ struct LeaderboardTab: View {
         loading = false
 
         var rank: (rank: Int, total: Int)? = nil
+        var win: (startRank: Int, entries: [LeaderboardEntry])? = nil
         if let uid = auth.profile?.id {
             rank = await LeaderboardService.userRank(gameMode: mode, userId: uid, topEntries: fetched)
             guard !Task.isCancelled else { return }
             userRank = rank
+            // Ranked past the visible list → also fetch the rows around them.
+            if let r = rank, r.rank > 50 {
+                win = await LeaderboardService.fetchRankWindow(gameMode: mode, userRank: r.rank)
+                guard !Task.isCancelled else { return }
+            }
+            rankWindow = win
         }
-        LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: count, userRank: rank)
+        LeaderboardCache.shared[cacheKey] = .init(entries: fetched, playerCount: count, userRank: rank, rankWindow: win)
     }
 
     private func loadYesterday() async {
