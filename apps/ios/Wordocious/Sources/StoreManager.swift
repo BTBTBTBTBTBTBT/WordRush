@@ -49,6 +49,23 @@ final class StoreManager: ObservableObject {
         UserDefaults.standard.set(processedTxIDs.map { NSNumber(value: $0) }, forKey: Self.processedKey)
     }
 
+    /// Original transaction IDs of subscriptions this install has already
+    /// credited at least once. Lets the launch reconcile tell a RENEWAL of a
+    /// known sub (unseen tx.id + known originalID → credit +4) apart from the
+    /// FIRST sight of a sub on a fresh install / new device (unknown originalID
+    /// → record only, so a device swap can't re-mint shields already granted
+    /// elsewhere). Android's seen-orderId ledger, iOS edition.
+    private static let originalsKey = "storekit-seen-original-ids"
+    private var seenOriginalIDs: Set<UInt64> = {
+        let raw = UserDefaults.standard.array(forKey: originalsKey) as? [NSNumber] ?? []
+        return Set(raw.map(\.uint64Value))
+    }()
+
+    private func markOriginalSeen(_ id: UInt64) {
+        seenOriginalIDs.insert(id)
+        UserDefaults.standard.set(seenOriginalIDs.map { NSNumber(value: $0) }, forKey: Self.originalsKey)
+    }
+
     func product(for plan: Plan) -> Product? { products.first { $0.id == plan.rawValue } }
 
     private init() {}
@@ -200,6 +217,7 @@ final class StoreManager: ObservableObject {
         // Transaction.updates for retry.
         if ok {
             markProcessed(transaction.id)
+            markOriginalSeen(transaction.originalID)   // this sub is now credit-known
             await transaction.finish()
         }
     }
@@ -250,8 +268,14 @@ final class StoreManager: ObservableObject {
         transaction.environment == .production ? Self.prodAPIBase : Self.sandboxAPIBase
     }
 
-    /// On launch / restore: reflect any active auto-renewable entitlement into the
-    /// profile without granting shields (reconciliation, not a new purchase).
+    /// On launch / restore: reflect any active auto-renewable entitlement into
+    /// the profile. Renewals that happened while the app was CLOSED surface
+    /// here (not on Transaction.updates) as the sub's latest transaction with a
+    /// new tx.id — an unseen period of a credit-known sub earns its +4 shields
+    /// now, or they'd silently never land for users who background the app
+    /// (which is everyone). First sight of an UNKNOWN sub (fresh install / new
+    /// device) records without crediting, so a device swap can't re-mint
+    /// shields granted elsewhere. Android reconcile+orderId-ledger parity.
     private func syncCurrentEntitlements() async {
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result,
@@ -260,7 +284,17 @@ final class StoreManager: ObservableObject {
                   appAccountMatchesCurrentUser(transaction) else { continue }
             // Skip expired (StoreKit usually omits these, but be safe).
             if let exp = transaction.expirationDate, exp < Date() { continue }
-            await AuthService.shared.syncProExpiry(expiresAt: expiryDate(for: plan, transaction: transaction))
+            let expiry = expiryDate(for: plan, transaction: transaction)
+            let isNewPeriod = !hasProcessed(transaction.id)
+            let isKnownSub = seenOriginalIDs.contains(transaction.originalID)
+            let shields = (plan.grantsShields && isNewPeriod && isKnownSub) ? 4 : 0
+            let ok = shields > 0
+                ? await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: shields)
+                : await AuthService.shared.syncProExpiry(expiresAt: expiry)
+            if ok {
+                markProcessed(transaction.id)
+                markOriginalSeen(transaction.originalID)
+            }
         }
     }
 
