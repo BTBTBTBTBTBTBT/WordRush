@@ -1,5 +1,11 @@
 # Payments runbook — going server-authoritative for Pro
 
+> STATUS 2026-07-20: LOCK APPLIED (admin-gated). protect_pro_columns_trg is live on
+> profiles. Regular clients can no longer write is_pro/pro_expires_at/is_admin/
+> is_banned; service-role (webhooks) + direct DB + is_admin accounts pass. Manage
+> the Simulate Pro button per-tester via: update profiles set is_admin=<bool>.
+> Remaining: re-enable Vercel Authentication (was disabled for sandbox testing).
+
 This is the operator checklist for the steps that need YOUR Apple / Supabase /
 Stripe credentials and consoles — the code side is committed, but these can't
 be automated from the repo. Written 2026-07-17 after the Pro payment audit.
