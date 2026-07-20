@@ -13,9 +13,12 @@ be automated from the repo. Written 2026-07-17 after the Pro payment audit.
 - **Apple webhook hardened**: 500-on-failed-write, out-of-order/stale-expiry
   guard, sandbox-rejected-in-production, idempotency ledger, +4 renewal shields.
   Still **fails closed (503)** until the certs + env below exist.
-- **Server expiry sweep**: `/api/cron/expire-pro` runs hourly, flips `is_pro`
-  off for lapsed rows (added to `vercel.json`). Needs `CRON_SECRET` (already set
-  for the other crons).
+- **Server expiry sweep**: `/api/cron/expire-pro` runs daily at 08:00 UTC, flips
+  `is_pro` off for lapsed rows (added to `vercel.json`). Needs `CRON_SECRET`
+  (already set for the other crons). NOTE: the Vercel account is on the **Hobby**
+  plan, which caps crons at **once per day** — an hourly schedule (`0 * * * *`)
+  makes every deploy fail with "Hobby accounts are limited to daily cron jobs."
+  Keep all `vercel.json` crons at daily-or-less-frequent unless the plan upgrades.
 - **RLS lock moved out of the auto-apply path** to
   `supabase/manual-migrations/…_lock_pro_columns.sql` so a routine `db push`
   can't apply it prematurely. It now also locks `streak_shields`.
@@ -120,5 +123,5 @@ so a checkout that isn't paid grants nothing. To turn it on:
 
 After the lock, every Pro grant flows: store → signed notification → verified
 webhook → service-role write → `profiles`. Clients only READ `is_pro` /
-`pro_expires_at` (expiry-gated, fail-closed) and never write them. The hourly
+`pro_expires_at` (expiry-gated, fail-closed) and never write them. The daily
 sweep is the backstop for any missed EXPIRED event.

@@ -6,8 +6,10 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 // after a subscription/Day Pass lapses, and a user who rolls their clock back
 // keeps Pro (audit #6). This flips is_pro=false for every row whose expiry has
 // passed — the DB becomes the authority for admin views, counts, and any
-// server-trusting read, independent of device clocks. Runs hourly (Day Pass is
-// 24h, so hourly bounds the over-grant window to ~1h).
+// server-trusting read, independent of device clocks. Runs daily (08:00 UTC) —
+// the Vercel Hobby plan caps crons at once/day; this is only a backstop anyway
+// (clients fail-closed on expiry and the store webhooks handle EXPIRED live), so
+// a lapsed row's DB is_pro may read stale for up to ~24h until the sweep.
 //
 // It does NOT touch pro_expires_at (kept as an audit trail) and never revokes a
 // row with a future or null expiry, so an active subscriber is untouched. The
