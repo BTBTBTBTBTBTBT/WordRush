@@ -149,18 +149,75 @@ final class StoreManager: ObservableObject {
         if plan == .day && hasProcessed(transaction.id) { await transaction.finish(); return }
 
         let expiry = expiryDate(for: plan, transaction: transaction)
-        // Shields once per delivery (per billing period): grant unless this exact
-        // transaction was already processed — covers first purchase, each renewal,
-        // and Ask-to-Buy approvals, without double-granting on the race.
+
+        if plan == .day {
+            // Day Pass is a CONSUMABLE, and Apple does not reliably send an App
+            // Store Server Notification for consumables — so the authoritative
+            // webhook never sees it. Once the RLS lock lands, the client also
+            // can't write is_pro directly. The server verify endpoint closes
+            // that gap: it re-verifies this signed transaction and writes via
+            // service-role. Fall back to a direct client write only while the
+            // endpoint isn't configured yet (pre-lock), and leave the
+            // transaction unfinished on a transient failure so StoreKit
+            // re-delivers it (a consumable never reappears in currentEntitlements).
+            switch await verifyDayPassOnServer(transaction) {
+            case .granted:
+                markProcessed(transaction.id)
+                await AuthService.shared.refreshProfile()   // pull the server-written entitlement
+                await transaction.finish()
+            case .notConfigured:
+                if await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: 0) {
+                    markProcessed(transaction.id)
+                    await transaction.finish()
+                }
+            case .failed:
+                break   // unfinished → retried via Transaction.updates
+            }
+            return
+        }
+
+        // Subscriptions (auto-renewable): the ASSN webhook is authoritative for
+        // server truth and the +4 renewal shields; this client write keeps the
+        // profile in immediate sync. Shields once per delivery (per billing
+        // period) — granted unless this exact transaction was already processed,
+        // covering first purchase, each renewal, and Ask-to-Buy approvals
+        // without double-granting on the .success/.updates race.
         let shields = (plan.grantsShields && !hasProcessed(transaction.id)) ? 4 : 0
         let ok = await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: shields)
 
         // Only mark + finish once the entitlement is durably written. On failure
         // the transaction stays unfinished → StoreKit re-delivers it via
-        // Transaction.updates for retry (fixes the paid-but-unfulfilled Day Pass).
+        // Transaction.updates for retry.
         if ok {
             markProcessed(transaction.id)
             await transaction.finish()
+        }
+    }
+
+    private enum ServerVerifyOutcome { case granted, notConfigured, failed }
+
+    /// POST a Day Pass's signed transaction (`jwsRepresentation`) to
+    /// /api/appstore/verify-transaction so Pro is written server-side via the
+    /// service-role — the authoritative path for the consumable Day Pass.
+    ///   .granted       → server wrote the entitlement (2xx).
+    ///   .notConfigured → endpoint not live yet (503) → caller does the client write.
+    ///   .failed        → network/4xx/5xx → caller leaves the transaction unfinished.
+    private func verifyDayPassOnServer(_ transaction: Transaction) async -> ServerVerifyOutcome {
+        guard let url = URL(string: "https://wordocious.com/api/appstore/verify-transaction") else { return .notConfigured }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["signedTransaction": transaction.jwsRepresentation])
+        do {
+            let (_, resp) = try await URLSession.shared.data(for: req)
+            guard let http = resp as? HTTPURLResponse else { return .failed }
+            switch http.statusCode {
+            case 200..<300: return .granted
+            case 503:       return .notConfigured   // certs/env not deployed yet
+            default:        return .failed           // 401/500/… → retry later
+            }
+        } catch {
+            return .failed
         }
     }
 

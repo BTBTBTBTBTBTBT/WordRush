@@ -58,11 +58,18 @@ NOT swept — the lock is the real fix).
 6. **Day Pass caveat (must resolve before step 7):** Apple does NOT reliably
    send ASSN for consumables, so the Day Pass may never reach the webhook.
    Once the lock is applied the iOS client can no longer write it either →
-   **Day Pass fulfillment would break.** Fix before locking: add a
-   `/api/appstore/verify-transaction` route the app POSTs its Day Pass
-   `Transaction.jwsRepresentation` to; the server verifies with the same
-   `SignedDataVerifier` and writes via service-role. (Not yet built — flagged
-   as the one remaining code piece; ping me to implement when you reach this.)
+   **Day Pass fulfillment would break.** ✅ **BUILT** (commit below):
+   `apps/web/app/api/appstore/verify-transaction/route.ts` verifies the app's
+   `Transaction.jwsRepresentation` with the same `SignedDataVerifier` and writes
+   via service-role (idempotent on `tx:<transactionId>`, no shields — those stay
+   webhook-only, so a sub's initial purchase can't be double-credited). It uses
+   the SAME certs + env as the webhook, so it goes live automatically once steps
+   1–2 are done — nothing extra to configure. iOS `StoreManager.handle()` routes
+   the Day Pass through it (`verifyDayPassOnServer`): `.granted` → server truth,
+   `503` → falls back to the pre-lock client write, transient failure → leaves
+   the transaction unfinished so StoreKit re-delivers. This ships in the next
+   iOS build. Sandbox-verify a Day Pass on the preview deployment (watch for the
+   `POST /api/appstore/verify-transaction` 200 and `profiles` +24h) BEFORE step 7.
 7. **Apply the lock:**
    `psql "$SUPABASE_DB_URL" -f supabase/manual-migrations/20260603000004_lock_pro_columns.sql`
    Then re-test a sandbox purchase end-to-end: the webhook grant must still land

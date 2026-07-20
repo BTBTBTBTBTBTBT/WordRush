@@ -10,6 +10,9 @@ const nextConfig = {
     // the serverless function bundle on Vercel actually contains the .cer files.
     outputFileTracingIncludes: {
       '/api/appstore/notifications': ['./certs/**'],
+      // The Day Pass verify endpoint reads the same certs at runtime — it must
+      // be traced too, or its bundle ships without the .cer and 503s forever.
+      '/api/appstore/verify-transaction': ['./certs/**'],
     },
   },
   // Disable source maps in production to reduce bundle size
