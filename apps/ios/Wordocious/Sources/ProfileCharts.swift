@@ -516,11 +516,14 @@ private struct TimeOfDayHeatmap: View {
     @State private var data: [MatchStatsService.HourBucket] = []
     /// Tapped hour — shows "8am · 65 games · 52 wins" instead of the peak line.
     @State private var selected: Int?
+    @State private var loaded = false
 
     var body: some View {
-        // Web parity: time-of-day-heatmap.tsx returns null when empty — hide.
         Group {
-            if data.contains(where: { $0.played > 0 }) {
+            if !data.contains(where: { $0.played > 0 }), loaded, playType != "vs_cpu" {
+                StatsEmptyCard(title: "When You Play", accent: Theme.primary,
+                               hint: "Play a few games and your active hours map out here.")
+            } else if data.contains(where: { $0.played > 0 }) {
                 LegacyChartCard(title: "WHEN YOU PLAY") {
                     let maxPlayed = max(1, data.map(\.played).max() ?? 1)
                     HStack(alignment: .bottom, spacing: 2) {
@@ -562,6 +565,7 @@ private struct TimeOfDayHeatmap: View {
             if let cached: [MatchStatsService.HourBucket] = StatsMemo.shared.get(key) { data = cached }
             let fresh = await MatchStatsService.timeOfDay(mode: mode, playType: playType)
             data = fresh
+            loaded = true
             StatsMemo.shared.set(key, fresh)
         }
     }
@@ -579,11 +583,14 @@ private struct TopWordsCard: View {
     let mode: GameMode?
     var playType: String = "solo"
     @State private var data: [MatchStatsService.TopWord] = []
+    @State private var loaded = false
 
     var body: some View {
-        // Web parity: top-words-card.tsx returns null when empty — hide.
         Group {
-            if !data.isEmpty {
+            if data.isEmpty, loaded, playType != "vs_cpu" {
+                StatsEmptyCard(title: "Top Words", accent: Color(hex: 0xD97706),
+                               hint: "Your most-guessed words appear here as you play.")
+            } else if !data.isEmpty {
                 LegacyChartCard(title: "TOP WORDS") {
                 let maxCount = max(1, data.map(\.count).max() ?? 1)
                 VStack(spacing: 8) {
@@ -617,6 +624,7 @@ private struct TopWordsCard: View {
             if let cached: [MatchStatsService.TopWord] = StatsMemo.shared.get(key) { data = cached }
             let fresh = await MatchStatsService.topWords(mode: mode, playType: playType)
             data = fresh
+            loaded = true
             StatsMemo.shared.set(key, fresh)
         }
     }

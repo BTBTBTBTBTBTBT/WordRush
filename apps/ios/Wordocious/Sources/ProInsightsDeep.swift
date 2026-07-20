@@ -120,15 +120,24 @@ private struct RadarChartView: View {
 /// Skill Radar section — the five-axis signature chart (Pro).
 struct SkillRadarCard: View {
     let isPro: Bool
+    /// Hoisted user_stats rows from ProfileTab (ProStatsCard fix pattern) —
+    /// the radar derives from these + a solve-times fetch, so it can't be
+    /// emptied by its own fetch racing auth hydration.
+    var statRows: [UserStatRow] = []
     @State private var data: StatsDeepService.SkillRadarData?
 
     /// Locked preview uses the web's static sample so free users see the shape.
     private static let sample = StatsDeepService.SkillRadarData(
         speed: 62, accuracy: 74, consistency: 55, endurance: 40, versatility: 68)
 
+    @State private var radarLoaded = false
+
     var body: some View {
         Group {
-            if let d = isPro ? data : Self.sample {
+            if isPro, data == nil, radarLoaded {
+                StatsEmptyCard(title: "Skill Radar",
+                               hint: "Play 5+ solo games to generate your skill radar.")
+            } else if let d = isPro ? data : Self.sample {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Skill Radar", accent: Theme.primary)
                     let card = KitCard {
@@ -146,12 +155,18 @@ struct SkillRadarCard: View {
                 }
             }
         }
-        .task(id: isPro) {
+        // Keyed on the hoisted rows too: when ProfileTab's stats land (or
+        // update), the radar recomputes — no permanent-empty race.
+        .task(id: "\(isPro)-\(statRows.count)") {
             guard isPro else { return }
             let key = "skillRadar:\(AuthService.shared.profile?.id ?? "anon")"
             if let cached: StatsDeepService.SkillRadarData = StatsMemo.shared.get(key) { data = cached }
-            let fresh = await StatsDeepService.skillRadar()
+            let times = await MatchStatsService.solveTimes(limit: 20)
+            let fresh = statRows.isEmpty
+                ? await StatsDeepService.skillRadar()   // fallback: self-fetch
+                : StatsDeepService.skillRadar(rows: statRows, times: times)
             data = fresh
+            radarLoaded = true
             if let fresh { StatsMemo.shared.set(key, fresh) }
         }
     }
@@ -173,6 +188,7 @@ private struct RadarLabeledChart: View {
 struct RivalriesCard: View {
     let isPro: Bool
     @State private var rows: [StatsDeepService.Rivalry] = []
+    @State private var loaded = false
 
     private static let sample: [StatsDeepService.Rivalry] = [
         .init(opponentId: "1", username: "WordSmith", wins: 4, losses: 2, draws: 0, total: 6),
@@ -182,7 +198,10 @@ struct RivalriesCard: View {
     var body: some View {
         let display = isPro ? rows : Self.sample
         Group {
-            if !(isPro && display.isEmpty) {
+            if isPro, display.isEmpty, loaded {
+                StatsEmptyCard(title: "Rivalries", accent: Color(hex: 0xEC4899),
+                               hint: "Face the same opponent a few times to start a rivalry.")
+            } else if !(isPro && display.isEmpty) {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Rivalries", accent: Color(hex: 0xEC4899))
                     let card = KitCard {
@@ -203,6 +222,7 @@ struct RivalriesCard: View {
             if let cached: [StatsDeepService.Rivalry] = StatsMemo.shared.get(key) { rows = cached }
             let fresh = await StatsDeepService.rivalries(limit: 5)
             rows = fresh
+            loaded = true
             StatsMemo.shared.set(key, fresh)
         }
     }
@@ -273,7 +293,10 @@ struct ProDeepModeCard: View {
     var body: some View {
         let d = isPro ? data : Self.sample
         Group {
-            if let d, d.hasAny, playType != "vs_cpu" {
+            if isPro, let real = data, !real.hasAny, playType != "vs_cpu" {
+                StatsEmptyCard(title: "Deep Insights", accent: accent,
+                               hint: "Play more of this mode to unlock openers, accuracy and almanac insights.")
+            } else if let d, d.hasAny, playType != "vs_cpu" {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Deep Insights", accent: accent)
                     let inner = VStack(spacing: 12) {

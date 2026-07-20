@@ -198,7 +198,7 @@ struct ProfileTab: View {
                     ProfileDashboard(mode: nil, playType: activeTab)
                     ProfileInsightsCard(insights: allViewInsights(p))
                     ProStatsCard(statRows: statRows)
-                    SkillRadarCard(isPro: auth.isProActive)
+                    SkillRadarCard(isPro: auth.isProActive, statRows: statRows)
                 }
                 }
                 .id("dash-\(activeTab)-\(selectedMode?.rawValue ?? "all")")

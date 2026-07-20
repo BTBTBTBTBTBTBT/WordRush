@@ -151,10 +151,16 @@ fun DailyStandingStrip(reloadToken: Int = 0) {
 @Composable
 fun OpenerLabCard(playType: String = "solo") {
     var openers by remember { mutableStateOf<List<StatsDeepService.OpenerStat>>(emptyList()) }
+    var loaded by remember { mutableStateOf(false) }
     LaunchedEffect(playType) {
         openers = AuthService.userId?.let { StatsDeepService.openerStats(it, 5, playType) } ?: emptyList()
+        loaded = true
     }
-    if (openers.isEmpty()) return
+    if (openers.isEmpty()) {
+        if (loaded && playType != "vs_cpu") StatsEmptyCard("Opener Lab", accent = Color(0xFF06B6D4),
+            hint = "Win a few games and your favorite starting words show up here.")
+        return
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionHeader("Opener Lab", accent = Color(0xFF06B6D4))
         KitCard {
@@ -191,10 +197,16 @@ fun OpenerLabCard(playType: String = "solo") {
 @Composable
 fun WeekdayFormCard(playType: String = "solo") {
     var days by remember { mutableStateOf<List<StatsDeepService.WeekdayFormDay>>(emptyList()) }
+    var loaded by remember { mutableStateOf(false) }
     LaunchedEffect(playType) {
         days = AuthService.userId?.let { StatsDeepService.weekdayForm(it, playType) } ?: emptyList()
+        loaded = true
     }
-    if (days.none { it.played > 0 }) return
+    if (days.none { it.played > 0 }) {
+        if (loaded && playType != "vs_cpu") StatsEmptyCard("Weekday Form", accent = Color(0xFFF97316),
+            hint = "Play across the week to see your win rate by day.")
+        return
+    }
     val labels = listOf("S", "M", "T", "W", "T", "F", "S")
     val dayNames = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
     val maxPlayed = maxOf(1, days.maxOf { it.played })

@@ -253,3 +253,26 @@ final class StatsMemo {
     func get<T>(_ key: String) -> T? { store[key] as? T }
     func set<T>(_ key: String, _ value: T) { store[key] = value }
 }
+
+/// Visible "no data yet" chrome for a stats card whose fetch returned nothing.
+/// Replaces silent hiding: an invisible card reads as a broken build (exactly
+/// how the missing Skill Radar was reported on 126), and the visible hint
+/// doubles as a diagnostic — a card stuck on this state for an account with
+/// real history means its FETCH is failing, not the data.
+struct StatsEmptyCard: View {
+    let title: String
+    var accent: Color = Theme.primary
+    var hint: String = "Not enough data yet — keep playing to unlock this insight."
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SectionHeader(title, accent: accent)
+            KitCard {
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.bar").font(.system(size: 13)).foregroundStyle(Theme.textMuted)
+                    Text(hint).font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
+                }
+                .frame(maxWidth: .infinity).padding(.vertical, 10)
+            }
+        }
+    }
+}

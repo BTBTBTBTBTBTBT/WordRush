@@ -380,12 +380,23 @@ enum StatsDeepService {
     }
 
     /// Five 0–100 axes from user_stats + recent solve times.
+    /// Self-fetching variant — kept for callers without hoisted stats.
     static func skillRadar() async -> SkillRadarData? {
         guard let uid = await userId() else { return nil }
         async let statsAsync = UserStatsService.fetch(userId: uid)
         async let timesAsync = MatchStatsService.solveTimes(limit: 20)
-        let rows = await statsAsync.filter { $0.playType == "solo" }
+        let rows = await statsAsync
         let times = await timesAsync
+        return skillRadar(rows: rows, times: times)
+    }
+
+    /// Pure computation from HOISTED stats rows (ProfileTab already fetched
+    /// them for Pro Stats) + recent solve times. Same fix pattern as the
+    /// ProStatsCard hoist: the old self-fetch could permanently early-return
+    /// when auth hydrated a frame late, silently hiding the radar (found live
+    /// on build 126 — web rendered the radar, iOS didn't).
+    static func skillRadar(rows allRows: [UserStatRow], times: [MatchStatsService.SolvePoint]) -> SkillRadarData? {
+        let rows = allRows.filter { $0.playType == "solo" }
         guard !rows.isEmpty else { return nil }
         let totalGames = rows.reduce(0) { $0 + $1.totalGames }
         guard totalGames >= 5 else { return nil }

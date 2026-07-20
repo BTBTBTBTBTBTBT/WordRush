@@ -62,10 +62,31 @@ function RadarSvg({ data }: { data: SkillRadarData }) {
   );
 }
 
+
+/** Visible "no data yet" card — replaces silent hiding for Pro users (an
+ *  invisible card reads as a broken build; this doubles as a diagnostic:
+ *  stuck-on-empty with real history behind it = failing fetch). */
+function StatsEmptyCard({ title, accent = '#7c3aed', hint }: { title: string; accent?: string; hint: string }) {
+  return (
+    <div>
+      <SectionHeader label={title} accent={accent} />
+      <KitCard>
+        <div className="flex items-center justify-center gap-2 py-3 text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+          <span>📊</span>
+          <span>{hint}</span>
+        </div>
+      </KitCard>
+    </div>
+  );
+}
+
 export function SkillRadarCard({ userId, isPro }: { userId: string; isPro: boolean }) {
   const { data } = useSWR(isPro ? ['skill-radar', userId] : ['skill-radar-locked'], () =>
     isPro ? fetchSkillRadar(userId) : Promise.resolve<SkillRadarData | null>({ speed: 62, accuracy: 74, consistency: 55, endurance: 40, versatility: 68 }));
-  if (!data) return null;
+  if (!data) {
+    if (!isPro) return null;
+    return <StatsEmptyCard title="Skill Radar" hint="Play 5+ solo games to generate your skill radar." />;
+  }
   const card = (
     <KitCard>
       <RadarSvg data={data} />
@@ -87,7 +108,10 @@ export function SkillRadarCard({ userId, isPro }: { userId: string; isPro: boole
 export function RivalriesCard({ userId, isPro }: { userId: string; isPro: boolean }) {
   const { data } = useSWR(isPro ? ['rivalries', userId] : null, () => fetchRivalries(userId, 5));
   const rows = data ?? [];
-  if (isPro && rows.length === 0) return null;
+  if (isPro && rows.length === 0) {
+    if (!data) return null; // still loading
+    return <StatsEmptyCard title="Rivalries" accent="#ec4899" hint="Face the same opponent a few times to start a rivalry." />;
+  }
   const card = (
     <KitCard>
       <div className="space-y-1.5">
@@ -156,7 +180,10 @@ export function ProDeepModeCard({ userId, gameMode, isPro, accentColor, playType
   };
   if (!d) return null;
   const hasAny = (d.openers?.length ?? 0) > 0 || d.positions || (d.almanac?.length ?? 0) > 0 || d.hints || (d.gauntlet?.length ?? 0) > 0;
-  if (!hasAny) return null;
+  if (!hasAny) {
+    if (!isPro) return null;
+    return <StatsEmptyCard title="Deep Insights" hint="Play more of this mode to unlock openers, accuracy and almanac insights." />;
+  }
 
   const inner = (
     <div className="space-y-3">

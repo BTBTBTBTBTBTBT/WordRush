@@ -174,6 +174,7 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
 @Composable
 fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
     var rows by remember { mutableStateOf<List<StatsDeepService.Rivalry>>(emptyList()) }
+    var loaded by remember { mutableStateOf(false) }
     LaunchedEffect(isPro) {
         if (isPro) AuthService.userId?.let { uid ->
             // P-cache: seed from the session memo (instant repaint), refresh, store back.
@@ -181,6 +182,7 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
             com.wordocious.app.data.StatsMemo.get<List<StatsDeepService.Rivalry>>(memoKey)?.let { rows = it }
             val fresh = StatsDeepService.rivalries(uid, 5)
             rows = fresh
+            loaded = true
             com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
         }
     }
@@ -188,7 +190,11 @@ fun RivalriesCard(isPro: Boolean, onGoPro: () -> Unit) {
         StatsDeepService.Rivalry("1", "WordSmith", 4, 2, 0, 6),
         StatsDeepService.Rivalry("2", "LexiconLou", 1, 3, 1, 5),
     )
-    if (isPro && display.isEmpty()) return
+    if (isPro && display.isEmpty()) {
+        if (loaded) StatsEmptyCard("Rivalries", accent = Color(0xFFEC4899),
+            hint = "Face the same opponent a few times to start a rivalry.")
+        return
+    }
     // F3: fade+rise when the fetch lands (row-count gate means this only renders
     // once rows exist, so the entrance runs on first appear).
     AsyncEntrance(visible = true) {
@@ -299,6 +305,11 @@ fun ProDeepModeCard(gameMode: String, isPro: Boolean, accent: Color, onGoPro: ()
     // (the panel shows a "totals only" note instead; restat B1).
     if (playType == "vs_cpu") return
     val d = if (isPro) data else DEEP_SAMPLE
+    if (isPro && data != null && !data!!.hasAny) {
+        StatsEmptyCard("Deep Insights", accent = accent,
+            hint = "Play more of this mode to unlock openers, accuracy and almanac insights.")
+        return
+    }
     if (d == null || !d.hasAny) return
     // F3: fade+rise when the fetch lands (only renders once data has rows).
     AsyncEntrance(visible = true) {
@@ -486,6 +497,27 @@ private fun AlmanacCard(entries: List<StatsDeepService.AlmanacEntry>, accent: Co
                 }
             }
             DeepCaption("Every solution you've faced recently — solved in purple")
+        }
+    }
+}
+
+
+/** Visible "no data yet" chrome — replaces silent hiding for Pro users (an
+ *  invisible card reads as a broken build; stuck-on-empty with real history
+ *  behind it = a failing fetch). iOS StatsEmptyCard / web parity. */
+@Composable
+fun StatsEmptyCard(title: String, accent: Color = WTheme.primary, hint: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionHeader(title, accent = accent)
+        KitCard {
+            Text(
+                hint,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = WTheme.textMuted,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            )
         }
     }
 }

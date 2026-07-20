@@ -106,10 +106,14 @@ struct OpenerLabCard: View {
     /// Play-type scope from the page toggle (restat B1); vs_cpu → empty → hidden.
     var playType: String = "solo"
     @State private var openers: [StatsDeepService.OpenerStat] = []
+    @State private var loaded = false
 
     var body: some View {
         Group {
-            if !openers.isEmpty {
+            if openers.isEmpty, loaded, playType != "vs_cpu" {
+                StatsEmptyCard(title: "Opener Lab", accent: Color(hex: 0x06B6D4),
+                               hint: "Win a few games and your favorite starting words show up here.")
+            } else if !openers.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Opener Lab", accent: Color(hex: 0x06B6D4))
                     KitCard {
@@ -145,6 +149,7 @@ struct OpenerLabCard: View {
             if let cached: [StatsDeepService.OpenerStat] = StatsMemo.shared.get(key) { openers = cached }
             let fresh = await StatsDeepService.openerStats(limit: 5, playType: playType)
             openers = fresh
+            loaded = true
             StatsMemo.shared.set(key, fresh)
         }
     }
@@ -157,6 +162,7 @@ struct WeekdayFormCard: View {
     /// Play-type scope from the page toggle (restat B1); vs_cpu → zero days → hidden.
     var playType: String = "solo"
     @State private var days: [StatsDeepService.WeekdayFormDay] = []
+    @State private var loaded = false
 
     private let labels = ["S", "M", "T", "W", "T", "F", "S"]
     private let dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
@@ -168,7 +174,10 @@ struct WeekdayFormCard: View {
 
     var body: some View {
         Group {
-            if days.contains(where: { $0.played > 0 }) {
+            if !days.contains(where: { $0.played > 0 }), loaded, playType != "vs_cpu" {
+                StatsEmptyCard(title: "Weekday Form", accent: Color(hex: 0xF97316),
+                               hint: "Play across the week to see your win rate by day.")
+            } else if days.contains(where: { $0.played > 0 }) {
                 let maxPlayed = max(1, days.map(\.played).max() ?? 1)
                 let hint = best.map { "Best: \(dayNames[$0.dow]) (\(Int((Double($0.won) / Double($0.played) * 100).rounded()))%)" }
                 VStack(alignment: .leading, spacing: 8) {
@@ -204,6 +213,7 @@ struct WeekdayFormCard: View {
             if let cached: [StatsDeepService.WeekdayFormDay] = StatsMemo.shared.get(key) { days = cached }
             let fresh = await StatsDeepService.weekdayForm(playType: playType)
             days = fresh
+            loaded = true
             StatsMemo.shared.set(key, fresh)
         }
     }
@@ -215,10 +225,14 @@ struct WeekdayFormCard: View {
 /// sweep-counts card; the counts moved to Records → You (single home).
 struct DailyPointsChartCard: View {
     @State private var points: [MatchStatsService.DailyPointsPoint] = []
+    @State private var loaded = false
 
     var body: some View {
         Group {
-            if points.count >= 2 {
+            if points.count < 2, loaded {
+                StatsEmptyCard(title: "Daily Points", accent: Color(hex: 0xEC4899),
+                               hint: "Finish dailies on a few different days to chart your points.")
+            } else if points.count >= 2 {
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("Daily Points", accent: Color(hex: 0xEC4899))
                     ChartCard(title: "Points per day", hint: "Last 30 days · ● sweep · ● flawless") {
@@ -246,6 +260,7 @@ struct DailyPointsChartCard: View {
             if let cached: [MatchStatsService.DailyPointsPoint] = StatsMemo.shared.get(key) { points = cached }
             let fresh = await MatchStatsService.dailyPointsOverTime(days: 30)
             points = fresh
+            loaded = true
             StatsMemo.shared.set(key, fresh)
         }
     }
