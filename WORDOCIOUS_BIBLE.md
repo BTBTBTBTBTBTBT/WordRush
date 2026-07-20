@@ -394,7 +394,7 @@ Native work (iOS + Android) now commits to `main` alongside everything else — 
 ## 10. Domains, accounts, infra
 
 - **Web production domain**: `wordocious.com` (Vercel)
-- **Vercel projects**: the **live project is `spellstrike`** (the `wordrush` project is stale — do not deploy there)
+- **Vercel projects**: the **live project is `wordocious`** (renamed from `spellstrike` 2026-07-20; project ID `prj_km9yeLsZpq6AeFPUeMRKMSWAxkjd`, team `team_3zytuCEHGsl7HqDgYX4LfRxI` — prefer the ID for CLI/API). The `wordrush` project is stale — do not deploy there. **HOBBY plan: crons max once/day** — a more-frequent cron in `apps/web/vercel.json` silently fails EVERY deploy. Sandbox alias `spellstrike-sandbox.vercel.app` (old-name label, still valid) → Preview deployment for App Store sandbox testing.
 - **GitHub repo**: `BTBTBTBTBTBTBT/WordRush`, default branch `main`
 - **Supabase project**: `eniiqqsxpmuyrspvepiw` (Postgres + Auth + Storage); 13 public tables, RLS enabled + correct
 - **Realtime server**: `socket.io` (`apps/server`) on **Railway** behind `server.wordocious.com` (deploys from `main`); DNS managed at **GoDaddy**, not Vercel
