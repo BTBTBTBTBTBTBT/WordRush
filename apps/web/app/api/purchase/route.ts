@@ -11,6 +11,12 @@ export async function POST(request: NextRequest) {
     }
 
     const provider = getPaymentProvider();
+    // No provider configured → refuse (never grant free Pro). The Pro page
+    // gates its buttons on NEXT_PUBLIC_STRIPE_ENABLED, so users shouldn't reach
+    // here, but the API is the real backstop.
+    if (!provider) {
+      return NextResponse.json({ error: 'Payments are not available yet.' }, { status: 503 });
+    }
 
     if (type === 'subscription') {
       if (!itemId) {

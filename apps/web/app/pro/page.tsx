@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords, EyeOff, Mail, Bot } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { useAuth } from '@/lib/auth-context';
@@ -23,10 +23,26 @@ const benefits = [
 export default function ProPage() {
   const { user, refreshProfile, isProActive } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  // Real payments are wired only when Stripe is configured. Until then the buy
+  // buttons are disabled with "Coming soon" — NEVER a free grant, and never a
+  // dead 503. (Server truth is paymentsConfigured(); this is the UI mirror.)
+  const paymentsEnabled = process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true';
+
+  // Returning from Stripe checkout: fulfillment lands via the webhook, so pull
+  // the fresh profile a moment after redirect-back.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (new URLSearchParams(window.location.search).get('purchase') === 'success') {
+      const t = setTimeout(() => { refreshProfile(); }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [refreshProfile]);
 
   const handleSubscribe = async (planId: string) => {
-    if (!user) return;
+    if (!user || !paymentsEnabled) return;
     setLoading(planId);
+    setPayError(null);
     try {
       const res = await fetch('/api/purchase', {
         method: 'POST',
@@ -40,11 +56,15 @@ export default function ProPage() {
       });
       const data = await res.json();
       if (data.url) {
-        await refreshProfile();
+        // Redirect to Stripe Checkout. Fulfillment happens server-side via the
+        // webhook after payment — NOT here (that was the free-Pro bug).
         window.location.href = data.url;
+      } else {
+        setPayError(data.error || 'Could not start checkout.');
       }
     } catch (err) {
       console.error('Subscribe error:', err);
+      setPayError('Could not start checkout.');
     } finally {
       setLoading(null);
     }
@@ -123,14 +143,14 @@ export default function ProPage() {
                 <p className="text-xs font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>Cancel anytime</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.monthly.id)}
-                  disabled={loading !== null}
+                  disabled={loading !== null || !paymentsEnabled}
                   className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
                   style={{
                     background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
                     boxShadow: '0 4px 0 #4c1d95',
                   }}
                 >
-                  {loading === PRO_PLANS.monthly.id ? 'Processing...' : 'Subscribe Monthly'}
+                  {!paymentsEnabled ? 'Coming soon' : loading === PRO_PLANS.monthly.id ? 'Processing...' : 'Subscribe Monthly'}
                 </button>
               </div>
 
@@ -156,14 +176,14 @@ export default function ProPage() {
                 <p className="text-xs font-bold mb-5" style={{ color: 'var(--color-text-muted)' }}>$4.99/mo billed annually</p>
                 <button
                   onClick={() => handleSubscribe(PRO_PLANS.yearly.id)}
-                  disabled={loading !== null}
+                  disabled={loading !== null || !paymentsEnabled}
                   className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
                   style={{
                     background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                     boxShadow: '0 4px 0 #92400e',
                   }}
                 >
-                  {loading === PRO_PLANS.yearly.id ? 'Processing...' : 'Subscribe Yearly'}
+                  {!paymentsEnabled ? 'Coming soon' : loading === PRO_PLANS.yearly.id ? 'Processing...' : 'Subscribe Yearly'}
                 </button>
               </div>
             </div>
@@ -181,7 +201,7 @@ export default function ProPage() {
               </div>
               <button
                 onClick={() => handleSubscribe(PRO_PLANS.day.id)}
-                disabled={loading !== null}
+                disabled={loading !== null || !paymentsEnabled}
                 className="w-full py-3 rounded-xl font-black text-sm transition-opacity disabled:opacity-50"
                 style={{
                   background: 'var(--color-surface)',
@@ -189,13 +209,20 @@ export default function ProPage() {
                   color: '#7c3aed',
                 }}
               >
-                {loading === PRO_PLANS.day.id
+                {!paymentsEnabled
+                  ? 'Coming soon'
+                  : loading === PRO_PLANS.day.id
                   ? 'Processing...'
                   : `Just today — $${PRO_PLANS.day.price.toFixed(0)} for 24 hours of Pro →`}
               </button>
               <p className="mt-2 text-center text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                Eight day passes cost more than a month of Pro.
+                {paymentsEnabled
+                  ? 'Eight day passes cost more than a month of Pro.'
+                  : 'Payments are being set up — Pro will be purchasable here shortly.'}
               </p>
+              {payError && (
+                <p className="mt-2 text-center text-xs font-bold" style={{ color: '#dc2626' }}>{payError}</p>
+              )}
             </div>
           </>
         )}

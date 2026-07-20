@@ -77,13 +77,37 @@ sales: create the Play Console products (`pro_monthly`/`pro_yearly`/`pro_day`),
 wire RTDN → Pub/Sub → this endpoint, set its env, Sandbox-verify, then the same
 lock covers Android too (it's one trigger on `profiles`).
 
-## Web (Stripe) — Track 2, in progress
+## Web (Stripe) — code done, needs your account setup
 
-The web "Subscribe" buttons currently grant Pro **free** via the demo provider.
-Track 2 replaces that with real Stripe checkout + a `/api/stripe/webhook` that
-writes via service-role, gated so the buttons DISABLE (never grant free Pro)
-until Stripe keys exist. See that commit + the Stripe section appended here when
-it lands.
+The free-Pro demo grant is GONE: absent Stripe keys the buy buttons render
+**"Coming soon"** (disabled) and `/api/purchase` returns 503 — never a free
+grant. Fulfillment is server-side only (Stripe webhook → service-role write),
+so a checkout that isn't paid grants nothing. To turn it on:
+
+1. **Stripe account** → create three Prices in the Stripe dashboard:
+   - Monthly recurring $6.99 → note its `price_…` id
+   - Yearly recurring $59.99 → `price_…`
+   - Day Pass **one-time** $1.00 → `price_…`
+2. **Env (Vercel, Production):**
+   - `STRIPE_SECRET_KEY=sk_live_…`
+   - `STRIPE_WEBHOOK_SECRET=whsec_…` (from step 4)
+   - `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` / `STRIPE_PRICE_DAY` = the ids above
+   - `NEXT_PUBLIC_STRIPE_ENABLED=true` (flips the buttons live)
+   - (`SUPABASE_SERVICE_ROLE_KEY` — same one the App Store webhook needs)
+   - For local dev without real charges: `PAYMENTS_DEMO=true` (NEVER in prod).
+3. **Register the webhook** in Stripe → Developers → Webhooks → endpoint
+   `https://wordocious.com/api/stripe/webhook`, events:
+   `checkout.session.completed`, `invoice.paid`,
+   `customer.subscription.deleted`. Copy its signing secret into
+   `STRIPE_WEBHOOK_SECRET`.
+4. **Test mode first:** use `sk_test_…` + Stripe test cards, buy each plan,
+   confirm the webhook 200s and `profiles` flips is_pro/pro_expires_at (+4
+   shields on subs, none on Day Pass), then a renewal (Stripe test clock) and a
+   cancel → revoke. Then swap to live keys.
+5. The Stripe webhook shares the `store_webhook_events` idempotency table with
+   the Apple one, so replays no-op there too. After Stripe + Apple are both
+   verified, apply the lock (top of this file) — it covers all three grant
+   paths since they all write `profiles` via service-role.
 
 ## Post-lock invariant
 

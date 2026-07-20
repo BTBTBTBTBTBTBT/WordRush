@@ -2,12 +2,11 @@ import { PaymentProvider, WebhookResult } from './types';
 import { fulfillSubscription } from './purchase-service';
 
 /**
- * DemoProvider — simulates subscription purchases with instant fulfillment.
- * No real charges, no external API calls. Use this for development and
- * testing until Stripe (web) or RevenueCat (mobile) is wired up.
- *
- * To swap to Stripe: create stripe-provider.ts implementing PaymentProvider,
- * then update the factory in ./index.ts.
+ * DemoProvider — instant fulfillment, NO real charge. ⚠️ LOCAL DEV ONLY.
+ * The factory (index.ts) returns this ONLY when PAYMENTS_DEMO === 'true';
+ * production uses StripeProvider (STRIPE_SECRET_KEY) or refuses to grant.
+ * Never set PAYMENTS_DEMO in a deployed environment — it hands out free Pro,
+ * which is exactly the bug that shipped when this was the default provider.
  */
 export class DemoProvider implements PaymentProvider {
   async createSubscriptionSession(
