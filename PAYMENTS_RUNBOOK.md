@@ -75,8 +75,14 @@ NOT swept — the lock is the real fix).
    - `SUPABASE_SERVICE_ROLE_KEY` — from Supabase → Project Settings → API.
    - `APPSTORE_BUNDLE_ID=com.wordocious.app`
    - `APPSTORE_APP_APPLE_ID=<your numeric App Store app id>`
-   - `APPSTORE_ACCEPT_SANDBOX=true` on the **Preview** env only (so TestFlight /
-     sandbox tests reach a non-prod deployment); leave it unset in Production.
+   - ~~`APPSTORE_ACCEPT_SANDBOX`~~ — NOT needed: the sandbox-rejection guard
+     only fires when `VERCEL_ENV === 'production'`, so *preview* deployments
+     accept sandbox transactions inherently. Only ever set this flag if you
+     deliberately want sandbox accepted on PRODUCTION (don't).
+   - ✅ Verified 2026-07-20: all of the above are already set on **spellstrike**
+     (since mid-June) with the correct values — nothing to add. (A duplicate set
+     accidentally added to the unrelated **wordrush** Vercel project on 07-20
+     can be deleted for tidiness; it does nothing there.)
 3. **Apply the idempotency migration** (safe, auto-applies with `supabase db
    push`, or run it by hand).
 4. **Register the webhook** in App Store Connect → your app → App Information →
