@@ -185,3 +185,62 @@ After the lock, every Pro grant flows: store → signed notification → verifie
 webhook → service-role write → `profiles`. Clients only READ `is_pro` /
 `pro_expires_at` (expiry-gated, fail-closed) and never write them. The daily
 sweep is the backstop for any missed EXPIRED event.
+
+---
+
+## ANDROID LAUNCH CHECKLIST (turnkey — do in order once the Play Console account exists)
+
+Code is DONE and verified 2026-07-20 (StoreManager orderId-ledger, Play RTDN
+webhook, billing-ktx 7.1.1, product-ID constants). Everything below is
+console/config; nothing in the app needs new code except the AdMob ID swap
+(one edit, noted).
+
+**1. Google Play Console ($25 one-time)** → create the developer account + the
+   Wordocious app record (package `com.wordocious.app`).
+
+**2. Billing products — create with EXACTLY these IDs** (StoreManager.kt keys):
+   - `pro_monthly` — auto-renewing subscription, $6.99/mo
+   - `pro_yearly`  — auto-renewing subscription, $59.99/yr
+   - `pro_day`     — one-time **consumable** product, $1.00
+   A typo in any ID = that product silently won't load.
+
+**3. Internal-testing track + license testers** (test purchases free, like iOS
+   sandbox). Add your + testers' Google accounts as license testers.
+
+**4. RTDN → Pub/Sub → the webhook** (mirrors the Apple ASSN flow):
+   - Play Console → Monetization setup → Real-time developer notifications →
+     topic name, verify.
+   - Pub/Sub push subscription → endpoint `https://wordocious.com/api/playstore/notifications`.
+   - Vercel env (Production): `PLAY_SA_EMAIL`, `PLAY_SA_PRIVATE_KEY` (service-account
+     key; `\n`-escaped), `PLAY_PUBSUB_TOKEN` (matches the Pub/Sub verification
+     token), and the shared `SUPABASE_SERVICE_ROLE_KEY`. The webhook fails closed
+     until all four exist.
+   - Service account (Play Console → Users & permissions → invite the SA email)
+     with **View financial data + Manage orders**.
+   - Sandbox-verify: internal-test purchase of each plan → webhook 200, `profiles`
+     flips. Then the RLS lock (already applied) covers Android too — one trigger.
+
+**5. Android AdMob — REQUIRED before production (currently on Google TEST IDs):**
+   - Create an **Android** AdMob app (the approved `…~8393761846` is iOS-only).
+   - Swap the real IDs into TWO places, then rebuild:
+       `apps/android/app/src/main/AndroidManifest.xml` — the
+         `com.google.android.gms.ads.APPLICATION_ID` meta-data (currently the test
+         app id `ca-app-pub-3940256099942544~3347511713`).
+       `apps/android/app/src/main/kotlin/com/wordocious/app/data/AdsManager.kt` —
+         `INTERSTITIAL_UNIT` (currently test `…3940256099942544/5354046379`).
+   - Shipping test IDs to production = zero revenue + an AdMob policy flag. (Ping
+     me with the new IDs and I'll do the swap edit.)
+
+**6. Android Google sign-in** — the app already sends the WEB client id as
+   serverClientId; Google Cloud still needs an **Android OAuth client**:
+   package `com.wordocious.app`, upload-cert SHA-1
+   `7A:2C:E8:AC:82:B7:F7:F6:10:64:E1:9D:CC:88:23:0A:8E:63:79:B0`. No ID tokens
+   vend until this exists.
+
+**7. App Links** — `/.well-known/assetlinks.json` is published with the
+   upload-cert SHA-256 (verify it still matches whatever Play App Signing assigns
+   if you enroll — Play may re-sign with a different cert).
+
+**8. ⚠️ BACK UP the upload keystore** `~/.android-keys/wordocious-upload.jks`
+   (+ `key.properties` storepass) BEFORE first upload — losing it loses the
+   ability to update the app unless Play App Signing is enrolled at submission.
