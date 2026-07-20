@@ -67,6 +67,37 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <div className="section-header">SUBSCRIPTION</div>
+            {/* The web can't tell which store a Pro sub was bought in, so link
+                both stores' manage pages. When Stripe web billing goes live,
+                add a portal row here for web-purchased subs. iOS/Android open
+                their own native manage surface from this same settings slot. */}
+            <div className="space-y-1.5">
+              {[
+                { label: 'Manage on App Store', description: 'Subscribed on iPhone or iPad', href: 'https://apps.apple.com/account/subscriptions' },
+                { label: 'Manage on Google Play', description: 'Subscribed on Android', href: 'https://play.google.com/store/account/subscriptions?package=com.wordocious.app' },
+              ].map((s) => (
+                <a
+                  key={s.href}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-left p-3 rounded-xl transition-all"
+                  style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)' }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{s.label}</div>
+                      <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{s.description}</div>
+                    </div>
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>›</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-3">
             <div className="section-header">ACCESSIBILITY</div>
             <div className="flex items-center justify-between">

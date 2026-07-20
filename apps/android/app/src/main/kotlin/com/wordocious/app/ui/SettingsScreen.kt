@@ -158,6 +158,26 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 }
             }
 
+            // SUBSCRIPTION — Play's manage-subscriptions page for this app
+            // (cancel, change plan, resubscribe). iOS opens Apple's native
+            // sheet; this is the Play analogue.
+            Section("SUBSCRIPTION") {
+                Card {
+                    LinkRow("Manage Subscription") {
+                        runCatching {
+                            context.startActivity(
+                                android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    android.net.Uri.parse(
+                                        "https://play.google.com/store/account/subscriptions?package=com.wordocious.app"
+                                    ),
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             // ABOUT
             Section("ABOUT") {
                 Card {

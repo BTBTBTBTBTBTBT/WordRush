@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 /// Settings — mirrors components/settings-dialog.tsx (theme picker + Sound /
 /// Colorblind / Reduced-motion toggles) plus account + info links + version.
@@ -60,6 +61,26 @@ struct SettingsView: View {
                                 toggleRow("Colorblind Mode", "High contrast colors", $themeManager.colorblind)
                                 Divider().overlay(Theme.border)
                                 toggleRow("Reduced Motion", "Minimize animations", $themeManager.reducedMotion)
+                            }
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
+                            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
+                        }
+                        section("SUBSCRIPTION") {
+                            VStack(spacing: 0) {
+                                // Apple's native manage-subscriptions sheet (cancel,
+                                // change plan, resubscribe). Works signed-out too —
+                                // it's the App Store account's subs, not ours. URL
+                                // fallback if no foreground scene is available.
+                                Button {
+                                    Task {
+                                        if let scene = UIApplication.shared.connectedScenes
+                                            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                                            try? await AppStore.showManageSubscriptions(in: scene)
+                                        } else if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                                            await UIApplication.shared.open(url)
+                                        }
+                                    }
+                                } label: { linkRow("Manage Subscription") }.buttonStyle(.plain)
                             }
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
                             .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.border, lineWidth: 1.5))
