@@ -28,7 +28,7 @@ Skip the `PLAY_PUBSUB_TOKEN` / service-role parts of step 2 — already done.
    - Enable the **Google Play Android Developer API** for the project.
    - In **Play Console → Users & permissions → Invite new user**, invite the
      service-account email with *View financial data* + *Manage orders*.
-2. **Env vars** (Vercel project `spellstrike`):
+2. **Env vars** (Vercel project `wordocious`, formerly `spellstrike`):
    - `PLAY_SA_EMAIL` — the service-account email.
    - `PLAY_SA_PRIVATE_KEY` — the PEM `private_key` from the JSON key
      (escape newlines as `\n` when pasting into Vercel).
