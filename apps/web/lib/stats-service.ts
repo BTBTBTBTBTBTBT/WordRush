@@ -743,7 +743,9 @@ export async function fetchGuessDistribution(userId: string, gameMode?: string, 
     .not('winner_id', 'is', null)
     .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null);
   if (gameMode) query = query.eq('game_mode', gameMode);
-  query = query.limit(2000);
+  // Recent-first so the 2000-row cap samples the player's LATEST history —
+  // unordered, a 5000-match veteran got an arbitrary 2000 (scalability audit).
+  query = query.order('created_at', { ascending: false }).limit(2000);
   const { data } = await query as { data: Array<{ player1_score: number; player2_id: string | null; winner_id: string; player1_id: string; game_mode: string }> | null };
 
   // Bucket range follows the mode's real max guesses — a 7/13 OctoWord win
@@ -813,6 +815,7 @@ export async function fetchDailyCalendar(userId: string, days: number = 90) {
     .select('created_at, winner_id, player1_id')
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .gte('created_at', since.toISOString())
+    .order('created_at', { ascending: false })
     .limit(2000) as { data: Array<{ created_at: string; winner_id: string | null; player1_id: string }> | null };
 
   const buckets = new Map<string, { gamesPlayed: number; gamesWon: number }>();
@@ -961,7 +964,9 @@ export async function fetchTimeOfDayHeatmap(userId: string, gameMode?: string, p
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .filter('player2_id', playType === 'vs' ? 'not.is' : 'is', null);
   if (gameMode) query = query.eq('game_mode', gameMode);
-  query = query.limit(2000);
+  // Recent-first so the 2000-row cap samples the player's LATEST history —
+  // unordered, a 5000-match veteran got an arbitrary 2000 (scalability audit).
+  query = query.order('created_at', { ascending: false }).limit(2000);
   const { data } = await query as { data: Array<{ created_at: string; winner_id: string | null }> | null };
 
   const hours: Array<{ hour: number; gamesPlayed: number; gamesWon: number }> = [];
@@ -1238,6 +1243,7 @@ export async function fetchHeadToHeadRecord(userId: string, gameMode: string) {
     .or(`player1_id.eq.${userId},player2_id.eq.${userId}`)
     .eq('game_mode', gameMode)
     .not('player2_id', 'is', null)
+    .order('created_at', { ascending: false })
     .limit(1000) as { data: Array<{ winner_id: string | null }> | null };
 
   let wins = 0;

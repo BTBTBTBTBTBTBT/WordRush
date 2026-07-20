@@ -27,6 +27,7 @@ export async function fetchHeadToHead(
     .or(
       `and(player1_id.eq.${myId},player2_id.eq.${opponentId}),and(player1_id.eq.${opponentId},player2_id.eq.${myId})`,
     )
+    .order('created_at', { ascending: false })
     .limit(1000) as {
     data: Array<{ player1_id: string; player2_id: string | null; winner_id: string | null }> | null;
   };

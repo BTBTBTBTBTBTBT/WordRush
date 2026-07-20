@@ -100,7 +100,8 @@ enum MatchStatsService {
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .gte("created_at", value: ISO8601DateFormatter().string(from: since))
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
-        let rows: [DateWinRow] = (try? await q.limit(2000).execute().value) ?? []
+        // Recent-first so the 2000-row cap samples the LATEST history (web parity).
+        let rows: [DateWinRow] = (try? await q.order("created_at", ascending: false).limit(2000).execute().value) ?? []
         var byDay = [Date: (played: Int, won: Int)]()
         // UTC buckets — web stats-service + Android bucket created_at by UTC
         // date; local buckets put the same game on different squares per platform.
@@ -146,7 +147,8 @@ enum MatchStatsService {
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
         q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
-        let rows: [DateWinRow] = (try? await q.limit(2000).execute().value) ?? []
+        // Recent-first so the 2000-row cap samples the LATEST history (web parity).
+        let rows: [DateWinRow] = (try? await q.order("created_at", ascending: false).limit(2000).execute().value) ?? []
         var played = [Int: Int](), won = [Int: Int]()
         let cal = Calendar.current
         for r in rows {
@@ -408,6 +410,7 @@ enum MatchStatsService {
             .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
             .eq("game_mode", value: mode.rawValue)
             .not("player2_id", operator: .is, value: "null")
+            .order("created_at", ascending: false)
             .limit(1000).execute().value) ?? []
         var wins = 0, losses = 0
         for r in rows {

@@ -138,6 +138,7 @@ object MatchStatsService {
         val rows = client.postgrest["matches"]
             .select(Columns.raw("player1_score,game_mode,winner_id")) {
                 filter { eq("player1_id", userId); eq("winner_id", userId); scopeToPlayType(playType); mode?.let { eq("game_mode", it) } }
+                order("created_at", Order.DESCENDING) // recent-first sampling (web parity)
                 limit(2000)
             }
             .decodeList<ScoreRow>()
@@ -167,6 +168,7 @@ object MatchStatsService {
                     mode?.let { eq("game_mode", it) }
                     gte("created_at", sinceIso)
                 }
+                order("created_at", Order.DESCENDING) // recent-first sampling (web parity)
                 limit(2000)
             }
             .decodeList<DateRow>()
@@ -196,6 +198,7 @@ object MatchStatsService {
                     or { eq("player1_id", userId); eq("player2_id", userId) }
                     gte("created_at", sinceIso)
                 }
+                order("created_at", Order.DESCENDING) // recent-first sampling (web parity)
                 limit(2000)
             }
             .decodeList<DateRow>()
@@ -234,6 +237,7 @@ object MatchStatsService {
         val rows = client.postgrest["matches"]
             .select(Columns.raw("created_at,winner_id")) {
                 filter { eq("player1_id", userId); scopeToPlayType(playType); mode?.let { eq("game_mode", it) } }
+                order("created_at", Order.DESCENDING) // recent-first sampling (web parity)
                 limit(2000)
             }
             .decodeList<DateRow>()
@@ -466,6 +470,7 @@ object MatchStatsService {
         val rows = client.postgrest["matches"]
             .select(Columns.raw("winner_id")) {
                 filter { or { eq("player1_id", userId); eq("player2_id", userId) }; eq("game_mode", mode); filterNot("player2_id", FilterOperator.IS, null) }
+                order("created_at", Order.DESCENDING)
                 limit(1000)
             }
             .decodeList<WinnerRow>()
