@@ -38,5 +38,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'sweep failed', detail: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, expired: data?.length ?? 0 });
+  // Housekeeping: prune old idempotency-ledger rows so store_webhook_events
+  // (written by the App Store / Stripe webhooks + the verify endpoint) doesn't
+  // grow unbounded. 30 days is far longer than any store's webhook retry
+  // window, so a legitimate replay is still caught. Best-effort — a prune
+  // failure must NOT fail the expiry sweep.
+  const cutoff = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+  const { error: pruneErr } = await sb
+    .from('store_webhook_events')
+    .delete()
+    .lt('processed_at', cutoff);
+  if (pruneErr) console.error('store_webhook_events prune failed:', pruneErr.message);
+
+  return NextResponse.json({ ok: true, expired: data?.length ?? 0, pruned: pruneErr ? 'error' : 'ok' });
 }

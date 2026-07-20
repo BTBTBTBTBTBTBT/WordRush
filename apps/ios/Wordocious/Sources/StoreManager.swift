@@ -160,7 +160,7 @@ final class StoreManager: ObservableObject {
             // endpoint isn't configured yet (pre-lock), and leave the
             // transaction unfinished on a transient failure so StoreKit
             // re-delivers it (a consumable never reappears in currentEntitlements).
-            switch await verifyDayPassOnServer(transaction) {
+            switch await verifyOnServer(transaction) {
             case .granted:
                 markProcessed(transaction.id)
                 await AuthService.shared.refreshProfile()   // pull the server-written entitlement
@@ -176,12 +176,22 @@ final class StoreManager: ObservableObject {
             return
         }
 
-        // Subscriptions (auto-renewable): the ASSN webhook is authoritative for
-        // server truth and the +4 renewal shields; this client write keeps the
-        // profile in immediate sync. Shields once per delivery (per billing
-        // period) — granted unless this exact transaction was already processed,
-        // covering first purchase, each renewal, and Ask-to-Buy approvals
-        // without double-granting on the .success/.updates race.
+        // Subscriptions (auto-renewable): the ASSN webhook is the DURABLE
+        // authority for is_pro/pro_expires_at, but it can lag — and post-lock a
+        // reverted client write would show nothing until it lands. Confirming the
+        // signed transaction server-side here writes the entitlement immediately
+        // (service-role, post-lock-safe) so Pro appears the instant the purchase
+        // completes. Best-effort — the webhook stays the backstop, so we don't
+        // gate finish() on it.
+        _ = await verifyOnServer(transaction)
+
+        // The +4 renewal shields are granted CLIENT-side: streak_shields is a
+        // game-mechanic column (spend/earn), deliberately NOT locked, and the
+        // store webhooks deliberately do NOT grant shields — so this is the
+        // single source and can't double up with them. Once per delivery (per
+        // billing period): granted unless this exact transaction was already
+        // processed — covers first purchase, each renewal, and Ask-to-Buy
+        // approvals without double-granting on the .success/.updates race.
         let shields = (plan.grantsShields && !hasProcessed(transaction.id)) ? 4 : 0
         let ok = await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: shields)
 
@@ -196,14 +206,16 @@ final class StoreManager: ObservableObject {
 
     private enum ServerVerifyOutcome { case granted, notConfigured, failed }
 
-    /// POST a Day Pass's signed transaction (`jwsRepresentation`) to
+    /// POST a signed transaction (`jwsRepresentation`) to
     /// /api/appstore/verify-transaction so Pro is written server-side via the
-    /// service-role — the authoritative path for the consumable Day Pass.
+    /// service-role. Authoritative for the consumable Day Pass (Apple doesn't
+    /// reliably send an ASSN for consumables); a best-effort instant-confirm for
+    /// subscriptions (the ASSN webhook is their durable authority).
     ///   .granted       → server wrote the entitlement (2xx).
     ///   .notConfigured → endpoint not live yet (503) → caller does the client write.
     ///   .failed        → network/4xx/5xx → caller leaves the transaction unfinished.
-    private func verifyDayPassOnServer(_ transaction: Transaction) async -> ServerVerifyOutcome {
-        guard let url = URL(string: "https://wordocious.com/api/appstore/verify-transaction") else { return .notConfigured }
+    private func verifyOnServer(_ transaction: Transaction) async -> ServerVerifyOutcome {
+        guard let url = URL(string: "\(apiBase(for: transaction))/api/appstore/verify-transaction") else { return .notConfigured }
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -219,6 +231,18 @@ final class StoreManager: ObservableObject {
         } catch {
             return .failed
         }
+    }
+
+    // Production transactions verify against the live site. Sandbox / Xcode
+    // transactions post to the sandbox base — set `sandboxAPIBase` to a preview
+    // deployment that has APPSTORE_ACCEPT_SANDBOX=true so a sandbox purchase
+    // (TestFlight / StoreKit test) verifies end-to-end WITHOUT temporarily
+    // accepting sandbox on production. Defaults to production (behaviour
+    // unchanged) until a sandbox base is configured.
+    private static let prodAPIBase = "https://wordocious.com"
+    private static let sandboxAPIBase = "https://wordocious.com"  // ← set to your APPSTORE_ACCEPT_SANDBOX=true preview alias
+    private func apiBase(for transaction: Transaction) -> String {
+        transaction.environment == .production ? Self.prodAPIBase : Self.sandboxAPIBase
     }
 
     /// On launch / restore: reflect any active auto-renewable entitlement into the

@@ -36,7 +36,6 @@ const PRO_PRODUCT_IDS = new Set([
   'com.wordocious.app.pro_day',
 ]);
 const DAY_PASS_ID = 'com.wordocious.app.pro_day';
-const RENEWAL_SHIELDS = 4;
 
 // Grant/extend Pro vs revoke it. IMMEDIATE_REVOKES fire regardless of any
 // expiry (a refund/revoke takes effect now); EXPIRY_REVOKES are period-driven
@@ -58,11 +57,11 @@ const EXPIRY_REVOKES = new Set<string>([
   NotificationTypeV2.EXPIRED,
   NotificationTypeV2.GRACE_PERIOD_EXPIRED,
 ]);
-// Notification types that credit the +4 renewal shields (per billing period).
-const SHIELD_GRANTS = new Set<string>([
-  NotificationTypeV2.SUBSCRIBED,
-  NotificationTypeV2.DID_RENEW,
-]);
+// NOTE: this webhook does NOT grant streak shields. On mobile the CLIENT grants
+// the +4 per billing period (streak_shields is a game-mechanic column that's
+// spent/earned client-side and is deliberately NOT locked) — the webhook
+// granting them too would double up once the ASSN URL is registered. Web has no
+// client, so Stripe fulfillment grants shields server-side there instead.
 
 let _rootCAs: Buffer[] | null = null;
 function appleRootCAs(): Buffer[] {
@@ -141,23 +140,22 @@ export async function POST(req: NextRequest) {
 
   const sb = getAdminSupabase();
 
-  // Idempotency: a replayed/duplicate delivery must not re-apply (esp. shields).
+  // Idempotency: a replayed/duplicate delivery must not re-apply the entitlement.
   if (eventId) {
     const dup = await sb.from('store_webhook_events').select('event_id').eq('event_id', eventId).maybeSingle();
     if (dup.data) return NextResponse.json({ ok: true, note: 'already processed' });
   }
 
-  // Current stored state — needed for the out-of-order guard and shield increment.
+  // Current stored state — needed for the out-of-order (stale-expiry) guard.
   const { data: current } = await sb
     .from('profiles')
-    .select('pro_expires_at, streak_shields')
+    .select('pro_expires_at')
     .eq('id', userId)
     .maybeSingle();
   const storedExpiryMs = current?.pro_expires_at ? new Date(current.pro_expires_at).getTime() : 0;
 
   let isPro: boolean;
   let proExpiresAt: string;
-  let shieldDelta = 0;
 
   if (IMMEDIATE_REVOKES.has(type)) {
     isPro = false;
@@ -179,14 +177,12 @@ export async function POST(req: NextRequest) {
     const effectiveExp = Math.max(exp, storedExpiryMs);
     isPro = effectiveExp > now;
     proExpiresAt = new Date(effectiveExp).toISOString();
-    if (SHIELD_GRANTS.has(type)) shieldDelta = RENEWAL_SHIELDS;
   } else {
     if (eventId) await sb.from('store_webhook_events').insert({ event_id: eventId, source: 'appstore' });
     return NextResponse.json({ ok: true, note: `ignored type ${type}` });
   }
 
   const update: Record<string, unknown> = { is_pro: isPro, pro_expires_at: proExpiresAt };
-  if (shieldDelta > 0) update.streak_shields = (current?.streak_shields ?? 0) + shieldDelta;
 
   const { error } = await sb.from('profiles').update(update).eq('id', userId);
   if (error) {

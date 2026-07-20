@@ -70,7 +70,34 @@ async function decodeTransaction(signedTransaction: string) {
   throw new Error('verify-failed');
 }
 
+// Best-effort per-instance rate limit. On Vercel each lambda instance keeps its
+// own map (and cold starts reset it), so this is a soft throttle against a hot
+// instance, NOT a hard global cap — real global limiting would need Vercel KV /
+// Upstash. It's just a cheap backstop: the endpoint is already safe (idempotent,
+// grants only to the JWS's OWN appAccountToken, and needs a valid Apple
+// signature to change anything), so abuse can at worst add DB load.
+const RL_WINDOW_MS = 60_000;
+const RL_MAX = 30;
+const rlHits = new Map<string, number[]>();
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  const hits = (rlHits.get(ip) ?? []).filter((t) => now - t < RL_WINDOW_MS);
+  hits.push(now);
+  rlHits.set(ip, hits);
+  if (rlHits.size > 5000) {
+    for (const [k, v] of rlHits) if (v.every((t) => now - t >= RL_WINDOW_MS)) rlHits.delete(k);
+  }
+  return hits.length > RL_MAX;
+}
+
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  if (rateLimited(ip)) return NextResponse.json({ error: 'rate limited' }, { status: 429 });
+  // Reject oversized bodies before doing any crypto work — a JWS is a few KB.
+  if (Number(req.headers.get('content-length') || 0) > 16_384) {
+    return NextResponse.json({ error: 'payload too large' }, { status: 413 });
+  }
+
   let signedTransaction: string;
   try {
     signedTransaction = (await req.json()).signedTransaction;

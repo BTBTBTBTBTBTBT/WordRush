@@ -11,8 +11,9 @@ be automated from the repo. Written 2026-07-17 after the Pro payment audit.
   Android expiry-parse (fail-closed), restore-no-longer-revokes, launch
   reconcile, ProScreen `isProActive`. These ride the next iOS/Android builds.
 - **Apple webhook hardened**: 500-on-failed-write, out-of-order/stale-expiry
-  guard, sandbox-rejected-in-production, idempotency ledger, +4 renewal shields.
-  Still **fails closed (503)** until the certs + env below exist.
+  guard, sandbox-rejected-in-production, idempotency ledger. Writes ONLY
+  `is_pro`/`pro_expires_at` — it does NOT grant streak shields (see the shields
+  model below). Still **fails closed (503)** until the certs + env below exist.
 - **Server expiry sweep**: `/api/cron/expire-pro` runs daily at 08:00 UTC, flips
   `is_pro` off for lapsed rows (added to `vercel.json`). Needs `CRON_SECRET`
   (already set for the other crons). NOTE: the Vercel account is on the **Hobby**
@@ -21,9 +22,36 @@ be automated from the repo. Written 2026-07-17 after the Pro payment audit.
   Keep all `vercel.json` crons at daily-or-less-frequent unless the plan upgrades.
 - **RLS lock moved out of the auto-apply path** to
   `supabase/manual-migrations/…_lock_pro_columns.sql` so a routine `db push`
-  can't apply it prematurely. It now also locks `streak_shields`.
+  can't apply it prematurely. It locks ONLY `is_pro` + `pro_expires_at`.
+  (An earlier draft also locked `streak_shields` — REMOVED: shields are written
+  client-side on every platform for spend/earn, so locking them would freeze
+  every player's shield count. See the shields model below.)
 - **Idempotency table**: `supabase/migrations/20260717000001_webhook_idempotency.sql`
-  (safe to auto-apply — creates `store_webhook_events`, service-role only).
+  (safe to auto-apply — creates `store_webhook_events`, service-role only). The
+  daily expire-pro cron prunes rows older than 30 days so it can't grow forever.
+
+### Streak shields — where they're granted (do not re-introduce double-grants)
+
+`streak_shields` is a game-mechanic column: the client spends it (−1, use a
+shield) and earns it (+1, every 7-day login streak) on all three platforms, so
+it is **deliberately NOT locked** and the client is trusted to write it.
+Purchase/renewal shields (+4) therefore follow a per-platform rule to avoid ever
+double-granting:
+
+- **iOS / Android (StoreKit / Play):** the **client** grants the +4 (per new
+  transaction / billing period). The App Store + Play **webhooks do NOT grant
+  shields.** (If both did, a subscribe would mint +8 once the ASSN URL is
+  registered.)
+- **Web (Stripe):** there is no client, so **Stripe fulfillment grants the +4
+  server-side** (initial + each renewal).
+- The **verify endpoint never grants shields** (it only writes is_pro/expiry), so
+  it can't double with the client on a sub confirm.
+
+⚠️ **Android gap (not live, fix before Android Pro sells):** the Android client
+grants +4 only on the *initial* purchase and the Play webhook grants none, so
+Android *renewal* shields currently land nowhere. Before enabling Android Pro,
+either grant renewal shields in the Android client's reconcile path or add them
+to the Play webhook — pick ONE side, matching the iOS "client-only" model.
 
 ## ⚠️ The live security hole (do this first)
 
@@ -55,9 +83,10 @@ NOT swept — the lock is the real fix).
    your preview deployment's `/api/appstore/notifications`. Choose **Version 2**.
 5. **Sandbox-verify:** make a sandbox purchase of monthly/yearly, watch the
    preview deployment logs — confirm the webhook 200s and the `profiles` row
-   flips `is_pro`/`pro_expires_at` and `streak_shields += 4`. Test a renewal
-   (sandbox renews fast) and a refund (App Store Connect → refund) → confirm
-   revoke.
+   flips `is_pro`/`pro_expires_at`. (`streak_shields += 4` comes from the CLIENT,
+   not the webhook — see the shields model above — so verify shields on-device,
+   not in the webhook log.) Test a renewal (sandbox renews fast) and a refund
+   (App Store Connect → refund) → confirm revoke.
 6. **Day Pass caveat (must resolve before step 7):** Apple does NOT reliably
    send ASSN for consumables, so the Day Pass may never reach the webhook.
    Once the lock is applied the iOS client can no longer write it either →
