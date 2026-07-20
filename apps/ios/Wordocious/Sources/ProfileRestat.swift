@@ -141,6 +141,8 @@ struct OpenerLabCard: View {
                         }
                     }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task(id: playType) {
@@ -206,6 +208,8 @@ struct WeekdayFormCard: View {
                         }
                     }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task(id: playType) {
@@ -253,6 +257,8 @@ struct DailyPointsChartCard: View {
                         .frame(height: 110)
                     }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task {

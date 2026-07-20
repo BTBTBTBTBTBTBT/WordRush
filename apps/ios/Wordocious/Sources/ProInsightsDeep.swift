@@ -153,10 +153,10 @@ struct SkillRadarCard: View {
                         ProLockOverlay(label: "Unlock Skill Radar with Pro") { card }
                     }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
-        // Keyed on the hoisted rows too: when ProfileTab's stats land (or
-        // update), the radar recomputes — no permanent-empty race.
         .task(id: "\(isPro)-\(statRows.count)") {
             guard isPro else { return }
             let key = "skillRadar:\(AuthService.shared.profile?.id ?? "anon")"
@@ -214,6 +214,8 @@ struct RivalriesCard: View {
                     }
                 }
                 .asyncEntrance(rows.count)   // F3: fade+rise when the fetch lands
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task(id: isPro) {
@@ -310,6 +312,8 @@ struct ProDeepModeCard: View {
                         ProLockOverlay(label: "Unlock Deep Insights with Pro") { inner }
                     }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when empty
             }
         }
         .task(id: "\(gameMode)-\(isPro)-\(playType)") {
