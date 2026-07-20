@@ -144,12 +144,16 @@ export async function POST(req: NextRequest) {
   try {
     if (notification.subscriptionNotification?.purchaseToken) {
       const result = await syncSubscription(notification.subscriptionNotification.purchaseToken);
+      // A DB write failure must 500 so Pub/Sub retries — returning 200 silently
+      // loses the entitlement change (parity with the Apple webhook / audit #4).
+      if (result.startsWith('db-error:')) return NextResponse.json({ error: result }, { status: 500 });
       return NextResponse.json({ ok: true, kind: 'subscription', result });
     }
     if (notification.oneTimeProductNotification?.purchaseToken) {
       const n = notification.oneTimeProductNotification;
       if (n.sku === DAY_PASS_PRODUCT_ID && n.notificationType === 1 /* PURCHASED */) {
         const result = await grantDayPass(n.purchaseToken, n.sku);
+        if (result.startsWith('db-error:')) return NextResponse.json({ error: result }, { status: 500 });
         return NextResponse.json({ ok: true, kind: 'one-time', result });
       }
       return NextResponse.json({ ok: true, kind: 'one-time', result: 'ignored' });
