@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, Theme } from '@/lib/theme-context';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
+import { useAuth } from '@/lib/auth-context';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -13,7 +14,37 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
+  const { user } = useAuth();
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+
+  // Open Stripe's Customer Portal for a web-purchased sub (cancel / update card).
+  // 404 → no web subscription on file; point them at the store links instead.
+  const handleManageWebBilling = async () => {
+    if (!user) return;
+    setPortalLoading(true);
+    setPortalError(null);
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, returnUrl: window.location.href }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (res.status === 404) {
+        setPortalError('No web subscription found — if you subscribed on a phone, use the store links below.');
+      } else {
+        setPortalError(data.error || 'Could not open billing.');
+      }
+    } catch {
+      setPortalError('Could not open billing.');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   const themes: { value: Theme; label: string; description: string }[] = [
     { value: 'default', label: 'Default', description: 'Classic Wordle colors' },
@@ -70,10 +101,28 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           <div className="space-y-2">
             <div className="section-header">SUBSCRIPTION</div>
             {/* The web can't tell which store a Pro sub was bought in, so link
-                both stores' manage pages. When Stripe web billing goes live,
-                add a portal row here for web-purchased subs. iOS/Android open
-                their own native manage surface from this same settings slot. */}
+                both stores' manage pages. Bought on the web (Stripe)? The
+                portal row below appears once web billing is live and opens
+                Stripe's self-serve manage/cancel. */}
             <div className="space-y-1.5">
+              {process.env.NEXT_PUBLIC_STRIPE_ENABLED === 'true' && (
+                <button
+                  onClick={handleManageWebBilling}
+                  disabled={portalLoading}
+                  className="block w-full text-left p-3 rounded-xl transition-all disabled:opacity-50"
+                  style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)' }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>
+                        {portalLoading ? 'Opening…' : 'Manage web subscription'}
+                      </div>
+                      <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Bought on wordocious.com — cancel or update card</div>
+                    </div>
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>›</span>
+                  </div>
+                </button>
+              )}
               {[
                 { label: 'Manage on App Store', description: 'Subscribed on iPhone or iPad', href: 'https://apps.apple.com/account/subscriptions' },
                 { label: 'Manage on Google Play', description: 'Subscribed on Android', href: 'https://play.google.com/store/account/subscriptions?package=com.wordocious.app' },
@@ -95,6 +144,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   </div>
                 </a>
               ))}
+              {portalError && (
+                <p className="text-[10px] font-bold px-1" style={{ color: 'var(--color-text-muted)' }}>{portalError}</p>
+              )}
             </div>
           </div>
 

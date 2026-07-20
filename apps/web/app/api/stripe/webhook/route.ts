@@ -16,6 +16,12 @@ import { fulfillStripePurchase, revokeStripePro } from '@/lib/payment/stripe-ful
 
 export const runtime = 'nodejs';
 
+// Wordocious plan IDs. The Stripe account is SHARED with ShowLoud, LLC, so this
+// endpoint receives ShowLoud's account-wide subscription events too. We act ONLY
+// on events whose metadata.planId is one of ours — a ShowLoud event (different
+// or absent planId) is ignored even if it somehow carries a userId.
+const KNOWN_PLANS = new Set(['pro_monthly', 'pro_yearly', 'pro_day']);
+
 export async function POST(req: NextRequest) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -42,7 +48,7 @@ export async function POST(req: NextRequest) {
         const s = event.data.object as Stripe.Checkout.Session;
         const userId = s.client_reference_id || s.metadata?.userId;
         const planId = s.metadata?.planId;
-        if (!userId || !planId) break; // not one of ours
+        if (!userId || !planId || !KNOWN_PLANS.has(planId)) break; // not one of ours (or a ShowLoud event)
         await fulfillStripePurchase({
           eventId: event.id,
           userId,
@@ -63,7 +69,7 @@ export async function POST(req: NextRequest) {
         const sub = await stripe.subscriptions.retrieve(subId);
         const userId = sub.metadata?.userId;
         const planId = sub.metadata?.planId;
-        if (!userId || !planId) break;
+        if (!userId || !planId || !KNOWN_PLANS.has(planId)) break; // ignore ShowLoud subs on the shared account
         await fulfillStripePurchase({
           eventId: event.id,
           userId,
@@ -77,7 +83,8 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
         const userId = sub.metadata?.userId;
-        if (!userId) break;
+        const planId = sub.metadata?.planId;
+        if (!userId || !planId || !KNOWN_PLANS.has(planId)) break; // ours only (shared account)
         await revokeStripePro(event.id, userId);
         break;
       }
