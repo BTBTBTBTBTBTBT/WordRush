@@ -9,3 +9,38 @@ SPICK
 FAGOT
 WETBACK
 TRANNY
+
+# Expanded 2026-07-21 pre-launch content audit (all forms; the original list
+# matched exact strings only, so plurals/variants had survived — incl. the
+# worst slur, which was guessable in the 6/7-letter allowed lists).
+NIGGER
+NIGGERS
+CHINKS
+CHINKY
+FAGGOT
+FAGGOTS
+KAFFIR
+KAFIR
+POLACK
+COOLIE
+COOLIES
+COOLY
+SAMBO
+SQUAW
+KRAUT
+PONCE
+NEGRESS
+NEGRITO
+NEGROID
+MULATTO
+MULATTA
+REDSKIN
+SHEMALE
+SHYLOCK
+SPASTIC
+LADYBOY
+GYPSY
+RETARD
+RETARDS
+MIDGET
+MIDGETS

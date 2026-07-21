@@ -44,3 +44,14 @@ MOLEST
 RAPIST
 RAPISTS
 RETARD
+
+# Pre-launch content audit 2026-07-21 — answer-tier removals (stay guessable,
+# never the daily answer): crude/violence/self-harm/loaded terms.
+TITTY
+NOOSE
+JIHAD
+SUICIDE
+BASTARD
+CRIPPLE
+VULVA
+LABIA

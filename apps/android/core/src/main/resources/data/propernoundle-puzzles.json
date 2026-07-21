@@ -9,7 +9,7 @@
   {
     "id": "mus002",
     "answer": "beyonce",
-    "display": "Beyoncé",
+    "display": "Beyonc\u00e9",
     "category": "celebrity",
     "themeCategory": "music"
   },
@@ -386,7 +386,7 @@
     "display": "Pokemon",
     "category": "other",
     "themeCategory": "videogames",
-    "wikiTitle": "Pokémon"
+    "wikiTitle": "Pok\u00e9mon"
   },
   {
     "id": "vg005",
@@ -879,7 +879,7 @@
     "display": "Timothee Chalamet",
     "category": "celebrity",
     "themeCategory": "movies",
-    "wikiTitle": "Timothée_Chalamet"
+    "wikiTitle": "Timoth\u00e9e_Chalamet"
   },
   {
     "id": "mov031",
@@ -1027,7 +1027,7 @@
     "display": "Shogun",
     "category": "other",
     "themeCategory": "movies",
-    "wikiTitle": "Shōgun_(2024_miniseries)"
+    "wikiTitle": "Sh\u014dgun_(2024_miniseries)"
   },
   {
     "id": "spo001",
@@ -1148,7 +1148,7 @@
     "display": "Nikola Jokic",
     "category": "sports",
     "themeCategory": "sports",
-    "wikiTitle": "Nikola_Jokić"
+    "wikiTitle": "Nikola_Joki\u0107"
   },
   {
     "id": "spo018",
@@ -1199,7 +1199,7 @@
     "display": "Luka Doncic",
     "category": "sports",
     "themeCategory": "sports",
-    "wikiTitle": "Luka_Dončić"
+    "wikiTitle": "Luka_Don\u010di\u0107"
   },
   {
     "id": "spo025",
@@ -1264,7 +1264,7 @@
     "display": "Kylian Mbappe",
     "category": "sports",
     "themeCategory": "sports",
-    "wikiTitle": "Kylian_Mbappé"
+    "wikiTitle": "Kylian_Mbapp\u00e9"
   },
   {
     "id": "spo034",
@@ -2547,14 +2547,6 @@
     "id": "cur070",
     "answer": "rondesantis",
     "display": "Ron DeSantis",
-    "category": "celebrity",
-    "themeCategory": "currentevents",
-    "wikiTitle": ""
-  },
-  {
-    "id": "cur071",
-    "answer": "andrewtate",
-    "display": "Andrew Tate",
     "category": "celebrity",
     "themeCategory": "currentevents",
     "wikiTitle": ""
@@ -4314,7 +4306,7 @@
   {
     "id": "mus104",
     "answer": "reneerapp",
-    "display": "Reneé Rapp",
+    "display": "Rene\u00e9 Rapp",
     "category": "celebrity",
     "themeCategory": "music",
     "wikiTitle": ""
@@ -4709,7 +4701,7 @@
     "display": "Julio Rodriguez",
     "category": "sports",
     "themeCategory": "sports",
-    "wikiTitle": "Julio_Rodríguez_(baseball)"
+    "wikiTitle": "Julio_Rodr\u00edguez_(baseball)"
   },
   {
     "id": "spo125",
