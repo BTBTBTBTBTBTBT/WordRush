@@ -1,6 +1,5 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import { Nunito } from 'next/font/google';
 import { ThemeProvider } from '@/lib/theme-context';
 import { AuthProvider } from '@/lib/auth-context';
@@ -18,6 +17,7 @@ import { PwaProvider } from '@/components/providers/pwa-provider';
 import { AppLoaderDismiss } from '@/components/providers/app-loader-dismiss';
 import { Toaster } from '@/components/ui/toaster';
 import { AdBanner } from '@/components/ads/ad-banner';
+import { AdSenseLoader } from '@/components/ads/adsense-loader';
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -135,13 +135,11 @@ export default function RootLayout({
             window.location.reload();
           }, 8000);
         ` }} />
-        {/* Google AdSense — deferred until after page is interactive and idle */}
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3015627373086578"
-          crossOrigin="anonymous"
-          strategy="lazyOnload"
-        />
+        {/* Google AdSense loader moved to <AdSenseLoader/> (inside AuthProvider)
+            so it loads ONLY for signed-in free users. The unconditional Script
+            here loaded ads for Pro too — and Auto-ads' anchor overlays set an
+            inline transform on <html>, detaching every position:fixed element
+            (BottomNav) from the viewport. See adsense-loader.tsx. */}
         <DailyBoundaryReload />
         {/* Dismiss the static #app-loader overlay as soon as React hydrates,
             regardless of auth state. Must live OUTSIDE <AuthGate> — otherwise
@@ -162,6 +160,7 @@ export default function RootLayout({
                     <ShareVariantHost />
                     <PwaProvider />
                     <Toaster />
+                    <AdSenseLoader />
                     <AdBanner />
                   </StreakShieldProvider>
                 </ThemeProvider>
