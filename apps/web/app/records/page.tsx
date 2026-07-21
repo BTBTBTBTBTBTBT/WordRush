@@ -12,6 +12,7 @@ import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
+import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { SectionHeader } from '@/components/profile/stat-kit';
 import {
   fetchAllTimeRecords,
@@ -322,8 +323,12 @@ function DailyRecordsView({ userId }: { userId?: string }) {
           </div>
         ) : (
           <div>
-            {leaderboard.map((entry, index) => {
-              const rank = index + 1;
+            {/* Blocked users are hidden client-side; ranks keep their
+                original positions (holes where blocked rows were). */}
+            {leaderboard
+              .map((entry, index) => ({ entry, rank: index + 1 }))
+              .filter(({ entry }) => !isBlocked(entry.user_id))
+              .map(({ entry, rank }) => {
               const isCurrentUser = !!userId && entry.user_id === userId;
               return (
                 <div
@@ -417,8 +422,8 @@ function YesterdayPodium({ mode, playType, color }: { mode: string; playType: 's
       </button>
       {open && (
         <div style={{ borderTop: '1px solid var(--color-border)' }}>
-          {top3.map((e, i) => (
-            <div key={e.user_id} className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: i < top3.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+          {top3.filter((e) => !isBlocked(e.user_id)).map((e, i, arr) => (
+            <div key={e.user_id} className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
               <Medal className="w-4 h-4 shrink-0" style={{ color: medalColor[i] }} />
               <Link href={`/profile/${e.user_id}`} className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80" style={{ color: 'var(--color-text)' }}>{e.username}</Link>
               <span className="font-black text-xs" style={{ color }}>{formatScore(e.composite_score)}</span>
@@ -823,6 +828,14 @@ function YourRecordsView({ userId }: { userId?: string }) {
 export default function RecordsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'daily' | 'alltime' | 'you'>('daily');
+
+  // Load the signed-in user's block list (session-cached) so blocked users'
+  // rows can be filtered out of the leaderboard renders below. The state bump
+  // just forces a re-render (which cascades to the tab views) once it arrives.
+  const [, setBlockedLoaded] = useState(false);
+  useEffect(() => {
+    if (user) fetchBlockedIds(user.id).then(() => setBlockedLoaded(true));
+  }, [user]);
 
   return (
     <div className="min-h-screen pb-20" style={{ backgroundColor: 'var(--color-bg)' }}>

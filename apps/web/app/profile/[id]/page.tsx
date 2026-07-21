@@ -15,6 +15,9 @@ import {
   Check,
   X,
   ArrowLeft,
+  MoreHorizontal,
+  Flag,
+  Ban,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -26,6 +29,8 @@ import { ACHIEVEMENTS } from '@/lib/achievement-service';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { TopWordsCard } from '@/components/profile/top-words-card';
 import { fetchTopWords } from '@/lib/stats-service';
+import { useAuth } from '@/lib/auth-context';
+import { reportUser, blockUser, unblockUser, fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { WIN_FG } from '@/lib/tile-theme';
 import type { Database } from '@/lib/database.types';
 
@@ -42,9 +47,121 @@ function formatDuration(seconds: number): string {
   return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
 }
 
+const REPORT_REASONS = [
+  'Inappropriate username',
+  'Inappropriate profile content',
+  'Cheating or fake scores',
+  'Other',
+];
+
+/** ⋯ report/block menu (App Review 1.2 parity) — only rendered when a
+ *  signed-in user is viewing SOMEONE ELSE's profile. */
+function ModerationMenu({ viewerId, profileId }: { viewerId: string; profileId: string }) {
+  const [open, setOpen] = useState(false);
+  const [showReasons, setShowReasons] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchBlockedIds(viewerId).then(() => {
+      if (active) setBlocked(isBlocked(profileId));
+    });
+    return () => { active = false; };
+  }, [viewerId, profileId]);
+
+  const handleReport = async (reason: string) => {
+    setOpen(false);
+    setShowReasons(false);
+    const ok = await reportUser(viewerId, profileId, reason, 'public_profile');
+    setConfirmation(ok ? 'Report submitted. Thank you.' : 'Could not submit report. Try again later.');
+  };
+
+  const handleBlockToggle = async () => {
+    setOpen(false);
+    if (blocked) {
+      await unblockUser(viewerId, profileId);
+      setBlocked(false);
+      setConfirmation('User unblocked.');
+    } else {
+      await blockUser(viewerId, profileId);
+      setBlocked(true);
+      setConfirmation("User blocked. You won't see them on leaderboards.");
+    }
+  };
+
+  return (
+    <div className="relative flex flex-col items-center">
+      <button
+        onClick={() => { setOpen((o) => !o); setShowReasons(false); }}
+        aria-label="Profile actions"
+        className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+        style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+      {open && (
+        <div
+          className="absolute top-9 z-20 w-56 overflow-hidden text-left"
+          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}
+        >
+          {!showReasons ? (
+            <>
+              <button
+                onClick={() => setShowReasons(true)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold"
+                style={{ color: 'var(--color-text)' }}
+              >
+                <Flag className="w-3.5 h-3.5 shrink-0" style={{ color: '#dc2626' }} /> Report user
+              </button>
+              <button
+                onClick={handleBlockToggle}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-extrabold"
+                style={{ color: 'var(--color-text)', borderTop: '1px solid var(--color-border)' }}
+              >
+                <Ban className="w-3.5 h-3.5 shrink-0" style={{ color: '#dc2626' }} /> {blocked ? 'Unblock user' : 'Block user'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div
+                className="px-3 py-2 text-[10px] font-black uppercase tracking-wider"
+                style={{ color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' }}
+              >
+                Report reason
+              </div>
+              {REPORT_REASONS.map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => handleReport(reason)}
+                  className="w-full px-3 py-2.5 text-xs font-extrabold text-left"
+                  style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
+                >
+                  {reason}
+                </button>
+              ))}
+              <button
+                onClick={() => setShowReasons(false)}
+                className="w-full px-3 py-2 text-[11px] font-bold text-left"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
+      )}
+      {confirmation && (
+        <p className="text-[11px] font-bold mt-1.5" style={{ color: 'var(--color-text-muted)' }}>{confirmation}</p>
+      )}
+    </div>
+  );
+}
+
 export default function PublicProfilePage() {
   const params = useParams();
   const profileId = params.id as string;
+  const { user } = useAuth();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stats, setStats] = useState<UserStats[]>([]);
@@ -202,6 +319,11 @@ export default function PublicProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* Report / Block (only when signed in and viewing someone else) */}
+          {user && user.id !== profileId && (
+            <ModerationMenu viewerId={user.id} profileId={profileId} />
+          )}
 
           <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />
 

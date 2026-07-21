@@ -26,6 +26,7 @@ import {
   type LeaderboardEntry,
 } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
+import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey)!;
@@ -110,6 +111,14 @@ export default function DailyPage() {
   useEffect(() => {
     setToday(getTodayLocal());
   }, []);
+
+  // Load the signed-in user's block list (session-cached) so blocked users'
+  // rows can be filtered out of the leaderboard render below. The state bump
+  // just forces a re-render once the list arrives.
+  const [, setBlockedLoaded] = useState(false);
+  useEffect(() => {
+    if (user) fetchBlockedIds(user.id).then(() => setBlockedLoaded(true));
+  }, [user]);
   const yesterday = useMemo(() => getYesterdayLocal(), []);
   // Drops late responses from a previous mode so a slow fetch can't overwrite
   // the rows of the mode the user has since switched to.
@@ -363,7 +372,12 @@ export default function DailyPage() {
             </div>
           ) : (
             <div>
-              {leaderboard.map((entry, index) => renderLbRow(entry, index + 1))}
+              {/* Blocked users are hidden client-side; ranks keep their
+                  original positions (holes where blocked rows were). */}
+              {leaderboard
+                .map((entry, index) => ({ entry, rank: index + 1 }))
+                .filter(({ entry }) => !isBlocked(entry.user_id))
+                .map(({ entry, rank }) => renderLbRow(entry, rank))}
               {/* "Your neighborhood" — the rows around the user's rank when they
                   placed past the top 50 (e.g. #425 sees ~421–429, own row
                   highlighted). Same ordering as the list, so ranks agree. */}
@@ -375,7 +389,10 @@ export default function DailyPage() {
                   >
                     ···
                   </div>
-                  {rankWindow.entries.map((entry, index) => renderLbRow(entry, rankWindow.startRank + index))}
+                  {rankWindow.entries
+                    .map((entry, index) => ({ entry, rank: rankWindow.startRank + index }))
+                    .filter(({ entry }) => !isBlocked(entry.user_id))
+                    .map(({ entry, rank }) => renderLbRow(entry, rank))}
                 </>
               )}
             </div>
@@ -408,7 +425,7 @@ export default function DailyPage() {
               </div>
             ) : (
               <div>
-                {yesterdayLeaderboard.map((entry, index) => (
+                {yesterdayLeaderboard.filter((e) => !isBlocked(e.user_id)).map((entry, index) => (
                   <div
                     key={entry.user_id}
                     className="flex items-center gap-3 px-4 py-3"

@@ -332,7 +332,7 @@ export async function fetchDailyLeaderboard(
       vs_wins,
       vs_games,
       completed,
-      profiles!inner(username, avatar_url)
+      profiles!inner(username, avatar_url, is_banned)
     `)
     .eq('day', targetDay)
     .eq('game_mode', gameMode)
@@ -343,7 +343,9 @@ export async function fetchDailyLeaderboard(
 
   if (!data) return [];
 
-  return data.map((row: any) => ({
+  // Banned users are excluded client-side (RLS can't filter the join for
+  // anon/other-user reads) — App Review 1.2 parity with native.
+  return data.filter((row: any) => !row.profiles?.is_banned).map((row: any) => ({
     user_id: row.user_id,
     username: row.profiles?.username || 'Unknown',
     avatar_url: row.profiles?.avatar_url || null,
@@ -705,13 +707,14 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
     .from('all_time_records')
     .select(`
       *,
-      profiles!inner(username, avatar_url)
+      profiles!inner(username, avatar_url, is_banned)
     `)
     .order('record_type');
 
   if (!data) return [];
 
-  return data.map((row: any) => ({
+  // Banned users can't hold visible records — excluded client-side.
+  return data.filter((row: any) => !row.profiles?.is_banned).map((row: any) => ({
     id: row.id,
     record_type: row.record_type,
     game_mode: row.game_mode,

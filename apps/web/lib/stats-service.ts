@@ -2110,8 +2110,15 @@ export async function fetchRivalries(userId: string, limit = 5): Promise<Rivalry
   if (top.length === 0) return [];
 
   const { data: profiles } = await (supabase as any)
-    .from('profiles').select('id, username').in('id', top.map((t) => t.opponentId));
+    .from('profiles').select('id, username, is_banned').in('id', top.map((t) => t.opponentId));
   const names: Record<string, string> = {};
-  for (const p of (profiles as Array<{ id: string; username: string }> | null) || []) names[p.id] = p.username;
-  return top.map((t) => ({ ...t, username: names[t.opponentId] ?? 'Unknown' }));
+  const banned = new Set<string>();
+  for (const p of (profiles as Array<{ id: string; username: string; is_banned?: boolean }> | null) || []) {
+    names[p.id] = p.username;
+    if (p.is_banned) banned.add(p.id);
+  }
+  // Banned opponents drop out of the rivalry list entirely (App Review 1.2).
+  return top
+    .filter((t) => !banned.has(t.opponentId))
+    .map((t) => ({ ...t, username: names[t.opponentId] ?? 'Unknown' }));
 }
