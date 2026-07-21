@@ -68,8 +68,20 @@ export async function POST(req: NextRequest) {
         // First invoice AND every renewal. This is the ONLY place subscription
         // shields are granted (checkout.session.completed passes false) —
         // exactly +4 per billing period.
-        const inv = event.data.object as Stripe.Invoice & { subscription?: string };
-        const subId = typeof inv.subscription === 'string' ? inv.subscription : undefined;
+        // API ≥2025-03 (basil) moved the invoice's subscription id from the
+        // top-level `subscription` field to parent.subscription_details.
+        // Read both so this survives API-version pins in either direction —
+        // with only the legacy read, every renewal no-opped (no shields).
+        const inv = event.data.object as Stripe.Invoice & {
+          subscription?: string;
+          parent?: { subscription_details?: { subscription?: string } };
+        };
+        const subId =
+          typeof inv.subscription === 'string'
+            ? inv.subscription
+            : typeof inv.parent?.subscription_details?.subscription === 'string'
+              ? inv.parent.subscription_details.subscription
+              : undefined;
         if (!subId) break;
         const sub = await stripe.subscriptions.retrieve(subId);
         const userId = sub.metadata?.userId;
