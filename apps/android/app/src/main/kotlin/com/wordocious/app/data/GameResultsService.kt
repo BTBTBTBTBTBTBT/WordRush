@@ -405,6 +405,22 @@ object GameResultsService {
         bestCorrectLetters: Int? = null,
     ): XpResult? {
         val userId = AuthService.userId ?: return null
+        // Crash-protection: persist the args locally BEFORE any network call so
+        // a kill/offline finish is re-run by PendingRecords.drain() next launch.
+        // Solo only — VS results are server-coordinated and must not retry.
+        val trackPending = playType == "solo"
+        if (trackPending) {
+            PendingRecords.register(
+                PendingRecords.Payload(
+                    userId = userId, gameModeName = gameMode.name, seed = seed,
+                    savedAt = System.currentTimeMillis(), won = won,
+                    guessCount = guessCount, timeSeconds = timeSeconds,
+                    boardsSolved = boardsSolved, totalBoards = totalBoards,
+                    solutions = solutions, guesses = guesses, hintsUsed = hintsUsed,
+                    stagesCompleted = stagesCompleted, bestCorrectLetters = bestCorrectLetters,
+                )
+            )
+        }
         // The first three writes touch DISJOINT tables and never read each
         // other's output — user_stats (read-modify-write user_stats),
         // matches (pure insert), profiles progression (read-modify-write
@@ -424,6 +440,12 @@ object GameResultsService {
             statsJob.await()
             matchJob?.await()
             xpJob.await()
+        }
+        // Profile progression succeeding is the success proxy (web/iOS parity):
+        // a failed/offline run keeps the payload; drain()'s matches-row dedupe
+        // prevents double-increments when everything landed but the clear didn't.
+        if (trackPending && xp != null) {
+            PendingRecords.clear(gameMode.name, seed)
         }
 
         // Daily extras — web stats-service ordering: daily row first, then

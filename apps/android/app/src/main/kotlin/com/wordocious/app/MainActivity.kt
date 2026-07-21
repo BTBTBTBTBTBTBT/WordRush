@@ -42,6 +42,14 @@ class MainActivity : ComponentActivity() {
             com.wordocious.core.DictionaryLoader.ensureLoaded()
         }
         AuthService.initialize()
+        // Re-fire any solo results whose record flow was cut off (killed
+        // mid-flight / offline finish) — idempotent, solo-only, waits for a
+        // session via AuthService.userId inside drain().
+        com.wordocious.app.data.PendingRecords.init(this)
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            kotlinx.coroutines.delay(3_000) // let auth restore the session first
+            com.wordocious.app.data.PendingRecords.drain()
+        }
         com.wordocious.app.data.StoreManager.start(this)
         // UMP consent -> Mobile Ads init -> preload the game-start interstitial.
         com.wordocious.app.data.AdsManager.start(this)

@@ -23,6 +23,9 @@ struct WordociousApp: App {
                     StoreManager.shared.start()
                     AdsManager.shared.start()
                     PresenceService.shared.start()
+                    // Re-fire any solo results whose record calls were cut off
+                    // (killed mid-flight / offline finish) — idempotent, solo-only.
+                    await PendingRecords.drain()
                 }
                 // Keep the always-on presence socket alive only while
                 // foregrounded + signed in, so the LIVE count reflects real

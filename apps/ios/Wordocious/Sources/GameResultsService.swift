@@ -50,7 +50,10 @@ enum GameResultsService {
         let completed_at: String
     }
 
-    /// Insert a solo match-history row for a finished game.
+    /// Insert a solo match-history row for a finished game. Registers a
+    /// pending-record part BEFORE the network write and clears it on success,
+    /// so a kill/offline finish is re-run by PendingRecords.drain() next
+    /// launch (web stats-service.ts recordSoloMatch parity).
     static func recordSoloMatch(
         gameMode: GameMode, won: Bool, score: Int, timeSeconds: Int,
         seed: String, solutions: [String], guesses: [String], hintsUsed: Int = 0
@@ -58,6 +61,10 @@ enum GameResultsService {
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return }
         let userId = session.user.id.uuidString
+        PendingRecords.register(
+            userId: userId, gameMode: gameMode.rawValue, seed: seed,
+            soloMatch: .init(won: won, score: score, timeSeconds: timeSeconds,
+                             solutions: solutions, guesses: guesses, hintsUsed: hintsUsed))
         let now = Date()
         let iso = ISO8601DateFormatter()
         let row = SoloMatchInsert(
@@ -66,7 +73,10 @@ enum GameResultsService {
             seed: seed, solutions: solutions, player1_guesses: guesses, hints_used: hintsUsed,
             started_at: iso.string(from: now.addingTimeInterval(-Double(timeSeconds))),
             completed_at: iso.string(from: now))
-        try? await client.from("matches").insert(row).execute()
+        do {
+            try await client.from("matches").insert(row).execute()
+            PendingRecords.markDone(gameMode: gameMode.rawValue, seed: seed, part: .soloMatch)
+        } catch { /* pending payload stays — retried by drain() */ }
     }
 
     /// A VS match as a `matches` row (player2_id set) so the battle appears in
@@ -194,9 +204,28 @@ enum GameResultsService {
         let userId = session.user.id.uuidString
         let mode = gameMode.rawValue
 
+        // Crash-protection: persist the args locally BEFORE any network call so
+        // a kill/offline finish is re-run by PendingRecords.drain() next launch.
+        // Solo only — VS results are server-coordinated and must not retry.
+        let trackPending = playType == "solo"
+        if trackPending {
+            PendingRecords.register(
+                userId: userId, gameMode: mode, seed: seed,
+                gameResult: .init(won: won, guessCount: guessCount, timeSeconds: timeSeconds,
+                                  boardsSolved: boardsSolved, totalBoards: totalBoards,
+                                  hintsUsed: hintsUsed, stagesCompleted: stagesCompleted,
+                                  bestCorrectLetters: bestCorrectLetters))
+        }
+
         await updateUserStats(client, userId: userId, mode: mode, playType: playType,
                               won: won, guessCount: guessCount, timeSeconds: timeSeconds)
         let xp = await updateProfileProgression(client, userId: userId, won: won, seed: seed)
+        // Profile progression succeeding is the success proxy (web parity: a
+        // failed/offline run keeps the payload; the drain's matches-row dedupe
+        // prevents double-increments when everything landed but the clear didn't).
+        if trackPending && xp != nil {
+            PendingRecords.markDone(gameMode: mode, seed: seed, part: .gameResult)
+        }
 
         var result = xp
         if playType == "vs" {
