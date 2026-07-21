@@ -18,6 +18,10 @@ struct PublicProfileView: View {
     @State private var notFound = false
     @State private var tab = "solo"                 // "solo" | "vs"
     @State private var selectedMode: GameMode = .duel
+    // Moderation (App Review 1.2): report + block from the stranger's profile.
+    @State private var showReportDialog = false
+    @State private var showBlockConfirm = false
+    @State private var moderationToast: String?
 
     private let pickerModes: [HomeMode] = homeModes.filter { $0.mode != nil }
 
@@ -35,6 +39,7 @@ struct PublicProfileView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
+        .task { await ModerationService.loadBlockedIds() }
         .task(id: userId) { await loadAll() }
         .task(id: "\(tab)-\(selectedMode.rawValue)") {
             topWords = await PublicProfileService.topWords(userId: userId, mode: selectedMode)
@@ -56,6 +61,13 @@ struct PublicProfileView: View {
         if let firstMode = stats.first(where: { $0.playType == tab })?.gameMode,
            let gm = GameMode(rawValue: firstMode) { selectedMode = gm }
         loading = false
+    }
+
+    private func fileReport(_ reason: String) {
+        Task {
+            let ok = await ModerationService.report(userId: userId, reason: reason, context: "public_profile")
+            moderationToast = ok ? "Report submitted — thank you" : "Could not submit report"
+        }
     }
 
     private var notFoundView: some View {
@@ -93,6 +105,44 @@ struct PublicProfileView: View {
                     Label("Back", systemImage: "chevron.left").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
                 }.buttonStyle(.plain)
                 Spacer()
+                // App Review 1.2: users must be able to report/block each other
+                // wherever strangers' content (usernames/bios/avatars) renders.
+                Menu {
+                    Button(role: .destructive) { showReportDialog = true } label: {
+                        Label("Report User", systemImage: "flag")
+                    }
+                    if ModerationService.isBlocked(userId) {
+                        Button { Task { await ModerationService.unblock(userId: userId); moderationToast = "User unblocked" } } label: {
+                            Label("Unblock User", systemImage: "person.crop.circle.badge.checkmark")
+                        }
+                    } else {
+                        Button(role: .destructive) { showBlockConfirm = true } label: {
+                            Label("Block User", systemImage: "person.crop.circle.badge.xmark")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle").font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Theme.textMuted).padding(4)
+                }
+            }
+            .confirmationDialog("Report this user?", isPresented: $showReportDialog, titleVisibility: .visible) {
+                Button("Inappropriate username", role: .destructive) { fileReport("Inappropriate username") }
+                Button("Inappropriate profile content", role: .destructive) { fileReport("Inappropriate profile content") }
+                Button("Cheating / fake scores", role: .destructive) { fileReport("Cheating / fake scores") }
+                Button("Other", role: .destructive) { fileReport("Other") }
+                Button("Cancel", role: .cancel) {}
+            } message: { Text("Reports are reviewed by the Wordocious team.") }
+            .confirmationDialog("Block this user?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
+                Button("Block", role: .destructive) {
+                    Task { await ModerationService.block(userId: userId); moderationToast = "User blocked" }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: { Text("You won't see this player on leaderboards or records.") }
+            if let toast = moderationToast {
+                Text(toast).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+                    .padding(.horizontal, 12).padding(.vertical, 5)
+                    .background(Capsule().fill(Theme.surface))
+                    .task { try? await Task.sleep(nanoseconds: 2_500_000_000); moderationToast = nil }
             }
             AvatarView(url: p.avatarUrl, username: p.username, size: 96, accentHex: p.accentColor, emoji: p.avatarEmoji)
             if ProfileAccent.isCustom(p.accentColor) {

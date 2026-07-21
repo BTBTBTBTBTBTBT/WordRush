@@ -26,6 +26,8 @@ struct WordociousApp: App {
                     // Re-fire any solo results whose record calls were cut off
                     // (killed mid-flight / offline finish) — idempotent, solo-only.
                     await PendingRecords.drain()
+                    // Block-list cache so leaderboards can filter immediately.
+                    await ModerationService.loadBlockedIds()
                 }
                 // Keep the always-on presence socket alive only while
                 // foregrounded + signed in, so the LIVE count reflects real

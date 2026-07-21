@@ -102,7 +102,7 @@ enum LeaderboardService {
 
     static func fetch(gameMode: GameMode, day: String? = nil, playType: String = "solo",
                       limit: Int = 50, offset: Int = 0) async throws -> [LeaderboardEntry] {
-        try await AuthService.shared.client
+        let rows: [LeaderboardEntry] = try await AuthService.shared.client
             .from("daily_results")
             .select("""
                 user_id, composite_score, guess_count, time_seconds, boards_solved,
@@ -117,6 +117,8 @@ enum LeaderboardService {
             .range(from: offset, to: offset + limit - 1)
             .execute()
             .value
+        // App Review 1.2: hide players the signed-in user has blocked.
+        return rows.filter { !ModerationService.isBlocked($0.userId) }
     }
 
     /// The rows AROUND the user's rank — the "your neighborhood" section shown
