@@ -27,15 +27,20 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,11 +52,15 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.ModerationService
 import com.wordocious.app.data.ProfileService
 import com.wordocious.app.data.SupabaseConfig
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -119,6 +128,23 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         value = com.wordocious.app.data.MatchStatsService.topWords(userId, selectedMode.name, 5)
     }
 
+    // Moderation (App Review 1.2): report + block from a stranger's profile —
+    // ports the iOS PublicProfileView ellipsis menu. Own profile shows no menu.
+    val isOwnProfile = userId == AuthService.userId
+    var menuOpen by remember { mutableStateOf(false) }
+    var showReportDialog by remember { mutableStateOf(false) }
+    var showBlockConfirm by remember { mutableStateOf(false) }
+    var moderationToast by remember { mutableStateOf<String?>(null) }
+    var blocked by remember { mutableStateOf(ModerationService.isBlocked(userId)) }
+    val moderationScope = rememberCoroutineScope()
+    LaunchedEffect(userId) {
+        ModerationService.loadBlockedIds()   // no-op after the launch warm-up
+        blocked = ModerationService.isBlocked(userId)
+    }
+    LaunchedEffect(moderationToast) {
+        if (moderationToast != null) { delay(2_500); moderationToast = null }
+    }
+
     Column(
         Modifier.fillMaxSize().background(WTheme.bg)
             .verticalScroll(rememberScrollState())
@@ -126,14 +152,66 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Spacer(Modifier.height(8.dp))
-        // Back
+        // Back + moderation overflow (iOS PublicProfileView header parity)
         Row(
-            Modifier.clickableNoRipple(onClose).padding(vertical = 6.dp),
+            Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color(0xFF7C3AED), modifier = Modifier.size(18.dp))
-            Text("Back", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
+            Row(
+                Modifier.clickableNoRipple(onClose).padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color(0xFF7C3AED), modifier = Modifier.size(18.dp))
+                Text("Back", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
+            }
+            // App Review 1.2: users must be able to report/block each other
+            // wherever strangers' content (usernames/bios/avatars) renders.
+            if (!isOwnProfile) {
+                Box {
+                    Icon(
+                        Icons.Filled.MoreVert, "More options", tint = WTheme.textMuted,
+                        modifier = Modifier.clickableNoRipple { menuOpen = true }.padding(4.dp).size(20.dp),
+                    )
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Report user", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) },
+                            onClick = { menuOpen = false; showReportDialog = true },
+                        )
+                        if (blocked) {
+                            DropdownMenuItem(
+                                text = { Text("Unblock user", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.text) },
+                                onClick = {
+                                    menuOpen = false
+                                    moderationScope.launch {
+                                        ModerationService.unblock(userId)
+                                        blocked = false
+                                        moderationToast = "User unblocked"
+                                    }
+                                },
+                            )
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text("Block user", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) },
+                                onClick = { menuOpen = false; showBlockConfirm = true },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        // Brief moderation confirmation (iOS toast parity; auto-clears in 2.5s).
+        moderationToast?.let { t ->
+            Text(
+                t, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .clip(RoundedCornerShape(50))
+                    .background(WTheme.surface)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
+                    .padding(horizontal = 12.dp, vertical = 5.dp),
+            )
         }
 
         val p = profile
@@ -339,6 +417,68 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
             matches.forEach { m -> PublicMatchRow(m, userId) }
         }
         Spacer(Modifier.height(20.dp))
+    }
+
+    // Report reason picker (iOS confirmationDialog parity, context "public_profile").
+    if (showReportDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showReportDialog = false },
+            title = { Text("Report this user?", fontWeight = FontWeight.Black) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Reports are reviewed by the Wordocious team.", fontSize = 12.sp, color = WTheme.textMuted)
+                    Spacer(Modifier.height(6.dp))
+                    listOf(
+                        "Inappropriate username",
+                        "Inappropriate profile content",
+                        "Cheating / fake scores",
+                        "Other",
+                    ).forEach { reason ->
+                        Text(
+                            reason,
+                            fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickableNoRipple {
+                                    showReportDialog = false
+                                    moderationScope.launch {
+                                        val ok = ModerationService.report(userId, reason, "public_profile")
+                                        moderationToast = if (ok) "Report submitted — thank you" else "Could not submit report"
+                                    }
+                                }
+                                .padding(vertical = 8.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showReportDialog = false }) { Text("Cancel") }
+            },
+        )
+    }
+    // Block confirmation (iOS confirmationDialog parity).
+    if (showBlockConfirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showBlockConfirm = false },
+            title = { Text("Block this user?", fontWeight = FontWeight.Black) },
+            text = { Text("You won't see this player on leaderboards or records.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showBlockConfirm = false
+                        moderationScope.launch {
+                            ModerationService.block(userId)
+                            blocked = true
+                            moderationToast = "User blocked"
+                        }
+                    },
+                ) { Text("Block", color = Color(0xFFDC2626), fontWeight = FontWeight.Black) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showBlockConfirm = false }) { Text("Cancel") }
+            },
+        )
     }
 }
 

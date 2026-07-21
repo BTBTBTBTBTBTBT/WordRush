@@ -91,15 +91,19 @@ object PendingRecords {
             val all = runCatching { p.all }.getOrNull() ?: return
             val now = System.currentTimeMillis()
             for ((k, v) in all) {
-                val raw = v as? String ?: run { p.edit().remove(k).apply(); continue }
+                // (Plain if/continue rather than `?: run { …; continue }` — a
+                // non-local continue in an inline lambda is experimental in
+                // Kotlin 2.0.x and fails compileDebugKotlin.)
+                val raw = v as? String
+                if (raw == null) { p.edit().remove(k).apply(); continue }
                 val payload = runCatching { json.decodeFromString<Payload>(raw) }.getOrNull()
-                    ?: run { p.edit().remove(k).apply(); continue }
+                if (payload == null) { p.edit().remove(k).apply(); continue }
                 // Too stale to be meaningful — drop regardless of owner.
                 if (now - payload.savedAt > MAX_AGE_MS) { p.edit().remove(k).apply(); continue }
                 // Another account's pending result — leave it for that account.
                 if (!payload.userId.equals(userId, ignoreCase = true)) continue
                 val mode = runCatching { GameMode.valueOf(payload.gameModeName) }.getOrNull()
-                    ?: run { p.edit().remove(k).apply(); continue }
+                if (mode == null) { p.edit().remove(k).apply(); continue }
 
                 // Dedupe: an existing matches row for this seed+mode means the
                 // original flow landed — clear, never re-run.

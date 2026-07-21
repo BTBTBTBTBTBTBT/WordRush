@@ -125,6 +125,10 @@ object LeaderboardService {
                 range(offset.toLong()..(offset + limit - 1).toLong())
             }
             .decodeList<LeaderboardEntry>()
+            // App Review 1.2: hide players the signed-in user has blocked
+            // (iOS LeaderboardService.fetch parity). Single choke point — the
+            // top-50 list, rank window, and yesterday's winners all route here.
+            .filter { !ModerationService.isBlocked(it.userId) }
     }.getOrElseNotCancelled { null }
 
     /**

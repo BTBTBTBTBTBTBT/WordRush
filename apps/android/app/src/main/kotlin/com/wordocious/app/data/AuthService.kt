@@ -43,6 +43,7 @@ data class Profile(
     @SerialName("pro_prompt_shown") val proPromptShown: Boolean = false,
     @SerialName("last_played_at") val lastPlayedAt: String? = null,
     @SerialName("is_admin") val isAdmin: Boolean = false,
+    @SerialName("is_banned") val isBanned: Boolean = false,
     // Personalization (migration 20260626000001) — all optional.
     val bio: String? = null,
     @SerialName("featured_achievement") val featuredAchievement: String? = null,
@@ -113,8 +114,7 @@ object AuthService {
             try {
                 client.auth.awaitInitialization()
                 val user = runCatching { client.auth.currentUserOrNull() }.getOrNull()
-                if (user != null) {
-                    loadProfile(user.id)
+                if (user != null && loadProfile(user.id)) {
                     _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
                 }
             } catch (_: Exception) {
@@ -155,7 +155,7 @@ object AuthService {
                 provider = io.github.jan.supabase.auth.providers.Google
             }
             val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
-            loadProfile(user.id)
+            if (!loadProfile(user.id)) return "This account has been suspended."
             _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
             null
         } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
@@ -172,7 +172,7 @@ object AuthService {
                 this.password = password
             }
             val user = client.auth.currentUserOrNull() ?: return "Authentication failed"
-            loadProfile(user.id)
+            if (!loadProfile(user.id)) return "This account has been suspended."
             _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
             null
         } catch (e: Exception) {
@@ -198,7 +198,7 @@ object AuthService {
             val user = client.auth.currentUserOrNull()
             when {
                 user != null -> {
-                    loadProfile(user.id)
+                    if (!loadProfile(user.id)) return "This account has been suspended."
                     _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
                     null
                 }
@@ -272,8 +272,11 @@ object AuthService {
         }
     }
 
-    /** Load profile row from `profiles` table. */
-    suspend fun loadProfile(userId: String) {
+    /** Load profile row from `profiles` table. Returns false when the account
+     *  is banned — the session is refused and signed out (mirrors iOS
+     *  AuthService.handleSignedIn's is_banned check); callers in the sign-in /
+     *  session-restore flows must NOT mark the user authenticated in that case. */
+    suspend fun loadProfile(userId: String): Boolean {
         try {
             // select * (like the web) so missing/extra columns never break decoding;
             // Profile fields are all defaulted so absent columns fall back gracefully.
@@ -283,11 +286,16 @@ object AuthService {
                     limit(1)
                 }
                 .decodeSingleOrNull<Profile>()
+            if (result?.isBanned == true) {
+                signOut()
+                return false
+            }
             _profile.value = result
             result?.let { SettingsPref.set(CACHED_DAILY_STREAK, it.dailyLoginStreak) }
         } catch (e: Exception) {
             // Profile might not exist yet for new sign-ups — that's fine
         }
+        return true
     }
 
     /** Refresh profile (e.g. after recording a game result). */

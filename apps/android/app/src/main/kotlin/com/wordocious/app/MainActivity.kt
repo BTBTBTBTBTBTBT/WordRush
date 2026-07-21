@@ -49,6 +49,10 @@ class MainActivity : ComponentActivity() {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             kotlinx.coroutines.delay(3_000) // let auth restore the session first
             com.wordocious.app.data.PendingRecords.drain()
+            // Block-list cache so leaderboards can filter immediately (iOS
+            // WordociousApp parity). No-ops if the session isn't restored yet —
+            // PublicProfileScreen retries on open.
+            com.wordocious.app.data.ModerationService.loadBlockedIds()
         }
         com.wordocious.app.data.StoreManager.start(this)
         // UMP consent -> Mobile Ads init -> preload the game-start interstitial.
