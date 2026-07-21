@@ -53,16 +53,21 @@ export async function POST(req: NextRequest) {
           eventId: event.id,
           userId,
           planId,
-          // Day Pass (mode: payment) gets no shields; subscriptions do.
-          grantShields: s.mode === 'subscription',
+          // NO shields here. A new subscription fires BOTH this event and
+          // invoice.paid (first invoice) with different event ids, so granting
+          // in both places double-credits (+8). Subscription shields come only
+          // from invoice.paid — which covers the first period and every
+          // renewal. Day Pass (mode: payment) has no invoice and gets none.
+          grantShields: false,
           stripeCustomerId: typeof s.customer === 'string' ? s.customer : undefined,
           stripeSubscriptionId: typeof s.subscription === 'string' ? s.subscription : undefined,
         });
         break;
       }
       case 'invoice.paid': {
-        // Renewal. The first invoice is also covered by checkout.session.completed;
-        // idempotency (per event id) keeps the two from double-granting shields.
+        // First invoice AND every renewal. This is the ONLY place subscription
+        // shields are granted (checkout.session.completed passes false) —
+        // exactly +4 per billing period.
         const inv = event.data.object as Stripe.Invoice & { subscription?: string };
         const subId = typeof inv.subscription === 'string' ? inv.subscription : undefined;
         if (!subId) break;
