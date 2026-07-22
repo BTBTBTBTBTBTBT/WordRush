@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -14,6 +16,8 @@ const nextConfig = {
       // be traced too, or its bundle ships without the .cer and 503s forever.
       '/api/appstore/verify-transaction': ['./certs/**'],
     },
+    // Required on Next 13 so instrumentation.ts runs (Sentry server/edge init).
+    instrumentationHook: true,
   },
   // Disable source maps in production to reduce bundle size
   productionBrowserSourceMaps: false,
@@ -55,4 +59,21 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+// Sentry build-time wrapper. No SENTRY_AUTH_TOKEN is configured, so source-map
+// upload is disabled explicitly — the build must succeed with no Sentry env vars.
+module.exports = withSentryConfig(nextConfig, {
+  // Suppress Sentry CLI/build logs (including the missing-auth-token warning).
+  silent: true,
+  // No auth token → never attempt (or require) source-map upload.
+  sourcemaps: {
+    disable: true,
+  },
+  // Don't send build telemetry to Sentry.
+  telemetry: false,
+  // Keep client bundles lean: strip Sentry debug-log statements in prod builds.
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
+});
