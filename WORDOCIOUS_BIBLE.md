@@ -107,6 +107,26 @@ Free users see ads; **Pro removes them entirely** (every ad surface is gated on 
 
 ## 6. Core user flows
 
+### 6a-0. First run — NO ACCOUNT REQUIRED (guest mode)
+
+**Anyone can play without an account, on all three platforms** — shipped 2026-06-17
+(builds 33/34) as the fix for App Review rejection 5.1.1(v) (forced registration
+before single-player play), and it's why v1.0 passed review. Code-verified state:
+
+- **Guests can:** play every solo mode + daily (web `AuthGate` passes `isGuest`
+  through to gameplay; both natives mirror it).
+- **Guests can't:** play VS (account-based — live opponents + recorded results;
+  a "Sign in to play VS" card explains why), or persist anything — no streaks,
+  leaderboard identity, medals, stats, or cross-device sync (all reads/writes
+  key on `auth.uid()`).
+- **Conversion surface:** a persistent header **Sign In** button (web + both
+  natives, build 34) and the sign-in prompts on the retention features guests
+  bump into. The account ask lands AFTER the hook, not before puzzle one.
+- **Known routing gap (open decision, distribution memo Part 2):** share/invite
+  links land on the LANDING page where the visitor must choose guest — not
+  directly on the board. "Frictionless first tap" (auto-guest into gameplay for
+  share/VS-invite links) is a UX routing change, not a feature build.
+
 ### 6a. Play the daily (solo)
 1. Open the app → pick a mode from the home grid.
 2. Today's puzzle loads from the **daily seed** (`daily-YYYY-MM-DD-<MODE>`, keyed to the device-local date) — identical on web, iOS, and Android.
@@ -463,6 +483,38 @@ Native work (iOS + Android) now commits to `main` alongside everything else — 
 - The `.claude/` memory under the project — accumulated session notes (native build plan, ShowLoud architecture reference).
 
 ---
+
+## 14. Distribution plan (founders' memo, 2026-07-22)
+
+Jasson's distribution strategy memo (2026-07-22) is the working growth plan;
+30-day list to be locked by both founders. Summary + engineering-truth notes:
+
+- **Part 1 (revenue on):** release iOS (build 128 is the RC pending Brian's
+  device pass), finish the Android user-side checklist (§12), AdSense
+  re-review, AdMob banking. All tracked in §12.
+- **Part 2 (anonymous play):** the memo's premise was stale — guest play
+  SHIPPED 2026-06-17 (§6a-0). The live decision is the smaller routing change:
+  share/invite links should drop visitors straight onto the board (auto-guest).
+- **Part 3 (organic levers):** share cards / VS invite links / SEO guides /
+  ASO / launch moments — all built except two small items, now DONE
+  (2026-07-22): **share-event instrumentation** (share_events table,
+  manual-migration 20260722000001 + logging on all 3 platforms) and the
+  **ratings prompt** (iOS SKStoreReviewController / Android Play In-App
+  Review; win-path only, throttled: ≥5 wins, ≥14 days between asks, once per
+  version).
+- **Part 4 (retention) / Metrics:** the Weekly Five queries live in
+  `scripts/weekly-five.sql` (DAU, D1/D7/D30 cohorts, share rate — needs
+  share_events applied — Pro conversion, plus reports-filed as the quiet
+  sixth). Ad revenue + store-sub mix come from the AdMob/ASC/Stripe
+  dashboards.
+- **Part 5 (steer Pro to web):** matches §5A economics (~97% web vs ~85%
+  stores). Marketing surfaces steer freely; IN-APP steering must follow the
+  current store rules (US external-link entitlement conditions).
+- **Part 6 (paid):** none until organic LTV/retention exist (60–90 days
+  post-launch), then small capped ASA tests.
+- **Ownership:** Brian = release checklist, crawlable surfaces, builds,
+  instrumentation. Jasson = ASO, communities/launch moments, SEO calendar,
+  press narrative, weekly metrics review, paid-test plan.
 
 ## Glossary
 

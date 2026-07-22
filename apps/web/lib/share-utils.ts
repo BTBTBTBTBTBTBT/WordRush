@@ -2,6 +2,7 @@ import { generateShareImage, type ShareImageInput, type ShareMode } from './shar
 import { openSharePreview } from '@/components/share/share-preview-modal';
 import { supabase } from './supabase-client';
 import { getTodayLocal } from './daily-service';
+import { logShareEvent } from './share-events';
 
 const SHARE_BUCKET = 'share-images';
 
@@ -211,11 +212,18 @@ export async function shareResult(
   }
 
   if (blob) {
-    if (await tryWebShare(blob, caption, input.mode)) return { via: 'share' };
-    if (await tryClipboardImage(blob, caption)) return { via: 'clipboard' };
+    if (await tryWebShare(blob, caption, input.mode)) {
+      logShareEvent('image', input.mode, 'post_game');
+      return { via: 'share' };
+    }
+    if (await tryClipboardImage(blob, caption)) {
+      logShareEvent('image', input.mode, 'post_game');
+      return { via: 'clipboard' };
+    }
     // Preview modal as a visible fallback before giving up.
     try {
       openSharePreview(blob, caption);
+      logShareEvent('image', input.mode, 'post_game');
       return { via: 'modal' };
     } catch {
       // fall through to text copy
@@ -225,6 +233,7 @@ export async function shareResult(
   // Image generation failed OR modal path errored — at minimum copy the caption
   // so the user still has something to paste.
   const copied = await copyShareToClipboard(caption);
+  if (copied) logShareEvent('text', input.mode, 'post_game');
   return { via: copied ? 'text' : 'failed' };
 }
 
