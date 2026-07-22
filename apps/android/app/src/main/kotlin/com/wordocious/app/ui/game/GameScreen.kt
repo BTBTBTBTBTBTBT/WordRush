@@ -494,11 +494,17 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         // Gauntlet only celebrates a WON run (web parity: a lost run goes
         // straight to the results screen, no overlay).
         if (mode != GameMode.GAUNTLET || state.status == GameStatus.WON) {
-            // High-point review ask: win + streak ≥ 3, once per version, delayed
-            // past the confetti (no-ops otherwise).
+            // High-point review ask (WIN path only, never on loss): count the
+            // win, then maybe show Play in-app review — 5+ wins, 14-day
+            // cooldown, once per version, delayed past the confetti.
             if (state.status == GameStatus.WON) {
                 val reviewCtx = androidx.compose.ui.platform.LocalContext.current
-                LaunchedEffect(Unit) { com.wordocious.app.data.ReviewPrompter.maybeAskAfterWin(reviewCtx) }
+                LaunchedEffect(Unit) {
+                    com.wordocious.app.data.RatingsPrompt.recordWin(reviewCtx)
+                    (reviewCtx as? android.app.Activity)?.let {
+                        com.wordocious.app.data.RatingsPrompt.maybeAsk(it)
+                    }
+                }
             }
             Box(modifier = Modifier.fillMaxSize()) {
                 VictoryOverlay(

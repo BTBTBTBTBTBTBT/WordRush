@@ -212,6 +212,9 @@ fun InviteSheet(onDismiss: () -> Unit) {
                         }
                         Spacer(Modifier.size(12.dp))
                         PrimaryButton("Share", purple, true, Icons.Filled.Share) {
+                            com.wordocious.app.data.ShareEvents.log(
+                                "link_invite", card.engineMode?.name?.lowercase() ?: "", "invite_sheet",
+                            )
                             val text = "Come play me on Wordocious — ${card.title}."
                             val intent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"

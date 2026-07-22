@@ -128,6 +128,11 @@ fun PostGameScreen(
                 solutionDisplay = pn?.display,
             )
         }.getOrNull()
+        com.wordocious.app.data.ShareEvents.log(
+            kind = if (bitmap != null) "image" else "text",
+            gameMode = mode.name.lowercase(),
+            surface = "post_game",
+        )
         if (bitmap != null) com.wordocious.app.data.ShareImage.share(context, bitmap, text, state, mode, elapsedSeconds, reveal)
         else com.wordocious.app.data.ShareHelper.share(context, text)
     }

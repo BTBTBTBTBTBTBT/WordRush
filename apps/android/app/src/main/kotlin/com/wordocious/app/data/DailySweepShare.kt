@@ -189,6 +189,7 @@ object DailySweepShare {
             file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         }.getOrNull()
+        ShareEvents.log(if (uri != null) "image" else "text", "", "daily_sweep")
         if (uri == null) { ShareHelper.share(context, text); return }
 
         CoroutineScope(Dispatchers.IO).launch {
@@ -320,6 +321,7 @@ object ProfileShare {
             file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 95, it) }
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         }.getOrNull()
+        ShareEvents.log(if (uri != null) "image" else "text", "", "profile")
         if (uri == null) { ShareHelper.share(context, text); return }
 
         CoroutineScope(Dispatchers.IO).launch {

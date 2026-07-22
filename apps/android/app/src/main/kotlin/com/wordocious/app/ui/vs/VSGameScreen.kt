@@ -170,6 +170,7 @@ private fun QueueScreen(label: String, gradient: List<Color>, position: Int, que
                 Box(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.primary)
                         .clickableNoRipple {
+                            com.wordocious.app.data.ShareEvents.log("link_invite", vm.mode.name.lowercase(), "vs_lobby")
                             com.wordocious.app.data.ShareHelper.share(context, "Join my Wordocious VS match — code $inviteCode\nhttps://wordocious.com/vs/join/$inviteCode")
                         }.padding(vertical = 12.dp),
                     Alignment.Center,
@@ -841,6 +842,11 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                     // Render the VS share card (same aesthetic as the daily cards);
                     // text-only fallback when there's no result payload.
                     val r = vm.result
+                    com.wordocious.app.data.ShareEvents.log(
+                        kind = if (r != null) "image" else "text",
+                        gameMode = vm.mode.name.lowercase(),
+                        surface = "vs_post_game",
+                    )
                     if (r != null) {
                         val solutions = r.solutions ?: emptyList()
                         val myLog = vm.game?.state?.value?.boards.orEmpty().flatMapIndexed { i, b ->
