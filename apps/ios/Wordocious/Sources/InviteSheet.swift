@@ -236,6 +236,7 @@ struct InviteSheet: View {
     }
 
     private func share(_ url: String) {
+        ShareEvents.log(kind: "link_invite", gameMode: mode.rawValue, surface: "invite_sheet")
         #if canImport(UIKit)
         let text = "Come play me on Wordocious — \(modeLabel)."
         let items: [Any] = [text, URL(string: url) ?? url]

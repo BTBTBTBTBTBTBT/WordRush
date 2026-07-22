@@ -393,6 +393,9 @@ struct ProperNoundleView: View {
         .animation(Theme.animation(.easeInOut(duration: 0.2)), value: vm.toast)
         .onChange(of: vm.status) { s in
             if s == .won || s == .lost { withAnimation(Theme.animation(.easeOut(duration: 0.25))) { showVictory = true } }
+            // High-point review ask: solo WIN path only (restored finished
+            // sessions set status in init, so this never re-fires for them).
+            if s == .won, !vm.isVersus { RatingsPrompt.recordWin(); RatingsPrompt.maybeAsk() }
         }
         .onAppear {
             // Free users watch the game-start ad first; reset the clock after.
@@ -497,6 +500,9 @@ struct ProperNoundleView: View {
     }
 
     private func shareResult(reveal: Bool = false) {
+        // User picked a chooser variant: Full results → image, No spoilers → text.
+        ShareEvents.log(kind: reveal ? "image" : "text",
+                        gameMode: GameMode.propernoundle.rawValue, surface: "post_game")
         // Category pill + multi-word name gaps in the share image (web parity).
         let p = vm.puzzle
         ShareService.share(kind: .single(grid: vm.shareGrid()), mode: .propernoundle,

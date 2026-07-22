@@ -224,9 +224,10 @@ struct GameScreen: View {
                     withAnimation(Theme.animation(.easeOut(duration: 0.3))) {
                         showVictory = true
                     }
-                    // High-point review ask: win + streak ≥ 3, once per version,
-                    // delayed past the confetti (no-ops otherwise).
-                    if newValue == .won { ReviewPrompter.maybeAskAfterWin() }
+                    // High-point review ask: WIN path only (never a loss) —
+                    // count the win, then maybe prompt (>=5 lifetime wins,
+                    // 14-day cooldown, once per build, ~2s past the confetti).
+                    if newValue == .won { RatingsPrompt.recordWin(); RatingsPrompt.maybeAsk() }
                 }
             }
         }
@@ -431,6 +432,10 @@ struct GameScreen: View {
     // MARK: Post-game share
 
     private func share(reveal: Bool = false) {
+        // User-initiated share: chooser pick → text/image (Gauntlet's stage-chip
+        // card skips the chooser and is always an image).
+        ShareEvents.log(kind: vm.isGauntlet || reveal ? "image" : "text",
+                        gameMode: mode.rawValue, surface: "post_game")
         let kind: ShareCardView.Kind
         if vm.isGauntlet {
             let stages = vm.gauntletStagesShare()

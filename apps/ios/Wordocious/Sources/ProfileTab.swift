@@ -375,6 +375,7 @@ struct ProfileTab: View {
             .padding(.top, 2)
             .sheet(isPresented: $showEditProfile) { EditProfileView() }
             Button {
+                ShareEvents.log(kind: "image", gameMode: "", surface: "profile")
                 let total = p.totalWins + p.totalLosses
                 ShareService.shareProfile(ProfileShareInput(
                     username: p.username, level: p.level, tier: levelTier(p.level).label,

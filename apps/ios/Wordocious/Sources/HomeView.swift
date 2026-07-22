@@ -233,6 +233,7 @@ struct HomeView: View {
         let totalTime = "\(Int(totals.totalTimeSeconds) / 60):\(String(format: "%02d", Int(totals.totalTimeSeconds) % 60))"
         let score = formatScore(totals.totalScore)  // grouped, like web toLocaleString()
         return Button {
+            ShareEvents.log(kind: "image", gameMode: "", surface: "daily_sweep")
             ShareService.shareDailySweep(byMode: completions.byMode)
         } label: {
             VStack(spacing: 3) {

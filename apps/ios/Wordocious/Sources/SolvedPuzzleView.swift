@@ -214,6 +214,10 @@ struct SolvedPuzzleView: View {
     /// Build the share card from the completed data and present the share sheet
     /// (same ShareService the live post-game screen uses → identical image).
     private func share(reveal: Bool = false) {
+        // User-initiated share from the re-entry review: chooser pick →
+        // text/image (Gauntlet's card skips the chooser, always an image).
+        ShareEvents.log(kind: mode == .gauntlet || reveal ? "image" : "text",
+                        gameMode: mode.rawValue, surface: "solved_review")
         let kind: ShareCardView.Kind
         if mode == .gauntlet, let g = gauntlet {
             let stages = g.stages.map { st -> GauntletStageShare in

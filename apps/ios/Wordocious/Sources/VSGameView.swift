@@ -378,6 +378,11 @@ struct VSGameView: View {
                     .frame(maxWidth: .infinity).padding(.vertical, 12)
                     .background(RoundedRectangle(cornerRadius: 12).fill(Theme.primary))
             }.buttonStyle(.plain)
+            // Logs alongside the ShareLink's own tap (share-sheet open = the
+            // user's choice to share the invite link).
+            .simultaneousGesture(TapGesture().onEnded {
+                ShareEvents.log(kind: "link_invite", gameMode: mode.rawValue, surface: "vs_invite")
+            })
         }
         .padding(16).frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -884,6 +889,7 @@ struct VSGameView: View {
     /// Falls back to text-only when there's no result payload.
     private func shareVSCard() {
         guard let r = vm.result else {
+            ShareEvents.log(kind: "text", gameMode: mode.rawValue, surface: "vs_result")
             #if canImport(UIKit)
             let av = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
             UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?
@@ -891,6 +897,7 @@ struct VSGameView: View {
             #endif
             return
         }
+        ShareEvents.log(kind: "image", gameMode: mode.rawValue, surface: "vs_result")
         let solutions = r.solutions ?? []
         func grids(_ log: [VSGuessLogEntry]) -> [[[TileState]]] {
             let byBoard = VSResultBoards.evaluate(log: log, solutions: solutions)

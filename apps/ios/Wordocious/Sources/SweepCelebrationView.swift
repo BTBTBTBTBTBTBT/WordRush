@@ -87,6 +87,7 @@ struct SweepCelebrationView: View {
 
                     HStack(spacing: 8) {
                         Button {
+                            ShareEvents.log(kind: "image", gameMode: "", surface: "sweep_celebration")
                             ShareService.shareDailySweep(byMode: byMode)
                         } label: {
                             HStack(spacing: 6) { Image(systemName: "square.and.arrow.up"); Text("Share") }
