@@ -1,11 +1,24 @@
 import SwiftUI
 import GoogleSignIn
+import Sentry
 
 @main
 struct WordociousApp: App {
     @StateObject private var auth = AuthService.shared
     @StateObject private var themeManager = ThemeManager.shared
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // Crash reporting for TestFlight/App Store builds only — DEBUG builds
+        // (simulator/dev) stay out of Sentry so local crashes don't pollute it.
+        #if !DEBUG
+        SentrySDK.start { options in
+            options.dsn = "https://372e8127de431c710a27250cd00d07df@o4511355315748865.ingest.us.sentry.io/4511779224354816"
+            options.tracesSampleRate = 0
+            options.enableAutoSessionTracking = true
+        }
+        #endif
+    }
 
     var body: some Scene {
         WindowGroup {

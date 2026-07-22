@@ -20,6 +20,9 @@ packages:
   GoogleSignIn:
     url: https://github.com/google/GoogleSignIn-iOS
     from: 7.1.0
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa.git
+    from: 8.0.0
 
 targets:
   Wordocious:
@@ -41,6 +44,8 @@ targets:
         product: GoogleMobileAds
       - package: GoogleSignIn
         product: GoogleSignIn
+      - package: Sentry
+        product: Sentry
     info:
       path: Wordocious/Info.plist
       properties:
