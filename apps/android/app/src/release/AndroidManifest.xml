@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release-only manifest overlay: carries the Sentry DSN so crash reporting
+     is active in release builds only. Debug builds merge no DSN, and Sentry's
+     auto-init logs a warning and stays inert. DSN is publishable (not secret). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <meta-data
+            android:name="io.sentry.dsn"
+            android:value="https://794742716ef025b39cf1e353951cbace@o4511355315748865.ingest.us.sentry.io/4511779231825920" />
+    </application>
+</manifest>

@@ -83,6 +83,11 @@ dependencies {
     // server the web + iOS connect to). Pulls org.json + OkHttp transitively.
     implementation("io.socket:socket.io-client:2.1.0")
 
+    // Sentry crash reporting — plain SDK + manifest auto-init (no gradle plugin;
+    // it wants source-map/proguard upload tokens we don't have). The DSN lives
+    // in src/release/AndroidManifest.xml only, so debug builds stay inert.
+    implementation("io.sentry:sentry-android:7.22.5")
+
     val composeBom = platform("androidx.compose:compose-bom:2024.09.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)

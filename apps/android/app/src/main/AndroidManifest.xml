@@ -34,6 +34,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Sentry crash reporting (manifest auto-init, no gradle plugin).
+             The DSN is release-only — see src/release/AndroidManifest.xml —
+             so debug builds have no DSN and Sentry stays inert. -->
+        <meta-data
+            android:name="io.sentry.auto-init"
+            android:value="true" />
+        <meta-data
+            android:name="io.sentry.traces.sample-rate"
+            android:value="0.0" />
+
         <!-- AdMob app ID — Google's TEST app ID. The approved AdMob app is
              iOS-only; create a Wordocious ANDROID app in the AdMob console and
              replace this (+ the unit ID in AdsManager.kt) before release. -->
