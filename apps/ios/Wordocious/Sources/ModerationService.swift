@@ -33,8 +33,10 @@ enum ModerationService {
             try await client.from("reports").insert(ReportInsert(
                 reporter_id: session.user.id.uuidString,
                 reported_user_id: userId,
-                reason: String(reason.prefix(500)),
-                context: String(context.prefix(200)))).execute()
+                // Truncate by unicode scalars — the DB CHECK counts code
+                // points, and Character-counted emoji text can exceed it.
+                reason: String(String.UnicodeScalarView(reason.unicodeScalars.prefix(500))),
+                context: String(String.UnicodeScalarView(context.unicodeScalars.prefix(200))))).execute()
             return true
         } catch { return false }
     }

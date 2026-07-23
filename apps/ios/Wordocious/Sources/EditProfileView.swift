@@ -62,10 +62,18 @@ struct EditProfileView: View {
                             .font(Brand.font(15, .bold))
                         if let error { Text(error).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0xDC2626)) }
                     }
-                    sectionCard("BIO  ·  \(bio.count)/\(bioMax)") {
+                    // Count/truncate by unicode SCALARS, not Characters: the DB
+                    // CHECK is char_length (code points), and one family emoji
+                    // is 1 Character but 7 code points — a Character-counted
+                    // "80/80" bio can violate the CHECK and fail the whole save.
+                    sectionCard("BIO  ·  \(bio.unicodeScalars.count)/\(bioMax)") {
                         TextField("A short tagline…", text: $bio, axis: .vertical)
                             .lineLimit(1...3).font(Brand.font(14, .regular))
-                            .onChange(of: bio) { if $0.count > bioMax { bio = String($0.prefix(bioMax)) } }
+                            .onChange(of: bio) {
+                                if $0.unicodeScalars.count > bioMax {
+                                    bio = String(String.UnicodeScalarView($0.unicodeScalars.prefix(bioMax)))
+                                }
+                            }
                     }
                     sectionCard("ACCENT COLOR") { accentRow }
                     sectionCard("FEATURED TITLE") { titlePicker }
