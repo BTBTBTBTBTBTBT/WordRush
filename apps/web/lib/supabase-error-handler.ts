@@ -1,4 +1,23 @@
 import { toast } from '@/hooks/use-toast';
+import * as Sentry from '@sentry/nextjs';
+
+/**
+ * A server-rejected write (RLS policy, guard trigger, CHECK constraint) is a
+ * bug on OUR side, not the user's — supabase-js returns it as `{ error }`
+ * without throwing, so it's invisible unless every call site checks. Route
+ * those through here: logged for local debugging AND captured to Sentry so a
+ * rejected write can never run silently in prod again (the gauntlet
+ * total_boards>16 guard rejection ran unnoticed for 2 days, bible 140).
+ * Safe to call with null/undefined — no-ops.
+ */
+export function reportRejectedWrite(context: string, error: any): void {
+  if (!error) return;
+  console.error(`${context} rejected:`, error);
+  Sentry.captureMessage(
+    `server write rejected: ${context} — ${error?.message ?? String(error)}`,
+    'error',
+  );
+}
 
 /**
  * Show a user-facing toast when a Supabase call fails due to

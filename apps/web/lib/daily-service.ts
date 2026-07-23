@@ -1,5 +1,5 @@
 import { supabase } from './supabase-client';
-import { handleSupabaseError } from './supabase-error-handler';
+import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 
 // ============================================================
 // Composite Score Calculation
@@ -172,9 +172,9 @@ export async function recordDailyResult(
           })
           .eq('id', existing.id);
         // supabase-js does NOT throw on a constraint/column error — it returns
-        // it here. Surface it so a rejected daily write (e.g. a game_mode the
-        // DB CHECK constraint doesn't allow) can never fail silently again.
-        if (error) console.error(`recordDailyResult update rejected for ${gameMode}:`, error);
+        // it here. Surface it (console + Sentry) so a rejected daily write
+        // can never fail silently again.
+        reportRejectedWrite(`recordDailyResult update ${gameMode}`, error);
       }
     } else {
       const { error } = await (supabase as any)
@@ -192,7 +192,7 @@ export async function recordDailyResult(
           composite_score: compositeScore,
           hints_used: hintsUsed,
         });
-      if (error) console.error(`recordDailyResult insert rejected for ${gameMode}:`, error);
+      reportRejectedWrite(`recordDailyResult insert ${gameMode}`, error);
     }
 
     // Check for streak and perfect game medals (fire-and-forget)
@@ -251,7 +251,7 @@ export async function recordDailyVsResult(
       const newGames = existing.vs_games + 1;
       const compositeScore = calculateVsCompositeScore(newWins, newLosses, newGames);
 
-      await (supabase as any)
+      const { error } = await (supabase as any)
         .from('daily_results')
         .update({
           vs_wins: newWins,
@@ -261,12 +261,13 @@ export async function recordDailyVsResult(
           completed: true,
         })
         .eq('id', existing.id);
+      reportRejectedWrite(`recordDailyVsResult update ${gameMode}`, error);
     } else {
       const wins = won ? 1 : 0;
       const losses = won ? 0 : 1;
       const compositeScore = calculateVsCompositeScore(wins, losses, 1);
 
-      await (supabase as any)
+      const { error } = await (supabase as any)
         .from('daily_results')
         .insert({
           user_id: userId,
@@ -279,6 +280,7 @@ export async function recordDailyVsResult(
           vs_games: 1,
           composite_score: compositeScore,
         });
+      reportRejectedWrite(`recordDailyVsResult insert ${gameMode}`, error);
     }
   } catch (err) {
     console.error('recordDailyVsResult failed:', err);
