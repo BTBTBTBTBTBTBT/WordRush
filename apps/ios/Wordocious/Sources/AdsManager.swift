@@ -39,25 +39,53 @@ final class AdsManager: NSObject, ObservableObject {
     /// why the reviewer never saw it. We now drive this from the first `.active`
     /// scene phase, and a watchdog guarantees ATT is requested even if the UMP
     /// network round-trip stalls or never calls back.
+    /// Set once the UMP requestConsentInfoUpdate callback has arrived. The ATT
+    /// watchdog only fires while this is false.
+    private var umpCallbackArrived = false
+    /// Set when the watchdog had to request ATT because UMP stalled. From that
+    /// point the GDPR form is SUPPRESSED for this session — App Review
+    /// 5.1.1(iv) (build 129 rejection): a GDPR/consent prompt must never be
+    /// shown after the user already answered the ATT request. Consent is
+    /// simply re-attempted on the next launch, before ATT (which by then is
+    /// already determined and never re-prompts).
+    private var attFallbackFired = false
+
     func start() {
         guard AdsConfig.enabled, !started else { return }
         started = true
         // Gather GDPR / Google UMP consent first (required to serve ads in EEA/UK).
-        // Order per Google: consent → (Apple) ATT → init Mobile Ads SDK.
+        // Order per BOTH Google and Apple 5.1.1(iv): consent form → (Apple) ATT →
+        // init Mobile Ads SDK. Apple explicitly blesses GDPR-before-ATT and
+        // rejects GDPR-after-ATT-denial.
         let params = UMPRequestParameters()
         params.tagForUnderAgeOfConsent = false
         UMPConsentInformation.sharedInstance.requestConsentInfoUpdate(with: params) { [weak self] _ in
             Task { @MainActor in self?.presentConsentFormThenStart() }
         }
         // Watchdog: if the UMP callback never fires (offline / unreachable during
-        // review), still present ATT so we never silently skip the prompt.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-            self?.requestATTOnce()
+        // review), still present ATT so we never silently skip the prompt
+        // (App Review 5.1.2i, build 8 rejection). 8s — long enough that any
+        // working network resolves UMP first, so the ATT-before-GDPR inversion
+        // (build 129 rejection) can only happen when UMP is truly unreachable,
+        // and then the form is suppressed for the session anyway.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8.0) { [weak self] in
+            guard let self, !self.umpCallbackArrived else { return }
+            self.attFallbackFired = true
+            self.requestATTOnce()
         }
     }
 
     /// Show the consent form if the user's region requires one, then continue.
     private func presentConsentFormThenStart() {
+        umpCallbackArrived = true
+        if attFallbackFired {
+            // UMP resolved only AFTER the watchdog already presented ATT.
+            // Never show the GDPR form post-ATT (5.1.1(iv)) — skip it this
+            // session; non-consent regions can still init ads below, consent
+            // regions retry the form (pre-ATT) next launch.
+            afterConsent()
+            return
+        }
         guard let vc = Self.rootViewController() else { afterConsent(); return }
         UMPConsentForm.loadAndPresentIfRequired(from: vc) { [weak self] _ in
             Task { @MainActor in self?.afterConsent() }
