@@ -170,6 +170,7 @@ export default function PublicProfilePage() {
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState<'solo' | 'vs'>('solo');
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [showAllRecent, setShowAllRecent] = useState(false);
   const [topWords, setTopWords] = useState<Array<{ word: string; count: number; wins: number }>>([]);
 
   useEffect(() => {
@@ -205,7 +206,7 @@ export default function PublicProfilePage() {
         .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
         .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
         .order('created_at', { ascending: false })
-        .limit(10),
+        .limit(50),
     ]);
 
     if (statsRes.data) setStats(statsRes.data);
@@ -536,7 +537,7 @@ export default function PublicProfilePage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {matches.map((match, index) => {
+              {(showAllRecent ? matches : matches.slice(0, 5)).map((match, index) => {
                 const isSolo = !match.player2_id;
                 const isWinner = match.winner_id === profile.id;
                 const isPlayer1 = match.player1_id === profile.id;
@@ -591,6 +592,11 @@ export default function PublicProfilePage() {
                   </div>
                 );
               })}
+              {matches.length > 5 && (
+                <button onClick={() => setShowAllRecent((v) => !v)} className="w-full mt-2 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
+                  {showAllRecent ? 'Show less' : `View all ${matches.length} →`}
+                </button>
+              )}
             </div>
           )}
         </div>

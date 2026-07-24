@@ -123,7 +123,7 @@ export default function ProfilePage() {
             .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit')
             .or(`player1_id.eq.${profile!.id},player2_id.eq.${profile!.id}`)
             .order('created_at', { ascending: false })
-            .limit(5);
+            .limit(50);
           const matchRows = (data || []) as Match[];
           const oppIds = Array.from(new Set(
             matchRows
@@ -202,6 +202,7 @@ export default function ProfilePage() {
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [showAllMedals, setShowAllMedals] = useState(false);
+  const [showAllRecent, setShowAllRecent] = useState(false);
 
   // Stats filtered to the active Solo/VS tab.
   const filteredStats = stats.filter((s) => s.play_type === activeTab);
@@ -978,7 +979,7 @@ export default function ProfilePage() {
           <div className="text-center py-8 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>No matches played yet.</div>
         ) : (
           <div className="space-y-2">
-            {matches.map((match) => {
+            {(showAllRecent ? matches : matches.slice(0, 5)).map((match) => {
               const isWinner = match.winner_id === profile.id;
               const isPlayer1 = match.player1_id === profile.id;
               const score = isPlayer1 ? match.player1_score : (match.player2_score ?? 0);
@@ -1023,6 +1024,11 @@ export default function ProfilePage() {
                 </div>
               );
             })}
+            {matches.length > 5 && (
+              <button onClick={() => setShowAllRecent((v) => !v)} className="w-full mt-2 py-1 text-[11px] font-extrabold" style={{ color: '#7c3aed' }}>
+                {showAllRecent ? 'Show less' : `View all ${matches.length} →`}
+              </button>
+            )}
           </div>
         )}
 
