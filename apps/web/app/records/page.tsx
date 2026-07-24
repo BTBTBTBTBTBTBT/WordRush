@@ -294,6 +294,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       <div className="mb-3">
         <ModePicker
           grid
+          includeSweep
           showAll={false}
           selectedMode={selectedMode}
           onSelectMode={(m) => setSelectedMode(m || 'DUEL')}

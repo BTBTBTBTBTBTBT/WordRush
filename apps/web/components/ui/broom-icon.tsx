@@ -22,13 +22,15 @@ export function BroomIcon({ className, size = 20, style }: BroomIconProps) {
       style={style}
     >
       {/* Handle */}
-      <path d="M20 3 L11 12" />
-      {/* Brush head band */}
-      <path d="M8.5 9.5 L14.5 15.5" />
-      {/* Fanned bristles */}
-      <path d="M8.5 9.5 L4 18 L14.5 15.5" />
-      <path d="M7 14 L10 17" />
-      <path d="M9.5 12.5 L12 15" />
+      <path d="M19 4.5 L9.5 14" />
+      {/* Binding band (crosses the handle base) */}
+      <path d="M6.5 11 L12.5 17" />
+      {/* Fanned bristles splaying out below the band */}
+      <path d="M9.5 14 L4 20" />
+      <path d="M6.7 12.8 L5 20.5" />
+      <path d="M8.4 14.5 L8 21" />
+      <path d="M10.2 16.2 L11 20.8" />
+      <path d="M11.6 15.6 L13.6 19.6" />
     </svg>
   );
 }
