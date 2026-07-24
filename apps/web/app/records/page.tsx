@@ -840,6 +840,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
   const Icon = mode.icon;
+  const isSweep = selectedMode === 'SWEEP';
   const my = stats.find((s) => s.game_mode === selectedMode && s.play_type === 'solo');
 
   const fmtRecord = (rt: string, v: number | null | undefined) =>
@@ -883,42 +884,11 @@ function YourRecordsView({ userId }: { userId?: string }) {
         </div>
       )}
 
-      {/* Sweep & Flawless */}
-      {sweep && (sweep.sweepCount > 0 || sweep.flawlessCount > 0) && (
-        <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
-          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #fbbf24, #d97706)' }} />
-          <div className="px-4 pt-2 pb-3">
-            <div className="text-[10px] font-black uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>Daily Sweeps</div>
-            <div className="grid grid-cols-2 gap-1">
-              <MyStatCell icon={Sparkles} value={`${sweep.sweepCount}`} label="Daily Sweeps" color="#7c3aed" />
-              <MyStatCell icon={Trophy} value={`${sweep.flawlessCount}`} label="Flawless Victories" color="#d97706" />
-              <MyStatCell icon={Flame} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
-              <MyStatCell icon={Clock} value={sweep.bestSweepSecs ? formatTime(Math.round(sweep.bestSweepSecs)) : '—'} label="Best Sweep Time" color="#2563eb" dim={!sweep.bestSweepSecs} />
-            </div>
-            {/* Sweep leaderboard standing — today's daily board + all-time. */}
-            {(sweepRankToday || sweepRankAllTime) && (
-              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
-                {sweepRankToday && (
-                  <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    Today: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankToday.rank}</span> of {sweepRankToday.totalPlayers}
-                  </span>
-                )}
-                {sweepRankAllTime && (
-                  <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                    All-Time: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankAllTime.rank}</span> of {sweepRankAllTime.totalPlayers}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Personal bests by mode */}
+      {/* Personal bests by mode (Sweep tile shows the daily-sweep window instead) */}
       <div>
         <SectionHeader label="Your Bests By Mode" accent="#7c3aed" />
         <div className="mb-3">
-          <ModePicker grid showAll={false} selectedMode={selectedMode} onSelectMode={(m) => setSelectedMode(m || 'DUEL')} />
+          <ModePicker grid includeSweep showAll={false} selectedMode={selectedMode} onSelectMode={(m) => setSelectedMode(m || 'DUEL')} />
         </div>
         <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
           <div className="h-[3px]" style={{ background: `linear-gradient(90deg, ${color}, ${color}88)` }} />
@@ -926,14 +896,50 @@ function YourRecordsView({ userId }: { userId?: string }) {
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
               {mode.romanNumeral ? <span className="text-[11px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span> : Icon ? <Icon className="w-4 h-4" style={{ color }} /> : null}
             </div>
-            <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>{mode.title}</div>
+            <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>{isSweep ? 'Daily Sweeps' : mode.title}</div>
           </div>
-          <div className="px-4 pb-3 grid grid-cols-2 gap-1">
-            <MyStatCell icon={Clock} value={fmtRecord('fastest_win', my?.fastest_time)} label="Fastest Win" color={color} dim={!my?.fastest_time} />
-            <MyStatCell icon={Target} value={fmtRecord('fewest_guesses', my?.best_score)} label="Fewest Guesses" color={color} dim={!my?.best_score} />
-            <MyStatCell icon={Zap} value={my ? `${my.total_games} games` : '—'} label="Games Played" color={color} dim={!my} />
-            <MyStatCell icon={Trophy} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
-          </div>
+          {isSweep ? (
+            // Sweep window — populates when the Sweep tile is pushed: sweep stats
+            // (count / flawless / current streak / best time) plus the user's
+            // today + all-time sweep rank chips.
+            sweep && (sweep.sweepCount > 0 || sweep.flawlessCount > 0) ? (
+              <div className="px-4 pb-3">
+                <div className="grid grid-cols-2 gap-1">
+                  <MyStatCell icon={Sparkles} value={`${sweep.sweepCount}`} label="Daily Sweeps" color="#7c3aed" />
+                  <MyStatCell icon={Trophy} value={`${sweep.flawlessCount}`} label="Flawless Victories" color="#d97706" />
+                  <MyStatCell icon={Flame} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
+                  <MyStatCell icon={Clock} value={sweep.bestSweepSecs ? formatTime(Math.round(sweep.bestSweepSecs)) : '—'} label="Best Sweep Time" color="#2563eb" dim={!sweep.bestSweepSecs} />
+                </div>
+                {/* Sweep leaderboard standing — today's daily board + all-time. */}
+                {(sweepRankToday || sweepRankAllTime) && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+                    {sweepRankToday && (
+                      <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                        Today: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankToday.rank}</span> of {sweepRankToday.totalPlayers}
+                      </span>
+                    )}
+                    {sweepRankAllTime && (
+                      <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                        All-Time: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankAllTime.rank}</span> of {sweepRankAllTime.totalPlayers}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="py-5 text-center">
+                <Trophy className="w-7 h-7 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
+                <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
+              </div>
+            )
+          ) : (
+            <div className="px-4 pb-3 grid grid-cols-2 gap-1">
+              <MyStatCell icon={Clock} value={fmtRecord('fastest_win', my?.fastest_time)} label="Fastest Win" color={color} dim={!my?.fastest_time} />
+              <MyStatCell icon={Target} value={fmtRecord('fewest_guesses', my?.best_score)} label="Fewest Guesses" color={color} dim={!my?.best_score} />
+              <MyStatCell icon={Zap} value={my ? `${my.total_games} games` : '—'} label="Games Played" color={color} dim={!my} />
+              <MyStatCell icon={Trophy} value={my ? `${my.wins}–${my.losses}` : '—'} label="Win–Loss" color={color} dim={!my} />
+            </div>
+          )}
         </div>
       </div>
 
