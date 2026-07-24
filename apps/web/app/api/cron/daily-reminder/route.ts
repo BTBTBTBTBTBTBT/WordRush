@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import webpush from 'web-push';
 
+// Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
+// route batches over rows, so give it headroom to finish instead of timing out.
+export const maxDuration = 60;
+
 const MESSAGES = [
   { title: '🔥 Keep your streak alive!', body: "Today's daily puzzles are waiting for you." },
   { title: '🧩 New puzzles are here!', body: "Can you beat yesterday's score?" },

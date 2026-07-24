@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 
+// Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
+// route batches over rows, so give it headroom to finish instead of timing out.
+export const maxDuration = 60;
+
 const GAME_MODES = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
 const PLAY_TYPES = ['solo', 'vs'] as const;
 const MEDAL_TYPES = ['gold', 'silver', 'bronze'] as const;

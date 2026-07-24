@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 
+// Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
+// route batches over rows, so give it headroom to finish instead of timing out.
+export const maxDuration = 300;
+
 /**
  * POST /api/admin/backfill-daily-bonuses
  *
