@@ -6,6 +6,7 @@ import WordociousCore
 struct VSGameView: View {
     @StateObject private var vm: VSMatchViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var adShown = false
 
     let mode: GameMode
@@ -44,6 +45,7 @@ struct VSGameView: View {
             case .waiting:           waitingScreen
             case .result:            resultScreen
             case .opponentLeft:      opponentLeftScreen
+            case .matchGone:         matchGoneScreen
             case .alreadyPlayedDaily: DailyVsAlreadyPlayed(answer: vm.dailyAnswer, gradient: gradient, isPro: AuthService.shared.isProActive, won: vm.dailyWon, onHome: goHome)
             }
 
@@ -84,6 +86,30 @@ struct VSGameView: View {
                     .zIndex(5)
             }
 
+            // Opponent-disconnect countdown banner: their socket dropped and the
+            // server holds the match open for its reconnect grace — if they don't
+            // return by the deadline, the server forfeits them (win for us).
+            if let deadline = vm.opponentDisconnectDeadline,
+               vm.screen == .match || vm.screen == .waiting {
+                VStack {
+                    TimelineView(.periodic(from: .now, by: 1)) { _ in
+                        let left = max(0, Int(((deadline - Date().timeIntervalSince1970 * 1000) / 1000).rounded()))
+                        Label("\(vm.opponentName) disconnected — you win by forfeit in \(left)s unless they return",
+                              systemImage: "wifi.slash")
+                            .font(Brand.font(12, .heavy)).foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 14).padding(.vertical, 9)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xDC2626).opacity(0.92)))
+                            .padding(.horizontal, 24)
+                    }
+                    .padding(.top, 52)
+                    Spacer()
+                }
+                .allowsHitTesting(false)
+                .transition(.opacity)
+                .zIndex(4)
+            }
+
             // Moment callout — opponent milestones (greens / board solved / last guess).
             if let c = vm.callout, vm.screen == .match {
                 VStack {
@@ -102,6 +128,12 @@ struct VSGameView: View {
             // Pro upsell when a free user taps Rematch (web parity — VsLimitModal).
             if showRematchUpsell {
                 VSLobbyView.VSLimitModal(onClose: { showRematchUpsell = false })
+            }
+
+            // Pro upsell when a free user RECEIVES a rematch offer — the VM
+            // auto-declined it (Rematch is Pro-only); explain why.
+            if vm.rematchProUpsell {
+                VSLobbyView.VSLimitModal(onClose: { vm.rematchProUpsell = false })
             }
         }
         // Fade the countdown overlay in/out (it used to pop) — scoped to the
@@ -140,6 +172,14 @@ struct VSGameView: View {
             }
         }
         .onDisappear { vm.leave() }
+        // A backgrounded app drops the VS socket; past the server's reconnect
+        // grace the match is gone server-side. Track the away time so the VM
+        // can show the clean "match ended while you were away" state instead
+        // of a zombie board looping "Not in a match" errors.
+        .onChange(of: scenePhase) { phase in
+            if phase == .background { vm.appDidEnterBackground() }
+            else if phase == .active { vm.appDidBecomeActive() }
+        }
         .confirmationDialog("Forfeit match?", isPresented: $confirmForfeit, titleVisibility: .visible) {
             Button("Forfeit & Leave", role: .destructive) { goHome() }
             Button("Keep Playing", role: .cancel) { }
@@ -511,7 +551,10 @@ struct VSGameView: View {
 
     private var matchHeader: some View {
         HStack {
-            Button { confirmForfeit = true } label: {
+            // Confirm only when leaving would TRULY forfeit (a recorded loss):
+            // CPU practice and already-resolved matches leave without the scary
+            // "counts as a loss" dialog, which would be lying there.
+            Button { if vm.leaveWouldForfeit { confirmForfeit = true } else { goHome() } } label: {
                 Image(systemName: "house.fill").font(.system(size: 15, weight: .bold))
                     .foregroundStyle(ModeStyle.accent(mode))
                     .frame(width: 34, height: 34)
@@ -735,10 +778,23 @@ struct VSGameView: View {
         let oppSolved = VSResultBoards.solved(log: vm.result?.opponentGuessLog ?? [],
                                               solutions: vm.result?.solutions ?? [])
         let whyLine: String? = {
-            guard vm.result != nil else { return nil }
+            guard let r = vm.result else { return nil }
+            // A forfeit ended it — say so instead of pretending it was decided
+            // on score ("Both solved — you won on score" read as a bug).
+            if r.forfeit == true {
+                return isWin ? "\(oppName) left the match — you win by forfeit"
+                             : "Match forfeited — \(oppName) wins"
+            }
             if isDraw { return "Dead even — identical scores" }
-            if isWin { return mySolved && !oppSolved ? "You solved it — \(oppName) didn’t" : "Both solved — you won on score" }
-            return oppSolved && !mySolved ? "\(oppName) solved it — you didn’t" : "Both solved — \(oppName) won on score"
+            if isWin {
+                if mySolved && !oppSolved { return "You solved it — \(oppName) didn’t" }
+                if mySolved && oppSolved { return "Both solved — you won on score" }
+                // Server timeout resolution: neither solved, board progress decided.
+                return "Neither solved — you won on progress"
+            }
+            if oppSolved && !mySolved { return "\(oppName) solved it — you didn’t" }
+            if oppSolved && mySolved { return "Both solved — \(oppName) won on score" }
+            return "Neither solved — \(oppName) won on progress"
         }()
 
         return ZStack {
@@ -945,6 +1001,21 @@ struct VSGameView: View {
             Button("Home", action: goHome).font(Brand.font(15, .black)).foregroundStyle(Theme.primary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// The match no longer exists server-side — the app was backgrounded past
+    /// the server's reconnect grace (or the server timed the match out). No
+    /// local result is recorded from this screen (leaving here is NOT a forfeit).
+    private var matchGoneScreen: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "clock.badge.xmark").font(.system(size: 40)).foregroundStyle(Theme.textMuted)
+            Text("Match ended while you were away").font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
+                .multilineTextAlignment(.center)
+            Text("The server couldn’t hold the match open that long.")
+                .font(Brand.body(13)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
+            Button("Home", action: goHome).font(Brand.font(15, .black)).foregroundStyle(Theme.primary)
+        }
+        .padding(.horizontal, 32).frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var notConfigured: some View {

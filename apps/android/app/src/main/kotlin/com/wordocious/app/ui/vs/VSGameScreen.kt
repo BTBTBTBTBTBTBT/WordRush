@@ -101,7 +101,26 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
             VSScreen.WAITING -> WaitingScreen(vm, gradient, ::goHome)
             VSScreen.RESULT -> ResultScreen(vm, gradient, ::goHome, onGoPro)
             VSScreen.OPPONENT_LEFT -> OpponentLeft(::goHome)
+            VSScreen.MATCH_GONE -> MatchGone(vm.message, ::goHome)
             VSScreen.ALREADY_PLAYED_DAILY -> AlreadyPlayedDaily(vm.dailyAnswer, gradient, vm.isPro, vm.dailyWon, ::goHome, onGoPro, onPlayUnlimited)
+        }
+
+        // Opponent-disconnected grace banner — pinned to the top over the live
+        // match / waiting screens: counts down the server's reconnect window
+        // (cleared by opponent_reconnected / match_ended).
+        vm.opponentDisconnectedSeconds?.let { secs ->
+            if (vm.screen == VSScreen.MATCH || vm.screen == VSScreen.WAITING) {
+                Box(Modifier.fillMaxSize().padding(top = 10.dp), Alignment.TopCenter) {
+                    Text(
+                        "📡 ${vm.opponentName} disconnected — reconnect window ${secs}s",
+                        fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(50))
+                            .background(Color(0xFFF59E0B))
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                    )
+                }
+            }
         }
 
         // Don't stack the countdown under the dark intro splash (it ticked behind
@@ -750,8 +769,13 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
         (vm.result?.opponentGuessLog ?: emptyList()).map { GuessLogEntry(it.boardIndex, it.guess) },
         vm.result?.solutions ?: emptyList(),
     )
+    // Forfeit-aware copy (match_ended.forfeit): the numbers don't decide a
+    // forfeited match, so score-based explanations would read as a mistake.
+    val isForfeit = vm.result?.forfeit == true
     val whyLine = when {
         vm.result == null -> null
+        isForfeit && isWin -> "$oppName left the match — you win by forfeit"
+        isForfeit && !isWin && !isDraw -> "Forfeit — $oppName takes the win"
         isDraw -> "Dead even — identical scores"
         isWin -> if (mySolved && !oppSolved) "You solved it — $oppName didn’t" else "Both solved — you won on score"
         else -> if (oppSolved && !mySolved) "$oppName solved it — you didn’t" else "Both solved — $oppName won on score"
@@ -806,6 +830,25 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                     opponent = ScoreCardPlayer(oppName, r.opponentScore, r.opponentGuesses, r.opponentTime, oppSolved, !isWin && !isDraw),
                     isDraw = isDraw,
                 )
+            }
+        }
+        // Free tier received a rematch offer — it was auto-declined in the VM
+        // (non-Pro can't accept, and the opponent must not hang on "Waiting…");
+        // surface the offer + Pro upsell instead of the accept/decline card.
+        if (vm.rematchProUpsell) {
+            item {
+                Column(
+                    Modifier.padding(top = 14.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                        .border(2.dp, Color(0xFFF59E0B), RoundedCornerShape(14.dp)).padding(14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("$oppName wants a rematch!", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+                    Text(
+                        "Rematches are a Pro feature — the offer was declined.",
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
+                    )
+                    GradientPill("Go Pro", listOf(Color(0xFFF59E0B), Color(0xFFD97706)), Modifier.fillMaxWidth()) { onGoPro() }
+                }
             }
         }
         if (vm.rematch == RematchState.RECEIVED) {
@@ -909,6 +952,24 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
 private fun OpponentLeft(onHome: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Opponent left the match", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        Text("Home", fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.primary, modifier = Modifier.clickableNoRipple(onHome))
+    }
+}
+
+/** Zombie-match recovery screen — the server dropped the match while the app
+ *  was backgrounded past the reconnect grace. Nothing was recorded (no
+ *  spurious loss); just a clean explanation + Home. */
+@Composable
+private fun MatchGone(message: String?, onHome: () -> Unit) {
+    Column(
+        Modifier.padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text("Match ended", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        Text(
+            message ?: "The match ended while you were away.",
+            fontSize = 13.sp, color = WTheme.textMuted, textAlign = TextAlign.Center,
+        )
         Text("Home", fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.primary, modifier = Modifier.clickableNoRipple(onHome))
     }
 }

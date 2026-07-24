@@ -65,9 +65,12 @@ enum MatchStatsService {
     static func guessDistribution(mode: GameMode? = nil, playType: String = "solo") async -> [GuessBucket] {
         if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
+        // player1_id ONLY: the chart reads player1_* columns, so rows where the
+        // user is player2 would chart the OPPONENT's guesses (topWords had the
+        // same bug and was fixed the same way).
         var q = AuthService.shared.client.from("matches")
             .select("player1_score,game_mode,winner_id")
-            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
+            .eq("player1_id", value: uid)
             .eq("winner_id", value: uid)
         q = scopeToPlayType(q, playType)
         if let mode { q = q.eq("game_mode", value: mode.rawValue) }
@@ -123,9 +126,11 @@ enum MatchStatsService {
     static func solveTimes(mode: GameMode? = nil, limit: Int = 30, playType: String = "solo") async -> [SolvePoint] {
         if playType == "vs_cpu" { return [] }
         guard let uid = await userId() else { return [] }
+        // player1_id ONLY — the chart reads player1_time; as player2 the OR
+        // filter charted the opponent's solve times (see guessDistribution).
         var q = AuthService.shared.client.from("matches")
             .select("player1_time,game_mode,created_at")
-            .or("player1_id.eq.\(uid),player2_id.eq.\(uid)")
+            .eq("player1_id", value: uid)
             .eq("winner_id", value: uid)
             .gt("player1_time", value: 0)
         q = scopeToPlayType(q, playType)

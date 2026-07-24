@@ -76,7 +76,10 @@ object DailyResultsService {
         }.getOrNull()
     }
 
-    suspend fun recordDailyVsResult(mode: GameMode, won: Boolean) {
+    suspend fun recordDailyVsResult(mode: GameMode, won: Boolean, isDraw: Boolean = false) {
+        // Web daily-service parity: a DRAW counts the game (vs_games+1, day
+        // completed) without touching the win/loss tallies — a drawn VS is
+        // not a loss.
         val userId = AuthService.userId ?: return
         val day = todayLocalDate()
         runCatching {
@@ -88,7 +91,7 @@ object DailyResultsService {
                 .decodeSingleOrNull<VsRow>()
             if (existing != null) {
                 val wins = existing.vsWins + if (won) 1 else 0
-                val losses = existing.vsLosses + if (won) 0 else 1
+                val losses = existing.vsLosses + if (won || isDraw) 0 else 1
                 val games = existing.vsGames + 1
                 client.postgrest["daily_results"].update({
                     set("vs_wins", wins); set("vs_losses", losses); set("vs_games", games)
@@ -97,7 +100,7 @@ object DailyResultsService {
                 }) { filter { eq("id", existing.id) } }
             } else {
                 val wins = if (won) 1 else 0
-                val losses = if (won) 0 else 1
+                val losses = if (won || isDraw) 0 else 1
                 client.postgrest["daily_results"].insert(
                     VsInsert(
                         userId = userId, day = day, gameMode = mode.name,
@@ -107,6 +110,15 @@ object DailyResultsService {
                 )
             }
             DailyCompletionsService.noteRecorded()
+        }.onFailure { reportSwallowedWrite("recordDailyVsResult", mode.name, it) }
+    }
+
+    /** Web reportRejectedWrite parity: a swallowed daily/results write failure is
+     *  invisible to the user by design, but must still surface in Sentry
+     *  (sentry-android manifest auto-init; no-op in debug builds with no DSN). */
+    internal fun reportSwallowedWrite(op: String, gameMode: String, error: Throwable) {
+        runCatching {
+            io.sentry.Sentry.captureMessage("$op failed (game_mode=$gameMode): ${error.message}")
         }
     }
 
@@ -200,8 +212,10 @@ object DailyResultsService {
             // Row is on the server — let server-backed screens refetch now.
             DailyCompletionsService.noteRecorded()
             AuthService.refreshProfile()
-        } catch (_: Exception) {
-            // Network/auth failure — silent (game result still local)
+        } catch (e: Exception) {
+            // Network/auth failure — silent for the user (game result still
+            // local), but reported to Sentry (web reportRejectedWrite parity).
+            reportSwallowedWrite("recordDailyResult", gameModeStr, e)
         }
     }
 

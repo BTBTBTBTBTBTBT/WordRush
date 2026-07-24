@@ -54,7 +54,7 @@ import kotlin.math.roundToInt
  * and achievement writes (checkAchievements via GameResultsService.record) are
  * wired too. Nothing VS is deferred on Android now.
  */
-enum class VSScreen { ENTRY, QUEUE, MATCH, WAITING, RESULT, OPPONENT_LEFT, ALREADY_PLAYED_DAILY, NOT_CONFIGURED }
+enum class VSScreen { ENTRY, QUEUE, MATCH, WAITING, RESULT, OPPONENT_LEFT, MATCH_GONE, ALREADY_PLAYED_DAILY, NOT_CONFIGURED }
 enum class RematchState { IDLE, OFFERED, RECEIVED, DECLINED }
 
 class OpponentProgressState {
@@ -113,10 +113,20 @@ class VSMatchViewModel(
     /** Bumps once per opponent guess row — drives the UI's light haptic. */
     var opponentGuessTick by mutableStateOf(0)
     var opponentTyping by mutableStateOf(false)
+    /** Non-null while the opponent's socket is dropped mid-match: seconds left in
+     *  the server's reconnect grace window (drives the countdown banner). */
+    var opponentDisconnectedSeconds by mutableStateOf<Int?>(null)
+    /** Set when a NON-Pro receives a rematch offer: we auto-decline (the free
+     *  tier can't accept) and the result screen shows the Pro upsell. */
+    var rematchProUpsell by mutableStateOf(false)
 
     val opponentName: String get() = opponentInfo?.displayName ?: "Opponent"
 
     private var calloutJob: Job? = null
+    private var disconnectJob: Job? = null
+    /** True once the server told us it no longer has our match ("Not in a match"
+     *  after a long background) — forfeit/abandon must record nothing then. */
+    private var matchGone = false
     private var lastCallout = ""
     private var typingHideJob: Job? = null
     private var lastTypingSentMs = 0L
@@ -284,7 +294,15 @@ class VSMatchViewModel(
         // Bailing from the queue (no match yet) records nothing.
         // CPU practice is never a ranked loss: quitting a bot match records
         // nothing (parity with the clean-end CPU path / iOS / web).
-        if ((screen == VSScreen.MATCH || screen == VSScreen.WAITING) && !resultRecorded && !isCpu) {
+        // NOT a loss (records nothing):
+        //  - myStatus != null — I already FINISHED my board; leaving the waiting
+        //    screen isn't a forfeit. The real outcome is decided server-side and
+        //    recorded via match_ended if it arrives (recording guard unchanged).
+        //  - matchGone — the server already dropped the match while we were
+        //    backgrounded; there is nothing left to forfeit.
+        if ((screen == VSScreen.MATCH || screen == VSScreen.WAITING) &&
+            myStatus == null && !matchGone && !resultRecorded && !isCpu
+        ) {
             resultRecorded = true
             val secs = if (matchStartMs > 0) max(0, ((System.currentTimeMillis() - matchStartMs) / 1000).toInt()) else 0
             val gc = game?.rowsUsed ?: 0
@@ -307,13 +325,16 @@ class VSMatchViewModel(
                 DailyResultsService.recordDailyVsResult(m, false)
             }
         }
-        service.abandonMatch()
+        // No match left server-side → nothing to abandon (avoids a stray
+        // "Not in a match" error on the way out).
+        if (!matchGone) service.abandonMatch()
         service.disconnect()
         game?.stopTimer()
     }
 
     override fun onCleared() {
         countdownJob?.cancel()
+        disconnectJob?.cancel()
         service.disconnect()
         game?.stopTimer()
     }
@@ -348,14 +369,87 @@ class VSMatchViewModel(
         service.onOpponentProgress = { applyOpponentProgress(it) }
         service.onOpponentStageCompleted = { opponent.stagesCleared = max(opponent.stagesCleared, it.stageIndex + 1) }
         service.onMatchEnded = { handleMatchEnded(it) }
-        service.onRematchOffered = { rematch = RematchState.RECEIVED }
+        service.onRematchOffered = {
+            if (isPro) {
+                rematch = RematchState.RECEIVED
+            } else {
+                // Free tier can't accept — auto-decline so the opponent isn't
+                // stuck on "Waiting…", and surface the Pro upsell (web/iOS parity).
+                service.declineRematch()
+                rematch = RematchState.DECLINED
+                rematchProUpsell = true
+            }
+        }
         service.onRematchDeclined = { rematch = RematchState.DECLINED }
         service.onRematchStart = {
             puzzleDisplay = it.puzzleMetadata?.display
             beginRematch(it.seed)
         }
-        service.onOpponentLeft = { message = "Opponent left the match"; screen = VSScreen.OPPONENT_LEFT }
-        service.onServerError = { message = it.message }
+        service.onOpponentLeft = {
+            clearDisconnectBanner()
+            when (screen) {
+                // Post-match departure: keep the result up — just kill the
+                // rematch path (mirrors the server's rematch_declined fallback).
+                VSScreen.RESULT -> rematch = RematchState.DECLINED
+                // Mid-match the server follows with match_ended (forfeit=true),
+                // which carries the real outcome — don't clobber it.
+                VSScreen.MATCH, VSScreen.WAITING -> {}
+                else -> { message = "Opponent left the match"; screen = VSScreen.OPPONENT_LEFT }
+            }
+        }
+        service.onOpponentDisconnected = { data ->
+            // Only meaningful mid-match; a stray event elsewhere is ignored.
+            if (screen == VSScreen.MATCH || screen == VSScreen.WAITING) {
+                startDisconnectCountdown(max(1, data.graceSeconds))
+            }
+        }
+        service.onOpponentReconnected = {
+            if (opponentDisconnectedSeconds != null) {
+                clearDisconnectBanner()
+                showCallout("$opponentName reconnected!")
+            }
+        }
+        // Our reconnect was re-bound to the live match inside the grace window —
+        // clear any stale toast; play simply continues.
+        service.onMatchResumed = { message = null }
+        service.onServerError = { err ->
+            // Zombie-match recovery: a long background (> the server's reconnect
+            // grace) means the server dropped the match; the next emit answers
+            // "Not in a match". Replace the dead board with a clean "ended while
+            // you were away" screen — and record nothing (no spurious loss).
+            if ((screen == VSScreen.MATCH || screen == VSScreen.WAITING) &&
+                (err.message == "Not in a match" || err.message == "Match not found")
+            ) {
+                matchGone = true
+                clearDisconnectBanner()
+                game?.stopTimer()
+                message = "The match ended while you were away."
+                screen = VSScreen.MATCH_GONE
+            } else {
+                message = err.message
+            }
+        }
+    }
+
+    /** Start/refresh the opponent-disconnected grace countdown banner. */
+    private fun startDisconnectCountdown(graceSeconds: Int) {
+        disconnectJob?.cancel()
+        opponentDisconnectedSeconds = graceSeconds
+        disconnectJob = viewModelScope.launch {
+            var s = graceSeconds
+            while (s > 0) {
+                delay(1000)
+                s -= 1
+                opponentDisconnectedSeconds = s
+            }
+            // At 0 the server is about to forfeit them — match_ended
+            // (forfeit=true) clears the banner via clearDisconnectBanner().
+        }
+    }
+
+    private fun clearDisconnectBanner() {
+        disconnectJob?.cancel()
+        opponentDisconnectedSeconds = null
     }
 
     private fun handleMatchFound(data: VSMatchFound) {
@@ -438,6 +532,14 @@ class VSMatchViewModel(
         myFinalBoards = null
         rematch = RematchState.IDLE
         resultRecorded = false
+        matchGone = false
+        rematchProUpsell = false
+        clearDisconnectBanner()
+        // Daily VS is consumed the moment the match STARTS (web/iOS parity):
+        // backing out mid-match, killing the app, or losing the connection can't
+        // mint a second daily attempt. The end-of-match marking stays as an
+        // idempotent backstop (same local-day key).
+        if (dailyVsActive && !isCpu) VSPlayLimit.markPlayedToday()
         // 3-2-1-GO: if a countdown was running, flash "GO!" over the board's
         // first ~0.6s instead of cutting straight from "1" into the game.
         if (countdown != null) {
@@ -558,6 +660,10 @@ class VSMatchViewModel(
         // reference is a safe snapshot) before anything can reset the game.
         myFinalBoards = game?.state?.value?.boards
         result = data
+        clearDisconnectBanner()
+        // Forfeit win: the opponent is gone — a rematch offer could only hang
+        // on "Waiting…", so surface "No Rematch" instead.
+        if (data.forfeit == true) rematch = RematchState.DECLINED
         screen = VSScreen.RESULT
         recordResult(data)
         // Refresh the head-to-head line so the result screen shows the UPDATED
@@ -581,10 +687,17 @@ class VSMatchViewModel(
         if (resultRecorded || AuthService.profile.value == null) return
         resultRecorded = true
         val won = data.winner == "player"
+        // A draw is neither a win nor a loss (winner == "draw" previously fell
+        // into the loss branch): no win/loss/streak/XP mutation anywhere — only
+        // the daily VS row's vs_games and the shared matches row (winner_id null).
+        val draw = data.winner == "draw"
 
         if (isCpu) {
             // Pure practice: record ONLY the separate vs_cpu bucket — no XP, no
             // matches row, no head-to-head, no achievements, no daily lock.
+            // A drawn practice match records nothing (vs_cpu has no draw column;
+            // counting it as a loss skewed the practice record + streak).
+            if (draw) return
             val secs = (data.playerTime / 1000).roundToInt()
             viewModelScope.launch { GameResultsService.recordCpuResult(mode, won, data.playerGuesses, secs) }
             val tier = cpuPersona?.tier ?: BotTier.MEDIUM
@@ -604,26 +717,31 @@ class VSMatchViewModel(
         // Web parity (stats-service): EVERY VS match lands on the daily VS
         // leaderboard (play_type='vs'). Inside the guard — a duplicate
         // match_ended event must not double-accumulate vs_wins/vs_games.
-        viewModelScope.launch { DailyResultsService.recordDailyVsResult(mode, won) }
+        // Draw: vs_games+1 only (completed=true), no vs_wins/vs_losses bump.
+        viewModelScope.launch { DailyResultsService.recordDailyVsResult(mode, won, draw) }
         val secs = (data.playerTime / 1000).roundToInt()
         val solved = game?.boardsSolvedCount ?: (if (won) 1 else 0)
         val total = game?.boardCount ?: 1
         val theSeed = seed
         val opponentSecs = (data.opponentTime / 1000).roundToInt()
         viewModelScope.launch {
-            xpResult = GameResultsService.record(
-                gameMode = mode, playType = "vs", won = won, guessCount = data.playerGuesses,
-                timeSeconds = secs, boardsSolved = solved, totalBoards = total, seed = theSeed,
-                solutions = game?.state?.value?.boards?.map { it.solution } ?: emptyList(),
-                guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(), // longest board = full shared history
-            )
+            // Draw: skip user_stats/profiles entirely — record() only knows
+            // won/lost and would have booked the draw as a loss + streak reset.
+            if (!draw) {
+                xpResult = GameResultsService.record(
+                    gameMode = mode, playType = "vs", won = won, guessCount = data.playerGuesses,
+                    timeSeconds = secs, boardsSolved = solved, totalBoards = total, seed = theSeed,
+                    solutions = game?.state?.value?.boards?.map { it.solution } ?: emptyList(),
+                    guesses = game?.state?.value?.boards?.maxByOrNull { it.guesses.size }?.guesses ?: emptyList(), // longest board = full shared history
+                )
+            }
             // Single shared match-history row written only by the designated writer.
             // Web row shape (vs-game recordMatch): solutions + BOTH players'
             // guess words — mine from the finished game state (longest board =
             // full shared history), the opponent's from match_ended's guess log.
             if (data.recordMatch == true && data.opponentId != null) {
                 GameResultsService.recordVsMatch(
-                    gameMode = mode, opponentId = data.opponentId, won = won, isDraw = data.winner == "draw",
+                    gameMode = mode, opponentId = data.opponentId, won = won, isDraw = draw,
                     playerGuesses = data.playerGuesses, opponentGuesses = data.opponentGuesses,
                     playerTimeSec = secs, opponentTimeSec = opponentSecs, seed = theSeed,
                     solutions = data.solutions

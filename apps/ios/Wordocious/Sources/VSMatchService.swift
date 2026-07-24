@@ -24,6 +24,8 @@ final class VSMatchService {
     var onRematchDeclined: (() -> Void)?
     var onRematchStart: ((VSRematchStart) -> Void)?
     var onOpponentLeft: (() -> Void)?
+    var onOpponentDisconnected: ((VSOpponentDisconnected) -> Void)?
+    var onOpponentReconnected: (() -> Void)?
     var onOpponentTyping: (() -> Void)?
     var onServerError: ((VSServerError) -> Void)?
 
@@ -92,12 +94,14 @@ final class VSMatchService {
         bind(socket, VSEvent.matchEnded, VSMatchEnded.self) { [weak self] in self?.onMatchEnded?($0) }
         bind(socket, VSEvent.opponentStageCompleted, VSStageEvent.self) { [weak self] in self?.onOpponentStageCompleted?($0) }
         bind(socket, VSEvent.rematchStart, VSRematchStart.self) { [weak self] in self?.onRematchStart?($0) }
+        bind(socket, VSEvent.opponentDisconnected, VSOpponentDisconnected.self) { [weak self] in self?.onOpponentDisconnected?($0) }
         bind(socket, VSEvent.error, VSServerError.self) { [weak self] in self?.onServerError?($0) }
 
         // Payload-less events.
         socket.on(VSEvent.rematchOffered) { [weak self] _, _ in self?.main { self?.onRematchOffered?() } }
         socket.on(VSEvent.rematchDeclined) { [weak self] _, _ in self?.main { self?.onRematchDeclined?() } }
         socket.on(VSEvent.opponentLeft) { [weak self] _, _ in self?.main { self?.onOpponentLeft?() } }
+        socket.on(VSEvent.opponentReconnected) { [weak self] _, _ in self?.main { self?.onOpponentReconnected?() } }
         socket.on(VSEvent.opponentTyping) { [weak self] _, _ in self?.main { self?.onOpponentTyping?() } }
     }
 

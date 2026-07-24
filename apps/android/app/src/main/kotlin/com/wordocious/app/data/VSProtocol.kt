@@ -39,6 +39,13 @@ object VSEvent {
     const val ERROR = "error"
     /** Opponent activity ping (no letters) — drives the "typing…" indicator. */
     const val OPPONENT_TYPING = "opponent_typing"
+    /** Opponent's socket dropped mid-match — the server holds the match open for
+     *  a reconnect grace window before it becomes a forfeit. */
+    const val OPPONENT_DISCONNECTED = "opponent_disconnected"
+    /** Opponent came back within the grace window — the match resumes. */
+    const val OPPONENT_RECONNECTED = "opponent_reconnected"
+    /** WE reconnected within the grace window — our new socket was re-bound. */
+    const val MATCH_RESUMED = "match_resumed"
 }
 
 // ── Server → client payloads ───────────────────────────────────────────────────
@@ -123,6 +130,13 @@ data class VSMatchEnded(
     val solutions: List<String>? = null,
     /** True when the match ended by the opponent disconnecting/abandoning (forfeit win). */
     val forfeit: Boolean? = null,
+)
+
+@Serializable
+data class VSOpponentDisconnected(
+    /** Seconds the server holds the match open for the opponent's reconnect
+     *  before forfeiting them (defaults to the server's RECONNECT_GRACE_MS). */
+    val graceSeconds: Int = 60,
 )
 
 @Serializable

@@ -27,6 +27,12 @@ interface VSTransport {
     var onOpponentLeft: (() -> Unit)?
     var onServerError: ((VSServerError) -> Unit)?
     var onOpponentTyping: (() -> Unit)?
+    /** Opponent dropped mid-match; the server holds a reconnect grace window. */
+    var onOpponentDisconnected: ((VSOpponentDisconnected) -> Unit)?
+    /** Opponent came back inside the grace window — clear the disconnect UI. */
+    var onOpponentReconnected: (() -> Unit)?
+    /** OUR reconnect was re-bound to the live match inside the grace window. */
+    var onMatchResumed: (() -> Unit)?
     val isConfigured: Boolean
     fun connect(presenceId: String?)
     fun disconnect()
@@ -106,6 +112,10 @@ class LocalBotMatchService(
     override var onOpponentLeft: (() -> Unit)? = null
     override var onServerError: ((VSServerError) -> Unit)? = null
     override var onOpponentTyping: (() -> Unit)? = null
+    // The client-side bot never disconnects — these never fire.
+    override var onOpponentDisconnected: ((VSOpponentDisconnected) -> Unit)? = null
+    override var onOpponentReconnected: (() -> Unit)? = null
+    override var onMatchResumed: (() -> Unit)? = null
     override val isConfigured: Boolean get() = true
 
     private val handler = Handler(Looper.getMainLooper())

@@ -34,6 +34,9 @@ class VSMatchService : VSTransport {
     override var onOpponentLeft: (() -> Unit)? = null
     override var onServerError: ((VSServerError) -> Unit)? = null
     override var onOpponentTyping: (() -> Unit)? = null
+    override var onOpponentDisconnected: ((VSOpponentDisconnected) -> Unit)? = null
+    override var onOpponentReconnected: (() -> Unit)? = null
+    override var onMatchResumed: (() -> Unit)? = null
 
     override val isConfigured: Boolean get() = VSConfig.isConfigured
 
@@ -104,11 +107,14 @@ class VSMatchService : VSTransport {
         bind(s, VSEvent.OPPONENT_STAGE_COMPLETED, VSStageEvent.serializer()) { onOpponentStageCompleted?.invoke(it) }
         bind(s, VSEvent.REMATCH_START, VSRematchStart.serializer()) { onRematchStart?.invoke(it) }
         bind(s, VSEvent.ERROR, VSServerError.serializer()) { onServerError?.invoke(it) }
+        bind(s, VSEvent.OPPONENT_DISCONNECTED, VSOpponentDisconnected.serializer()) { onOpponentDisconnected?.invoke(it) }
 
         s.on(VSEvent.REMATCH_OFFERED) { runOnMain { onRematchOffered?.invoke() } }
         s.on(VSEvent.REMATCH_DECLINED) { runOnMain { onRematchDeclined?.invoke() } }
         s.on(VSEvent.OPPONENT_LEFT) { runOnMain { onOpponentLeft?.invoke() } }
         s.on(VSEvent.OPPONENT_TYPING) { runOnMain { onOpponentTyping?.invoke() } }
+        s.on(VSEvent.OPPONENT_RECONNECTED) { runOnMain { onOpponentReconnected?.invoke() } }
+        s.on(VSEvent.MATCH_RESUMED) { runOnMain { onMatchResumed?.invoke() } }
     }
 
     /**

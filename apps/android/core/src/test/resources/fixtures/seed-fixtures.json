@@ -4,31 +4,31 @@
       "seed": "test",
       "count": 1,
       "solutions": [
-        "SENNA"
+        "QUEST"
       ]
     },
     {
       "seed": "test",
       "count": 4,
       "solutions": [
-        "SENNA",
-        "LUNAR",
-        "VOMIT",
-        "HEAVE"
+        "QUEST",
+        "SAGGY",
+        "SPOOL",
+        "SAVIN"
       ]
     },
     {
       "seed": "test",
       "count": 8,
       "solutions": [
-        "SENNA",
-        "LUNAR",
-        "VOMIT",
-        "HEAVE",
-        "STENT",
-        "MULCH",
-        "FLOOR",
-        "BEBOP"
+        "QUEST",
+        "SAGGY",
+        "SPOOL",
+        "SAVIN",
+        "KNACK",
+        "LANKY",
+        "POKED",
+        "MEDIC"
       ]
     },
     {
@@ -86,73 +86,73 @@
       "seed": "daily-2026-08-01-DUEL",
       "count": 1,
       "solutions": [
-        "DOWRY"
+        "FLASK"
       ]
     },
     {
       "seed": "daily-2026-08-01-QUORDLE",
       "count": 4,
       "solutions": [
-        "PEACH",
-        "CATCH",
-        "SWEEP",
-        "TRACE"
+        "CURLY",
+        "LOCUS",
+        "SIXTY",
+        "AIMED"
       ]
     },
     {
       "seed": "daily-2026-08-01-OCTORDLE",
       "count": 8,
       "solutions": [
-        "BAYOU",
-        "NASTY",
-        "FORAY",
-        "FIVER",
-        "GRASS",
-        "SHALT",
-        "RATIO",
-        "VEGAN"
+        "BRASS",
+        "GANJA",
+        "SEINE",
+        "BUZZY",
+        "CLINE",
+        "MEDIA",
+        "OWNED",
+        "STOOL"
       ]
     },
     {
       "seed": "gauntlet-abc-123",
       "count": 21,
       "solutions": [
-        "DEGAS",
-        "LINEN",
-        "PATIO",
-        "SLICE",
-        "SCALY",
-        "FEAST",
-        "SPORE",
-        "COMFY",
-        "LEAVE",
-        "STILL",
-        "SAFER",
-        "OPTED",
-        "VAULT",
-        "MOGUL",
-        "GAYER",
-        "SCUBA",
-        "MATED",
-        "GLADE",
-        "SWAIN",
-        "WHIFF",
-        "FOYER"
+        "WHERE",
+        "ARGON",
+        "MERRY",
+        "PESTO",
+        "TIMER",
+        "WHEEL",
+        "COLIC",
+        "QUAKE",
+        "SITAR",
+        "CAMEL",
+        "FROTH",
+        "STEAL",
+        "OZONE",
+        "GROUP",
+        "RANCH",
+        "RATED",
+        "GABBY",
+        "SWEAT",
+        "FOGGY",
+        "FAMED",
+        "SCENT"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 1,
       "solutions": [
-        "LAMIA"
+        "LEVEL"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 2,
       "solutions": [
-        "LAMIA",
-        "LUMPY"
+        "LEVEL",
+        "OWING"
       ]
     }
   ],
@@ -191,7 +191,7 @@
       "seed": "test",
       "count": 1,
       "solutions": [
-        "PATTERN"
+        "JEALOUS"
       ]
     },
     {
@@ -205,14 +205,14 @@
       "seed": "match-7-abc",
       "count": 1,
       "solutions": [
-        "SETTLED"
+        "FAVORED"
       ]
     },
     {
       "seed": "daily-2026-08-01-DUEL_7",
       "count": 1,
       "solutions": [
-        "NOWHERE"
+        "ENCLOSE"
       ]
     }
   ]

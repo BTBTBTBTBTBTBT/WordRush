@@ -18,6 +18,8 @@ protocol VSTransport: AnyObject {
     var onRematchDeclined: (() -> Void)? { get set }
     var onRematchStart: ((VSRematchStart) -> Void)? { get set }
     var onOpponentLeft: (() -> Void)? { get set }
+    var onOpponentDisconnected: ((VSOpponentDisconnected) -> Void)? { get set }
+    var onOpponentReconnected: (() -> Void)? { get set }
     var onOpponentTyping: (() -> Void)? { get set }
     var onServerError: ((VSServerError) -> Void)? { get set }
     var isConfigured: Bool { get }
@@ -109,6 +111,9 @@ final class LocalBotMatchService: VSTransport {
     var onRematchDeclined: (() -> Void)?
     var onRematchStart: ((VSRematchStart) -> Void)?
     var onOpponentLeft: (() -> Void)?
+    // A local bot never drops its (in-process) connection — these never fire.
+    var onOpponentDisconnected: ((VSOpponentDisconnected) -> Void)?
+    var onOpponentReconnected: (() -> Void)?
     var onOpponentTyping: (() -> Void)?
     var onServerError: ((VSServerError) -> Void)?
     var isConfigured: Bool { true }

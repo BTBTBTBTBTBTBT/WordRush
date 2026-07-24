@@ -67,7 +67,7 @@ enum VSModeInfo {
 /// from server events.
 @MainActor
 final class VSMatchViewModel: ObservableObject {
-    enum Screen { case entry, queue, match, waiting, result, opponentLeft, alreadyPlayedDaily, notConfigured }
+    enum Screen { case entry, queue, match, waiting, result, opponentLeft, matchGone, alreadyPlayedDaily, notConfigured }
     enum RematchState { case idle, offered, received, declined }
 
     struct OpponentProgress {
@@ -101,6 +101,13 @@ final class VSMatchViewModel: ObservableObject {
     @Published var result: VSMatchEnded?
     @Published var playerTimeMs: Int = 0
     @Published var rematch: RematchState = .idle
+    /// Free user received a rematch offer: it was auto-declined — show the Pro
+    /// upsell modal (web parity: Rematch is Pro-only, VsLimitModal explains).
+    @Published var rematchProUpsell = false
+    /// Opponent's socket dropped mid-match: unix-ms deadline when the server's
+    /// reconnect grace expires (a forfeit win for us). Drives the countdown
+    /// banner; cleared on opponent_reconnected / match end.
+    @Published var opponentDisconnectDeadline: Double?
     @Published var message: String?
     @Published var dailyAnswer: String = ""
     /// Today's daily VS result for the already-played screen badge (true=won,
@@ -323,17 +330,28 @@ final class VSMatchViewModel: ObservableObject {
         service.connect(presenceId: nil)
     }
 
+    /// Leaving now would actually forfeit (a recorded loss): only while still
+    /// MID-GAME. Once finished (waiting screen) — or once the match is over /
+    /// gone — leaving records nothing.
+    var leaveWouldForfeit: Bool { screen == .match && myStatus == nil && !isCpu && !resultRecorded }
+
     func forfeit() {
         // Forfeiting an IN-PROGRESS match counts as a loss and (for daily VS)
         // consumes today's play — you can't replay it. The server already
         // credits the opponent the win + writes the shared match row; this records
         // OUR side (user_stats VS loss + daily_results loss) since we leave before
         // match_ended arrives. Bailing from the queue (no match yet) records nothing.
+        // A FINISHED player leaving the spectator screen is NOT a forfeit: their
+        // result is already submitted, so record nothing here — the server
+        // resolves the match (opponent finishes, or its idle/hard-cap timeout)
+        // and a match_ended that lands before teardown still records normally.
+        // Same for a zombie match (.matchGone): the match no longer exists
+        // server-side, so a local loss would be fabricated.
         // CPU practice is never a ranked loss: quitting a bot match records
         // nothing (parity with the clean-end CPU path, which only writes the
         // separate vs_cpu bucket — and with the web, where a CPU abandon is a
         // pure teardown).
-        if (screen == .match || screen == .waiting), !resultRecorded, !isCpu {
+        if screen == .match, myStatus == nil, !resultRecorded, !isCpu {
             resultRecorded = true
             let secs = matchStartMs > 0 ? Int(max(0, Date().timeIntervalSince1970 * 1000 - matchStartMs) / 1000) : 0
             let gc = game?.rowsUsed ?? 0
@@ -351,8 +369,52 @@ final class VSMatchViewModel: ObservableObject {
                     timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
             }
         }
-        service.abandonMatch()
+        // Only abandon when still mid-game (or CPU teardown). A finished player
+        // emitting abandon_match would turn their already-submitted result into
+        // a forfeit win for the opponent — disconnect and let the server
+        // resolve the match (opponent finishes on merit, or its reconnect-grace
+        // timeout). A gone match (.matchGone) has nothing to abandon.
+        if isCpu || (myStatus == nil && screen != .matchGone) { service.abandonMatch() }
         service.disconnect()
+    }
+
+    // MARK: - App lifecycle (scenePhase)
+
+    /// Server-side reconnect grace: a dropped socket forfeits after this long.
+    /// Mirrors the server's RECONNECT_GRACE_MS.
+    private static let serverGraceMs: Double = 60_000
+    /// Wall-clock (unix ms) when the app was backgrounded mid-match.
+    private var backgroundedAtMs: Double?
+
+    /// scenePhase → .background while playing a HUMAN match: the socket will
+    /// drop and the server holds our slot for its 60s reconnect grace.
+    func appDidEnterBackground() {
+        guard !isCpu, screen == .match || screen == .waiting else { return }
+        backgroundedAtMs = Date().timeIntervalSince1970 * 1000
+    }
+
+    /// scenePhase → .active: if we were backgrounded past the server's grace
+    /// window the match no longer exists server-side (we were forfeited).
+    /// Transition to the clean "match ended while you were away" state instead
+    /// of leaving a zombie board that loops "Not in a match" toasts — and never
+    /// record a local loss here (the server already resolved the match; only a
+    /// match_ended that actually arrived records anything).
+    func appDidBecomeActive() {
+        guard let bg = backgroundedAtMs else { return }
+        backgroundedAtMs = nil
+        guard !isCpu, screen == .match || screen == .waiting else { return }
+        if Date().timeIntervalSince1970 * 1000 - bg > Self.serverGraceMs {
+            markMatchGone()
+        }
+    }
+
+    /// The match no longer exists server-side (backgrounded past the reconnect
+    /// grace, or the server answered "Not in a match"). Show the clean
+    /// match-gone screen; forfeit()/goHome from there records nothing.
+    private func markMatchGone() {
+        guard screen == .match || screen == .waiting else { return }
+        opponentDisconnectDeadline = nil
+        screen = .matchGone
     }
 
     // MARK: - User actions
@@ -386,14 +448,52 @@ final class VSMatchViewModel: ObservableObject {
             self?.opponent.stagesCleared = max(self?.opponent.stagesCleared ?? 0, $0.stageIndex + 1)
         }
         service.onMatchEnded = { [weak self] in self?.handleMatchEnded($0) }
-        service.onRematchOffered = { [weak self] in self?.rematch = .received }
+        service.onRematchOffered = { [weak self] in
+            guard let self else { return }
+            if self.isPro {
+                self.rematch = .received
+            } else {
+                // Rematch is Pro-only: auto-decline so the Pro opponent's
+                // "Waiting…" resolves instead of hanging on a button this
+                // player can't accept, then show the Pro upsell (web parity —
+                // non-Pro Rematch routes to VsLimitModal).
+                self.service.declineRematch()
+                self.rematch = .declined
+                self.rematchProUpsell = true
+            }
+        }
         service.onRematchDeclined = { [weak self] in self?.rematch = .declined }
         service.onRematchStart = { [weak self] in self?.beginRematch(seed: $0.seed) }
         service.onOpponentLeft = { [weak self] in
-            self?.message = "Opponent left the match"
-            self?.screen = .opponentLeft
+            // Only meaningful while actually mid-match or spectating — a stray
+            // opponent_left on the queue/result screens must not clobber them
+            // (the forfeit-win match_ended that follows this event sets .result).
+            guard let self, self.screen == .match || self.screen == .waiting else { return }
+            self.opponentDisconnectDeadline = nil
+            self.message = "Opponent left the match"
+            self.screen = .opponentLeft
         }
-        service.onServerError = { [weak self] in self?.message = $0.message }
+        service.onOpponentDisconnected = { [weak self] data in
+            // Opponent's socket dropped: the server holds the match open for a
+            // reconnect grace window, then forfeits them. Surface a countdown
+            // banner against that deadline.
+            guard let self, self.screen == .match || self.screen == .waiting else { return }
+            let grace = data.graceSeconds ?? 60
+            self.opponentDisconnectDeadline = Date().timeIntervalSince1970 * 1000 + grace * 1000
+        }
+        service.onOpponentReconnected = { [weak self] in self?.opponentDisconnectDeadline = nil }
+        service.onServerError = { [weak self] err in
+            guard let self else { return }
+            // "Not in a match" while we think we're playing = the server ended
+            // our match while we were away (reconnect grace expired / idle or
+            // hard-cap timeout). One clean transition, not an error-toast loop.
+            if err.message == "Not in a match", !self.isCpu,
+               self.screen == .match || self.screen == .waiting {
+                self.markMatchGone()
+            } else {
+                self.message = err.message
+            }
+        }
     }
 
     private func handleMatchFound(_ data: VSMatchFound) {
@@ -482,8 +582,16 @@ final class VSMatchViewModel: ObservableObject {
         opponent = OpponentProgress()
         result = nil
         rematch = .idle
+        rematchProUpsell = false
+        opponentDisconnectDeadline = nil
+        backgroundedAtMs = nil
         resultRecorded = false
         matchCompletionHandled = false
+        // Daily VS is CONSUMED at match START, not at the end — once the shared
+        // daily board is revealed, backgrounding/killing the app mid-match must
+        // not hand back a fresh attempt at the same (now known) puzzle. The
+        // end-of-match/forfeit markings stay as idempotent backstops.
+        if dailyVsActive && !isCpu { VSPlayLimit.markPlayedToday() }
         // 3-2-1-GO: if a countdown was running, flash "GO!" over the board's
         // first ~0.6s instead of cutting straight from "1" into the game.
         if countdown != nil {
@@ -669,6 +777,7 @@ final class VSMatchViewModel: ObservableObject {
         // myFinalBoards doc comment.
         myFinalBoards = game?.state.boards
         myFinalPNRows = proper.map { p in p.guesses.map { VSPNRecapRow(word: $0.word, tiles: $0.tiles) } }
+        opponentDisconnectDeadline = nil
         result = data
         screen = .result
         recordResult(data)
@@ -744,9 +853,12 @@ final class VSMatchViewModel: ObservableObject {
                         forfeit: forfeit)
                 }
             }()
+            // A draw is NOT a loss: isDraw skips the loss/streak mutations and
+            // counts the game only (vs_games+1 on the daily VS row) — web parity.
             xpResult = await GameResultsService.record(
                 gameMode: theMode, playType: "vs", won: won, guessCount: data.playerGuesses,
-                timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed)
+                timeSeconds: secs, boardsSolved: solved, totalBoards: total, seed: theSeed,
+                isDraw: isDraw)
             await matchWrite
             if let uid = try? await AuthService.shared.client.auth.session.user.id.uuidString.lowercased() {
                 await AchievementService.checkAchievements(

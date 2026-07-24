@@ -81,7 +81,7 @@ object GameResultsService {
                     completedAt = now.toString(),
                 )
             )
-        }
+        }.onFailure { DailyResultsService.reportSwallowedWrite("recordSoloMatch", gameMode.name, it) }
     }
 
     // ── Gauntlet per-stage breakdown (iOS/web parity) ─────────────────────────────
@@ -260,7 +260,7 @@ object GameResultsService {
                     )
                 )
             }
-        }
+        }.onFailure { DailyResultsService.reportSwallowedWrite("updateUserStats($playType)", mode, it) }
     }
 
     // ── profile progression (XP / level / streaks / shield) ───────────────────────
@@ -327,7 +327,7 @@ object GameResultsService {
                 totalXp = xpGain + streakBonus + dailyBonus,
                 newLevel = newLevel, leveledUp = newLevel > p.level,
             )
-        }.getOrNull()
+        }.onFailure { DailyResultsService.reportSwallowedWrite("updateProfileProgression", "n/a", it) }.getOrNull()
 
     // ── VS match-history row (player2_id set) ──────────────────────────────────────
     @Serializable
@@ -382,7 +382,7 @@ object GameResultsService {
                     forfeit = forfeit,
                 )
             )
-        }
+        }.onFailure { DailyResultsService.reportSwallowedWrite("recordVsMatch", gameMode.name, it) }
     }
 
     /**

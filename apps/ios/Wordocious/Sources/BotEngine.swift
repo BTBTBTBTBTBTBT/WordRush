@@ -87,9 +87,14 @@ enum BotEngine {
     /// `excluding` (restat B3): shared-guess fillers must never equal ANOTHER
     /// board's solution — post-filtering shrank the sequence below the
     /// intended budget, making the bot slightly stronger than tuned.
-    private static func realWordPath(_ solution: String, steps: Int, willSolve: Bool, excluding: [String] = []) -> [String] {
+    /// `used` is the MATCH-wide played set (web bot-engine.ts usedWords): the
+    /// bot must never resubmit a word it already played this match — the server
+    /// rejects a human's duplicate guesses across boards/stages, so a repeating
+    /// bot reads broken.
+    private static func realWordPath(_ solution: String, steps: Int, willSolve: Bool,
+                                     excluding: [String] = [], used matchUsed: Set<String> = []) -> [String] {
         let len = solution.count
-        let ex = Set(excluding.map { $0.uppercased() })
+        let ex = Set(excluding.map { $0.uppercased() }).union(matchUsed)
         // Filler words are SHOWN to the opponent at match end, so they come
         // from the curated answer banks (always-common vocabulary), never the
         // permissive guess dictionary — allowed-6/7 held zipf-0 junk the bot
@@ -121,7 +126,7 @@ enum BotEngine {
             // pool fabricates a unique filler.
             let word = best
                 ?? pool.first { !used.contains($0) }
-                ?? fabricatedUniqueWord(solution, avoiding: used)
+                ?? fabricatedUniqueWord(solution, avoiding: used.union(matchUsed))
             used.insert(word)
             path.append(word)
         }
@@ -206,8 +211,14 @@ enum BotEngine {
         var cumulativeAttempts = 0
         var boardsSolved = 0
         var lastAtMs: Double = 0
+        // MATCH-wide played-word set (web bot-engine.ts usedWords): every
+        // emitted word lands here, and realWordPath filters against it — the
+        // bot never resubmits a word it already played this match (any board,
+        // any stage), matching the server's duplicate-guess rejection.
+        var usedWords = Set<String>()
 
         func emit(word: String, entries: [VSOpponentLatestGuess], logBoard: Int, single: VSOpponentLatestGuess? = nil) {
+            usedWords.insert(word.uppercased())
             lastAtMs += Double.random(in: p.perGuessMinMs...max(p.perGuessMinMs, p.perGuessMaxMs))
             cumulativeAttempts += 1
             events.append(Event(atMs: max(0, lastAtMs - 1100), typing: true, progress: nil))
@@ -231,8 +242,11 @@ enum BotEngine {
                 if !solveAll { return max(0, budget - solveCount) }   // failed run burns the budget
                 return max(0, min(budget - solveCount, Int.random(in: max(0, p.minGuesses - 2)...max(1, p.maxGuesses - 2))))
             }()
+            // Exclude ALL the match's solutions (not just this segment's) and
+            // every word already played this match (web parity).
             let fillers = fillerCount > 0
-                ? realWordPath(sols[n - 1], steps: fillerCount, willSolve: false, excluding: sols)
+                ? realWordPath(sols[n - 1], steps: fillerCount, willSolve: false,
+                               excluding: solutions, used: usedWords)
                 : []
             var solvedLocal = Set<Int>()
             let solveOrder = Array(Array(0..<n).shuffled().prefix(solveCount))
@@ -253,11 +267,10 @@ enum BotEngine {
         /// order, one at a time, sharing one guess budget.
         func sequentialSegment(offset: Int, sols: [String], budget: Int, solveAll: Bool, stageIndex: Int? = nil) {
             var remaining = budget
-            // One shared no-repeat set across ALL the segment's boards: they
-            // share a match, and a human can't resubmit a word the server
-            // already accepted. Seeding it with every solution also stops a
+            // No-repeat across the WHOLE match (usedWords, fed by emit) — a
+            // human can't resubmit a word the server already accepted, on any
+            // board or stage. Excluding every match solution also stops a
             // filler from accidentally pre-solving a later board.
-            var played: [String] = sols
             for (li, sol) in sols.enumerated() {
                 guard remaining > 0 else { return }
                 let isLast = li == sols.count - 1
@@ -280,8 +293,8 @@ enum BotEngine {
                     let hi = max(lo, min(maxSteps, max(1, min(3, p.maxGuesses - 2))))
                     steps = Int.random(in: lo...hi)
                 }
-                let path = realWordPath(sol, steps: steps, willSolve: !fails, excluding: played)
-                played.append(contentsOf: path)
+                let path = realWordPath(sol, steps: steps, willSolve: !fails,
+                                        excluding: solutions, used: usedWords)
                 for (i, word) in path.enumerated() {
                     let solving = !fails && i == path.count - 1
                     if solving { boardsSolved += 1 }
@@ -321,7 +334,8 @@ enum BotEngine {
             let steps = min(cap, opts.targetGuesses ?? Int.random(in: p.minGuesses...max(p.minGuesses, p.maxGuesses)))
             let path = mode == .propernoundle
                 ? fabricatedPath(solution, steps: willSolveAll ? steps : cap, willSolve: willSolveAll)
-                : realWordPath(solution, steps: willSolveAll ? steps : cap, willSolve: willSolveAll)
+                : realWordPath(solution, steps: willSolveAll ? steps : cap, willSolve: willSolveAll,
+                               used: usedWords)
             for (i, word) in path.enumerated() {
                 if willSolveAll && i == path.count - 1 { boardsSolved += 1 }
                 emit(word: word, entries: [], logBoard: 0,

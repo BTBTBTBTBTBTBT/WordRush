@@ -1,6 +1,21 @@
 import Foundation
+import Sentry
 import Supabase
 import WordociousCore
+
+/// Report a swallowed Supabase write failure to Sentry (release builds only —
+/// Sentry never starts in DEBUG). Recording stays best-effort — capture, never
+/// rethrow — but failed stat/result writes are no longer invisible (web
+/// reportRejectedWrite parity).
+func reportRejectedWrite(_ operation: String, gameMode: String, _ error: Error) {
+    #if !DEBUG
+    SentrySDK.capture(error: error) { scope in
+        scope.setTag(value: gameMode, key: "game_mode")
+        scope.setContext(value: ["operation": operation, "game_mode": gameMode],
+                         key: "rejected_write")
+    }
+    #endif
+}
 
 /// Records a finished game's full progression, porting the core of
 /// lib/stats-service.ts recordGameResult(): user_stats (wins/losses/games/
@@ -76,7 +91,11 @@ enum GameResultsService {
         do {
             try await client.from("matches").insert(row).execute()
             PendingRecords.markDone(gameMode: gameMode.rawValue, seed: seed, part: .soloMatch)
-        } catch { /* pending payload stays — retried by drain() */ }
+        } catch {
+            // Pending payload stays — retried by drain(). Still worth a Sentry
+            // breadcrumb: a systematic insert failure would otherwise be silent.
+            reportRejectedWrite("recordSoloMatch", gameMode: gameMode.rawValue, error)
+        }
     }
 
     /// A VS match as a `matches` row (player2_id set) so the battle appears in
@@ -124,7 +143,13 @@ enum GameResultsService {
             seed: seed, solutions: solutions, player1_guesses: myGuesses, player2_guesses: theirGuesses,
             started_at: iso.string(from: now.addingTimeInterval(-Double(playerTimeSec))),
             completed_at: iso.string(from: now), forfeit: forfeit)
-        try? await client.from("matches").insert(row).execute()
+        do {
+            try await client.from("matches").insert(row).execute()
+        } catch {
+            // Best-effort stays (the match result itself recorded via record()),
+            // but a failed shared-history insert is captured, not swallowed.
+            reportRejectedWrite("recordVsMatch", gameMode: gameMode.rawValue, error)
+        }
     }
 
     /// Gauntlet per-stage breakdown stored on the matches row so the results
@@ -197,7 +222,11 @@ enum GameResultsService {
         seed: String,
         hintsUsed: Int = 0,
         stagesCompleted: Int? = nil,
-        bestCorrectLetters: Int? = nil
+        bestCorrectLetters: Int? = nil,
+        // VS draw: pass won=false + isDraw=true. A draw counts the game (and
+        // its time) but does NOT increment losses or reset the win streak
+        // (web stats-service.ts recordGameResult parity).
+        isDraw: Bool = false
     ) async -> XpResult? {
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return nil }
@@ -218,8 +247,10 @@ enum GameResultsService {
         }
 
         await updateUserStats(client, userId: userId, mode: mode, playType: playType,
-                              won: won, guessCount: guessCount, timeSeconds: timeSeconds)
-        let xp = await updateProfileProgression(client, userId: userId, won: won, seed: seed)
+                              won: won, guessCount: guessCount, timeSeconds: timeSeconds,
+                              isDraw: isDraw)
+        let xp = await updateProfileProgression(client, userId: userId, won: won, seed: seed,
+                                                isDraw: isDraw, mode: mode)
         // Profile progression succeeding is the success proxy (web parity: a
         // failed/offline run keeps the payload; the drain's matches-row dedupe
         // prevents double-increments when everything landed but the clear didn't).
@@ -233,8 +264,9 @@ enum GameResultsService {
             // daily_results row (play_type='vs') — vs_wins/vs_losses/vs_games —
             // so the VS daily leaderboard and VS records see all matches, not
             // just daily-seed ones (web stats-service.ts recordDailyVsResult
-            // parity: the VS branch records unconditionally).
-            await DailyResultsService.recordVs(gameMode: gameMode, won: won)
+            // parity: the VS branch records unconditionally). Draws count the
+            // game (vs_games+1, completed) without a win OR a loss.
+            await DailyResultsService.recordVs(gameMode: gameMode, won: won, isDraw: isDraw)
         } else if isDailySeed(seed) {
             await DailyResultsService.record(
                 gameMode: gameMode, completed: won, guessCount: guessCount,
@@ -285,8 +317,10 @@ enum GameResultsService {
 
     private static func updateUserStats(
         _ client: SupabaseClient, userId: String, mode: String, playType: String,
-        won: Bool, guessCount: Int, timeSeconds: Int
+        won: Bool, guessCount: Int, timeSeconds: Int, isDraw: Bool = false
     ) async {
+        // A drawn VS never counts as a loss (web parity).
+        let lossInc = (won || isDraw) ? 0 : 1
         do {
             let rows: [StatsRow] = try await client.from("user_stats")
                 .select("id, wins, losses, total_games, best_score, average_time, fastest_time")
@@ -298,17 +332,20 @@ enum GameResultsService {
                 let newAvg = s.averageTime > 0 ? Int((Double(s.averageTime * s.totalGames + timeSeconds) / Double(newTotal)).rounded()) : timeSeconds
                 let newBest = (guessCount > 0 && (s.bestScore == 0 || guessCount < s.bestScore)) ? guessCount : s.bestScore
                 let newFastest = (timeSeconds > 0 && (s.fastestTime == 0 || timeSeconds < s.fastestTime)) ? timeSeconds : s.fastestTime
-                let upd = StatsUpdate(wins: s.wins + (won ? 1 : 0), losses: s.losses + (won ? 0 : 1),
+                let upd = StatsUpdate(wins: s.wins + (won ? 1 : 0), losses: s.losses + lossInc,
                                       total_games: newTotal, best_score: newBest,
                                       average_time: newAvg, fastest_time: newFastest)
                 try await client.from("user_stats").update(upd).eq("id", value: s.id).execute()
             } else {
                 let ins = StatsInsert(user_id: userId, game_mode: mode, play_type: playType,
-                                      wins: won ? 1 : 0, losses: won ? 0 : 1, total_games: 1,
+                                      wins: won ? 1 : 0, losses: lossInc, total_games: 1,
                                       best_score: guessCount, average_time: timeSeconds, fastest_time: timeSeconds)
                 try await client.from("user_stats").insert(ins).execute()
             }
-        } catch { /* best-effort */ }
+        } catch {
+            // Best-effort stays, but the failure is captured, not swallowed.
+            reportRejectedWrite("updateUserStats(\(playType))", gameMode: mode, error)
+        }
     }
 
     /// XP earned by a finished game — drives the post-game XP toast.
@@ -323,7 +360,8 @@ enum GameResultsService {
 
     @discardableResult
     private static func updateProfileProgression(
-        _ client: SupabaseClient, userId: String, won: Bool, seed: String
+        _ client: SupabaseClient, userId: String, won: Bool, seed: String,
+        isDraw: Bool = false, mode: String = ""
     ) async -> XpResult? {
         do {
             let rows: [ProfileRow] = try await client.from("profiles")
@@ -331,7 +369,8 @@ enum GameResultsService {
                 .eq("id", value: userId).limit(1).execute().value
             guard let p = rows.first else { return nil }
 
-            let newWinStreak = won ? p.currentStreak + 1 : 0
+            // Win streak resets on a loss; a draw leaves it untouched (web parity).
+            let newWinStreak = won ? p.currentStreak + 1 : (isDraw ? p.currentStreak : 0)
             let newBestWinStreak = max(p.bestStreak, newWinStreak)
 
             let xpGain = won ? 100 : 25
@@ -359,7 +398,7 @@ enum GameResultsService {
 
             let upd = ProfileUpdate(
                 total_wins: p.totalWins + (won ? 1 : 0),
-                total_losses: p.totalLosses + (won ? 0 : 1),
+                total_losses: p.totalLosses + ((won || isDraw) ? 0 : 1),
                 current_streak: newWinStreak, best_streak: newBestWinStreak,
                 xp: newXp, level: newLevel,
                 last_played_at: ISO8601DateFormatter().string(from: Date()),
@@ -370,7 +409,12 @@ enum GameResultsService {
             return XpResult(xpGain: xpGain, streakBonus: streakBonus, dailyBonus: dailyBonus,
                             totalXp: xpGain + streakBonus + dailyBonus,
                             newLevel: newLevel, leveledUp: newLevel > (p.level ?? 1))
-        } catch { return nil }
+        } catch {
+            // Best-effort stays (nil = no XP toast), but capture the failure —
+            // a silently failing progression write loses XP/streaks invisibly.
+            reportRejectedWrite("updateProfileProgression", gameMode: mode, error)
+            return nil
+        }
     }
 
     // MARK: - Local day helpers (match lib/daily-service.ts toLocalDayString)

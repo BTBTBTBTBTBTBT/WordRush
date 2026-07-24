@@ -33,6 +33,11 @@ enum VSEvent {
     static let rematchDeclined = "rematch_declined"
     static let rematchStart = "rematch_start"
     static let opponentLeft = "opponent_left"
+    /// Opponent's socket dropped mid-match — the server holds the match open
+    /// for a reconnect grace window before forfeiting them.
+    static let opponentDisconnected = "opponent_disconnected"
+    /// Opponent resumed within the grace window — clear the disconnect banner.
+    static let opponentReconnected = "opponent_reconnected"
     /// Opponent activity ping (no letters) — drives the "typing…" indicator.
     static let opponentTyping = "opponent_typing"
     static let error = "error"
@@ -132,6 +137,10 @@ struct VSRematchStart: Codable {
 
 struct VSStageEvent: Codable { let stageIndex: Int }
 struct VSServerError: Codable { let message: String }
+
+/// opponent_disconnected payload. `graceSeconds` is how long the server holds
+/// the match open for their reconnect (absent on older servers, which sent `{}`).
+struct VSOpponentDisconnected: Codable { let graceSeconds: Double? }
 
 // MARK: - Helpers
 

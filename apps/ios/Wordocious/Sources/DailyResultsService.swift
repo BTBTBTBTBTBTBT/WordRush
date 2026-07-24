@@ -92,11 +92,14 @@ enum DailyResultsService {
     /// upserts vs_wins/vs_losses/vs_games + a VS composite score so the player
     /// appears on the VS daily leaderboard and the 3-wins-a-day achievement can
     /// fire. Keyed by user+day+mode+play_type='vs'. Requires an auth session.
-    static func recordVs(gameMode: GameMode, won: Bool) async {
+    /// A draw (`isDraw`) counts the game (vs_games+1, completed) without
+    /// touching the win/loss tallies — a drawn VS is not a loss (web parity).
+    static func recordVs(gameMode: GameMode, won: Bool, isDraw: Bool = false) async {
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return }
         let userId = session.user.id.uuidString
         let day = LeaderboardService.todayLocal()
+        let lossInc = (won || isDraw) ? 0 : 1
         do {
             let existing: [VsRow] = try await client.from("daily_results")
                 .select("id, vs_wins, vs_losses, vs_games")
@@ -109,7 +112,7 @@ enum DailyResultsService {
 
             if let row = existing.first {
                 let w = row.vsWins + (won ? 1 : 0)
-                let l = row.vsLosses + (won ? 0 : 1)
+                let l = row.vsLosses + lossInc
                 let g = row.vsGames + 1
                 let update = VsUpdate(vs_wins: w, vs_losses: l, vs_games: g,
                                       composite_score: vsCompositeScore(wins: w, losses: l, games: g),
@@ -117,7 +120,7 @@ enum DailyResultsService {
                 try await client.from("daily_results").update(update).eq("id", value: row.id).execute()
             } else {
                 let w = won ? 1 : 0
-                let l = won ? 0 : 1
+                let l = lossInc
                 let insert = VsInsert(user_id: userId, day: day, game_mode: gameMode.rawValue,
                                       play_type: "vs", completed: true, vs_wins: w, vs_losses: l,
                                       vs_games: 1, composite_score: vsCompositeScore(wins: w, losses: l, games: 1))
@@ -127,7 +130,12 @@ enum DailyResultsService {
             await MainActor.run {
                 NotificationCenter.default.post(name: DailyCompletionsStore.completionRecorded, object: nil)
             }
-        } catch {}
+        } catch {
+            // Best-effort stays, but the failure is captured, not swallowed —
+            // a rejected write here silently drops the player off the VS
+            // daily leaderboard.
+            reportRejectedWrite("DailyResultsService.recordVs", gameMode: gameMode.rawValue, error)
+        }
     }
 
     /// Records a finished solo daily game. No-ops if signed out or the mode
@@ -222,6 +230,9 @@ enum DailyResultsService {
                                                  completed: completed)
             return composite
         } catch {
+            // Best-effort stays (nil = not recorded), but capture the failure —
+            // a rejected daily_results write silently drops the day's score.
+            reportRejectedWrite("DailyResultsService.record", gameMode: gameMode.rawValue, error)
             return nil
         }
     }
