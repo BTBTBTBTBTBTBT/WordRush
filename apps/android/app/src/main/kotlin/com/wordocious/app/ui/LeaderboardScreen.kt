@@ -519,7 +519,7 @@ private fun UserRankCard(rank: Int, total: Int, mode: String) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
             Text("You're ranked ", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text("#$rank", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+            Text("#$rank", fontSize = 18.sp, fontWeight = FontWeight.Black, color = if (mode == SWEEP_ID) SWEEP_ACCENT else Color(0xFFD97706))
             // Transient "+N/−N" movement pill since you last looked (web parity).
             RankDeltaBadge(mode = mode, playType = "solo", pageKey = "daily", currentRank = rank)
             Text(" of $total", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)

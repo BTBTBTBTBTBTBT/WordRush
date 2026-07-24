@@ -226,7 +226,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                 val total = r.totalPlayers
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text("Your rank:", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    Text("#$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+                    Text("#$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (isSweep) SWEEP_ACCENT else Color(0xFFD97706))
                     Text(
                         if (total > 1) "of $total · top ${maxOf(1, Math.round(rank.toDouble() / total * 100).toInt())}%" else "of $total",
                         fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
@@ -405,7 +405,7 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
     val modeRecords = records.filter { it.gameMode == selectedMode }
     // GUARDED valueOf: SWEEP has no `:core` GameMode → keep the neutral primary
     // accent (indigo is reserved for the tile only).
-    val accent = if (isSweep) WTheme.primary else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
+    val accent = if (isSweep) SWEEP_ACCENT else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         // Hall of Fame
@@ -653,18 +653,18 @@ private fun YourRecordsTab() {
                         if (sweepRankToday != null || sweepRankAllTime != null) {
                             Spacer(Modifier.height(6.dp))
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = Color(0xFFD97706), modifier = Modifier.size(13.dp))
+                                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = SWEEP_ACCENT, modifier = Modifier.size(13.dp))
                                 sweepRankToday?.let { r ->
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                                         Text("Today", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+                                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = SWEEP_ACCENT)
                                         Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                                     }
                                 }
                                 sweepRankAllTime?.let { r ->
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                                         Text("All-Time", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+                                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = SWEEP_ACCENT)
                                         Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                                     }
                                 }
