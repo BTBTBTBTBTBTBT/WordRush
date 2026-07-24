@@ -4,6 +4,10 @@ export interface Player {
   id: string;
   socketId: string;
   rating: number;
+  /** Stable per-person presence id from the handshake (`u:<userId>` signed-in,
+   *  `a:<uuid>` anonymous), when the client sent one. Matchmaking uses it so
+   *  two sockets belonging to the same person are never paired together. */
+  presence?: string;
 }
 
 export interface QueueEntry {
@@ -49,6 +53,13 @@ export interface Match {
   seed: string;
   player1: Player;
   player2: Player;
+  /** Supabase user ids (from each handshake presenceId `u:<id>`), resolved at
+   *  createMatch time while BOTH sockets are still connected. endMatch used to
+   *  re-resolve from the live socket, which returns null once a forfeiter's
+   *  socket is gone — so forfeit matches lost the opponent id and clients
+   *  skipped the shared matches insert. */
+  player1UserId: string | null;
+  player2UserId: string | null;
   solutions: string[];
   serverStartAt: number;
   player1State: PlayerMatchState;
@@ -60,6 +71,19 @@ export interface Match {
   ended?: boolean;
   /** 30s no-answer timer on a pending rematch offer (REMATCH_TIMEOUT). */
   rematchTimer?: ReturnType<typeof setTimeout>;
+  /** Hard cap: the match resolves by current standing MATCH_MAX_DURATION_MS
+   *  after its start, no matter what. Armed at create/rematch time. */
+  capTimer?: ReturnType<typeof setTimeout>;
+  /** Slow-finisher clock: armed when the FIRST player finishes — the other
+   *  has FINISH_TIMEOUT_MS to complete or the match resolves by standing. */
+  finishTimer?: ReturnType<typeof setTimeout>;
+  /** Held-over forfeit timers keyed by the REBOUND playerId. A mid-match
+   *  reconnect re-binds the slot but does NOT prove the player is back — the
+   *  always-on presence socket shares the same `u:<userId>` handshake id and
+   *  can claim the slot without having any match handlers. The forfeit stays
+   *  armed until the original grace deadline; only the rebound socket's first
+   *  in-match event (confirmResume) clears it. */
+  resumePending?: Map<string, ReturnType<typeof setTimeout>>;
 }
 
 export interface ClientToServerEvents {
@@ -138,10 +162,13 @@ export interface ServerToClientEvents {
   rematch_offered: () => void;
   rematch_declined: () => void;
   rematch_start: (data: { matchId: string; seed: string; puzzleMetadata?: any }) => void;
+  /** Opponent left for good (explicit abandon, or their reconnect grace expired). */
   opponent_left: () => void;
-  /** Opponent dropped mid-match but is within the reconnect grace window. */
-  opponent_disconnected: (data: Record<string, never>) => void;
-  /** A previously-disconnected opponent re-bound their socket and resumed. */
+  /** Opponent dropped mid-match but is within the reconnect grace window.
+   *  `graceSeconds` = how long the window lasts, for a countdown banner. */
+  opponent_disconnected: (data: { graceSeconds: number }) => void;
+  /** A previously-disconnected opponent re-bound their socket and resumed
+   *  (fires on their first in-match event, not on the mere rebind). */
   opponent_reconnected: (data: Record<string, never>) => void;
   /** Sent to a reconnecting player whose match was held open and re-bound. */
   match_resumed: (data: { matchId: string }) => void;

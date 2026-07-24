@@ -43,6 +43,13 @@ export class MatchmakingQueue {
     if (existing !== -1) {
       return existing;
     }
+    // Drop any stale entry from the same PERSON (reconnect → new socket, so a
+    // new playerId): their ghost's socket is gone, and a third player pairing
+    // against it would land in a dead match.
+    if (player.presence != null) {
+      const ghost = queue.findIndex(e => e.player.presence === player.presence);
+      if (ghost !== -1) queue.splice(ghost, 1);
+    }
     queue.push({
       player,
       mode,
@@ -67,8 +74,20 @@ export class MatchmakingQueue {
     if (queue.length < 2) {
       return null;
     }
-    const [entry1, entry2] = queue.splice(0, 2);
-    return [entry1, entry2];
+    // Never pair two entries belonging to the same person (same handshake
+    // presence id) — two tabs / a reconnected socket used to get matched
+    // against themselves. Take the earliest compatible pair.
+    for (let i = 0; i < queue.length - 1; i++) {
+      for (let j = i + 1; j < queue.length; j++) {
+        const a = queue[i];
+        const b = queue[j];
+        if (a.player.presence != null && a.player.presence === b.player.presence) continue;
+        queue.splice(j, 1); // j > i, so remove j first to keep i stable
+        queue.splice(i, 1);
+        return [a, b];
+      }
+    }
+    return null;
   }
 
   getPosition(playerId: string, mode: GameMode, dailySeed?: string): number {

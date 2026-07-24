@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import { createServer } from 'http';
-import { initDictionary, generateMatchSeed, generateSolutionsFromSeed, isValidWord, evaluateGuess, GameMode, GameStatus } from '@wordle-duel/core';
+import { initDictionary, initDictionaryForLength, generateMatchSeed, generateSolutionsFromSeed, generateSolutionsFromSeedForLength, isValidWord, evaluateGuess, GameMode, GameStatus } from '@wordle-duel/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { MatchmakingQueue } from './matchmaking';
@@ -13,6 +13,17 @@ const solutionWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/so
 // curated list, but core init requires legacy so pre-cutover seeds resolve.
 const legacySolutionWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions-legacy.json'), 'utf-8'));
 initDictionary(allowedWords, solutionWords, legacySolutionWords);
+// 6/7-letter dictionaries for the Six/Seven duels (DUEL_6/DUEL_7 VS) — same
+// files the web client loads in lib/init-dictionary.ts, so both sides resolve
+// a match seed to the same word and validate guesses against the same list.
+const allowed6Words = JSON.parse(readFileSync(join(__dirname, '../../web/data/allowed-6.json'), 'utf-8'));
+const solution6Words = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions-6.json'), 'utf-8'));
+const legacySolution6Words = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions-6-legacy.json'), 'utf-8'));
+const allowed7Words = JSON.parse(readFileSync(join(__dirname, '../../web/data/allowed-7.json'), 'utf-8'));
+const solution7Words = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions-7.json'), 'utf-8'));
+const legacySolution7Words = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions-7-legacy.json'), 'utf-8'));
+initDictionaryForLength(6, allowed6Words, solution6Words, legacySolution6Words);
+initDictionaryForLength(7, allowed7Words, solution7Words, legacySolution7Words);
 
 // ProperNoundle puzzle data
 interface ProperNoundlePuzzle {
@@ -47,7 +58,9 @@ const MODE_BOARD_COUNT: Record<string, number> = {
   [GameMode.GAUNTLET]: 21,
   [GameMode.MULTI_DUEL]: 2,
   [GameMode.TOURNAMENT]: 1,
-  [GameMode.PROPERNOUNDLE]: 1
+  [GameMode.PROPERNOUNDLE]: 1,
+  [GameMode.DUEL_6]: 1,
+  [GameMode.DUEL_7]: 1
 };
 
 // Modes where one guess applies to ALL boards at once (not one active board).
@@ -66,8 +79,30 @@ const MODE_MAX_GUESSES: Record<string, number> = {
   [GameMode.GAUNTLET]: 50,
   [GameMode.MULTI_DUEL]: 6,
   [GameMode.TOURNAMENT]: 6,
-  [GameMode.PROPERNOUNDLE]: 6
+  [GameMode.PROPERNOUNDLE]: 6,
+  [GameMode.DUEL_6]: 7,
+  [GameMode.DUEL_7]: 8
 };
+
+// Word length per mode — 5 everywhere except the Six/Seven duels.
+// ProperNoundle is variable-length and skips length validation entirely.
+// Mirrors MODE_WORD_LEN in apps/web/components/vs/vs-game.tsx and the
+// DUEL_6/DUEL_7 branches of the core reducer.
+const MODE_WORD_LENGTH: Record<string, number> = {
+  [GameMode.DUEL_6]: 6,
+  [GameMode.DUEL_7]: 7
+};
+
+/** Length-aware solution derivation — the Six/Seven duels draw from their own
+ *  curated pools via generateSolutionsFromSeedForLength, exactly as clients do
+ *  (core reducer / vs-game), so both sides resolve the same seed to the same
+ *  word. Everything else keeps the 5-letter generator. */
+function generateSolutionsForMode(mode: GameMode, seed: string, boardCount: number): string[] {
+  const wordLength = MODE_WORD_LENGTH[mode] || 5;
+  return wordLength === 5
+    ? generateSolutionsFromSeed(seed, boardCount)
+    : generateSolutionsFromSeedForLength(seed, boardCount, wordLength);
+}
 
 // Socket.IO accepts a string, a string[], or a function for `cors.origin`.
 // Parse CLIENT_URL as a comma-separated list so a single env var can cover
@@ -189,12 +224,21 @@ const nextMatchId = () => `match-${Date.now()}-${++matchSeq}`;
 // How long a finished match is kept around for a possible rematch before the
 // sweep deletes it (rematch/decline/disconnect all clean up sooner themselves).
 const ENDED_MATCH_TTL_MS = 5 * 60 * 1000;
+// Hard caps so a stalled or hostile client can't pin a match open forever:
+// every match resolves by current standing at most 10 minutes after its
+// start, and once the FIRST player finishes the other has 3 minutes to wrap
+// up. Both fire the normal match_ended flow (see timeoutMatch).
+const MATCH_MAX_DURATION_MS = 10 * 60 * 1000;
+const FINISH_TIMEOUT_MS = 3 * 60 * 1000;
 
 /** Delete a match and every lookup keyed to it. */
 function cleanupMatch(matchId: string): void {
   const m = matches.get(matchId);
   if (m) {
     if (m.rematchTimer) clearTimeout(m.rematchTimer);
+    if (m.capTimer) clearTimeout(m.capTimer);
+    if (m.finishTimer) clearTimeout(m.finishTimer);
+    if (m.resumePending) { for (const t of m.resumePending.values()) clearTimeout(t); m.resumePending.clear(); }
     if (playerToMatch.get(m.player1.id) === matchId) playerToMatch.delete(m.player1.id);
     if (playerToMatch.get(m.player2.id) === matchId) playerToMatch.delete(m.player2.id);
   }
@@ -239,9 +283,12 @@ const REMATCH_TIMEOUT = 30000;
 const RECONNECT_GRACE_MS = 60000;
 // Keyed by the stable presence id (`u:<userId>`) of a player who dropped
 // mid-match. Holds the match + the pending forfeit timer so a reconnect can
-// cancel it and re-attach. Anonymous players (no presence id) skip the grace
-// and forfeit immediately, as before.
-const pendingReconnects = new Map<string, { matchId: string; oldPlayerId: string; timer: ReturnType<typeof setTimeout> }>();
+// re-attach. `deadline` is the absolute grace expiry: a rebind does NOT
+// disarm the forfeit, it re-arms it against this same deadline until the
+// rebound socket proves itself with an in-match event (see confirmResume).
+// Anonymous players (no presence id) skip the grace and forfeit immediately,
+// as before.
+const pendingReconnects = new Map<string, { matchId: string; oldPlayerId: string; timer: ReturnType<typeof setTimeout>; deadline: number }>();
 
 io.on('connection', (socket) => {
   // Stash the presenceId from the handshake so /presence can dedupe
@@ -257,7 +304,10 @@ io.on('connection', (socket) => {
   const player: Player = {
     id: playerId,
     socketId: socket.id,
-    rating: 1000
+    rating: 1000,
+    // Stable per-person id — matchmaking uses it so two sockets belonging to
+    // the same person (two tabs, or a reconnect's ghost entry) never pair.
+    presence: presenceId
   };
 
   // Reconnect-into-match: if this signed-in player dropped mid-match within the
@@ -273,7 +323,6 @@ io.on('connection', (socket) => {
     if (match) {
       const isP1 = match.player1.id === pending.oldPlayerId;
       const slot = isP1 ? match.player1 : match.player2;
-      const oppSocket = isP1 ? match.player2.socketId : match.player1.socketId;
       // Re-point the match's player slot at the new socket, and re-key the
       // playerId→match lookup so this socket's guesses resolve to the match.
       playerToMatch.delete(pending.oldPlayerId);
@@ -281,7 +330,32 @@ io.on('connection', (socket) => {
       slot.socketId = socket.id;
       playerToMatch.set(playerId, pending.matchId);
       logVS('reconnect', presenceId, { mode: match.mode, matchId: pending.matchId });
-      io.to(oppSocket).emit('opponent_reconnected', {});
+      // The rebind alone does NOT prove the player is back: every platform
+      // also runs an always-on presence socket with this same `u:<userId>`
+      // handshake id, and if THAT socket claims the slot it has no match
+      // handlers — the opponent would hang forever. Keep the forfeit armed
+      // against the ORIGINAL grace deadline; the rebound socket's first
+      // in-match event (confirmResume) is what disarms it and tells the
+      // opponent they're back. A presence-socket claim just lets the forfeit
+      // fire at grace expiry, exactly as if no one had reconnected.
+      const remaining = Math.max(0, pending.deadline - Date.now());
+      const resumeTimer = setTimeout(() => {
+        const m = matches.get(pending.matchId);
+        if (!m) return;
+        m.resumePending?.delete(playerId);
+        const stillP1 = m.player1.id === playerId;
+        const pState = stillP1 ? m.player1State : m.player2State;
+        const oState = stillP1 ? m.player2State : m.player1State;
+        if (pState.status === GameStatus.PLAYING || oState.status === GameStatus.PLAYING) {
+          pState.status = GameStatus.ABANDONED;
+          pState.completedAt = pState.completedAt ?? Date.now();
+          logVS('resume_grace_expired', presenceId, { mode: m.mode, matchId: pending.matchId });
+          io.to(stillP1 ? m.player2.socketId : m.player1.socketId).emit('opponent_left');
+          endMatch(pending.matchId, playerId);
+        }
+        cleanupMatch(pending.matchId);
+      }, remaining);
+      (match.resumePending ??= new Map()).set(playerId, resumeTimer);
       socket.emit('match_resumed', { matchId: pending.matchId });
     }
   }
@@ -314,7 +388,10 @@ io.on('connection', (socket) => {
       if (existing && !isSelf) {
         privateLobbies.delete(inviteCode);
         const preferredSeed = existing.entry.dailySeed || dailySeed;
-        createMatch(existing.entry.player, player, mode, preferredSeed);
+        // Mode comes from the lobby CREATOR's parked entry, not the joiner's
+        // payload — a doctored/mismatched invite URL used to make the server
+        // adopt the second arrival's mode and desync the two clients.
+        createMatch(existing.entry.player, player, existing.entry.mode, preferredSeed);
       } else {
         privateLobbies.set(inviteCode, {
           entry: { player, mode, joinedAt: Date.now(), dailySeed, inviteCode },
@@ -350,6 +427,7 @@ io.on('connection', (socket) => {
     if (!matchId) return;
     const match = matches.get(matchId);
     if (!match) return;
+    confirmResume(match, playerId);
     const opponentSocket = match.player1.id === playerId ? match.player2.socketId : match.player1.socketId;
     io.to(opponentSocket).emit('opponent_typing', {});
   });
@@ -377,14 +455,17 @@ io.on('connection', (socket) => {
       return;
     }
 
+    confirmResume(match, playerId);
+
     // Skip length and dictionary checks for ProperNoundle (variable-length proper nouns)
     if (match.mode !== GameMode.PROPERNOUNDLE) {
-      if (guess.length !== 5) {
+      const wordLength = MODE_WORD_LENGTH[match.mode] || 5;
+      if (guess.length !== wordLength) {
         socket.emit('guess_result', {
           boardIndex,
           isValid: false,
           isCorrect: false,
-          reason: 'Guess must be 5 letters'
+          reason: `Guess must be ${wordLength} letters`
         });
         return;
       }
@@ -513,6 +594,9 @@ io.on('connection', (socket) => {
 
     if (playerState.status !== GameStatus.PLAYING && opponentState.status !== GameStatus.PLAYING) {
       endMatch(matchId);
+    } else if (playerState.status !== GameStatus.PLAYING) {
+      // First finisher (server-detected): the opponent is now on the clock.
+      armFinishTimeout(matchId);
     }
   });
 
@@ -522,6 +606,8 @@ io.on('connection', (socket) => {
 
     const match = matches.get(matchId);
     if (!match) return;
+
+    confirmResume(match, playerId);
 
     const isPlayer1 = match.player1.id === playerId;
     const playerState = isPlayer1 ? match.player1State : match.player2State;
@@ -548,6 +634,8 @@ io.on('connection', (socket) => {
 
     const match = matches.get(matchId);
     if (!match) { logVS('player_completed_DROP', presenceId ?? socket.id, { status, reason: 'match not found' }); return; }
+
+    confirmResume(match, playerId);
 
     const isPlayer1 = match.player1.id === playerId;
     const playerState = isPlayer1 ? match.player1State : match.player2State;
@@ -576,15 +664,21 @@ io.on('connection', (socket) => {
 
     playerState.status = claimedWon ? GameStatus.WON : GameStatus.LOST;
     playerState.completedAt = Date.now();
-    playerState.guesses = totalGuesses;
+    // The client's totalGuesses is deliberately IGNORED (logged only) —
+    // playerState.guesses is the server's own count from submit_guess, and the
+    // tie-break scores in endMatch must not be spoofable by a doctored payload.
     logVS('player_completed', presenceId ?? socket.id, {
-      mode: match.mode, status, totalGuesses, opponentStatus: opponentState.status,
+      mode: match.mode, status, totalGuesses, serverGuesses: playerState.guesses,
+      opponentStatus: opponentState.status,
       willEnd: opponentState.status !== GameStatus.PLAYING,
     });
 
     // Both players must be done (playerState was just set to WON/LOST above)
     if (opponentState.status !== GameStatus.PLAYING) {
       endMatch(matchId);
+    } else {
+      // First finisher: the opponent is now on the FINISH_TIMEOUT_MS clock.
+      armFinishTimeout(matchId);
     }
   });
 
@@ -594,6 +688,8 @@ io.on('connection', (socket) => {
 
     const match = matches.get(matchId);
     if (!match) return;
+
+    confirmResume(match, playerId);
 
     const isPlayer1 = match.player1.id === playerId;
     const playerState = isPlayer1 ? match.player1State : match.player2State;
@@ -626,6 +722,10 @@ io.on('connection', (socket) => {
     playerState.completedAt = Date.now();
     logVS('abandon_match', presenceId ?? socket.id, { mode: match.mode });
 
+    // Explicit leave — tell the remaining player before the match_ended flow
+    // so their (previously dead-code) opponent_left handlers light up.
+    io.to(isPlayer1 ? match.player2.socketId : match.player1.socketId).emit('opponent_left');
+
     // Pass forfeitBy so the REMAINING player is credited the win. Without it,
     // endMatch derives the winner purely from board state — and since the
     // abandoner is ABANDONED (not WON) and the opponent is still PLAYING (not
@@ -649,6 +749,7 @@ io.on('connection', (socket) => {
       return;
     }
 
+    confirmResume(match, playerId);
     match.rematchOffers.add(playerId);
 
     const isPlayer1 = match.player1.id === playerId;
@@ -686,21 +787,28 @@ io.on('connection', (socket) => {
         newSolutions = [puzzle.answer];
         newPuzzleMetadata = { display: puzzle.display, category: puzzle.category, answerLength: puzzle.answer.length, themeCategory: puzzle.themeCategory };
       } else {
-        newSolutions = generateSolutionsFromSeed(newSeed, boardCount);
+        newSolutions = generateSolutionsForMode(match.mode, newSeed, boardCount);
       }
 
+      const newServerStartAt = Date.now() + MATCH_COUNTDOWN * 1000;
       const newMatch: Match = {
         id: newMatchId,
         mode: match.mode,
         seed: newSeed,
         player1: match.player1,
         player2: match.player2,
+        // Same two people — carry the identities resolved at the original
+        // createMatch over so a forfeit here still reports opponentId.
+        player1UserId: match.player1UserId,
+        player2UserId: match.player2UserId,
         solutions: newSolutions,
-        serverStartAt: Date.now() + MATCH_COUNTDOWN * 1000,
+        serverStartAt: newServerStartAt,
         player1State: { guesses: 0, status: GameStatus.PLAYING, boardsSolved: 0, totalBoards: boardCount },
         player2State: { guesses: 0, status: GameStatus.PLAYING, boardsSolved: 0, totalBoards: boardCount },
         rematchOffers: new Set()
       };
+      // Rematches get the same hard cap as first matches.
+      newMatch.capTimer = setTimeout(() => timeoutMatch(newMatchId), (newServerStartAt - Date.now()) + MATCH_MAX_DURATION_MS);
 
       matches.set(newMatchId, newMatch);
       playerToMatch.set(match.player1.id, newMatchId);
@@ -727,6 +835,8 @@ io.on('connection', (socket) => {
     const match = matches.get(matchId);
     if (!match) return;
 
+    confirmResume(match, playerId);
+
     const isPlayer1 = match.player1.id === playerId;
     const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
 
@@ -747,6 +857,11 @@ io.on('connection', (socket) => {
     if (matchId) {
       const match = matches.get(matchId);
       if (match) {
+        // If this socket was a rebound-but-unconfirmed reconnect, its held-over
+        // forfeit timer is superseded by whatever this disconnect decides next
+        // (a signed-in player gets a fresh grace entry below).
+        const heldTimer = match.resumePending?.get(playerId);
+        if (heldTimer) { clearTimeout(heldTimer); match.resumePending!.delete(playerId); }
         const isPlayer1 = match.player1.id === playerId;
         const playerState = isPlayer1 ? match.player1State : match.player2State;
         const opponentState = isPlayer1 ? match.player2State : match.player1State;
@@ -762,7 +877,7 @@ io.on('connection', (socket) => {
         // Anonymous players (no presence id) can't be re-identified on reconnect,
         // so they forfeit immediately as before.
         if (stillLive && presenceId && playerState.status !== GameStatus.ABANDONED) {
-          io.to(isPlayer1 ? match.player2.socketId : match.player1.socketId).emit('opponent_disconnected', {});
+          io.to(isPlayer1 ? match.player2.socketId : match.player1.socketId).emit('opponent_disconnected', { graceSeconds: RECONNECT_GRACE_MS / 1000 });
           const timer = setTimeout(() => {
             pendingReconnects.delete(presenceId);
             const m = matches.get(matchId);
@@ -774,11 +889,12 @@ io.on('connection', (socket) => {
               pState.status = GameStatus.ABANDONED;
               pState.completedAt = pState.completedAt ?? Date.now();
               logVS('reconnect_grace_expired', presenceId, { mode: m.mode, matchId });
+              io.to(stillP1 ? m.player2.socketId : m.player1.socketId).emit('opponent_left');
               endMatch(matchId, playerId);
             }
             cleanupMatch(matchId);
           }, RECONNECT_GRACE_MS);
-          pendingReconnects.set(presenceId, { matchId, oldPlayerId: playerId, timer });
+          pendingReconnects.set(presenceId, { matchId, oldPlayerId: playerId, timer, deadline: Date.now() + RECONNECT_GRACE_MS });
           // Leave the match + lookups intact so the reconnect can re-bind. The
           // disconnected socket's playerToMatch entry is harmless (its id is gone).
           return;
@@ -788,6 +904,7 @@ io.on('connection', (socket) => {
         if (stillLive) {
           playerState.status = GameStatus.ABANDONED;
           playerState.completedAt = playerState.completedAt ?? Date.now();
+          io.to(isPlayer1 ? match.player2.socketId : match.player1.socketId).emit('opponent_left');
           endMatch(matchId, playerId);
         } else {
           // Match already over → the leaver was on the RESULT screen. Tell the
@@ -826,8 +943,14 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
       themeCategory: puzzle.themeCategory,
     };
   } else {
-    solutions = generateSolutionsFromSeed(seed, boardCount);
+    solutions = generateSolutionsForMode(mode, seed, boardCount);
   }
+
+  // Opponent identity (Supabase user id from the handshake presenceId) — used
+  // for the match-intro splash below AND stored on the match so endMatch still
+  // has it after a forfeiter's socket is gone.
+  const p1Uid = userIdFromSocket(player1.socketId);
+  const p2Uid = userIdFromSocket(player2.socketId);
 
   const match: Match = {
     id: matchId,
@@ -835,23 +958,22 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
     seed,
     player1,
     player2,
+    player1UserId: p1Uid,
+    player2UserId: p2Uid,
     solutions,
     serverStartAt,
     player1State: { guesses: 0, status: GameStatus.PLAYING, boardsSolved: 0, totalBoards: boardCount },
     player2State: { guesses: 0, status: GameStatus.PLAYING, boardsSolved: 0, totalBoards: boardCount },
     rematchOffers: new Set()
   };
+  // Hard cap: no match outlives MATCH_MAX_DURATION_MS past its start.
+  match.capTimer = setTimeout(() => timeoutMatch(matchId), (serverStartAt - Date.now()) + MATCH_MAX_DURATION_MS);
 
   matches.set(matchId, match);
   playerToMatch.set(player1.id, matchId);
   playerToMatch.set(player2.id, matchId);
   submittedWordsByMatch.set(matchId, { p1: new Set(), p2: new Set() });
   guessLogByMatch.set(matchId, { p1: [], p2: [] });
-
-  // Opponent identity (Supabase user id from the handshake presenceId) so the
-  // client can render the match-intro splash (avatar/level/head-to-head).
-  const p1Uid = userIdFromSocket(player1.socketId);
-  const p2Uid = userIdFromSocket(player2.socketId);
 
   io.to(player1.socketId).emit('match_found', {
     matchId,
@@ -880,7 +1002,45 @@ function createMatch(player1: Player, player2: Player, mode: GameMode, preferred
   }, MATCH_COUNTDOWN * 1000);
 }
 
-function endMatch(matchId: string, forfeitBy?: string): void {
+/** After the first player finishes, the other must complete within
+ *  FINISH_TIMEOUT_MS or the match resolves by current standing. */
+function armFinishTimeout(matchId: string): void {
+  const match = matches.get(matchId);
+  if (!match || match.ended || match.finishTimer) return;
+  match.finishTimer = setTimeout(() => timeoutMatch(matchId), FINISH_TIMEOUT_MS);
+}
+
+/** Resolve a match whose clock ran out (hard 10-minute cap, or the 3-minute
+ *  slow-finisher window): still-PLAYING players become LOST, then the normal
+ *  match_ended flow runs — a player who solved beats one who didn't; neither
+ *  solved → server-verified board progress decides, else draw. */
+function timeoutMatch(matchId: string): void {
+  const match = matches.get(matchId);
+  if (!match || match.ended) return;
+  for (const state of [match.player1State, match.player2State]) {
+    if (state.status === GameStatus.PLAYING) {
+      state.status = GameStatus.LOST;
+      state.completedAt = state.completedAt ?? Date.now();
+    }
+  }
+  logVS('match_timeout', null, { mode: match.mode, matchId });
+  endMatch(matchId, undefined, true);
+}
+
+/** First in-match event from a rebound socket — proof the reconnect was the
+ *  real game client (not the always-on presence socket, which can claim the
+ *  slot but has no match handlers). Only now do we disarm the held-over
+ *  forfeit and tell the opponent the player is back. */
+function confirmResume(match: Match, playerId: string): void {
+  const timer = match.resumePending?.get(playerId);
+  if (!timer) return;
+  clearTimeout(timer);
+  match.resumePending!.delete(playerId);
+  const opponentSocket = match.player1.id === playerId ? match.player2.socketId : match.player1.socketId;
+  io.to(opponentSocket).emit('opponent_reconnected', {});
+}
+
+function endMatch(matchId: string, forfeitBy?: string, timedOut = false): void {
   const match = matches.get(matchId);
   if (!match) return;
   // Idempotence: the final submit_guess and the client's player_completed can
@@ -888,6 +1048,11 @@ function endMatch(matchId: string, forfeitBy?: string): void {
   // (a duplicate re-ran winner logic and re-emitted to both players).
   if (match.ended) return;
   match.ended = true;
+  // The match is decided — its clocks are moot, and a still-armed resume
+  // forfeit must not fire cleanupMatch into the rematch window.
+  if (match.capTimer) { clearTimeout(match.capTimer); match.capTimer = undefined; }
+  if (match.finishTimer) { clearTimeout(match.finishTimer); match.finishTimer = undefined; }
+  if (match.resumePending) { for (const t of match.resumePending.values()) clearTimeout(t); match.resumePending.clear(); }
   // The match object stays alive for a possible rematch, but never forever:
   // if neither rematch nor decline nor a disconnect cleans it up, sweep it.
   setTimeout(() => { if (matches.get(matchId)?.ended) cleanupMatch(matchId); }, ENDED_MATCH_TTL_MS);
@@ -939,17 +1104,35 @@ function endMatch(matchId: string, forfeitBy?: string): void {
     winner = forfeitBy === match.player1.id ? 'opponent' : 'player';
   }
 
+  // Timeout resolution: the clock ran out with neither player solving, so the
+  // WON-based logic above left winner null (clients render that as a loss for
+  // both). Decide by server-verified board progress instead, else draw.
+  if (timedOut && winner === null) {
+    const p1Solved = match.player1State.serverSolvedSet?.size ?? 0;
+    const p2Solved = match.player2State.serverSolvedSet?.size ?? 0;
+    if (p1Solved > p2Solved) {
+      winner = 'player';
+    } else if (p2Solved > p1Solved) {
+      winner = 'opponent';
+    } else {
+      winner = 'draw';
+    }
+  }
+
   // Compute composite scores for display
   const TIME_WEIGHT_DISPLAY = 45;
   const p1ScoreDisplay = match.player1State.guesses + (player1Time / 1000 / TIME_WEIGHT_DISPLAY);
   const p2ScoreDisplay = match.player2State.guesses + (player2Time / 1000 / TIME_WEIGHT_DISPLAY);
 
-  // Resolve each player's Supabase user id from their handshake presenceId
-  // (`u:<userId>`), so the client can write a VS match-history row. player1 is
-  // the designated single writer (only when it has a real user id), which keeps
-  // exactly one row per match without giving the public server DB access.
-  const p1UserId = userIdFromSocket(match.player1.socketId);
-  const p2UserId = userIdFromSocket(match.player2.socketId);
+  // Each player's Supabase user id, resolved and stored at createMatch time —
+  // NOT re-read from the live socket, which returns null once a forfeiter's
+  // socket is gone (forfeit matches then lost the opponent id and clients
+  // skipped the shared matches insert). The client uses it to write a VS
+  // match-history row; player1 is the designated single writer (only when it
+  // has a real user id), which keeps exactly one row per match without giving
+  // the public server DB access.
+  const p1UserId = match.player1UserId;
+  const p2UserId = match.player2UserId;
   const log = guessLogByMatch.get(matchId) ?? { p1: [], p2: [] };
 
   // Single writer = player1 by default. On a forfeit the player who LEFT can't
