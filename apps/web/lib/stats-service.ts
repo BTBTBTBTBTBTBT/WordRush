@@ -229,6 +229,9 @@ export async function recordGameResult(
   // Loss-only progress inputs forwarded to the composite-score calc.
   stagesCompleted?: number,    // GAUNTLET: fully-cleared stage count
   bestCorrectLetters?: number, // single-board: best green-letter count
+  // VS draw: pass won=false + isDraw=true. A draw counts the game (and its
+  // time) but does NOT increment losses or reset the win streak.
+  isDraw: boolean = false,
 ): Promise<XpResult | null> {
   const timeSeconds = Math.round(timeMs / 1000);
 
@@ -266,7 +269,7 @@ export async function recordGameResult(
       .from('user_stats')
       .update({
         wins: existing.wins + (won ? 1 : 0),
-        losses: existing.losses + (won ? 0 : 1),
+        losses: existing.losses + (won || isDraw ? 0 : 1),
         total_games: newTotalGames,
         best_score: guessCount > 0 && (existing.best_score === 0 || guessCount < existing.best_score)
           ? guessCount
@@ -286,7 +289,7 @@ export async function recordGameResult(
         game_mode: gameMode,
         play_type: playType,
         wins: won ? 1 : 0,
-        losses: won ? 0 : 1,
+        losses: won || isDraw ? 0 : 1,
         total_games: 1,
         best_score: guessCount,
         average_time: timeSeconds,
@@ -303,8 +306,8 @@ export async function recordGameResult(
     .single() as { data: any };
 
   if (profile) {
-    // --- Win streak (resets on loss) ---
-    const newWinStreak = won ? profile.current_streak + 1 : 0;
+    // --- Win streak (resets on loss; a draw leaves it untouched) ---
+    const newWinStreak = won ? profile.current_streak + 1 : isDraw ? profile.current_streak : 0;
     const newBestWinStreak = Math.max(profile.best_streak, newWinStreak);
 
     // --- XP ---
@@ -351,7 +354,7 @@ export async function recordGameResult(
       .from('profiles')
       .update({
         total_wins: profile.total_wins + (won ? 1 : 0),
-        total_losses: profile.total_losses + (won ? 0 : 1),
+        total_losses: profile.total_losses + (won || isDraw ? 0 : 1),
         current_streak: newWinStreak,
         best_streak: newBestWinStreak,
         xp: newXp,
@@ -368,8 +371,9 @@ export async function recordGameResult(
   if (playType === 'vs') {
     // EVERY completed VS match counts toward today's Records (not just
     // daily-seed matches) — recordDailyVsResult accumulates wins/losses
-    // idempotently into a single play_type='vs' row per day+mode.
-    await recordDailyVsResult(userId, gameMode, won);
+    // idempotently into a single play_type='vs' row per day+mode. Draws
+    // count the game without a win OR a loss.
+    await recordDailyVsResult(userId, gameMode, won, isDraw);
   } else if (seed && isDailySeed(seed)) {
     const boards = boardsSolved ?? (won ? (totalBoards ?? 1) : 0);
     const total = totalBoards ?? 1;

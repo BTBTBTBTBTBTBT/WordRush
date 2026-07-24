@@ -37,7 +37,8 @@ export interface BotConfig {
 const HANDLER_KEYS = [
   'onQueueStatus', 'onMatchFound', 'onMatchStart', 'onGuessResult', 'onOpponentProgress',
   'onOpponentTyping', 'onMatchEnded', 'onOpponentStageCompleted', 'onRematchOffered',
-  'onRematchDeclined', 'onRematchStart', 'onOpponentLeft', 'onError',
+  'onRematchDeclined', 'onRematchStart', 'onOpponentLeft', 'onOpponentDisconnected',
+  'onOpponentReconnected', 'onError',
 ] as const;
 
 /**
@@ -107,6 +108,8 @@ export class SwappableMatchService implements IMatchService {
   onRematchDeclined(cb: Parameters<IMatchService['onRematchDeclined']>[0]): void { this.handlers.onRematchDeclined = cb; this.delegate.onRematchDeclined(cb); }
   onRematchStart(cb: Parameters<IMatchService['onRematchStart']>[0]): void { this.handlers.onRematchStart = cb; this.delegate.onRematchStart(cb); }
   onOpponentLeft(cb: Parameters<IMatchService['onOpponentLeft']>[0]): void { this.handlers.onOpponentLeft = cb; this.delegate.onOpponentLeft(cb); }
+  onOpponentDisconnected(cb: Parameters<IMatchService['onOpponentDisconnected']>[0]): void { this.handlers.onOpponentDisconnected = cb; this.delegate.onOpponentDisconnected(cb); }
+  onOpponentReconnected(cb: Parameters<IMatchService['onOpponentReconnected']>[0]): void { this.handlers.onOpponentReconnected = cb; this.delegate.onOpponentReconnected(cb); }
   onError(cb: Parameters<IMatchService['onError']>[0]): void { this.handlers.onError = cb; this.delegate.onError(cb); }
 }
 
@@ -142,7 +145,13 @@ export class LocalBotMatchService implements IMatchService {
   private seed = '';
   private plan: BotPlan | null = null;
 
-  private timers: ReturnType<typeof setTimeout>[] = [];
+  // Scheduled events keyed by id, with their ABSOLUTE fire time. Background
+  // tabs throttle/pause setTimeout, which froze the bot while the player's
+  // clock kept running — the fire times let a visibilitychange handler replay
+  // everything that's overdue the moment the tab comes back (see catchUp).
+  private timers = new Map<number, { fireAt: number; fn: () => void; handle: ReturnType<typeof setTimeout> }>();
+  private nextTimerId = 1;
+  private visibilityHandler: (() => void) | null = null;
   private serverStartAt = 0;
   private ended = false;
 
@@ -179,20 +188,51 @@ export class LocalBotMatchService implements IMatchService {
   }
 
   private schedule(fn: () => void, ms: number) {
-    this.timers.push(setTimeout(fn, Math.max(0, ms)));
+    const id = this.nextTimerId++;
+    const delay = Math.max(0, ms);
+    const handle = setTimeout(() => {
+      this.timers.delete(id);
+      fn();
+    }, delay);
+    this.timers.set(id, { fireAt: Date.now() + delay, fn, handle });
   }
   private clearTimers() {
-    this.timers.forEach(clearTimeout);
-    this.timers = [];
+    for (const t of this.timers.values()) clearTimeout(t.handle);
+    this.timers.clear();
+  }
+  /** Fire every overdue scheduled event NOW, oldest first, so the bot catches
+   *  up to wall clock after background-tab throttling paused its timers. */
+  private catchUpOverdueTimers() {
+    const now = Date.now();
+    const due = [...this.timers.entries()]
+      .filter(([, t]) => t.fireAt <= now)
+      .sort((a, b) => a[1].fireAt - b[1].fireAt);
+    for (const [id, t] of due) {
+      // An earlier fn may have ended the match and cleared the rest.
+      if (!this.timers.has(id)) continue;
+      this.timers.delete(id);
+      clearTimeout(t.handle);
+      t.fn();
+    }
   }
 
   // ── lifecycle ─────────────────────────────────────────────────────────────
   connect(): void {
-    /* no socket to open */
+    // No socket to open — but watch for the tab returning to the foreground
+    // so throttled bot events can catch up (each fn re-checks this.ended).
+    if (typeof document === 'undefined' || this.visibilityHandler) return;
+    this.visibilityHandler = () => {
+      if (document.visibilityState === 'visible') this.catchUpOverdueTimers();
+    };
+    document.addEventListener('visibilitychange', this.visibilityHandler);
   }
 
   disconnect(): void {
     this.clearTimers();
+    if (this.visibilityHandler && typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+      this.visibilityHandler = null;
+    }
   }
 
   joinQueue(mode: GameMode, _dailySeed?: string, _inviteCode?: string): void {
@@ -407,6 +447,12 @@ export class LocalBotMatchService implements IMatchService {
   }
   onOpponentLeft(): void {
     /* a bot never leaves */
+  }
+  onOpponentDisconnected(): void {
+    /* a bot never drops connection */
+  }
+  onOpponentReconnected(): void {
+    /* n/a */
   }
   onError(): void {
     /* n/a */

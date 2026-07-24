@@ -21,6 +21,8 @@ export interface MatchEndedData {
   opponentGuessLog?: OpponentGuessLogEntry[];
   /** Match solutions so the result screen can render both final boards. */
   solutions?: string[];
+  /** True when the match ended because a player left/idled out (forfeit win). */
+  forfeit?: boolean;
 }
 
 export interface IMatchService {
@@ -53,6 +55,11 @@ export interface IMatchService {
   onRematchDeclined(callback: () => void): void;
   onRematchStart(callback: (data: { matchId: string; seed: string; puzzleMetadata?: { display: string; category: string; answerLength: number; themeCategory?: string } }) => void): void;
   onOpponentLeft(callback: () => void): void;
+  /** Opponent's socket dropped — the server holds the match open for a
+   *  reconnect grace window before awarding the forfeit win. */
+  onOpponentDisconnected(callback: (data: { graceSeconds: number }) => void): void;
+  /** Opponent resumed within the grace window — clear the disconnect UI. */
+  onOpponentReconnected(callback: () => void): void;
   onError(callback: (data: { message: string }) => void): void;
 }
 
@@ -164,6 +171,14 @@ export class SocketIOMatchService implements IMatchService {
 
   onOpponentLeft(callback: () => void): void {
     this.socket?.on('opponent_left', callback);
+  }
+
+  onOpponentDisconnected(callback: (data: { graceSeconds: number }) => void): void {
+    this.socket?.on('opponent_disconnected', callback);
+  }
+
+  onOpponentReconnected(callback: () => void): void {
+    this.socket?.on('opponent_reconnected', callback);
   }
 
   onError(callback: (data: { message: string }) => void): void {

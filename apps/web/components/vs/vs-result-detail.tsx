@@ -54,15 +54,20 @@ function evaluateLog(
 }
 
 /**
- * Did this guess log actually solve anything? True when any guess matches its
- * board's solution. Solving beats score, which is the #1 source of confusion
- * when the loser has prettier numbers — so the result screen spells it out.
+ * Did this guess log actually SOLVE the match — i.e. every board's solution
+ * was guessed? This matches how a win is defined per mode (multi-board modes
+ * require all boards; single-board modes reduce to the one solution). A
+ * Quadword player who solved 1/4 boards did NOT solve. Solving beats score,
+ * which is the #1 source of confusion when the loser has prettier numbers —
+ * so the result screen spells it out.
  */
 export function logSolved(guessLog: OpponentGuessLogEntry[], solutions: string[]): boolean {
-  return guessLog.some(({ boardIndex, guess }) => {
-    const solution = solutions[boardIndex];
-    return !!solution && guess.toUpperCase() === solution.toUpperCase();
-  });
+  if (solutions.length === 0) return false;
+  return solutions.every((solution, boardIndex) =>
+    !!solution && guessLog.some(
+      (e) => e.boardIndex === boardIndex && e.guess.toUpperCase() === solution.toUpperCase(),
+    ),
+  );
 }
 
 function SolveBadge({ solved, size = 10 }: { solved: boolean; size?: number }) {

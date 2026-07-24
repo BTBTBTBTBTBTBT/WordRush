@@ -232,6 +232,9 @@ export async function recordDailyVsResult(
   userId: string,
   gameMode: string,
   won: boolean,
+  // Draws count the game (and mark the day completed) without touching the
+  // win/loss tallies — a drawn VS is not a loss.
+  isDraw: boolean = false,
 ) {
   const day = getTodayLocal();
 
@@ -247,7 +250,7 @@ export async function recordDailyVsResult(
 
     if (existing) {
       const newWins = existing.vs_wins + (won ? 1 : 0);
-      const newLosses = existing.vs_losses + (won ? 0 : 1);
+      const newLosses = existing.vs_losses + (won || isDraw ? 0 : 1);
       const newGames = existing.vs_games + 1;
       const compositeScore = calculateVsCompositeScore(newWins, newLosses, newGames);
 
@@ -264,7 +267,7 @@ export async function recordDailyVsResult(
       reportRejectedWrite(`recordDailyVsResult update ${gameMode}`, error);
     } else {
       const wins = won ? 1 : 0;
-      const losses = won ? 0 : 1;
+      const losses = won || isDraw ? 0 : 1;
       const compositeScore = calculateVsCompositeScore(wins, losses, 1);
 
       const { error } = await (supabase as any)

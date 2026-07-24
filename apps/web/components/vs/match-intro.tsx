@@ -19,7 +19,9 @@ interface MatchIntroProps {
   onDone: () => void;
 }
 
-const INTRO_DURATION_MS = 2500;
+// Exported so vs-game can anchor its shared input-lock timeline to the FULL
+// un-skipped intro length — tapping to skip only skips the visuals.
+export const INTRO_DURATION_MS = 2500;
 
 export function headToHeadLine(opponentName: string, h2h: HeadToHeadRecord): string {
   if (h2h.myWins === 0 && h2h.theirWins === 0 && h2h.draws === 0) return 'First meeting!';

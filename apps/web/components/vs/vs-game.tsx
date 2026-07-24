@@ -28,7 +28,7 @@ import { playOpponentThunk } from '@/lib/sounds';
 import { Crown, Loader2, Home, RotateCcw, Share2, Trophy, X, Swords, Bot, Lock, Users, ChevronLeft } from 'lucide-react';
 import { GameHomeButton } from '@/components/game/game-home-button';
 import { Confetti } from '@/components/effects/confetti';
-import { MatchIntro, headToHeadLine , VsOverlayWordmark } from './match-intro';
+import { MatchIntro, headToHeadLine , VsOverlayWordmark, INTRO_DURATION_MS } from './match-intro';
 import { VsMatchHeader } from './vs-match-header';
 import { FinalBoards, ScoreCard, logSolved, type EvaluatedRow } from './vs-result-detail';
 import { generateVsShareImage, logToGrids } from '@/lib/vs-share-image';
@@ -253,8 +253,16 @@ function bestRowGreens(tiles: Record<number, string[][]>): number {
 export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   ensureDictionaryInitialized();
 
-  const { profile, isProActive } = useAuth();
+  const { profile, isProActive, isGuest, exitGuest } = useAuth();
   const isPro = isProActive;
+  // Live ref so the once-wired socket handlers (rematch offer) read the
+  // CURRENT Pro status, not the value captured at mount.
+  const isProRef = useRef(isPro);
+  isProRef.current = isPro;
+  // VS is account-based (live opponents, recorded results). The /vs lobby
+  // gates guests, but deep links (/classic/vs, invite links) mount this
+  // component directly — mirror the lobby's sign-in gate here.
+  const authGated = isGuest && !profile;
 
   // Daily VS uses the shared daily seed for EVERYONE (incl. Pro) so all players
   // play the same puzzle and pair together. The once-per-day limit + already-
@@ -391,6 +399,59 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // ── VS experience upgrade state ──
   const [showIntro, setShowIntro] = useState(false);
 
+  // Opponent-disconnect grace: seconds left on the server's reconnect window
+  // (null = connected). Set by opponent_disconnected, cleared by
+  // opponent_reconnected / opponent_left / match end.
+  const [disconnectGrace, setDisconnectGrace] = useState<number | null>(null);
+  const graceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const clearDisconnectGrace = useCallback(() => {
+    if (graceTimerRef.current) {
+      clearInterval(graceTimerRef.current);
+      graceTimerRef.current = null;
+    }
+    setDisconnectGrace(null);
+  }, []);
+
+  // Shared input-lock timeline: keyboard input is swallowed for the FULL
+  // intro + countdown + GO beat measured from match_found, regardless of
+  // whether this player tapped to skip the intro — so a hardware keyboard
+  // (window keydown is live from match_start while the overlay only covers
+  // the on-screen keys) and an intro-skipper can't get a head start.
+  const [sharedInputLock, setSharedInputLock] = useState(false);
+  const sharedLockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const beginInputLock = useCallback((ms: number) => {
+    setSharedInputLock(true);
+    if (sharedLockTimerRef.current) clearTimeout(sharedLockTimerRef.current);
+    sharedLockTimerRef.current = setTimeout(() => {
+      sharedLockTimerRef.current = null;
+      setSharedInputLock(false);
+    }, ms);
+  }, []);
+  const endInputLock = useCallback(() => {
+    if (sharedLockTimerRef.current) {
+      clearTimeout(sharedLockTimerRef.current);
+      sharedLockTimerRef.current = null;
+    }
+    setSharedInputLock(false);
+  }, []);
+
+  // While locked, swallow game keys at the CAPTURE phase so the mode
+  // components' window keydown listeners (live from match_start, still under
+  // the intro/countdown overlays) never see them. Modifier combos pass
+  // through — only bare game keys are blocked.
+  useEffect(() => {
+    if (!sharedInputLock) return;
+    const block = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    };
+    window.addEventListener('keydown', block, true);
+    return () => window.removeEventListener('keydown', block, true);
+  }, [sharedInputLock]);
+
   // Run the on-board countdown overlay. Called after the match-intro splash
   // finishes (see MatchIntro onDone) so the two no longer overlap.
   const startCountdown = useCallback((secs: number) => {
@@ -491,6 +552,10 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   const label = MODE_LABELS[mode] || 'VS';
 
   useEffect(() => {
+    // Anonymous guests never open the socket or queue — the sign-in gate
+    // below renders instead (deep links /classic/vs and invite links mount
+    // this component without passing through the /vs lobby's gate).
+    if (authGated) return;
     matchService.connect(presenceId);
 
     matchService.onQueueStatus((data) => {
@@ -501,6 +566,13 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     matchService.onMatchFound((data) => {
       // Park the countdown length; it starts when the intro splash finishes.
       pendingCountdownRef.current = Math.max(1, data.countdownSeconds);
+
+      // Shared input-lock, anchored HERE to the full un-skipped timeline:
+      // intro + countdown + the ~600ms GO beat. Tap-skipping the intro or
+      // typing on a hardware keyboard (window keydown is live from
+      // match_start while the overlays only cover the on-screen keys) can't
+      // buy a head start.
+      beginInputLock(INTRO_DURATION_MS + pendingCountdownRef.current * 1000 + 600);
 
       // Match-intro splash: resolve the opponent's public profile and the
       // all-time head-to-head record while the 2.5s intro plays.
@@ -552,6 +624,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       setOpponentTiles({});
       resultRecordedRef.current = false;
       resetPerMatchState();
+      clearDisconnectGrace();
+      // Consume the free daily VS the moment the match STARTS, not only at
+      // the end — quitting or killing the tab mid-match no longer refunds
+      // the daily. The match-end write below stays as an idempotent
+      // belt-and-braces (recordModePlayed just re-sets the same flag/row).
+      if (dailyVsActive && !isCpuRef.current) recordModePlayed('vs');
     });
 
     matchService.onOpponentProgress((data: any) => {
@@ -606,12 +684,15 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     matchService.onMatchEnded((data) => {
       setMatchResult(data);
       setScreen('result');
+      clearDisconnectGrace();
+      endInputLock();
 
       // Record stats
       const me = profileRef.current;
       if (me && !resultRecordedRef.current) {
         resultRecordedRef.current = true;
         const won = data.winner === 'player';
+        const isDraw = data.winner === 'draw';
         if (isCpuRef.current) {
           // Pure practice: record ONLY the separate vs_cpu bucket — no XP, no
           // matches row, no head-to-head, no achievements, no daily lock.
@@ -633,7 +714,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           }
           return;
         }
-        recordGameResult(me.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seedRef.current)
+        // isDraw: a drawn VS counts the game without a loss (or a broken
+        // win streak) — see recordGameResult / recordDailyVsResult.
+        recordGameResult(me.id, mode, 'vs', won, data.playerGuesses, data.playerTime, seedRef.current, undefined, undefined, 0, undefined, undefined, isDraw)
           .then(xp => { if (xp) setXpResult(xp); });
         // Persist a match-history row so this VS battle shows in Recent Matches.
         // Exactly one client writes it (server flags player1 via recordMatch),
@@ -678,6 +761,13 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     });
 
     matchService.onRematchOffered(() => {
+      // Free tier can't accept a rematch (Pro feature): decline immediately
+      // instead of letting the Pro opponent stare at "Waiting…" for the full
+      // 30s offer window while this side sees an upsell it can't act on.
+      if (!isProRef.current && !isCpuRef.current) {
+        matchService.declineRematch();
+        return;
+      }
       setRematchState('received');
     });
 
@@ -695,6 +785,8 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       setPlayerStats(null);
       setCountdownIsRematch(true);
       startCountdown(3);
+      // Same shared input-lock over the rematch countdown + GO beat.
+      beginInputLock(3000 + 600);
       const start = Date.now() + 3000;
       setTimeout(() => {
         setSeed(data.seed);
@@ -713,10 +805,31 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
       // Only treat as a forfeit while actually mid-match or spectating; ignore
       // stray disconnects on the queue/result screens (don't boot home).
       if (screenRef.current !== 'match' && screenRef.current !== 'waiting') return;
+      clearDisconnectGrace();
       setMessage('Opponent left the match');
+      // The server follows a genuine leave with match_ended { forfeit: true }
+      // awarding the win — hold for that result screen; only bail home if no
+      // result ever lands (older server / dropped packet).
       setTimeout(() => {
+        if (screenRef.current === 'result') return;
         window.location.href = '/';
-      }, 2000);
+      }, 4000);
+    });
+
+    // Opponent's socket dropped: run the server's reconnect-grace window as a
+    // countdown banner. A resume clears it (opponent_reconnected); otherwise
+    // the server ends the match itself via match_ended { forfeit: true }.
+    matchService.onOpponentDisconnected((data) => {
+      if (screenRef.current !== 'match' && screenRef.current !== 'waiting') return;
+      if (graceTimerRef.current) clearInterval(graceTimerRef.current);
+      setDisconnectGrace(Math.max(0, Math.round(data.graceSeconds)));
+      graceTimerRef.current = setInterval(() => {
+        setDisconnectGrace((prev) => (prev === null || prev <= 0 ? prev : prev - 1));
+      }, 1000);
+    });
+
+    matchService.onOpponentReconnected(() => {
+      clearDisconnectGrace();
     });
 
     matchService.onError((data) => {
@@ -738,18 +851,22 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
     return () => {
       matchService.disconnect();
+      if (graceTimerRef.current) { clearInterval(graceTimerRef.current); graceTimerRef.current = null; }
+      if (sharedLockTimerRef.current) { clearTimeout(sharedLockTimerRef.current); sharedLockTimerRef.current = null; }
     };
     // Connect ONCE per mount. Volatile values (profile, seed, daily flags) are
     // read via refs/stable closures inside the handlers, so the socket is never
-    // torn down mid-match. Only matchService/presenceId (stable) gate the effect.
+    // torn down mid-match. Only matchService/presenceId (stable) and authGated
+    // gate the effect — authGated flips at most once (guest → signed in, which
+    // navigates through sign-in), never mid-match.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchService, presenceId]);
+  }, [matchService, presenceId, authGated]);
 
   // Daily VS: join the shared-seed queue only once the played-today gate says
   // 'play' (native parity — iOS awaits hasPlayedDailyVS before queueing, so a
   // daily finished on another device can't be replayed here).
   useEffect(() => {
-    if (!dailyVsActive || dailyGate !== 'play' || alreadyPlayedDaily) return;
+    if (authGated || !dailyVsActive || dailyGate !== 'play' || alreadyPlayedDaily) return;
     // Re-derive at join time: a tab left open across midnight must queue with
     // TODAY'S seed, not the seed memoized at mount.
     const queueSeed = generateDailySeed(getTodayUTC(), 'DUEL_VS');
@@ -908,11 +1025,15 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // Forfeiting an IN-PROGRESS human match counts as a loss and (for daily
     // VS) consumes today's play — native parity: iOS/Android record their own
     // side before leaving. The web used to record NOTHING here, so the
-    // forfeiter kept a clean record and could replay the daily VS. CPU
+    // forfeiter kept a clean record and could replay the daily VS. Leaving
+    // from the 'waiting' spectator screen records NOTHING: that player
+    // already finished (maybe even solved), so stamping a 0-guess loss over
+    // their real game was wrong — and if the server's match_ended lands
+    // before navigation it stays the single writer (no double record). CPU
     // practice records nothing (bot abandon is a pure teardown). Awaited so
     // the hard navigation below can't kill the in-flight writes.
     const me = profileRef.current;
-    if ((screen === 'match' || screen === 'waiting') && !resultRecordedRef.current && !isCpuRef.current && me) {
+    if (screen === 'match' && !resultRecordedRef.current && !isCpuRef.current && me) {
       resultRecordedRef.current = true;
       if (dailyVsActive) recordModePlayed('vs');
       const timeMs = startTime > 0 ? Math.max(0, Date.now() - startTime) : 0;
@@ -924,6 +1045,44 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     matchService.disconnect();
     window.location.href = '/';
   }, [matchService, screen, dailyVsActive, mode, startTime]);
+
+  // Sign-in gate — mirrors the /vs lobby's guest gate. VS is account-based
+  // (live opponents, recorded results); deep links (/classic/vs, invite
+  // links) mount this component without passing through the lobby, so the
+  // same gate must live here too. Rendered before anything can queue (the
+  // socket effect above also early-returns while authGated).
+  if (authGated) {
+    return (
+      <div className="h-screen-stable flex flex-col items-center justify-center relative px-6" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="w-full max-w-sm space-y-6">
+          <h1 className={`text-center text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
+            VS {label}
+          </h1>
+          <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}>
+            <div className="text-center space-y-3 py-2">
+              <div className="text-base font-black" style={{ color: 'var(--color-text)' }}>Sign in to play VS</div>
+              <p className="text-[13px] font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+                VS Battle pits you against a live opponent and records your results — it needs an account.
+              </p>
+              <button
+                onClick={exitGuest}
+                className="w-full rounded-xl py-3 text-[15px] font-black text-white"
+                style={{ background: '#7c3aed' }}
+              >
+                Sign in
+              </button>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/')}
+            className="mx-auto flex items-center gap-2 text-gray-400 hover:text-gray-500 font-bold text-sm"
+          >
+            <X className="w-4 h-4" /> Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // "Already played today" screen — shown when a freemium user
   // revisits /practice/vs?daily=true after using their free daily VS
@@ -972,6 +1131,19 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           {countdown === 0 ? 'GO!' : countdown}
         </div>
       </div>
+    </div>
+  ) : null;
+
+  // Opponent-disconnect grace banner — rendered over the match and waiting
+  // screens while the server holds the match open for a reconnect. When the
+  // count hits 0 the server ends the match itself (match_ended, forfeit).
+  const disconnectBannerEl = disconnectGrace !== null ? (
+    <div className="absolute top-14 left-0 right-0 text-center z-40 pointer-events-none">
+      <span className="inline-block bg-amber-500 text-white text-xs font-extrabold px-4 py-2 rounded-full shadow-lg animate-fade-in-up">
+        {disconnectGrace > 0
+          ? `Opponent lost connection — you win in ${disconnectGrace}s…`
+          : 'Opponent lost connection — claiming your win…'}
+      </span>
     </div>
   ) : null;
 
@@ -1246,7 +1418,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // the loser often has "better" numbers, which reads as a mistake otherwise.
     const mySolved = myStatus === 'won';
     const oppSolved = logSolved(matchResult?.opponentGuessLog ?? [], matchResult?.solutions ?? []);
-    const whyLine = isDraw
+    // Forfeit (opponent left / disconnected past grace / idled out) is its own
+    // story — "Both solved — you won on score" was flatly wrong there.
+    const isForfeit = matchResult?.forfeit === true;
+    const whyLine = isForfeit
+      ? (isWin ? `${oppName} left the match — you win by forfeit` : 'Match forfeited')
+      : isDraw
       ? 'Dead even — identical scores'
       : isWin
         ? (mySolved && !oppSolved ? `You solved it — ${oppName} didn’t` : 'Both solved — you won on score')
@@ -1401,7 +1578,10 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 onClick={handleRematch}
                 className={`w-full bg-gradient-to-r ${titleGradient} text-white font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg btn-3d`}
               >
-                <RotateCcw className="w-4 h-4" /> {isCpu ? 'Run it back' : 'Rematch'}
+                {/* Honest label: for free users the tap opens the Pro upsell,
+                    not a rematch — say so instead of a bait "Rematch". */}
+                {isCpu || isPro ? <RotateCcw className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                {isCpu ? 'Run it back' : isPro ? 'Rematch' : 'Rematch — Pro'}
               </button>
             ) : null}
             <div className="flex gap-3">
@@ -1502,6 +1682,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
 
     return (
       <div className="h-screen-stable flex flex-col items-center justify-center relative overflow-y-auto" style={{ backgroundColor: 'var(--color-bg)' }}>
+        {disconnectBannerEl}
         <div className="text-center space-y-5 max-w-md w-full px-6 py-6">
           <h2 className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient}`}>
             {oppName} is still playing...
@@ -1674,6 +1855,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
           (held ~600ms over the board, native parity) never showed and the
           countdown appeared to end at 1. */}
       {countdownOverlayEl}
+      {disconnectBannerEl}
+      {/* Input shield: a player who tap-skipped the intro sees the countdown
+          overlay clear BEFORE the shared input-lock ends — keep the on-screen
+          keys (and everything else) untouchable until the shared timeline
+          completes, matching the un-skipped player exactly. */}
+      {sharedInputLock && <div className="fixed inset-0 z-40" aria-hidden="true" />}
       {xpResult && <XpToast xp={xpResult.xpGain} streakBonus={xpResult.streakBonus} dailyBonus={xpResult.dailyBonus} sweepBonus={xpResult.sweepBonus} flawlessBonus={xpResult.flawlessBonus} leveledUp={xpResult.leveledUp} newLevel={xpResult.newLevel} />}
       {/* Match Header. The Home button forfeits the match first so the
           server can end it cleanly and credit the opponent — just navigating

@@ -12,7 +12,9 @@
  *
  * Free tier limits:
  * - 1 free play per game mode per day (daily puzzle is always free and doesn't count)
- * - 2 VS matches per day across all modes combined
+ * - 1 free daily VS match, tracked as a regular mode via
+ *   `recordModePlayed('vs')` / `hasPlayedModeToday('vs')` (the old
+ *   2-matches-per-day VS counter is retired)
  *
  * Resets at the user's LOCAL midnight (Wordle-style), matching daily
  * puzzle rollover.
@@ -156,8 +158,11 @@ export function hasPlayedModeToday(modeId: string): boolean {
   return plays[modeId] === true;
 }
 
-/** Get VS match count for today (sync; reads cache). */
-export function getVsMatchesToday(): number {
+/** Legacy VS-counter cache read — kept only so syncPlayLimits can hydrate the
+ *  old `kind: 'vs'` rows without losing a higher local count. The retired
+ *  2-per-day rule's exports (hasReachedVsLimit / recordVsMatch) are gone; the
+ *  real rule is 1 daily VS via recordModePlayed('vs'). */
+function getVsMatchesToday(): number {
   if (typeof window === 'undefined') return 0;
   try {
     const stored = localStorage.getItem(getVsStorageKey());
@@ -165,44 +170,6 @@ export function getVsMatchesToday(): number {
   } catch {
     return 0;
   }
-}
-
-/** Record a VS match played (DB + localStorage). */
-export function recordVsMatch(): void {
-  if (typeof window === 'undefined') return;
-  const count = getVsMatchesToday() + 1;
-  try {
-    localStorage.setItem(getVsStorageKey(), String(count));
-  } catch {}
-
-  (async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      // Upsert the daily VS counter. The DB row always takes the max of
-      // existing vs incoming so parallel tabs can't undercount.
-      const today = getTodayLocal();
-      const { data: existing } = await (supabase as any)
-        .from('play_limits')
-        .select('count')
-        .eq('user_id', user.id)
-        .eq('day', today)
-        .eq('kind', 'vs')
-        .maybeSingle();
-      const next = Math.max(count, (existing?.count ?? 0) + 1);
-      await (supabase as any)
-        .from('play_limits')
-        .upsert(
-          { user_id: user.id, day: today, kind: 'vs', count: next },
-          { onConflict: 'user_id,day' },
-        );
-    } catch {}
-  })();
-}
-
-/** Check if free VS limit reached (2 per day) */
-export function hasReachedVsLimit(): boolean {
-  return getVsMatchesToday() >= 2;
 }
 
 /** Get seconds until the user's local midnight. (Renamed from the misleading
