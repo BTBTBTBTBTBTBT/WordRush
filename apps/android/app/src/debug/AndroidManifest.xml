@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Debug-only overlay: disable Sentry auto-init. The DSN is release-only
+         (see src/release/AndroidManifest.xml), so in debug the auto-init
+         provider would call Sentry.init() with no DSN and throw
+         "DSN is required", crashing the app on launch. Turning auto-init off
+         here makes debug builds genuinely inert. Release keeps auto-init=true
+         (from src/main) + its DSN, so crash reporting stays active there. -->
+    <application>
+        <meta-data
+            android:name="io.sentry.auto-init"
+            android:value="false"
+            tools:replace="android:value" />
+    </application>
+</manifest>
