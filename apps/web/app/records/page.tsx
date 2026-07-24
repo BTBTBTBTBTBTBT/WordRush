@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { formatScore } from '@/lib/composite-scoring';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
-import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
+import { ModePicker, PROFILE_MODES, SWEEP_MODE } from '@/components/profile/mode-picker';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
@@ -17,15 +17,21 @@ import { SectionHeader } from '@/components/profile/stat-kit';
 import {
   fetchAllTimeRecords,
   fetchDailyLeaderboard,
+  fetchDailySweepLeaderboard,
+  fetchAllTimeSweepLeaderboard,
   getDailyPlayerCount,
   getUserDailyRank,
+  getUserSweepRank,
+  getUserAllTimeSweepRank,
   getTodayLocal,
   getYesterdayLocal,
   type AllTimeRecord,
   type LeaderboardEntry,
+  type SweepEntry,
+  type AllTimeSweepEntry,
 } from '@/lib/daily-service';
 
-const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey)!;
+const getMode = (dbKey: string) => (dbKey === 'SWEEP' ? SWEEP_MODE : PROFILE_MODES.find((m) => m.dbKey === dbKey)!);
 
 // Session-lived stale-while-revalidate cache for the Daily records view —
 // same pattern as lbCache on /daily, with playType in the key (this view has
@@ -170,6 +176,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   const [selectedMode, setSelectedMode] = useState('DUEL');
   const [playType, setPlayType] = useState<'solo' | 'vs'>('solo');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
   const [playerCount, setPlayerCount] = useState(0);
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -181,6 +188,24 @@ function DailyRecordsView({ userId }: { userId?: string }) {
 
   const loadData = useCallback(async () => {
     const seq = ++loadSeq.current;
+
+    // Synthetic Sweep board — cross-mode daily sweep ranking (no Solo/VS split).
+    if (selectedMode === 'SWEEP') {
+      setLoading(true);
+      setUserRank(null);
+      const lb = await fetchDailySweepLeaderboard(today, 50);
+      if (seq !== loadSeq.current) return;
+      setSweepLeaderboard(lb);
+      setLoading(false);
+      let rank: { rank: number; totalPlayers: number } | null = null;
+      if (userId) {
+        rank = await getUserSweepRank(userId, today);
+        if (seq === loadSeq.current) setUserRank(rank);
+      }
+      if (seq === loadSeq.current) setPlayerCount(rank?.totalPlayers ?? lb.length);
+      return;
+    }
+
     const cacheKey = `${selectedMode}:${playType}:${today}:${userId ?? 'anon'}`;
     const cached = recordsLbCache.get(cacheKey);
     if (cached) {
@@ -220,6 +245,48 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
   const Icon = mode.icon;
+  const isSweep = selectedMode === 'SWEEP';
+
+  // One Sweep row — records style (py-2.5); total score · total time ·
+  // modes-won, with a GOLD "FLAWLESS" / VIOLET "SWEEP" pill.
+  const renderSweepRow = (entry: SweepEntry, rank: number) => {
+    const isCurrentUser = !!userId && entry.user_id === userId;
+    const pillColor = entry.is_flawless ? '#d97706' : '#a78bfa';
+    return (
+      <div
+        key={entry.user_id}
+        className="flex items-center gap-3 px-4 py-2.5"
+        style={{
+          background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
+          borderBottom: '1px solid var(--color-border)',
+        }}
+      >
+        <RankIcon rank={rank} />
+        <div className="flex-1 min-w-0">
+          <Link
+            href={`/profile/${entry.user_id}`}
+            className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {entry.username}
+            {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
+          </Link>
+        </div>
+        <div className="text-right">
+          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.total_score)}</div>
+          <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <span>{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
+            <span
+              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+              style={{ background: `${pillColor}22`, color: pillColor }}
+            >
+              {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="animate-fade-in-up">
@@ -271,7 +338,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
               </div>
             </div>
 
-            {/* Solo/VS toggle */}
+            {/* Solo/VS toggle (per-mode only — Sweep is solo-only, cross-mode) */}
+            {!isSweep && (
             <div
               className="flex rounded-lg overflow-hidden"
               style={{ border: '1.5px solid var(--color-border)' }}
@@ -291,19 +359,24 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                 </button>
               ))}
             </div>
+            )}
           </div>
 
           {/* Player count + user rank */}
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
               <Users className="w-3.5 h-3.5" />
-              <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
+              <span>
+                {isSweep
+                  ? `${playerCount} swept today`
+                  : `${playerCount} player${playerCount !== 1 ? 's' : ''} today`}
+              </span>
             </div>
             {userRank && (
               <div className="flex items-center gap-1">
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>Your rank:</span>
                 <span className="font-black text-xs" style={{ color: '#d97706' }}>#{userRank.rank}</span>
-                <RankDeltaBadge mode={selectedMode} playType={playType} pageKey="records-daily" currentRank={userRank.rank} />
+                {!isSweep && <RankDeltaBadge mode={selectedMode} playType={playType} pageKey="records-daily" currentRank={userRank.rank} />}
                 <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                   of {userRank.totalPlayers}
                   {userRank.totalPlayers > 1 && ` · top ${Math.max(1, Math.round((userRank.rank / userRank.totalPlayers) * 100))}%`}
@@ -316,6 +389,16 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         {/* Leaderboard rows */}
         {loading ? (
           <LeaderboardSkeleton />
+        ) : isSweep ? (
+          sweepLeaderboard.length === 0 ? (
+            <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+              <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p className="text-xs font-bold">Nobody&apos;s swept today. Be the first!</p>
+            </div>
+          ) : (
+            // Service already filters blocked; the RPC rank is authoritative.
+            <div>{sweepLeaderboard.map((entry) => renderSweepRow(entry, entry.rank))}</div>
+          )
         ) : leaderboard.length === 0 ? (
           <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
             <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -442,6 +525,8 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
   const [records, setRecords] = useState<AllTimeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMode, setSelectedMode] = useState('DUEL');
+  const [sweepBoard, setSweepBoard] = useState<AllTimeSweepEntry[]>([]);
+  const [sweepLoading, setSweepLoading] = useState(false);
 
   useEffect(() => {
     fetchAllTimeRecordsShared().then((data) => {
@@ -449,6 +534,19 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
+
+  // Lazily load the all-time Sweep board the first time SWEEP is selected.
+  useEffect(() => {
+    if (selectedMode !== 'SWEEP') return;
+    let active = true;
+    setSweepLoading(true);
+    fetchAllTimeSweepLeaderboard(50).then((rows) => {
+      if (!active) return;
+      setSweepBoard(rows);
+      setSweepLoading(false);
+    }).catch(() => { if (active) setSweepLoading(false); });
+    return () => { active = false; };
+  }, [selectedMode]);
 
   const globalRecords = useMemo(
     () => records.filter((r) => !r.game_mode && GLOBAL_RECORD_TYPES.includes(r.record_type)),
@@ -478,6 +576,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
   const Icon = mode.icon;
+  const isSweep = selectedMode === 'SWEEP';
   const modeRecords = modeRecordsMap.get(selectedMode) || [];
 
   return (
@@ -533,6 +632,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
         <div className="mb-3">
           <ModePicker
             grid
+            includeSweep
             showAll={false}
             selectedMode={selectedMode}
             onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
@@ -564,9 +664,56 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
               ) : null}
             </div>
             <div className="font-black text-sm" style={{ color: 'var(--color-text)' }}>
-              {mode.title}
+              {isSweep ? 'Sweep · All-Time' : mode.title}
             </div>
           </div>
+          {isSweep ? (
+            // All-time Sweep leaderboard — lifetime sweep count, flawless count,
+            // and best (fastest) sweep time.
+            sweepLoading ? (
+              <LeaderboardSkeleton />
+            ) : sweepBoard.length === 0 ? (
+              <div className="py-5 text-center">
+                <Trophy className="w-7 h-7 mx-auto mb-1.5" style={{ color: 'var(--color-text-muted)' }} />
+                <p className="text-[11px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>No sweeps yet</p>
+              </div>
+            ) : (
+              <div style={{ borderTop: '1px solid var(--color-border)' }}>
+                {/* Service already filters blocked; the RPC rank is authoritative. */}
+                {sweepBoard.map((entry) => {
+                  const isCurrentUser = !!userId && entry.user_id === userId;
+                  return (
+                    <div
+                      key={entry.user_id}
+                      className="flex items-center gap-3 px-4 py-2.5"
+                      style={{
+                        background: isCurrentUser ? 'var(--color-highlight-gold)' : entry.rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
+                        borderBottom: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <RankIcon rank={entry.rank} />
+                      <div className="flex-1 min-w-0">
+                        <Link
+                          href={`/profile/${entry.user_id}`}
+                          className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
+                          style={{ color: 'var(--color-text)' }}
+                        >
+                          {entry.username}
+                          {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
+                        </Link>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{entry.sweep_count} sweep{entry.sweep_count !== 1 ? 's' : ''}</div>
+                        <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                          {entry.flawless_count} flawless{entry.best_sweep_time ? ` · best ${formatTime(entry.best_sweep_time)}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          ) : (
           <div className="px-4 pb-4">
             {modeRecords.length === 0 ? (
               <div className="py-5 text-center">
@@ -600,6 +747,7 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </div>
@@ -629,6 +777,8 @@ function YourRecordsView({ userId }: { userId?: string }) {
   const { profile } = useAuth();
   const [stats, setStats] = useState<UserStatRow[]>([]);
   const [sweep, setSweep] = useState<DailySweepStats | null>(null);
+  const [sweepRankToday, setSweepRankToday] = useState<{ rank: number; totalPlayers: number } | null>(null);
+  const [sweepRankAllTime, setSweepRankAllTime] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [recordsHeld, setRecordsHeld] = useState<AllTimeRecord[]>([]);
   const [chases, setChases] = useState<Array<{ label: string; gap: string; pct: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -638,15 +788,19 @@ function YourRecordsView({ userId }: { userId?: string }) {
     if (!userId) { setLoading(false); return; }
     let active = true;
     (async () => {
-      const [statsRes, sweepRes, recs] = await Promise.all([
+      const [statsRes, sweepRes, recs, sweepRankTodayRes, sweepRankAllTimeRes] = await Promise.all([
         supabase.from('user_stats').select('game_mode, play_type, wins, losses, total_games, best_score, fastest_time').eq('user_id', userId),
         fetchDailySweepStats(userId),
         fetchAllTimeRecordsShared(),
+        getUserSweepRank(userId),
+        getUserAllTimeSweepRank(userId),
       ]);
       if (!active) return;
       const rows = (statsRes.data || []) as UserStatRow[];
       setStats(rows);
       setSweep(sweepRes);
+      setSweepRankToday(sweepRankTodayRes);
+      setSweepRankAllTime(sweepRankAllTimeRes);
       setRecordsHeld(recs.filter((r) => r.holder_id === userId));
 
       // Record Chase: EVERY beatable all-time record with your gap, sorted by
@@ -740,6 +894,21 @@ function YourRecordsView({ userId }: { userId?: string }) {
               <MyStatCell icon={Flame} value={`${sweep.currentSweepStreak}`} label="Current Sweep Streak" color="#f97316" />
               <MyStatCell icon={Clock} value={sweep.bestSweepSecs ? formatTime(Math.round(sweep.bestSweepSecs)) : '—'} label="Best Sweep Time" color="#2563eb" dim={!sweep.bestSweepSecs} />
             </div>
+            {/* Sweep leaderboard standing — today's daily board + all-time. */}
+            {(sweepRankToday || sweepRankAllTime) && (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+                {sweepRankToday && (
+                  <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    Today: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankToday.rank}</span> of {sweepRankToday.totalPlayers}
+                  </span>
+                )}
+                {sweepRankAllTime && (
+                  <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                    All-Time: <span className="font-black" style={{ color: '#4f46e5' }}>#{sweepRankAllTime.rank}</span> of {sweepRankAllTime.totalPlayers}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -4,6 +4,7 @@ import { TrendingUp, Shield, Skull, Crown, BarChart3 } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { SixIcon } from '@/components/ui/six-icon';
 import { SevenIcon } from '@/components/ui/seven-icon';
+import { BroomIcon } from '@/components/ui/broom-icon';
 import { DAILY_MODES } from '@/lib/modes.generated';
 
 export interface ModeConfig {
@@ -32,6 +33,22 @@ export const PROFILE_MODES: ModeConfig[] = DAILY_MODES.map((m) => ({
   accentColor: m.accentHex,
 }));
 
+// Synthetic 10th tile — the Daily Sweep leaderboard. Deliberately NOT in
+// modes.json (it has no puzzle/seed) and NOT in PROFILE_MODES (which many
+// surfaces map over: the profile mode pickers, the favorite-mode chooser).
+// It's opt-in via <ModePicker includeSweep> so it only ever shows on /daily
+// and /records; appending it there makes the grid's slice(0,5)/slice(5) fall
+// out to a clean 5-over-5.
+export const SWEEP_MODE: ModeConfig = {
+  id: 'SWEEP',
+  dbKey: 'SWEEP',
+  title: 'Sweep',
+  shortTitle: 'Sweep',
+  icon: BroomIcon,
+  romanNumeral: undefined,
+  accentColor: '#4f46e5',
+};
+
 interface ModePickerProps {
   selectedMode: string | null;
   onSelectMode: (dbKey: string | null) => void;
@@ -40,9 +57,13 @@ interface ModePickerProps {
   /** When true, lay the 9 modes out 5-on-top-of-4 on one screen (no horizontal
    *  scroll) instead of a scrolling row. Used on /daily and /records. */
   grid?: boolean;
+  /** When true, append the synthetic Sweep tile (10th) — the daily sweep
+   *  leaderboard selector. Only /daily and /records opt in. */
+  includeSweep?: boolean;
 }
 
-export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll = true, grid = false }: ModePickerProps) {
+export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll = true, grid = false, includeSweep = false }: ModePickerProps) {
+  const modes = includeSweep ? [...PROFILE_MODES, SWEEP_MODE] : PROFILE_MODES;
   const modeButton = (mode: ModeConfig, fullWidth = false) => {
     const isActive = selectedMode === mode.dbKey;
     const games = gamesPerMode?.[mode.dbKey] || 0;
@@ -91,12 +112,12 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
     return (
       <div className="flex flex-col gap-2">
         <div className="flex justify-center gap-2">
-          {PROFILE_MODES.slice(0, 5).map((m) => (
+          {modes.slice(0, 5).map((m) => (
             <div key={m.id} style={{ width: cellWidth }}>{modeButton(m, true)}</div>
           ))}
         </div>
         <div className="flex justify-center gap-2">
-          {PROFILE_MODES.slice(5).map((m) => (
+          {modes.slice(5).map((m) => (
             <div key={m.id} style={{ width: cellWidth }}>{modeButton(m, true)}</div>
           ))}
         </div>
@@ -132,7 +153,7 @@ export function ModePicker({ selectedMode, onSelectMode, gamesPerMode, showAll =
         </button>
       )}
 
-      {PROFILE_MODES.map((mode) => modeButton(mode))}
+      {modes.map((mode) => modeButton(mode))}
     </div>
   );
 }

@@ -11,25 +11,28 @@ import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModeLimitModal } from '@/components/modals/mode-limit-modal';
-import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
+import { ModePicker, PROFILE_MODES, SWEEP_MODE } from '@/components/profile/mode-picker';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
   fetchDailyLeaderboard,
   fetchRankWindow,
+  fetchDailySweepLeaderboard,
   getUserDailyRank,
+  getUserSweepRank,
   getDailyPlayerCount,
   getSecondsUntilMidnightLocal,
   getTodayLocal,
   getYesterdayLocal,
   formatHintsLabel,
   type LeaderboardEntry,
+  type SweepEntry,
 } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
-const getMode = (dbKey: string) => PROFILE_MODES.find((m) => m.dbKey === dbKey)!;
+const getMode = (dbKey: string) => (dbKey === 'SWEEP' ? SWEEP_MODE : PROFILE_MODES.find((m) => m.dbKey === dbKey)!);
 
 // Session-lived stale-while-revalidate cache, keyed mode:day:user. A mode-chip
 // tap or a return visit paints the last-known rows instantly while the fresh
@@ -40,6 +43,14 @@ const lbCache = new Map<string, {
   rank: { rank: number; totalPlayers: number } | null;
   // "Your neighborhood" rows when the user ranks past the top-50 list.
   win: { startRank: number; entries: LeaderboardEntry[] } | null;
+}>();
+
+// Same stale-while-revalidate cache for the synthetic Sweep board, keyed
+// day:user (no per-mode dimension — Sweep is cross-mode).
+const sweepCache = new Map<string, {
+  lb: SweepEntry[];
+  count: number;
+  rank: { rank: number; totalPlayers: number } | null;
 }>();
 
 
@@ -94,6 +105,7 @@ export default function DailyPage() {
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [selectedMode, setSelectedMode] = useState('DUEL');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);
   const [rankWindow, setRankWindow] = useState<{ startRank: number; entries: LeaderboardEntry[] } | null>(null);
   const [playerCount, setPlayerCount] = useState(0);
@@ -130,6 +142,42 @@ export default function DailyPage() {
     // effect delayed the first request by a render cycle.
     const day = getTodayLocal();
     const seq = ++loadSeq.current;
+
+    // Synthetic Sweep board — cross-mode ranking, different RPCs and row shape.
+    if (selectedMode === 'SWEEP') {
+      const sweepKey = `SWEEP:${day}:${user?.id ?? 'anon'}`;
+      const cachedSweep = sweepCache.get(sweepKey);
+      if (cachedSweep) {
+        setSweepLeaderboard(cachedSweep.lb);
+        setPlayerCount(cachedSweep.count);
+        setUserRank(cachedSweep.rank);
+        setRankWindow(null);
+        setLoading(false);
+      } else {
+        setLoading(true);
+        setUserRank(null);
+        setRankWindow(null);
+        setSweepLeaderboard([]);
+      }
+
+      const lb = await fetchDailySweepLeaderboard(day, 50);
+      if (seq !== loadSeq.current) return;
+      setSweepLeaderboard(lb);
+      setLoading(false);
+
+      let rank: { rank: number; totalPlayers: number } | null = null;
+      if (user) {
+        rank = await getUserSweepRank(user.id, day);
+        if (seq === loadSeq.current) setUserRank(rank);
+      }
+      // No dedicated count RPC — the rank query yields the true total when the
+      // user swept; otherwise the (≤50) board length is the best estimate.
+      const count = rank?.totalPlayers ?? lb.length;
+      if (seq === loadSeq.current) setPlayerCount(count);
+      sweepCache.set(sweepKey, { lb, count, rank });
+      return;
+    }
+
     const cacheKey = `${selectedMode}:${day}:${user?.id ?? 'anon'}`;
     const cached = lbCache.get(cacheKey);
     if (cached) {
@@ -175,7 +223,7 @@ export default function DailyPage() {
   }, [loadLeaderboard]);
 
   useEffect(() => {
-    if (showYesterday) {
+    if (showYesterday && selectedMode !== 'SWEEP') {
       fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 3).then(setYesterdayLeaderboard);
     }
   }, [showYesterday, selectedMode, yesterday]);
@@ -236,6 +284,50 @@ export default function DailyPage() {
     );
   };
 
+  // One row of the Sweep board — same shell + RankIcon as renderLbRow, but the
+  // three stats are total score · total time · modes-won, and the Win/Loss pill
+  // becomes a GOLD "FLAWLESS" (won all 9) vs VIOLET "SWEEP" (completed all 9).
+  const renderSweepRow = (entry: SweepEntry, rank: number) => {
+    const isCurrentUser = user && entry.user_id === user.id;
+    const pillColor = entry.is_flawless ? '#d97706' : '#a78bfa';
+    return (
+      <div
+        key={entry.user_id}
+        className="flex items-center gap-3 px-4 py-3"
+        style={{
+          background: isCurrentUser ? 'var(--color-highlight-gold)' : rank <= 3 ? 'var(--color-surface-alt)' : 'transparent',
+          borderBottom: '1px solid var(--color-border)',
+        }}
+      >
+        <RankIcon rank={rank} />
+        <div className="flex-1 min-w-0">
+          <Link
+            href={`/profile/${entry.user_id}`}
+            className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--color-text)' }}
+          >
+            {entry.username}
+            {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
+          </Link>
+        </div>
+        <div className="text-right">
+          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.total_score)}</div>
+          <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <span>{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
+            <span
+              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+              style={{ background: `${pillColor}22`, color: pillColor }}
+            >
+              {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const isSweep = selectedMode === 'SWEEP';
+
   const handlePlayDaily = () => {
     if (!user) {
       setAuthModalOpen(true);
@@ -276,6 +368,7 @@ export default function DailyPage() {
         <div className="mb-4">
           <ModePicker
             grid
+            includeSweep
             showAll={false}
             selectedMode={selectedMode}
             onSelectMode={(m) => setSelectedMode(m || 'DUEL')}
@@ -314,24 +407,32 @@ export default function DailyPage() {
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                     <Users className="w-3 h-3" />
-                    <span>{playerCount} player{playerCount !== 1 ? 's' : ''} today</span>
+                    <span>
+                      {isSweep
+                        ? `${playerCount} swept today`
+                        : `${playerCount} player${playerCount !== 1 ? 's' : ''} today`}
+                    </span>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={handlePlayDaily}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-white font-black text-xs active:scale-95 transition-transform"
-                style={{ background: color }}
-              >
-                <Play className="w-3.5 h-3.5" fill="currentColor" />
-                Play
-              </button>
+              {/* Sweep isn't a playable puzzle — it's a cross-mode ranking, so
+                  no Play button (just complete the 9 dailies to appear here). */}
+              {!isSweep && (
+                <button
+                  onClick={handlePlayDaily}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full text-white font-black text-xs active:scale-95 transition-transform"
+                  style={{ background: color }}
+                >
+                  <Play className="w-3.5 h-3.5" fill="currentColor" />
+                  Play
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Completed Board Preview */}
-        <CompletedDailyBoard modeId={selectedMode} />
+        {/* Completed Board Preview (per-mode only — Sweep has no board) */}
+        {!isSweep && <CompletedDailyBoard modeId={selectedMode} />}
 
         {/* User Rank */}
         {userRank && (
@@ -365,6 +466,17 @@ export default function DailyPage() {
         >
           {loading ? (
             <LeaderboardSkeleton />
+          ) : isSweep ? (
+            sweepLeaderboard.length === 0 ? (
+              <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+                <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p className="text-xs font-bold">Nobody&apos;s swept today. Be the first!</p>
+              </div>
+            ) : (
+              // Blocked users are already filtered by the service; the RPC's
+              // rank field is authoritative (handles ties), so use it directly.
+              <div>{sweepLeaderboard.map((entry) => renderSweepRow(entry, entry.rank))}</div>
+            )
           ) : leaderboard.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
               <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -400,7 +512,9 @@ export default function DailyPage() {
         </div>
         </PullToRefresh>
 
-        {/* Yesterday's Winners */}
+        {/* Yesterday's Winners (per-mode only) */}
+        {!isSweep && (
+        <>
         <button
           onClick={() => setShowYesterday(!showYesterday)}
           className="w-full mt-4 flex items-center justify-center gap-1.5 text-xs font-extrabold py-2 transition-colors"
@@ -448,6 +562,8 @@ export default function DailyPage() {
               </div>
             )}
           </div>
+        )}
+        </>
         )}
       </div>
 

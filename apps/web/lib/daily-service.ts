@@ -1,5 +1,6 @@
 import { supabase } from './supabase-client';
 import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
+import { isBlocked } from './moderation-service';
 
 // ============================================================
 // Composite Score Calculation
@@ -470,6 +471,130 @@ export async function getDailyPlayerCount(
     .eq('game_mode', gameMode);
 
   return count ?? 0;
+}
+
+// ============================================================
+// Sweep Leaderboard Queries
+// ============================================================
+// A "sweep" = completing all 9 solo dailies in a day. The Sweep board ranks
+// sweepers by their combined composite score (ties broken by total time).
+// These are thin callers over server-side RPCs; blocked users are dropped
+// client-side (same as the per-mode board — this leaves holes in the ranks
+// rather than re-closing them, which is acceptable).
+
+export interface SweepEntry {
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+  total_score: number;
+  total_time: number;
+  modes_won: number;
+  is_flawless: boolean;
+  rank: number;
+}
+
+export interface AllTimeSweepEntry {
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+  sweep_count: number;
+  flawless_count: number;
+  best_sweep_time: number;
+  rank: number;
+}
+
+/**
+ * Fetch the daily Sweep leaderboard for a given day — players who completed
+ * all 9 dailies, ranked by total composite score (time asc as tiebreak).
+ */
+export async function fetchDailySweepLeaderboard(
+  day?: string,
+  limit: number = 50,
+  offset: number = 0,
+): Promise<SweepEntry[]> {
+  const targetDay = day || getTodayLocal();
+
+  const { data } = await (supabase as any).rpc('daily_sweep_leaderboard', {
+    p_day: targetDay,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (!data) return [];
+
+  return (data as any[])
+    .filter((row) => !isBlocked(row.user_id))
+    .map((row) => ({
+      user_id: row.user_id,
+      username: row.username || 'Unknown',
+      avatar_url: row.avatar_url || null,
+      total_score: Number(row.total_score),
+      total_time: row.total_time,
+      modes_won: row.modes_won,
+      is_flawless: row.is_flawless,
+      rank: Number(row.rank),
+    }));
+}
+
+/**
+ * The current user's Sweep rank for a given day. Null if they didn't sweep.
+ */
+export async function getUserSweepRank(
+  userId: string,
+  day?: string,
+): Promise<{ rank: number; totalPlayers: number } | null> {
+  const targetDay = day || getTodayLocal();
+
+  const { data } = await (supabase as any).rpc('daily_sweep_rank', {
+    p_day: targetDay,
+    p_user: userId,
+  });
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || !row.rank) return null;
+  return { rank: Number(row.rank), totalPlayers: Number(row.total_players) };
+}
+
+/**
+ * Fetch the all-time Sweep leaderboard — players ranked by lifetime sweep count.
+ */
+export async function fetchAllTimeSweepLeaderboard(
+  limit: number = 50,
+  offset: number = 0,
+): Promise<AllTimeSweepEntry[]> {
+  const { data } = await (supabase as any).rpc('alltime_sweep_leaderboard', {
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (!data) return [];
+
+  return (data as any[])
+    .filter((row) => !isBlocked(row.user_id))
+    .map((row) => ({
+      user_id: row.user_id,
+      username: row.username || 'Unknown',
+      avatar_url: row.avatar_url || null,
+      sweep_count: row.sweep_count,
+      flawless_count: row.flawless_count,
+      best_sweep_time: row.best_sweep_time,
+      rank: Number(row.rank),
+    }));
+}
+
+/**
+ * The current user's all-time Sweep rank. Null if they've never swept.
+ */
+export async function getUserAllTimeSweepRank(
+  userId: string,
+): Promise<{ rank: number; totalPlayers: number } | null> {
+  const { data } = await (supabase as any).rpc('alltime_sweep_rank', {
+    p_user: userId,
+  });
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || !row.rank) return null;
+  return { rank: Number(row.rank), totalPlayers: Number(row.total_players) };
 }
 
 // ============================================================
