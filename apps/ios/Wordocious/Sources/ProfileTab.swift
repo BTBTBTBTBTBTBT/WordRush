@@ -957,6 +957,11 @@ struct LeaderboardTab: View {
     /// Owned by RootTabView so tab gestures can pop it to root.
     @Binding var path: [String]
     @State private var mode: GameMode = .duel
+    // Sweep tile (10th HModePicker cell) — the cross-mode "completed all 9" board.
+    @State private var isSweep = false
+    @State private var sweepEntries: [SweepEntry] = []
+    @State private var sweepRank: (rank: Int, total: Int)?
+    @State private var sweepLoading = false
     @State private var entries: [LeaderboardEntry] = []
     @State private var yesterday: [LeaderboardEntry] = []
     @State private var reloadToken = 0
@@ -1088,7 +1093,62 @@ struct LeaderboardTab: View {
         ScrollView {
             VStack(spacing: 12) {
                 header
-                HModePicker(selected: $mode)
+                HModePicker(selected: $mode, isSweep: $isSweep)
+                if isSweep {
+                    sweepBoard
+                } else {
+                perModeBoard
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+        }
+        .task(id: "\(mode.rawValue)-\(reloadToken)") { await load() }
+        .task(id: "sweep-\(isSweep)-\(reloadToken)") { if isSweep { await loadSweep() } }
+        // Yesterday's Winners keys on the MODE too (web/Android parity) — it
+        // used to fetch only on toggle-open, so switching chips while the
+        // dropdown was expanded kept showing the previous mode's podium until
+        // you closed and reopened it.
+        .task(id: "yesterday-\(mode.rawValue)-\(showYesterday)") {
+            guard showYesterday else { return }
+            await loadYesterday()
+        }
+        .task { await completions.load() }
+        .onDailyCompletion { Task { await completions.load() } }
+        .onDailyRecorded { reloadToken += 1 }
+        .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
+    }
+
+    /// The cross-mode Sweep board — players who completed all 9 dailies today,
+    /// ranked by total composite score. Reuses the rank banner + rankIcon shell.
+    @ViewBuilder private var sweepBoard: some View {
+        if let r = sweepRank { rankBanner(r) }
+
+        Text("DAILY SWEEP").font(Brand.font(10, .black)).tracking(0.8)
+            .foregroundStyle(Theme.textMuted).frame(maxWidth: .infinity, alignment: .leading)
+
+        if sweepLoading {
+            LeaderboardSkeleton()
+        } else if sweepEntries.isEmpty {
+            VStack(spacing: 8) {
+                Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
+                Text("No sweeps yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 40)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, entry in
+                    sweepRow(rank: entry.rank, entry: entry)
+                    if idx < sweepEntries.count - 1 { Divider().overlay(Theme.border) }
+                }
+            }
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        }
+    }
+
+    @ViewBuilder private var perModeBoard: some View {
                 playCtaCard
                 // .id(mode) → a fresh card per mode so switching away from one mode
                 // can't render the previous mode's board data (which trapped when a
@@ -1156,22 +1216,6 @@ struct LeaderboardTab: View {
                         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                     }
                 }
-            }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-        }
-        .task(id: "\(mode.rawValue)-\(reloadToken)") { await load() }
-        // Yesterday's Winners keys on the MODE too (web/Android parity) — it
-        // used to fetch only on toggle-open, so switching chips while the
-        // dropdown was expanded kept showing the previous mode's podium until
-        // you closed and reopened it.
-        .task(id: "yesterday-\(mode.rawValue)-\(showYesterday)") {
-            guard showYesterday else { return }
-            await loadYesterday()
-        }
-        .task { await completions.load() }
-        .onDailyCompletion { Task { await completions.load() } }
-        .onDailyRecorded { reloadToken += 1 }
-        .onReceive(ticker) { _ in secondsLeft = secondsUntilLocalMidnight() }
     }
 
     /// Compact yesterday row — RankIcon, name, small W/L pill, composite score (muted).
@@ -1249,6 +1293,30 @@ struct LeaderboardTab: View {
         return s
     }
 
+    /// A sweep-board row — reuses the per-mode row shell: rankIcon, name,
+    /// total score, then "total time · X/9" + the FLAWLESS/SWEEP pill.
+    private func sweepRow(rank: Int, entry: SweepEntry) -> some View {
+        let isMe = entry.userId == auth.profile?.id
+        return HStack(spacing: 12) {
+            rankIcon(rank).frame(width: 22)
+            NavigationLink(value: entry.userId) {
+                (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            }.buttonStyle(.plain)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                HStack(spacing: 5) {
+                    Text("\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9")
+                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    sweepPill(isFlawless: entry.isFlawless)
+                }
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+    }
+
     private func load() async {
         // Stale-while-revalidate (web parity: lbCache in app/daily/page.tsx) —
         // a cache hit paints the last-known rows instantly (no skeleton) while
@@ -1308,18 +1376,69 @@ struct LeaderboardTab: View {
         guard !Task.isCancelled else { return }
         yesterday = rows
     }
+
+    /// Loads the daily-sweep board (stale-while-revalidate, same shape as load()).
+    private func loadSweep() async {
+        let cacheKey = SweepCache.dailyKey()
+        if let cached = SweepCache.shared.daily(cacheKey) {
+            sweepEntries = cached.entries
+            sweepRank = cached.userRank
+            sweepLoading = false
+        } else {
+            sweepLoading = true
+            sweepRank = nil
+            sweepEntries = []
+        }
+
+        let fetchedOpt = try? await SweepLeaderboardService.fetchDailySweep()
+        guard !Task.isCancelled else { return }
+        guard let fetched = fetchedOpt else { sweepLoading = false; return }
+        sweepEntries = fetched
+        sweepLoading = false
+
+        var rank: (rank: Int, total: Int)? = nil
+        if let uid = auth.profile?.id {
+            rank = await SweepLeaderboardService.dailySweepRank(userId: uid)
+            guard !Task.isCancelled else { return }
+            sweepRank = rank
+        }
+        SweepCache.shared.setDaily(cacheKey, .init(entries: fetched, userRank: rank))
+    }
 }
 
 let HINT_MODES: Set<String> = ["DUEL_6", "DUEL_7", "PROPERNOUNDLE"]
+
+/// Sweep-board rank pill — GOLD "FLAWLESS" (won all 9) vs VIOLET "SWEEP"
+/// (completed all 9 but dropped a board). Mirrors the per-mode Win/Loss pill
+/// shape; the sweep-celebration colors (amber #D97706 / violet #A78BFA).
+@ViewBuilder func sweepPill(isFlawless: Bool) -> some View {
+    let color = isFlawless ? Color(hex: 0xD97706) : Color(hex: 0xA78BFA)
+    Text(isFlawless ? "FLAWLESS" : "SWEEP").font(Brand.font(9, .heavy))
+        .foregroundStyle(color)
+        .padding(.horizontal, 5).padding(.vertical, 1)
+        .background(RoundedRectangle(cornerRadius: 4).fill(color.opacity(0.14)))
+}
 
 /// Shared mode picker — all 9 daily modes laid out 5-on-top-of-4 on one screen
 /// (no horizontal scroll), matching the Profile "Today's Dailies" arrangement.
 /// Selecting a mode highlights it in the mode's accent color.
 struct HModePicker: View {
     @Binding var selected: GameMode
+    // Parallel selection flag for the Sweep tile — GameMode can't hold SWEEP, so
+    // the picker tracks it alongside `selected` (untouched for the 9 real cells).
+    // Defaults to a constant binding so the Home-grid / non-sweep call sites keep
+    // compiling unchanged; only the sweep-aware screens pass a live binding.
+    @Binding var isSweep: Bool
     // All 9 daily-recordable modes incl. ProperNoundle (dbKey, no HomeMode.mode).
     private let modes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
     private let spacing: CGFloat = 8
+    // Sweep tile accent — indigo, used ONLY here (leaderboard/records sweep board).
+    private let sweepAccent = Color(hex: 0x4F46E5)
+
+    init(selected: Binding<GameMode>, isSweep: Binding<Bool> = .constant(false)) {
+        _selected = selected
+        _isSweep = isSweep
+    }
 
     // Short labels so each cell fits 5-across without truncating.
     private let shortTitles: [String: String] = [
@@ -1332,7 +1451,11 @@ struct HModePicker: View {
             let w = (geo.size.width - spacing * 4) / 5
             VStack(spacing: spacing) {
                 HStack(spacing: spacing) { ForEach(Array(modes.prefix(5))) { cell($0, w) } }
-                HStack(spacing: spacing) { ForEach(Array(modes.dropFirst(5))) { cell($0, w) } }
+                // Bottom row: the remaining 4 real modes + the Sweep tile → 5-over-5.
+                HStack(spacing: spacing) {
+                    ForEach(Array(modes.dropFirst(5))) { cell($0, w) }
+                    sweepCell(w)
+                }
             }
             .frame(maxWidth: .infinity)
         }
@@ -1340,8 +1463,11 @@ struct HModePicker: View {
     }
 
     private func cell(_ m: HomeMode, _ w: CGFloat) -> some View {
-        let active = m.dbKey == selected.rawValue
-        return Button { selected = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? selected } label: {
+        let active = !isSweep && m.dbKey == selected.rawValue
+        return Button {
+            isSweep = false
+            selected = m.mode ?? GameMode(rawValue: m.dbKey ?? "") ?? selected
+        } label: {
             VStack(spacing: 4) {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 26)
                 Text(shortTitles[m.id] ?? m.title).font(Brand.font(9, .heavy))
@@ -1350,6 +1476,20 @@ struct HModePicker: View {
             .frame(width: w, height: 52)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? m.accent : Theme.border, lineWidth: 1.5))
+        }.buttonStyle(.plain)
+    }
+
+    /// The 10th "Sweep" tile — leaderboard/records only, never the Home grid.
+    private func sweepCell(_ w: CGFloat) -> some View {
+        Button { isSweep = true } label: {
+            VStack(spacing: 4) {
+                ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 26)
+                Text("Sweep").font(Brand.font(9, .heavy))
+                    .foregroundStyle(isSweep ? sweepAccent : Theme.textMuted).lineLimit(1)
+            }
+            .frame(width: w, height: 52)
+            .background(RoundedRectangle(cornerRadius: 12).fill(isSweep ? sweepAccent.opacity(0.08) : Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(isSweep ? sweepAccent : Theme.border, lineWidth: 1.5))
         }.buttonStyle(.plain)
     }
 }

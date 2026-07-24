@@ -11,6 +11,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Daily leaderboard + all-time records, mirroring iOS LeaderboardService.swift
@@ -89,6 +91,100 @@ object LeaderboardService {
     ) {
         val holderUsername: String? get() = profiles?.username
     }
+
+    /**
+     * One row of the Daily Sweep leaderboard — a player who completed all 9 daily
+     * modes today, ranked by total composite score (RPC daily_sweep_leaderboard).
+     * `username`/`avatarUrl` come back as FLAT columns (the RPC already joins the
+     * profile), unlike [LeaderboardEntry]'s embedded `profiles`.
+     */
+    @Serializable
+    data class SweepEntry(
+        @SerialName("user_id") val userId: String,
+        val username: String? = null,
+        @SerialName("avatar_url") val avatarUrl: String? = null,
+        @SerialName("total_score") val totalScore: Double = 0.0,
+        @SerialName("total_time") val totalTime: Int = 0,
+        @SerialName("modes_won") val modesWon: Int = 0,
+        @SerialName("is_flawless") val isFlawless: Boolean = false,
+        val rank: Long = 0,
+    )
+
+    /** One row of the all-time sweep ranking (RPC alltime_sweep_leaderboard). */
+    @Serializable
+    data class AllTimeSweepEntry(
+        @SerialName("user_id") val userId: String,
+        val username: String? = null,
+        @SerialName("avatar_url") val avatarUrl: String? = null,
+        @SerialName("sweep_count") val sweepCount: Int = 0,
+        @SerialName("flawless_count") val flawlessCount: Int = 0,
+        @SerialName("best_sweep_time") val bestSweepTime: Int = 0,
+        val rank: Long = 0,
+    )
+
+    /** rank + total_players from daily_sweep_rank / alltime_sweep_rank. */
+    @Serializable
+    private data class SweepRankRow(
+        val rank: Long = 0,
+        @SerialName("total_players") val totalPlayers: Long = 0,
+    )
+
+    /**
+     * Today's Daily Sweep leaderboard (RPC daily_sweep_leaderboard) — players who
+     * completed all 9 daily modes, ranked score DESC / time ASC. Null on a
+     * network/decode error (vs. a genuinely empty day) so the SWR path keeps
+     * cached rows. Blocked users are filtered client-side (App Review 1.2 parity).
+     */
+    suspend fun fetchDailySweepOrNull(
+        day: String = todayLocalDate(),
+        limit: Int = 50,
+        offset: Int = 0,
+    ): List<SweepEntry>? = runCatching {
+        client.postgrest.rpc(
+            "daily_sweep_leaderboard",
+            buildJsonObject {
+                put("p_day", day)
+                put("p_limit", limit)
+                put("p_offset", offset)
+            },
+        ).decodeList<SweepEntry>()
+            .filter { !ModerationService.isBlocked(it.userId) }
+    }.getOrElseNotCancelled { null }
+
+    /** User's daily sweep rank + total (RPC daily_sweep_rank). Null if they
+     *  didn't sweep today (the RPC returns no rows). */
+    suspend fun getUserSweepRank(userId: String, day: String = todayLocalDate()): RankInfo? = runCatching {
+        val row = client.postgrest.rpc(
+            "daily_sweep_rank",
+            buildJsonObject {
+                put("p_day", day)
+                put("p_user", userId)
+            },
+        ).decodeList<SweepRankRow>().firstOrNull() ?: return@runCatching null
+        RankInfo(row.rank.toInt(), row.totalPlayers.toInt())
+    }.getOrElseNotCancelled { null }
+
+    /** All-time sweep ranking (RPC alltime_sweep_leaderboard). Null on error. */
+    suspend fun fetchAllTimeSweepOrNull(limit: Int = 50, offset: Int = 0): List<AllTimeSweepEntry>? = runCatching {
+        client.postgrest.rpc(
+            "alltime_sweep_leaderboard",
+            buildJsonObject {
+                put("p_limit", limit)
+                put("p_offset", offset)
+            },
+        ).decodeList<AllTimeSweepEntry>()
+            .filter { !ModerationService.isBlocked(it.userId) }
+    }.getOrElseNotCancelled { null }
+
+    /** User's all-time sweep rank + total (RPC alltime_sweep_rank). Null if the
+     *  user has never swept. */
+    suspend fun getUserAllTimeSweepRank(userId: String): RankInfo? = runCatching {
+        val row = client.postgrest.rpc(
+            "alltime_sweep_rank",
+            buildJsonObject { put("p_user", userId) },
+        ).decodeList<SweepRankRow>().firstOrNull() ?: return@runCatching null
+        RankInfo(row.rank.toInt(), row.totalPlayers.toInt())
+    }.getOrElseNotCancelled { null }
 
     private const val COLS =
         "user_id,profiles!inner(username,avatar_url),composite_score,guess_count," +

@@ -85,6 +85,7 @@ fun modeIconRes(lucide: String?): Int? = when (lucide) {
     "Shield" -> com.wordocious.app.R.drawable.ic_shield
     "Skull" -> com.wordocious.app.R.drawable.ic_skull
     "Crown" -> com.wordocious.app.R.drawable.ic_crown
+    "Broom" -> com.wordocious.app.R.drawable.ic_broom
     else -> null
 }
 

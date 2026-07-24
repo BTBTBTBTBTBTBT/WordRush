@@ -128,6 +128,10 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     var rankWindow by remember { mutableStateOf<LeaderboardService.RankWindow?>(null) }
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
+    // Daily Sweep board (10th "Sweep" tile) — RPC path, mirrors LeaderboardScreen.
+    val isSweep = selectedMode == SWEEP_ID
+    var sweepEntries by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
+    var sweepRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
 
     // Re-fetch once a daily result row has LANDED on the server (recordedTick)
     // so a finished puzzle appears here immediately, without a tab round-trip
@@ -140,6 +144,20 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         val mode = selectedMode
         val pt = playType
         val day = com.wordocious.app.todayLocalDate()
+        // Daily Sweep board takes its own RPC path (play-type is irrelevant) —
+        // kept ahead of the per-mode fetch so `daily_results` never sees SWEEP.
+        if (mode == SWEEP_ID) {
+            loading = true
+            val rows = LeaderboardService.fetchDailySweepOrNull(day)
+            ensureActive()
+            if (rows == null) { loading = false; return@LaunchedEffect }
+            sweepEntries = rows
+            playerCount = rows.size
+            loading = false
+            sweepRank = if (userId != null) LeaderboardService.getUserSweepRank(userId, day) else null
+            ensureActive()
+            return@LaunchedEffect
+        }
         // Stale-while-revalidate: a chip/toggle tap or screen re-entry paints the
         // last-known rows instantly; the skeleton only shows on a true first load.
         val key = LeaderboardService.cacheKey(mode, day, userId, pt)
@@ -189,7 +207,8 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
 
     Column {
         ModePickerRow(selectedMode) { selectedMode = it }
-        SoloVsToggle(playType) { playType = it }
+        // Solo|VS is meaningless for the composite Sweep board — hide it there.
+        if (!isSweep) SoloVsToggle(playType) { playType = it }
 
         // Player count + your rank/percentile (web/iOS parity — was missing on Android).
         Row(
@@ -198,10 +217,11 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(Icons.Filled.People, null, tint = WTheme.textMuted, modifier = Modifier.size(14.dp))
-                Text("$playerCount player${if (playerCount == 1) "" else "s"} today", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                val noun = if (isSweep) "sweeper" else "player"
+                Text("$playerCount $noun${if (playerCount == 1) "" else "s"} today", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
             Spacer(Modifier.weight(1f))
-            userRank?.let { r ->
+            (if (isSweep) sweepRank else userRank)?.let { r ->
                 val rank = r.rank
                 val total = r.totalPlayers
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -218,6 +238,24 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         if (loading) {
             // Web parity: animate-pulse skeleton rows, not a spinner.
             Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { LeaderboardSkeleton() }
+        } else if (isSweep) {
+            if (sweepEntries.isEmpty()) {
+                Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = WTheme.textMuted.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Text("No sweeps yet today. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+                    item { Spacer(Modifier.height(8.dp)) }
+                    items(sweepEntries) { entry ->
+                        val rank = sweepEntries.indexOf(entry) + 1
+                        SweepRow(rank = rank, entry = entry, isCurrentUser = entry.userId == userId, onOpenProfile = onOpenProfile)
+                        Spacer(Modifier.height(4.dp))
+                    }
+                    item { Spacer(Modifier.height(24.dp)) }
+                }
+            }
         } else if (entries.isEmpty()) {
             // Web parity (records page): trophy + "No results yet today. Be the first!"
             Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -345,10 +383,16 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
     var loading by remember { mutableStateOf(true) }
     var selectedMode by remember { mutableStateOf("DUEL") }
     val userId = AuthService.profile.value?.id
+    // All-time sweep ranking — loaded lazily the first time SWEEP is selected.
+    val isSweep = selectedMode == SWEEP_ID
+    var sweepBoard by remember { mutableStateOf<List<LeaderboardService.AllTimeSweepEntry>?>(null) }
 
     LaunchedEffect(Unit) {
         records = LeaderboardService.fetchAllTimeRecords()
         loading = false
+    }
+    LaunchedEffect(isSweep) {
+        if (isSweep && sweepBoard == null) sweepBoard = LeaderboardService.fetchAllTimeSweepOrNull() ?: emptyList()
     }
 
     if (loading) {
@@ -359,7 +403,9 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
 
     val globalRecords = records.filter { it.gameMode == null && it.recordType in GLOBAL_RECORD_TYPES }
     val modeRecords = records.filter { it.gameMode == selectedMode }
-    val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
+    // GUARDED valueOf: SWEEP has no `:core` GameMode → keep the neutral primary
+    // accent (indigo is reserved for the tile only).
+    val accent = if (isSweep) WTheme.primary else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         // Hall of Fame
@@ -410,7 +456,25 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
                     }
                     Text(MODE_OPTIONS.firstOrNull { it.first == selectedMode }?.second ?: selectedMode, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 }
-                if (modeRecords.isEmpty()) {
+                if (isSweep) {
+                    // All-time sweep ranking — most daily sweeps, tiebreak flawless / best time.
+                    val board = sweepBoard
+                    when {
+                        board == null -> Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = WTheme.textMuted.copy(alpha = 0.3f), modifier = Modifier.size(28.dp))
+                        }
+                        board.isEmpty() -> Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = WTheme.textMuted, modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.height(6.dp))
+                            Text("No sweeps yet", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                        }
+                        else -> Column {
+                            board.forEachIndexed { i, e ->
+                                AllTimeSweepRow(rank = (e.rank.takeIf { it > 0 }?.toInt()) ?: (i + 1), entry = e, isCurrentUser = userId != null && e.userId == userId, onOpenProfile = onOpenProfile)
+                            }
+                        }
+                    }
+                } else if (modeRecords.isEmpty()) {
                     Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(androidx.compose.material.icons.Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted, modifier = Modifier.size(28.dp))
                         Spacer(Modifier.height(6.dp))
@@ -457,12 +521,15 @@ private fun YourRecordsTab() {
     var chases by remember { mutableStateOf<List<RecordChase>>(emptyList()) }
     var selectedMode by remember { mutableStateOf("DUEL") }
     var loading by remember { mutableStateOf(true) }
+    // The user's global all-time sweep rank — augments the DAILY SWEEPS card.
+    var sweepRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
 
     LaunchedEffect(userId) {
         if (userId == null) { loading = false; return@LaunchedEffect }
         val s = com.wordocious.app.data.ProfileService.fetchUserStats(userId)
         sweep = com.wordocious.app.data.MatchStatsService.dailySweepStats()
         val recs = LeaderboardService.fetchAllTimeRecords()
+        sweepRank = LeaderboardService.getUserAllTimeSweepRank(userId)
         stats = s
         recordsHeld = recs.filter { it.holderId == userId }
         // Record Chase: EVERY beatable all-time record with your gap, sorted by
@@ -504,7 +571,9 @@ private fun YourRecordsTab() {
     }
     if (loading) { Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { CardsSkeleton() }; return }
 
-    val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
+    // GUARDED valueOf: the picker's SWEEP id has no `:core` GameMode → neutral
+    // primary accent (indigo is reserved for the tile).
+    val accent = if (selectedMode == SWEEP_ID) WTheme.primary else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
     val streak = profile?.dailyLoginStreak ?: 0
     val nextMilestone = STREAK_MILESTONES.firstOrNull { it > streak }
     val my = stats.find { it.gameMode == selectedMode && it.playType == "solo" }
@@ -567,6 +636,17 @@ private fun YourRecordsTab() {
                 Row(Modifier.fillMaxWidth()) {
                     Box(Modifier.weight(1f)) { MeCell("${sweep.currentSweepStreak}", "Sweep Streak") }
                     Box(Modifier.weight(1f)) { MeCell(if (sweep.bestSweepSecs > 0) fmtSecs(sweep.bestSweepSecs) else "—", "Best Sweep Time", dim = sweep.bestSweepSecs == 0) }
+                }
+                // Global all-time sweep rank (RPC alltime_sweep_rank) — the user's
+                // standing among all sweepers, alongside their raw totals.
+                sweepRank?.let { r ->
+                    Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = Color(0xFFD97706), modifier = Modifier.size(13.dp))
+                        Text("Sweep rank ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+                        Text(" of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    }
                 }
             }
             Spacer(Modifier.height(16.dp))

@@ -84,6 +84,12 @@ struct AllTimeRecordsView: View {
     @State private var records: [AllTimeRecord] = []
     @State private var mode: GameMode = .duel
     @State private var loading = true
+    // Sweep tile — the all-time sweep ranking (lifetime sweep totals).
+    @State private var isSweep = false
+    @State private var sweepEntries: [AllTimeSweepEntry] = []
+    @State private var sweepRank: (rank: Int, total: Int)?
+    @State private var sweepLoading = false
+    private let sweepAccent = Color(hex: 0x4F46E5)
 
     private let pickerModes: [HomeMode] = homeModes.filter { $0.dbKey != nil }
     private var myId: String? { auth.profile?.id }
@@ -109,8 +115,11 @@ struct AllTimeRecordsView: View {
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.goldBorder, lineWidth: 1.5))
 
                 // By Game Mode
-                Text("BY GAME MODE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                HModePicker(selected: $mode)
+                Text(isSweep ? "SWEEP RANKING" : "BY GAME MODE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                HModePicker(selected: $mode, isSweep: $isSweep)
+                if isSweep {
+                    sweepCard
+                } else {
                 let m = pickerModes.first { $0.dbKey == mode.rawValue }
                 VStack(spacing: 0) {
                     RoundedRectangle(cornerRadius: 2).fill((m?.accent ?? Theme.primary)).frame(height: 3)
@@ -139,9 +148,118 @@ struct AllTimeRecordsView: View {
                 // Clip the 3pt top accent bar to the card's rounded corners.
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                }
             }
         }
         .task { if loading { records = (try? await RecordsService.fetchAll()) ?? []; loading = false } }
+        .task(id: "sweep-\(isSweep)") { if isSweep { await loadSweep() } }
+    }
+
+    /// The all-time sweep-ranking card — players ranked by lifetime sweep count
+    /// (sweeps · flawless · best sweep time). Same indigo card shell as daily.
+    private var sweepCard: some View {
+        let total = sweepRank?.total ?? sweepEntries.count
+        return VStack(spacing: 0) {
+            LinearGradient(colors: [sweepAccent, sweepAccent.opacity(0.53)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
+
+            HStack(spacing: 10) {
+                ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 32)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("All-Time Sweeps").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    Text("Most daily sweeps ever").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)
+
+            HStack {
+                HStack(spacing: 4) {
+                    Image(systemName: "person.2.fill").font(.system(size: 11))
+                    Text("\(total) sweeper\(total == 1 ? "" : "s")").font(Brand.font(10, .bold))
+                }.foregroundStyle(Theme.textMuted)
+                Spacer()
+                if let r = sweepRank {
+                    (Text("Your rank: ").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
+                     + Text("#\(r.rank)").font(Brand.font(12, .black)).foregroundColor(Color(hex: 0xD97706))
+                     + Text(" of \(r.total)").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted))
+                }
+            }
+            .padding(.horizontal, 14).padding(.bottom, 8)
+
+            Divider().overlay(Theme.border)
+
+            if sweepLoading {
+                LeaderboardSkeleton()
+            } else if sweepEntries.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+                    Text("No sweeps yet. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                }
+                .frame(maxWidth: .infinity).padding(.vertical, 30)
+            } else {
+                ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in
+                    allTimeSweepRow(e.rank, e)
+                    if idx < sweepEntries.count - 1 { Divider().overlay(Theme.border) }
+                }
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+    }
+
+    @ViewBuilder private func allTimeRankIcon(_ rank: Int) -> some View {
+        switch rank {
+        case 1: Image(systemName: "crown.fill").foregroundStyle(Color(hex: 0xD97706))
+        case 2: Image(systemName: "medal.fill").foregroundStyle(Theme.textMuted)
+        case 3: Image(systemName: "medal.fill").foregroundStyle(Color(hex: 0xB45309))
+        default: Text("\(rank)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted).frame(width: 20)
+        }
+    }
+
+    private func allTimeSweepRow(_ rank: Int, _ e: AllTimeSweepEntry) -> some View {
+        let isMe = e.userId == myId
+        return HStack(spacing: 12) {
+            allTimeRankIcon(rank).frame(width: 22)
+            NavigationLink(value: e.userId) {
+                (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            }.buttonStyle(.plain)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("\(e.sweepCount) sweep\(e.sweepCount == 1 ? "" : "s")").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text("\(e.flawlessCount) flawless · \(formatShortTime(e.bestSweepTime))")
+                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+    }
+
+    private func loadSweep() async {
+        if let cached = SweepCache.shared.allTime {
+            sweepEntries = cached.entries
+            sweepRank = cached.userRank
+            sweepLoading = false
+        } else {
+            sweepLoading = true
+            sweepRank = nil
+            sweepEntries = []
+        }
+
+        let fetchedOpt = try? await SweepLeaderboardService.fetchAllTimeSweep()
+        guard !Task.isCancelled else { return }
+        guard let fetched = fetchedOpt else { sweepLoading = false; return }
+        sweepEntries = fetched
+        sweepLoading = false
+
+        var rank: (rank: Int, total: Int)? = nil
+        if let uid = myId {
+            rank = await SweepLeaderboardService.allTimeSweepRank(userId: uid)
+            guard !Task.isCancelled else { return }
+            sweepRank = rank
+        }
+        SweepCache.shared.allTime = .init(entries: fetched, userRank: rank)
     }
 
     private func globalRecord(_ rt: String) -> AllTimeRecord? {
@@ -204,6 +322,12 @@ struct DailyRecordsView: View {
     @State private var rankWindow: (startRank: Int, entries: [LeaderboardEntry])?
     @State private var loading = false
     @State private var reloadToken = 0
+    // Sweep tile — the cross-mode "completed all 9 dailies today" board.
+    @State private var isSweep = false
+    @State private var sweepEntries: [SweepEntry] = []
+    @State private var sweepRank: (rank: Int, total: Int)?
+    @State private var sweepLoading = false
+    private let sweepAccent = Color(hex: 0x4F46E5)
 
     private var accent: Color { homeModes.first { $0.dbKey == mode.rawValue }?.accent ?? Theme.primary }
 
@@ -233,8 +357,11 @@ struct DailyRecordsView: View {
         let m = homeModes.first { $0.dbKey == mode.rawValue }
         let total = userRank?.total ?? entries.count
         return VStack(spacing: 10) {
-            HModePicker(selected: $mode)
+            HModePicker(selected: $mode, isSweep: $isSweep)
 
+            if isSweep {
+                sweepCard
+            } else {
             // Single leaderboard card: accent bar → header (mode + Today + toggle)
             // → player-count/your-rank row → rows. Mirrors records/page.tsx.
             VStack(spacing: 0) {
@@ -302,9 +429,116 @@ struct DailyRecordsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
 
             YesterdayPodiumCard(mode: mode, playType: playType, accent: accent)
+            }
         }
         .task(id: "\(mode.rawValue)-\(playType)-\(reloadToken)") { await load() }
+        .task(id: "sweep-\(isSweep)-\(reloadToken)") { if isSweep { await loadSweep() } }
         .onDailyRecorded { reloadToken += 1 }
+    }
+
+    /// The daily-sweep card — same card shell as the per-mode leaderboard (accent
+    /// bar → header → your-rank row → rows), but indigo and filled with sweep rows.
+    private var sweepCard: some View {
+        let total = sweepRank?.total ?? sweepEntries.count
+        return VStack(spacing: 0) {
+            LinearGradient(colors: [sweepAccent, sweepAccent.opacity(0.53)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
+
+            HStack(spacing: 10) {
+                ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 32)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Daily Sweep").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                    Text("All 9 modes today").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)
+
+            HStack {
+                HStack(spacing: 4) {
+                    Image(systemName: "person.2.fill").font(.system(size: 11))
+                    Text("\(total) sweeper\(total == 1 ? "" : "s") today").font(Brand.font(10, .bold))
+                }.foregroundStyle(Theme.textMuted)
+                Spacer()
+                if let r = sweepRank {
+                    HStack(spacing: 3) {
+                        (Text("Your rank: ").font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
+                         + Text("#\(r.rank)").font(Brand.font(12, .black)).foregroundColor(Color(hex: 0xD97706)))
+                        Text(r.total > 1 ? " of \(r.total) · top \(max(1, Int((Double(r.rank) / Double(r.total) * 100).rounded())))%" : " of \(r.total)")
+                            .font(Brand.font(10, .bold)).foregroundColor(Theme.textMuted)
+                    }
+                }
+            }
+            .padding(.horizontal, 14).padding(.bottom, 8)
+
+            Divider().overlay(Theme.border)
+
+            if sweepLoading {
+                LeaderboardSkeleton()
+            } else if sweepEntries.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+                    Text("No sweeps yet today. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                }
+                .frame(maxWidth: .infinity).padding(.vertical, 30)
+            } else {
+                ForEach(Array(sweepEntries.enumerated()), id: \.element.id) { idx, e in
+                    sweepRow(e.rank, e)
+                    if idx < sweepEntries.count - 1 { Divider().overlay(Theme.border) }
+                }
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func sweepRow(_ rank: Int, _ e: SweepEntry) -> some View {
+        let isMe = e.userId == auth.profile?.id
+        return HStack(spacing: 12) {
+            rankIcon(rank).frame(width: 22)
+            NavigationLink(value: e.userId) {
+                (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            }.buttonStyle(.plain)
+            Spacer()
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(formatScore(e.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                HStack(spacing: 5) {
+                    Text("\(formatShortTime(e.totalTime)) · \(e.modesWon)/9")
+                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                    sweepPill(isFlawless: e.isFlawless)
+                }
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+    }
+
+    private func loadSweep() async {
+        let cacheKey = SweepCache.dailyKey()
+        if let cached = SweepCache.shared.daily(cacheKey) {
+            sweepEntries = cached.entries
+            sweepRank = cached.userRank
+            sweepLoading = false
+        } else {
+            sweepLoading = true
+            sweepRank = nil
+            sweepEntries = []
+        }
+
+        let fetchedOpt = try? await SweepLeaderboardService.fetchDailySweep()
+        guard !Task.isCancelled else { return }
+        guard let fetched = fetchedOpt else { sweepLoading = false; return }
+        sweepEntries = fetched
+        sweepLoading = false
+
+        var rank: (rank: Int, total: Int)? = nil
+        if let uid = auth.profile?.id {
+            rank = await SweepLeaderboardService.dailySweepRank(userId: uid)
+            guard !Task.isCancelled else { return }
+            sweepRank = rank
+        }
+        SweepCache.shared.setDaily(cacheKey, .init(entries: fetched, userRank: rank))
     }
 
     @ViewBuilder private func rankIcon(_ rank: Int) -> some View {
@@ -447,6 +681,10 @@ struct YourRecordsView: View {
     @EnvironmentObject private var auth: AuthService
     @State private var stats: [UserStatRow] = []
     @State private var sweep = MatchStatsService.DailySweepStats()
+    // The user's sweep standings (from the sweep rank RPCs) — augment the sweep
+    // card with today's + all-time rank. Nil when the user hasn't swept.
+    @State private var sweepDailyRank: (rank: Int, total: Int)?
+    @State private var sweepAllTimeRank: (rank: Int, total: Int)?
     @State private var recordsHeld: [AllTimeRecord] = []
     /// Record Chase (restat R2): the top-3 beatable all-time records with the
     /// gap + a progress bar (was a single "closest" line).
@@ -547,12 +785,32 @@ struct YourRecordsView: View {
                     meCell("flame.fill", "\(sweep.currentSweepStreak)", "Current Sweep Streak", Color(hex: 0xF97316))
                     meCell("clock.fill", sweep.bestSweepSecs > 0 ? formatShortTime(sweep.bestSweepSecs) : "—", "Best Sweep Time", Color(hex: 0x2563EB), dim: sweep.bestSweepSecs == 0)
                 }
+                // Your sweep standing on the sweep leaderboards (rank RPCs).
+                if sweepDailyRank != nil || sweepAllTimeRank != nil {
+                    HStack(spacing: 8) {
+                        if let d = sweepDailyRank { sweepRankChip("Today", d) }
+                        if let a = sweepAllTimeRank { sweepRankChip("All-Time", a) }
+                        Spacer(minLength: 0)
+                    }
+                }
             }
             .padding(14)
         }
         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    /// A compact "#rank of total" chip for the sweep card's standing row.
+    private func sweepRankChip(_ label: String, _ r: (rank: Int, total: Int)) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "sparkles").font(.system(size: 10)).foregroundStyle(Color(hex: 0x4F46E5))
+            (Text("\(label): ").font(Brand.font(9, .bold)).foregroundColor(Theme.textMuted)
+             + Text("#\(r.rank)").font(Brand.font(11, .black)).foregroundColor(Color(hex: 0xD97706))
+             + Text(" of \(r.total)").font(Brand.font(9, .bold)).foregroundColor(Theme.textMuted))
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x4F46E5).opacity(0.08)))
     }
 
     private var bestsByMode: some View {
@@ -657,7 +915,12 @@ struct YourRecordsView: View {
         async let s = UserStatsService.fetch(userId: uid)
         async let sw = MatchStatsService.dailySweepStats()
         async let recs = (try? RecordsService.fetchAll()) ?? []
+        // The user's sweep standings — augment the sweep card's totals with rank.
+        async let dRank = SweepLeaderboardService.dailySweepRank(userId: uid)
+        async let aRank = SweepLeaderboardService.allTimeSweepRank(userId: uid)
         let (rows, sweepRes, allRecs) = await (s, sw, recs)
+        sweepDailyRank = await dRank
+        sweepAllTimeRank = await aRank
         stats = rows
         sweep = sweepRes
         recordsHeld = allRecs.filter { $0.holderId == uid }
