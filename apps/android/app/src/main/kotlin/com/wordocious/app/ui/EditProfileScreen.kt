@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -188,7 +190,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
             Text("Cancel", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onDone))
             Spacer(Modifier.weight(1f))
             Text("EDIT PROFILE", fontSize = 18.sp, fontWeight = FontWeight.Black,
-                style = androidx.compose.ui.text.TextStyle(brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))))
+                style = androidx.compose.ui.text.TextStyle(brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))), fontFamily = Nunito))
             Spacer(Modifier.weight(1f))
             Text(
                 if (saving) "Saving…" else "Save", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,

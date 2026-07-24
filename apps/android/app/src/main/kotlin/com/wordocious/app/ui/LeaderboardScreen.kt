@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -190,7 +192,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         ) {
             Text(
                 "DAILY CHALLENGE", fontSize = 28.sp, fontWeight = FontWeight.Black,
-                style = TextStyle(brush = WTheme.wordmarkGradient),
+                style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
             )
             DailyCountdownChip()
         }

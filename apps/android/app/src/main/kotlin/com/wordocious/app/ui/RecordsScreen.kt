@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -72,7 +74,7 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
         Text(
             "RECORDS",
             fontSize = 28.sp, fontWeight = FontWeight.Black,
-            style = TextStyle(brush = WTheme.wordmarkGradient),
+            style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
         Text(

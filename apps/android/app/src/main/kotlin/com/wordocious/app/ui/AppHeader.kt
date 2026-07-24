@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -58,7 +60,7 @@ fun AppHeader(
         Text(
             "WORDOCIOUS",
             fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
-            style = TextStyle(brush = WTheme.wordmarkGradient),
+            style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
             maxLines = 1,
         )
         if (AuthService.isProActive) {

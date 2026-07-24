@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
@@ -412,11 +414,11 @@ private fun DailyHero(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (flawless) {
                     Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
-                    Text("Flawless Victory!", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(titleGrad)))
+                    Text("Flawless Victory!", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(titleGrad), fontFamily = Nunito))
                     Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
                 } else {
                     Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(16.dp))
-                    Text("Daily Sweep!", fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(titleGrad)))
+                    Text("Daily Sweep!", fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(titleGrad), fontFamily = Nunito))
                     Icon(Icons.Filled.AutoAwesome, null, tint = Color(0xFFEC4899), modifier = Modifier.size(16.dp))
                 }
             }
@@ -428,7 +430,7 @@ private fun DailyHero(
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
-                Text("Daily Challenge", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5)))))
+                Text("Daily Challenge", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5))), fontFamily = Nunito))
                 Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
             }
             Text("9 puzzles · Leaderboards & medals", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))

@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -294,7 +296,7 @@ private fun FinishedStatsHeader(
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             modeTitle(mode), fontSize = 28.sp, fontWeight = FontWeight.Black,
-            style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode))),
+            style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode)), fontFamily = Nunito),
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (isMulti) StatItem(Icons.Filled.EmojiEvents, Color(0xFFD97706), "$boardsSolved/$totalBoards")

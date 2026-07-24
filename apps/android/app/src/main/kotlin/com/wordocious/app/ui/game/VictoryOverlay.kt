@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.game
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.animation.core.EaseOut
@@ -111,7 +113,7 @@ fun VictoryOverlay(
                     Text(
                         "VICTORY!",
                         fontSize = 36.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))),
+                        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24))), fontFamily = Nunito),
                     )
                 } else {
                     Text("GAME OVER", fontSize = 36.sp, fontWeight = FontWeight.Black, color = Color(0xFFF87171))

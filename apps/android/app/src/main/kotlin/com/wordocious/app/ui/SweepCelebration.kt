@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -100,7 +102,7 @@ fun SweepCelebration(
                     Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
                         tint = if (flawless) Color(0xFFD97706) else Color(0xFF7C3AED), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
                     Text(if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!", fontSize = 24.sp, fontWeight = FontWeight.Black,
-                        style = TextStyle(brush = Brush.linearGradient(titleColors)))
+                        style = TextStyle(brush = Brush.linearGradient(titleColors), fontFamily = Nunito))
                     Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
                         tint = if (flawless) Color(0xFFD97706) else Color(0xFFEC4899), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
                 }

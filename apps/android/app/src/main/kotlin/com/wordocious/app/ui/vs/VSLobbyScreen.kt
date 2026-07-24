@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -82,7 +84,7 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode,
                 // aesthetic of the mode rows below (user request).
                 Text(
                     "VS BATTLE", fontSize = 30.sp, fontWeight = FontWeight.Black,
-                    style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFF14B8A6), Color(0xFF0D9488)))),
+                    style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFF14B8A6), Color(0xFF0D9488))), fontFamily = Nunito),
                 )
                 Text("Race a live opponent on the same puzzle", fontSize = 13.sp, color = WTheme.textMuted)
             }
@@ -130,7 +132,7 @@ private fun ModeRow(mode: GameMode, count: com.wordocious.app.data.VSCountsServi
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(modeTitle(mode), fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode))))
+            Text(modeTitle(mode), fontSize = 16.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(modeTitleGradient(mode)), fontFamily = Nunito))
             // Live activity for this mode (green dot when anyone's around).
             if (count != null && count.waiting + count.playing > 0) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {

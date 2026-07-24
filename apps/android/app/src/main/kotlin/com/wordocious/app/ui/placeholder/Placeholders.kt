@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.placeholder
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +45,7 @@ private fun PlaceholderScreen(title: String, subtitle: String) {
     ) {
         Text(
             "WORDOCIOUS", fontSize = 20.sp, fontWeight = FontWeight.Black,
-            style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient),
+            style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
         )
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -96,7 +98,7 @@ fun InfoMenuSheet(onNav: (String) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("MENU", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Text("MENU", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDismiss))
         }
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -133,7 +135,7 @@ fun ShareVariantSheet(onPick: (Boolean) -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg, dragHandle = null) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("SHARE", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Text("SHARE", fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDismiss))
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 28.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -254,7 +256,7 @@ private fun OverlayScaffold(title: String, onDone: () -> Unit, leading: (@Compos
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (leading != null) { leading(); Spacer(Modifier.size(8.dp)) }
-            Text(title.uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient))
+            Text(title.uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
             Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
         }
         content()

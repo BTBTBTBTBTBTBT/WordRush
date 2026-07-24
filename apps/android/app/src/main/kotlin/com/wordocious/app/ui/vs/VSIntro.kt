@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -73,7 +75,7 @@ fun VSOverlayWordmark(boxScope: androidx.compose.foundation.layout.BoxScope) = w
             "WORDOCIOUS",
             fontSize = 52.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp,
             maxLines = 1,
-            style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))),
+            style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))), fontFamily = Nunito),
             modifier = Modifier.align(Alignment.CenterHorizontally),
         )
     }

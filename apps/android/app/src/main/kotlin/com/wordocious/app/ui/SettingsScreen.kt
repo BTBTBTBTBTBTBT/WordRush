@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -77,7 +79,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("SETTINGS", fontSize = 18.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient))
+            Text("SETTINGS", fontSize = 18.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
             Spacer(Modifier.weight(1f))
             Text(
                 "Done", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,

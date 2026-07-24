@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -75,7 +77,7 @@ fun WelcomeScreen() {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         "WORDOCIOUS", fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
-                        style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd))),
+                        style = androidx.compose.ui.text.TextStyle(brush = Brush.horizontalGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd)), fontFamily = Nunito),
                     )
                     Text("Welcome to Epic Word Battles", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }

@@ -1,5 +1,7 @@
 package com.wordocious.app.ui.vs
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -152,7 +154,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
 
 @Composable
 private fun VsTitle(label: String, gradient: List<Color>, size: Int) {
-    Text(label, fontSize = size.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
+    Text(label, fontSize = size.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
 }
 
 @Composable
@@ -184,7 +186,7 @@ private fun QueueScreen(label: String, gradient: List<Color>, position: Int, que
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text("PRIVATE MATCH", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.textMuted)
-                Text(inviteCode, fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = 6.sp, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
+                Text(inviteCode, fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = 6.sp, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
                 Text("Share this code — the match starts when your friend joins.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center)
                 Box(
                     Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.primary)
@@ -360,7 +362,7 @@ private fun PhotoFinishStamp(clutch: Boolean) {
     Text(
         if (clutch) "CLUTCH!" else "PHOTO FINISH!",
         fontSize = 30.sp, fontWeight = FontWeight.Black,
-        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF97316), Color(0xFFEC4899)))),
+        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF97316), Color(0xFFEC4899))), fontFamily = Nunito),
         modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale; rotationZ = -6f; alpha = if (shown) 1f else 0f },
     )
 }
@@ -387,8 +389,8 @@ private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, i
         VSOverlayWordmark(this)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
-            Text(label.uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
-            Text(if (count == 0) "GO!" else "$count", fontSize = if (count == 0) 72.sp else 96.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
+            Text(label.uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
+            Text(if (count == 0) "GO!" else "$count", fontSize = if (count == 0) 72.sp else 96.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
         }
     }
 }
@@ -628,7 +630,7 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
         item {
             Text(
                 "$oppName is still playing...", fontSize = 24.sp, fontWeight = FontWeight.Black,
-                textAlign = TextAlign.Center, style = TextStyle(brush = Brush.horizontalGradient(gradient)),
+                textAlign = TextAlign.Center, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito),
             )
         }
         // Opponent identity + live counters (+ typing dots while pings arrive).
@@ -783,7 +785,7 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         item { Spacer(Modifier.height(40.dp)) }
-        item { Text(headline, fontSize = 56.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(colors))) }
+        item { Text(headline, fontSize = 56.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(colors), fontFamily = Nunito)) }
         // Why you won/lost, in plain English.
         whyLine?.let { line ->
             item {
@@ -989,7 +991,7 @@ private fun AlreadyPlayedDaily(answer: String, gradient: List<Color>, isPro: Boo
     Column(Modifier.padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("TODAY'S VS PUZZLE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.textMuted)
-            Text("Already Played", fontSize = 32.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient)))
+            Text("Already Played", fontSize = 32.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
         }
         // Today's daily VS outcome — W/L pill (the user asked for an explicit result here).
         won?.let {

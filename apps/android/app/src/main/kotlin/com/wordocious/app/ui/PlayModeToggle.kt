@@ -1,5 +1,7 @@
 package com.wordocious.app.ui
 
+import com.wordocious.app.ui.theme.Nunito
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -74,7 +76,7 @@ fun UnlimitedHero() {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Filled.AllInclusive, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
             Text("Unlimited Play", fontSize = 18.sp, fontWeight = FontWeight.Black,
-                style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))))
+                style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))), fontFamily = Nunito))
             Icon(Icons.Filled.AllInclusive, null, tint = Color(0xFFEC4899), modifier = Modifier.size(20.dp))
         }
         Text("Infinite puzzles · All stats count", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED), modifier = Modifier.padding(top = 2.dp))
