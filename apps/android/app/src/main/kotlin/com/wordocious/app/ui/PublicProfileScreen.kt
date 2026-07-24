@@ -117,10 +117,11 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         value = ProfileService.fetchUserStats(userId)
     }
     val matches by produceState(initialValue = emptyList<ProfileService.RecentMatch>(), userId) {
-        value = ProfileService.fetchRecentMatches(userId, limit = 10)
+        value = ProfileService.fetchRecentMatches(userId, limit = 50)
     }
     var playType by remember { mutableStateOf("solo") }
     var selectedMode by remember { mutableStateOf(GameMode.DUEL) }
+    var showAllRecent by remember { mutableStateOf(false) }
     val topWords by produceState(
         initialValue = emptyList<com.wordocious.app.data.MatchStatsService.TopWord>(),
         userId, selectedMode,
@@ -414,7 +415,15 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         if (matches.isEmpty()) {
             Text("No matches played yet.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         } else {
-            matches.forEach { m -> PublicMatchRow(m, userId) }
+            (if (showAllRecent) matches else matches.take(5)).forEach { m -> PublicMatchRow(m, userId) }
+            if (matches.size > 5) {
+                Text(
+                    if (showAllRecent) "Show less" else "View all ${matches.size} ›",
+                    fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().clickableNoRipple { showAllRecent = !showAllRecent }.padding(top = 4.dp),
+                )
+            }
         }
         Spacer(Modifier.height(20.dp))
     }

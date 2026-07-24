@@ -114,6 +114,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf<List<ProfileService.UserStat>>(emptyList()) }
     var recentMatches by remember { mutableStateOf<List<ProfileService.RecentMatch>>(emptyList()) }
+    var showAllRecent by remember { mutableStateOf(false) }
     // VS opponents' usernames for the "· vs <name>" line (web profile parity).
     var opponentNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var medals by remember { mutableStateOf<List<ProfileService.UserMedal>>(emptyList()) }
@@ -177,7 +178,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             // gating the whole screen); only usernames chains off recentMatches.
             kotlinx.coroutines.coroutineScope {
                 val statsD = async { ProfileService.fetchUserStats(userId) }
-                val matchesD = async { ProfileService.fetchRecentMatches(userId) }
+                val matchesD = async { ProfileService.fetchRecentMatches(userId, limit = 50) }
                 val medalsD = async { ProfileService.fetchUserMedals(userId, limit = 100) }
                 val todayD = async { DailyCompletionsService.fetchTodayCompletions() }
                 val unlockedD = async { com.wordocious.app.data.AchievementService.fetchUnlocked(userId) }
@@ -471,10 +472,20 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 )
             }
         } else {
-            items(recentMatches) { m ->
+            items(if (showAllRecent) recentMatches else recentMatches.take(5)) { m ->
                 val oppId = if (m.player2Id == null) null else if (m.player1Id == userId) m.player2Id else m.player1Id
                 RecentMatchRow(m, userId, opponentName = oppId?.let { opponentNames[it] ?: "Unknown" })
                 Spacer(Modifier.height(8.dp))
+            }
+            if (recentMatches.size > 5) {
+                item {
+                    Text(
+                        if (showAllRecent) "Show less" else "View all ${recentMatches.size} ›",
+                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().clickableNoRipple { showAllRecent = !showAllRecent }.padding(top = 4.dp),
+                    )
+                }
             }
         }
 

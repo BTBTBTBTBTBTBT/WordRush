@@ -23,6 +23,7 @@ struct ProfileTab: View {
     @StateObject private var achievementCatalog = AchievementCatalog.shared
     @State private var medals: [MedalRow] = []
     @State private var showAllMedals = false
+    @State private var showAllRecent = false
     @State private var gamesThisWeek = 0
     @State private var socialLinks: [String: String] = [:]
     @State private var recentMatches: [PublicProfileService.RecentMatch] = []
@@ -571,12 +572,20 @@ struct ProfileTab: View {
                 Text("No matches played yet.").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     .frame(maxWidth: .infinity).padding(.vertical, 16)
             } else {
+                // Show 5 collapsed; the toggle expands the rest in place (no
+                // inner ScrollView — the rows render straight into the VStack).
                 VStack(spacing: 8) {
-                    ForEach(recentMatches.prefix(5)) { m in
+                    ForEach(showAllRecent ? recentMatches : Array(recentMatches.prefix(5))) { m in
                         RecentMatchRow(
                             match: m, profileId: p.id,
                             opponentName: m.opponentId(p.id).map { opponentNames[$0] ?? "Unknown" })
                     }
+                }
+                if recentMatches.count > 5 {
+                    Button { showAllRecent.toggle() } label: {
+                        Text(showAllRecent ? "Show less" : "View all \(recentMatches.count) ›")
+                            .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
+                    }.buttonStyle(.plain).padding(.top, 2)
                 }
             }
         }

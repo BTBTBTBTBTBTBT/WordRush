@@ -18,6 +18,7 @@ struct PublicProfileView: View {
     @State private var notFound = false
     @State private var tab = "solo"                 // "solo" | "vs"
     @State private var selectedMode: GameMode = .duel
+    @State private var showAllRecent = false
     // Moderation (App Review 1.2): report + block from the stranger's profile.
     @State private var showReportDialog = false
     @State private var showBlockConfirm = false
@@ -347,7 +348,19 @@ struct PublicProfileView: View {
                 Text("No matches played yet.").font(Brand.body(13)).foregroundStyle(Theme.textMuted)
                     .frame(maxWidth: .infinity).padding(.vertical, 24)
             } else {
-                VStack(spacing: 8) { ForEach(matches) { m in RecentMatchRow(match: m, profileId: p.id) } }
+                // Show 5 collapsed; the toggle expands the rest in place (no
+                // inner ScrollView — the rows render straight into the VStack).
+                VStack(spacing: 8) {
+                    ForEach(showAllRecent ? matches : Array(matches.prefix(5))) { m in
+                        RecentMatchRow(match: m, profileId: p.id)
+                    }
+                }
+                if matches.count > 5 {
+                    Button { showAllRecent.toggle() } label: {
+                        Text(showAllRecent ? "Show less" : "View all \(matches.count) ›")
+                            .font(Brand.font(11, .heavy)).foregroundStyle(Theme.primary).frame(maxWidth: .infinity)
+                    }.buttonStyle(.plain).padding(.top, 2)
+                }
             }
         }
         .padding(16)
