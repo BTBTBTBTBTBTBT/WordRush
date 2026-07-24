@@ -70,21 +70,31 @@ describe('game reducer', () => {
   });
 
   describe('GAUNTLET mode', () => {
-    it('should create initial state with three boards', () => {
+    it('should create initial state with the first stage board set', () => {
       const state = createInitialState('test', GameMode.GAUNTLET);
-      expect(state.boards).toHaveLength(3);
+      // Stage 0 ("The Opening") is a single board; the full run spans
+      // GAUNTLET_STAGES (5 stages, 21 boards total).
+      expect(state.boards).toHaveLength(GAUNTLET_STAGES[0].boardCount);
       expect(state.mode).toBe(GameMode.GAUNTLET);
       expect(state.gauntlet).toBeDefined();
-      expect(state.gauntlet?.totalRounds).toBe(3);
+      expect(state.gauntlet?.currentStage).toBe(0);
+      expect(state.gauntlet?.totalStages).toBe(GAUNTLET_STAGES.length);
+      expect(state.gauntlet?.allSolutions).toHaveLength(
+        GAUNTLET_STAGES.reduce((sum, s) => sum + s.boardCount, 0)
+      );
     });
 
-    it('should progress to next board on win', () => {
+    it('should progress to next stage on win', () => {
       let state = createInitialState('test', GameMode.GAUNTLET);
       const solution = state.boards[0].solution;
       state = gameReducer(state, { type: 'SUBMIT_GUESS', guess: solution });
-      state = gameReducer(state, { type: 'NEXT_BOARD' });
-      expect(state.currentBoardIndex).toBe(1);
-      expect(state.gauntlet?.currentRound).toBe(1);
+      state = gameReducer(state, { type: 'NEXT_STAGE' });
+      expect(state.gauntlet?.currentStage).toBe(1);
+      expect(state.boards).toHaveLength(GAUNTLET_STAGES[1].boardCount);
+      expect(state.currentBoardIndex).toBe(0);
+      expect(state.status).toBe(GameStatus.PLAYING);
+      expect(state.gauntlet?.stageResults).toHaveLength(1);
+      expect(state.gauntlet?.stageResults[0].status).toBe(GameStatus.WON);
     });
 
     it('should lose immediately on any board loss', () => {
@@ -95,18 +105,23 @@ describe('game reducer', () => {
       expect(state.status).toBe(GameStatus.LOST);
     });
 
-    it('should win after completing all three boards', () => {
+    it('should win after completing all stages', () => {
       let state = createInitialState('test', GameMode.GAUNTLET);
 
-      for (let boardIdx = 0; boardIdx < 3; boardIdx++) {
-        const solution = state.boards[boardIdx].solution;
-        state = gameReducer(state, { type: 'SUBMIT_GUESS', guess: solution });
-        if (boardIdx < 2) {
-          state = gameReducer(state, { type: 'NEXT_BOARD' });
+      for (let stageIdx = 0; stageIdx < GAUNTLET_STAGES.length; stageIdx++) {
+        // Win every board in the current stage by guessing its solution.
+        for (let boardIdx = 0; boardIdx < state.boards.length; boardIdx++) {
+          const solution = state.boards[boardIdx].solution;
+          state = gameReducer(state, { type: 'SUBMIT_GUESS', guess: solution, boardIndex: boardIdx });
         }
+        expect(state.boards.every(b => b.status === GameStatus.WON)).toBe(true);
+        // NEXT_STAGE loads the next stage, or marks the run WON after the last.
+        state = gameReducer(state, { type: 'NEXT_STAGE' });
       }
 
       expect(state.status).toBe(GameStatus.WON);
+      expect(state.gauntlet?.stageResults).toHaveLength(GAUNTLET_STAGES.length);
+      expect(state.gauntlet?.stageResults.every(r => r.status === GameStatus.WON)).toBe(true);
     });
   });
 

@@ -26,9 +26,11 @@ describe('evaluateGuess', () => {
   });
 
   it('should handle duplicate letters correctly - both in solution', () => {
+    // SPEED has E at positions 2 and 3; the guessed Es at positions 0 and 1
+    // are both misplaced, so standard Wordle rules mark both PRESENT.
     const result = evaluateGuess('SPEED', 'EEXXX');
     expect(result.tiles[0].state).toBe(TileState.PRESENT);
-    expect(result.tiles[1].state).toBe(TileState.CORRECT);
+    expect(result.tiles[1].state).toBe(TileState.PRESENT);
   });
 
   it('should handle duplicate letters correctly - one correct, one wrong', () => {
