@@ -690,9 +690,14 @@ struct YourRecordsView: View {
     /// gap + a progress bar (was a single "closest" line).
     @State private var chases: [(label: String, gap: String, pct: Int)] = []
     @State private var mode: GameMode = .duel
+    // Sweep tile — the "Your Bests By Mode" picker's 10th cell. When selected the
+    // bests card slot shows the daily-sweep window instead of a per-mode card.
+    @State private var isSweep = false
     @State private var loading = true
 
     private let streakMilestones = [7, 30, 100]
+    // Sweep tile accent — indigo, matching the Daily/All-Time sweep boards.
+    private let sweepAccent = Color(hex: 0x4F46E5)
     private var accent: Color { homeModes.first { $0.dbKey == mode.rawValue }?.accent ?? Theme.primary }
     private func modeTitle(_ key: String) -> String { homeModes.first { $0.dbKey == key }?.title ?? key }
 
@@ -702,7 +707,6 @@ struct YourRecordsView: View {
             else {
                 VStack(spacing: 16) {
                     milestoneCard
-                    if sweep.hasData { sweepCard }
                     bestsByMode
                     medalsAndRecords
                     // Trophy shelf — the specific records you hold, spelled out.
@@ -774,31 +778,32 @@ struct YourRecordsView: View {
         }
     }
 
-    private var sweepCard: some View {
-        VStack(spacing: 0) {
-            LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xD97706)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("DAILY SWEEPS").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
-                    meCell("sparkles", "\(sweep.sweepCount)", "Daily Sweeps", Color(hex: 0x7C3AED))
-                    meCell("trophy.fill", "\(sweep.flawlessCount)", "Flawless Victories", Color(hex: 0xD97706))
-                    meCell("flame.fill", "\(sweep.currentSweepStreak)", "Current Sweep Streak", Color(hex: 0xF97316))
-                    meCell("clock.fill", sweep.bestSweepSecs > 0 ? formatShortTime(sweep.bestSweepSecs) : "—", "Best Sweep Time", Color(hex: 0x2563EB), dim: sweep.bestSweepSecs == 0)
-                }
-                // Your sweep standing on the sweep leaderboards (rank RPCs).
-                if sweepDailyRank != nil || sweepAllTimeRank != nil {
-                    HStack(spacing: 8) {
-                        if let d = sweepDailyRank { sweepRankChip("Today", d) }
-                        if let a = sweepAllTimeRank { sweepRankChip("All-Time", a) }
-                        Spacer(minLength: 0)
-                    }
+    /// The daily-sweep window — rendered inside the "Your Bests By Mode" card slot
+    /// only when the Sweep tile is selected (web parity: sweep stats + rank chips,
+    /// with a "No sweeps yet" empty state). Reuses the same meCell/rank-chip views.
+    @ViewBuilder private var sweepWindow: some View {
+        if sweep.hasData {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                meCell("sparkles", "\(sweep.sweepCount)", "Daily Sweeps", Color(hex: 0x7C3AED))
+                meCell("trophy.fill", "\(sweep.flawlessCount)", "Flawless Victories", Color(hex: 0xD97706))
+                meCell("flame.fill", "\(sweep.currentSweepStreak)", "Current Sweep Streak", Color(hex: 0xF97316))
+                meCell("clock.fill", sweep.bestSweepSecs > 0 ? formatShortTime(sweep.bestSweepSecs) : "—", "Best Sweep Time", Color(hex: 0x2563EB), dim: sweep.bestSweepSecs == 0)
+            }
+            // Your sweep standing on the sweep leaderboards (rank RPCs).
+            if sweepDailyRank != nil || sweepAllTimeRank != nil {
+                HStack(spacing: 8) {
+                    if let d = sweepDailyRank { sweepRankChip("Today", d) }
+                    if let a = sweepAllTimeRank { sweepRankChip("All-Time", a) }
+                    Spacer(minLength: 0)
                 }
             }
-            .padding(14)
+        } else {
+            VStack(spacing: 8) {
+                Image(systemName: "trophy").font(.system(size: 28)).foregroundStyle(Theme.textMuted.opacity(0.5))
+                Text("No sweeps yet").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 24)
         }
-        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     /// A compact "#rank of total" chip for the sweep card's standing row.
@@ -816,21 +821,33 @@ struct YourRecordsView: View {
     private var bestsByMode: some View {
         let my = stats.first { $0.gameMode == mode.rawValue && $0.playType == "solo" }
         let m = homeModes.first { $0.dbKey == mode.rawValue }
+        // Card accent follows the selection: indigo for the Sweep window, else the mode.
+        let barAccent = isSweep ? sweepAccent : accent
         return VStack(alignment: .leading, spacing: 8) {
             Text("YOUR BESTS BY MODE").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-            HModePicker(selected: $mode)
+            HModePicker(selected: $mode, isSweep: $isSweep)
             VStack(spacing: 0) {
-                LinearGradient(colors: [accent, accent.opacity(0.53)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
+                LinearGradient(colors: [barAccent, barAccent.opacity(0.53)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 10) {
-                        if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
-                        Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                        if isSweep {
+                            ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 32)
+                            Text("Daily Sweeps").font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                        } else {
+                            if let m { ModeIconView(icon: m.icon, accent: m.accent, box: 32) }
+                            Text(m?.title ?? mode.rawValue).font(Brand.font(14, .black)).foregroundStyle(Theme.textPrimary)
+                        }
                     }
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
-                        meCell("clock.fill", (my?.fastestTime ?? 0) > 0 ? formatShortTime(my!.fastestTime) : "—", "Fastest Win", accent, dim: (my?.fastestTime ?? 0) == 0)
-                        meCell("target", (my?.bestScore ?? 0) > 0 ? "\(my!.bestScore) guesses" : "—", "Fewest Guesses", accent, dim: (my?.bestScore ?? 0) == 0)
-                        meCell("bolt.fill", my != nil ? "\(my!.totalGames) games" : "—", "Games Played", accent, dim: my == nil)
-                        meCell("trophy.fill", my != nil ? "\(my!.wins)–\(my!.losses)" : "—", "Win–Loss", accent, dim: my == nil)
+                    // Sweep tile → daily-sweep window; a real mode → that mode's bests.
+                    if isSweep {
+                        sweepWindow
+                    } else {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 6) {
+                            meCell("clock.fill", (my?.fastestTime ?? 0) > 0 ? formatShortTime(my!.fastestTime) : "—", "Fastest Win", accent, dim: (my?.fastestTime ?? 0) == 0)
+                            meCell("target", (my?.bestScore ?? 0) > 0 ? "\(my!.bestScore) guesses" : "—", "Fewest Guesses", accent, dim: (my?.bestScore ?? 0) == 0)
+                            meCell("bolt.fill", my != nil ? "\(my!.totalGames) games" : "—", "Games Played", accent, dim: my == nil)
+                            meCell("trophy.fill", my != nil ? "\(my!.wins)–\(my!.losses)" : "—", "Win–Loss", accent, dim: my == nil)
+                        }
                     }
                 }
                 .padding(14)
