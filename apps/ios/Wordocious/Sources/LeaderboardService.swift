@@ -147,7 +147,7 @@ enum LeaderboardService {
                          topEntries: [LeaderboardEntry]? = nil, topLimit: Int = 50) async -> (rank: Int, total: Int)? {
         let client = AuthService.shared.client
         let day = todayLocal()
-        func totalCount() async throws -> Int {
+        @Sendable func totalCount() async throws -> Int {
             try await client.from("daily_results")
                 .select("user_id", head: true, count: .exact)
                 .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)

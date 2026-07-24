@@ -33,7 +33,7 @@ enum MedalService {
                 .select("id").eq("user_id", value: userId).eq("medal_type", value: m.type)
                 .limit(1).execute().value) ?? []
             if existing.isEmpty {
-                try? await client.from("medals").insert(MedalInsert(
+                _ = try? await client.from("medals").insert(MedalInsert(
                     user_id: userId, day: day, game_mode: "ALL", play_type: "solo",
                     medal_type: m.type, composite_score: streak)).execute()
             }
@@ -61,7 +61,7 @@ enum MedalService {
             .eq("game_mode", value: gameMode).eq("medal_type", value: "perfect")
             .limit(1).execute().value) ?? []
         guard existing.isEmpty else { return }
-        try? await client.from("medals").insert(MedalInsert(
+        _ = try? await client.from("medals").insert(MedalInsert(
             user_id: userId, day: day, game_mode: gameMode, play_type: "solo",
             medal_type: "perfect", composite_score: guessCount)).execute()
     }
@@ -93,7 +93,7 @@ enum MedalService {
         let sweepNew = sweepXp > 0, flawlessNew = flawlessXp > 0
 
         struct BonusUpsert: Encodable { let user_id, day: String; let sweep_awarded, flawless_awarded: Bool; let updated_at: String }
-        try? await client.from("daily_bonuses").upsert(BonusUpsert(
+        _ = try? await client.from("daily_bonuses").upsert(BonusUpsert(
             user_id: userId, day: day, sweep_awarded: sweepAlready || sweepNew,
             flawless_awarded: flawlessAlready || flawlessNew,
             updated_at: ISO8601DateFormatter().string(from: Date())), onConflict: "user_id,day").execute()
@@ -103,7 +103,7 @@ enum MedalService {
         if let prof: [PR] = try? await client.from("profiles")
             .select("xp, level").eq("id", value: userId).limit(1).execute().value, let cur = prof.first {
             let newXp = (cur.xp ?? 0) + bonus
-            try? await client.from("profiles").update(XpUpd(xp: newXp, level: newXp / 1000 + 1))
+            _ = try? await client.from("profiles").update(XpUpd(xp: newXp, level: newXp / 1000 + 1))
                 .eq("id", value: userId).execute()
         }
         return (sweepXp, flawlessXp)

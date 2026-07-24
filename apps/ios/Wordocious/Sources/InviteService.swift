@@ -113,7 +113,7 @@ enum InviteService {
     /// Decline an invite (dismiss from the banner).
     static func decline(inviteId: String) async {
         struct DeclineUpdate: Encodable { let status: String }
-        try? await AuthService.shared.client.from("match_invites")
+        _ = try? await AuthService.shared.client.from("match_invites")
             .update(DeclineUpdate(status: "declined")).eq("id", value: inviteId).execute()
     }
 
@@ -132,7 +132,7 @@ enum InviteService {
     static func markAccepted(code: String, matchId: String?) async {
         let client = AuthService.shared.client
         let iso = ISO8601DateFormatter().string(from: Date())
-        try? await client.from("match_invites")
+        _ = try? await client.from("match_invites")
             .update(AcceptUpdate(status: "accepted", accepted_at: iso, match_id: matchId))
             .eq("invite_code", value: code)
             .eq("status", value: "pending")

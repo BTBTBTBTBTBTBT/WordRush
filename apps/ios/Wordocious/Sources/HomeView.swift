@@ -359,7 +359,7 @@ struct HomeView: View {
         Task {
             struct Upd: Encodable { let pro_prompt_shown: Bool }
             if let uid = auth.profile?.id {
-                try? await auth.client.from("profiles").update(Upd(pro_prompt_shown: true))
+                _ = try? await auth.client.from("profiles").update(Upd(pro_prompt_shown: true))
                     .eq("id", value: uid).execute()
             }
         }

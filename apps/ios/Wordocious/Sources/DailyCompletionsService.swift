@@ -69,7 +69,9 @@ final class DailyCompletionsStore: ObservableObject {
     @Published private(set) var byMode: [String: DailyCompletion] = [:]
 
     /// The 9 daily modes (VS excluded — no daily row).
-    static let totalDailyModes = 9
+    /// nonisolated: an immutable Int constant, safely readable from the
+    /// non-isolated `DailyTotals` struct and any context.
+    nonisolated static let totalDailyModes = 9
 
     private static let cacheKey = "daily-completions-cache"
 
@@ -110,21 +112,26 @@ final class DailyCompletionsStore: ObservableObject {
     init() {
         byMode = Self.readCache() ?? [:]
         NotificationCenter.default.addObserver(forName: Self.completionPosted, object: nil, queue: .main) { [weak self] note in
-            guard let self, let c = note.object as? DailyCompletion else { return }
-            // Best-result semantics: never downgrade a recorded win on replay.
-            if let existing = self.byMode[c.gameMode], existing.completed && !c.completed { return }
-            self.byMode[c.gameMode] = c
-            self.optimistic[c.gameMode] = c
-            self.optimisticDay = LeaderboardService.todayLocal()
-            Self.writeCache(self.byMode)
-            WidgetBridge.update(completions: self.byMode)
+            // Delivered on `.main` (queue: .main above), so we are genuinely on the
+            // main actor — assumeIsolated lets us touch main-actor state synchronously
+            // without deferring into a Task (which would change ordering).
+            MainActor.assumeIsolated {
+                guard let self, let c = note.object as? DailyCompletion else { return }
+                // Best-result semantics: never downgrade a recorded win on replay.
+                if let existing = self.byMode[c.gameMode], existing.completed && !c.completed { return }
+                self.byMode[c.gameMode] = c
+                self.optimistic[c.gameMode] = c
+                self.optimisticDay = LeaderboardService.todayLocal()
+                Self.writeCache(self.byMode)
+                WidgetBridge.update(completions: self.byMode)
+            }
         }
         // A session left open across LOCAL midnight must refresh to the new day's
         // (empty) completions. Without this, yesterday's byMode lingered and — via
         // the old in-memory merge — got re-stamped onto today, so the home grid
         // showed yesterday's sweep as done with no board behind it. Reload on
         // foreground + on the system day change, mirroring web daily-boundary-reload.
-        let reload: (Notification) -> Void = { [weak self] _ in Task { await self?.load() } }
+        let reload: @Sendable (Notification) -> Void = { [weak self] _ in Task { await self?.load() } }
         NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main, using: reload)
         NotificationCenter.default.addObserver(forName: .NSCalendarDayChanged, object: nil, queue: .main, using: reload)
     }

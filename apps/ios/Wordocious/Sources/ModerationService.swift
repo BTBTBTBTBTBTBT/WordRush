@@ -58,7 +58,7 @@ enum ModerationService {
         let client = AuthService.shared.client
         guard let session = try? await client.auth.session else { return }
         blockedIds.remove(userId.lowercased())
-        try? await client.from("blocks").delete()
+        _ = try? await client.from("blocks").delete()
             .eq("blocker_id", value: session.user.id.uuidString)
             .eq("blocked_id", value: userId).execute()
     }

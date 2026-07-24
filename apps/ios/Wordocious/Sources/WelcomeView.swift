@@ -112,7 +112,7 @@ struct WelcomeView: View {
         guard let uid = auth.profile?.id else { return }
         saving = true
         Task {
-            try? await auth.client.from("profiles").update(SkipUpdate(has_onboarded: true)).eq("id", value: uid).execute()
+            _ = try? await auth.client.from("profiles").update(SkipUpdate(has_onboarded: true)).eq("id", value: uid).execute()
             await auth.refreshProfile()
         }
     }

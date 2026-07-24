@@ -26,7 +26,7 @@ enum ShareEvents {
         Task {
             let client = AuthService.shared.client
             let uid = (try? await client.auth.session)?.user.id.uuidString
-            try? await client.from("share_events").insert(Insert(
+            _ = try? await client.from("share_events").insert(Insert(
                 user_id: uid,
                 platform: "ios",
                 game_mode: String(gameMode.prefix(32)),

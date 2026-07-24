@@ -128,8 +128,13 @@ final class AdsManager: NSObject, ObservableObject {
     private func preloadInterstitial() {
         guard AdsConfig.enabled else { return }
         GADRewardedInterstitialAd.load(withAdUnitID: AdsConfig.interstitialUnitID, request: GADRequest()) { [weak self] ad, _ in
-            self?.interstitial = ad
-            ad?.fullScreenContentDelegate = self
+            // GoogleMobileAds delivers the load completion on the main thread, so
+            // touching main-actor state here is safe — assumeIsolated makes that
+            // contract explicit without deferring onto a later runloop turn.
+            MainActor.assumeIsolated {
+                self?.interstitial = ad
+                ad?.fullScreenContentDelegate = self
+            }
         }
     }
 
@@ -155,15 +160,24 @@ final class AdsManager: NSObject, ObservableObject {
     }
 }
 
+// GADFullScreenContentDelegate is an Obj-C protocol whose requirements are
+// nonisolated, but GoogleMobileAds documents (and guarantees) that these
+// callbacks fire on the main thread. We therefore satisfy them with nonisolated
+// methods (so the conformance no longer crosses actor isolation) and hop onto
+// the main actor via assumeIsolated to touch AdsManager's main-actor state.
 extension AdsManager: GADFullScreenContentDelegate {
-    func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
-        interstitial = nil
-        preloadInterstitial()   // load the next one
-        onDismiss?(); onDismiss = nil
+    nonisolated func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
+        MainActor.assumeIsolated {
+            interstitial = nil
+            preloadInterstitial()   // load the next one
+            onDismiss?(); onDismiss = nil
+        }
     }
-    func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
-        interstitial = nil
-        preloadInterstitial()
-        onDismiss?(); onDismiss = nil
+    nonisolated func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
+        MainActor.assumeIsolated {
+            interstitial = nil
+            preloadInterstitial()
+            onDismiss?(); onDismiss = nil
+        }
     }
 }

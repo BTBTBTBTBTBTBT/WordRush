@@ -24,7 +24,7 @@ enum ShieldService {
             .select("streak_shields").eq("id", value: uid).single().execute().value,
               row.streak_shields > 0 else { return false }
         struct Upd: Encodable { let streak_shields: Int; let last_played_at: String }
-        try? await client.from("profiles")
+        _ = try? await client.from("profiles")
             .update(Upd(streak_shields: row.streak_shields - 1,
                         last_played_at: ISO8601DateFormatter().string(from: Date())))
             .eq("id", value: uid).execute()
@@ -37,7 +37,7 @@ enum ShieldService {
         let client = AuthService.shared.client
         guard let uid = try? await client.auth.session.user.id.uuidString else { return }
         struct Upd: Encodable { let daily_login_streak: Int }
-        try? await client.from("profiles")
+        _ = try? await client.from("profiles")
             .update(Upd(daily_login_streak: 0)).eq("id", value: uid).execute()
         await AuthService.shared.refreshProfile()
     }

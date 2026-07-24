@@ -72,7 +72,7 @@ enum GoogleAuth {
 /// Mirrors apps/web/lib/auth-context.tsx (session, profile, isProActive).
 @MainActor
 final class AuthService: ObservableObject {
-    static let shared = AuthService()
+    nonisolated static let shared = AuthService()
 
     @Published private(set) var profile: Profile?
     @Published private(set) var isAuthenticated = false
@@ -82,11 +82,15 @@ final class AuthService: ObservableObject {
     /// so recording no-ops; account surfaces show their signed-out "Sign in" state.
     @Published var isGuest = false
 
-    let client: SupabaseClient
+    // nonisolated: the client is an immutable, Sendable (thread-safe) SupabaseClient
+    // created once, so it (and `shared`) are safe to reach from any context. This
+    // clears the Swift 6 main-actor-isolation warnings at every `AuthService.shared.client`
+    // call site without changing behavior. The @Published UI state stays main-actor.
+    nonisolated let client: SupabaseClient
 
     var isProActive: Bool { Wordocious.isProActive(profile) }
 
-    private init() {
+    nonisolated private init() {
         client = SupabaseClient(
             supabaseURL: SupabaseConfig.url,
             supabaseKey: SupabaseConfig.isConfigured ? SupabaseConfig.anonKey : "anon-key-not-set",
@@ -309,7 +313,7 @@ final class AuthService: ObservableObject {
         let expiry: String? = on
             ? ISO8601DateFormatter().string(from: Date().addingTimeInterval(365 * 24 * 60 * 60))
             : nil
-        try? await client.from("profiles").update(ProToggle(is_pro: on, pro_expires_at: expiry))
+        _ = try? await client.from("profiles").update(ProToggle(is_pro: on, pro_expires_at: expiry))
             .eq("id", value: userId).execute()
         await refreshProfile()
     }
@@ -362,6 +366,6 @@ final class AuthService: ObservableObject {
                 row["avatar_url"] = avatar
             }
         }
-        try? await client.from("profiles").insert(row).execute()
+        _ = try? await client.from("profiles").insert(row).execute()
     }
 }

@@ -166,7 +166,7 @@ enum GameResultsService {
     static func recordGauntletStages(seed: String, payload: GauntletStagesPayload) async {
         let client = AuthService.shared.client
         guard let uid = try? await client.auth.session.user.id.uuidString else { return }
-        try? await client.from("matches")
+        _ = try? await client.from("matches")
             .update(GauntletStagesUpdate(gauntlet_stages: payload))
             .eq("player1_id", value: uid)
             .eq("game_mode", value: "GAUNTLET")

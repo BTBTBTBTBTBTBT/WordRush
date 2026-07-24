@@ -341,12 +341,12 @@ struct EditProfileView: View {
         guard let url = await AvatarUploader.upload(data) else {
             error = "Avatar upload failed. Please try again."; return
         }
-        try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: url)).eq("id", value: uid).execute()
+        _ = try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: url)).eq("id", value: uid).execute()
         await auth.refreshProfile()
     }
     private func removeAvatar() async {
         guard let uid = auth.profile?.id else { return }
-        try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: nil)).eq("id", value: uid).execute()
+        _ = try? await auth.client.from("profiles").update(AvatarUpdate(avatar_url: nil)).eq("id", value: uid).execute()
         await auth.refreshProfile()
     }
 }
