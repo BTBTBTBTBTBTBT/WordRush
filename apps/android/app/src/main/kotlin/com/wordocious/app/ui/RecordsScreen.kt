@@ -521,15 +521,18 @@ private fun YourRecordsTab() {
     var chases by remember { mutableStateOf<List<RecordChase>>(emptyList()) }
     var selectedMode by remember { mutableStateOf("DUEL") }
     var loading by remember { mutableStateOf(true) }
-    // The user's global all-time sweep rank — augments the DAILY SWEEPS card.
-    var sweepRank by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    // The user's sweep standings — shown in the Sweep-selected bests window:
+    // today's daily-sweep board rank + the global all-time sweep rank.
+    var sweepRankToday by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
+    var sweepRankAllTime by remember { mutableStateOf<LeaderboardService.RankInfo?>(null) }
 
     LaunchedEffect(userId) {
         if (userId == null) { loading = false; return@LaunchedEffect }
         val s = com.wordocious.app.data.ProfileService.fetchUserStats(userId)
         sweep = com.wordocious.app.data.MatchStatsService.dailySweepStats()
         val recs = LeaderboardService.fetchAllTimeRecords()
-        sweepRank = LeaderboardService.getUserAllTimeSweepRank(userId)
+        sweepRankToday = LeaderboardService.getUserSweepRank(userId)
+        sweepRankAllTime = LeaderboardService.getUserAllTimeSweepRank(userId)
         stats = s
         recordsHeld = recs.filter { it.holderId == userId }
         // Record Chase: EVERY beatable all-time record with your gap, sorted by
@@ -571,9 +574,9 @@ private fun YourRecordsTab() {
     }
     if (loading) { Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { CardsSkeleton() }; return }
 
-    // GUARDED valueOf: the picker's SWEEP id has no `:core` GameMode → neutral
-    // primary accent (indigo is reserved for the tile).
-    val accent = if (selectedMode == SWEEP_ID) WTheme.primary else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
+    // GUARDED valueOf via pickerGameModeOrNull: the picker's SWEEP id has no
+    // `:core` GameMode → neutral primary accent (indigo is reserved for the tile).
+    val accent = pickerGameModeOrNull(selectedMode)?.let { modeAccent(it) } ?: WTheme.primary
     val streak = profile?.dailyLoginStreak ?: 0
     val nextMilestone = STREAK_MILESTONES.firstOrNull { it > streak }
     val my = stats.find { it.gameMode == selectedMode && it.playType == "solo" }
@@ -624,49 +627,65 @@ private fun YourRecordsTab() {
             }
             Spacer(Modifier.height(16.dp))
         }
-        // Sweep totals
-        if (sweep.hasData) item {
-            CardShell(Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFD97706)))) {
-                Text("DAILY SWEEPS", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
-                Spacer(Modifier.height(4.dp))
-                Row(Modifier.fillMaxWidth()) {
-                    Box(Modifier.weight(1f)) { MeCell("${sweep.sweepCount}", "Daily Sweeps") }
-                    Box(Modifier.weight(1f)) { MeCell("${sweep.flawlessCount}", "Flawless Wins") }
-                }
-                Row(Modifier.fillMaxWidth()) {
-                    Box(Modifier.weight(1f)) { MeCell("${sweep.currentSweepStreak}", "Sweep Streak") }
-                    Box(Modifier.weight(1f)) { MeCell(if (sweep.bestSweepSecs > 0) fmtSecs(sweep.bestSweepSecs) else "—", "Best Sweep Time", dim = sweep.bestSweepSecs == 0) }
-                }
-                // Global all-time sweep rank (RPC alltime_sweep_rank) — the user's
-                // standing among all sweepers, alongside their raw totals.
-                sweepRank?.let { r ->
-                    Spacer(Modifier.height(6.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = Color(0xFFD97706), modifier = Modifier.size(13.dp))
-                        Text("Sweep rank ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
-                        Text(" of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                    }
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-        }
-        // Bests by mode
+        // Bests by mode — the Sweep tile swaps the per-mode bests for the daily-
+        // sweep window (totals + today/all-time rank), populating only on select.
         item {
+            val isSweep = selectedMode == SWEEP_ID
             Text("YOUR BESTS BY MODE", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
             Spacer(Modifier.height(8.dp))
             ModePickerRow(selectedMode) { selectedMode = it }
             Spacer(Modifier.height(8.dp))
             CardShell(Brush.horizontalGradient(listOf(accent, accent.copy(alpha = 0.53f)))) {
-                Text(recModeTitle(selectedMode), fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Text(if (isSweep) "Daily Sweeps" else recModeTitle(selectedMode), fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 Spacer(Modifier.height(2.dp))
-                Row(Modifier.fillMaxWidth()) {
-                    Box(Modifier.weight(1f)) { MeCell(if ((my?.fastestTime ?: 0) > 0) fmtSecs(my!!.fastestTime!!) else "—", "Fastest Win", dim = (my?.fastestTime ?: 0) == 0) }
-                    Box(Modifier.weight(1f)) { MeCell(if ((my?.bestScore ?: 0.0) > 0) "${my!!.bestScore!!.toInt()} guesses" else "—", "Fewest Guesses", dim = (my?.bestScore ?: 0.0) == 0.0) }
-                }
-                Row(Modifier.fillMaxWidth()) {
-                    Box(Modifier.weight(1f)) { MeCell(if (my != null) "${my.totalGames} games" else "—", "Games Played", dim = my == null) }
-                    Box(Modifier.weight(1f)) { MeCell(if (my != null) "${my.wins}–${my.losses}" else "—", "Win–Loss", dim = my == null) }
+                if (isSweep) {
+                    if (sweep.hasData) {
+                        Row(Modifier.fillMaxWidth()) {
+                            Box(Modifier.weight(1f)) { MeCell("${sweep.sweepCount}", "Daily Sweeps") }
+                            Box(Modifier.weight(1f)) { MeCell("${sweep.flawlessCount}", "Flawless Wins") }
+                        }
+                        Row(Modifier.fillMaxWidth()) {
+                            Box(Modifier.weight(1f)) { MeCell("${sweep.currentSweepStreak}", "Sweep Streak") }
+                            Box(Modifier.weight(1f)) { MeCell(if (sweep.bestSweepSecs > 0) fmtSecs(sweep.bestSweepSecs) else "—", "Best Sweep Time", dim = sweep.bestSweepSecs == 0) }
+                        }
+                        // Sweep leaderboard standing — today's daily board + all-time
+                        // (getUserSweepRank / getUserAllTimeSweepRank).
+                        if (sweepRankToday != null || sweepRankAllTime != null) {
+                            Spacer(Modifier.height(6.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = Color(0xFFD97706), modifier = Modifier.size(13.dp))
+                                sweepRankToday?.let { r ->
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Text("Today", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+                                        Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                    }
+                                }
+                                sweepRankAllTime?.let { r ->
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Text("All-Time", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                        Text("#${r.rank}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
+                                        Text("of ${r.totalPlayers}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = WTheme.textMuted, modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.height(6.dp))
+                            Text("No sweeps yet", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                        }
+                    }
+                } else {
+                    Row(Modifier.fillMaxWidth()) {
+                        Box(Modifier.weight(1f)) { MeCell(if ((my?.fastestTime ?: 0) > 0) fmtSecs(my!!.fastestTime!!) else "—", "Fastest Win", dim = (my?.fastestTime ?: 0) == 0) }
+                        Box(Modifier.weight(1f)) { MeCell(if ((my?.bestScore ?: 0.0) > 0) "${my!!.bestScore!!.toInt()} guesses" else "—", "Fewest Guesses", dim = (my?.bestScore ?: 0.0) == 0.0) }
+                    }
+                    Row(Modifier.fillMaxWidth()) {
+                        Box(Modifier.weight(1f)) { MeCell(if (my != null) "${my.totalGames} games" else "—", "Games Played", dim = my == null) }
+                        Box(Modifier.weight(1f)) { MeCell(if (my != null) "${my.wins}–${my.losses}" else "—", "Win–Loss", dim = my == null) }
+                    }
                 }
             }
             Spacer(Modifier.height(16.dp))
