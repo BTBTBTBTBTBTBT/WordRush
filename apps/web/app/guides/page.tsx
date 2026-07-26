@@ -16,9 +16,41 @@ export default function GuidesIndexPage() {
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
       <InfoPageHeader title="Mode Guides" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <p className="text-sm font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-sm font-bold mb-4" style={{ color: 'var(--color-text-muted)' }}>
           Every Wordocious mode, explained properly — exact rules, the real scoring math, and the strategy that separates the leaderboard from the middle of the pack.
         </p>
+
+        <div className="rounded-2xl p-5 mb-6 space-y-3" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+          <h2 className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--color-text)' }}>
+            Which mode should you play first?
+          </h2>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+            The nine daily modes are really four families. <strong>Single-board classics</strong> — Classic (5 letters), Six,
+            and Seven — are pure deduction: one hidden word, six guesses, and the only variable is word length. Longer words
+            sound harder but often play easier, because every guess reveals more letters; the real difficulty jump is the
+            thinner vocabulary most players have at six and seven letters. If you&apos;re new, start with Classic and work up.
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+            <strong>Multi-board marathons</strong> — QuadWord (4 boards) and OctoWord (8) — solve several words with a shared
+            guess pool. They reward breadth over depth: your opening guesses should maximize information across every board
+            at once, not chase a single kill. These are the modes where a disciplined three-guess opening routine pays off
+            most, and the ones that teach you to read multiple boards at a glance.
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+            <strong>Twist modes</strong> change the rules themselves. Succession chains answers so each solve feeds the next.
+            Deliverance is a rescue mission against a shrinking guess budget. ProperNoundle breaks the biggest convention in
+            the genre by hiding proper nouns — names, places, brands — which flips your instincts about likely letters on
+            their head. They&apos;re the antidote to autopilot.
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text)' }}>
+            Finally, <strong>Gauntlet</strong> chains five stages into one run where a single bust ends everything — the
+            closest thing Wordocious has to a boss fight. Finish all nine modes in a day and you&apos;ve scored a{' '}
+            <strong>Daily Sweep</strong>, tracked on the{' '}
+            <Link href="/strategy/daily-sweep-guide" style={{ color: '#7c3aed', fontWeight: 700 }}>sweep leaderboard</Link> —
+            the long-game goal that turns dabbling into a routine. Each guide below covers one mode&apos;s exact rules,
+            its scoring formula, and the specific strategy that mode rewards.
+          </p>
+        </div>
 
         <div className="space-y-3">
           {MODE_GUIDES.map((g) => (

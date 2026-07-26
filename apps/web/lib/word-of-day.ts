@@ -1,6 +1,7 @@
 import { SOLUTIONS_CUTOVER_DATE } from '@wordle-duel/core';
 import solutions from '@/data/solutions.json';
 import legacySolutions from '@/data/solutions-legacy.json';
+import definitions from '@/data/word-definitions.json';
 
 /**
  * Word of the Day — the deterministic daily word (from the shared solutions list,
@@ -8,11 +9,37 @@ import legacySolutions from '@/data/solutions-legacy.json';
  * and the public /word/[date] archive both derive the word the SAME way so they
  * always agree.
  *
+ * Definitions come from data/word-definitions.json — a committed local dataset
+ * generated once by scripts/gen-word-defs.mjs (source: Wiktionary via the Free
+ * Dictionary API, CC BY-SA; credited on the page). This module used to call
+ * that API at render time; production rate-limits made the lookups fail, the
+ * definition sections vanished, and every archive page collapsed to a thin
+ * stub — the "low value content" AdSense kept rejecting. Local data makes the
+ * pages deterministic and permanently self-contained.
+ *
  * LOCAL, not UTC: the home card (app/page.tsx) and both native home cards index
  * by the viewer's local calendar day. This module briefly used raw-UTC
  * timestamps, which made the archive's "today" run a day ahead of the home card
  * every local evening (between UTC midnight and local midnight).
  */
+
+/** One dictionary sense from the local dataset. */
+export interface WordSense {
+  pos: string;
+  def: string;
+  example?: string;
+  syn?: string[];
+  ant?: string[];
+}
+
+interface DictRecord {
+  miss?: boolean;
+  phonetic?: string;
+  senses?: WordSense[];
+}
+
+const DICT = definitions as Record<string, DictRecord>;
+
 export interface WordEntry {
   word: string;
   phonetic?: string;
@@ -21,6 +48,9 @@ export interface WordEntry {
   example?: string;
   /** Other senses (part of speech + definition) for a richer archive page. */
   extraSenses?: { partOfSpeech: string; definition: string }[];
+  /** Synonyms/antonyms across senses (deduped) — web archive page only. */
+  synonyms?: string[];
+  antonyms?: string[];
 }
 
 /** LOCAL-calendar-day number since the Unix epoch — the daily index. Same
@@ -62,45 +92,35 @@ export function candidateWords(date: Date): string[] {
   return Array.from({ length: 20 }, (_, o) => list[(idx + o) % list.length]);
 }
 
+/** Look up a word in the local dictionary; null when absent or a recorded miss. */
+export function dictEntry(word: string): { phonetic: string; senses: WordSense[] } | null {
+  const rec = DICT[word.toLowerCase()];
+  if (!rec || rec.miss || !rec.senses?.length) return null;
+  return { phonetic: rec.phonetic || '', senses: rec.senses };
+}
+
 /**
- * The Word of the Day for a date, with its definition. Tries each candidate until
- * one has a dictionary entry (free dictionaryapi.dev), mirroring the home card.
- * Cached for a day per word so crawler hits don't hammer the API.
+ * The Word of the Day for a date, with its definition. Tries each candidate
+ * until one has a local dictionary entry, mirroring the home card. Async only
+ * for call-site compatibility — the lookup itself is local and instant.
  */
 export async function wordOfDay(date: Date): Promise<WordEntry> {
   for (const word of candidateWords(date)) {
-    try {
-      const res = await fetch(
-        `https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`,
-        { next: { revalidate: 86400 } },
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      const entry = data?.[0];
-      if (!entry) continue;
-      const phonetic: string =
-        entry.phonetics?.find((p: { text?: string }) => p.text)?.text || entry.phonetic || '';
-      const meanings: { partOfSpeech?: string; definitions?: { definition?: string; example?: string }[] }[] =
-        entry.meanings || [];
-      const primary = meanings[0];
-      const def = primary?.definitions?.[0];
-      const definition = def?.definition || '';
-      if (!definition) continue;
-      const extraSenses = meanings
-        .slice(1, 4)
-        .map((m) => ({ partOfSpeech: m.partOfSpeech || '', definition: m.definitions?.[0]?.definition || '' }))
-        .filter((s) => s.definition);
-      return {
-        word,
-        phonetic,
-        partOfSpeech: primary?.partOfSpeech || '',
-        definition,
-        example: def?.example || '',
-        extraSenses,
-      };
-    } catch {
-      // try the next candidate
-    }
+    const entry = dictEntry(word);
+    if (!entry) continue;
+    const [primary, ...rest] = entry.senses;
+    const synonyms = [...new Set(entry.senses.flatMap((s) => s.syn ?? []))].slice(0, 8);
+    const antonyms = [...new Set(entry.senses.flatMap((s) => s.ant ?? []))].slice(0, 6);
+    return {
+      word,
+      phonetic: entry.phonetic,
+      partOfSpeech: primary.pos,
+      definition: primary.def,
+      example: primary.example || '',
+      extraSenses: rest.slice(0, 3).map((s) => ({ partOfSpeech: s.pos, definition: s.def })),
+      synonyms,
+      antonyms,
+    };
   }
   return { word: candidateWords(date)[0] };
 }

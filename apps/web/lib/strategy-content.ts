@@ -290,6 +290,167 @@ export const STRATEGY_ARTICLES: StrategyArticle[] = [
     ],
     related: ['solve-faster', 'modes-explained'],
   },
+  {
+    slug: 'letter-frequency-atlas',
+    title: 'The Wordocious Letter Atlas: What 2,412 Curated Answers Reveal',
+    description:
+      'Original letter-frequency research computed from the actual Wordocious answer bank: which letters appear most, where they sit, the endings that dominate, and how to convert the numbers into better guesses.',
+    dek: 'We counted every letter in every answer so you don’t have to — here’s the map, and how to play it.',
+    minutes: 9,
+    sections: [
+      {
+        heading: 'The headline numbers',
+        body: [
+          'Every daily Classic answer in Wordocious is drawn from a curated bank of 2,412 five-letter words — common enough to be fair, varied enough to stay interesting. We counted every letter in every one of them. The results explain, in hard numbers, why some guesses feel efficient and others feel wasted.',
+          'E appears in 48% of all answers — nearly one in two. A follows at 40%, then R at 36%, O and T at 29%, I at 28%, S at 27%, L at 25%, and N at 24%. That top group is exactly the pool a strong opening word should draw from: guess a word built from these and you are statistically guaranteed to light up tiles most days.',
+          'At the other end of the atlas: Q appears in just 1.0% of answers, J in 1.3%, Z in 1.7%, and X in 1.9%. Even V (6.6%) and W (8.2%) are comparative rarities. The practical rule: never spend an early guess on a rare-letter word. Test the rare letters only when the board has narrowed and a specific candidate demands it.',
+        ],
+      },
+      {
+        heading: 'Position matters as much as presence',
+        body: [
+          'Knowing a letter is likely in the answer is half the picture; knowing where it likes to sit is the other half. First position is dominated by S — 16% of all answers start with it, nearly double the next contender. C (9%), B (8%), T (7%), P (6%), and F (6%) round out the leaders. When your candidate list is long, biasing toward S-starting words is the percentage play.',
+          'Last position tells an even sharper story. E ends 17% of answers, but the surprise is Y: it closes 15% of the entire bank. Y is a deceptive letter overall — it appears in 17% of answers, and when it does appear, 88% of the time it is the final letter. If you have a yellow Y anywhere on the board, your default assumption should be that it belongs at the end.',
+          'Two-letter endings concentrate hard: -ER closes 148 answers, -ED 116, then -CH (58), -SE (49), -CK (48), -TY (45), -AL (43), and -LY (41). When you are down to your last guesses with a couple of letters floating, running through these ending frames — does the evidence fit an -ER word? an -ED word? — resolves endgames faster than letter-by-letter trial.',
+        ],
+      },
+      {
+        heading: 'The vowel budget',
+        body: [
+          'Vowel structure is remarkably consistent: 60% of answers contain exactly two vowels, 31% contain just one, 9% squeeze in three, and only four words in the entire bank carry four. So the baseline assumption for any unsolved board is two vowels — and once you have confirmed two, additional vowel-hunting is usually a wasted tile.',
+          'This is also the quiet argument for two-vowel openers like SLATE or CRANE over three-vowel openers like ADIEU. The three-vowel word over-tests a hypothesis that is only true 9% of the time, while under-testing the consonant structure that actually distinguishes most answers. Match your opener to the shape of the bank, not to a hunch about vowels.',
+        ],
+      },
+      {
+        heading: 'Turning the atlas into a routine',
+        body: [
+          'Here is the whole atlas compressed into a pre-game routine. Open with a no-repeat word built from the E-A-R-O-T-I-S-L-N pool. Read the result against the base rates: no S showing? You have still eliminated the single most common starting letter. Yellow Y? Slide it to the end. Two vowels confirmed? Stop hunting vowels and grind consonants.',
+          'In the endgame, lean on the frames: S- up front, -ER/-ED/-Y at the back, and never re-test the rare letters unless a specific surviving candidate contains one. None of these rules solves a puzzle by itself — but each one tilts a guess a few percentage points in your favor, and across six rows those points compound into the difference between solving in five and solving in three.',
+          'Want to see the atlas applied to a single word? Every entry in our Word of the Day archive breaks down a real answer with these exact statistics — how common its letters are, which answers sit one letter away, and what its pattern rewards.',
+        ],
+      },
+    ],
+    related: ['best-starting-words', 'repeated-letter-traps'],
+  },
+  {
+    slug: 'repeated-letter-traps',
+    title: 'Repeated Letters: The Trap Hiding in a Third of All Answers',
+    description:
+      'One in three Wordocious answers contains a repeated letter, and repeats break the assumptions behind most players’ guessing systems. How to detect a repeat early and solve through it without burning rows.',
+    dek: '32% of answers repeat a letter. Players who never consider repeats donate a full guess to the house.',
+    minutes: 7,
+    sections: [
+      {
+        heading: 'The scale of the trap',
+        body: [
+          'Count every answer in the Wordocious bank and 780 of the 2,412 — a flat 32% — contain at least one repeated letter. That means roughly two mornings a week, the daily Classic answer breaks the quiet assumption built into most guessing habits: that five tiles means five different letters.',
+          'The repeat offenders are not exotic. E doubles in 169 answers, O in 90, A in 81, L in 68, T in 64, and R in 56 — the same common letters your opener already tests. The trap is not that repeats use strange letters; it is that they reuse the letters you have already found, in places you have stopped looking.',
+        ],
+      },
+      {
+        heading: 'Why repeats wreck standard deduction',
+        body: [
+          'The standard system — eliminate grays, relocate yellows, keep greens — silently assumes each letter appears once. Repeats violate it in both directions. A green E in slot 2 does not tell you there is no second E in slot 5. And the tile feedback for a doubled guess against a single-letter answer (one colored, one gray) reads, to most players, like a contradiction rather than a count.',
+          'The tell-tale symptom is the "impossible board": you have four confirmed letters, one open slot, and no remaining letter of the alphabet seems to fit. Nine times out of ten the missing letter is not missing at all — it is a second copy of a letter already on the board. When a board feels impossible, repeats should be your first hypothesis, not your last.',
+        ],
+      },
+      {
+        heading: 'Detecting a repeat early',
+        body: [
+          'You can hunt repeats deliberately. If mid-game evidence points toward a common doubler — an E, O, A, L, T, or R confirmed but position-ambiguous — spend a guess on a word that uses that letter twice in the positions still open. The tile colors on the doubled guess resolve the count directly: two colored tiles means the answer really does carry two copies.',
+          'Pattern knowledge shortcuts this further. Doubles cluster in recognizable frames: -LL- and -SS- in the middle or end (HELLO-type and CLASS-type shapes), -EE- and -OO- cores (GREEN-type, FLOOR-type), and double letters straddling common endings (-TTER, -NNER). When your surviving candidates include one of these shapes, test it before a fifth single-letter theory.',
+        ],
+      },
+      {
+        heading: 'The discipline that saves the row',
+        body: [
+          'Make one habit change: every time you reach row four with an unsolved board, explicitly ask "what does this look like with a doubled letter?" before guessing. Run the confirmed letters through the double frames — could that yellow L be two Ls? could the E be at both ends? It takes five seconds, and it catches the 32% case before it costs you rows five and six.',
+          'Repeats also change multi-board play. In QuadWord and OctoWord, a board that stalls while its siblings solve is disproportionately likely to be hiding a repeat — single-copy answers get swept up by your shared guesses, while doubled answers linger. Prioritize the repeat hypothesis on whichever board has resisted the longest.',
+          'For a worked example, browse the Word of the Day archive: every entry flags whether the day’s word repeats a letter and how that repeat changes the solve, so you can build the instinct against real answers.',
+        ],
+      },
+    ],
+    related: ['letter-frequency-atlas', 'solve-faster'],
+  },
+  {
+    slug: 'beginner-to-sweeper',
+    title: 'From First Guess to Daily Sweeper: A 30-Day Progression Plan',
+    description:
+      'A structured month-long roadmap through every Wordocious skill tier: tile-reading fundamentals, an opening system, multi-board scanning, twist-mode adaptation, Gauntlet nerve, and finally the full nine-mode Daily Sweep.',
+    dek: 'The distance from casual solver to nine-for-nine sweeper is about a month of deliberate play. Here’s the curriculum.',
+    minutes: 8,
+    sections: [
+      {
+        heading: 'Days 1–7: own the fundamentals in Classic',
+        body: [
+          'Spend the first week exclusively in Classic and Practice, with two goals: never reuse a gray letter, and never guess a word that contradicts a yellow’s known exclusions. These sound trivial; they are not. Most streak-ending guesses violate one of them under time pressure. Practice mode exists precisely so you can drill without burning your daily.',
+          'Adopt one fixed opener this week — SLATE, CRANE, or any no-repeat word from the high-frequency pool — and play it every game. Fixing the opener converts your first row from a decision into a habit, which frees your full attention for the rows where deduction actually happens.',
+        ],
+      },
+      {
+        heading: 'Days 8–14: length changes, system holds',
+        body: [
+          'Add Six and Seven. The deduction system is unchanged; what changes is vocabulary confidence and vowel structure — longer answers carry more vowels and more multi-syllable shapes, so extend your opener accordingly (a six-letter opener like ORANGE covers the shifted vowel budget).',
+          'This week also introduces the endgame frames: common endings like -ER, -ED, -LY, and -TION become dramatically more powerful at six and seven letters, where suffixes make up a larger share of the word. If you learn to see a six-letter board as "four letters plus a frame," the extra length becomes an advantage rather than a threat.',
+        ],
+      },
+      {
+        heading: 'Days 15–21: multi-board scanning',
+        body: [
+          'QuadWord first, then OctoWord. The skill being trained is fundamentally new: instead of deducing one answer deeply, you are triaging many boards quickly. Play a fixed two- or three-word opening across all boards before solving any single one — every board deserves the same broad information base before you commit guesses to kills.',
+          'Then solve in order of certainty, not order of position: knock out the board you are surest of, because every solved board effectively refunds information to the others through the shared guess pool. The scanning rhythm — sweep the boards, rank by certainty, solve the surest — is exactly the muscle Gauntlet and the Sweep will demand later.',
+        ],
+      },
+      {
+        heading: 'Days 22–30: twists, the Gauntlet, and the Sweep',
+        body: [
+          'Fold in the twist modes now. Succession rewards chain-thinking, Deliverance rewards budget discipline, and ProperNoundle deliberately breaks your letter statistics — proper nouns obey different frequency rules, so it trains flexibility more than any other mode. Expect your first ProperNoundle games to feel wrong; that disorientation is the lesson.',
+          'Gauntlet is the nerve test: five chained stages where one bust ends the run. Enter it only after your Classic average sits comfortably under four guesses, and play it like a mountaineer — conservative information-first guessing on every stage, because the expected cost of a risky guess is the entire run, not one row.',
+          'Finally, assemble the Daily Sweep: all nine modes, one day. Your first sweeps are about stamina and scheduling as much as skill — the composite score that ranks you on the sweep leaderboard rewards both accuracy and pace across the full slate. Once the first sweep lands, the game changes character: the question stops being "can I solve today’s puzzle" and becomes "how clean can the whole day be." That is the sweeper’s mindset, and it is a month away for almost anyone willing to train deliberately.',
+        ],
+      },
+    ],
+    related: ['daily-sweep-guide', 'multi-board-mastery'],
+  },
+  {
+    slug: 'vs-battle-tactics',
+    title: 'Winning VS Battles: Head-to-Head Word Puzzle Tactics',
+    description:
+      'Live VS play is a different sport from solo solving: same word, real opponent, first correct solve wins. Opening tempo, when to deviate from coverage, reading the opponent clock, and closing games you’re behind in.',
+    dek: 'In VS, a perfect slow solve loses to a sloppy fast one. Speed changes every rule you learned solo.',
+    minutes: 7,
+    sections: [
+      {
+        heading: 'What actually decides a VS match',
+        body: [
+          'In Wordocious VS, you and a live opponent race the same hidden word — first correct solve takes the match. That single change inverts solo priorities: solo play optimizes guesses used, VS play optimizes time to solution. A five-guess solve in ninety seconds beats a three-guess solve in two minutes, every time.',
+          'The largest source of lost matches is not bad deduction — it is deliberation. Solo habits teach you to stare at row three until certainty arrives. In VS, the seconds you spend polishing a guess from 70% to 85% confidence are usually worth less than the information the 70% guess would already have bought you. Type the good guess now instead of the great guess later.',
+        ],
+      },
+      {
+        heading: 'Tempo openings',
+        body: [
+          'Your opening two rows should be fully automatic — the same fixed, letter-diverse pair you play in every match, entered as fast as you can physically type them. Any thinking during rows one and two is pure clock donation; there is no board state yet that could improve on a memorized coverage pair.',
+          'This is also why a practiced VS player banks a reliable twenty-plus seconds on most opponents before deduction even begins. Two instant rows of ten distinct high-frequency letters put you at the real decision point — rows three through six — ahead on both information and time. The match is usually decided by who reaches that point first, not by who deduces better once there.',
+        ],
+      },
+      {
+        heading: 'Risk shifts with the scoreboard',
+        body: [
+          'VS strategy is situational in a way solo never is. When you sense you are ahead on the clock, play textbook: coverage guesses, clean elimination, take the solve when it is safe. When you are behind — your opponent’s progress bar is moving faster, or the clock has run long — expected value flips toward aggression: commit to your best candidate a row earlier than solo discipline would allow.',
+          'The deeper principle: in a race, the value of certainty depends on your position. Leaders buy certainty because time is on their side; trailers sell certainty for speed because a 40% shot at first place beats a 100% chance of a tidy second. Practicing both gears — and noticing which one the match state calls for — is most of VS mastery.',
+        ],
+      },
+      {
+        heading: 'The rematch meta and daily VS',
+        body: [
+          'Matches cluster into sessions — rematches against the same opponent are common, and they carry information. An opponent who opened SLATE twice will open it a third time; if you are trailing in a series, varying your own opener denies them the same read. Across a rematch series, the player who adapts openings, risk timing, and even typing cadence holds a real edge over the player who runs one script.',
+          'Daily VS adds a scheduling wrinkle: the day’s VS result is part of your nine-mode Daily Sweep, and it is the one mode you cannot fully control — an opponent has a vote. Sweepers should play their VS match early in the day while focus is fresh, rather than leaving the least controllable mode for a tired midnight attempt. Warm up in Practice, run your tempo opening, and treat the first minute as the whole match — because statistically, it is.',
+        ],
+      },
+    ],
+    related: ['best-starting-words', 'daily-sweep-guide'],
+  },
 ];
 
 export function getArticle(slug: string): StrategyArticle | undefined {

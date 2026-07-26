@@ -5,7 +5,11 @@ import { recentDates, wordOfDay, dateKey, wordPlayAnalysis } from '@/lib/word-of
 // the last ~30 days, each with the definition + the same original letter
 // analysis the web /word/[date] page renders. Cached a day (the words + their
 // dictionary lookups are deterministic per date).
-export const runtime = 'edge';
+//
+// Node runtime (was edge): definitions now come from the committed local
+// dataset (data/word-definitions.json), which is too large to bundle into an
+// edge function. The response shape is unchanged — native decoders are
+// untouched.
 export const revalidate = 86400;
 
 export async function GET() {
