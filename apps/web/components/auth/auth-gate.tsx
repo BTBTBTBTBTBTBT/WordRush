@@ -9,7 +9,7 @@ import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 
 // Public (no login) so AdSense / search crawlers can index real content —
 // not just the login wall. These are static content pages.
-const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about', '/faq', '/guides', '/pro', '/word', '/strategy'];
+const PUBLIC_PATHS = ['/privacy', '/terms', '/support', '/auth/callback', '/how-to-play', '/about', '/faq', '/guides', '/pro', '/word', '/words', '/strategy'];
 
 // Game routes → their guide slug. Signed-out visitors (and crawlers) on these
 // URLs get a mode-specific public landing built from the guide content, so
