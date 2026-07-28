@@ -1,1 +1,6 @@
+# AdMob (native iOS/Android app inventory) — still the original publisher
+# account. The iOS build in the App Store carries ca-app-pub-3015627373086578
+# unit IDs, so this MUST stay until AdMob migrates to the ShowLoud LLC account
+# and a new build ships with new unit IDs. Web/AdSense inventory is declared
+# separately in ads.txt (pub-6632322515624356, ShowLoud LLC).
 google.com, pub-3015627373086578, DIRECT, f08c47fec0942fa0

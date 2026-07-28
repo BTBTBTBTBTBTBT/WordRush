@@ -46,7 +46,10 @@ export const metadata: Metadata = {
     title: 'Wordocious',
   },
   other: {
-    'google-adsense-account': 'ca-pub-3015627373086578',
+    // ShowLoud LLC AdSense account (organization payments profile 1182-9434-2368).
+    // NOT the old personal pub-3015627373086578 — that one still owns AdMob for
+    // the native apps (see public/app-ads.txt) until AdMob migrates post-launch.
+    'google-adsense-account': 'ca-pub-6632322515624356',
   },
   openGraph: {
     title: 'Wordocious — Epic Word Battles',
