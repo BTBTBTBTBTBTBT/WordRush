@@ -25,7 +25,6 @@ struct RecordsTab: View {
             // Tapping a record holder / daily-row username opens their public profile
             // (web parity — Records links names to /profile/[id]).
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
-            .adBanner()
         }
     }
 

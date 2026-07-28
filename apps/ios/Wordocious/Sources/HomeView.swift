@@ -212,10 +212,7 @@ struct HomeView: View {
             } message: {
                 Text("\(comingSoon ?? "This mode") is coming to the iOS app soon.")
             }
-            // Banner lives on the Home root only — applying it here (inside the
-            // NavigationStack) keeps it off pushed game screens (GameScreen /
-            // ProperNoundle / VS), where it would otherwise cover the keyboard.
-            .adBanner()
+
         }
     }
 

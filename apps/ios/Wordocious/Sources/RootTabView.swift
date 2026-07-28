@@ -54,7 +54,19 @@ struct RootTabView: View {
         // so it's full-screen like the web — it otherwise bleeds onto pushed
         // views and steals the height the keyboard/boards need.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if !chrome.bottomNavHidden { BottomNav(selection: tabSelection) }
+            // Banner + nav share ONE inset: a second safeAreaInset applied
+            // inside a TabView page (the old per-tab .adBanner()) never
+            // rendered — SwiftUI drops bottom insets declared within tab
+            // content when the tab bar area is already inset at this level.
+            // Mounting the banner here (directly above the nav) is the web
+            // layout exactly: AdBanner sits above BottomNav on every tab, and
+            // both hide together for immersive game screens.
+            if !chrome.bottomNavHidden {
+                VStack(spacing: 0) {
+                    AdBannerContainer()
+                    BottomNav(selection: tabSelection)
+                }
+            }
         }
         // Post-game "Next Daily" handoff: launch the requested mode's daily via
         // the same path the Leaderboard Play CTA uses (GameScreen with today's

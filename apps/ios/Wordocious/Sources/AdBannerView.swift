@@ -17,18 +17,18 @@ struct AdBannerContainer: View {
     }
 }
 
-extension View {
-    /// Pin the bottom banner inside the content area (above the system tab bar)
-    /// for free users. AdBannerContainer renders nothing for Pro / ads-disabled,
-    /// so the inset collapses to zero in those cases.
-    func adBanner() -> some View {
-        safeAreaInset(edge: .bottom, spacing: 0) { AdBannerContainer() }
-    }
-}
+
 
 private struct AdBannerRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> GADBannerView {
-        let banner = GADBannerView(adSize: GADAdSizeBanner)
+        // Anchored ADAPTIVE banner (not fixed 320x50): fills the device width
+        // edge-to-edge — no black side bars — and typically monetizes better.
+        let width = UIScreen.main.bounds.width
+        let banner = GADBannerView(adSize: GADCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(width))
+        // Clear, not the default black: if a creative renders narrower than the
+        // slot (e.g. a 320x50 fill in the adaptive slot), the gaps show the
+        // app's surface color instead of black side bars.
+        banner.backgroundColor = .clear
         banner.adUnitID = AdsConfig.bannerUnitID
         banner.rootViewController = AdsManager.rootViewController()
         banner.load(GADRequest())

@@ -123,7 +123,6 @@ struct ProfileTab: View {
             // Banner inside the NavigationStack so the ScrollView insets for it
             // (the Sign-out button stays scrollable above the banner) and it
             // doesn't leak onto pushed detail views.
-            .adBanner()
         }
     }
 
@@ -1010,7 +1009,6 @@ struct LeaderboardTab: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: String.self) { PublicProfileView(userId: $0) }
-            .adBanner()
             .fullScreenCover(item: $lbGame) { g in
                 NavigationStack { GameScreen(seed: DailySeed.today(mode: g.mode), mode: g.mode, title: g.title) }
             }
