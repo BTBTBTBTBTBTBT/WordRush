@@ -226,6 +226,82 @@ export default function ProPage() {
             </div>
           </>
         )}
+
+        {/* Static explainer — renders for every visitor (including signed-out
+            crawlers), so the pricing page carries real information rather than
+            just buttons. */}
+        <section className="mt-10 space-y-5">
+          <div>
+            <h2 className="text-lg font-black mb-2" style={{ color: 'var(--color-text)' }}>
+              What Pro actually changes
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              Wordocious is free to play, and it stays that way: every one of the nine daily puzzles —
+              Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, Gauntlet, and ProperNoundle —
+              is playable once a day at no cost, with the full daily leaderboard and your complete stats
+              history included. Pro is for players who finish the daily slate and want to keep going.
+              It removes the interstitial ads, unlocks unlimited replays of every mode, opens VS head-to-head
+              on all nine modes rather than the daily rotation, and adds CPU practice opponents at three
+              difficulty levels so you can drill a weak mode without burning your daily attempt.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-black mb-2" style={{ color: 'var(--color-text)' }}>
+              Does Pro give a competitive advantage?
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              No — and that&apos;s deliberate. Pro buys you <em>more play</em>, not better odds. Daily
+              leaderboard entries come from your first attempt at each mode, exactly like a free player&apos;s,
+              and unlimited replays never overwrite a daily score. There are no hints, no extra guesses, and
+              no scoring bonuses attached to a subscription. A free player and a Pro player who solve the same
+              puzzle in the same number of guesses at the same speed post an identical score. The competitive
+              ladder stays honest, which matters more to us than squeezing conversions out of it.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-black mb-2" style={{ color: 'var(--color-text)' }}>
+              Streak shields, explained
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              A streak shield protects your daily-login streak on a day you miss. Monthly and yearly Pro
+              credit four shields each billing period, spent automatically the moment a gap would otherwise
+              break your run. They cover travel, sick days, and the occasional forgotten evening — the
+              things that end long streaks for reasons that have nothing to do with word skill. Shields do
+              not stack indefinitely, and a day covered by a shield still counts as unplayed for leaderboards.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-black mb-2" style={{ color: 'var(--color-text)' }}>
+              Billing, cancellation, and the day pass
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              Monthly and yearly plans renew automatically until you cancel, and you can cancel any time
+              from Settings — access continues through the period you already paid for, with no cancellation
+              fee and no winback friction. The <strong>day pass</strong> is a one-time purchase, not a
+              subscription: it grants 24 hours of Pro and then simply expires with nothing to cancel. It
+              exists for tournament nights and long flights, and it is deliberately priced so that habitual
+              users are better off monthly — eight day passes cost more than a month of Pro.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-black mb-2" style={{ color: 'var(--color-text)' }}>
+              One subscription, every device
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
+              Pro is tied to your Wordocious account, not to the device or store you bought it from. Purchase
+              on the web and your iPhone recognizes it the next time you sign in; the same is true in reverse.
+              Your streaks, stats, medals, and leaderboard history sync the same way, so switching between a
+              laptop at lunch and a phone on the couch is seamless. New to the game? Start with the{' '}
+              <a href="/how-to-play" className="font-bold" style={{ color: '#7c3aed' }}>how-to-play guide</a>,
+              browse the <a href="/guides" className="font-bold" style={{ color: '#7c3aed' }}>mode guides</a>{' '}
+              to find your favorite, and try Pro once the daily nine stops being enough.
+            </p>
+          </div>
+        </section>
       </div>
 
       <BottomNav />
