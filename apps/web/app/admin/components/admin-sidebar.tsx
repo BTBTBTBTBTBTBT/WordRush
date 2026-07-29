@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Gamepad2, FileText, Shield, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Users, Gamepad2, FileText, Shield, Gift, ArrowLeft } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/games', label: 'Games', icon: Gamepad2 },
+  { href: '/admin/referrals', label: 'Referrals', icon: Gift },
   { href: '/admin/content', label: 'Content', icon: FileText },
   { href: '/admin/moderation', label: 'Moderation', icon: Shield },
 ];
