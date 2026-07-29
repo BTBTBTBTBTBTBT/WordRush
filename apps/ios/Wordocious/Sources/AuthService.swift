@@ -74,7 +74,11 @@ enum GoogleAuth {
 final class AuthService: ObservableObject {
     nonisolated static let shared = AuthService()
 
-    @Published private(set) var profile: Profile?
+    /// didSet keeps the launch-window entitlement cache in step with every
+    /// assignment (load, refresh, sign-out) from one place — see isProActive.
+    @Published private(set) var profile: Profile? {
+        didSet { AuthService.cacheProEntitlement(from: profile) }
+    }
     @Published private(set) var isAuthenticated = false
     @Published private(set) var isLoading = true
     /// Guest mode — chose "Play without an account". Lets a signed-out user reach
@@ -88,7 +92,19 @@ final class AuthService: ObservableObject {
     // call site without changing behavior. The @Published UI state stays main-actor.
     nonisolated let client: SupabaseClient
 
-    var isProActive: Bool { Wordocious.isProActive(profile) }
+    /// Pro entitlement, with a launch-window fallback to the last known value.
+    ///
+    /// The profile row arrives over the network a beat after launch, so a Pro
+    /// player used to see the free-tier UI first — ad banner in, PRO badge out
+    /// — and watch it flip once the fetch landed. Until the real profile is in
+    /// hand, fall back to the cached entitlement (expiry-checked locally, so a
+    /// lapsed subscription can't ride the cache past its end date). The server
+    /// response overwrites it either way within about a second; the cache only
+    /// decides what shows in the meantime.
+    var isProActive: Bool {
+        if let profile { return Wordocious.isProActive(profile) }
+        return AuthService.cachedProEntitlement
+    }
 
     nonisolated private init() {
         client = SupabaseClient(
@@ -345,6 +361,30 @@ final class AuthService: ObservableObject {
     static var hadPersistedSession: Bool {
         get { UserDefaults.standard.bool(forKey: "wordocious.had-session") }
         set { UserDefaults.standard.set(newValue, forKey: "wordocious.had-session") }
+    }
+
+    private static let proCacheKey = "wordocious.pro-until"
+    /// Sentinel for a Pro row with no expiry (legacy/lifetime), matching
+    /// isProActive's treatment of a nil `pro_expires_at` as active.
+    private static let proNoExpiry = Date.distantFuture
+
+    /// Last known entitlement, still honoring its own expiry. Used only while
+    /// `profile` is nil (the launch fetch window) — see `isProActive`.
+    static var cachedProEntitlement: Bool {
+        guard let until = UserDefaults.standard.object(forKey: proCacheKey) as? Date else { return false }
+        return until.timeIntervalSinceNow > 0
+    }
+
+    /// Mirror the profile's entitlement into the cache on every load, so the
+    /// next launch paints the right tier immediately. Storing the EXPIRY (not a
+    /// bool) is what keeps a cancelled subscription from lingering.
+    private static func cacheProEntitlement(from profile: Profile?) {
+        guard let profile, Wordocious.isProActive(profile) else {
+            UserDefaults.standard.removeObject(forKey: proCacheKey)
+            return
+        }
+        let until = profile.proExpiresAt.flatMap(parseTimestamp) ?? proNoExpiry
+        UserDefaults.standard.set(until, forKey: proCacheKey)
     }
 
     private func handleSignedIn(userId: String) async {

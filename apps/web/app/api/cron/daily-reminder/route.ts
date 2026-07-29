@@ -9,13 +9,19 @@ export const maxDuration = 60;
 // node:http2 (the APNs transport) is unavailable on the edge runtime.
 export const runtime = 'nodejs';
 
+// Notification copy uses the game's all-caps headline voice (FLAWLESS VICTORY!,
+// DAILY SWEEP!) so the nudge reads as Wordocious even though iOS/Android own
+// the banner chrome and won't let us style type or color.
 const MESSAGES = [
-  { title: '🔥 Keep your streak alive!', body: "Today's daily puzzles are waiting for you." },
-  { title: '🧩 New puzzles are here!', body: "Can you beat yesterday's score?" },
-  { title: '⚔️ Daily challenge is live!', body: 'Your word skills are needed.' },
-  { title: '🏆 Climb the leaderboard!', body: "Play today's puzzles before time runs out." },
-  { title: "💪 Don't break your streak!", body: 'A quick game keeps the streak going.' },
+  { title: 'DAILY CHALLENGE 🔥', body: "Today's nine puzzles are live. Keep the streak alive." },
+  { title: 'NEW PUZZLES! 🧩', body: "A fresh set just dropped. Can you beat yesterday's score?" },
+  { title: 'THE SWEEP AWAITS 🧹', body: 'All nine dailies, one run. Think you can clear them?' },
+  { title: 'CLIMB THE BOARD 🏆', body: "Play today's puzzles before the day rolls over." },
+  { title: 'STREAK AT RISK! 💪', body: 'One quick game keeps it going.' },
 ];
+
+/** Lapsed = no daily result today OR yesterday. */
+const LAPSED_AFTER_DAYS = 2;
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
@@ -51,6 +57,21 @@ export async function GET(req: NextRequest) {
     .eq('day', today);
 
   const playedSet = new Set((playedToday ?? []).map((r: any) => r.user_id));
+
+  // The iOS app schedules its OWN 18:00 local reminder for anyone with
+  // unfinished dailies, so pushing "you haven't played today" to the same
+  // devices would nag twice a day. Instead the native channel targets LAPSED
+  // players — no daily result today or yesterday — which is precisely the group
+  // the local reminder stops reaching, since it only re-arms when the app is
+  // foregrounded or a daily is completed.
+  const lapsedCutoff = new Date(Date.now() - (LAPSED_AFTER_DAYS - 1) * 86_400_000)
+    .toISOString().slice(0, 10);
+  const { data: playedRecently } = await sb
+    .from('daily_results')
+    .select('user_id')
+    .gte('day', lapsedCutoff);
+
+  const recentSet = new Set((playedRecently ?? []).map((r: any) => r.user_id));
 
   const msg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
   const payload = JSON.stringify({ title: msg.title, body: msg.body, url: '/daily' });
@@ -88,11 +109,16 @@ export async function GET(req: NextRequest) {
       .in('endpoint', staleEndpoints);
   }
 
-  // Native pass: same message to iOS devices whose owner hasn't played today
-  // and wasn't already reached over web push.
+  // Native pass: win-back for lapsed players only (see recentSet above), minus
+  // anyone already reached over web push this run.
   const apnsTargets: ApnsMessage[] = (devices ?? [])
-    .filter((d: any) => !playedSet.has(d.user_id) && !notifiedUsers.has(d.user_id))
-    .map((d: any) => ({ token: d.token, title: msg.title, body: msg.body, url: '/daily' }));
+    .filter((d: any) => !recentSet.has(d.user_id) && !notifiedUsers.has(d.user_id))
+    .map((d: any) => ({
+      token: d.token,
+      title: 'WE MISS YOU! 🧩',
+      body: "Your streak is waiting. Today's nine puzzles are live.",
+      url: '/daily',
+    }));
 
   const apns = await sendApns(apnsTargets);
 

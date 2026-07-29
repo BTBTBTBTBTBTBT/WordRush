@@ -54,11 +54,15 @@ enum NotificationService {
         center.removePendingNotificationRequests(withIdentifiers: [reminderId])
 
         let content = UNMutableNotificationContent()
-        content.title = "Wordocious"
+        // iOS owns the banner chrome — type and color aren't themeable — so the
+        // branding lives in the app icon plus the game's all-caps headline voice
+        // (FLAWLESS VICTORY!, DAILY SWEEP!). Kept in step with the server copy in
+        // apps/web/app/api/cron/daily-reminder.
         let streak = AuthService.shared.profile?.dailyLoginStreak ?? 0
+        content.title = streak >= 3 ? "STREAK AT RISK! 🔥" : "DAILY CHALLENGE 🧩"
         content.body = streak >= 3
-            ? "Don't lose your \(streak)-day streak! Today's puzzles are waiting. 🔥"
-            : "Your daily puzzles are ready — keep your streak alive! 🔥"
+            ? "Your \(streak)-day streak ends at midnight. One quick game keeps it alive."
+            : "Today's nine puzzles are live. Keep the streak going."
         content.sound = .default
 
         let cal = Calendar.current
