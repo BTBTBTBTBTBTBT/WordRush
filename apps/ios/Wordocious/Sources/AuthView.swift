@@ -143,7 +143,12 @@ struct AuthView: View {
             // single-player daily without registering. Shown only on the root
             // gate (not the in-app "Sign in" sheet, which already has a close X).
             if !showsCloseButton {
-                Button(action: { auth.isGuest = true }) {
+                Button(action: {
+                    // Guest is its own save owner — never inherit the boards of
+                    // whoever was signed in on this device before.
+                    AuthService.claimSavesFor("guest")
+                    auth.isGuest = true
+                }) {
                     Text("Play without an account")
                         .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textSecondary).underline()
                 }

@@ -234,14 +234,30 @@ final class AuthService: ObservableObject {
 
     func signOut() async {
         try? await client.auth.signOut()
-        // Purge on-device game saves so the next session (guest or another
-        // account) never inherits this user's daily results — the completed-daily
-        // card reads from local persistence, which otherwise leaked across users.
-        GamePersistence.shared.clearAllSaves()
+        // NOTE: saves are deliberately NOT purged here. Purging on sign-OUT
+        // meant signing out and straight back in as the same person destroyed
+        // their in-progress boards (founder lost a half-played Seven doing
+        // exactly that). The cross-account leak this guarded against is now
+        // closed on the sign-IN side by `claimSavesFor`, which only wipes when
+        // the owner actually changes.
         profile = nil
         isAuthenticated = false
         isGuest = false
         AuthService.hadPersistedSession = false
+    }
+
+    private static let lastOwnerKey = "wordocious.last-save-owner"
+
+    /// Hand the on-device saves to `owner` ("guest" or a user id), wiping them
+    /// only when they belonged to somebody else. The completed-daily card reads
+    /// from local persistence, so without this a guest — or a second account on
+    /// a shared phone — would inherit the previous player's boards.
+    static func claimSavesFor(_ owner: String) {
+        let previous = UserDefaults.standard.string(forKey: lastOwnerKey)
+        if let previous, previous != owner {
+            GamePersistence.shared.clearAllSaves()
+        }
+        UserDefaults.standard.set(owner, forKey: lastOwnerKey)
     }
 
     /// Permanently delete the account. The native client only holds the anon
@@ -391,6 +407,9 @@ final class AuthService: ObservableObject {
         isAuthenticated = true
         AuthService.hadPersistedSession = true
         isGuest = false  // a real session supersedes guest mode
+        // Same user back after a sign-out keeps their boards; a different
+        // account (or a hand-off from guest play) starts clean.
+        AuthService.claimSavesFor(userId)
         if let row = await fetchProfileRow(userId: userId) {
             if row.isBanned { await signOut(); return }
             profile = row

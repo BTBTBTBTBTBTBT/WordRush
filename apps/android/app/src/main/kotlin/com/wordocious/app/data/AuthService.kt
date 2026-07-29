@@ -78,7 +78,28 @@ object AuthService {
     // Play). No session, so recording no-ops; account surfaces prompt sign-in.
     private val _isGuest = MutableStateFlow(false)
     val isGuest: StateFlow<Boolean> = _isGuest.asStateFlow()
-    fun enterGuest() { _isGuest.value = true }
+    fun enterGuest() {
+        // Guest is its own save owner — never inherit the boards of whoever was
+        // signed in on this device before.
+        claimSavesFor("guest")
+        _isGuest.value = true
+    }
+
+    private const val LAST_OWNER = "last-save-owner"
+
+    /** Hand local saves to [owner] ("guest" or a user id), wiping them only when
+     *  they belonged to somebody else. The home grid seeds from the completions
+     *  cache and the completed-daily card reads local saves, so without this a
+     *  guest — or a second account on a shared phone — inherits the previous
+     *  player's boards. */
+    fun claimSavesFor(owner: String) {
+        val previous = SettingsPref.get(LAST_OWNER, "")
+        if (previous.isNotEmpty() && previous != owner) {
+            runCatching { DailyCompletionsService.clearCache() }
+            runCatching { GamePersistence.clearAll() }
+        }
+        SettingsPref.set(LAST_OWNER, owner)
+    }
     /** Leave guest mode → the MainActivity gate shows AuthScreen so the guest
      *  can sign in (used by the "Sign in" prompts on account-only surfaces). */
     fun exitGuest() { _isGuest.value = false }
@@ -232,11 +253,11 @@ object AuthService {
         try {
             client.auth.signOut()
         } catch (_: Exception) {}
-        // Purge per-account local state so the next session (guest or another
-        // account) never inherits this user's daily results — the home grid seeds
-        // from the completions cache and the completed-daily card reads local saves.
-        runCatching { DailyCompletionsService.clearCache() }
-        runCatching { GamePersistence.clearAll() }
+        // NOTE: local saves are deliberately NOT purged here. Purging on
+        // sign-OUT meant signing out and straight back in as the same person
+        // destroyed their in-progress boards. The cross-account leak this
+        // guarded against is now closed on the sign-IN side by claimSavesFor,
+        // which only wipes when the save owner actually changes.
         _profile.value = null
         _isAuthenticated.value = false
         _isGuest.value = false
@@ -307,6 +328,9 @@ object AuthService {
                 signOut()
                 return false
             }
+            // Same user back after a sign-out keeps their boards; a different
+            // account (or a hand-off from guest play) starts clean.
+            claimSavesFor(userId)
             _profile.value = result
             result?.let { SettingsPref.set(CACHED_DAILY_STREAK, it.dailyLoginStreak) }
         } catch (e: Exception) {
