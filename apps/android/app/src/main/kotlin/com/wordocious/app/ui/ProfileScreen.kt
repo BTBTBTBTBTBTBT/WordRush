@@ -678,7 +678,7 @@ private fun TodaysDailies(today: Map<String, DailyCompletionsService.Completion>
     ) {
         if (allDone) {
             Text(
-                if (flawless) "Flawless Victory!" else "Daily Sweep!",
+                if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!",
                 fontSize = if (flawless) 18.sp else 16.sp, fontWeight = FontWeight.Black,
                 color = if (flawless) Color(0xFFB45309) else Color(0xFF7C3AED),
             )

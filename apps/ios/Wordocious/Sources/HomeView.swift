@@ -237,7 +237,7 @@ struct HomeView: View {
                 HStack(spacing: 8) {
                     Image(systemName: flawless ? "trophy.fill" : "sparkles")
                         .font(.system(size: flawless ? 20 : 16)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
-                    Text(flawless ? "Flawless Victory!" : "Daily Sweep!")
+                    Text(flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!")
                         .font(Brand.font(flawless ? 18 : 16, .black))
                         .foregroundStyle(LinearGradient(colors: titleGradient, startPoint: .topLeading, endPoint: .bottomTrailing))
                     Image(systemName: flawless ? "trophy.fill" : "sparkles")

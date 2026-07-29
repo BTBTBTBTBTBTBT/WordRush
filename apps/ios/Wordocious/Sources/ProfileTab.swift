@@ -492,7 +492,7 @@ struct ProfileTab: View {
                     HStack(spacing: 8) {
                         Image(systemName: flawless ? "trophy.fill" : "sparkles")
                             .font(.system(size: flawless ? 18 : 15)).foregroundStyle(flawless ? Color(hex: 0xB45309) : Color(hex: 0x7C3AED))
-                        Text(flawless ? "Flawless Victory!" : "Daily Sweep!")
+                        Text(flawless ? "FLAWLESS VICTORY!" : "DAILY SWEEP!")
                             .font(Brand.font(16, .black))
                             .foregroundStyle(LinearGradient(colors: flawless ? [Color(hex: 0xD97706), Color(hex: 0xB45309)] : [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .topLeading, endPoint: .bottomTrailing))
                         Image(systemName: flawless ? "trophy.fill" : "sparkles")

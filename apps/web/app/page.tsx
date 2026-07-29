@@ -377,7 +377,7 @@ export default function HomePage() {
               ? 'linear-gradient(135deg, #fef3c7, #fde68a)'
               : 'linear-gradient(135deg, #f5f3ff, #fce7f3)';
             const border = flawless ? '1.5px solid #f59e0b' : '1.5px solid #c4b5fd';
-            const titleText = flawless ? 'Flawless Victory!' : 'Daily Sweep!';
+            const titleText = flawless ? 'FLAWLESS VICTORY!' : 'DAILY SWEEP!';
             const titleGradient = flawless
               ? 'linear-gradient(135deg, #d97706, #b45309)'
               : 'linear-gradient(135deg, #a78bfa, #ec4899)';

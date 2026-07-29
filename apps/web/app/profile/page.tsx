@@ -471,13 +471,13 @@ export default function ProfilePage() {
                       {flawless ? (
                         <>
                           <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
-                          <span className="text-lg font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #d97706, #b45309)' }}>Flawless Victory!</span>
+                          <span className="text-lg font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #d97706, #b45309)' }}>FLAWLESS VICTORY!</span>
                           <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
-                          <span className="text-base font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>Daily Sweep!</span>
+                          <span className="text-base font-black text-transparent bg-clip-text" style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}>DAILY SWEEP!</span>
                           <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
                         </>
                       )}

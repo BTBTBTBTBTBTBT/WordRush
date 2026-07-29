@@ -43,7 +43,7 @@ export function DailySweepBanner({ completed, wins, total }: Props) {
             className="text-lg font-black text-transparent bg-clip-text"
             style={{ backgroundImage: 'linear-gradient(135deg, #d97706, #b45309)' }}
           >
-            Flawless Victory!
+            FLAWLESS VICTORY!
           </span>
           <Trophy className="w-5 h-5" style={{ color: '#b45309' }} fill="currentColor" />
         </div>
@@ -69,7 +69,7 @@ export function DailySweepBanner({ completed, wins, total }: Props) {
           className="text-base font-black text-transparent bg-clip-text"
           style={{ backgroundImage: 'linear-gradient(135deg, #a78bfa, #ec4899)' }}
         >
-          Daily Sweep!
+          DAILY SWEEP!
         </span>
         <Sparkles className="w-4 h-4" style={{ color: '#ec4899' }} />
       </div>
