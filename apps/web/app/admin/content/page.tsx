@@ -27,6 +27,29 @@ export default function AdminContentPage() {
   const [seedMode, setSeedMode] = useState('DUEL');
   const [seedWord, setSeedWord] = useState('');
   const [seedStatus, setSeedStatus] = useState('');
+  const [pushStatus, setPushStatus] = useState('');
+  const [pushSending, setPushSending] = useState(false);
+
+  // Self-targeted APNs smoke test — proves the key, entitlement and token
+  // registration all line up without waiting for the 14:00 reminder cron.
+  const sendTestPush = async () => {
+    setPushSending(true);
+    setPushStatus('');
+    try {
+      const res = await fetch('/api/admin/push/test', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setPushStatus(`❌ ${data.error ?? 'Failed'}`);
+      } else if (data.sent > 0) {
+        setPushStatus(`✅ Sent to ${data.sent} device${data.sent === 1 ? '' : 's'} — check your phone.`);
+      } else {
+        setPushStatus(`❌ ${data.failed} failed${data.errors?.length ? `: ${data.errors.join(', ')}` : ''}`);
+      }
+    } catch {
+      setPushStatus('❌ Request failed');
+    }
+    setPushSending(false);
+  };
 
   const fetchAnnouncements = async () => {
     const res = await fetch('/api/admin/announcements');
@@ -210,6 +233,22 @@ export default function AdminContentPage() {
           </button>
         </div>
         {seedStatus && <p className="text-xs text-green-600 font-medium mt-2">{seedStatus}</p>}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <h2 className="text-sm font-black text-gray-900 mb-1">Push notifications</h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Sends a test notification to your own iOS devices only. Requires the app
+          on build 136 or later with notifications allowed.
+        </p>
+        <button
+          onClick={sendTestPush}
+          disabled={pushSending}
+          className="px-4 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700 disabled:opacity-50"
+        >
+          {pushSending ? 'Sending…' : 'Send test push to my devices'}
+        </button>
+        {pushStatus && <p className="text-xs font-medium mt-2 text-gray-700">{pushStatus}</p>}
       </div>
     </div>
   );
