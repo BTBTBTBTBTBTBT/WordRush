@@ -19,6 +19,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AdBanner } from '@/components/ads/ad-banner';
 import { AdSenseLoader } from '@/components/ads/adsense-loader';
 import { ReferralRedeemer } from '@/components/referrals/referral-redeemer';
+import { ConfirmDialogHost } from '@/components/ui/confirm-dialog';
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -167,6 +168,7 @@ export default function RootLayout({
                     <AdSenseLoader />
                     <AdBanner />
                     <ReferralRedeemer />
+                    <ConfirmDialogHost />
                   </StreakShieldProvider>
                 </ThemeProvider>
               </AuthGate>

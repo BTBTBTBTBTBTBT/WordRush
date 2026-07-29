@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Gift, Users, Crown, Percent, CalendarPlus, Ban } from 'lucide-react';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 
 interface ReferralRow {
   id: string;
@@ -53,7 +54,13 @@ export default function AdminReferralsPage() {
   useEffect(() => { load(); }, []);
 
   const handleRevoke = async (id: string, code: string) => {
-    if (!window.confirm(`Revoke invite ${code}? The link stops working immediately.`)) return;
+    const ok = await confirmDialog({
+      title: `Revoke invite ${code}?`,
+      message: 'The link stops working immediately for whoever holds it.',
+      confirmText: 'Revoke',
+      cancelText: 'Keep it',
+    });
+    if (!ok) return;
     setRevoking(id);
     await fetch(`/api/admin/referrals/${id}/revoke`, { method: 'POST' });
     setRevoking(null);

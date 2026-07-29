@@ -6,6 +6,7 @@ import { Gift, Copy, Check, Crown, Trophy, X as XIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { logShareEvent } from '@/lib/share-events';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 
 interface ReferralRow {
   id: string;
@@ -101,7 +102,13 @@ export function InvitePanel() {
 
   const cancelInvite = async (id: string, code: string) => {
     if (!session) return;
-    if (!window.confirm(`Cancel invite ${code}? The link stops working and the slot frees up.`)) return;
+    const ok = await confirmDialog({
+      title: `Cancel invite ${code}?`,
+      message: 'The link stops working immediately and your invite slot frees up.',
+      confirmText: 'Cancel invite',
+      cancelText: 'Keep it',
+    });
+    if (!ok) return;
     await fetch('/api/referrals/cancel', {
       method: 'POST',
       headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
