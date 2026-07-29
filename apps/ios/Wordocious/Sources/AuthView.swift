@@ -22,10 +22,11 @@ struct AuthView: View {
     @State private var password = ""
     @State private var username = ""
     @State private var error: String?
+    @State private var resetSent = false
     @State private var working = false
     @State private var appleNonce: String?
 
-    enum Mode { case signin, signup }
+    enum Mode { case signin, signup, reset }
 
     var body: some View {
         NavigationStack {
@@ -55,39 +56,59 @@ struct AuthView: View {
 
     private var card: some View {
         VStack(spacing: 16) {   // web card space-y-4 between header / social / divider / form
-            Text(mode == .signin ? "Welcome Back!" : "Join the Fun!")
+            Text(mode == .signin ? "Welcome Back!" : mode == .signup ? "Join the Fun!" : "Reset Password")
                 .font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
 
-            // Apple — required by App Store Guideline 4.8 alongside Google.
-            // Official SignInWithAppleButton for HIG compliance.
-            SignInWithAppleButton(.signIn, onRequest: configureAppleRequest, onCompletion: handleAppleResult)
-                .signInWithAppleButtonStyle(.black)
-                .frame(height: 48)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .disabled(working || !SupabaseConfig.isConfigured)
+            if mode == .reset {
+                Text("Enter your email and we'll send you a link to set a new password. Works for Google and Apple accounts too.")
+                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    .multilineTextAlignment(.center)
+            }
 
-            // Google
-            Button(action: signInWithGoogle) {
-                HStack(spacing: 12) {
-                    Image("google").resizable().scaledToFit().frame(width: 20, height: 20)
-                    Text("Continue with Google").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+            if mode != .reset {
+                // Apple — required by App Store Guideline 4.8 alongside Google.
+                // Official SignInWithAppleButton for HIG compliance.
+                SignInWithAppleButton(.signIn, onRequest: configureAppleRequest, onCompletion: handleAppleResult)
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .disabled(working || !SupabaseConfig.isConfigured)
+
+                // Google
+                Button(action: signInWithGoogle) {
+                    HStack(spacing: 12) {
+                        Image("google").resizable().scaledToFit().frame(width: 20, height: 20)
+                        Text("Continue with Google").font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                }.buttonStyle(.plain).disabled(working || !SupabaseConfig.isConfigured)
+
+                HStack(spacing: 10) {
+                    Rectangle().fill(Theme.border).frame(height: 1)
+                    Text("or").font(Brand.font(10, .heavy)).foregroundStyle(Theme.textMuted)
+                    Rectangle().fill(Theme.border).frame(height: 1)
                 }
-                .frame(maxWidth: .infinity).padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Theme.background))
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
-            }.buttonStyle(.plain).disabled(working || !SupabaseConfig.isConfigured)
-
-            HStack(spacing: 10) {
-                Rectangle().fill(Theme.border).frame(height: 1)
-                Text("or").font(Brand.font(10, .heavy)).foregroundStyle(Theme.textMuted)
-                Rectangle().fill(Theme.border).frame(height: 1)
             }
 
             // Form fields group — web <form className="space-y-3"> (12pt).
             VStack(spacing: 12) {
                 if mode == .signup { labeledField("Username", "person", $username, "Choose a username") }
                 labeledField("Email", "envelope", $email, "your@email.com", keyboard: .emailAddress)
-                labeledSecure("Password", "lock", $password)
+                if mode != .reset {
+                    labeledSecure("Password", "lock", $password,
+                                  trailing: mode == .signin ? ("Forgot password?", { mode = .reset; error = nil; resetSent = false }) : nil)
+                }
+
+                if resetSent {
+                    Text("Check your email — if an account exists for that address, a reset link is on its way.")
+                        .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x047857))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: 0xECFDF5)))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: 0xA7F3D0), lineWidth: 1))
+                }
 
                 if let error {
                     Text(error).font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0xDC2626))
@@ -99,7 +120,7 @@ struct AuthView: View {
 
                 Button(action: submit) {
                     HStack { if working { ProgressView().tint(.white) }
-                        Text(working ? "Loading..." : (mode == .signin ? "Sign In" : "Create Account")) }
+                        Text(working ? "Loading..." : (mode == .signin ? "Sign In" : mode == .signup ? "Create Account" : "Send Reset Link")) }
                     .font(Brand.font(15, .black)).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 13)
                     .background(RoundedRectangle(cornerRadius: 12)
@@ -107,10 +128,13 @@ struct AuthView: View {
                         .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4))   // btn-3d
                 }
                 .buttonStyle(.plain)
-                .disabled(working || !SupabaseConfig.isConfigured)
+                .disabled(working || !SupabaseConfig.isConfigured || (mode == .reset && resetSent))
 
-                Button(mode == .signin ? "Don't have an account? Sign up" : "Already have an account? Sign in") {
-                    mode = mode == .signin ? .signup : .signin; error = nil
+                Button(mode == .signin ? "Don't have an account? Sign up"
+                       : mode == .signup ? "Already have an account? Sign in"
+                       : "Back to sign in") {
+                    mode = mode == .reset ? .signin : (mode == .signin ? .signup : .signin)
+                    error = nil; resetSent = false
                 }
                 .font(Brand.body(13)).foregroundStyle(Theme.primary)
             }
@@ -157,9 +181,18 @@ struct AuthView: View {
         }
     }
 
-    private func labeledSecure(_ label: String, _ icon: String, _ text: Binding<String>) -> some View {
+    private func labeledSecure(_ label: String, _ icon: String, _ text: Binding<String>,
+                               trailing: (String, () -> Void)? = nil) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+            HStack {
+                Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+                if let (title, action) = trailing {
+                    Spacer()
+                    Button(title, action: action)
+                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.primary)
+                        .buttonStyle(.plain)
+                }
+            }
             SecureField("••••••••", text: text)
                 .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1.5))
@@ -168,6 +201,18 @@ struct AuthView: View {
 
     private func submit() {
         error = nil
+        // Reset mode only needs an email — the link finishes on the web page.
+        if mode == .reset {
+            guard email.contains("@") else { error = "Enter your email address."; return }
+            working = true
+            Task {
+                // Report success either way: confirming which addresses exist
+                // would let anyone probe the user list (web parity).
+                do { try await auth.resetPassword(email: email) } catch {}
+                resetSent = true; working = false
+            }
+            return
+        }
         // Client-side validation — web parity (login-screen.tsx: password
         // minLength=6; signup username required, 3–20 chars).
         guard password.count >= 6 else {

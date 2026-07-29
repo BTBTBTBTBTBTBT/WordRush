@@ -17,13 +17,14 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export function LoginScreen() {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
+  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +36,13 @@ export function LoginScreen() {
       if (error) {
         setError(error.message);
       }
+    } else if (mode === 'reset') {
+      const { error } = await resetPassword(email);
+      // Always report success: confirming which addresses exist would let
+      // anyone probe the user list.
+      if (error && !/rate limit/i.test(error.message)) setSent(true);
+      else if (error) setError(error.message);
+      else setSent(true);
     } else {
       const { error } = await signIn(email, password);
       if (error) {
@@ -43,6 +51,12 @@ export function LoginScreen() {
     }
 
     setLoading(false);
+  };
+
+  const switchMode = (next: 'signin' | 'signup' | 'reset') => {
+    setMode(next);
+    setError('');
+    setSent(false);
   };
 
   const handleGoogleSignIn = async () => {
@@ -89,27 +103,38 @@ export function LoginScreen() {
           }}
         >
           <h2 className="text-lg font-black text-center" style={{ color: 'var(--color-text)' }}>
-            {mode === 'signin' ? 'Welcome Back!' : 'Join the Fun!'}
+            {mode === 'signin' ? 'Welcome Back!' : mode === 'signup' ? 'Join the Fun!' : 'Reset Password'}
           </h2>
 
-          {/* Google Sign-In */}
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-extrabold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-            style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
-          >
-            <GoogleIcon className="w-5 h-5" />
-            Continue with Google
-          </button>
+          {mode === 'reset' && (
+            <p className="text-xs font-bold text-center" style={{ color: 'var(--color-text-muted)' }}>
+              Enter your email and we&apos;ll send you a link to set a new password. Works for
+              Google and Apple accounts too.
+            </p>
+          )}
 
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
-            <span className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>or</span>
-            <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
-          </div>
+          {mode !== 'reset' && (
+            <>
+              {/* Google Sign-In */}
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-extrabold text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+                style={{ background: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+              >
+                <GoogleIcon className="w-5 h-5" />
+                Continue with Google
+              </button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+                <span className="text-[10px] font-extrabold" style={{ color: 'var(--color-text-muted)' }}>or</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
+              </div>
+            </>
+          )}
 
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -157,26 +182,49 @@ export function LoginScreen() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
-                <Lock className="w-3.5 h-3.5" />
-                Password
-              </label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                style={{
-                  color: 'var(--color-text)',
-                  background: 'var(--color-bg)',
-                  border: '1.5px solid var(--color-border)',
-                }}
-              />
-            </div>
+            {mode !== 'reset' && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                    <Lock className="w-3.5 h-3.5" />
+                    Password
+                  </label>
+                  {mode === 'signin' && (
+                    <button
+                      type="button"
+                      onClick={() => switchMode('reset')}
+                      className="text-xs font-bold transition-colors"
+                      style={{ color: '#7c3aed' }}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
+                  style={{
+                    color: 'var(--color-text)',
+                    background: 'var(--color-bg)',
+                    border: '1.5px solid var(--color-border)',
+                  }}
+                />
+              </div>
+            )}
+
+            {sent && (
+              <div
+                className="p-3 rounded-xl text-xs font-bold"
+                style={{ background: 'var(--color-win-bg, #ecfdf5)', border: '1px solid #a7f3d0', color: '#047857' }}
+              >
+                Check your email — if an account exists for that address, a reset link is on its way.
+              </div>
+            )}
 
             {error && (
               <div
@@ -189,27 +237,26 @@ export function LoginScreen() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (mode === 'reset' && sent)}
               className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
               style={{
                 background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
                 boxShadow: '0 4px 0 #4c1d95',
               }}
             >
-              {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+              {loading ? 'Loading...' : mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
             </button>
 
             <div className="text-center">
               <button
                 type="button"
-                onClick={() => {
-                  setMode(mode === 'signin' ? 'signup' : 'signin');
-                  setError('');
-                }}
+                onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
                 className="text-xs font-bold transition-colors"
                 style={{ color: 'var(--color-text-muted)' }}
               >
-                {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                {mode === 'signin' ? "Don't have an account? Sign up"
+                  : mode === 'signup' ? 'Already have an account? Sign in'
+                  : 'Back to sign in'}
               </button>
             </div>
           </form>

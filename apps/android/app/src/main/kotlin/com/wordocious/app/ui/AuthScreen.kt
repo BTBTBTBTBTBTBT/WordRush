@@ -60,11 +60,15 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
         InfoScreen(kind = route, onDone = { infoRoute = null })
         return
     }
-    var isSignIn by remember { mutableStateOf(true) }
+    // "signin" | "signup" | "reset" — reset emails a recovery link that finishes
+    // on the web reset page (wordocious.com/auth/reset), web/iOS parity.
+    var mode by remember { mutableStateOf("signin") }
+    val isSignIn = mode == "signin"
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var resetSent by remember { mutableStateOf(false) }
     var working by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -101,32 +105,69 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                if (isSignIn) "Welcome Back!" else "Join the Fun!",
+                when (mode) { "signin" -> "Welcome Back!"; "signup" -> "Join the Fun!"; else -> "Reset Password" },
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 color = WTheme.text,
             )
 
-            // TODO: Google / Apple OAuth buttons — deferred pending OAuth config
-            GoogleSignInButton(onError = { error = it })
+            if (mode == "reset") {
+                Text(
+                    "Enter your email and we'll send you a link to set a new password. Works for Google accounts too.",
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
-            // Divider
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.foundation.layout.Box(
-                    Modifier.weight(1f).height(1.dp).background(WTheme.border)
-                )
-                Text("or", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
-                androidx.compose.foundation.layout.Box(
-                    Modifier.weight(1f).height(1.dp).background(WTheme.border)
-                )
+            if (mode != "reset") {
+                // TODO: Google / Apple OAuth buttons — deferred pending OAuth config
+                GoogleSignInButton(onError = { error = it })
+
+                // Divider
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.foundation.layout.Box(
+                        Modifier.weight(1f).height(1.dp).background(WTheme.border)
+                    )
+                    Text("or", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+                    androidx.compose.foundation.layout.Box(
+                        Modifier.weight(1f).height(1.dp).background(WTheme.border)
+                    )
+                }
             }
 
             // Sign-up: username
-            if (!isSignIn) {
+            if (mode == "signup") {
                 AuthField("Username", username, onValue = { username = it })
             }
             AuthField("Email", email, onValue = { email = it }, keyboardType = KeyboardType.Email)
-            AuthField("Password", password, onValue = { password = it }, isPassword = true)
+            if (mode != "reset") {
+                AuthField("Password", password, onValue = { password = it }, isPassword = true)
+            }
+            if (mode == "signin") {
+                Text(
+                    "Forgot password?",
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .clickableNoRipple { mode = "reset"; error = null; resetSent = false },
+                )
+            }
+
+            // Reset-link confirmation (deliberately shown for any address — no
+            // account probing, web/iOS parity).
+            if (resetSent) {
+                Text(
+                    "Check your email — if an account exists for that address, a reset link is on its way.",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF047857),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFECFDF5), RoundedCornerShape(10.dp))
+                        .border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(10.dp))
+                        .padding(10.dp),
+                )
+            }
 
             // Error
             if (error != null) {
@@ -147,9 +188,17 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
             val submit = {
                 error = null
                 when {
+                    mode == "reset" && !email.contains("@") -> error = "Enter your email address."
+                    mode == "reset" -> {
+                        working = true
+                        scope.launch {
+                            AuthService.resetPassword(email.trim())
+                            working = false; resetSent = true
+                        }
+                    }
                     email.isBlank() || password.isBlank() -> error = "Email and password are required"
                     password.length < 6 -> error = "Password must be at least 6 characters."
-                    !isSignIn && username.trim().length !in 3..20 -> error = "Username must be 3-20 characters."
+                    mode == "signup" && username.trim().length !in 3..20 -> error = "Username must be 3-20 characters."
                     else -> {
                         working = true
                         scope.launch {
@@ -162,17 +211,17 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                 }
             }
             Button3D(
-                onClick = { if (!working) submit() },
+                onClick = { if (!working && !(mode == "reset" && resetSent)) submit() },
                 face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),
                 shadow = Color(0xFF4C1D95),
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !working,
+                enabled = !working && !(mode == "reset" && resetSent),
             ) {
                 if (working) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.height(20.dp))
                 } else {
                     Text(
-                        if (isSignIn) "Sign In" else "Create Account",
+                        when (mode) { "signin" -> "Sign In"; "signup" -> "Create Account"; else -> "Send Reset Link" },
                         color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp,
                     )
                 }
@@ -184,10 +233,13 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
         // Toggle sign in / sign up
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (isSignIn) "Don't have an account?" else "Already have an account?",
+                when (mode) { "signin" -> "Don't have an account?"; "signup" -> "Already have an account?"; else -> "Remembered it?" },
                 fontSize = 13.sp, color = WTheme.textMuted, fontWeight = FontWeight.Bold,
             )
-            TextButton(onClick = { isSignIn = !isSignIn; error = null }) {
+            TextButton(onClick = {
+                mode = if (mode == "signin") "signup" else "signin"
+                error = null; resetSent = false
+            }) {
                 Text(
                     if (isSignIn) "Sign Up" else "Sign In",
                     fontSize = 13.sp, color = WTheme.primary, fontWeight = FontWeight.Black,

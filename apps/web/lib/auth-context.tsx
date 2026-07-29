@@ -35,6 +35,15 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signInWithFacebook: () => Promise<{ error: Error | null }>;
+  /**
+   * Emails a recovery link that lands on /auth/reset. Also the ONLY way an
+   * OAuth-only account (signed up with Google/Apple, so `encrypted_password`
+   * is null) can gain a password — without it, losing the federated login
+   * means losing the account.
+   */
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  /** Sets a new password for the current session (recovery or signed-in). */
+  updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -239,6 +248,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const redirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/reset`
+        : undefined;
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     try { localStorage.removeItem('wordocious-guest'); } catch {}
@@ -274,6 +307,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signInWithGoogle,
         signInWithFacebook,
+        resetPassword,
+        updatePassword,
         signOut,
         refreshProfile,
       }}

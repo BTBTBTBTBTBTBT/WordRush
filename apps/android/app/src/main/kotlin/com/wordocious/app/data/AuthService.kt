@@ -181,6 +181,20 @@ object AuthService {
     }
 
     /**
+     * Emails a recovery link that opens the web reset page (wordocious.com/auth/reset).
+     * The link finishes in the browser — the web page handles the recovery session
+     * and new-password form. Also the only way an OAuth-only account (Google signup,
+     * no password) can gain a password. Always returns null: confirming which
+     * addresses exist would let anyone probe the user list (web/iOS parity).
+     */
+    suspend fun resetPassword(email: String): String? {
+        runCatching {
+            client.auth.resetPasswordForEmail(email, redirectUrl = "https://wordocious.com/auth/reset")
+        }
+        return null
+    }
+
+    /**
      * Email + password sign up. Returns null on success (auto-signed-in), or a
      * message. When the project requires email confirmation, sign-up succeeds but
      * no session is created until the user clicks the email link — we surface that

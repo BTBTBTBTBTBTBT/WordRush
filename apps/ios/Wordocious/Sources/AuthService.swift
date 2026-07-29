@@ -133,6 +133,16 @@ final class AuthService: ObservableObject {
         try await client.auth.signIn(email: email, password: password)
     }
 
+    /// Emails a recovery link that opens the web reset page (wordocious.com/auth/reset).
+    /// The link finishes in the browser — the app has no universal links, and the
+    /// web page already handles the recovery session + new-password form. Also the
+    /// only way an OAuth-only account (Google/Apple signup, no password) can gain
+    /// a password.
+    func resetPassword(email: String) async throws {
+        try await client.auth.resetPasswordForEmail(
+            email, redirectTo: URL(string: "https://wordocious.com/auth/reset"))
+    }
+
     func signUp(email: String, password: String, username: String) async throws {
         // Pass the username as user metadata; the DB trigger handle_new_user()
         // creates the profiles row (SECURITY DEFINER). We don't insert it here —
