@@ -77,6 +77,13 @@ export function InvitePanel() {
   );
   const slotsLeft = Math.max(0, 3 - openInvites.length);
   const redemptions = (invites ?? []).filter((i) => i.status === 'redeemed' || i.status === 'converted').length;
+  // Dead invites (cancelled / expired) disappear entirely — a spent random
+  // code is noise to the player. The rows live on in the DB for the admin
+  // Referrals tab's history.
+  const visibleInvites = (invites ?? []).filter(
+    (i) => i.status !== 'revoked'
+      && !(i.status === 'pending' && new Date(i.expires_at).getTime() < Date.now()),
+  );
 
   const handleCreate = async () => {
     if (!session) return;
@@ -166,17 +173,16 @@ export function InvitePanel() {
       </button>
       {error && <p className="text-xs font-bold" style={{ color: '#dc2626' }}>{error}</p>}
 
-      {(invites ?? []).length > 0 && (
+      {visibleInvites.length > 0 && (
         <div className="space-y-1.5">
-          {(invites ?? []).slice(0, 6).map((inv) => {
+          {visibleInvites.slice(0, 6).map((inv) => {
             const label = STATUS_LABEL[inv.status] ?? STATUS_LABEL.pending;
-            const expired = inv.status === 'pending' && new Date(inv.expires_at).getTime() < Date.now();
-            const open = inv.status === 'pending' && !expired;
+            const open = inv.status === 'pending';
             return (
               <div key={inv.id} className="flex items-center gap-2 text-xs font-bold">
                 <span className="font-mono tracking-widest" style={{ color: 'var(--color-text)' }}>{inv.code}</span>
-                <span className="flex-1" style={{ color: expired ? 'var(--color-text-muted)' : label.color }}>
-                  {expired ? 'Expired' : label.text}
+                <span className="flex-1" style={{ color: label.color }}>
+                  {label.text}
                   {open && (
                     <span style={{ color: 'var(--color-text-muted)' }}> · {timeLeft(inv.expires_at)}</span>
                   )}
