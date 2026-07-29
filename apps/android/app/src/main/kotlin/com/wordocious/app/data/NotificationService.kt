@@ -106,9 +106,12 @@ object NotificationService {
             // Respect the toggle even if a stale work request fires — and stop
             // the chain (Settings re-calls schedule() when toggled back on).
             if (!SettingsPref.get(SettingsPref.DAILY_REMINDER, false)) return Result.success()
-            // U1: all 9 dailies already done today → nothing to nudge about.
-            // Skip the post but STILL reschedule tomorrow's check.
-            if (completedDailiesToday() >= DailyCompletionsService.TOTAL_DAILY_MODES) {
+            // ANY daily played today → the streak is already secure, so there's
+            // nothing to nudge about. (Was ">= all 9", which nagged players who
+            // had locked in their streak with one puzzle — and the copy below
+            // told them it was at risk, which was false.) Skip the post but
+            // STILL reschedule tomorrow's check.
+            if (completedDailiesToday() > 0) {
                 schedule(applicationContext)
                 return Result.success()
             }
@@ -117,14 +120,18 @@ object NotificationService {
             // profile first, then the persisted copy (cold process).
             val streak = AuthService.profile.value?.dailyLoginStreak
                 ?: SettingsPref.get(AuthService.CACHED_DAILY_STREAK, 0)
+            // All-caps headline voice (FLAWLESS VICTORY!, DAILY SWEEP!) — Android
+            // owns the notification chrome, so the branding is the icon plus the
+            // voice. Kept in step with iOS NotificationService + the web cron.
+            val title = if (streak >= 3) "STREAK AT RISK! 🔥" else "DAILY CHALLENGE 🧩"
             val body = if (streak >= 3)
-                "Don't lose your $streak-day streak! Today's puzzles are waiting. 🔥"
+                "Your $streak-day streak ends at midnight. One quick game keeps it alive."
             else
-                "Your daily puzzles are ready — keep your streak alive! 🔥"
+                "Today's nine puzzles are live. Keep the streak going."
             ensureChannel(applicationContext)
             val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("Wordocious")
+                .setContentTitle(title)
                 .setContentText(body)
                 .setAutoCancel(true)
                 .setContentIntent(

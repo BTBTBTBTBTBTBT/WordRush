@@ -42,10 +42,15 @@ enum NotificationService {
         await schedule()
     }
 
-    /// Schedule (or reschedule) a one-shot reminder for the next 18:00 local
-    /// that still has unfinished dailies:
-    ///   - all 9 dailies already recorded today, or it's past 18:00 → tomorrow 18:00
+    /// Schedule (or reschedule) a one-shot reminder for the next 18:00 local on
+    /// a day the player hasn't touched:
+    ///   - ANY daily already recorded today, or it's past 18:00 → tomorrow 18:00
     ///   - otherwise → today 18:00
+    ///
+    /// "Any", not "all nine": a single daily secures the streak, so someone who
+    /// played one puzzle this morning is done being nudged tonight. Gating on
+    /// all 9 meant a player who'd already locked in their streak still got a
+    /// "streak at risk" banner in the evening — a claim that was simply false.
     /// Copy is streak-aware: a daily-login streak ≥ 3 names the streak so the
     /// nudge carries real loss-aversion weight; below that, the generic body.
     @MainActor
@@ -68,8 +73,9 @@ enum NotificationService {
         let cal = Calendar.current
         let now = Date()
         guard var target = cal.date(bySettingHour: reminderHour, minute: 0, second: 0, of: now) else { return }
-        let allDoneToday = DailyCompletionsStore.cachedTodayCount() >= DailyCompletionsStore.totalDailyModes
-        if allDoneToday || now >= target {
+        // One daily is enough to keep the streak — see the note above.
+        let playedToday = DailyCompletionsStore.cachedTodayCount() > 0
+        if playedToday || now >= target {
             guard let tomorrow = cal.date(byAdding: .day, value: 1, to: target) else { return }
             target = tomorrow
         }
