@@ -22,7 +22,14 @@ enum NotificationService {
     static func requestAndSchedule() async -> Bool {
         let center = UNUserNotificationCenter.current()
         let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
-        if granted { await schedule() }
+        if granted {
+            await schedule()
+            // Re-register for APNs the moment permission exists. Launch-time
+            // registration yields a token even while unauthorized, but iOS
+            // won't DISPLAY anything sent to it — and the app never appears
+            // under Settings > Notifications until authorization is requested.
+            await PushRegistration.register()
+        }
         return granted
     }
 
