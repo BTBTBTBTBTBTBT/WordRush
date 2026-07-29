@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { maybeGrantReferralReward } from '@/lib/referral-service';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Google Play Real-Time Developer Notifications (RTDN) webhook — the
@@ -99,7 +100,18 @@ async function syncSubscription(purchaseToken: string): Promise<string> {
   const { error } = await sb.from('profiles')
     .update({ is_pro: isPro, pro_expires_at: expiry ? new Date(expiry).toISOString() : null })
     .eq('id', userId);
-  return error ? `db-error:${error.message}` : `synced:${isPro}`;
+  if (error) return `db-error:${error.message}`;
+
+  // Referral conversion — pay the inviter when a referred user's sub is live.
+  // lineItems carry the short product id (pro_monthly / pro_yearly) directly;
+  // the service guards double-pay and never throws.
+  if (isPro) {
+    const planId = (sub.lineItems ?? [])
+      .map((li: any) => li.productId)
+      .find((p: string) => p === 'pro_monthly' || p === 'pro_yearly');
+    if (planId) await maybeGrantReferralReward(userId, planId);
+  }
+  return `synced:${isPro}`;
 }
 
 async function grantDayPass(purchaseToken: string, productId: string): Promise<string> {

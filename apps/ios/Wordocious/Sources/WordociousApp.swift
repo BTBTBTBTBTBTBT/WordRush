@@ -60,9 +60,18 @@ struct WordociousApp: App {
                 .onChange(of: auth.profile?.id) { id in
                     if id != nil { PresenceService.shared.start() } else { PresenceService.shared.stop() }
                 }
-                // Complete the Google sign-in callback if iOS routes back via
-                // the reversed-client-ID URL scheme (e.g. the Google app path).
-                .onOpenURL { url in _ = GIDSignIn.sharedInstance.handle(url) }
+                // Universal links (wordocious.com/vs/join/*) route in-app;
+                // everything else falls through to the Google sign-in callback
+                // (reversed-client-ID URL scheme, e.g. the Google app path).
+                .onOpenURL { url in
+                    if DeepLink.shared.handle(url: url) { return }
+                    _ = GIDSignIn.sharedInstance.handle(url)
+                }
+                // Some launch paths deliver universal links as a browsing
+                // NSUserActivity instead of onOpenURL — cover both.
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+                    if let url = activity.webpageURL { _ = DeepLink.shared.handle(url: url) }
+                }
         }
     }
 }

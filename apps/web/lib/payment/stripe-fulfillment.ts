@@ -1,4 +1,5 @@
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { maybeGrantReferralReward } from '@/lib/referral-service';
 
 // Server-side (service-role) Pro fulfillment for Stripe. This is the ONLY place
 // a web purchase grants Pro — called from the Stripe webhook after payment is
@@ -59,6 +60,10 @@ export async function fulfillStripePurchase(opts: {
 
   const { error } = await sb.from('profiles').update(update).eq('id', opts.userId);
   if (error) throw new Error(`stripe fulfillment write failed: ${error.message}`);
+
+  // If this buyer joined via a referral, pay the inviter (subscriptions only;
+  // internally guarded against pro_day and double-pay, and it never throws).
+  await maybeGrantReferralReward(opts.userId, opts.planId);
 }
 
 /** Cancellation / final subscription end → revoke Pro. */

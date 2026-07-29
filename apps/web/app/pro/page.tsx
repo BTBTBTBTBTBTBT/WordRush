@@ -223,6 +223,10 @@ export default function ProPage() {
               {payError && (
                 <p className="mt-2 text-center text-xs font-bold" style={{ color: '#dc2626' }}>{payError}</p>
               )}
+              <p className="mt-4 text-center text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                Invited by a friend? Open their invite link to claim 7 free days — or gift Pro
+                yourself from your <a href="/profile" style={{ color: '#7c3aed' }}>profile</a>.
+              </p>
             </div>
           </>
         )}

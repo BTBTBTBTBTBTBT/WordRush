@@ -59,6 +59,16 @@ fun MainScreen() {
     var publicProfileId by remember { mutableStateOf<String?>(null) }
     // Invite-accepted VS match (mode + invite code) from the pending-invites banner.
     var vsInvite by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, String>?>(null) }
+    // App-link VS invites (wordocious.com/vs/join/* via DeepLinkRouter) feed the
+    // same state — one-shot: consume and clear so back doesn't re-open it.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        com.wordocious.app.data.DeepLinkRouter.vsInvite.collect { link ->
+            if (link != null) {
+                vsInvite = link
+                com.wordocious.app.data.DeepLinkRouter.vsInvite.value = null
+            }
+        }
+    }
     // Streak-shield prompt — web StreakShieldProvider: checked once per session
     // when the profile is available and the streak is at risk.
     val profile by com.wordocious.app.data.AuthService.profile.collectAsState()

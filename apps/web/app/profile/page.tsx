@@ -48,6 +48,7 @@ import { SkillRadarCard, RivalriesCard } from '@/components/profile/pro-insights
 import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
+import { InvitePanel } from '@/components/referrals/invite-panel';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import type { Database } from '@/lib/database.types';
 
@@ -442,6 +443,11 @@ export default function ProfilePage() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* ── Gift Pro to Friends (referral program) ── */}
+        <div className="mb-4">
+          <InvitePanel />
         </div>
 
         {/* ── B. Today's Dailies ── */}

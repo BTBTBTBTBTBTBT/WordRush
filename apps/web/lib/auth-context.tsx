@@ -174,10 +174,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // creates the profiles row (SECURITY DEFINER, bypassing RLS). We do NOT
       // insert the profile client-side — with email confirmation on there's no
       // session yet, so the insert would fail the profiles RLS policy.
+      // A pending referral code rides along in metadata too — the wr_ref
+      // cookie won't survive an email-confirmation link opened in a
+      // different browser, but user_metadata will.
+      const referralCode = typeof document !== 'undefined'
+        ? document.cookie.match(/(?:^|;\s*)wr_ref=([A-Z2-9]+)/)?.[1]
+        : undefined;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { username } },
+        options: { data: referralCode ? { username, referral_code: referralCode } : { username } },
       });
 
       if (authError) throw authError;

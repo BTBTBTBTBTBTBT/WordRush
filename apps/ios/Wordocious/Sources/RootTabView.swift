@@ -14,6 +14,9 @@ struct RootTabView: View {
     // clears it so returning shows the leaderboard (not the profile you left on).
     @State private var leaderboardPath: [String] = []
     @ObservedObject private var chrome = ChromeVisibility.shared
+    /// Universal-link VS invites (wordocious.com/vs/join/*) present from the
+    /// tab root — same cover the pending-invite banner accept uses.
+    @ObservedObject private var deepLink = DeepLink.shared
     /// Post-game "Next Daily" handoff (NextDailyCTA): the tapped mode's daily,
     /// presented from the tab root so it works no matter which tab/screen
     /// presented the game that just finished.
@@ -84,6 +87,11 @@ struct RootTabView: View {
                     ProperNoundleView()   // ProperNoundle daily (dbKey set, no engine mode)
                 }
             }
+        }
+        // Universal-link VS invite → straight into the private match, exactly
+        // like accepting a pending-invite banner (VSGameView handles the rest).
+        .fullScreenCover(item: $deepLink.vsInvite) { inv in
+            NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }
         }
     }
 }

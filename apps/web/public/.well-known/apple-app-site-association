@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["Q32F6GRDYG.com.wordocious.app"],
+        "components": [
+          { "/": "/vs/join/*", "comment": "VS invite links open the app when installed" }
+        ]
+      }
+    ]
+  }
+}

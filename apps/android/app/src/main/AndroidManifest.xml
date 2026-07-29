@@ -23,14 +23,17 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep links: open wordocious.com links in the app. autoVerify
-                 needs /.well-known/assetlinks.json on the site (requires the
-                 release signing cert SHA-256 — add once the keystore exists). -->
+            <!-- App links: ONLY /vs/join/* opens in the app (handled by
+                 DeepLinkRouter). The old host-wide filter claimed every
+                 wordocious.com link and then discarded the path — referral
+                 /join/*, share /s/*, and content pages belong in the browser.
+                 autoVerify needs /.well-known/assetlinks.json to carry the
+                 Play App Signing SHA-256 (task #50). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="wordocious.com" />
+                <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/vs/join/" />
             </intent-filter>
         </activity>
 

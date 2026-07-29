@@ -33,6 +33,10 @@ import java.util.TimeZone
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // App links (wordocious.com/vs/join/*) — cold-start delivery. Warm
+        // starts arrive via onNewIntent below. Before this, the intent-filter
+        // matched but the path was silently discarded.
+        com.wordocious.app.data.DeepLinkRouter.handle(intent?.data)
         com.wordocious.app.data.ThemePref.load()
         // Warm the ~635KB word-list JSON decode off-main at launch (iOS parity:
         // RootTabView.init preloads). DictionaryLoader.ensureLoaded() is
@@ -88,6 +92,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        com.wordocious.app.data.DeepLinkRouter.handle(intent.data)
     }
 }
 

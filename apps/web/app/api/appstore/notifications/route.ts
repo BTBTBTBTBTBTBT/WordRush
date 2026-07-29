@@ -7,6 +7,7 @@ import {
   NotificationTypeV2,
 } from '@apple/app-store-server-library';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { maybeGrantReferralReward } from '@/lib/referral-service';
 
 // ────────────────────────────────────────────────────────────────────────────
 // App Store Server Notifications V2 webhook — the SERVER-AUTHORITATIVE source
@@ -194,6 +195,15 @@ export async function POST(req: NextRequest) {
   // Record only after a successful write, so a failed-then-retried event isn't
   // skipped as "already processed".
   if (eventId) await sb.from('store_webhook_events').insert({ event_id: eventId, source: 'appstore' });
+
+  // Referral conversion: pay the inviter when a referred user SUBSCRIBES.
+  // Map the reverse-DNS product id to the short plan id the service expects;
+  // Day Pass maps to nothing and never pays. Guarded + non-throwing inside.
+  if (GRANTS.has(type) && isPro) {
+    const planId = productId.endsWith('.pro_monthly') ? 'pro_monthly'
+      : productId.endsWith('.pro_yearly') ? 'pro_yearly' : '';
+    if (planId) await maybeGrantReferralReward(userId, planId);
+  }
 
   return NextResponse.json({ ok: true, userId, isPro, type });
 }

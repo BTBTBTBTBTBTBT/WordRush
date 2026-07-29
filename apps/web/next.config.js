@@ -47,6 +47,15 @@ const nextConfig = {
         ],
       },
       {
+        // Universal links: Apple's CDN requires the AASA file served as JSON
+        // (the extension-less file in public/ would default to octet-stream).
+        source: '/.well-known/apple-app-site-association',
+        headers: [
+          { key: 'Content-Type', value: 'application/json' },
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
+        ],
+      },
+      {
         // Security headers for all routes
         source: '/:path*',
         headers: [
