@@ -160,6 +160,8 @@ fun HomeScreen(
         ) {
             // Pro-only Daily/Unlimited toggle; Unlimited swaps the daily hero.
             // Daily hero shows Daily Sweep! / Flawless Victory! once all 9 are done.
+            // Admin-authored announcements (web/iOS AnnouncementsBanner parity).
+            AnnouncementsBanner()
             // Pending VS invites banner (web pending-invites-banner.tsx).
             PendingInvitesBanner(onJoinInvite = onJoinInvite)
             if (isPro) PlayModeToggle(playMode) { playMode = it }

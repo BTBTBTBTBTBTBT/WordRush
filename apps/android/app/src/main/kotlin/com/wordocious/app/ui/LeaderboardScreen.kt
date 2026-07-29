@@ -91,6 +91,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     var selectedMode by remember { mutableStateOf("DUEL") }
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterday by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
+    var yesterdaySweep by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
     var showYesterday by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     val userId = AuthService.profile.value?.id
@@ -180,6 +181,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     }
     LaunchedEffect(selectedMode, showYesterday) {
         yesterday = if (showYesterday && selectedMode != SWEEP_ID) LeaderboardService.fetchYesterdayWinners(selectedMode) else emptyList()
+        yesterdaySweep = if (showYesterday && selectedMode == SWEEP_ID) {
+            LeaderboardService.fetchDailySweepOrNull(day = com.wordocious.app.yesterdayLocalDate(), limit = 3) ?: emptyList()
+        } else emptyList()
     }
 
     val modeLabel = MODE_OPTIONS.firstOrNull { it.first == selectedMode }?.second ?: selectedMode
@@ -307,8 +311,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     }
                 }
             }
-            // Yesterday's Winners (collapsible) — per-mode only, not for Sweep.
-            if (!isSweep) item {
+            // Yesterday's Winners (collapsible) — per-mode top 3, or yesterday's
+            // top sweepers when the Sweep tile is selected.
+            item {
                 Spacer(Modifier.height(16.dp))
                 Row(
                     Modifier.fillMaxWidth().clickableNoRipple { showYesterday = !showYesterday }.padding(vertical = 8.dp),
@@ -326,7 +331,20 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
                             .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
                     ) {
-                        if (yesterday.isEmpty()) {
+                        if (isSweep) {
+                            if (yesterdaySweep.isEmpty()) {
+                                Text(
+                                    "No sweeps yesterday", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                                    color = WTheme.textMuted, modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                )
+                            } else {
+                                yesterdaySweep.forEachIndexed { i, e ->
+                                    YesterdaySweepRow(entry = e)
+                                    if (i < yesterdaySweep.size - 1) Divider()
+                                }
+                            }
+                        } else if (yesterday.isEmpty()) {
                             Text(
                                 "No results from yesterday", fontSize = 12.sp, fontWeight = FontWeight.Bold,
                                 color = WTheme.textMuted, modifier = Modifier.fillMaxWidth().padding(24.dp),
@@ -696,6 +714,21 @@ private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry) 
         Text(entry.username ?: "Player", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f), maxLines = 1)
         WinLossPill(entry.completed, abbrev = true)
         Text(formatScore(entry.compositeScore), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+    }
+}
+
+/** Compact sweep-yesterday row — RankIcon, name, FLAWLESS/SWEEP pill, total
+ *  score (muted). Mirrors YesterdayRow's shape; rank comes from the RPC. */
+@Composable
+private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        RankIcon(entry.rank.toInt())
+        Text(entry.username ?: "Player", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f), maxLines = 1)
+        SweepPill(entry.isFlawless)
+        Text(formatScore(entry.totalScore), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
 }
 

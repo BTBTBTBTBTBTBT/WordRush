@@ -34,6 +34,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/vs/join/" />
+                <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/auth/reset" />
+                <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/auth/confirm" />
             </intent-filter>
         </activity>
 

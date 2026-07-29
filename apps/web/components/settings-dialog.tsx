@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { useTheme, Theme } from '@/lib/theme-context';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
 import { useAuth } from '@/lib/auth-context';
+import { confirmDialog } from '@/components/ui/confirm-dialog';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -14,10 +15,50 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
-  const { user } = useAuth();
+  const { user, session, signOut } = useAuth();
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Permanent account deletion — web parity with the native apps' in-app
+  // deletion (Apple 5.1.1(v)). Two explicit confirms, then the existing
+  // service-role endpoint wipes stats/matches/medals/profile/auth user.
+  const handleDeleteAccount = async () => {
+    if (!user || !session) return;
+    const first = await confirmDialog({
+      title: 'Delete your account?',
+      message: 'This permanently erases your profile, stats, streaks, medals, and match history on every platform. It cannot be undone.',
+      confirmText: 'Continue',
+      cancelText: 'Keep my account',
+    });
+    if (!first) return;
+    const second = await confirmDialog({
+      title: 'Really delete everything?',
+      message: `Last check for @${user.email ?? 'this account'} — active Pro time is forfeited and nothing can be recovered.`,
+      confirmText: 'Delete forever',
+      cancelText: 'Go back',
+    });
+    if (!second) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? 'Deletion failed — try again or contact support@wordocious.com');
+      }
+      await signOut();
+      window.location.href = '/';
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Deletion failed');
+      setDeleting(false);
+    }
+  };
 
   // Open Stripe's Customer Portal for a web-purchased sub (cancel / update card).
   // 404 → no web subscription on file; point them at the store links instead.
@@ -149,6 +190,28 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               )}
             </div>
           </div>
+
+          {user && (
+            <div className="space-y-2">
+              <div className="section-header">ACCOUNT</div>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                className="block w-full text-left p-3 rounded-xl transition-all disabled:opacity-50"
+                style={{ background: '#fef2f2', border: '1.5px solid #fecaca' }}
+              >
+                <div className="font-extrabold text-xs" style={{ color: '#dc2626' }}>
+                  {deleting ? 'Deleting…' : 'Delete account'}
+                </div>
+                <div className="text-[10px] font-bold" style={{ color: '#b91c1c' }}>
+                  Permanently erase your profile and all data
+                </div>
+              </button>
+              {deleteError && (
+                <p className="text-[10px] font-bold px-1" style={{ color: '#dc2626' }}>{deleteError}</p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-3">
             <div className="section-header">ACCESSIBILITY</div>

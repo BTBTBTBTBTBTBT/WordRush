@@ -148,8 +148,12 @@ final class AuthService: ObservableObject {
         // creates the profiles row (SECURITY DEFINER). We don't insert it here —
         // with email confirmation on there's no session yet, so a client insert
         // would fail the profiles RLS policy.
+        // Confirmation links land on /auth/confirm — a path this app claims as
+        // a universal link, so tapping the email on this phone confirms
+        // in-app; the branded web page is the no-app fallback.
         let response = try await client.auth.signUp(
-            email: email, password: password, data: ["username": .string(username)])
+            email: email, password: password, data: ["username": .string(username)],
+            redirectTo: URL(string: "https://wordocious.com/auth/confirm"))
         // Only proceed to the signed-in flow if a session exists; otherwise the
         // user must confirm their email first.
         if response.session != nil {

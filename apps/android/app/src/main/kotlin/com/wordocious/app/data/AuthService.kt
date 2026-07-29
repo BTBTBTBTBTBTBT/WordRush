@@ -202,7 +202,10 @@ object AuthService {
      */
     suspend fun signUpWithEmail(email: String, password: String, username: String): String? {
         return try {
-            val result = client.auth.signUpWith(Email) {
+            // Confirmation links land on /auth/confirm — a path the app claims
+            // as an app link, so tapping the email on this phone confirms
+            // in-app; the branded web page is the no-app fallback.
+            val result = client.auth.signUpWith(Email, redirectUrl = "https://wordocious.com/auth/confirm") {
                 this.email = email
                 this.password = password
                 data = kotlinx.serialization.json.buildJsonObject {

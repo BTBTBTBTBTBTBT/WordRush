@@ -145,6 +145,9 @@ struct ProfileTab: View {
         ScrollView {
             VStack(spacing: 16) {
                 header(p)
+                // Referral program — web-parity "GIFT PRO TO FRIENDS" panel
+                // (same placement: between the header and Today's Dailies).
+                InvitePanelView()
                 todaysDailies
                 SnapshotHero(profile: p, gamesThisWeek: gamesThisWeek, isPro: auth.isProActive)
                 DailyStandingStrip(reloadToken: reloadToken)
@@ -972,6 +975,7 @@ struct LeaderboardTab: View {
     @State private var sweepLoading = false
     @State private var entries: [LeaderboardEntry] = []
     @State private var yesterday: [LeaderboardEntry] = []
+    @State private var yesterdaySweep: [SweepEntry] = []
     @State private var reloadToken = 0
     @State private var userRank: (rank: Int, total: Int)?
     // "Your neighborhood" rows when the user placed past the top-50 list.
@@ -1115,7 +1119,7 @@ struct LeaderboardTab: View {
         // used to fetch only on toggle-open, so switching chips while the
         // dropdown was expanded kept showing the previous mode's podium until
         // you closed and reopened it.
-        .task(id: "yesterday-\(mode.rawValue)-\(showYesterday)") {
+        .task(id: "yesterday-\(mode.rawValue)-\(isSweep)-\(showYesterday)") {
             guard showYesterday else { return }
             await loadYesterday()
         }
@@ -1153,6 +1157,46 @@ struct LeaderboardTab: View {
             .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
         }
+
+        // Yesterday's Winners — same toggle as the per-mode board, but the
+        // podium is yesterday's top sweepers (rank/pill from the sweep RPC).
+        Button { showYesterday.toggle() } label: {
+            HStack(spacing: 6) {
+                Text("Yesterday's Winners").font(Brand.font(12, .heavy))
+                Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
+            }.foregroundStyle(Theme.textMuted)
+        }
+        if showYesterday {
+            if yesterdaySweep.isEmpty {
+                Text("No sweeps yesterday")
+                    .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    .frame(maxWidth: .infinity).padding(24).multilineTextAlignment(.center)
+                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(Array(yesterdaySweep.enumerated()), id: \.element.id) { idx, entry in
+                        yesterdaySweepRow(entry)
+                        if idx < yesterdaySweep.count - 1 { Divider().overlay(Theme.border) }
+                    }
+                }
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+            }
+        }
+    }
+
+    /// Compact sweep-yesterday row — rankIcon, name, FLAWLESS/SWEEP pill,
+    /// total score (muted). Mirrors yesterdayRow's shape.
+    private func yesterdaySweepRow(_ entry: SweepEntry) -> some View {
+        HStack(spacing: 12) {
+            rankIcon(entry.rank).frame(width: 22)
+            Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            Spacer()
+            sweepPill(isFlawless: entry.isFlawless)
+            Text(formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
     }
 
     @ViewBuilder private var perModeBoard: some View {
@@ -1377,6 +1421,13 @@ struct LeaderboardTab: View {
     }
 
     private func loadYesterday() async {
+        if isSweep {
+            let rows = (try? await SweepLeaderboardService.fetchDailySweep(
+                day: LeaderboardService.yesterdayLocal(), limit: 3)) ?? []
+            guard !Task.isCancelled else { return }
+            yesterdaySweep = rows
+            return
+        }
         let rows = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 3)) ?? []
         // .task(id:) cancels this on a mode switch — don't let the previous
         // mode's slow response overwrite the new mode's podium.

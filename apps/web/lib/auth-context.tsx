@@ -180,10 +180,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const referralCode = typeof document !== 'undefined'
         ? document.cookie.match(/(?:^|;\s*)wr_ref=([A-Z2-9]+)/)?.[1]
         : undefined;
+      // Confirmation links land on /auth/confirm — a branded page that
+      // exchanges the code and signs the user in (and a path the native apps
+      // claim, so phones with the app installed confirm in-app).
+      const emailRedirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/confirm`
+        : undefined;
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: referralCode ? { username, referral_code: referralCode } : { username } },
+        options: {
+          emailRedirectTo,
+          data: referralCode ? { username, referral_code: referralCode } : { username },
+        },
       });
 
       if (authError) throw authError;

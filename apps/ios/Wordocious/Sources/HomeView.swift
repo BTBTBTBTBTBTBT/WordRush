@@ -73,6 +73,7 @@ struct HomeView: View {
                     AppHeaderView()
                     ScrollView {
                         VStack(spacing: 8) {
+                            AnnouncementsBanner()
                             pendingInvitesBanner
                             if auth.isProActive { PlayModeToggle(value: $playMode) }
                             // Always fill the hero slot so toggling Daily⇄Unlimited

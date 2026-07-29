@@ -23,6 +23,7 @@ struct RootTabView: View {
     @State private var nextDaily: HomeMode?
 
     enum Tab: Hashable { case home, leaderboard, profile, records }
+    struct SafariURLItem: Identifiable { let id = UUID(); let url: URL }
 
     init() {
         DictionaryLoader.ensureInitialized()
@@ -92,6 +93,16 @@ struct RootTabView: View {
         // like accepting a pending-invite banner (VSGameView handles the rest).
         .fullScreenCover(item: $deepLink.vsInvite) { inv in
             NavigationStack { VSGameView(mode: inv.mode, inviteCode: inv.code) }
+        }
+        // Password-recovery universal link → native set-new-password sheet
+        // (session already established by DeepLink's code exchange).
+        .sheet(isPresented: $deepLink.showNewPasswordSheet) { NewPasswordSheet() }
+        // Cross-device auth links can't exchange in-app (PKCE verifier lives
+        // on the requesting client) → finish on the web page in-app.
+        .sheet(item: Binding(
+            get: { deepLink.safariFallbackURL.map { SafariURLItem(url: $0) } },
+            set: { _ in deepLink.safariFallbackURL = nil })) { item in
+            SafariSheet(url: item.url)
         }
     }
 }

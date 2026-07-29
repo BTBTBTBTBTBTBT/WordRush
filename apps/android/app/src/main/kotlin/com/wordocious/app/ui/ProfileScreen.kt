@@ -309,6 +309,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             })
         }
 
+        // ── Referral program (web/iOS "GIFT PRO TO FRIENDS" parity) ──
+        item { InvitePanel() }
+
         // ── B. Today's Dailies ────────────────────────────────────
         item { TodaysDailies(todayDailies, onPlayDaily) }
 

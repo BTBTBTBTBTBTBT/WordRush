@@ -7,6 +7,9 @@ struct WordociousApp: App {
     @StateObject private var auth = AuthService.shared
     @StateObject private var themeManager = ThemeManager.shared
     @Environment(\.scenePhase) private var scenePhase
+    // APNs token capture (PushRegistration.swift) — SwiftUI apps need a
+    // UIApplicationDelegate for didRegisterForRemoteNotifications callbacks.
+    @UIApplicationDelegateAdaptor(PushRegistrationDelegate.self) private var pushDelegate
 
     init() {
         // Crash reporting for TestFlight/App Store builds only — DEBUG builds
@@ -41,6 +44,8 @@ struct WordociousApp: App {
                     await PendingRecords.drain()
                     // Block-list cache so leaderboards can filter immediately.
                     await ModerationService.loadBlockedIds()
+                    // APNs token capture (send path comes later with the key).
+                    PushRegistration.register()
                 }
                 // Keep the always-on presence socket alive only while
                 // foregrounded + signed in, so the LIVE count reflects real

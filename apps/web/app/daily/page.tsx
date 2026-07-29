@@ -112,6 +112,7 @@ export default function DailyPage() {
   const [loading, setLoading] = useState(true);
   const [showYesterday, setShowYesterday] = useState(false);
   const [yesterdayLeaderboard, setYesterdayLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [yesterdaySweep, setYesterdaySweep] = useState<SweepEntry[]>([]);
 
   const isPro = isProActive;
 
@@ -223,7 +224,10 @@ export default function DailyPage() {
   }, [loadLeaderboard]);
 
   useEffect(() => {
-    if (showYesterday && selectedMode !== 'SWEEP') {
+    if (!showYesterday) return;
+    if (selectedMode === 'SWEEP') {
+      fetchDailySweepLeaderboard(yesterday, 3).then(setYesterdaySweep);
+    } else {
       fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 3).then(setYesterdayLeaderboard);
     }
   }, [showYesterday, selectedMode, yesterday]);
@@ -512,9 +516,7 @@ export default function DailyPage() {
         </div>
         </PullToRefresh>
 
-        {/* Yesterday's Winners (per-mode only) */}
-        {!isSweep && (
-        <>
+        {/* Yesterday's Winners — per-mode top 3, or yesterday's top sweepers */}
         <button
           onClick={() => setShowYesterday(!showYesterday)}
           className="w-full mt-4 flex items-center justify-center gap-1.5 text-xs font-extrabold py-2 transition-colors"
@@ -533,7 +535,36 @@ export default function DailyPage() {
               borderRadius: '16px',
             }}
           >
-            {yesterdayLeaderboard.length === 0 ? (
+            {isSweep ? (
+              yesterdaySweep.length === 0 ? (
+                <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  No sweeps yesterday
+                </div>
+              ) : (
+                <div>
+                  {yesterdaySweep.filter((e) => !isBlocked(e.user_id)).map((entry) => (
+                    <div
+                      key={entry.user_id}
+                      className="flex items-center gap-3 px-4 py-3"
+                      style={{ borderBottom: '1px solid var(--color-border)' }}
+                    >
+                      <RankIcon rank={entry.rank} />
+                      <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>{entry.username}</span>
+                      <span
+                        className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+                        style={{
+                          background: entry.is_flawless ? '#d9770622' : '#a78bfa22',
+                          color: entry.is_flawless ? '#d97706' : '#a78bfa',
+                        }}
+                      >
+                        {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
+                      </span>
+                      <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{formatScore(entry.total_score)}</span>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : yesterdayLeaderboard.length === 0 ? (
               <div className="p-6 text-center text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 No results from yesterday
               </div>
@@ -562,8 +593,6 @@ export default function DailyPage() {
               </div>
             )}
           </div>
-        )}
-        </>
         )}
       </div>
 

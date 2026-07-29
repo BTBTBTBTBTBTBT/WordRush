@@ -69,6 +69,24 @@ fun MainScreen() {
             }
         }
     }
+    // Password-recovery app link → native new-password dialog (session already
+    // established by the code exchange in DeepLinkRouter).
+    val showNewPassword by com.wordocious.app.data.DeepLinkRouter.showNewPassword.collectAsState()
+    if (showNewPassword) {
+        NewPasswordDialog(onDone = { com.wordocious.app.data.DeepLinkRouter.showNewPassword.value = false })
+    }
+    // Cross-device auth links can't exchange in-app — hand off to a browser
+    // explicitly (a plain VIEW intent would loop back into the app link).
+    val fallbackContext = androidx.compose.ui.platform.LocalContext.current
+    val fallbackUrl by com.wordocious.app.data.DeepLinkRouter.browserFallback.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(fallbackUrl) {
+        val url = fallbackUrl ?: return@LaunchedEffect
+        com.wordocious.app.data.DeepLinkRouter.browserFallback.value = null
+        val browse = android.content.Intent.makeMainSelectorActivity(
+            android.content.Intent.ACTION_MAIN, android.content.Intent.CATEGORY_APP_BROWSER,
+        ).setData(android.net.Uri.parse(url))
+        runCatching { fallbackContext.startActivity(browse) }
+    }
     // Streak-shield prompt — web StreakShieldProvider: checked once per session
     // when the profile is available and the streak is at risk.
     val profile by com.wordocious.app.data.AuthService.profile.collectAsState()
