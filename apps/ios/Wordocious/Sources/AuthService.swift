@@ -244,6 +244,11 @@ final class AuthService: ObservableObject {
         isAuthenticated = false
         isGuest = false
         AuthService.hadPersistedSession = false
+        // Drop the launch-window entitlement cache with the session. It's keyed
+        // to nobody, so leaving it behind let the NEXT account render as Pro
+        // (badge on, ads hidden) for the second before their own profile
+        // loaded — someone else's subscription, briefly wearing their name.
+        UserDefaults.standard.removeObject(forKey: AuthService.proCacheKey)
     }
 
     private static let lastOwnerKey = "wordocious.last-save-owner"
@@ -379,7 +384,7 @@ final class AuthService: ObservableObject {
         set { UserDefaults.standard.set(newValue, forKey: "wordocious.had-session") }
     }
 
-    private static let proCacheKey = "wordocious.pro-until"
+    fileprivate static let proCacheKey = "wordocious.pro-until"
     /// Sentinel for a Pro row with no expiry (legacy/lifetime), matching
     /// isProActive's treatment of a nil `pro_expires_at` as active.
     private static let proNoExpiry = Date.distantFuture
