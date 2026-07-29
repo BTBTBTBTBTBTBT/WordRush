@@ -92,12 +92,15 @@ export function InvitePanel() {
 
   const copyLink = async (code: string) => {
     const url = `https://wordocious.com/join/${code}`;
-    const text = `I'm gifting you 7 days of Wordocious Pro — daily word puzzles, battles, the works. Claim it here: ${url}`;
+    const text = `I'm gifting you 7 days of Wordocious Pro — daily word puzzles, battles, the works.`;
     try {
       if (navigator.share) {
-        await navigator.share({ text });
+        // Pass url SEPARATELY from text: iOS then renders the share-sheet
+        // preview as a link (site touch icon — the W) instead of the generic
+        // plain-text "A|" glyph, and Messages unfurls the branded OG card.
+        await navigator.share({ text, url });
       } else {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(`${text} Claim it here: ${url}`);
       }
       setCopiedCode(code);
       logShareEvent('link_invite', '', 'referral');
