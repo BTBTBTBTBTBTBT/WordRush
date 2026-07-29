@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   // inviter (approximation: cap nuances ignored), 30/60 per conversion.
   const proDaysGranted = redeemed * (7 + 3)
     + referrals.filter((r) => r.status === 'converted')
-      .reduce((sum, r) => sum + (r.converted_plan === 'pro_yearly' ? 60 : 30), 0);
+      .reduce((sum, r) => sum + (r.converted_plan === 'pro_yearly' ? 90 : 30), 0);
 
   return NextResponse.json({
     stats: {

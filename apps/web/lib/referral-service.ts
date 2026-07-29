@@ -6,7 +6,7 @@
  *   * +3 days Pro instantly per redemption (first INSTANT_REWARD_CAP only —
  *     fake-account farming yields nothing past the cap),
  *   * +4 streak shields at the 3rd redemption (milestone),
- *   * +30 days (monthly) / +60 days (yearly) when the friend SUBSCRIBES —
+ *   * +30 days (monthly) / +90 days (yearly) when the friend SUBSCRIBES —
  *     the big reward is revenue-gated, so the expensive payout only fires
  *     when real money arrives. pro_day NEVER triggers it (a $1 pass must not
  *     buy a $6.99 month).
@@ -28,7 +28,7 @@ const MILESTONE_SHIELDS = 4;
 export const MAX_PENDING_INVITES = 3;
 const CONVERSION_REWARD_DAYS: Record<string, number> = {
   pro_monthly: 30,
-  pro_yearly: 60,
+  pro_yearly: 90, // 3 free months when the friend goes annual (founder call 2026-07-29)
 };
 
 /** Extend a user's Pro window by N days — additive, never shrinking. */

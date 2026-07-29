@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { Gift, Copy, Check, Crown, Trophy } from 'lucide-react';
+import { Gift, Copy, Check, Crown, Trophy, X as XIcon } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase-client';
 import { logShareEvent } from '@/lib/share-events';
@@ -18,10 +18,19 @@ interface ReferralRow {
 const STATUS_LABEL: Record<string, { text: string; color: string }> = {
   pending: { text: 'Waiting', color: 'var(--color-text-muted)' },
   redeemed: { text: 'Friend joined! +3 days', color: '#059669' },
-  converted: { text: 'Subscribed! Month earned', color: '#d97706' },
+  converted: { text: 'Subscribed! Reward earned', color: '#d97706' },
   expired: { text: 'Expired', color: 'var(--color-text-muted)' },
-  revoked: { text: 'Revoked', color: '#dc2626' },
+  revoked: { text: 'Cancelled', color: 'var(--color-text-muted)' },
 };
+
+/** "29d left" / "12h left" for a pending invite's expiry. */
+function timeLeft(expiresAt: string): string {
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return 'expired';
+  const days = Math.floor(ms / 86_400_000);
+  if (days >= 1) return `${days}d left`;
+  return `${Math.max(1, Math.floor(ms / 3_600_000))}h left`;
+}
 
 /**
  * Profile "Gift Pro to friends" panel — the referral program's home.
@@ -90,6 +99,17 @@ export function InvitePanel() {
     setCreating(false);
   };
 
+  const cancelInvite = async (id: string, code: string) => {
+    if (!session) return;
+    if (!window.confirm(`Cancel invite ${code}? The link stops working and the slot frees up.`)) return;
+    await fetch('/api/referrals/cancel', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    await mutate();
+  };
+
   const copyLink = async (code: string) => {
     const url = `https://wordocious.com/join/${code}`;
     const text = `I'm gifting you 7 days of Wordocious Pro — daily word puzzles, battles, the works.`;
@@ -114,13 +134,19 @@ export function InvitePanel() {
     >
       <div className="flex items-center gap-2">
         <Gift className="w-5 h-5" style={{ color: '#7c3aed' }} />
-        <h3 className="text-base font-black" style={{ color: 'var(--color-text)' }}>Gift Pro to Friends</h3>
+        <h3
+          className="text-base font-black tracking-tight text-transparent bg-clip-text"
+          style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
+        >
+          GIFT PRO TO FRIENDS
+        </h3>
       </div>
 
       <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
         Each friend gets <span style={{ color: '#d97706' }}>7 days of Pro</span> free. You get
-        +3 days when they join — and a <span style={{ color: '#d97706' }}>free month</span> if
-        they subscribe. {redemptions >= 3 ? null : <>3 friends = +4 streak shields.</>}
+        +3 days when they join, a <span style={{ color: '#d97706' }}>free month</span> if they
+        subscribe — and <span style={{ color: '#d97706' }}>3 free months</span> if they go
+        annual. {redemptions >= 3 ? null : <>3 friends = +4 streak shields.</>}
       </p>
 
       <button
@@ -138,18 +164,31 @@ export function InvitePanel() {
           {(invites ?? []).slice(0, 6).map((inv) => {
             const label = STATUS_LABEL[inv.status] ?? STATUS_LABEL.pending;
             const expired = inv.status === 'pending' && new Date(inv.expires_at).getTime() < Date.now();
+            const open = inv.status === 'pending' && !expired;
             return (
-              <div key={inv.id} className="flex items-center justify-between gap-2 text-xs font-bold">
+              <div key={inv.id} className="flex items-center gap-2 text-xs font-bold">
                 <span className="font-mono tracking-widest" style={{ color: 'var(--color-text)' }}>{inv.code}</span>
-                <span style={{ color: expired ? 'var(--color-text-muted)' : label.color }}>
+                <span className="flex-1" style={{ color: expired ? 'var(--color-text-muted)' : label.color }}>
                   {expired ? 'Expired' : label.text}
+                  {open && (
+                    <span style={{ color: 'var(--color-text-muted)' }}> · {timeLeft(inv.expires_at)}</span>
+                  )}
                 </span>
-                {inv.status === 'pending' && !expired && (
-                  <button onClick={() => copyLink(inv.code)} aria-label="Copy invite link" className="p-1">
-                    {copiedCode === inv.code
-                      ? <Check className="w-3.5 h-3.5" style={{ color: '#059669' }} />
-                      : <Copy className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />}
-                  </button>
+                {open && (
+                  <>
+                    <button onClick={() => copyLink(inv.code)} aria-label="Share invite link" className="p-1">
+                      {copiedCode === inv.code
+                        ? <Check className="w-3.5 h-3.5" style={{ color: '#059669' }} />
+                        : <Copy className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />}
+                    </button>
+                    <button
+                      onClick={() => cancelInvite(inv.id, inv.code)}
+                      aria-label="Cancel invite"
+                      className="p-1"
+                    >
+                      <XIcon className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                    </button>
+                  </>
                 )}
                 {inv.status === 'converted' && <Crown className="w-3.5 h-3.5" style={{ color: '#d97706' }} />}
               </div>

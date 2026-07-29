@@ -84,7 +84,8 @@ export default function AdminReferralsPage() {
         <h1 className="text-2xl font-black text-gray-900">Referrals</h1>
         <p className="text-xs text-gray-400 font-medium mt-0.5">
           Gift-trial program — friends get 7 days of Pro; inviters earn +3 days per join
-          (first 5), +4 shields at 3 joins, and a free month (or two, yearly) per subscription.
+          (first 5), +4 shields at 3 joins, and a free month per monthly subscription —
+          3 free months per annual.
         </p>
       </div>
 
