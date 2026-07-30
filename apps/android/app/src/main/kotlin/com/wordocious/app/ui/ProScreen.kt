@@ -18,18 +18,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -74,6 +79,19 @@ fun ProScreen(onDone: () -> Unit) {
     // server sweep yet) otherwise saw "You're enjoying all Pro benefits!" with
     // no way to resubscribe. Every other gate already uses isProActive.
     val isPro = AuthService.isProActive
+    val lastError by StoreManager.lastError.collectAsState()
+    // iOS presents AuthView as a SHEET over ProView (ProView.swift:59), so a
+    // guest who signs in lands back on the plan list. Overlay it here for the
+    // same result instead of leaving guest mode and tearing the paywall down.
+    var showAuth by remember { mutableStateOf(false) }
+    if (showAuth) {
+        androidx.activity.compose.BackHandler { showAuth = false }
+        // Google sign-in never calls onAuthenticated (AuthScreen.kt:315), so the
+        // profile landing is what closes the overlay in that path.
+        LaunchedEffect(profile) { if (profile != null) showAuth = false }
+        AuthScreen(onAuthenticated = { showAuth = false })
+        return
+    }
 
     Column(
         Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover)))
@@ -81,7 +99,6 @@ fun ProScreen(onDone: () -> Unit) {
     ) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Close", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.primary, modifier = Modifier.weight(1f).clickableNoRipple(onDone))
-            Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp).padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             // Header
@@ -104,7 +121,7 @@ fun ProScreen(onDone: () -> Unit) {
                     )
                     Box(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.primary)
-                            .clickableNoRipple { AuthService.exitGuest(); onDone() }.padding(vertical = 13.dp),
+                            .clickableNoRipple { showAuth = true }.padding(vertical = 13.dp),
                         contentAlignment = Alignment.Center,
                     ) { Text("Sign in", color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp) }
                 }
@@ -119,7 +136,7 @@ fun ProScreen(onDone: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Icon(painterResource(R.drawable.ic_crown), null, tint = Color.White, modifier = Modifier.size(14.dp))
-                        Text("ACTIVE PRO", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        Text("ACTIVE PRO", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                     Text("You're enjoying all Pro benefits!", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
@@ -128,6 +145,21 @@ fun ProScreen(onDone: () -> Unit) {
             }
         }
     }
+
+    // Purchase errors are a dismissible alert on every state of the screen, not
+    // a line of red text inside the plan list (iOS ProView.swift:54).
+    if (lastError != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { StoreManager.clearError() },
+            title = { Text("Purchase issue", fontWeight = FontWeight.Black) },
+            text = { Text(lastError ?: "") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { StoreManager.clearError() }) {
+                    Text("OK", color = WTheme.primary, fontWeight = FontWeight.Black)
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -135,7 +167,9 @@ private fun PlansContent() {
     val activity = LocalContext.current as? android.app.Activity
     val prices by StoreManager.prices.collectAsState()
     val purchasingId by StoreManager.purchasingId.collectAsState()
-    val lastError by StoreManager.lastError.collectAsState()
+    // While a Play billing flow is in flight every CTA is inert, so a second
+    // billing intent can't be launched on top of it (iOS `.disabled(purchasingId != nil)`).
+    val busy = purchasingId != null
     fun buy(id: String) { activity?.let { StoreManager.purchase(it, id) } }
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -148,26 +182,33 @@ private fun PlansContent() {
             "Monthly", prices[StoreManager.PRO_MONTHLY] ?: "\$6.99", "/mo", "Cancel anytime",
             listOf(Color(0xFF7C3AED), Color(0xFF6D28D9)), best = false,
             cta = if (purchasingId == StoreManager.PRO_MONTHLY) "Processing…" else "Subscribe Monthly",
+            loading = purchasingId == StoreManager.PRO_MONTHLY, enabled = !busy,
             onClick = { buy(StoreManager.PRO_MONTHLY) },
         )
         PlanCard(
             "Yearly", prices[StoreManager.PRO_YEARLY] ?: "\$59.99", "/yr", "\$4.99/mo billed annually",
             listOf(Color(0xFFF59E0B), GOLD), best = true,
             cta = if (purchasingId == StoreManager.PRO_YEARLY) "Processing…" else "Subscribe Yearly",
+            loading = purchasingId == StoreManager.PRO_YEARLY, enabled = !busy,
             onClick = { buy(StoreManager.PRO_YEARLY) },
         )
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.padding(top = 6.dp)) {
             Box(Modifier.weight(1f).height(1.dp).background(WTheme.border))
-            Text("OR TRY IT FIRST", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.5.sp)
+            Text("OR TRY IT FIRST", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted, letterSpacing = 0.5.sp)
             Box(Modifier.weight(1f).height(1.dp).background(WTheme.border))
         }
-        Box(
+        Row(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
-                .clickableNoRipple { buy(StoreManager.PRO_DAY) }.padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center,
+                .clickableNoRipple { if (!busy) buy(StoreManager.PRO_DAY) }
+                .alpha(if (busy) 0.6f else 1f).padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (purchasingId == StoreManager.PRO_DAY) {
+                CircularProgressIndicator(Modifier.size(16.dp), color = WTheme.primary, strokeWidth = 2.dp)
+            }
             Text(
                 if (purchasingId == StoreManager.PRO_DAY) "Processing…"
                 else "Just today — ${prices[StoreManager.PRO_DAY] ?: "\$1"} for 24 hours of Pro →",
@@ -178,15 +219,9 @@ private fun PlansContent() {
             "Eight day passes cost more than a month of Pro.",
             fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )
-        if (lastError != null) {
-            Text(
-                lastError ?: "", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
-                textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            )
-        }
         Text(
             "Restore Purchases",
-            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.primary, textAlign = TextAlign.Center,
+            fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary, textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp).clickableNoRipple { StoreManager.restore() },
         )
         // Disclosure (Google Play wording for Android).
@@ -194,12 +229,37 @@ private fun PlansContent() {
             "Monthly ($6.99) and Yearly ($59.99) are auto-renewing subscriptions billed through Google Play. Payment is charged to your Google account at confirmation. Subscriptions renew automatically unless cancelled at least 24 hours before the period ends; manage or cancel in Google Play → Subscriptions. The Day Pass is a one-time 24-hour purchase and does not renew.",
             fontSize = 10.sp, color = WTheme.textMuted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp),
         )
+        // Terms / Privacy links under the disclosure (iOS ProView.swift:153) —
+        // Play's subscription policy expects them on the purchase surface too.
+        val context = LocalContext.current
+        fun open(url: String) {
+            runCatching {
+                context.startActivity(
+                    android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                )
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Terms of Service", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
+                modifier = Modifier.clickableNoRipple { open("https://wordocious.com/terms") },
+            )
+            Text("·", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(
+                "Privacy Policy", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
+                modifier = Modifier.clickableNoRipple { open("https://wordocious.com/privacy") },
+            )
+        }
     }
 }
 
 @Composable
 private fun SectionHeader(t: String) {
-    Text(t, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.1.sp)
+    Text(t, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted, letterSpacing = 1.1.sp)
 }
 
 @Composable
@@ -218,24 +278,32 @@ private fun BenefitRow(b: Benefit) {
 }
 
 @Composable
-private fun PlanCard(title: String, price: String, unit: String, note: String, gradient: List<Color>, best: Boolean, cta: String, onClick: () -> Unit = {}) {
+private fun PlanCard(
+    title: String, price: String, unit: String, note: String, gradient: List<Color>, best: Boolean, cta: String,
+    loading: Boolean = false, enabled: Boolean = true, onClick: () -> Unit = {},
+) {
     Box {
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
                 .border(1.5.dp, if (best) Color(0xFFFDE68A) else WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(price, fontSize = 30.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 Text(unit, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(bottom = 4.dp))
             }
             Text(note, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(bottom = 8.dp))
-            Box(
+            Row(
                 Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(gradient))
-                    .clickableNoRipple(onClick).padding(vertical = 12.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(cta, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
+                    .clickableNoRipple { if (enabled) onClick() }
+                    .alpha(if (enabled) 1f else 0.6f).padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (loading) CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                Text(cta, fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
+            }
         }
         if (best) {
             Text(

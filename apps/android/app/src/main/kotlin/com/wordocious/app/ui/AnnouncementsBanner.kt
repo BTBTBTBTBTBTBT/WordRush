@@ -8,7 +8,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,7 +67,11 @@ fun AnnouncementsBanner() {
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("📣", fontSize = 13.sp)
+        // iOS uses a purple vector megaphone, not a full-color system emoji.
+        Icon(
+            Icons.Filled.Campaign, null, tint = Color(0xFF7C3AED),
+            modifier = Modifier.padding(top = 2.dp).size(13.dp),
+        )
         Column(Modifier.weight(1f)) {
             Text(
                 a.title, fontSize = 13.sp, fontWeight = FontWeight.Black,
@@ -73,11 +82,14 @@ fun AnnouncementsBanner() {
             )
             Text(a.body, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, fontFamily = Nunito)
         }
-        Text("✕", fontSize = 12.sp, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple {
-            val dismissed = SettingsPref.get("dismissed-announcements", "")
-            SettingsPref.set("dismissed-announcements", if (dismissed.isEmpty()) a.id else "$dismissed,${a.id}")
-            current = null
-        })
+        Icon(
+            Icons.Filled.Close, "Dismiss", tint = WTheme.textMuted,
+            modifier = Modifier.size(11.dp).clickableNoRipple {
+                val dismissed = SettingsPref.get("dismissed-announcements", "")
+                SettingsPref.set("dismissed-announcements", if (dismissed.isEmpty()) a.id else "$dismissed,${a.id}")
+                current = null
+            },
+        )
     }
 }
 

@@ -12,23 +12,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,14 +64,13 @@ private val THEMES = listOf(
 @Composable
 fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     val scope = rememberCoroutineScope()
-    val isAuthenticated by AuthService.isAuthenticated.collectAsState()
     var theme by remember { mutableStateOf(ThemePref.current()) }
     var sound by remember { mutableStateOf(SettingsPref.get(SettingsPref.SOUND, true)) }
     var dailyReminder by remember { mutableStateOf(SettingsPref.get(SettingsPref.DAILY_REMINDER, false)) }
     var colorblind by remember { mutableStateOf(SettingsPref.get(SettingsPref.COLORBLIND, false)) }
     var reducedMotion by remember { mutableStateOf(SettingsPref.get(SettingsPref.REDUCED_MOTION, false)) }
     val context = androidx.compose.ui.platform.LocalContext.current
-    // Declared before the launcher below, which assigns it from its callback.
+    val isAuthenticated by AuthService.isAuthenticated.collectAsState()
     var reminderDenied by remember { mutableStateOf(false) }
     // Permission launcher for the daily-reminder toggle (API 33+ runtime perm).
     val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -78,10 +79,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
         if (granted) {
             com.wordocious.app.data.NotificationService.schedule(context)
         } else {
-            // iOS reverts the switch when the permission prompt is declined
-            // (SettingsView.onChange -> requestAndSchedule returns false). Leaving
-            // it ON persisted pref-daily-reminder=true while nothing was ever
-            // scheduled, so the user believed reminders were on.
+            // iOS snaps the toggle back off and explains (SettingsView.swift:142).
             dailyReminder = false
             SettingsPref.set(SettingsPref.DAILY_REMINDER, false)
             reminderDenied = true
@@ -101,6 +99,9 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             Text("SETTINGS", fontSize = 17.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
             Spacer(Modifier.weight(1f))
             Text(
+                // Deliberately brand purple, NOT iOS's #007AFF: that blue is a
+                // SwiftUI toolbar default rather than a design choice, and system
+                // blue reads as foreign chrome on Android.
                 "Done", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
                 modifier = Modifier.clickableNoRipple(onDone),
             )
@@ -156,8 +157,14 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                                 ) != android.content.pm.PackageManager.PERMISSION_GRANTED
                             ) {
                                 notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
+                            } else if (androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()) {
                                 com.wordocious.app.data.NotificationService.schedule(context)
+                            } else {
+                                // Notifications switched off in system settings (or a
+                                // previously-denied 33+ perm) — same revert-and-explain as iOS.
+                                dailyReminder = false
+                                SettingsPref.set(SettingsPref.DAILY_REMINDER, false)
+                                reminderDenied = true
                             }
                         } else {
                             com.wordocious.app.data.NotificationService.cancel(context)
@@ -209,41 +216,37 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 }
             }
 
-            // Account — iOS wraps BOTH of these in `if auth.isAuthenticated`
-            // (SettingsView.swift:104). Android showed them to guests too, so a
-            // guest saw a Sign Out row for a session they never started and a
-            // Delete Account button wired to a destructive call.
+            // Account — hidden for guests, matching SettingsView.swift:104
+            // (`if auth.isAuthenticated`); a guest has no session to sign out of
+            // and no account to delete.
             if (isAuthenticated) {
-                Text(
-                    "Sign Out",
-                    fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                // iOS uses .buttonStyle(.bordered).tint(red) — a soft tinted fill
+                // at a fixed 46pt height, not a hard outline.
+                Box(
                     modifier = Modifier.fillMaxWidth()
                         .height(46.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        // iOS uses a TINTED .bordered fill, not a hard 1.5pt outline.
                         .background(Color(0xFFDC2626).copy(alpha = 0.12f))
-                        .clickableNoRipple { scope.launch { AuthService.signOut(); onDone() } }
-                        .wrapContentHeight(),
-                )
+                        .clickableNoRipple { scope.launch { AuthService.signOut(); onDone() } },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("Sign Out", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626))
+                }
 
-                // iOS renders this as an OUTLINED card with a leading trash icon,
-                // not a solid red slab — the solid fill read as the primary action
-                // of the whole screen.
+                // Quiet outlined card matching the Section cards above (iOS
+                // SettingsView.swift:111-122), not a solid-red slab.
                 Row(
                     modifier = Modifier.fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .border(1.5.dp, Color(0xFFDC2626), RoundedCornerShape(14.dp))
-                        .clickableNoRipple { showDeleteConfirm = true }
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                        .background(WTheme.surface)
+                        .border(1.5.dp, Color(0xFFFECACA), RoundedCornerShape(14.dp))
+                        .clickableNoRipple { if (!deleting) showDeleteConfirm = true }
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(Icons.Filled.Delete, null, tint = Color(0xFFDC2626), modifier = Modifier.size(15.dp))
-                    Text(
-                        "Delete Account",
-                        fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFDC2626),
-                    )
+                    Icon(Icons.Filled.Delete, null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text("Delete Account", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFDC2626))
                 }
             }
 
@@ -257,27 +260,16 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
         }
     }
 
-    // Permission was declined — say so, rather than leaving a switch that
-    // silently snapped back with no explanation (iOS surfaces the same alert).
     if (reminderDenied) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { reminderDenied = false },
             title = { Text("Notifications are off", fontWeight = FontWeight.Black) },
-            text = {
-                Text(
-                    "Enable notifications for Wordocious in your device settings " +
-                        "to get a daily reminder to play.",
-                )
-            },
+            text = { Text("Enable notifications for Wordocious in Android Settings to get a daily reminder.") },
             confirmButton = {
-                Text(
-                    "OK", fontWeight = FontWeight.Black, color = WTheme.primary,
-                    modifier = Modifier.clickableNoRipple { reminderDenied = false }.padding(12.dp),
-                )
+                androidx.compose.material3.TextButton(onClick = { reminderDenied = false }) { Text("OK") }
             },
         )
     }
-
     if (showDeleteConfirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { if (!deleting) showDeleteConfirm = false },
@@ -341,16 +333,17 @@ private fun Card(content: @Composable () -> Unit) {
 
 @Composable
 private fun ToggleRow(title: String, sub: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    // SwiftUI's Toggle makes label + switch one tap target; mirror that here so
+    // tapping the title flips the switch (the Switch itself no longer handles it).
+    val interaction = remember { MutableInteractionSource() }
     Row(
-        // iOS's Toggle makes its whole label part of the hit target; on Android
-        // only the switch thumb was tappable, so the row read as inert.
         modifier = Modifier.fillMaxWidth()
             .toggleable(
                 value = checked,
-                onValueChange = onChange,
-                role = androidx.compose.ui.semantics.Role.Switch,
+                interactionSource = interaction,
                 indication = null,
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                role = Role.Switch,
+                onValueChange = onChange,
             )
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,

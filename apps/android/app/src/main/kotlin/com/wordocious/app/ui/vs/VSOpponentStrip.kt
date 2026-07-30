@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,12 +24,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.ui.theme.Nunito
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.TileState
 import kotlinx.coroutines.delay
@@ -46,6 +52,10 @@ fun OpponentStrip(
     // 0 until their first progress event, which made Quad/Octo render a single
     // tall placeholder board pre-typing (iOS build-87 parity).
     totalBoards: Int = 1,
+    // Gauntlet VS: the opponent's current stage name + its accent gradient
+    // (iOS OpponentStrip stageName/stageGradient). Null for every other mode.
+    stageName: String? = null,
+    stageGradient: List<Color> = emptyList(),
 ) {
     val liveTotalBoards = maxOf(opponent.totalBoards, totalBoards)
     Column(
@@ -56,8 +66,21 @@ fun OpponentStrip(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Opponent", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
             Spacer(Modifier.weight(1f))
-            if (opponent.stagesCleared > 0) {
-                Text("Stage ${opponent.stagesCleared + 1}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+            if (stageName != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Icon(
+                        Icons.Filled.Flag, null,
+                        tint = stageGradient.firstOrNull() ?: WTheme.text, modifier = Modifier.size(11.dp),
+                    )
+                    Text("Stage ${opponent.stagesCleared + 1}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
+                    Text(
+                        stageName, fontSize = 12.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                        style = TextStyle(
+                            brush = Brush.horizontalGradient(if (stageGradient.isEmpty()) listOf(WTheme.text, WTheme.text) else stageGradient),
+                            fontFamily = Nunito,
+                        ),
+                    )
+                }
             } else if (liveTotalBoards > 1) {
                 Text("${opponent.boardsSolved}/$liveTotalBoards boards", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             }
@@ -75,7 +98,9 @@ fun OpponentStrip(
             val boards = if (liveTotalBoards > 1) (0 until liveTotalBoards).toList() else listOf(0)
             // Bigger cells so the opponent board uses the space around it and the
             // live flip-in reveal is easy to follow (single gets the most room).
-            val cell = if (liveTotalBoards > 1) 10.dp else 14.dp
+            // Succession's 10-row full frame drops to cell 8 so its strip is no
+            // taller than QuadWord's 9-row one (10×8+gaps ≈ 9×10+gaps).
+            val cell = if (liveTotalBoards > 1) (if (maxGuesses > 9) 8.dp else 10.dp) else 14.dp
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 boards.forEach { i -> OpponentMiniBoard(opponent.tiles[i] ?: emptyList(), maxGuesses, wordLength, cell) }
             }
@@ -116,7 +141,8 @@ fun OpponentMiniBoard(tiles: List<List<TileState>>, maxGuesses: Int, wordLength:
                     val color = when (st) {
                         TileState.CORRECT -> Color(0xFF7C3AED)
                         TileState.PRESENT -> Color(0xFFF59E0B)
-                        TileState.ABSENT -> Color(0xFF9CA3AF)
+                        // Theme-driven (iOS Theme.textMuted) so Ocean/Forest tint too.
+                        TileState.ABSENT -> WTheme.textMuted
                         else -> Color.Transparent
                     }
                     Box(

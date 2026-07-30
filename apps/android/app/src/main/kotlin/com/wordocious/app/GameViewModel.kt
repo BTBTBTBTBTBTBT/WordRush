@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.wordocious.app.data.GamePersistence
 import com.wordocious.core.DictionaryLoader
 import com.wordocious.core.GameAction
+import com.wordocious.core.GameDictionary
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
@@ -197,43 +198,52 @@ class GameViewModel(
     val shakeKey: StateFlow<Int> = _shakeKey.asStateFlow()
     private val _rejectMessage = MutableStateFlow<String?>(null)
     val rejectMessage: StateFlow<String?> = _rejectMessage.asStateFlow()
-    private var rejecting = false
     private var rejectJob: kotlinx.coroutines.Job? = null
+    private var toastJob: kotlinx.coroutines.Job? = null
 
     fun typeLetter(c: Char) {
-        // No `rejecting` guard: iOS (GameViewModel.swift:427-428) keeps taking
-        // input during the 600ms shake and simply declines to clear it if the
-        // player has already started retyping. Swallowing keys here dropped
-        // letters from fast players.
         if (isFinished) return
         if (_input.value.length >= wordLength) return
         if (!c.isLetter()) return
-        _invalidWord.value = false
         _rejectMessage.value = null
         _input.value = _input.value + c.uppercaseChar()
+        refreshLiveInvalid()
     }
 
     fun deleteLetter() {
         if (_input.value.isNotEmpty()) {
-            _invalidWord.value = false
             _rejectMessage.value = null
             _input.value = _input.value.dropLast(1)
+            refreshLiveInvalid()
         }
+    }
+
+    /** The board a guess lands on. Sequence's active board = first still-PLAYING
+     *  (currentBoardIndex is never advanced); other modes use board 0's shared history. */
+    private fun activeBoard() = if (mode == GameMode.SEQUENCE)
+        (_state.value.boards.firstOrNull { it.status == GameStatus.PLAYING } ?: _state.value.boards[0])
+    else _state.value.boards[_state.value.currentBoardIndex]
+
+    /** Live invalid indicator (iOS BoardView parity): a full-length entry that
+     *  isn't in the dictionary — or was already guessed on this board — turns the
+     *  current row red WHILE typing, before ENTER. ProperNoundle answers aren't
+     *  dictionary words and PN allows repeats, so it's excluded. */
+    private fun refreshLiveInvalid() {
+        val entry = _input.value
+        _invalidWord.value = mode != GameMode.PROPERNOUNDLE && entry.length == wordLength &&
+            (!GameDictionary.isValidWord(entry) ||
+                activeBoard().guesses.any { it.equals(entry, ignoreCase = true) })
     }
 
     /** Submit the typed input. Returns false if rejected (length/validity/no-op). */
     fun submit(applyToAll: Boolean = false): Boolean {
-        if (isFinished || rejecting) return false
+        if (isFinished) return false
         val guess = _input.value
         if (guess.length != wordLength) { reject("Not enough letters"); return false }
         // Reject already-guessed words on the active board (UI rule; reducer doesn't
-        // dedupe). Sequence's active board = first still-PLAYING (currentBoardIndex
-        // is never advanced); other modes check board 0's shared history.
-        val activeBoard = if (mode == GameMode.SEQUENCE)
-            (_state.value.boards.firstOrNull { it.status == GameStatus.PLAYING } ?: _state.value.boards[0])
-        else _state.value.boards[_state.value.currentBoardIndex]
-        // iOS's ProperNoundle VM has no duplicate-guess rule; the "Already
-        // guessed" rejection was Android-only and blocked legitimate retries.
+        // dedupe). ProperNoundle is exempt: iOS ProperNoundleVM.submit() never
+        // dedupes, so re-submitting a name is a legal row-burning move there.
+        val activeBoard = activeBoard()
         if (mode != GameMode.PROPERNOUNDLE &&
             activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }
         ) { reject("Already guessed"); return false }
@@ -257,6 +267,11 @@ class GameViewModel(
         _state.value = after
         _input.value = ""
         persist()
+        // iOS parity: a dark pill flashes the outcome the instant the final guess
+        // lands — "Solved!" on a win, the unsolved answer (or "N left unsolved")
+        // on a loss — before the reveal finishes and the overlay appears.
+        if (after.status == GameStatus.WON) flash("Solved!")
+        else if (after.status == GameStatus.LOST) flash(lossMessage(after))
         // VS relay: report the guess, any newly-solved boards, and completion.
         if (isVersus) {
             onGuessCommitted?.invoke(guess.uppercase(), committedBoardIndex)
@@ -312,27 +327,45 @@ class GameViewModel(
         }
     }
 
+    /** Transient toast in the reject pill — iOS GameViewModel.flash(): 1.5s, and
+     *  only cleared if a newer message hasn't replaced it. */
+    private fun flash(message: String) {
+        _rejectMessage.value = message
+        toastJob?.cancel()
+        toastJob = viewModelScope.launch {
+            delay(1500)
+            if (_rejectMessage.value == message) _rejectMessage.value = null
+        }
+    }
+
+    /** iOS GameViewModel.lossMessage: the single unsolved answer, or a count. */
+    private fun lossMessage(state: GameState): String {
+        val unsolved = state.boards.filter { it.status != GameStatus.WON }.map { it.solution }
+        return if (unsolved.size == 1) unsolved[0] else "${unsolved.size} left unsolved"
+    }
+
     /**
      * Flag the rejected guess: red row (full-length only) + shake + toast.
-     * Web timing: keys ignored + input cleared at 600ms, toast gone at 1500ms.
+     * Timing mirrors iOS rejectGuess: the row clears at 600ms but ONLY if the
+     * player hasn't already started a new entry (keys are never swallowed), and
+     * the toast auto-dismisses at 1500ms.
      */
     private fun reject(message: String) {
-        val rejected = _input.value
         if (_input.value.length == wordLength) _invalidWord.value = true
         _shakeKey.value = _shakeKey.value + 1
-        _rejectMessage.value = message
+        flash(message)
         com.wordocious.app.data.SoundManager.playInvalid()
-        rejecting = true
+        // ProperNoundle keeps whatever was typed — iOS ProperNoundleVM.submit()
+        // flashes "Not enough letters" and leaves the input intact.
+        if (mode == GameMode.PROPERNOUNDLE) return
+        val rejected = _input.value
         rejectJob?.cancel()
         rejectJob = viewModelScope.launch {
             delay(600)
-            // Only wipe what was rejected — if the player retyped during the
-            // shake, their new letters survive (iOS parity).
-            if (_input.value == rejected) _input.value = ""
-            _invalidWord.value = false
-            rejecting = false
-            delay(900)
-            _rejectMessage.value = null
+            if (_input.value == rejected) {
+                _input.value = ""
+                _invalidWord.value = false
+            }
         }
     }
 
@@ -464,13 +497,7 @@ class GameViewModel(
         }
     }
 
-    /** Humanized category name — shares the in-game header's map so the clue
-     *  fallback and the header can never disagree ("Videogames" vs "Video Games"). */
-    private fun categoryLabel(c: String?): String {
-        val key = (c ?: "general").lowercase()
-        return com.wordocious.app.ui.game.PN_CATEGORY_LABELS[key]
-            ?: key.replaceFirstChar { it.uppercase() }
-    }
+    private fun categoryLabel(c: String?): String = properNoundleCategoryLabel(c)
 
     fun revealVowel() = revealHint(vowels = true)
     fun revealConsonant() = revealHint(vowels = false)
@@ -482,20 +509,20 @@ class GameViewModel(
         val vset = setOf('A', 'E', 'I', 'O', 'U')
         val solution = board.solution.uppercase()
         val guessed = board.guesses.joinToString("").uppercase().toSet()
+        // iOS ProperNoundleView.reveal() pools EVERY distinct vowel/consonant in
+        // the answer, already-guessed letters included; Six/Seven still skip them.
         val candidates = solution.filter { c ->
-            // PN's hint pool is EVERY distinct vowel/consonant in the answer —
-            // iOS ProperNoundleView.reveal() does not exclude already-guessed
-            // letters, so excluding them here made PN hints run out early.
             c in 'A'..'Z' && (if (vowels) c in vset else c !in vset) &&
                 (mode == GameMode.PROPERNOUNDLE || c !in guessed)
         }.toSet().toList()
 
         val pick = candidates.randomOrNull()
         if (pick == null) {
-            // None of that type left — mark used, reveal "—", add no row.
+            // None of that type left — mark used, reveal the sentinel, add no row.
             // Still counts toward the hint penalty (web sets used=true here).
+            // iOS spells it "None" on the PN pill; Six/Seven keep "—" (their pill
+            // maps that to "No vowels left").
             noCandidateHints += 1
-            // PN spells it out; the 6/7 hint pills use the em dash.
             val none = if (mode == GameMode.PROPERNOUNDLE) "None" else "—"
             if (vowels) { _vowelUsed.value = true; _vowelRevealed.value = none }
             else { _consonantUsed.value = true; _consonantRevealed.value = none }
@@ -516,4 +543,18 @@ class GameViewModel(
         persist(); persistHints()
         finalizeIfFinished()
     }
+}
+
+/** Humanized ProperNoundle theme-category names — 1:1 with the iOS
+ *  `categoryLabels` map in ProperNoundleView.swift (used by the clue fallback
+ *  and the share card). Unknown keys fall back to a capitalized raw key. */
+internal fun properNoundleCategoryLabel(c: String?): String = when (c) {
+    "music" -> "Music"
+    "videogames" -> "Video Games"
+    "movies" -> "Movies & TV"
+    "sports" -> "Sports"
+    "history" -> "History"
+    "science" -> "Science"
+    "currentevents" -> "Current Events"
+    else -> (c ?: "general").replaceFirstChar { it.uppercase() }
 }

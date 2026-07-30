@@ -9,9 +9,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -33,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.R
 import com.wordocious.app.data.ReferralService
 import com.wordocious.app.data.ShareEvents
 import com.wordocious.app.ui.theme.Nunito
@@ -148,25 +155,36 @@ fun InvitePanel() {
         visible.take(6).forEach { inv ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(inv.code, fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace, color = WTheme.text)
-                val daysLeft = ((expiryMs(inv) - now) / 86_400_000L).coerceAtLeast(0)
+                // Days → hours → "expired" ladder (iOS timeLeft): the last day of an
+                // invite's life read "0d left" before.
+                val msLeft = expiryMs(inv) - now
+                val timeLeft = when {
+                    msLeft <= 0L -> "expired"
+                    msLeft >= 86_400_000L -> "${msLeft / 86_400_000L}d left"
+                    else -> "${maxOf(1L, msLeft / 3_600_000L)}h left"
+                }
                 when (inv.status) {
                     "redeemed" -> Text("Friend joined! +3 days", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
-                    "converted" -> Text("Subscribed! Reward earned 👑", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
-                    else -> Text("Waiting · ${daysLeft}d left", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    "converted" -> Text("Subscribed! Reward earned", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706))
+                    else -> Text("Waiting · $timeLeft", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
                 Spacer(Modifier.weight(1f))
                 if (inv.status == "pending") {
-                    Text("Share", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
-                        modifier = Modifier.clickableNoRipple { share(inv.code) })
+                    Icon(Icons.Filled.Share, "Share", tint = WTheme.primary,
+                        modifier = Modifier.size(14.dp).clickableNoRipple { share(inv.code) })
                     Spacer(Modifier.width(4.dp))
                     Text("✕", fontSize = 12.sp, color = WTheme.textMuted,
                         modifier = Modifier.clickableNoRipple { cancelTarget = inv })
+                }
+                if (inv.status == "converted") {
+                    Icon(painterResource(R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
                 }
             }
         }
 
         if (leaders.isNotEmpty()) {
-            Text("TOP INVITERS THIS MONTH", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, fontFamily = Nunito)
+            HorizontalDivider(color = WTheme.border)
+            Text("TOP INVITERS THIS MONTH", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.textMuted, fontFamily = Nunito)
             leaders.forEachIndexed { i, l ->
                 Row {
                     Text("${i + 1}. ${l.username}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text)

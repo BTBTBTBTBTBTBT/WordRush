@@ -164,11 +164,35 @@ fun EditProfileScreen(onDone: () -> Unit) {
     }
 
     if (showPhotoChoice) {
+        val currentAvatar = avatarOverride ?: profile?.avatarUrl?.takeIf { it.isNotBlank() }
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showPhotoChoice = false },
             containerColor = WTheme.surface,
             title = { Text("Change Photo", fontWeight = FontWeight.Black, color = WTheme.text) },
-            text = { Text("Take a new photo or choose one from your library.", color = WTheme.textSecondary) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Take a new photo or choose one from your library.", color = WTheme.textSecondary)
+                    // iOS offers Remove Photo whenever an avatar_url exists —
+                    // without it an uploaded photo can never be cleared.
+                    if (currentAvatar != null) {
+                        Text(
+                            "Remove Photo", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
+                            modifier = Modifier.fillMaxWidth().clickableNoRipple {
+                                showPhotoChoice = false
+                                val uid = AuthService.userId ?: return@clickableNoRipple
+                                scope.launch {
+                                    runCatching {
+                                        SupabaseConfig.client.postgrest["profiles"]
+                                            .update({ set("avatar_url", null as String?) }) { filter { eq("id", uid) } }
+                                    }
+                                    AuthService.refreshProfile()
+                                    avatarOverride = null
+                                }
+                            }.padding(vertical = 4.dp),
+                        )
+                    }
+                }
+            },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     showPhotoChoice = false
@@ -205,7 +229,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     saving = true; error = null
                     scope.launch {
                         val ok = runCatching {
-                            val bioVal = bio.trim().take(80).ifBlank { null }
+                            val bioVal = bio.trim().takeCodePoints(80).ifBlank { null }
                             val emojiVal = avatarEmoji.trim().ifBlank { null }
                             val titleVal = featured?.takeIf { unlocked.contains(it) }
                             SupabaseConfig.client.postgrest["profiles"].update({
@@ -280,11 +304,11 @@ fun EditProfileScreen(onDone: () -> Unit) {
                     placeholder = { Text("🎯", fontSize = 13.sp) },
                     colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
                 )
+                Text("(shown when you have no photo)", fontSize = 10.sp, color = WTheme.textMuted)
             }
 
             // Username
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("USERNAME", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            SectionCard("USERNAME") {
                 OutlinedTextField(
                     value = username, onValueChange = { username = it; error = null }, singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -294,10 +318,9 @@ fun EditProfileScreen(onDone: () -> Unit) {
             }
 
             // Bio
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("BIO  ·  ${bio.length}/80", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            SectionCard("BIO  ·  ${bio.codePointCount(0, bio.length)}/80") {
                 OutlinedTextField(
-                    value = bio, onValueChange = { if (it.length <= 80) bio = it },
+                    value = bio, onValueChange = { bio = it.takeCodePoints(80) },
                     placeholder = { Text("A short tagline…", fontSize = 13.sp, color = WTheme.textMuted) },
                     modifier = Modifier.fillMaxWidth(), maxLines = 3,
                     colors = TextFieldDefaults.colors(focusedContainerColor = WTheme.surface, unfocusedContainerColor = WTheme.surface),
@@ -305,8 +328,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
             }
 
             // Accent color
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("ACCENT COLOR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            SectionCard("ACCENT COLOR") {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     ProfileAccent.palette.forEach { (id, hex) ->
                         val selected = ProfileAccent.hex(accent).equals(hex, true)
@@ -321,8 +343,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
             }
 
             // Featured title
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("FEATURED TITLE", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            SectionCard("FEATURED TITLE") {
                 val unlockedDefs = catalog.filter { unlocked.contains(it.key) }
                 if (unlockedDefs.isEmpty()) {
                     Text("Unlock achievements to wear one as a title.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
@@ -338,8 +359,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
             }
 
             // Favorite mode
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("FAVORITE MODE", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            SectionCard("FAVORITE MODE") {
                 androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     item { EditChip("None", favoriteMode == null, ProfileAccent.color(accent)) { favoriteMode = null } }
                     items(dailyModes.size) { i ->
@@ -356,9 +376,8 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 }
             }
 
-            // Social Links
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("SOCIAL LINKS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+            // Socials
+            SectionCard("SOCIALS") {
                 SOCIAL_PLATFORMS.forEach { (key, label, placeholder) ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary, modifier = Modifier.width(96.dp))
@@ -374,6 +393,19 @@ fun EditProfileScreen(onDone: () -> Unit) {
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+/** A titled bordered surface card — iOS EditProfileView.sectionCard. */
+@Composable
+private fun SectionCard(title: String, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+        content()
     }
 }
 
@@ -396,6 +428,11 @@ private fun validate(name: String): String? {
     if (t.length !in 3..20) return "Username must be 3-20 characters"
     return null
 }
+
+/** Truncate to [max] Unicode code points — the bio DB CHECK is char_length and
+ *  iOS counts unicodeScalars, so String.length (UTF-16) cuts emoji bios short. */
+private fun String.takeCodePoints(max: Int): String =
+    if (codePointCount(0, length) <= max) this else substring(0, offsetByCodePoints(0, max))
 
 private fun sanitize(key: String, raw: String): String {
     val t = raw.trim()

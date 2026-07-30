@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Close
@@ -48,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.core.LinearEasing
@@ -130,7 +133,17 @@ fun HomeScreen(
         com.wordocious.app.data.SettingsPref.set("pro-prompt-shown", true)
         com.wordocious.app.data.AuthService.markProPromptShown()
     }
-    var playMode by remember { mutableStateOf(PlayMode.DAILY) }
+    // iOS @AppStorage("pref-play-mode"): the Pro Daily⇄Unlimited choice survives
+    // launches (and MainScreen disposing Home while a game/settings route shows).
+    var playMode by remember {
+        mutableStateOf(
+            if (com.wordocious.app.data.SettingsPref.get("pref-play-mode", "daily") == "unlimited") {
+                PlayMode.UNLIMITED
+            } else {
+                PlayMode.DAILY
+            }
+        )
+    }
     val unlimitedMode = isPro && playMode == PlayMode.UNLIMITED
     val signOutScope = androidx.compose.runtime.rememberCoroutineScope()
     var inviteOpen by remember { mutableStateOf(false) }
@@ -164,7 +177,10 @@ fun HomeScreen(
             AnnouncementsBanner()
             // Pending VS invites banner (web pending-invites-banner.tsx).
             PendingInvitesBanner(onJoinInvite = onJoinInvite)
-            if (isPro) PlayModeToggle(playMode) { playMode = it }
+            if (isPro) PlayModeToggle(playMode) {
+                playMode = it
+                com.wordocious.app.data.SettingsPref.set("pref-play-mode", it.name.lowercase())
+            }
             if (unlimitedMode) UnlimitedHero()
             else DailyHero(completions) { com.wordocious.app.data.DailySweepShare.share(context, completions) }
             WordOfTheDayCard(onClick = { onNavigate("pastwords") })
@@ -194,11 +210,11 @@ fun HomeScreen(
 
             Text(
                 "GAME MODES",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Black,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
                 color = WTheme.textMuted,
                 letterSpacing = 1.sp,
-                modifier = Modifier.padding(top = 4.dp),
+                modifier = Modifier.padding(top = 2.dp),
             )
 
             // 2-column grid (web grid-cols-2 gap-2)
@@ -253,11 +269,15 @@ fun HomeScreen(
         // Free-user daily-limit modal (web ModeLimitModal). "View Solved Puzzle"
         // opens the finished daily (GameScreen resumes → post-game screen).
         limitModal?.let { card ->
+            // iOS `showViewSolved: m.id != "vs"` — VS has no solo solved board to
+            // review, so that card falls through to "Come back tomorrow".
+            val viewPuzzle: (() -> Unit)? =
+                if (card.id == "vs") null else { { onSelectMode(card, false) } }
             ModeLimitModal(
                 modeName = card.title,
                 onClose = { limitModal = null },
                 onGoPro = onGoPro,
-                onViewPuzzle = { onSelectMode(card, false) },
+                onViewPuzzle = viewPuzzle,
             )
         }
 
@@ -289,41 +309,57 @@ fun HomeScreen(
  */
 @Composable
 private fun FirstGameCard(onPlay: () -> Unit, onHowToPlay: () -> Unit, onDismiss: () -> Unit) {
+    // Classic's catalog accent — matches iOS, which reads it off the mode card.
+    val accent = Color(0xFF7C3AED)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(WTheme.surface)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(12.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(
-            Icons.Filled.AutoAwesome, null,
-            tint = Color(0xFF7C3AED), modifier = Modifier.size(28.dp),
-        )
+        // 32dp tinted tile behind the sparkle (iOS: RoundedRectangle(9) @ 8%).
+        Box(
+            Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(accent.copy(alpha = 0.08f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.AutoAwesome, null, tint = accent, modifier = Modifier.size(16.dp))
+        }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("New here? Start with Classic", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+            Text("New here? Start with Classic", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Text(
                 "The original 5-letter challenge — a fresh puzzle every day.",
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             )
-            Text(
-                "How to play",
-                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED),
-                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
-                modifier = Modifier.clickableNoRipple(onHowToPlay).padding(top = 2.dp),
-            )
-        }
-        Box(
-            Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5))))
-                .clickableNoRipple(onPlay)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            Text("Play", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                // Flat accent capsule with a play glyph + soft drop shadow (iOS btn).
+                Row(
+                    Modifier
+                        .shadow(4.dp, RoundedCornerShape(50), spotColor = accent.copy(alpha = 0.3f), ambientColor = accent.copy(alpha = 0.3f))
+                        .clip(RoundedCornerShape(50))
+                        .background(accent)
+                        .clickableNoRipple(onPlay)
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(Icons.Filled.PlayArrow, null, tint = Color.White, modifier = Modifier.size(10.dp))
+                    Text("Play", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
+                Text(
+                    "How to play",
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold, color = accent,
+                    textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+                    modifier = Modifier.clickableNoRipple(onHowToPlay),
+                )
+            }
         }
         Icon(
             Icons.Filled.Close, null,
@@ -342,16 +378,18 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
     Row(
         modifier = modifier
             .fillMaxWidth()
+            // iOS floats this banner above the page (.shadow radius 16, y 8).
+            .shadow(16.dp, RoundedCornerShape(16.dp), spotColor = Color.Black.copy(alpha = 0.1f), ambientColor = Color.Black.copy(alpha = 0.1f))
             .clip(RoundedCornerShape(16.dp))
             .background(WTheme.surface)
             .border(1.5.dp, Color(0xFFFDE68A), RoundedCornerShape(16.dp))
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Icon(
             androidx.compose.material.icons.Icons.Filled.WorkspacePremium, null,
-            tint = Color(0xFFD97706), modifier = Modifier.size(32.dp),
+            tint = Color(0xFFD97706), modifier = Modifier.size(26.dp),
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("You're on a streak!", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
@@ -362,12 +400,12 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
         }
         Box(
             Modifier
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
                 .clickableNoRipple(onGoPro)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp),
         ) {
-            Text("Go Pro", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White)
+            Text("Go Pro", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White)
         }
         Icon(
             androidx.compose.material.icons.Icons.Filled.Close, null,
@@ -431,34 +469,50 @@ private fun DailyHero(
             Text("Tap to share · Next in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = subColor.copy(alpha = 0.75f), modifier = Modifier.padding(top = 2.dp))
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(20.dp))
+                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF7C3AED), modifier = Modifier.size(17.dp))
                 Text("Daily Challenge", fontSize = 18.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF4F46E5))), fontFamily = Nunito))
-                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF4F46E5), modifier = Modifier.size(20.dp))
+                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_star), null, tint = Color(0xFF4F46E5), modifier = Modifier.size(17.dp))
             }
-            Text("9 puzzles · Leaderboards & medals", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
-            Text("Resets in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
+            Text("9 puzzles · Leaderboards & medals", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
+            Text("Resets in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9).copy(alpha = 0.9f), modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
 
+/** Today's Word of the Day plus the dictionary entry that qualified it. */
+private data class WordOfTheDay(
+    val word: String,
+    val definition: com.wordocious.app.data.DefinitionService.WordDefinition?,
+)
+
 @Composable
 private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
-    val word by produceState<String?>(initialValue = null) {
+    val wotd by produceState<WordOfTheDay?>(initialValue = null) {
         DictionaryLoader.ensureLoaded()
         // Pool for THIS displayed local date — pre-cutover dates keep the legacy
         // word (matches the archive), curated after.
         val localDay = com.wordocious.app.todayLocalDate()
         val sols = GameDictionary.solutionPool(localDay)
+        if (sols.isEmpty()) return@produceState
         // Day index of the LOCAL calendar date (not currentTimeMillis/86400000,
         // which rolls at UTC midnight — 7 PM Central — and flipped the card to
         // tomorrow's word mid-evening). LocalDate.toEpochDay() is exactly the
         // local date's UTC-midnight day index, matching web (commit ad2ef44).
         val daysSinceEpoch = java.time.LocalDate.parse(localDay).toEpochDay().toInt()
-        value = if (sols.isNotEmpty()) sols[daysSinceEpoch % sols.size] else null
-    }
-    // Definition from dictionaryapi.dev (same source as the post-game card).
-    val def by produceState<com.wordocious.app.data.DefinitionService.WordDefinition?>(initialValue = null, key1 = word) {
-        value = word?.let { com.wordocious.app.data.DefinitionService.fetch(it) }
+        // iOS WordOfTheDayView.fetch(): walk up to 20 candidates from today's
+        // index and display the FIRST one dictionaryapi.dev actually defines —
+        // otherwise the platforms show different words on a no-entry day.
+        // (DefinitionService caches hits AND misses per local day, so a repeat
+        // visit costs no network.)
+        for (offset in 0 until 20) {
+            val candidate = sols[(daysSinceEpoch + offset) % sols.size]
+            val d = com.wordocious.app.data.DefinitionService.fetch(candidate)
+            if (d != null) {
+                value = WordOfTheDay(candidate, d)
+                return@produceState
+            }
+        }
+        value = WordOfTheDay(sols[daysSinceEpoch % sols.size], null)
     }
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -476,7 +530,7 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
             Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
             Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
         }
-        val w = word   // local capture: produceState delegate can't smart-cast
+        val w = wotd   // local capture: produceState delegate can't smart-cast
         if (w == null) {
             // Web parity: structural animate-pulse skeleton, not a "…" placeholder.
             Spacer(Modifier.height(4.dp))
@@ -486,9 +540,9 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
             return@Column
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val display = w.first().uppercase() + w.drop(1).lowercase()
+            val display = w.word.first().uppercase() + w.word.drop(1).lowercase()
             Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            def?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
+            w.definition?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
                 // Web parity (page.tsx): plain italic purple text, no background pill.
                 Text(
                     it.partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
@@ -496,8 +550,9 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
                 )
             }
         }
-        def?.takeIf { it.definition.isNotBlank() }?.let {
-            Text(it.definition, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), maxLines = 2, modifier = Modifier.padding(top = 2.dp))
+        // No maxLines: iOS lets the card grow to the full definition.
+        w.definition?.takeIf { it.definition.isNotBlank() }?.let {
+            Text(it.definition, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
@@ -547,13 +602,13 @@ private fun ModeCardView(
             ) {
                 ModeGlyph(card, card.accent, glyphSize = 11.sp, iconSize = 16.dp)
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             // Completed daily shows guesses · time; else the mode description (web parity).
             Text(
                 if (completion != null) {
-                    val g = completion.guessCount
-                    "$g ${if (g == 1) "guess" else "guesses"} · ${fmtShort(completion.timeSeconds)}"
+                    // iOS resultText: always "guesses", shared formatShortTime.
+                    "${completion.guessCount} guesses · ${formatShortTime(completion.timeSeconds)}"
                 } else if (vsDone) "Played today" else card.desc,
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             )
@@ -562,7 +617,9 @@ private fun ModeCardView(
         // W/L pill top-right when today's daily is on the books (web parity).
         if (isDone) {
             Box(
-                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                // iOS keeps the badge inside the 12pt content padding, below the
+                // 4pt accent bar — not flush against the card corner.
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 16.dp, end = 12.dp)
                     .size(20.dp)
                     .clip(RoundedCornerShape(6.dp))
                     .background(if (doneWon) Color(0xFF7C3AED) else Color(0xFFDC2626)),
@@ -593,9 +650,6 @@ private fun ModeCardView(
     }
 }
 
-private fun fmtShort(secs: Int): String =
-    if (secs <= 0) "—" else if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"
-
 @Composable
 private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, String) -> Unit) {
     val userId = com.wordocious.app.data.AuthService.userId
@@ -624,12 +678,12 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
-            Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0xFFEC4899)),
+            Modifier.size(34.dp).clip(androidx.compose.foundation.shape.CircleShape).background(Color(0xFFEC4899)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(androidx.compose.material.icons.Icons.Filled.Email, null, tint = Color.White, modifier = Modifier.size(16.dp))
+            Icon(androidx.compose.material.icons.Icons.Filled.Email, null, tint = Color.White, modifier = Modifier.size(14.dp))
         }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 "@${inviterNames[top.inviterId] ?: "A friend"} invited you to $modeTitle",
                 fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text,
@@ -643,14 +697,14 @@ private fun PendingInvitesBanner(onJoinInvite: (com.wordocious.core.GameMode, St
             "Play",
             fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
             modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(Color(0xFFEC4899))
                 .clickableNoRipple {
                     runCatching { com.wordocious.core.GameMode.valueOf(top.gameMode) }.getOrNull()?.let { m ->
                         onJoinInvite(m, top.inviteCode)
                     }
                 }
-                .padding(horizontal = 12.dp, vertical = 7.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp),
         )
         Box(
             Modifier.size(28.dp).clip(androidx.compose.foundation.shape.CircleShape)
@@ -706,7 +760,7 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF22C55E)))
+        LivePulseDot()
         Text("LIVE", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         Text(
             count?.let { "$it ${if (it == 1) "player" else "players"} online" } ?: "Players online",
@@ -715,17 +769,47 @@ private fun LiveBanner(isPro: Boolean = false, onInvite: () -> Unit = {}) {
         // Pro-only Invite button (web page.tsx + iOS HomeView LIVE banner parity).
         if (isPro) {
             Spacer(Modifier.weight(1f))
-            Text(
-                "Invite",
-                fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFFEC4899), Color(0xFFDB2777))))
-                    .clickable { onInvite() }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
+            Box {
+                // iOS .shadow(color: 0x9F1239, radius: 0, y: 2) — the app's hard
+                // 2pt btn-3d offset, which Compose's blurred shadow can't do.
+                Box(
+                    Modifier.matchParentSize().offset(y = 2.dp)
+                        .clip(RoundedCornerShape(6.dp)).background(Color(0xFF9F1239)),
+                )
+                Text(
+                    "Invite",
+                    fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFFEC4899), Color(0xFFDB2777))))
+                        .clickable { onInvite() }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
         }
     }
+}
+
+/**
+ * LIVE pulse dot — breathes 35%→100% on a 0.9s cycle (iOS LivePulseDot); held
+ * solid under Reduced Motion.
+ */
+@Composable
+private fun LivePulseDot() {
+    val dim = if (WTheme.reducedMotion) {
+        1f
+    } else {
+        val transition = rememberInfiniteTransition(label = "livePulse")
+        transition.animateFloat(
+            initialValue = 1f, targetValue = 0.35f,
+            animationSpec = infiniteRepeatable(
+                tween(900, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                RepeatMode.Reverse,
+            ),
+            label = "dim",
+        ).value
+    }
+    Box(Modifier.size(8.dp).alpha(dim).clip(RoundedCornerShape(4.dp)).background(Color(0xFF22C55E)))
 }
 
 @Composable

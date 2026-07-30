@@ -1,12 +1,12 @@
 package com.wordocious.app.ui.theme
 
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -165,41 +165,55 @@ object WTheme {
 }
 
 /**
- * Material chrome (dialogs, switches, text fields, ripples) derived from the
- * ACTIVE palette.
- *
- * This used to be a top-level `val` built from `WTheme.*` at class-init time. Two
- * bugs fell out of that: the scheme froze at whatever the launch palette was, so
- * switching theme in Settings recolored our own composables but left every
- * Material surface on the old palette until the process restarted; and it was
- * always `lightColorScheme`, so even after a restart Dark got light-mode chrome
- * — white dialogs, dark-on-dark text. iOS has no equivalent problem because
- * `ThemeManager.colorScheme` (ThemeManager.swift:65) is read reactively and
- * applied via `.preferredColorScheme`.
- *
- * Reading `WTheme.palette` inside a @Composable makes this recompose on switch.
+ * Material chrome (AlertDialog containers, Switch tracks, text-field outlines)
+ * derived from the ACTIVE palette. iOS gets this free via
+ * `.preferredColorScheme(themeManager.colorScheme)` (WordociousApp.swift:34), so
+ * the container roles have to follow the theme here or a Dark-theme AlertDialog
+ * draws near-white text on material3's light `surfaceContainerHigh`.
  */
-@Composable
-private fun wordociousColorScheme(): ColorScheme {
-    val p = WTheme.palette
-    val base = if (p == Palettes.Dark) darkColorScheme() else lightColorScheme()
-    return base.copy(
+private fun schemeFor(p: Palette) =
+    if (p == Palettes.Dark) darkColorScheme(
         primary = WTheme.primary,
         background = p.bg,
         surface = p.surface,
-        surfaceVariant = p.surfaceAlt,
         onPrimary = Color.White,
         onBackground = p.text,
         onSurface = p.text,
+        surfaceContainerLowest = p.bg,
+        surfaceContainerLow = p.surface,
+        surfaceContainer = p.surface,
+        surfaceContainerHigh = p.surface,
+        surfaceContainerHighest = p.surfaceHover,
+        surfaceVariant = p.surfaceAlt,
         onSurfaceVariant = p.textSecondary,
         outline = p.border,
+        outlineVariant = p.borderLight,
+    ) else lightColorScheme(
+        primary = WTheme.primary,
+        background = p.bg,
+        surface = p.surface,
+        onPrimary = Color.White,
+        onBackground = p.text,
+        onSurface = p.text,
+        surfaceContainerLowest = p.bg,
+        surfaceContainerLow = p.surface,
+        surfaceContainer = p.surface,
+        surfaceContainerHigh = p.surface,
+        surfaceContainerHighest = p.surfaceHover,
+        surfaceVariant = p.surfaceAlt,
+        onSurfaceVariant = p.textSecondary,
+        outline = p.border,
+        outlineVariant = p.borderLight,
     )
-}
 
 @Composable
 fun WordociousTheme(content: @Composable () -> Unit) {
+    // Read WTheme.palette here so a theme switch in Settings recomposes the
+    // Material scheme too (it used to be a top-level val, frozen at launch).
+    val palette = WTheme.palette
+    val scheme = remember(palette) { schemeFor(palette) }
     MaterialTheme(
-        colorScheme = wordociousColorScheme(),
+        colorScheme = scheme,
         typography = WordociousTypography,
     ) {
         // Make EVERY Text() default to Nunito (brand font) unless it overrides

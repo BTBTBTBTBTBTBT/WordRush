@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +68,8 @@ fun XpToast(result: GameResultsService.XpResult, onDismiss: () -> Unit) {
         ) {
             Row(
                 Modifier
+                    // iOS: soft violet glow under the pill (PostGameEffects).
+                    .shadow(8.dp, RoundedCornerShape(18.dp), ambientColor = Color(0xFF7C3AED), spotColor = Color(0xFF7C3AED))
                     .clip(RoundedCornerShape(18.dp))
                     .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
                     .padding(horizontal = 18.dp, vertical = 12.dp),

@@ -11,6 +11,7 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.net.Uri
+import android.os.Build
 import androidx.core.content.FileProvider
 import androidx.core.content.res.ResourcesCompat
 import com.wordocious.app.R
@@ -75,7 +76,12 @@ object ShareImage {
 
     private fun nunito(context: Context, black: Boolean): Typeface {
         val base = ResourcesCompat.getFont(context, R.font.nunito) ?: Typeface.DEFAULT
-        return Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
+        // Nunito.ttf is a variable font whose default instance is ExtraLight; the
+        // weighted create (API 28+) drives the real `wght` axis so the share card
+        // renders true Bold/Black instead of faux-bolded thin glyphs.
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
+            Typeface.create(base, if (black) 900 else 700, false)
+        else Typeface.create(base, if (black) Typeface.BOLD else Typeface.NORMAL)
     }
 
     private fun fmtTime(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
@@ -109,21 +115,23 @@ object ShareImage {
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
         val cx = W / 2f
 
-        p.typeface = black; p.textSize = 56f; p.isFakeBoldText = true
+        p.typeface = black; p.textSize = 56f; p.isFakeBoldText = false
         p.shader = LinearGradient(cx - 200f, 0f, cx + 200f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
         c.drawText("WORDOCIOUS", cx, 92f, p)
         p.shader = null
 
         p.textSize = 38f; p.color = accent
-        c.drawText(modeLabel.uppercase(), cx, 152f, p)
+        c.drawText(modeLabel, cx, 152f, p)
 
         val board0 = state.boards[0]
         val date = SimpleDateFormat("MMM d", Locale.US).format(Date())
         val meta = when {
             mode == GameMode.GAUNTLET -> {
+                // state.boards holds only the FINAL stage — the run totals live in
+                // stageResults (iOS gauntletTotalGuesses / stages.filter { won }).
                 val g = state.gauntlet
-                val cleared = g?.currentStage?.let { if (won) g.totalStages else it } ?: 0
-                val totalGuesses = state.boards.sumOf { it.guesses.size }
+                val cleared = g?.stageResults?.count { it.status == GameStatus.WON } ?: 0
+                val totalGuesses = g?.stageResults?.sumOf { it.guesses } ?: 0
                 "$cleared/${g?.totalStages ?: 5} stages · $totalGuesses guesses · ${fmtTime(elapsedSeconds)} · $date"
             }
             state.boards.size > 1 -> {
@@ -132,41 +140,50 @@ object ShareImage {
             }
             else -> "${if (won) "${board0.guesses.size}" else "X"}/${board0.maxGuesses} · ${fmtTime(elapsedSeconds)} · $date"
         }
-        p.typeface = bold; p.isFakeBoldText = true; p.textSize = 24f; p.color = TEXT_MUTED
-        c.drawText(meta, cx, 200f, p)
+        // Stats + category pill + Win/Loss pill on ONE centered row (iOS
+        // ShareCardView: `HStack(spacing: 12)` under the mode label), not stacked.
+        val rowTop = 180f; val rowH = 38f; val rowGap = 12f
+        p.typeface = bold; p.isFakeBoldText = false
+        p.textSize = 24f
+        val metaW = p.measureText(meta)
+        val catLabel = category?.replaceFirstChar { it.uppercase() }
+        p.textSize = 18f
+        val catW = catLabel?.let { p.measureText(it) + 24f } ?: 0f
+        p.textSize = 22f
+        val resultLabel = if (won) "Win" else "Loss"
+        val resultW = p.measureText(resultLabel) + 32f
+        val rowW = metaW + resultW + catW + rowGap * (if (catLabel != null) 2 else 1)
+        var rowX = cx - rowW / 2f
 
-        // Win/Loss pill (web: 22px label, padX 16 padY 8, radius 10)
-        var headerBottom = 218f
-        run {
-            p.textSize = 22f
-            val label = if (won) "Win" else "Loss"
-            val tw = p.measureText(label)
-            val pillW = tw + 32f; val pillH = 38f
-            val rect = RectF(cx - pillW / 2, headerBottom, cx + pillW / 2, headerBottom + pillH)
-            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() }
-            c.drawRoundRect(rect, 10f, 10f, fill)
-            p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
-            c.drawText(label, cx, rect.centerY() + 8f, p)
-            headerBottom = rect.bottom + 14f
-        }
+        p.textAlign = Paint.Align.LEFT
+        p.textSize = 24f; p.color = TEXT_MUTED
+        c.drawText(meta, rowX, rowTop + rowH / 2f + 8f, p)
+        rowX += metaW + rowGap
+        p.textAlign = Paint.Align.CENTER
         // ProperNoundle category pill (web: 18px white on accent, radius 14)
-        if (category != null) {
-            p.textSize = 18f
-            val label = category.replaceFirstChar { it.uppercase() }
-            val tw = p.measureText(label)
-            val rect = RectF(cx - tw / 2 - 14f, headerBottom, cx + tw / 2 + 14f, headerBottom + 32f)
+        if (catLabel != null) {
+            val rect = RectF(rowX, rowTop + 4f, rowX + catW, rowTop + 34f)
             val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = accent }
             c.drawRoundRect(rect, 14f, 14f, fill)
-            p.color = Color.WHITE
-            c.drawText(label, cx, rect.centerY() + 6f, p)
-            headerBottom = rect.bottom + 14f
+            p.textSize = 18f; p.color = Color.WHITE
+            c.drawText(catLabel, rect.centerX(), rect.centerY() + 6f, p)
+            rowX += catW + rowGap
         }
+        // Win/Loss pill (web: 22px label, padX 16 padY 8, radius 10)
+        run {
+            val rect = RectF(rowX, rowTop, rowX + resultW, rowTop + rowH)
+            val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = (if (won) 0xFFF5F3FF else 0xFFFEE2E2).toInt() }
+            c.drawRoundRect(rect, 10f, 10f, fill)
+            p.textSize = 22f; p.color = (if (won) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(resultLabel, rect.centerX(), rect.centerY() + 8f, p)
+        }
+        val headerBottom = rowTop + rowH + 14f
 
         // ── Board area (between header and footer) ──────────────────────────────
         val areaTop = headerBottom + 16f
         val areaBottom = height - 80f
         when {
-            mode == GameMode.GAUNTLET -> drawGauntlet(c, p, state, areaTop, areaBottom, black)
+            mode == GameMode.GAUNTLET -> drawGauntlet(c, p, state, areaTop, areaBottom, black, bold)
             state.boards.size > 1 -> drawMulti(c, state, areaTop, areaBottom, reveal, black)
             else -> drawBoardCard(
                 c, board0, cx, (areaTop + areaBottom) / 2,
@@ -180,14 +197,14 @@ object ShareImage {
         }
 
         // ── Footer ───────────────────────────────────────────────────────────────
-        p.typeface = bold; p.isFakeBoldText = true; p.textSize = 22f; p.color = FOOT
+        p.typeface = bold; p.isFakeBoldText = false; p.textSize = 22f; p.color = FOOT
         c.drawText("wordocious.com", cx, height - 40f, p)
         return bmp
     }
 
     /**
      * One board as a tile grid centered at (cx, cy) — ports web drawBoardCard:
-     * cardPad 12 + 3px border when won != null, gap 4, tile radius 12% of size,
+     * size-proportional pad + 4px border when won != null, tile radius 12% of size,
      * ProperNoundle two-pass wordGroups gaps (groupGap = max(4·gap, tileSize)).
      */
     private const val ANSWER_CAPTION_H = 44f
@@ -198,9 +215,12 @@ object ShareImage {
         reveal: Boolean = false, answerCaption: String? = null,
         reserveCaption: Boolean = false, letterFace: Typeface? = null,
     ) {
-        val gap = 4f
-        val cardPad = if (won != null) 12f else 0f
-        val borderW = if (won != null) 3f else 0f
+        // iOS derives both from the board budget (`gap = max(3, maxSide * 0.012)`,
+        // `pad = maxSide * 0.04`) so the card scales with the canvas.
+        val side = min(maxW, maxH)
+        val gap = max(3f, side * 0.012f)
+        val cardPad = if (won != null) side * 0.04f else 0f
+        val borderW = if (won != null) 4f else 0f
         val cols = board.solution.length
         val rows = board.maxGuesses
         // "Full results": shift the board up by half the caption strip and draw
@@ -248,7 +268,7 @@ object ShareImage {
         val letterPaint = if (reveal) Paint(Paint.ANTI_ALIAS_FLAG).apply {
             textAlign = Paint.Align.CENTER
             typeface = letterFace ?: Typeface.DEFAULT_BOLD
-            isFakeBoldText = true
+            isFakeBoldText = false
             color = Color.WHITE
             textSize = max(10f, tile * 0.55f)
         } else null
@@ -266,7 +286,7 @@ object ShareImage {
                 c.drawRoundRect(rect, radius, radius, tilePaint)
                 if (st == TileState.EMPTY) {
                     strokePaint.color = EMPTY_BORDER
-                    strokePaint.strokeWidth = max(1f, tile * 0.025f)
+                    strokePaint.strokeWidth = 1.5f
                     c.drawRoundRect(rect, radius, radius, strokePaint)
                 }
                 if (letterPaint != null && st != TileState.EMPTY) {
@@ -286,7 +306,7 @@ object ShareImage {
             val capPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 textAlign = Paint.Align.CENTER
                 typeface = letterFace ?: Typeface.DEFAULT_BOLD
-                isFakeBoldText = true
+                isFakeBoldText = false
                 color = 0xFFDC2626.toInt()
                 textSize = min(30f, max(16f, tile * 0.6f))
             }
@@ -296,7 +316,7 @@ object ShareImage {
         }
     }
 
-    /** Multi-board grid — web drawMulti: 2×2 (≤4 boards) or 4×2, rowGap 20 colGap 16.
+    /** Multi-board grid — web drawMulti: 2×2 (≤4 boards) or 4×2, 24px row/col gaps.
      *  When revealing, every cell reserves a uniform caption strip (answer only
      *  drawn under lost boards) so won/lost boards keep identical tile sizes. */
     private fun drawMulti(
@@ -306,7 +326,7 @@ object ShareImage {
         val boards = state.boards
         val cols = if (boards.size <= 4) 2 else 4
         val rows = (boards.size + cols - 1) / cols
-        val rowGap = 20f; val colGap = 16f
+        val rowGap = 24f; val colGap = 24f   // iOS LazyVGrid: uniform 24 spacing
         val padV = 32f; val minPadH = 40f
         val areaH = areaBottom - areaTop - 2 * padV
         val cellH = (areaH - rowGap * (rows - 1)) / rows
@@ -328,37 +348,46 @@ object ShareImage {
     }
 
     /** Gauntlet — web drawGauntlet: one chip per stage with ✓/✗, name, stats. */
-    private fun drawGauntlet(c: Canvas, p: Paint, state: GameState, areaTop: Float, areaBottom: Float, black: Typeface) {
+    private fun drawGauntlet(c: Canvas, p: Paint, state: GameState, areaTop: Float, areaBottom: Float, black: Typeface, bold: Typeface) {
         val g = state.gauntlet ?: return
         val n = g.totalStages
         val padH = 100f; val gap = 20f
         val chipH = floor((areaBottom - areaTop - gap * (n - 1)) / n)
-        val won = state.status == GameStatus.WON
         for (i in 0 until n) {
             val top = areaTop + i * (chipH + gap)
             val rect = RectF(padH, top, W - padH, top + chipH)
-            val reached = i <= g.currentStage
-            val stageWon = i < g.currentStage || (i == g.currentStage && won)
+            // iOS gauntletStagesShare(): every configured stage is drawn and one
+            // the player never reached counts as a LOSS — there's no grey state.
+            val stage = g.stages.getOrNull(i)
+            val res = g.stageResults.firstOrNull { it.stageIndex == (stage?.stageIndex ?: i) }
+            val stageWon = res?.status == GameStatus.WON
+            val boardCount = stage?.boardCount ?: 0
+            val solved = if (stageWon) boardCount
+                         else (res?.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0)
             val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = (if (!reached) 0xFFF3F4F6 else if (stageWon) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
+                color = (if (stageWon) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
             }
             c.drawRoundRect(rect, 18f, 18f, fill)
             val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE; strokeWidth = 3f
-                color = (if (!reached) 0xFFE5E7EB else if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
+                color = (if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
             }
             c.drawRoundRect(rect, 18f, 18f, stroke)
 
-            p.typeface = black; p.isFakeBoldText = true
+            p.typeface = black; p.isFakeBoldText = false
             p.textAlign = Paint.Align.LEFT
-            p.textSize = 32f; p.color = TEXT_MUTED
+            p.textSize = 32f; p.color = (if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
             c.drawText("${i + 1}", rect.left + 28f, rect.centerY() + 11f, p)
             p.textSize = 30f; p.color = 0xFF1A1A2E.toInt()
-            c.drawText(g.stages.getOrNull(i)?.name ?: "Stage ${i + 1}", rect.left + 80f, rect.centerY() + 11f, p)
+            c.drawText(stage?.name ?: "Stage ${i + 1}", rect.left + 80f, rect.centerY() - 6f, p)
+            // Per-stage stats under the name (iOS chip stacks name over stats).
+            p.typeface = bold; p.textSize = 20f; p.color = TEXT_MUTED
+            c.drawText("$solved/$boardCount boards · ${res?.guesses ?: 0} guesses", rect.left + 80f, rect.centerY() + 24f, p)
+            p.typeface = black
             p.textAlign = Paint.Align.RIGHT
             p.textSize = 56f
-            p.color = (if (!reached) 0xFFD1D5DB else if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
-            c.drawText(if (!reached) "·" else if (stageWon) "✓" else "✗", rect.right - 28f, rect.centerY() + 20f, p)
+            p.color = (if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
+            c.drawText(if (stageWon) "✓" else "✗", rect.right - 28f, rect.centerY() + 20f, p)
             p.textAlign = Paint.Align.CENTER
         }
     }
@@ -439,12 +468,12 @@ object ShareImage {
 
         // Header — hero wordmark (iOS VSShareCardView parity: the brand is the
         // headline of the share, 92pt on the 1080 canvas).
-        p.typeface = black; p.textSize = 92f; p.isFakeBoldText = true
+        p.typeface = black; p.textSize = 92f; p.isFakeBoldText = false
         p.shader = LinearGradient(cx - 330f, 0f, cx + 330f, 0f, 0xFFA78BFA.toInt(), 0xFFEC4899.toInt(), Shader.TileMode.CLAMP)
         c.drawText("WORDOCIOUS", cx, 128f, p)
         p.shader = null
         p.textSize = 40f; p.color = accent
-        c.drawText(modeLabel.uppercase(), cx, 192f, p)
+        c.drawText(modeLabel, cx, 192f, p)
 
         val date = SimpleDateFormat("MMM d, yyyy", Locale.US).format(Date())
         p.typeface = bold; p.textSize = 24f; p.color = TEXT_MUTED

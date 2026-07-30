@@ -25,6 +25,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -35,6 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +83,15 @@ private fun vsModeLabel(mode: GameMode): String = when (mode) {
     GameMode.DUEL_6 -> "SIX"; GameMode.DUEL_7 -> "SEVEN"; else -> modeTitle(mode)
 }
 
+/** Per-stage Gauntlet accent gradient — mirrors iOS `gauntletStageGradient`. */
+private fun gauntletStageGradient(name: String): List<Color> = when (name) {
+    "QuadWord" -> listOf(Color(0xFFFACC15), Color(0xFFF472B6), Color(0xFFC084FC))
+    "Succession" -> listOf(Color(0xFFFACC15), Color(0xFFFB923C), Color(0xFFF87171))
+    "Deliverance" -> listOf(Color(0xFF818CF8), Color(0xFFC084FC), Color(0xFFE879F9))
+    "OctoWord" -> listOf(Color(0xFF22D3EE), Color(0xFFC084FC), Color(0xFFF472B6))
+    else -> listOf(Color(0xFFC084FC), Color(0xFFF472B6))  // The Opening / fallback
+}
+
 /**
  * VS match UI — ports iOS VSGameView / web vs-game.tsx screens
  * (queue → countdown → match → waiting → result → rematch). Board modes only in
@@ -85,7 +100,19 @@ private fun vsModeLabel(mode: GameMode): String = when (mode) {
 @Composable
 fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? = null, onHome: () -> Unit, onGoPro: () -> Unit, onPlayUnlimited: () -> Unit = {}) {
     val vm: VSMatchViewModel = viewModel(key = "vs-$mode-${inviteCode ?: "rand"}", factory = VSVMFactory(mode, isDaily, inviteCode))
-    LaunchedEffect(Unit) { vm.start() }
+    // Free users watch the game-start interstitial before matchmaking begins
+    // (iOS VSGameView.onAppear / solo GameScreen parity). Shown once per screen.
+    var adShown by rememberSaveable { mutableStateOf(false) }
+    val adActivity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    LaunchedEffect(Unit) {
+        if (!adShown && adActivity != null && com.wordocious.app.data.AdsManager.active) {
+            adShown = true
+            com.wordocious.app.data.AdsManager.showGameStartInterstitial(adActivity) { vm.start() }
+        } else {
+            adShown = true
+            vm.start()
+        }
+    }
     val gradient = modeTitleGradient(mode)
     val label = "VS ${vsModeLabel(mode)}"
 
@@ -112,15 +139,21 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
         // (cleared by opponent_reconnected / match_ended).
         vm.opponentDisconnectedSeconds?.let { secs ->
             if (vm.screen == VSScreen.MATCH || vm.screen == VSScreen.WAITING) {
-                Box(Modifier.fillMaxSize().padding(top = 10.dp), Alignment.TopCenter) {
-                    Text(
-                        "📡 ${vm.opponentName} disconnected — reconnect window ${secs}s",
-                        fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(50))
-                            .background(Color(0xFFF59E0B))
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
-                    )
+                Box(Modifier.fillMaxSize().padding(top = 52.dp), Alignment.TopCenter) {
+                    Row(
+                        Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xEBDC2626))
+                            .padding(horizontal = 14.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(Icons.Filled.WifiOff, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                        Text(
+                            "${vm.opponentName} disconnected — you win by forfeit in ${secs}s unless they return",
+                            fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color.White,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
         }
@@ -387,12 +420,40 @@ private fun CountdownOverlay(count: Int, label: String, gradient: List<Color>, i
         Alignment.Center,
     ) {
         VSOverlayWordmark(this)
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(if (isRematch) "REMATCH STARTING IN" else "MATCH FOUND", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp, color = Color.White.copy(alpha = 0.7f))
             Text(label.uppercase(), fontSize = 30.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
-            Text(if (count == 0) "GO!" else "$count", fontSize = if (count == 0) 72.sp else 96.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
+            Box(Modifier.size(150.dp), Alignment.Center) {
+                // iOS pulses a 150pt gradient ring out from behind each tick, so the
+                // number bursts instead of just swapping.
+                CountdownRing(count, gradient)
+                Text(if (count == 0) "GO!" else "$count", fontSize = if (count == 0) 72.sp else 96.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(gradient), fontFamily = Nunito))
+            }
         }
     }
+}
+
+/** The countdown's pulsing ring — expands from 0.4x and fades out on each tick
+ *  (iOS `.transition(.scale(scale: 0.4).combined(with: .opacity))`). */
+@Composable
+private fun CountdownRing(count: Int, gradient: List<Color>) {
+    if (WTheme.reducedMotion) {
+        Box(Modifier.size(150.dp).border(3.dp, Brush.horizontalGradient(gradient), CircleShape))
+        return
+    }
+    val anim = remember(count) { androidx.compose.animation.core.Animatable(0.4f) }
+    LaunchedEffect(count) {
+        anim.animateTo(1f, androidx.compose.animation.core.spring(dampingRatio = 0.6f, stiffness = 260f))
+    }
+    Box(
+        Modifier.size(150.dp)
+            .graphicsLayer {
+                val v = anim.value
+                scaleX = v; scaleY = v
+                alpha = ((v - 0.4f) / 0.6f).coerceIn(0f, 1f)
+            }
+            .border(3.dp, Brush.horizontalGradient(gradient), CircleShape),
+    )
 }
 
 @Composable
@@ -435,7 +496,10 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
     Column(Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
         // Header: home button + VS title
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(34.dp).clip(CircleShape).background(WTheme.surface).border(1.5.dp, WTheme.border, CircleShape).clickableNoRipple { confirmForfeit = true }, Alignment.Center) {
+            // Confirm only when leaving would TRULY forfeit (a recorded loss):
+            // CPU practice and already-resolved matches leave without the scary
+            // "counts as a loss" dialog, which would be lying there.
+            Box(Modifier.size(34.dp).clip(CircleShape).background(WTheme.surface).border(1.5.dp, WTheme.border, CircleShape).clickableNoRipple { if (vm.leaveWouldForfeit) confirmForfeit = true else onHome() }, Alignment.Center) {
                 Text("⌂", fontSize = 18.sp, color = WTheme.primary, fontWeight = FontWeight.Black)
             }
             Spacer(Modifier.weight(1f))
@@ -446,8 +510,13 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
                 LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); tick++ } }
                 @Suppress("UNUSED_EXPRESSION") tick
                 val secs = vm.matchElapsedSeconds
+                // Gauntlet's per-stage "1/6" is confusing next to the cumulative
+                // guess count in the tug-of-war, so show only the clock there
+                // (the stepper conveys the stage).
+                val clock = "${secs / 60}:${"%02d".format(secs % 60)}"
                 Text(
-                    "${game.rowsUsed}/${game.maxGuesses} guesses · ${secs / 60}:${"%02d".format(secs % 60)}",
+                    if (vm.mode == GameMode.GAUNTLET) clock
+                    else "${game.rowsUsed}/${game.maxGuesses} guesses · $clock",
                     fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                 )
             }
@@ -462,7 +531,9 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
                 guesses = vm.myGuessCount,
                 progress = computeVsProgress(
                     boardsSolved = state.boards.count { it.status == GameStatus.WON },
-                    totalBoards = state.boards.size,
+                    // The MODE's board count (21 for Gauntlet), not the current
+                    // stage's — the opponent reports cumulative boardsSolved.
+                    totalBoards = vm.totalBoards,
                     bestGreens = myBestRowGreens(state.boards, vm.mode),
                     wordLen = vm.wordLen,
                 ),
@@ -473,7 +544,7 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
                 guesses = vm.opponent.attempts,
                 progress = computeVsProgress(
                     boardsSolved = vm.opponent.boardsSolved,
-                    totalBoards = state.boards.size,
+                    totalBoards = vm.totalBoards,
                     bestGreens = bestRowGreens(vm.opponent.tiles),
                     wordLen = vm.wordLen,
                 ),
@@ -483,7 +554,16 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
         )
         // Full-frame opponent board from match start — the STARTING row budget
         // (live maxGuesses can shrink, e.g. Gauntlet steal-guess).
-        OpponentStrip(vm.opponent, game.initialMaxGuesses, game.wordLength, Modifier.padding(top = 6.dp), totalBoards = vm.totalBoards)
+        // Gauntlet: the strip shows "Stage N <name>" in the stage accent instead
+        // of a meaningless "x/21 boards" (iOS OpponentStrip stageName/gradient).
+        val oppStageName = if (vm.mode == GameMode.GAUNTLET)
+            com.wordocious.core.gauntletStages.getOrNull(vm.opponent.stagesCleared)?.name else null
+        OpponentStrip(
+            vm.opponent, game.initialMaxGuesses, game.wordLength, Modifier.padding(top = 6.dp),
+            totalBoards = vm.totalBoards,
+            stageName = oppStageName,
+            stageGradient = oppStageName?.let { gauntletStageGradient(it) } ?: gradient,
+        )
 
         // Gauntlet VS: the 5-node stage stepper (parity with the solo header).
         if (vm.mode == GameMode.GAUNTLET) {
@@ -568,7 +648,7 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
 
     // Moment callout — opponent milestones (greens / board solved / last guess).
     vm.callout?.let { text ->
-        Box(Modifier.fillMaxWidth().padding(top = 48.dp), Alignment.TopCenter) {
+        Box(Modifier.fillMaxWidth().padding(top = 96.dp), Alignment.TopCenter) {
             VsCalloutPill(text)
         }
     }
@@ -606,7 +686,9 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
     // opponent is still playing, so they're almost always behind on time and
     // need strictly FEWER guesses; if they're somehow still ahead of your
     // clock, matching your guess count could win on time.
-    val myGuesses = vm.myGuessCount
+    // The completion-reported total, not myGuessCount — Six/Seven hint reveals
+    // add a board row without hitting onGuessCommitted (iOS myFinalGuesses).
+    val myGuesses = vm.myFinalGuesses ?: vm.myGuessCount
     val stakes: String = run {
         val boardsLeft = liveTotalBoards - vm.opponent.boardsSolved
         if (vm.myStatus == GameStatus.LOST) {
@@ -685,24 +767,32 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
                 )
             }
         }
-        // Opponent live board — bigger now so it fills the space and the flip-in
-        // reveal reads clearly while you watch.
-        item {
-            val specCell = if (liveTotalBoards <= 1) 34.dp else if (liveTotalBoards <= 4) 24.dp else 14.dp
-            Box(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(WTheme.surface)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(18.dp)).padding(20.dp),
-                Alignment.Center,
-            ) {
-                if (liveTotalBoards <= 1) {
-                    OpponentMiniBoard(vm.opponent.tiles[0] ?: emptyList(), spectatorRows, vm.wordLen, specCell)
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            (0 until liveTotalBoards).chunked(4).forEach { rowBoards ->
-                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    rowBoards.forEach { i ->
-                                        OpponentMiniBoard(vm.opponent.tiles[i] ?: emptyList(), spectatorRows, vm.wordLen, specCell)
+        // Gauntlet spectates by STAGE (its 21 boards are meaningless as a flat
+        // wall) — a card per stage with its name, status, and boards.
+        if (vm.mode == GameMode.GAUNTLET) {
+            items(com.wordocious.core.gauntletStages.size) { idx ->
+                GauntletSpectatorStage(idx, vm.opponent, vm.wordLen)
+            }
+        } else {
+            // Opponent live board — bigger now so it fills the space and the flip-in
+            // reveal reads clearly while you watch.
+            item {
+                val specCell = if (liveTotalBoards <= 1) 34.dp else if (liveTotalBoards <= 4) 24.dp else 14.dp
+                Box(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(WTheme.surface)
+                        .border(1.5.dp, WTheme.border, RoundedCornerShape(18.dp)).padding(20.dp),
+                    Alignment.Center,
+                ) {
+                    if (liveTotalBoards <= 1) {
+                        OpponentMiniBoard(vm.opponent.tiles[0] ?: emptyList(), spectatorRows, vm.wordLen, specCell)
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                (0 until liveTotalBoards).chunked(4).forEach { rowBoards ->
+                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        rowBoards.forEach { i ->
+                                            OpponentMiniBoard(vm.opponent.tiles[i] ?: emptyList(), spectatorRows, vm.wordLen, specCell)
+                                        }
                                     }
                                 }
                             }
@@ -749,6 +839,73 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
     }
 }
 
+/**
+ * One Gauntlet spectator stage card — name in its accent gradient, a
+ * Cleared/PLAYING/locked chip, and that stage's boards (iOS
+ * GauntletSpectatorView). Cleared stages compact to the rows actually used;
+ * the active stage renders its full frame; locked stages hide their boards.
+ */
+@Composable
+private fun GauntletSpectatorStage(idx: Int, opponent: OpponentProgressState, wordLen: Int) {
+    val stage = com.wordocious.core.gauntletStages[idx]
+    val accent = gauntletStageGradient(stage.name)
+    val cleared = idx < opponent.stagesCleared
+    val active = idx == opponent.stagesCleared
+    val locked = idx > opponent.stagesCleared
+    val offset = com.wordocious.core.gauntletStages.take(idx).sumOf { it.boardCount }
+    Column(
+        Modifier.fillMaxWidth().alpha(if (locked) 0.55f else 1f)
+            .clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+            .border(if (active) 1.8.dp else 1.5.dp, if (active) accent.first() else WTheme.border, RoundedCornerShape(16.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(26.dp).clip(CircleShape).background(accent.first().copy(alpha = if (locked) 0.10f else 0.18f)), Alignment.Center) {
+                if (cleared) {
+                    Icon(Icons.Filled.Check, null, tint = accent.first(), modifier = Modifier.size(11.dp))
+                } else {
+                    Text("${idx + 1}", fontSize = 12.sp, fontWeight = FontWeight.Black, color = if (locked) WTheme.textMuted else accent.first())
+                }
+            }
+            if (locked) {
+                Text(stage.name, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+            } else {
+                Text(
+                    stage.name, fontSize = 15.sp, fontWeight = FontWeight.Black,
+                    style = TextStyle(brush = Brush.horizontalGradient(accent), fontFamily = Nunito),
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            when {
+                cleared -> Text("✓ Cleared", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF16A34A))
+                active -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("PLAYING", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.primary)
+                    TypingDots(dotSize = 5.dp)
+                }
+                else -> Icon(Icons.Filled.Lock, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
+            }
+        }
+        if (!locked) {
+            // The ACTIVE stage renders its full frame so you can tell how many
+            // guesses are left; a CLEARED stage is over, so it compacts to the
+            // rows actually used instead of towers of empty rows.
+            val used = (0 until stage.boardCount).maxOfOrNull { opponent.tiles[offset + it]?.size ?: 0 } ?: 0
+            val rows = if (active) stage.maxGuesses else minOf(stage.maxGuesses, maxOf(1, used))
+            val cell = if (stage.boardCount == 1) 22.dp else if (stage.boardCount <= 4) 16.dp else 11.dp
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                (0 until stage.boardCount).chunked(4).forEach { rowBoards ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        rowBoards.forEach { b ->
+                            OpponentMiniBoard(opponent.tiles[offset + b] ?: emptyList(), rows, wordLen, cell)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: () -> Unit, onGoPro: () -> Unit) {
     // Web parity: non-Pro Rematch opens the VsLimitModal Pro upsell.
@@ -780,8 +937,13 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
         isForfeit && isWin -> "$oppName left the match — you win by forfeit"
         isForfeit && !isWin && !isDraw -> "Forfeit — $oppName takes the win"
         isDraw -> "Dead even — identical scores"
-        isWin -> if (mySolved && !oppSolved) "You solved it — $oppName didn’t" else "Both solved — you won on score"
-        else -> if (oppSolved && !mySolved) "$oppName solved it — you didn’t" else "Both solved — $oppName won on score"
+        // Server timeout resolution: neither solved, board progress decided it.
+        isWin -> if (mySolved && !oppSolved) "You solved it — $oppName didn’t"
+        else if (mySolved && oppSolved) "Both solved — you won on score"
+        else "Neither solved — you won on progress"
+        else -> if (oppSolved && !mySolved) "$oppName solved it — you didn’t"
+        else if (oppSolved && mySolved) "Both solved — $oppName won on score"
+        else "Neither solved — $oppName won on progress"
     }
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {

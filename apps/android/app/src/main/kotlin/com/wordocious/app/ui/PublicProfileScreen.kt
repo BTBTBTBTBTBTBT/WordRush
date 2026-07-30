@@ -22,12 +22,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.DropdownMenu
@@ -105,14 +106,20 @@ private val SOCIAL_PLATFORMS = listOf(
     SocialPlatform("tiktok", "TikTok", Color(0xFF000000)) { "https://tiktok.com/@$it" },
     SocialPlatform("threads", "Threads", Color(0xFF000000)) { "https://threads.net/@$it" },
     SocialPlatform("discord", "Discord", Color(0xFF5865F2)) { "https://discord.com/users/$it" },
-    SocialPlatform("website", "Website", Color(0xFF2563EB)) { it },
+    // iOS socialURL: a handle stored as "example.com" needs a scheme or
+    // ACTION_VIEW finds no handler and the tap does nothing.
+    SocialPlatform("website", "Website", Color(0xFF2563EB)) { if (it.startsWith("http")) it else "https://$it" },
 )
 
 @Composable
 fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
-    val profile by produceState<PublicProfile?>(initialValue = null, userId) {
-        value = fetchPublicProfile(userId)
+    // iOS PublicProfileView keeps `loading` and `notFound` apart — a null result
+    // after the fetch settles means the profile is gone, not still in flight.
+    val load by produceState(initialValue = true to null as PublicProfile?, userId) {
+        value = false to fetchPublicProfile(userId)
     }
+    val loading = load.first
+    val profile = load.second
     val stats by produceState(initialValue = emptyList<ProfileService.UserStat>(), userId) {
         value = ProfileService.fetchUserStats(userId)
     }
@@ -124,9 +131,17 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
     var showAllRecent by remember { mutableStateOf(false) }
     val topWords by produceState(
         initialValue = emptyList<com.wordocious.app.data.MatchStatsService.TopWord>(),
-        userId, selectedMode,
+        userId, selectedMode, playType,
     ) {
-        value = com.wordocious.app.data.MatchStatsService.topWords(userId, selectedMode.name, 5)
+        // iOS refetches top words on every tab/mode change (task id "\(tab)-\(mode)").
+        value = com.wordocious.app.data.MatchStatsService.topWords(userId, selectedMode.name, 5, playType)
+    }
+    // iOS loadAll(): default the picker to the player's first mode for this tab
+    // so a stranger's profile doesn't open on an all-zero Duel card.
+    LaunchedEffect(stats) {
+        stats.firstOrNull { it.playType == playType }?.gameMode
+            ?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
+            ?.let { selectedMode = it }
     }
 
     // Moderation (App Review 1.2): report + block from a stranger's profile —
@@ -216,10 +231,31 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         }
 
         val p = profile
-        if (p == null) {
+        if (loading) {
             // Loading skeletons (web animate-pulse parity).
             SkeletonBlock(height = 96.dp)
             SkeletonBlock(height = 200.dp)
+            return@Column
+        }
+        if (p == null) {
+            // iOS notFoundView — deleted/banned/bad-id profiles get a message and
+            // a way out instead of skeletons that never resolve.
+            Column(
+                Modifier.fillMaxWidth().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text("Player not found", fontSize = 28.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Text(
+                    "This profile doesn't exist or may have been removed.",
+                    fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+                androidx.compose.material3.Button(
+                    onClick = onClose,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = WTheme.primary),
+                ) { Text("Back", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
+            }
             return@Column
         }
 
@@ -228,7 +264,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
             val avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }
             val customAccent = ProfileAccent.isCustom(p.accentColor)
             Box(
-                Modifier.size(96.dp).clip(CircleShape).background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else Brush.linearGradient(listOf(WTheme.surfaceAlt, WTheme.surfaceAlt))),
+                // iOS AvatarView: no accent set = the wordmark gradient, never a flat grey.
+                Modifier.size(96.dp).clip(CircleShape).background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else WTheme.wordmarkGradient),
                 contentAlignment = Alignment.Center,
             ) {
                 if (avatarUrl != null) {
@@ -240,16 +277,16 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                 } else {
                     Text(
                         p.avatarEmoji?.takeIf { it.isNotBlank() } ?: (p.username?.take(2) ?: "P").uppercase(),
-                        fontSize = 30.sp, fontWeight = FontWeight.Black, color = if (customAccent) Color.White else WTheme.textMuted,
+                        fontSize = 38.4f.sp, fontWeight = FontWeight.Black, color = Color.White,   // iOS: size * 0.4
                     )
                 }
             }
             if (customAccent) {
-                Text(p.username ?: "Player", fontSize = 34.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(p.accentColor))
+                Text(p.username ?: "Player", fontSize = 30.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(p.accentColor))
             } else {
                 Text(
                     p.username ?: "Player",
-                    fontSize = 34.sp, fontWeight = FontWeight.Black,
+                    fontSize = 30.sp, fontWeight = FontWeight.Black,
                     style = TextStyle(
                         brush = Brush.horizontalGradient(
                             listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA)),
@@ -269,7 +306,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Icon(Icons.Filled.Star, null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
-                Text("Level ${p.level}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Text("Level ${p.level}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
             }
             // XP bar to next level
             val intoLevel = p.xp % 1000
@@ -282,42 +319,47 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                 }
                 Text("${1000 - intoLevel} XP to next level", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
-            // Socials (web SocialLinksDisplay: brand-colored pills opening the link)
+            // Socials — iOS socialLinksRow(): 30×30 grey circles with an
+            // @/globe/chat glyph, not brand-colored word pills (those wrapped
+            // out of the header once a player had three or more links).
             val links = p.socialLinks ?: emptyMap()
             val present = SOCIAL_PLATFORMS.filter { !links[it.key].isNullOrBlank() }
             if (present.isNotEmpty()) {
                 val ctx = LocalContext.current
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     present.forEach { pf ->
-                        Text(
-                            pf.label,
-                            fontSize = 10.sp, fontWeight = FontWeight.Black, color = pf.color,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(WTheme.surface)
-                                .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
+                        Box(
+                            Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(WTheme.surfaceHover)
+                                .border(1.5.dp, WTheme.border, CircleShape)
                                 .clickableNoRipple {
                                     runCatching {
                                         ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(pf.url(links[pf.key]!!))))
                                     }
-                                }
-                                .padding(horizontal = 10.dp, vertical = 5.dp),
-                        )
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            when (pf.key) {
+                                "website" -> Icon(Icons.Filled.Language, pf.label, tint = WTheme.textSecondary, modifier = Modifier.size(15.dp))
+                                "discord" -> Icon(Icons.AutoMirrored.Filled.Chat, pf.label, tint = WTheme.textSecondary, modifier = Modifier.size(15.dp))
+                                else -> Text("@", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
+                            }
+                        }
                     }
                 }
             }
         }
 
-        // ── Overall stat cards (web 4-card row; 2×2 on phone) ───────────────────
+        // ── Overall stat cards (iOS: one 4-across row) ──────────────────────────
         val games = p.totalWins + p.totalLosses
         val winRate = if (games > 0) "%.1f".format(p.totalWins * 100.0 / games) else "0.0"
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OverallCard(Icons.Filled.EmojiEvents, Color(0xFF7C3AED), "${p.totalWins}", "Total Wins", "$winRate% win rate", Modifier.weight(1f))
+            OverallCard(Icons.Filled.EmojiEvents, Color(0xFF7C3AED), "${p.totalWins}", "Wins", "$winRate% win rate", Modifier.weight(1f))
             OverallCard(Icons.Filled.LocalFireDepartment, Color(0xFFEA580C), "${p.currentStreak}", "Win Streak", "Best: ${p.bestStreak}", Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OverallCard(Icons.Filled.Bolt, Color(0xFF7C3AED), "${p.dailyLoginStreak}", "Daily Streak", "Best: ${p.bestDailyLoginStreak}", Modifier.weight(1f))
-            OverallCard(Icons.Filled.TrackChanges, Color(0xFF2563EB), "$games", "Total Games", "${p.totalLosses} losses", Modifier.weight(1f))
+            OverallCard(Icons.Filled.Bolt, Color(0xFF7C3AED), "${p.dailyLoginStreak}", "Daily", "Best: ${p.bestDailyLoginStreak}", Modifier.weight(1f))
+            OverallCard(Icons.Filled.TrackChanges, Color(0xFF2563EB), "$games", "Games", "${p.totalLosses} losses", Modifier.weight(1f))
         }
 
         // ── Game mode statistics ────────────────────────────────────────────────
@@ -343,20 +385,26 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
             Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            MODE_CARDS.mapNotNull { it.engineMode }.forEach { m ->
+            // iOS modeChip: the mode's own glyph over its proper-case title.
+            MODE_CARDS.filter { it.engineMode != null }.forEach { card ->
+                val m = card.engineMode!!
                 val active = m == selectedMode
-                val accent = modeAccent(m)
-                Text(
-                    modeTitle(m),
-                    fontSize = 10.sp, fontWeight = FontWeight.Black,
-                    color = if (active) Color.White else WTheme.textSecondary,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(if (active) accent else WTheme.surface)
-                        .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(50))
+                Column(
+                    Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (active) card.accent.copy(alpha = 0.08f) else WTheme.surface)
+                        .border(1.5.dp, if (active) card.accent else WTheme.border, RoundedCornerShape(12.dp))
                         .clickableNoRipple { selectedMode = m }
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                )
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    ModeIconBox(card, 28.dp)
+                    Text(
+                        card.title, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                        color = if (active) card.accent else WTheme.textMuted,
+                    )
+                }
             }
         }
         // Per-mode stats card (web: accent top bar + Wins/Losses/Best/Fastest)
@@ -372,22 +420,27 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                 Box(Modifier.fillMaxWidth().height(3.dp).background(accent))
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(
-                            Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(modeTitle(selectedMode).take(1), fontSize = 13.sp, fontWeight = FontWeight.Black, color = accent)
-                        }
+                        modeCardFor(selectedMode)?.let { ModeIconBox(it, 28.dp) }
                         Text(modeTitle(selectedMode), fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                     }
-                    Row(Modifier.fillMaxWidth()) {
-                        ModeStat("Wins", "${stat?.wins ?: 0}", Color(0xFF7C3AED), Modifier.weight(1f))
-                        ModeStat("Losses", "${stat?.losses ?: 0}", Color(0xFFDC2626), Modifier.weight(1f))
-                        ModeStat("Best", stat?.bestScore?.let { if (it > 0) "${it.toInt()}" else "—" } ?: "—", Color(0xFFD97706), Modifier.weight(1f))
-                        ModeStat(
-                            "Fastest",
-                            stat?.fastestTime?.takeIf { it > 0 }?.let { fmtDuration(it) } ?: "—",
-                            Color(0xFF2563EB), Modifier.weight(1f),
+                    // iOS: an unplayed mode/tab says so instead of showing 0 / 0 / — / —.
+                    if (stat != null) {
+                        Row(Modifier.fillMaxWidth()) {
+                            ModeStat("Wins", "${stat.wins}", Modifier.weight(1f))
+                            ModeStat("Losses", "${stat.losses}", Modifier.weight(1f))
+                            ModeStat("Best", stat.bestScore?.let { if (it > 0) "${it.toInt()}" else "—" } ?: "—", Modifier.weight(1f))
+                            ModeStat(
+                                "Fastest",
+                                stat.fastestTime?.takeIf { it > 0 }?.let { fmtDuration(it) } ?: "—",
+                                Modifier.weight(1f),
+                            )
+                        }
+                    } else {
+                        Text(
+                            "No $playType games played in this mode yet",
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
                         )
                     }
                 }
@@ -410,19 +463,28 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
             }
         }
 
-        // ── Recent matches (10) ──────────────────────────────────────────────────
-        Text("RECENT MATCHES", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
-        if (matches.isEmpty()) {
-            Text("No matches played yet.", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        } else {
-            (if (showAllRecent) matches else matches.take(5)).forEach { m -> PublicMatchRow(m, userId) }
-            if (matches.size > 5) {
-                Text(
-                    if (showAllRecent) "Show less" else "View all ${matches.size} ›",
-                    fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().clickableNoRipple { showAllRecent = !showAllRecent }.padding(top = 4.dp),
-                )
+        // ── Recent matches — iOS renders this as a titled surface card ───────────
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(Icons.Filled.Schedule, null, tint = Color(0xFF2563EB), modifier = Modifier.size(14.dp))
+                Text("Recent Matches", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            }
+            if (matches.isEmpty()) {
+                Text("No matches played yet.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            } else {
+                (if (showAllRecent) matches else matches.take(5)).forEach { m -> PublicMatchRow(m, userId) }
+                if (matches.size > 5) {
+                    Text(
+                        if (showAllRecent) "Show less" else "View all ${matches.size} ›",
+                        fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.primary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().clickableNoRipple { showAllRecent = !showAllRecent }.padding(top = 4.dp),
+                    )
+                }
             }
         }
         Spacer(Modifier.height(20.dp))
@@ -504,16 +566,28 @@ private fun OverallCard(icon: androidx.compose.ui.graphics.vector.ImageVector, t
     ) {
         Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
         Text(value, fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-        Text(sub, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.4.sp)
+        Text(sub, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)
     }
 }
 
 @Composable
-private fun ModeStat(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+private fun ModeStat(label: String, value: String, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Black, color = color)
+        // iOS deliberately renders all four values in primary text, not the cell color.
+        Text(value, fontSize = 17.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+    }
+}
+
+/** A mode's glyph in its accent-tinted rounded square — iOS ModeIconView(box:). */
+@Composable
+private fun ModeIconBox(card: ModeCard, box: androidx.compose.ui.unit.Dp) {
+    Box(
+        Modifier.size(box).clip(RoundedCornerShape(box * 0.27f)).background(card.accent.copy(alpha = 0.08f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        ModeGlyph(card, tint = card.accent, glyphSize = (box.value * 0.42f).sp, iconSize = box * 0.5f)
     }
 }
 
@@ -530,10 +604,11 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
     val guesses = (if (isP1) m.player1Score else m.player2Score)?.toInt() ?: 0
     val time = (if (isP1) m.player1Time else m.player2Time)?.toInt() ?: 0
     val mode = runCatching { GameMode.valueOf(m.gameMode) }.getOrNull()
+    val card = mode?.let { modeCardFor(it) }
     val dateTime = runCatching {
         val inst = java.time.Instant.parse(if (m.createdAt.endsWith("Z") || m.createdAt.contains('+')) m.createdAt else m.createdAt + "Z")
         val zdt = inst.atZone(java.time.ZoneId.systemDefault())
-        zdt.format(java.time.format.DateTimeFormatter.ofPattern("M/d/yy, h:mm a"))
+        zdt.format(java.time.format.DateTimeFormatter.ofPattern("MMM d · h:mm a"))
     }.getOrDefault("")
 
     Row(
@@ -545,21 +620,35 @@ private fun PublicMatchRow(m: ProfileService.RecentMatch, userId: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(
-            if (won) Icons.Filled.CheckCircle else Icons.Filled.Cancel, null,
-            tint = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626),
-            modifier = Modifier.size(20.dp),
-        )
+        // iOS RecentMatchRow leads with the mode's own glyph, not a win/loss tick.
+        if (card != null) {
+            ModeIconBox(card, 36.dp)
+        } else {
+            Box(
+                Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFD97706).copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Filled.Bolt, null, tint = Color(0xFFD97706), modifier = Modifier.size(15.dp)) }
+        }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(mode?.let { modeTitle(it) } ?: m.gameMode, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Text(card?.title ?: m.gameMode, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
                 Text(if (isVs) "VS" else "Solo", fontSize = 9.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+                if (m.forfeit == true) {
+                    Text(
+                        "FORFEIT", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFFB45309),
+                        modifier = Modifier.clip(RoundedCornerShape(5.dp)).background(Color(0xFFFEF3C7))
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
             }
-            Text(dateTime, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(
+                "$guesses ${if (guesses == 1) "guess" else "guesses"} · ${if (time > 0) fmtDuration(time) else "—"}",
+                fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            )
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(if (won) "Win" else "Loss", fontSize = 11.sp, fontWeight = FontWeight.Black, color = if (won) Color(0xFF7C3AED) else Color(0xFFDC2626))
-            Text("$guesses guesses · ${fmtDuration(time)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(dateTime, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }
 }

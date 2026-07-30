@@ -66,7 +66,7 @@ fun SectionHeader(
         Spacer(Modifier.width(8.dp))
         Text(
             label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Black,
-            color = WTheme.textMuted, letterSpacing = 1.2.sp,
+            color = WTheme.textMuted, letterSpacing = 1.6.sp,
         )
         Spacer(Modifier.weight(1f))
         right?.invoke()
