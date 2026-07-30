@@ -41,13 +41,21 @@ class VSMatchService : VSTransport {
     override val isConfigured: Boolean get() = VSConfig.isConfigured
 
     // ── Connection ──────────────────────────────────────────────────────────────
-    override fun connect(presenceId: String?) {
+    override fun connect(presenceId: String?, token: String?) {
         val opts = IO.Options().apply {
             forceNew = true
             reconnection = true
             transports = arrayOf("websocket")
-            // socket.io v3+ handshake auth — server reads handshake.auth.presenceId.
-            if (presenceId != null) auth = mapOf("presenceId" to presenceId)
+            // socket.io v3+ handshake auth. `token` is the Supabase access
+            // token: the server derives identity from it and ignores presenceId
+            // when present. presenceId alone was taken on trust, so anyone
+            // knowing a (public) user id could seize that player's live match
+            // during their reconnect grace window.
+            val payload = buildMap {
+                if (presenceId != null) put("presenceId", presenceId)
+                if (token != null) put("token", token)
+            }
+            if (payload.isNotEmpty()) auth = payload
         }
         val s = runCatching { IO.socket(VSConfig.SERVER_URL, opts) }.getOrNull() ?: return
         socket = s

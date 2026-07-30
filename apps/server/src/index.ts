@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { MatchmakingQueue } from './matchmaking';
 import { Match, Player, QueueEntry, ClientToServerEvents, ServerToClientEvents } from './types';
+import { verifyAccessToken } from './auth';
 
 const allowedWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/allowed.json'), 'utf-8'));
 const solutionWords = JSON.parse(readFileSync(join(__dirname, '../../web/data/solutions.json'), 'utf-8'));
@@ -288,14 +289,53 @@ const RECONNECT_GRACE_MS = 60000;
 // rebound socket proves itself with an in-match event (see confirmResume).
 // Anonymous players (no presence id) skip the grace and forfeit immediately,
 // as before.
-const pendingReconnects = new Map<string, { matchId: string; oldPlayerId: string; timer: ReturnType<typeof setTimeout>; deadline: number }>();
+// `verified` records whether the socket that DROPPED had proved its identity
+// with a token. A verified player's match may only be resumed by another
+// verified socket for the same user — that's what closes the presenceId
+// hijack while legacy clients keep working.
+const pendingReconnects = new Map<string, { matchId: string; oldPlayerId: string; timer: ReturnType<typeof setTimeout>; deadline: number; verified: boolean }>();
+
+/**
+ * Handshake authentication.
+ *
+ * `presenceId` ("u:<userId>") was taken on trust, and user ids are public — the
+ * leaderboard renders /profile/<uuid> links — so anyone could claim to be
+ * anyone. Presenting a victim's presenceId during their reconnect grace window
+ * handed over their live match.
+ *
+ * TRANSITION: shipped clients (iOS 133/136/137, the Android build, and web
+ * until it redeploys) send only presenceId, so a token is not yet REQUIRED —
+ * demanding one would break VS for everyone mid-match. Instead:
+ *   * a token that is present and valid  → verified; presenceId is derived
+ *     from the token, so it can't be forged;
+ *   * a token that is present and INVALID → rejected outright (a bad token is
+ *     an attack, never a legacy client);
+ *   * no token at all → legacy: allowed, but flagged unverified, and a
+ *     verified player's match can never be resumed by an unverified socket.
+ * Once every client sends a token, drop the legacy branch and require it.
+ */
+io.use(async (socket, next) => {
+  const auth = socket.handshake.auth as { presenceId?: string; token?: string } | undefined;
+  const raw = auth?.token;
+  if (raw) {
+    const verified = await verifyAccessToken(raw);
+    if (!verified) return next(new Error('invalid token'));
+    (socket.data as any).verifiedUserId = verified.userId;
+  }
+  next();
+});
 
 io.on('connection', (socket) => {
   // Stash the presenceId from the handshake so /presence can dedupe
   // distinct sockets belonging to the same person. Not required — clients
   // that don't send one just fall through to socket.id on the /presence
   // side, which preserves the pre-dedupe count for those sockets.
-  const presenceId = (socket.handshake.auth as { presenceId?: string } | undefined)?.presenceId;
+  const verifiedUserId = (socket.data as { verifiedUserId?: string }).verifiedUserId;
+  // A verified socket's identity comes from its TOKEN, never from whatever
+  // presenceId it asked for.
+  const presenceId = verifiedUserId
+    ? `u:${verifiedUserId}`
+    : (socket.handshake.auth as { presenceId?: string } | undefined)?.presenceId;
   if (presenceId) (socket.data as { presenceId?: string }).presenceId = presenceId;
 
   console.log(`Client connected: ${socket.id}${presenceId ? ` (presence=${presenceId})` : ''}`);
@@ -317,6 +357,13 @@ io.on('connection', (socket) => {
   // automatically when the app returns to the foreground.
   if (presenceId && pendingReconnects.has(presenceId)) {
     const pending = pendingReconnects.get(presenceId)!;
+    // THE HIJACK GATE. If the player who dropped was verified, only a verified
+    // socket may take the match back. Without this, knowing a public user id
+    // was enough to seize someone's live match during their grace window.
+    if (pending.verified && !verifiedUserId) {
+      logVS('resume_REJECT', presenceId, { matchId: pending.matchId, reason: 'unverified socket' });
+      return;
+    }
     clearTimeout(pending.timer);
     pendingReconnects.delete(presenceId);
     const match = matches.get(pending.matchId);
@@ -932,7 +979,7 @@ io.on('connection', (socket) => {
             }
             cleanupMatch(matchId);
           }, RECONNECT_GRACE_MS);
-          pendingReconnects.set(presenceId, { matchId, oldPlayerId: playerId, timer, deadline: Date.now() + RECONNECT_GRACE_MS });
+          pendingReconnects.set(presenceId, { matchId, oldPlayerId: playerId, timer, deadline: Date.now() + RECONNECT_GRACE_MS, verified: !!verifiedUserId });
           // Leave the match + lookups intact so the reconnect can re-bind. The
           // disconnected socket's playerToMatch entry is harmless (its id is gone).
           return;
@@ -1222,3 +1269,34 @@ const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+/**
+ * Graceful shutdown.
+ *
+ * Match state lives in memory, so a deploy or restart takes every live match
+ * with it. Previously the process just died: both players sat looking at a
+ * board whose opponent would never move again, with no explanation, until
+ * something timed out. Now each side is told the match is over before the
+ * socket closes, so the client can surface a real message and return to the
+ * lobby. This does NOT make matches survive a restart — see the note in
+ * WORDOCIOUS_BIBLE about durable match state — it just makes the loss honest.
+ */
+let shuttingDown = false;
+function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[shutdown] ${signal} — ending ${matches.size} live match(es)`);
+  for (const [, match] of matches) {
+    if (match.ended) continue;
+    for (const socketId of [match.player1.socketId, match.player2.socketId]) {
+      io.to(socketId).emit('opponent_left');
+    }
+  }
+  io.close(() => {
+    httpServer.close(() => process.exit(0));
+  });
+  // Never hang a deploy waiting for stragglers to disconnect.
+  setTimeout(() => process.exit(0), 3000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

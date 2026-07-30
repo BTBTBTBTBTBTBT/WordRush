@@ -246,7 +246,7 @@ class VSMatchViewModel(
                 service.joinQueue(mode = mode.name, dailySeed = dailySeed, inviteCode = inviteCode)
             }
         }
-        service.connect(presenceId = AuthService.userId?.let { "u:$it" })
+        service.connect(presenceId = AuthService.userId?.let { "u:$it" }, token = AuthService.accessToken)
     }
 
     /** Swap the socket transport for a client-side CPU bot and start a match.
@@ -271,7 +271,7 @@ class VSMatchViewModel(
         resultRecorded = false
         wireHandlers()
         service.onConnect = { if (screen == VSScreen.QUEUE) service.joinQueue(mode.name, null, null) }
-        service.connect(null)
+        service.connect(null, null)
     }
 
     fun leave() {

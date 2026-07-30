@@ -280,7 +280,7 @@ final class VSMatchViewModel: ObservableObject {
             guard let self, self.screen == .queue else { return }
             self.service.joinQueue(mode: joinMode, dailySeed: seed, inviteCode: joinInvite)
         }
-        service.connect(presenceId: presenceId)
+        service.connect(presenceId: presenceId, token: AuthService.shared.accessToken)
     }
 
     /// CPU spectator shortcut: end the match now instead of watching the bot's
@@ -327,7 +327,7 @@ final class VSMatchViewModel: ObservableObject {
             guard let self, self.screen == .queue else { return }
             self.service.joinQueue(mode: self.mode.rawValue, dailySeed: nil, inviteCode: nil)
         }
-        service.connect(presenceId: nil)
+        service.connect(presenceId: nil, token: nil)
     }
 
     /// Leaving now would actually forfeit (a recorded loss): only while still

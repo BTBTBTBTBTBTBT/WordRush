@@ -23,7 +23,7 @@ protocol VSTransport: AnyObject {
     var onOpponentTyping: (() -> Void)? { get set }
     var onServerError: ((VSServerError) -> Void)? { get set }
     var isConfigured: Bool { get }
-    func connect(presenceId: String?)
+    func connect(presenceId: String?, token: String?)
     func disconnect()
     func joinQueue(mode: String, dailySeed: String?, inviteCode: String?)
     func leaveQueue()
@@ -161,7 +161,7 @@ final class LocalBotMatchService: VSTransport {
     }
 
     // MARK: VSTransport
-    func connect(presenceId: String?) { DispatchQueue.main.async { [weak self] in self?.onConnect?() } }
+    func connect(presenceId: String?, token: String?) { DispatchQueue.main.async { [weak self] in self?.onConnect?() } }
     func disconnect() { clearTimers() }
 
     func joinQueue(mode: String, dailySeed: String?, inviteCode: String?) {

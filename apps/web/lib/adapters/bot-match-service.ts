@@ -78,7 +78,7 @@ export class SwappableMatchService implements IMatchService {
   }
 
   // ── forwarded actions ──
-  connect(presenceId?: string): void { this.lastPresenceId = presenceId; this.delegate.connect(presenceId); }
+  connect(presenceId?: string, token?: string): void { this.lastPresenceId = presenceId; this.delegate.connect(presenceId, token); }
   disconnect(): void { this.delegate.disconnect(); }
   joinQueue(mode: GameMode, dailySeed?: string, inviteCode?: string): void {
     this.lastJoin = { mode, dailySeed, inviteCode };

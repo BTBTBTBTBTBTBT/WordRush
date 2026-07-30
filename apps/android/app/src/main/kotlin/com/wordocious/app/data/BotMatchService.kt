@@ -34,7 +34,7 @@ interface VSTransport {
     /** OUR reconnect was re-bound to the live match inside the grace window. */
     var onMatchResumed: (() -> Unit)?
     val isConfigured: Boolean
-    fun connect(presenceId: String?)
+    fun connect(presenceId: String?, token: String?)
     fun disconnect()
     fun joinQueue(mode: String, dailySeed: String?, inviteCode: String?)
     fun leaveQueue()
@@ -149,7 +149,7 @@ class LocalBotMatchService(
         adaptive = config.adaptive,
     )
 
-    override fun connect(presenceId: String?) { handler.post { onConnect?.invoke() } }
+    override fun connect(presenceId: String?, token: String?) { handler.post { onConnect?.invoke() } }
     override fun disconnect() { clearTimers() }
 
     override fun joinQueue(mode: String, dailySeed: String?, inviteCode: String?) {

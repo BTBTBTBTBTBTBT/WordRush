@@ -33,7 +33,11 @@ final class VSMatchService {
 
     // MARK: Connection
 
-    func connect(presenceId: String?) {
+    /// `token` is the Supabase access token. The server derives identity from
+    /// it and ignores presenceId when present — presenceId alone was taken on
+    /// trust, so anyone knowing a (public) user id could seize that player's
+    /// live match during their reconnect grace window.
+    func connect(presenceId: String?, token: String?) {
         guard let url = VSConfig.serverURL else { return }
         let manager = SocketManager(socketURL: url, config: [
             .log(false), .compress, .forceWebsockets(true), .reconnects(true),
@@ -42,7 +46,10 @@ final class VSMatchService {
         let socket = manager.defaultSocket
         self.socket = socket
         register(socket)
-        socket.connect(withPayload: presenceId.map { ["presenceId": $0] })
+        var payload: [String: Any] = [:]
+        if let presenceId { payload["presenceId"] = presenceId }
+        if let token { payload["token"] = token }
+        socket.connect(withPayload: payload.isEmpty ? nil : payload)
     }
 
     func disconnect() {

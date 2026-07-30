@@ -141,6 +141,10 @@ object AuthService {
 
     val userId: String? get() = _profile.value?.id
 
+    /** Current Supabase access token — the VS socket handshake sends this so the
+     *  server can verify identity instead of trusting a client-supplied id. */
+    val accessToken: String? get() = runCatching { client.auth.currentSessionOrNull()?.accessToken }.getOrNull()
+
     /** Restore session from local storage on app start. */
     fun initialize() {
         scope.launch {

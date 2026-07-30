@@ -80,6 +80,10 @@ final class AuthService: ObservableObject {
         didSet { AuthService.cacheProEntitlement(from: profile) }
     }
     @Published private(set) var isAuthenticated = false
+    /// Last known access token. The VS socket handshake is synchronous but
+    /// Supabase's session accessor is async, so the token is cached here as
+    /// sessions land and cleared on sign-out.
+    private(set) var accessToken: String?
     @Published private(set) var isLoading = true
     /// Guest mode — chose "Play without an account". Lets a signed-out user reach
     /// the app to play the daily single-player puzzle (Apple 5.1.1(v)). No session,
@@ -246,6 +250,7 @@ final class AuthService: ObservableObject {
         profile = nil
         isAuthenticated = false
         isGuest = false
+        accessToken = nil
         AuthService.hadPersistedSession = false
         // Drop the launch-window entitlement cache with the session. It's keyed
         // to nobody, so leaving it behind let the NEXT account render as Pro
@@ -433,6 +438,7 @@ final class AuthService: ObservableObject {
 
     private func handleSignedIn(userId: String) async {
         isAuthenticated = true
+        accessToken = try? await client.auth.session.accessToken
         AuthService.hadPersistedSession = true
         isGuest = false  // a real session supersedes guest mode
         // Same user back after a sign-out keeps their boards; a different

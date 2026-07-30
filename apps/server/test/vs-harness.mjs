@@ -263,6 +263,72 @@ async function scenarioBoardIndexBounds() {
   a.close(); b.close();
 }
 
+
+async function scenarioRematch() {
+  log('\n[10] Rematch: both accept → a fresh match with a NEW seed');
+  const { a, b } = await pair();
+  const [sa] = await Promise.all([a.wait('match_start', 8000), b.wait('match_start', 8000)]);
+  await sleep(300);
+  a.emit('abandon_match');                 // end the match so a rematch is legal
+  await Promise.all([a.wait('match_ended', 5000), b.wait('match_ended', 5000)]);
+
+  a.emit('offer_rematch');
+  const offered = await b.wait('rematch_offered', 5000);
+  check('opponent saw the rematch offer', !!offered,
+    offered ? '' : `B saw: ${b.events.map((e) => e.name).join(',')}`);
+  if (!offered) { a.close(); b.close(); return; }
+
+  b.emit('offer_rematch');                 // accepting is offering back
+  const [ra, rb] = await Promise.all([a.wait('rematch_start', 8000), b.wait('rematch_start', 8000)]);
+  check('both players entered the rematch', !!ra && !!rb);
+  check('rematch has its own matchId', ra?.matchId && ra.matchId === rb?.matchId,
+    `${ra?.matchId} vs ${rb?.matchId}`);
+  check('rematch uses a DIFFERENT seed than the first match', ra?.seed && ra.seed !== sa?.seed,
+    `first=${sa?.seed} rematch=${ra?.seed}`);
+  a.close(); b.close();
+}
+
+async function scenarioDeclineRematch() {
+  log('\n[11] Declining a rematch resolves the offerer, not hangs it');
+  const { a, b } = await pair();
+  await Promise.all([a.wait('match_start', 8000), b.wait('match_start', 8000)]);
+  await sleep(300);
+  a.emit('abandon_match');
+  await Promise.all([a.wait('match_ended', 5000), b.wait('match_ended', 5000)]);
+  a.emit('offer_rematch');
+  await b.wait('rematch_offered', 5000);
+  b.emit('decline_rematch');
+  const declined = await a.wait('rematch_declined', 5000);
+  check('offerer got rematch_declined (button resolves)', !!declined);
+  a.close(); b.close();
+}
+
+async function scenarioReconnectResume() {
+  log('\n[12] Reconnecting inside the grace window resumes the SAME match');
+  const a = makePlayer('A', nextUser());
+  const b = makePlayer('B', nextUser());
+  await Promise.all([a.wait('connect', 5000), b.wait('connect', 5000)]);
+  requireLive(a, b);
+  a.emit('join_queue', { mode: MODE });
+  await sleep(150);
+  b.emit('join_queue', { mode: MODE });
+  const fa = await a.wait('match_found');
+  await Promise.all([a.wait('match_start', 8000), b.wait('match_start', 8000)]);
+
+  a.socket.disconnect();
+  await sleep(800);
+  // Same presenceId (u:<userId>) = the same player returning on a new socket.
+  const a2Same = makePlayer('A-again', a.userId);
+  await a2Same.wait('connect', 5000);
+  const resumed = await a2Same.wait('match_resumed', 6000);
+  check('returning player was handed back their match', !!resumed,
+    resumed ? '' : `saw: ${a2Same.events.map((e) => e.name).join(',')}`);
+  if (resumed) check('resumed into the SAME match', resumed.matchId === fa?.matchId,
+    `${resumed.matchId} vs ${fa?.matchId}`);
+  check('opponent was never told the player left', b.seen('opponent_left').length === 0);
+  a2Same.close(); b.close();
+}
+
 // -------------------------------------------------------------------- main
 
 const scenarios = [
@@ -275,6 +341,9 @@ const scenarios = [
   scenarioForeignMatchSpoof,
   scenarioSelfReportedWin,
   scenarioBoardIndexBounds,
+  scenarioRematch,
+  scenarioDeclineRematch,
+  scenarioReconnectResume,
 ];
 
 (async () => {

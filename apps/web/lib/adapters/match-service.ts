@@ -26,7 +26,7 @@ export interface MatchEndedData {
 }
 
 export interface IMatchService {
-  connect(presenceId?: string): void;
+  connect(presenceId?: string, token?: string): void;
   disconnect(): void;
   joinQueue(mode: GameMode, dailySeed?: string, inviteCode?: string): void;
   leaveQueue(): void;
@@ -71,11 +71,18 @@ export class SocketIOMatchService implements IMatchService {
     this.serverUrl = serverUrl;
   }
 
-  connect(presenceId?: string): void {
+  connect(presenceId?: string, token?: string): void {
     // Pass presenceId in auth so the server's /presence count dedupes this
     // socket against any other socket from the same user/tab (notably the
     // SitePresenceProvider's socket that's already open in this tab).
-    this.socket = io(this.serverUrl, presenceId ? { auth: { presenceId } } : undefined);
+    // `token` is the Supabase access token. The server derives identity from
+    // it and ignores presenceId when present — without it, presenceId was taken
+    // on trust and anyone knowing a (public) user id could seize that player's
+    // live match during their reconnect grace window.
+    const auth: Record<string, string> = {};
+    if (presenceId) auth.presenceId = presenceId;
+    if (token) auth.token = token;
+    this.socket = io(this.serverUrl, Object.keys(auth).length ? { auth } : undefined);
   }
 
   disconnect(): void {

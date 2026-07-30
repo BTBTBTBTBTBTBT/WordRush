@@ -253,7 +253,7 @@ function bestRowGreens(tiles: Record<number, string[][]>): number {
 export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   ensureDictionaryInitialized();
 
-  const { profile, isProActive, isGuest, exitGuest } = useAuth();
+  const { profile, session, isProActive, isGuest, exitGuest } = useAuth();
   const isPro = isProActive;
   // Live ref so the once-wired socket handlers (rematch offer) read the
   // CURRENT Pro status, not the value captured at mount.
@@ -556,7 +556,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // below renders instead (deep links /classic/vs and invite links mount
     // this component without passing through the /vs lobby's gate).
     if (authGated) return;
-    matchService.connect(presenceId);
+    matchService.connect(presenceId, session?.access_token);
 
     matchService.onQueueStatus((data) => {
       setQueuePosition(data.position);
@@ -860,7 +860,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
     // gate the effect — authGated flips at most once (guest → signed in, which
     // navigates through sign-in), never mid-match.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchService, presenceId, authGated]);
+  }, [matchService, presenceId, session?.access_token, authGated]);
 
   // Daily VS: join the shared-seed queue only once the played-today gate says
   // 'play' (native parity — iOS awaits hasPlayedDailyVS before queueing, so a
