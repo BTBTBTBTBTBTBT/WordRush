@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -288,8 +289,16 @@ fun MainScreen() {
         return
     }
 
-    // Help / Info overlay (Help from header; About/Privacy/Terms/Support from Settings)
+    // Status-bar inset for the OVERLAY surfaces. These three blocks `return`
+    // before the Scaffold below, and the Scaffold is what supplies the top inset
+    // (no topBar slot -> innerPadding.top == contentWindowInsets.top). The root
+    // Surface in MainActivity supplies navigationBarsPadding ONLY, so under
+    // targetSdk 35's forced edge-to-edge on Android 15+ the Done / Close / Save
+    // controls on Settings, Pro, Edit Profile, Auth and the info screens drew
+    // under the system clock — and the top-right ones were often untappable.
+    // Paywall and profile-commit surfaces, so this was revenue and lost edits.
     infoRoute?.let { route ->
+      androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
         androidx.activity.compose.BackHandler { infoRoute = null }
         when (route) {
             "help" -> HowToPlayScreen(onDone = { infoRoute = null })
@@ -302,6 +311,7 @@ fun MainScreen() {
             "edit" -> EditProfileScreen(onDone = { infoRoute = null })
             else -> InfoScreen(kind = route, onDone = { infoRoute = null })
         }
+      }
         return
     }
 
@@ -311,13 +321,17 @@ fun MainScreen() {
     // backing out returns you to the exact tab you were on. On success the
     // auth state flow flips and the root gate re-composes on its own.
     if (showSignIn) {
-        AuthScreen(onAuthenticated = { showSignIn = false }, onDismiss = { showSignIn = false })
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            AuthScreen(onAuthenticated = { showSignIn = false }, onDismiss = { showSignIn = false })
+        }
         return
     }
 
     if (showSettings) {
         androidx.activity.compose.BackHandler { showSettings = false }
-        SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
+        androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
+        }
         return
     }
 

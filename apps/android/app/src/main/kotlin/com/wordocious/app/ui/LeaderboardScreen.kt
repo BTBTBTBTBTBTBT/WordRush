@@ -447,7 +447,10 @@ private fun RankIcon(rank: Int) {
         )
         2 -> Icon(Icons.Filled.MilitaryTech, null, tint = WTheme.textMuted, modifier = Modifier.size(20.dp))
         3 -> Icon(Icons.Filled.MilitaryTech, null, tint = Color(0xFFB45309), modifier = Modifier.size(20.dp))
-        else -> Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+        // width(), NOT size(): a 20dp SQUARE constrained the height too, so a
+        // 3-digit rank wrapped to a second line that was then clipped — rank
+        // 425 displayed as "42". iOS uses .frame(width: 20) for exactly this.
+        else -> Box(Modifier.width(20.dp), contentAlignment = Alignment.Center) {
             // iOS renders the bare number here — no "#" prefix.
             Text("$rank", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
         }

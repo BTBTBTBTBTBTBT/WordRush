@@ -207,7 +207,10 @@ fun AuthScreen(
                     error!!,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = WTheme.lossText,
+                    // Fixed, like iOS: the card fill below is a hardcoded #FEE2E2,
+                    // and WTheme.lossText is #F87171 in Dark — 2.26:1, so a mistyped
+                    // password produced an unreadable explanation.
+                    color = Color(0xFFDC2626),
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color(0xFFFEE2E2), RoundedCornerShape(12.dp))
