@@ -3,6 +3,7 @@ package com.wordocious.app.data
 import android.content.Context
 import android.content.SharedPreferences
 import com.wordocious.core.GameMode
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -18,14 +19,24 @@ import kotlinx.serialization.json.Json
  * result (and streak/XP credit) forever.
  *
  * Android's GameResultsService.record() funnels EVERYTHING (user_stats,
- * matches row, profile progression, daily extras) through one call, so one
- * payload per game re-runs the whole flow. Semantics mirror web/iOS:
+ * matches row, profile progression, daily extras) through one call, but the
+ * three primary writes hit disjoint tables and fail INDEPENDENTLY, so one
+ * done-flag for the lot was wrong in both directions:
+ *  - it could re-run a write that had already landed. When user_stats
+ *    succeeded but matches and profiles both failed, the whole payload
+ *    survived, drain() found no matches row and replayed record() in full —
+ *    total_games +2, wins +2 and a permanently skewed average_time for one
+ *    game actually played.
+ *  - it could discard a write that had never run. A matches row on the server
+ *    cleared the key outright, so a game whose progression half had failed
+ *    lost its XP, level, win streak and daily-login streak for good.
+ * Hence a flag per part (stats / match / xp). Semantics otherwise mirror
+ * web/iOS:
  * - persisted BEFORE any network write, keyed by mode+seed
- * - cleared when record() reports success (profile progression landed)
- * - drain() re-runs leftovers once per launch after auth is ready, first
- *   checking the server for an existing matches row for that seed+mode — if
- *   one exists, the original flow landed and the key is cleared WITHOUT
- *   re-running (user_stats/XP can never double-increment)
+ * - each part marks itself done as it lands; the key goes when all three are
+ * - drain() re-runs ONLY the parts still outstanding. It checks the server for
+ *   a matches row too, but that settles the match part alone (it is what stops
+ *   match history duplicating) — it is not evidence about the other two.
  * - solo only (VS is server-coordinated; CPU games are untracked practice)
  * - payloads older than 7 days are dropped; other accounts' payloads are left
  */
@@ -56,19 +67,73 @@ object PendingRecords {
         val hintsUsed: Int,
         val stagesCompleted: Int? = null,
         val bestCorrectLetters: Int? = null,
+        /** user_stats aggregate landed (wins/losses/games/best/avg/fastest). */
+        val statsDone: Boolean = false,
+        /** `matches` history row landed. */
+        val matchDone: Boolean = false,
+        /** profiles progression landed (XP, level, win + daily-login streak). */
+        val xpDone: Boolean = false,
     )
+
+    enum class Part { STATS, MATCH, XP }
 
     private fun key(gameModeName: String, seed: String) = "$gameModeName-$seed"
 
-    /** Persist the record args BEFORE the network flow (solo only). */
+    /** Current payload for this game, if one is outstanding. */
+    fun read(gameModeName: String, seed: String): Payload? {
+        val raw = prefs?.getString(key(gameModeName, seed), null) ?: return null
+        return runCatching { json.decodeFromString<Payload>(raw) }.getOrNull()
+    }
+
+    /**
+     * Persist the record args BEFORE the network flow (solo only). MERGES onto
+     * an existing payload rather than replacing it: drain() replays through
+     * record(), which registers again, and a blind overwrite would reset the
+     * done-flags and re-run writes that had already landed.
+     */
     fun register(payload: Payload) {
         val p = prefs ?: return
+        val existing = read(payload.gameModeName, payload.seed)
+        val merged = if (existing == null) payload else payload.copy(
+            savedAt = existing.savedAt,
+            statsDone = existing.statsDone,
+            matchDone = existing.matchDone,
+            xpDone = existing.xpDone,
+        )
         runCatching {
-            p.edit().putString(key(payload.gameModeName, payload.seed), json.encodeToString(payload)).apply()
+            p.edit().putString(key(payload.gameModeName, payload.seed), json.encodeToString(merged)).apply()
         }
     }
 
-    /** Clear after record() reports success. */
+    /**
+     * Flag one part done, the moment it lands. Deliberately does NOT drop the
+     * key even when that was the last part — releasing the payload is
+     * [settle]'s job, and it happens further down record(), after the daily
+     * row, the medals and the sweep bonus. Flagging and releasing were the same
+     * act before, so the payload was gone before those later writes ran and a
+     * blip between them lost the leaderboard row, the medal and the sweep bonus
+     * with nothing left to retry them (web does it in this order).
+     */
+    fun markDone(gameModeName: String, seed: String, part: Part) {
+        val p = prefs ?: return
+        val current = read(gameModeName, seed) ?: return
+        val next = when (part) {
+            Part.STATS -> current.copy(statsDone = true)
+            Part.MATCH -> current.copy(matchDone = true)
+            Part.XP -> current.copy(xpDone = true)
+        }
+        runCatching {
+            p.edit().putString(key(gameModeName, seed), json.encodeToString(next)).apply()
+        }
+    }
+
+    /** Release the payload once every part has landed. No-op while any is outstanding. */
+    fun settle(gameModeName: String, seed: String) {
+        val current = read(gameModeName, seed) ?: return
+        if (current.statsDone && current.matchDone && current.xpDone) clear(gameModeName, seed)
+    }
+
+    /** Drop the payload outright. */
     fun clear(gameModeName: String, seed: String) {
         prefs?.edit()?.remove(key(gameModeName, seed))?.apply()
     }
@@ -87,7 +152,13 @@ object PendingRecords {
         draining = true
         try {
             val p = prefs ?: return
-            val userId = AuthService.userId ?: return
+            // AuthService.userId reads the PROFILE row, which needs a network
+            // fetch that may never have completed this launch. Fall back to the
+            // locally-stored session user, or a drain would no-op for exactly
+            // the stranded sessions whose results are sitting in this queue.
+            val userId = AuthService.userId
+                ?: runCatching { SupabaseConfig.client.auth.currentUserOrNull()?.id }.getOrNull()
+                ?: return
             val all = runCatching { p.all }.getOrNull() ?: return
             val now = System.currentTimeMillis()
             for ((k, v) in all) {
@@ -104,9 +175,18 @@ object PendingRecords {
                 if (!payload.userId.equals(userId, ignoreCase = true)) continue
                 val mode = runCatching { GameMode.valueOf(payload.gameModeName) }.getOrNull()
                 if (mode == null) { p.edit().remove(k).apply(); continue }
+                // Every part landed, only the release didn't (killed between the
+                // last write and settle()) — nothing to replay.
+                if (payload.statsDone && payload.matchDone && payload.xpDone) {
+                    p.edit().remove(k).apply(); continue
+                }
 
-                // Dedupe: an existing matches row for this seed+mode means the
-                // original flow landed — clear, never re-run.
+                // Dedupe, per part. A matches row for this seed+mode proves the
+                // MATCH write landed and nothing else — the user_stats and
+                // profiles writes fail independently of it. Clearing the key on
+                // its presence deleted the XP, level, win streak and
+                // daily-login streak of any game whose progression half had
+                // failed, unrecoverably.
                 val existing = runCatching {
                     SupabaseConfig.client.postgrest["matches"].select {
                         filter {
@@ -117,11 +197,14 @@ object PendingRecords {
                         limit(1)
                     }.decodeList<IdRow>()
                 }.getOrNull() ?: continue // can't verify (offline?) — retry later
-                if (existing.isNotEmpty()) { p.edit().remove(k).apply(); continue }
+                if (existing.isNotEmpty() && !payload.matchDone) {
+                    markDone(payload.gameModeName, payload.seed, Part.MATCH)
+                }
 
-                // Re-run the full record flow. record() re-registers this key
-                // and clears it on success, so a failure here simply leaves the
-                // payload for the next launch.
+                // Re-run whatever is still outstanding. record() re-registers
+                // (merging the flags forward), skips the parts already done and
+                // marks each remaining one as it lands, so a failure here simply
+                // leaves the rest of the payload for the next launch.
                 GameResultsService.record(
                     gameMode = mode, won = payload.won, guessCount = payload.guessCount,
                     timeSeconds = payload.timeSeconds, boardsSolved = payload.boardsSolved,

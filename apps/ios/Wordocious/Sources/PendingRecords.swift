@@ -15,12 +15,12 @@ import WordociousCore
 ///   progression (`gameResult`, GameResultsService.record) and the matches
 ///   history row (`soloMatch`, recordSoloMatch). Each marks itself done on
 ///   success; the key is removed when all registered parts are done.
-/// - drain() re-runs leftovers once per launch after auth is ready. It first
-///   checks the server for an existing `matches` row for that seed+mode — if
-///   one exists the original calls (or a prior drain) landed, so the key is
-///   cleared WITHOUT re-running anything (user_stats/XP can never
-///   double-increment from a payload whose writes landed but whose clear
-///   didn't).
+/// - drain() re-runs leftovers once per launch after auth is ready, driven by
+///   the per-part done-flags. It also checks the server for a `matches` row for
+///   that seed+mode, but that row settles ONLY the `soloMatch` part (it stops
+///   match history duplicating); it is not evidence about the progression part,
+///   and treating it as such threw away XP, levels and streaks that had never
+///   been written.
 /// - Solo only. VS results are server-coordinated (designated writer) and are
 ///   never retried from here; CPU games are pure practice and not tracked.
 /// - Payloads older than 7 days, or belonging to a different signed-in user,
@@ -124,7 +124,7 @@ enum PendingRecords {
         let keys = UserDefaults.standard.dictionaryRepresentation().keys
             .filter { $0.hasPrefix(keyPrefix) }
         for k in keys {
-            guard let p = read(k), !p.userId.isEmpty, !p.gameMode.isEmpty, !p.seed.isEmpty else {
+            guard var p = read(k), !p.userId.isEmpty, !p.gameMode.isEmpty, !p.seed.isEmpty else {
                 UserDefaults.standard.removeObject(forKey: k)
                 continue
             }
@@ -140,8 +140,15 @@ enum PendingRecords {
                 continue
             }
 
-            // Dedupe: an existing matches row for this seed+mode means the
-            // original flow landed — clear, never re-run.
+            // Dedupe, per PART. A matches row for this seed+mode proves the
+            // `soloMatch` half landed and nothing more — the progression half
+            // (user_stats, XP, level, win streak, daily-login streak) is a
+            // separate call that fails on its own all the time. Clearing the
+            // key on row presence alone deleted work that had never run: the
+            // game appeared in match history while its XP, level and both
+            // streaks were gone permanently. So the row only settles the match
+            // half — which is what stops history duplicating — and the
+            // done-flags decide what actually gets replayed.
             struct IdRow: Decodable { let id: String }
             do {
                 let rows: [IdRow] = try await client.from("matches")
@@ -150,12 +157,19 @@ enum PendingRecords {
                     .eq("seed", value: p.seed)
                     .eq("game_mode", value: p.gameMode)
                     .limit(1).execute().value
-                if rows.first != nil {
-                    UserDefaults.standard.removeObject(forKey: k)
-                    continue
+                if rows.first != nil, p.soloMatch != nil, p.soloMatchDone != true {
+                    markDone(gameMode: p.gameMode, seed: p.seed, part: .soloMatch)
+                    p.soloMatchDone = true
                 }
             } catch {
                 continue // can't verify (offline?) — retry on a later drain
+            }
+
+            // Everything registered has landed — nothing left to replay.
+            if (p.gameResult == nil || p.gameResultDone == true)
+                && (p.soloMatch == nil || p.soloMatchDone == true) {
+                UserDefaults.standard.removeObject(forKey: k)
+                continue
             }
 
             // Re-run the missing parts. Each re-registers against the same key

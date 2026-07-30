@@ -1,6 +1,6 @@
 import { toast } from '@/hooks/use-toast';
 import { supabase } from './supabase-client';
-import { handleSupabaseError } from './supabase-error-handler';
+import { handleSupabaseError, reportRejectedWrite } from './supabase-error-handler';
 import { isDailySeed, getDailySeedDate, type GauntletStageConfig, type GauntletStageResult } from '@wordle-duel/core';
 import {
   recordDailyResult,
@@ -38,10 +38,11 @@ export interface XpResult {
 // To close that gap, each solo record call writes a compact arg payload to
 // localStorage BEFORE touching the network and marks its part done on
 // success; the key is removed once every registered part is done.
-// drainPendingRecords() re-runs leftovers on the next signed-in visit,
-// after first checking the server for an existing `matches` row so a
-// payload whose network calls DID land (but whose clear didn't) can never
-// double-increment user_stats / XP.
+// drainPendingRecords() re-runs leftovers on the next signed-in visit. What
+// it re-runs is driven by the per-part done-flags, NOT by whether a row
+// turned up on the server: a `matches` row proves only that the match half
+// landed, and treating it as proof for the whole payload threw away XP,
+// levels and streaks that had never been written.
 
 const PENDING_RECORD_PREFIX = 'wordocious-pending-record-';
 const PENDING_RECORD_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -132,8 +133,9 @@ function markPendingRecordDone(gameMode: string, seed: string, part: 'gameResult
 /**
  * Re-fire any solo game results whose record calls were cut off (tab close
  * mid-flight, network drop at the final guess). Call once after auth
- * hydration. Idempotent: a pending key whose `matches` row already exists
- * on the server is cleared without re-running anything.
+ * hydration. Idempotent per PART: a half already flagged done — or, for the
+ * match half, already present on the server — is skipped, and only the halves
+ * that genuinely never ran are re-fired.
  */
 export async function drainPendingRecords(userId: string): Promise<void> {
   if (typeof window === 'undefined') return;
@@ -162,9 +164,15 @@ export async function drainPendingRecords(userId: string): Promise<void> {
     if (p.userId !== userId) continue;
 
     try {
-      // A matches row for this seed+mode means the original calls (or a
-      // prior drain) landed — just clear, never re-run, so user_stats and
-      // XP can't double-increment.
+      // A matches row for this seed+mode proves the `soloMatch` HALF landed —
+      // and only that half. It says nothing about the progression half
+      // (user_stats, XP, level, win streak, daily-login streak), which is a
+      // separate network call that routinely fails on its own. Clearing the
+      // key on row presence alone therefore deleted work that had never run:
+      // the match showed up in history while the XP, level and both streaks
+      // were gone for good, unrecoverably. So the row only marks the match
+      // part done — never re-inserting it, so history can't duplicate — and
+      // what actually gets re-run is decided by the done-flags below.
       const { data: existing, error } = await (supabase as any)
         .from('matches')
         .select('id')
@@ -174,11 +182,17 @@ export async function drainPendingRecords(userId: string): Promise<void> {
         .limit(1)
         .maybeSingle();
       if (error) continue; // can't verify (offline?) — retry on a later drain
-      if (existing) {
-        try { localStorage.removeItem(key); } catch {}
-        continue;
+      if (existing && p.soloMatch && !p.soloMatchDone) {
+        markPendingRecordDone(p.gameMode, p.seed, 'soloMatch');
+        p.soloMatchDone = true;
       }
     } catch {
+      continue;
+    }
+
+    // Everything registered has landed — nothing left to retry.
+    if ((!p.gameResult || p.gameResultDone) && (!p.soloMatch || p.soloMatchDone)) {
+      try { localStorage.removeItem(key); } catch {}
       continue;
     }
 
@@ -350,7 +364,13 @@ export async function recordGameResult(
 
     const newBestDailyStreak = Math.max(profile.best_daily_login_streak || 0, newDailyStreak);
 
-    await (supabase as any)
+    // supabase-js RESOLVES on a rejected write instead of throwing, so an RLS
+    // denial or constraint failure here returned normally: the payload was
+    // marked done below and the player watched "+150 XP, Level 4!" animate for
+    // XP that was never written, with the win streak and daily-login streak
+    // silently lost too. Check it and abort to the catch so the pending
+    // payload survives for drainPendingRecords and no XP toast is shown.
+    const { error: progressionError } = await (supabase as any)
       .from('profiles')
       .update({
         total_wins: profile.total_wins + (won ? 1 : 0),
@@ -364,6 +384,7 @@ export async function recordGameResult(
         best_daily_login_streak: newBestDailyStreak,
       })
       .eq('id', userId);
+    if (progressionError) throw progressionError;
   }
 
   // --- Daily result recording ---
@@ -503,7 +524,12 @@ export async function recordGameResult(
   }
   return null;
   } catch (err) {
+    // The payload is deliberately NOT marked done — drainPendingRecords will
+    // re-fire this on the next visit. Report it anyway: a systematic failure
+    // here (an RLS regression, a constraint) silently costs every player their
+    // XP, level and streaks until someone happens to notice.
     console.error('recordGameResult failed:', err);
+    reportRejectedWrite(`recordGameResult ${gameMode}/${playType}`, err);
     handleSupabaseError(err, 'recordGameResult');
     return null;
   }
@@ -613,6 +639,7 @@ export async function recordSoloMatch(data: {
     if (trackPending) markPendingRecordDone(data.gameMode, data.seed, 'soloMatch');
   } catch (err) {
     console.error('recordSoloMatch failed:', err);
+    reportRejectedWrite(`recordSoloMatch ${data.gameMode}`, err);
     handleSupabaseError(err, 'recordSoloMatch');
     toast({ title: 'Failed to save game results', description: 'Your stats may not be recorded.', variant: 'destructive' });
   }

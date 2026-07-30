@@ -1,6 +1,7 @@
 package com.wordocious.app.data
 
 import com.wordocious.core.GameMode
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
@@ -65,13 +66,18 @@ object GameResultsService {
     )
 
     /** Insert a solo match-history row so this game feeds the Profile charts. */
+    /** Returns true when the row actually landed — record() needs to know which
+     *  of the three writes succeeded so it can flag that part done and never
+     *  replay it (a replayed insert duplicates the game in match history). The
+     *  user id is passed in rather than re-read from AuthService.userId, which
+     *  is the profile row and is null whenever the launch fetch failed. */
     private suspend fun recordSoloMatch(
+        uid: String,
         gameMode: GameMode, won: Boolean, score: Int, timeSeconds: Int,
         seed: String, solutions: List<String>, guesses: List<String>, hintsUsed: Int,
-    ) {
-        val uid = AuthService.userId ?: return
+    ): Boolean {
         val now = Instant.now()
-        runCatching {
+        return runCatching {
             client.postgrest["matches"].insert(
                 SoloMatchInsert(
                     gameMode = gameMode.name, player1Id = uid,
@@ -82,6 +88,7 @@ object GameResultsService {
                 )
             )
         }.onFailure { DailyResultsService.reportSwallowedWrite("recordSoloMatch", gameMode.name, it) }
+            .isSuccess
     }
 
     // ── Gauntlet per-stage breakdown (iOS/web parity) ─────────────────────────────
@@ -226,10 +233,14 @@ object GameResultsService {
         updateUserStats(userId, gameMode.name, "vs_cpu", won, guessCount, timeSeconds)
     }
 
+    /** Returns true when the aggregate actually landed. record() flags that part
+     *  done so a later drain never replays it — this is a read-modify-write on
+     *  total_games/wins/average_time, so a second run for one played game is a
+     *  permanent double-count, not a harmless retry. */
     private suspend fun updateUserStats(
         userId: String, mode: String, playType: String, won: Boolean, guessCount: Int, timeSeconds: Int,
-    ) {
-        runCatching {
+    ): Boolean {
+        return runCatching {
             val rows = client.postgrest["user_stats"]
                 .select(Columns.raw("id, wins, losses, total_games, best_score, average_time, fastest_time")) {
                     filter { eq("user_id", userId); eq("game_mode", mode); eq("play_type", playType) }
@@ -261,6 +272,7 @@ object GameResultsService {
                 )
             }
         }.onFailure { DailyResultsService.reportSwallowedWrite("updateUserStats($playType)", mode, it) }
+            .isSuccess
     }
 
     // ── profile progression (XP / level / streaks / shield) ───────────────────────
@@ -410,7 +422,26 @@ object GameResultsService {
         stagesCompleted: Int? = null,
         bestCorrectLetters: Int? = null,
     ): XpResult? {
-        val userId = AuthService.userId ?: return null
+        // THE line that dropped finished games. AuthService.userId is
+        // `_profile.value?.id` — the PROFILE ROW, which arrives over the
+        // network. When the launch fetch failed the app still reported itself
+        // signed in, but this returned null at the very first statement, before
+        // the PendingRecords.register() below. The one failure the retry queue
+        // was built for was the one failure that bypassed it: the finished game
+        // was dropped with no queue entry, no user feedback and no telemetry,
+        // and nothing re-tried it later in the session. The session user id is
+        // held locally and readable offline, and it is the same id the profile
+        // row is keyed by, so fall back to it — the payload only needs an id to
+        // be keyed and replayed under.
+        val userId = AuthService.userId
+            ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
+            ?: run {
+                DailyResultsService.reportSwallowedWrite(
+                    "record (no session — finished game dropped)", gameMode.name,
+                    IllegalStateException("no profile and no local session while recording a finished game"),
+                )
+                return null
+            }
         // Crash-protection: persist the args locally BEFORE any network call so
         // a kill/offline finish is re-run by PendingRecords.drain() next launch.
         // Solo only — VS results are server-coordinated and must not retry.
@@ -427,6 +458,18 @@ object GameResultsService {
                 )
             )
         }
+        // On a replay, whichever of the three already landed must be SKIPPED,
+        // not re-run: user_stats and profiles are read-modify-writes and the
+        // matches insert is not idempotent. Previously all three fired
+        // unconditionally and the payload cleared on `xp != null` alone, so a
+        // run where only user_stats succeeded left the key behind and the next
+        // drain replayed everything — total_games +2, wins +2, average_time
+        // skewed for good, off one game actually played.
+        val pending = if (trackPending) PendingRecords.read(gameMode.name, seed) else null
+        val skipStats = pending?.statsDone == true
+        val skipMatch = pending?.matchDone == true
+        val skipXp = pending?.xpDone == true
+
         // The first three writes touch DISJOINT tables and never read each
         // other's output — user_stats (read-modify-write user_stats),
         // matches (pure insert), profiles progression (read-modify-write
@@ -435,23 +478,30 @@ object GameResultsService {
         // (streak medals read profiles.daily_login_streak; records/
         // achievements read the fresh totals) and must stay after.
         var xp = coroutineScope {
-            val statsJob = async { updateUserStats(userId, gameMode.name, playType, won, guessCount, timeSeconds) }
+            val statsJob = if (skipStats) null else async {
+                updateUserStats(userId, gameMode.name, playType, won, guessCount, timeSeconds)
+            }
             // Solo games only: VS matches get their single shared row via
             // recordVsMatch (designated writer) — writing a player2_id=null row
             // here too polluted Recent Matches/charts with phantom solo games.
-            val matchJob = if (playType == "solo") async {
-                recordSoloMatch(gameMode, won, guessCount, timeSeconds, seed, solutions, guesses, hintsUsed)
+            val matchJob = if (playType == "solo" && !skipMatch) async {
+                recordSoloMatch(userId, gameMode, won, guessCount, timeSeconds, seed, solutions, guesses, hintsUsed)
             } else null
-            val xpJob = async { updateProfileProgression(userId, won, seed) }
-            statsJob.await()
-            matchJob?.await()
-            xpJob.await()
+            val xpJob = if (skipXp) null else async { updateProfileProgression(userId, won, seed) }
+            val statsOk = statsJob?.await() ?: false
+            val matchOk = matchJob?.await() ?: false
+            // Flag each part the instant it lands, independently — a part that
+            // succeeded here is never replayed even if its siblings failed.
+            if (trackPending) {
+                if (statsOk) PendingRecords.markDone(gameMode.name, seed, PendingRecords.Part.STATS)
+                if (matchOk) PendingRecords.markDone(gameMode.name, seed, PendingRecords.Part.MATCH)
+            }
+            xpJob?.await()
         }
-        // Profile progression succeeding is the success proxy (web/iOS parity):
-        // a failed/offline run keeps the payload; drain()'s matches-row dedupe
-        // prevents double-increments when everything landed but the clear didn't.
+        // The XP part is the one whose success we can also SEE (it returns the
+        // toast payload), so flag it on the same rule as the others.
         if (trackPending && xp != null) {
-            PendingRecords.clear(gameMode.name, seed)
+            PendingRecords.markDone(gameMode.name, seed, PendingRecords.Part.XP)
         }
 
         // Daily extras — web stats-service ordering: daily row first, then
@@ -497,6 +547,14 @@ object GameResultsService {
                 )
             }
         }
+
+        // Release the crash-protection payload only NOW, below the daily row,
+        // the medals and the sweep bonus — web's ordering. The clear used to sit
+        // above this block, so a connection blip partway through cost the player
+        // their daily leaderboard row, their medal and the +200/+400 sweep bonus
+        // with nothing queued to retry any of it. No-ops while any part is still
+        // outstanding, leaving the payload for the next drain.
+        if (trackPending) PendingRecords.settle(gameMode.name, seed)
 
         // Refresh in-memory profile so XP/streak/level reflect immediately on Profile/Home.
         AuthService.refreshProfile()
