@@ -2,6 +2,10 @@ package com.wordocious.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,6 +77,31 @@ class MainActivity : ComponentActivity() {
         tagLaunchAfterUpdate()
         setContent {
             WordociousTheme {
+                // Tell the SYSTEM BARS which way the app's palette leans.
+                //
+                // Nothing did this before, and on API 35+ it is the only lever
+                // that still works: android:statusBarColor (themes.xml, still a
+                // hardcoded light brand_bg) is DEPRECATED AND IGNORED there, so
+                // the platform draws transparent bars and picks icon colour
+                // purely from these two flags. Left unset they stay in their
+                // light-background default — dark icons — which is invisible
+                // against Dark/Ocean/Forest. Caught by the API 36 dark sweep:
+                // the clock and battery were near-black on a near-black bar and
+                // the gesture pill sat in a light strip under a dark keyboard.
+                //
+                // Derived from the palette's own background luminance rather
+                // than a theme-name check, so a future palette gets this right
+                // without anyone remembering to update a when-branch.
+                val bg = WTheme.palette.bg
+                val lightBars = bg.luminance() > 0.5f
+                val view = LocalView.current
+                LaunchedEffect(lightBars) {
+                    val window = (view.context as android.app.Activity).window
+                    WindowCompat.getInsetsController(window, view).apply {
+                        isAppearanceLightStatusBars = lightBars
+                        isAppearanceLightNavigationBars = lightBars
+                    }
+                }
                 // Keep content clear of the system navigation bar, app-wide.
                 //
                 // targetSdk 35 opts us into FORCED edge-to-edge on Android 15+:
@@ -89,12 +118,19 @@ class MainActivity : ComponentActivity() {
                 // so adding status-bar padding here would double it. The Surface
                 // keeps painting WTheme.bg behind the bar, so the inset reads as
                 // background rather than a dead strip.
+                // The padding moved OFF the Surface and onto a Box inside it.
+                // While it was on the Surface, the Surface stopped at the top of
+                // the nav bar, so nothing painted WTheme.bg behind the bar —
+                // what showed through was the light android:windowBackground.
+                // In Dark that was a white strip under a dark keyboard (visible
+                // in the API 36 dark sweep), which is precisely the "background
+                // rather than a dead strip" the old comment claimed to deliver.
+                // Surface now fills the whole window and the Box insets content.
                 Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding(),
+                    modifier = Modifier.fillMaxSize(),
                     color = WTheme.bg,
                 ) {
+                  Box(Modifier.fillMaxSize().navigationBarsPadding()) {
                     val isLoading by AuthService.isLoading.collectAsState()
                     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
                     val isGuest by AuthService.isGuest.collectAsState()
@@ -135,6 +171,7 @@ class MainActivity : ComponentActivity() {
                         }
                         else -> AuthScreen(onAuthenticated = { /* state flow re-composes */ })
                     }
+                  }
                 }
             }
         }
