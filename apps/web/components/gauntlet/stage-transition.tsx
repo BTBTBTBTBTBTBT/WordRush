@@ -7,14 +7,17 @@ import { useEffect } from 'react';
 interface StageTransitionProps {
   completedStage: GauntletStageConfig;
   nextStage: GauntletStageConfig | null;
+  /** VS shortens the interstitial: the OPPONENT'S CLOCK DOES NOT PAUSE for it,
+   *  so a 2.5s flourish per stage is a real handicap over a 5-stage run. */
+  isVersus?: boolean;
   onComplete: () => void;
 }
 
-export function StageTransition({ completedStage, nextStage, onComplete }: StageTransitionProps) {
+export function StageTransition({ completedStage, nextStage, isVersus = false, onComplete }: StageTransitionProps) {
   useEffect(() => {
-    const timer = setTimeout(onComplete, 2500);
+    const timer = setTimeout(onComplete, isVersus ? 1000 : 2500);
     return () => clearTimeout(timer);
-  }, [onComplete]);
+  }, [onComplete, isVersus]);
 
   return (
     <div
@@ -56,6 +59,11 @@ export function StageTransition({ completedStage, nextStage, onComplete }: Stage
               {nextStage.boardCount} board{nextStage.boardCount > 1 ? 's' : ''} &middot; {nextStage.maxGuesses} guesses
               {nextStage.sequential ? ' · sequential' : ''}
               {nextStage.hasPrefill ? ' · pre-filled clues' : ''}
+            </div>
+            {/* The overlay has ALWAYS been click-to-skip, but nothing said so —
+                mid-run it read as a cutscene you had to sit through. */}
+            <div className="pt-1.5 text-white/50 text-xs font-black uppercase tracking-wide">
+              Tap to continue
             </div>
           </div>
         )}

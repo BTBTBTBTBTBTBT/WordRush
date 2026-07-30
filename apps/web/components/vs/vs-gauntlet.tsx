@@ -306,6 +306,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
       {/* Stage Transition Overlay */}
       {showTransition && (
         <StageTransition
+          isVersus
           completedStage={currentStageConfig}
           nextStage={gauntlet.currentStage + 1 < gauntlet.totalStages
             ? gauntlet.stages[gauntlet.currentStage + 1]

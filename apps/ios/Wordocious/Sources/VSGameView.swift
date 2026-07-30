@@ -81,6 +81,7 @@ struct VSGameView: View {
             if vm.screen == .match, let game = vm.game, game.stageCleared {
                 StageTransitionOverlay(completedName: game.gauntletStageName,
                                        next: game.gauntletNextStageInfo,
+                                       isVersus: true,
                                        onAdvance: { game.nextStage() })
                     .transition(.opacity)
                     .zIndex(5)

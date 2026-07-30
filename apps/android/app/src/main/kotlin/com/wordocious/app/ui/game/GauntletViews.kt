@@ -58,6 +58,9 @@ import kotlinx.coroutines.delay
 fun StageTransitionOverlay(
     completed: GauntletStageConfig,
     next: GauntletStageConfig?,
+    /** VS shortens the interstitial: the OPPONENT'S CLOCK DOES NOT PAUSE for it,
+     *  so a 2.5s flourish per stage is a real handicap over a 5-stage run. */
+    isVersus: Boolean = false,
     onComplete: () -> Unit,
 ) {
     // Between stages: auto-advance after 2.5s (web StageTransition). After the
@@ -66,7 +69,7 @@ fun StageTransitionOverlay(
     // win only records on advance, so leaving the screen first dropped the daily
     // result → a real Flawless showed as an 8/9 Sweep.
     LaunchedEffect(completed.stageIndex) {
-        delay(if (next == null) 4000 else 2500)
+        delay(if (next == null) 4000L else if (isVersus) 1000L else 2500L)
         onComplete()
     }
     Box(
@@ -124,6 +127,15 @@ fun StageTransitionOverlay(
                             if (next.hasPrefill) append(" · pre-filled clues")
                         },
                         color = Color.White.copy(alpha = 0.4f), fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                    )
+                    // The overlay has ALWAYS been tap-to-skip, but only the final
+                    // stage said so — mid-run it read as a cutscene you had to sit
+                    // through. Say it every time.
+                    Text(
+                        "Tap to continue",
+                        color = Color.White.copy(alpha = 0.5f),
+                        fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp,
+                        modifier = Modifier.padding(top = 6.dp),
                     )
                 }
             }

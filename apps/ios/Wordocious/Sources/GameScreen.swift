@@ -487,6 +487,9 @@ struct GameScreen: View {
 struct StageTransitionOverlay: View {
     let completedName: String
     let next: (name: String, boards: Int, guesses: Int, sequential: Bool, prefill: Bool)?
+    /// VS runs shorten the interstitial: the OPPONENT'S CLOCK DOES NOT PAUSE for
+    /// it, so a 2.5s flourish per stage is a real handicap over a 5-stage run.
+    var isVersus: Bool = false
     let onAdvance: () -> Void
 
     var body: some View {
@@ -524,6 +527,13 @@ struct StageTransitionOverlay: View {
                                                             startPoint: .leading, endPoint: .trailing))
                         Text("\(n.boards) board\(n.boards > 1 ? "s" : "") · \(n.guesses) guesses\(n.sequential ? " · sequential" : "")\(n.prefill ? " · pre-filled clues" : "")")
                             .font(Brand.caption(12)).foregroundStyle(.white.opacity(0.4))
+                        // The overlay has ALWAYS been tap-to-skip, but only the
+                        // final stage said so — mid-run it read as a cutscene you
+                        // had to sit through. Say it every time.
+                        Text("Tap to continue")
+                            .font(Brand.font(11, .black)).tracking(0.8)
+                            .foregroundStyle(.white.opacity(0.5))
+                            .padding(.top, 6)
                     }
                 }
             }
@@ -536,7 +546,8 @@ struct StageTransitionOverlay: View {
             // rushed — but it MUST still auto-advance (was: wait forever for a
             // tap). The win only records on advance, so leaving the screen first
             // dropped the daily result → a real Flawless showed as an 8/9 Sweep.
-            try? await Task.sleep(nanoseconds: next == nil ? 4_000_000_000 : 2_500_000_000)
+            let nanos: UInt64 = next == nil ? 4_000_000_000 : (isVersus ? 1_000_000_000 : 2_500_000_000)
+            try? await Task.sleep(nanoseconds: nanos)
             onAdvance()
         }
     }

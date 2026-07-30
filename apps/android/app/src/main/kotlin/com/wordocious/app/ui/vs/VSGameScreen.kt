@@ -560,6 +560,7 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
         state.boards.all { it.status == GameStatus.WON }
     ) {
         StageTransitionOverlay(
+            isVersus = true,
             completed = gauntlet.stages[gauntlet.currentStage],
             next = gauntlet.stages.getOrNull(gauntlet.currentStage + 1),
         ) { game.advanceGauntletStage() }
