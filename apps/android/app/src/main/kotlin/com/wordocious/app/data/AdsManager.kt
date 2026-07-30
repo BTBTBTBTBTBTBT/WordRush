@@ -11,6 +11,7 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 
@@ -78,6 +79,33 @@ object AdsManager {
                 },
             )
         }
+    }
+
+    /**
+     * True when Google says a privacy-options entry point must be offered.
+     *
+     * UMP requires a PERSISTENT way to change an ad-consent choice — a form
+     * shown once at first launch is not compliance, it's a one-shot. Our
+     * in-app policy promised users a choice they had no way to revisit.
+     * Drives the visibility of the Settings row so it doesn't appear for
+     * users outside a consent region, where Google would show nothing.
+     */
+    fun privacyOptionsRequired(activity: Activity): Boolean = runCatching {
+        UserMessagingPlatform.getConsentInformation(activity)
+            .privacyOptionsRequirementStatus ==
+            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+    }.getOrDefault(false)
+
+    /**
+     * Re-present the consent form so a user can WITHDRAW or change consent.
+     * onDone reports null on success or a message to surface on failure.
+     */
+    fun showPrivacyOptions(activity: Activity, onDone: (String?) -> Unit) {
+        runCatching {
+            UserMessagingPlatform.showPrivacyOptionsForm(activity) { error ->
+                onDone(error?.message)
+            }
+        }.onFailure { onDone(it.message ?: "Could not open privacy options.") }
     }
 
     private fun initAds(context: Context) {

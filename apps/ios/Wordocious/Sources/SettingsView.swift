@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var deleting = false
     @State private var deleteError = false
     @State private var infoKind: InfoKind?
+    @State private var consentError: String?
     // Colorblind + reduced-motion are owned by ThemeManager so changes publish
     // and apply app-wide (tile palette / animation gating).
 
@@ -96,6 +97,20 @@ struct SettingsView: View {
                                 Divider().overlay(Theme.border)
                                 Button { infoKind = .privacy } label: { linkRow("Privacy Policy") }.buttonStyle(.plain)
                                 Divider().overlay(Theme.border)
+                                // Ad-consent withdrawal. UMP requires a
+                                // PERSISTENT entry point — the first-launch
+                                // form is a one-shot, and the in-app policy
+                                // promised a choice users could revisit.
+                                // Hidden outside consent regions, where the
+                                // form would present nothing.
+                                if AdsManager.shared.privacyOptionsRequired {
+                                    Button {
+                                        AdsManager.shared.showPrivacyOptions { err in
+                                            consentError = err
+                                        }
+                                    } label: { linkRow("Ad Privacy Settings") }.buttonStyle(.plain)
+                                    Divider().overlay(Theme.border)
+                                }
                                 Button { infoKind = .terms } label: { linkRow("Terms of Service") }.buttonStyle(.plain)
                             }
                             .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
@@ -144,6 +159,16 @@ struct SettingsView: View {
                 } else {
                     NotificationService.cancel()
                 }
+            }
+            // Google's form failed to present (offline / UMP unreachable).
+            // Swallowing it silently would leave the user tapping a row that
+            // does nothing — the dead end the row exists to remove.
+            .alert("Couldn't open ad privacy settings",
+                   isPresented: Binding(get: { consentError != nil },
+                                        set: { if !$0 { consentError = nil } })) {
+                Button("OK", role: .cancel) { consentError = nil }
+            } message: {
+                Text((consentError ?? "") + "\n\nCheck your connection and try again.")
             }
             .alert("Notifications are off", isPresented: $reminderDenied) {
                 Button("OK", role: .cancel) {}

@@ -98,6 +98,29 @@ final class AdsManager: NSObject, ObservableObject {
         }
     }
 
+    /// True when Google says a privacy-options entry point must be offered.
+    ///
+    /// UMP requires a PERSISTENT way to change an ad-consent choice; a form
+    /// shown once at first launch is a one-shot, not a choice, and our own
+    /// privacy policy promised users one they could revisit. Gates the
+    /// Settings row so it stays hidden outside consent regions, where Google's
+    /// form would present nothing and the row would be a dead end.
+    var privacyOptionsRequired: Bool {
+        UMPConsentInformation.sharedInstance.privacyOptionsRequirementStatus == .required
+    }
+
+    /// Re-present the consent form so a user can withdraw or change consent.
+    /// Completion carries nil on success, or a message worth showing.
+    func showPrivacyOptions(_ completion: @escaping (String?) -> Void) {
+        guard let vc = Self.rootViewController() else {
+            completion("Could not open ad privacy settings.")
+            return
+        }
+        UMPConsentForm.presentPrivacyOptionsForm(from: vc) { error in
+            Task { @MainActor in completion(error?.localizedDescription) }
+        }
+    }
+
     /// After consent is resolved: request ATT, then (if we may request ads)
     /// initialize the Mobile Ads SDK and preload the interstitial.
     private func afterConsent() {

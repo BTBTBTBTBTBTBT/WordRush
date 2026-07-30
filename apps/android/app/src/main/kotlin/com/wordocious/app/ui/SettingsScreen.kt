@@ -70,6 +70,13 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     var colorblind by remember { mutableStateOf(SettingsPref.get(SettingsPref.COLORBLIND, false)) }
     var reducedMotion by remember { mutableStateOf(SettingsPref.get(SettingsPref.REDUCED_MOTION, false)) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    // Resolved once: outside a consent region Google's form has nothing to
+    // show, so the row would be a dead end rather than a choice.
+    val privacyOptionsRequired = remember {
+        (context as? android.app.Activity)
+            ?.let { com.wordocious.app.data.AdsManager.privacyOptionsRequired(it) } ?: false
+    }
+    var consentError by remember { mutableStateOf<String?>(null) }
     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
     var reminderDenied by remember { mutableStateOf(false) }
     // Permission launcher for the daily-reminder toggle (API 33+ runtime perm).
@@ -212,6 +219,19 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                     LinkRow("About Wordocious") { onOpenInfo("about") }; Divider()
                     LinkRow("Help & Support") { onOpenInfo("support") }; Divider()
                     LinkRow("Privacy Policy") { onOpenInfo("privacy") }; Divider()
+                    // Ad-consent withdrawal. UMP requires a PERSISTENT entry
+                    // point — a form shown once at first launch is not a
+                    // choice the user can revisit, and our own privacy policy
+                    // promised one. Hidden outside consent regions, where
+                    // Google's form would have nothing to show.
+                    if (privacyOptionsRequired) {
+                        LinkRow("Ad Privacy Settings") {
+                            val activity = context as? android.app.Activity ?: return@LinkRow
+                            com.wordocious.app.data.AdsManager.showPrivacyOptions(activity) { err ->
+                                if (err != null) consentError = err
+                            }
+                        }; Divider()
+                    }
                     LinkRow("Terms of Service") { onOpenInfo("terms") }
                 }
             }
@@ -260,6 +280,19 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
         }
     }
 
+    // Google's privacy form failed to present (offline, or UMP unreachable).
+    // Silently swallowing it would leave the user tapping a row that appears
+    // to do nothing — the same dead-end the row exists to remove.
+    consentError?.let { msg ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { consentError = null },
+            title = { Text("Couldn't open ad privacy settings", fontWeight = FontWeight.Black) },
+            text = { Text("$msg\n\nCheck your connection and try again.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { consentError = null }) { Text("OK") }
+            },
+        )
+    }
     if (reminderDenied) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { reminderDenied = false },
