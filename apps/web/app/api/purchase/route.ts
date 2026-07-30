@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPaymentProvider } from '@/lib/payment';
+import { verifyUser } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, type, itemId, returnUrl } = body;
+    // The checkout session carries this id in its metadata, and the webhook
+    // grants Pro to whoever it names — so it must come from the verified token
+    // rather than the request body.
+    const user = await verifyUser(request);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!userId || !type || !returnUrl) {
+    const body = await request.json();
+    const { type, itemId, returnUrl } = body;
+    const userId = user.id;
+
+    if (!type || !returnUrl) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 

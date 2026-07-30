@@ -67,10 +67,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setPortalLoading(true);
     setPortalError(null);
     try {
+      // The route identifies the user from this token — sending a userId in
+      // the body would be an open door (see the comment in the route).
       const res = await fetch('/api/stripe/portal', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, returnUrl: window.location.href }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ returnUrl: window.location.href }),
       });
       const data = await res.json();
       if (data.url) {

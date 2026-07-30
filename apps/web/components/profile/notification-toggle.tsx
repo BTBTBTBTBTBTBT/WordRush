@@ -15,7 +15,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 
 export function NotificationToggle() {
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const supported = isPushSupported();
@@ -35,7 +35,7 @@ export function NotificationToggle() {
     try {
       if (enabled) {
         await unsubscribeFromPush();
-        await removeSubscription(profile.id);
+        await removeSubscription(session?.access_token ?? '');
         setEnabled(false);
         toast({ title: 'Notifications disabled' });
       } else {
@@ -55,7 +55,7 @@ export function NotificationToggle() {
           setLoading(false);
           return;
         }
-        await saveSubscription(profile.id, sub);
+        await saveSubscription(session?.access_token ?? '', sub);
         setEnabled(true);
         toast({ title: 'Daily reminders enabled!' });
       }

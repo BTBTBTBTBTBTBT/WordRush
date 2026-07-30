@@ -35,20 +35,21 @@ export async function unsubscribeFromPush(): Promise<boolean> {
   return sub.unsubscribe();
 }
 
-export async function saveSubscription(userId: string, sub: PushSubscription): Promise<boolean> {
+// Both endpoints identify the user from the access token — passing a userId
+// would be an open door (see the comments in the routes).
+export async function saveSubscription(accessToken: string, sub: PushSubscription): Promise<boolean> {
   const res = await fetch('/api/push/subscribe', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, subscription: sub.toJSON() }),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ subscription: sub.toJSON() }),
   });
   return res.ok;
 }
 
-export async function removeSubscription(userId: string): Promise<boolean> {
+export async function removeSubscription(accessToken: string): Promise<boolean> {
   const res = await fetch('/api/push/unsubscribe', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId }),
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
   });
   return res.ok;
 }

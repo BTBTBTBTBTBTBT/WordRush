@@ -21,7 +21,7 @@ const benefits = [
 ];
 
 export default function ProPage() {
-  const { user, refreshProfile, isProActive } = useAuth();
+  const { user, session, refreshProfile, isProActive } = useAuth();
   const [loading, setLoading] = useState<string | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
   // Real payments are wired only when Stripe is configured. Until then the buy
@@ -46,9 +46,11 @@ export default function ProPage() {
     try {
       const res = await fetch('/api/purchase', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
         body: JSON.stringify({
-          userId: user.id,
           type: 'subscription',
           itemId: planId,
           returnUrl: window.location.href,
