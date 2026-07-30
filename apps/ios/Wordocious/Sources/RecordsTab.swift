@@ -223,6 +223,7 @@ struct AllTimeRecordsView: View {
             NavigationLink(value: e.userId) {
                 (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                     .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
@@ -295,6 +296,7 @@ struct RecordStatCell: View {
                     NavigationLink(value: record?.holderId ?? "") {
                         HStack(spacing: 3) {
                             Text(record?.holderUsername ?? "Unknown").font(Brand.font(10, .heavy)).lineLimit(1)
+                            .minimumScaleFactor(0.7)
                                 .foregroundStyle(isMe ? Color(hex: 0xD97706) : accent)
                             if isMe { Image(systemName: "crown.fill").font(.system(size: 8)).foregroundStyle(Color(hex: 0xD97706)) }
                         }.padding(.top, 2)
@@ -498,6 +500,7 @@ struct DailyRecordsView: View {
             NavigationLink(value: e.userId) {
                 (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                     .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
@@ -560,6 +563,7 @@ struct DailyRecordsView: View {
             NavigationLink(value: e.userId) {
                 (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                     .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
@@ -653,7 +657,7 @@ struct YesterdayPodiumCard: View {
                         ForEach(Array(top3.enumerated()), id: \.element.id) { i, e in
                             HStack(spacing: 12) {
                                 Image(systemName: "medal.fill").foregroundStyle(medalColors[min(i, 2)]).frame(width: 20)
-                                NavigationLink(value: e.userId) { Text(e.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1) }.buttonStyle(.plain)
+                                NavigationLink(value: e.userId) { Text(e.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.7) }.buttonStyle(.plain)
                                 Spacer()
                                 Text(formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(accent)
                             }

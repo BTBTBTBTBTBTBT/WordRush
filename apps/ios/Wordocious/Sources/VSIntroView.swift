@@ -135,6 +135,7 @@ struct VSMatchIntroView: View {
             Text(p.username)
                 .font(Brand.font(14, .black)).foregroundStyle(.white)
                 .lineLimit(1)
+                .minimumScaleFactor(0.7)
             if let level = p.level {
                 Text("Lv \(level)")
                     .font(Brand.font(10, .heavy)).foregroundStyle(.white)
@@ -179,6 +180,7 @@ struct VSMatchHeaderBar: View {
                         HStack(spacing: 4) {
                             Text(me.username).font(Brand.font(11, .heavy))
                                 .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                .minimumScaleFactor(0.7)
                             if iLead { crown }
                         }
                         Text("\(me.guesses) \(me.guesses == 1 ? "guess" : "guesses")")
@@ -194,6 +196,7 @@ struct VSMatchHeaderBar: View {
                             if theyLead { crown }
                             Text(opponent.username).font(Brand.font(11, .heavy))
                                 .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                .minimumScaleFactor(0.7)
                         }
                         Text("\(opponent.guesses) \(opponent.guesses == 1 ? "guess" : "guesses")")
                             .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)

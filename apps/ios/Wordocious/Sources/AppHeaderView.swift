@@ -110,6 +110,7 @@ struct AppHeaderView: View {
                 .frame(width: 13, height: 13).foregroundStyle(iconColor)
             Text(text).font(Brand.font(13, .heavy)).foregroundStyle(textColor)
                 .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .fixedSize()   // never compress/wrap — keeps both pills the same pill shape
         .padding(.horizontal, 10).padding(.vertical, 5)

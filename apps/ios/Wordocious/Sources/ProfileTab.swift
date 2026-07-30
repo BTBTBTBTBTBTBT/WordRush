@@ -547,6 +547,7 @@ struct ProfileTab: View {
                 .opacity(played ? 1 : 0.7)
                 Text(m.title).font(Brand.font(8, .bold)).foregroundStyle(played ? Theme.textPrimary : Theme.textMuted)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .frame(width: 42)
         }
@@ -717,6 +718,7 @@ struct ProfileTab: View {
         VStack(spacing: 2) {
             Text(on ? "✓" : "?").font(Brand.font(18, .black)).foregroundStyle(on ? Theme.primary : Theme.textMuted)
             Text(a.name).font(Brand.font(10, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            .minimumScaleFactor(0.7)
             Text(a.description).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center).lineLimit(2)
             if let prog {
                 GeometryReader { g in ZStack(alignment: .leading) { Capsule().fill(Theme.border); Capsule().fill(Theme.primary).frame(width: g.size.width * min(1, Double(prog.c) / Double(prog.t))) } }.frame(height: 4).padding(.top, 1)
@@ -951,6 +953,7 @@ private struct ProfileModePicker: View {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 28)
                 Text(shortTitles[m.id] ?? m.title).font(Brand.font(10, .heavy))
                     .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(count > 0 ? "\(count)" : " ").font(Brand.font(8, .bold)).foregroundStyle(Theme.textMuted)
             }
             .frame(minWidth: 62).padding(.horizontal, 12).padding(.vertical, 8)
@@ -1192,6 +1195,7 @@ struct LeaderboardTab: View {
         HStack(spacing: 12) {
             rankIcon(entry.rank).frame(width: 22)
             Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            .minimumScaleFactor(0.7)
             Spacer()
             sweepPill(isFlawless: entry.isFlawless)
             Text(formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
@@ -1274,6 +1278,7 @@ struct LeaderboardTab: View {
         HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
             Text(entry.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+            .minimumScaleFactor(0.7)
             Spacer()
             Text(entry.completed ? "W" : "L").font(Brand.font(9, .heavy))
                 .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
@@ -1318,6 +1323,7 @@ struct LeaderboardTab: View {
             NavigationLink(value: entry.userId) {
                 (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                     .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
@@ -1353,6 +1359,7 @@ struct LeaderboardTab: View {
             NavigationLink(value: entry.userId) {
                 (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                     .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
@@ -1530,6 +1537,7 @@ struct HModePicker: View {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 26)
                 Text(shortTitles[m.id] ?? m.title).font(Brand.font(9, .heavy))
                     .foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .frame(width: w, height: 52)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
@@ -1544,6 +1552,7 @@ struct HModePicker: View {
                 ModeIconView(icon: .asset("broom"), accent: sweepAccent, box: 26)
                 Text("Sweep").font(Brand.font(9, .heavy))
                     .foregroundStyle(isSweep ? sweepAccent : Theme.textMuted).lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
             .frame(width: w, height: 52)
             .background(RoundedRectangle(cornerRadius: 12).fill(isSweep ? sweepAccent.opacity(0.08) : Theme.surface))

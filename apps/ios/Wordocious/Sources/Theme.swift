@@ -131,9 +131,45 @@ enum Brand {
         }
     }
 
+    /// Largest multiple of the base size we will scale to.
+    ///
+    /// Full Dynamic Type (AX5 is ~3.1x) cannot work on a puzzle board: the
+    /// grid is geometry, not flow, and at 3x the letters leave the tiles and
+    /// the keyboard stops fitting a phone. Capping means Larger Text now DOES
+    /// something everywhere — which it previously did not, anywhere — while
+    /// keeping the board playable. Accessibility sizes beyond this are served
+    /// by system Zoom rather than by breaking the grid.
+    private static let maxScale: CGFloat = 1.6
+
+    /// Text that should track the user's Larger Text setting — i.e. all of it
+    /// except glyphs whose size is derived from a container (see fixedFont).
+    ///
+    /// Nothing here scaled before: there was no UIFontMetrics anywhere in the
+    /// app, so a shipped App Store build ignored Larger Text entirely at
+    /// roughly a thousand call sites.
     static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        let scaled = min(
+            UIFontMetrics.default.scaledValue(for: size),
+            size * maxScale,
+        )
+        return rawFont(scaled, weight)
+    }
+
+    /// Text whose size is ALREADY derived from its container — board tiles
+    /// compute `min(width, height) * 0.5`, so the glyph is proportional to a
+    /// box that Dynamic Type does not resize. Scaling it again would overflow
+    /// the tile, which is exactly the clipping bug that shipped on Android.
+    /// The container itself grows with the layout, so the text still grows.
+    static func fixedFont(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+        rawFont(size, weight)
+    }
+
+    private static func rawFont(_ size: CGFloat, _ weight: Font.Weight) -> Font {
         let wght = numericWeight(weight)
-        let key = "\(size)-\(Int(wght))"
+        // The cache key must carry the size category: without it, the first
+        // font built at Default is handed back forever and changing Larger
+        // Text mid-session appears to do nothing.
+        let key = "\(size)-\(Int(wght))-\(UIApplication.shared.preferredContentSizeCategory.rawValue)"
         if let cached = fontCache[key] { return Font(cached) }
         guard let base = UIFont(name: "Nunito", size: size) else {
             return .system(size: size, weight: weight, design: .rounded)
@@ -182,6 +218,7 @@ struct Wordmark: View {
             .tracking(0.5)
             .foregroundStyle(Theme.wordmarkGradient)
             .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .fixedSize()
     }
 }

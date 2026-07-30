@@ -237,6 +237,7 @@ struct RivalriesCard: View {
                     .frame(width: 14, height: 14).foregroundStyle(Theme.primary)
                 Text(r.username).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Spacer()
                 Text("\(r.wins)–\(r.losses)\(r.draws > 0 ? "–\(r.draws)" : "")")
                     .font(Brand.font(12, .black))
@@ -417,6 +418,7 @@ struct ProDeepModeCard: View {
                                 .foregroundStyle(Theme.textMuted).frame(width: 16)
                             Text(s.name ?? "Stage \(s.stage + 1)").font(Brand.font(12, .heavy))
                                 .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                .minimumScaleFactor(0.7)
                             Spacer()
                             if s.avgTimeSecs > 0 {
                                 Text("~\(s.avgTimeSecs)s").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)

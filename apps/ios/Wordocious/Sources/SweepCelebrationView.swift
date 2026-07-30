@@ -76,6 +76,7 @@ struct SweepCelebrationView: View {
                                         .background(RoundedRectangle(cornerRadius: 7).fill(r.accent))
                                 }
                                 Text(r.modeLabel).font(Brand.font(11, .bold)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                .minimumScaleFactor(0.7)
                                 Spacer(minLength: 0)
                                 Text(r.won ? "✓" : "✗").font(Brand.font(12, .black))
                                     .foregroundStyle(r.won ? Color(hex: 0x16A34A) : Color(hex: 0xDC2626))

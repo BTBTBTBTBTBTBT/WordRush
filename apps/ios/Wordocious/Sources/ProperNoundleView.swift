@@ -595,7 +595,7 @@ struct NoundleBoard: View {
             case .empty: return Theme.surface // themed: a fixed white tile under themed ink is invisible in Dark
             }
         }()
-        return Text(letter).font(Brand.font(size * 0.5, .heavy))
+        return Text(letter).font(Brand.fixedFont(size * 0.5, .heavy))   // tile-derived
             .foregroundStyle(filled ? .white : Theme.textPrimary)
             .frame(width: size, height: size)
             .background(RoundedRectangle(cornerRadius: size * 0.14).fill(color))

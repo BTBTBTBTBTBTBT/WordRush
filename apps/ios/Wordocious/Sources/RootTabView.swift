@@ -166,6 +166,7 @@ private struct BottomNav: View {
                 Image(systemName: active ? "\(icon).fill" : icon)
                     .font(.system(size: 20)).foregroundStyle(color)
                 Text(label).font(Brand.font(10, .heavy)).foregroundStyle(color).lineLimit(1)
+                .minimumScaleFactor(0.7)
                 // 4px active dot (clear when inactive so all items align).
                 Circle().fill(active ? Theme.primary : .clear).frame(width: 4, height: 4)
             }

@@ -87,7 +87,7 @@ struct TileView: View {
                : (state == .hintUsed ? Color(hex: 0xE5E7EB)
                   : (state == .absent ? Theme.emptyBorder : Theme.borderAlt)))
         Text(letter)
-            .font(Brand.font(s * 0.5, .black))
+            .font(Brand.fixedFont(s * 0.5, .black))   // derived from the tile, not from Dynamic Type
             .foregroundStyle(fg)
             .frame(width: size, height: h)
             .background(RoundedRectangle(cornerRadius: s * 0.14).fill(bg))

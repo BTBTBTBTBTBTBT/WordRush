@@ -238,7 +238,7 @@ struct ScoreBreakdownView: View {
         let abs = Swift.abs((value * 100).rounded() / 100)
         return HStack(alignment: .firstTextBaseline) {
             Text(label).font(Brand.font(12, .bold)).foregroundStyle(pure ? Color(hex: 0x7C3AED) : Theme.textPrimary)
-            if !detail.isEmpty { Text(detail).font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted).lineLimit(1) }
+            if !detail.isEmpty { Text(detail).font(Brand.font(10, .regular)).foregroundStyle(Theme.textMuted).lineLimit(1).minimumScaleFactor(0.7) }
             Spacer()
             Text("\(sign)\(Int(abs))").font(Brand.font(12, .black))
                 .foregroundStyle(value > 0 ? Theme.textPrimary : value < 0 ? Color(hex: 0xDC2626) : Theme.textMuted)

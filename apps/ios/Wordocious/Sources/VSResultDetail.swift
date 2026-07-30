@@ -185,6 +185,7 @@ struct VSShareCardView: View {
                 HStack(spacing: 6) {
                     if side.won && !isDraw { Text("👑").font(.system(size: 24)) }
                     Text(side.name).font(Brand.font(28, .black)).foregroundStyle(accent).lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 }
                 Text(fmt(side.score))
                     .font(Brand.font(52, .black)).monospacedDigit()
@@ -325,6 +326,7 @@ struct VSScoreCard: View {
                     Image(systemName: "crown.fill").font(.system(size: 10)).foregroundStyle(Color(hex: 0xF59E0B))
                 }
                 Text(p.name).font(Brand.font(11, .heavy)).foregroundStyle(accent).lineLimit(1)
+                .minimumScaleFactor(0.7)
             }
             Text(String(format: "%.2f", p.score))
                 .font(Brand.font(36, .black)).monospacedDigit()
@@ -416,6 +418,7 @@ struct VSFinalBoards: View {
             Text(label.uppercased())
                 .font(Brand.font(10, .heavy)).tracking(0.8)
                 .foregroundStyle(accent).lineLimit(1)
+                .minimumScaleFactor(0.7)
             if words.isEmpty {
                 Text("No guesses").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     .padding(.vertical, 8)
@@ -466,6 +469,7 @@ struct VSFinalBoards: View {
                 Text(label.uppercased())
                     .font(Brand.font(10, .heavy)).tracking(0.8)
                     .foregroundStyle(accent).lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 HStack(spacing: 3) {
                     Image(systemName: allWon ? "checkmark.circle.fill" : "xmark.circle.fill").font(.system(size: 9))
                     Text("\(won)/\(boards.count) boards").font(Brand.font(9, .heavy))
@@ -566,6 +570,7 @@ struct VSFinalBoards: View {
             Text(label.uppercased())
                 .font(Brand.font(10, .heavy)).tracking(0.8)
                 .foregroundStyle(accent).lineLimit(1)
+                .minimumScaleFactor(0.7)
             // At-a-glance outcome for this side's boards.
             HStack(spacing: 3) {
                 Image(systemName: solved ? "checkmark.circle.fill" : "xmark.circle.fill").font(.system(size: 9))

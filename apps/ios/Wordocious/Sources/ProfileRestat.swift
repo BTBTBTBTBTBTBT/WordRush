@@ -36,11 +36,13 @@ struct SnapshotHero: View {
                     Text("THIS WEEK").font(Brand.font(10, .black)).tracking(0.5).foregroundStyle(Color(hex: 0x6D28D9))
                     Text("\(gamesThisWeek) \(gamesThisWeek == 1 ? "game" : "games")")
                         .font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     Spacer(minLength: 8)
                     Image(systemName: "chart.line.uptrend.xyaxis").font(.system(size: 13)).foregroundStyle(Color(hex: 0x2563EB))
                     (Text("\(xpToNext) XP ").font(Brand.font(11, .heavy)).foregroundColor(Theme.textPrimary)
                      + Text("to Lvl \(profile.level + 1)").font(Brand.font(11, .heavy)).foregroundColor(Theme.textMuted))
                         .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 .padding(.top, 12)
                 .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1) }

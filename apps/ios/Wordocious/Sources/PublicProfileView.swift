@@ -227,6 +227,7 @@ struct PublicProfileView: View {
             Text(value).font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
             Text(label.uppercased()).font(Brand.font(9, .bold)).tracking(0.4).foregroundStyle(Theme.textMuted)
             Text(sub).font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+            .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 12)
         .background(RoundedRectangle(cornerRadius: 14).fill(Theme.surface))
@@ -269,6 +270,7 @@ struct PublicProfileView: View {
             VStack(spacing: 4) {
                 ModeIconView(icon: m.icon, accent: m.accent, box: 28)
                 Text(m.title).font(Brand.font(10, .heavy)).foregroundStyle(active ? m.accent : Theme.textMuted).lineLimit(1)
+                .minimumScaleFactor(0.7)
             }
             .frame(minWidth: 58).padding(.horizontal, 12).padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 12).fill(active ? m.accent.opacity(0.08) : Theme.surface))
@@ -403,6 +405,7 @@ struct RecentMatchRow: View {
                 HStack(spacing: 6) {
                     Text(mode?.title ?? match.game_mode)
                         .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     Text(match.isSolo ? "Solo" : "VS")
                         .font(Brand.font(9, .heavy))
                         .padding(.horizontal, 6).padding(.vertical, 2)
@@ -419,6 +422,7 @@ struct RecentMatchRow: View {
                     if !match.isSolo, let opponentName {
                         Text("· vs \(opponentName)")
                             .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted).lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 }
                 Text("\(guesses) \(guesses == 1 ? "guess" : "guesses") · \(secs > 0 ? durationStr(secs) : "—")")

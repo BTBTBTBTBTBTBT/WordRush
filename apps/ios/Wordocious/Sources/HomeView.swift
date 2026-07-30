@@ -435,6 +435,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("@\(name) invited you to \(ModeStyle.title(mode).capitalized)")
                         .font(Brand.font(12, .black)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     if pendingInvites.count > 1 {
                         Text("+\(pendingInvites.count - 1) more pending").font(Brand.font(10, .bold)).foregroundStyle(Color(hex: 0xA21CAF))
                     }

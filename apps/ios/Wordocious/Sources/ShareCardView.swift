@@ -183,7 +183,7 @@ struct ShareCardView: View {
             // out under the board — same treatment as the completed-puzzle page.
             if captionH > 0 {
                 Text(answerCaption?.uppercased() ?? " ")
-                    .font(Brand.font(min(30, max(16, tile * 0.6)), .black))
+                    .font(Brand.fixedFont(min(30, max(16, tile * 0.6)), .black))   // fixed-size share image
                     .foregroundStyle(lossFG)
                     .lineLimit(1).minimumScaleFactor(0.5)
                     .frame(height: captionH)

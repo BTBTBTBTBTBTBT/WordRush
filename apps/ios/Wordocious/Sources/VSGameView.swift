@@ -1229,6 +1229,7 @@ private struct OpponentStrip: View {
                             .foregroundStyle(LinearGradient(colors: stageGradient.isEmpty ? gradient : stageGradient,
                                                             startPoint: .leading, endPoint: .trailing))
                             .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
                 } else if max(opponent.totalBoards, totalBoards) > 1 {
                     Text("\(opponent.boardsSolved)/\(max(opponent.totalBoards, totalBoards)) boards").font(Brand.font(12, .bold)).foregroundStyle(Theme.textPrimary)
