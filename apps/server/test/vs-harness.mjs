@@ -231,6 +231,38 @@ async function scenarioSelfReportedWin() {
   a.close(); b.close();
 }
 
+
+async function scenarioBoardIndexBounds() {
+  log('\n[9] Out-of-range boardIndex cannot crash the server or fake a win');
+  const { a, b } = await pair('QUORDLE');
+  await Promise.all([a.wait('match_start', 8000), b.wait('match_start', 8000)]);
+  await sleep(200);
+  // match.solutions[boardIndex] used to be read unchecked, so undefined
+  // .toUpperCase() threw inside the handler and took the process down —
+  // one packet, every live match gone.
+  for (const bad of [999, -1, 1.5, 'x', null]) {
+    a.emit('submit_guess', { guess: 'CRANE', boardIndex: bad });
+  }
+  // board_solved incremented boardsSolved with no validation or dedup, so
+  // spamming it past totalBoards fabricated a win in multi-board modes.
+  for (let i = 0; i < 12; i++) a.emit('board_solved', { boardIndex: 99 });
+  for (let i = 0; i < 12; i++) a.emit('board_solved', { boardIndex: 0 });
+  await sleep(1200);
+
+  requireLive(a, b);
+  check('server survived the malformed packets', a.socket.connected && b.socket.connected);
+  check('opponent was not told of a fabricated sweep',
+    !b.events.some((e) => e.name === 'opponent_progress' && (e.payload?.boardsSolved ?? 0) > 4),
+    JSON.stringify(b.seen('opponent_progress').map((e) => e.payload?.boardsSolved)));
+  check('no fabricated match end', a.seen('match_ended').length === 0);
+
+  // Still functional afterwards.
+  a.emit('submit_guess', { guess: 'CRANE', boardIndex: 0 });
+  const ok = await a.wait('guess_result', 4000);
+  check('valid guesses still work after the abuse', !!ok);
+  a.close(); b.close();
+}
+
 // -------------------------------------------------------------------- main
 
 const scenarios = [
@@ -242,6 +274,7 @@ const scenarios = [
   scenarioDoubleQueue,
   scenarioForeignMatchSpoof,
   scenarioSelfReportedWin,
+  scenarioBoardIndexBounds,
 ];
 
 (async () => {

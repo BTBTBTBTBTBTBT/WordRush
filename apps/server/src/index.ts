@@ -457,6 +457,32 @@ io.on('connection', (socket) => {
 
     confirmResume(match, playerId);
 
+    // The match has a server-authoritative start time with a countdown in front
+    // of it. Nothing should reach the board before that instant: a modified
+    // client could otherwise bank guesses during the countdown and — because
+    // endMatch times players as `completedAt - serverStartAt` — finish with a
+    // NEGATIVE duration, which sorts ahead of every honest result. Real clients
+    // don't accept input until match_start, so this only ever rejects abuse.
+    if (Date.now() < match.serverStartAt) {
+      logVS('submit_guess_REJECT', presenceId ?? socket.id, { guess, reason: 'before match start' });
+      socket.emit('guess_result', {
+        boardIndex, isValid: false, isCorrect: false, reason: 'Match has not started',
+      });
+      return;
+    }
+
+    // boardIndex arrives from the client and indexes match.solutions directly.
+    // Out of range made `solution` undefined and the .toUpperCase() below threw
+    // inside the handler — one crafted packet could take the process down and
+    // with it EVERY live match. Validate before it is used as an index.
+    if (!Number.isInteger(boardIndex) || boardIndex < 0 || boardIndex >= match.solutions.length) {
+      logVS('submit_guess_REJECT', presenceId ?? socket.id, { guess, reason: 'boardIndex out of range', boardIndex });
+      socket.emit('guess_result', {
+        boardIndex: 0, isValid: false, isCorrect: false, reason: 'Invalid board',
+      });
+      return;
+    }
+
     // Skip length and dictionary checks for ProperNoundle (variable-length proper nouns)
     if (match.mode !== GameMode.PROPERNOUNDLE) {
       const wordLength = MODE_WORD_LENGTH[match.mode] || 5;
@@ -613,9 +639,21 @@ io.on('connection', (socket) => {
     const playerState = isPlayer1 ? match.player1State : match.player2State;
     const opponentSocket = isPlayer1 ? match.player2.socketId : match.player1.socketId;
 
-    playerState.boardsSolved++;
-    // Remember which board this player solved so applyToAll fan-out skips it.
-    (playerState.solvedBoardSet ??= new Set<number>()).add(boardIndex);
+    // The client names which board it solved, so this is only trustworthy once
+    // the index is real AND not already counted. Unvalidated, `boardsSolved++`
+    // could be spammed past totalBoards — and multi-board modes decide the
+    // winner from that count, so a client could simply declare victory.
+    const solvedSet = (playerState.solvedBoardSet ??= new Set<number>());
+    if (!Number.isInteger(boardIndex) || boardIndex < 0 || boardIndex >= playerState.totalBoards) {
+      logVS('board_solved_REJECT', presenceId ?? socket.id, { boardIndex, reason: 'out of range' });
+      return;
+    }
+    if (solvedSet.has(boardIndex)) {
+      logVS('board_solved_REJECT', presenceId ?? socket.id, { boardIndex, reason: 'already counted' });
+      return;
+    }
+    solvedSet.add(boardIndex);
+    playerState.boardsSolved = solvedSet.size;
     logVS('board_solved', presenceId ?? socket.id, {
       mode: match.mode, boardIndex, boardsSolved: playerState.boardsSolved, totalBoards: playerState.totalBoards,
     });
