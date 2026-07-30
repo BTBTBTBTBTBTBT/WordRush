@@ -229,7 +229,14 @@ fun HomeScreen(
                         // VS card (daily only): reflect today's daily-VS W/L (no solo row).
                         val vsWon = if (!unlimitedMode && isVsCard) vsDailyWon else null
                         // Free user who used today's daily VS → locked like other modes.
-                        val isLocked = !isPro && (completion != null || (isVsCard && vsDailyWon != null))
+                        // iOS locks the VS card on VSPlayLimit.hasPlayedToday()
+                        // (HomeView.swift:532) — the play is consumed at match
+                        // START. Keying off a finished result left the card bright
+                        // after an abandoned daily VS, so tapping it dropped the
+                        // player into a match that then refused to play.
+                        val vsUsed = isVsCard &&
+                            (com.wordocious.app.data.VSPlayLimit.hasPlayedToday() || vsDailyWon != null)
+                        val isLocked = !isPro && (completion != null || vsUsed)
                         // Per-card VS swords shortcut removed (redundant) — VS is
                         // reachable only from the dedicated VS Battle card.
                         val showVs = false
@@ -542,6 +549,14 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val display = w.word.first().uppercase() + w.word.drop(1).lowercase()
             Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            // Pronunciation sits between the word and the part of speech
+            // (WordOfTheDayView.swift:107). It was fetched but never rendered.
+            w.definition?.takeIf { it.phonetic.isNotBlank() }?.let {
+                Text(
+                    it.phonetic, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                    color = WTheme.textMuted,
+                )
+            }
             w.definition?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
                 // Web parity (page.tsx): plain italic purple text, no background pill.
                 Text(

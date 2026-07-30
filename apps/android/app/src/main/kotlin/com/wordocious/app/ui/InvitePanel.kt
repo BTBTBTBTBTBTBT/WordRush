@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -99,7 +101,12 @@ fun InvitePanel() {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("🎁", fontSize = 15.sp)
+            // iOS: Image(systemName: "gift.fill") tinted brand purple. An emoji
+            // renders in the system font and can't be tinted.
+            Icon(
+                Icons.Filled.CardGiftcard, null, tint = WTheme.primary,
+                modifier = Modifier.size(15.dp),
+            )
             Text(
                 "GIFT PRO TO FRIENDS",
                 fontSize = 15.sp, fontWeight = FontWeight.Black,
@@ -177,7 +184,8 @@ fun InvitePanel() {
                         modifier = Modifier.clickableNoRipple { cancelTarget = inv })
                 }
                 if (inv.status == "converted") {
-                    Icon(painterResource(R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
+                    // iOS marks a converted invite with trophy.fill, not a crown.
+                    Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
                 }
             }
         }

@@ -333,7 +333,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                 // Solo and VS (dailyRow has no playType branch) — keep the solo
                 // detail rather than LeaderboardRow's W/G tally.
                 entries.forEachIndexed { i, entry ->
-                    LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId)
+                    LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = false)
                     if (i < entries.size - 1) HorizontalDivider(color = WTheme.border)
                 }
                 // "Your neighborhood" — rows around the user's rank when they
@@ -348,7 +348,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                     )
                     HorizontalDivider(color = WTheme.border)
                     win.entries.forEachIndexed { i, entry ->
-                        LeaderboardRow(rank = win.startRank + i, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId)
+                        LeaderboardRow(rank = win.startRank + i, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = false)
                         if (i < win.entries.size - 1) HorizontalDivider(color = WTheme.border)
                     }
                 }

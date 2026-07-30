@@ -783,7 +783,7 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
 }
 
 @Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo") {
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true) {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
@@ -813,7 +813,7 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
                     // solo guesses/time + Win/Loss pill (web records page parity).
                     Text("${entry.vsWins}W / ${entry.vsGames}G", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 } else {
-                    Text(rowDetail(entry, mode), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text(rowDetail(entry, mode, showHints), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     WinLossPill(entry.completed)
                 }
             }
@@ -850,10 +850,15 @@ private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry) {
 }
 
 /** Row detail: "{guesses} Guesses · m s [· bs/tb] [· hint label]". Mirrors web. */
-private fun rowDetail(entry: LeaderboardService.LeaderboardEntry, mode: String): String {
+private fun rowDetail(
+    entry: LeaderboardService.LeaderboardEntry,
+    mode: String,
+    /** Records rows omit the hints segment — iOS shows it on the Leaderboard only. */
+    showHints: Boolean = true,
+): String {
     val sb = StringBuilder("${entry.guessCount} Guesses · ${fmtTime(entry.timeSeconds)}")
     if (entry.totalBoards > 1) sb.append(" · ${entry.boardsSolved}/${entry.totalBoards}")
-    formatHintsLabel(mode, entry.hintsUsed)?.let { sb.append(" · $it") }
+    if (showHints) formatHintsLabel(mode, entry.hintsUsed)?.let { sb.append(" · $it") }
     return sb.toString()
 }
 

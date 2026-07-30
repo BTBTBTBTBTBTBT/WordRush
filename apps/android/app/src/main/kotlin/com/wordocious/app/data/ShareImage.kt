@@ -417,7 +417,10 @@ object ShareImage {
 
         CoroutineScope(Dispatchers.IO).launch {
             val url = uploadAndBuildUrl(bitmap, state, mode, elapsedSeconds, reveal)
-            val finalText = if (url != null) "$text\n$url" else text
+            // The card already renders the grid, so iOS sends image + URL and
+            // never the emoji text. Only fall back to `text` when there is no
+            // hosted URL, so the share still carries something meaningful.
+            val finalText = url ?: text
             withContext(Dispatchers.Main) {
                 runCatching {
                     val intent = Intent(Intent.ACTION_SEND).apply {

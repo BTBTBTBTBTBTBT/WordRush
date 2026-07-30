@@ -370,17 +370,51 @@ object AuthService {
      * is_pro=true + pro_expires_at, plus +addShields streak shields for
      * monthly/yearly (0 for the day pass and for launch/restore reconciles).
      */
-    suspend fun applyProGrant(expiresAtIso: String, addShields: Int) {
-        val uid = userId ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull() ?: return
+    /**
+     * Grant Pro and ADD shields. Returns false if the write did not land, so the
+     * caller can leave the purchase unconsumed and retry — a swallowed failure
+     * here permanently loses a paid entitlement.
+     *
+     * Callers must not use this to merely refresh an expiry: it reads
+     * `streak_shields` from the in-memory profile, which is null during the
+     * launch reconcile race, and would then write shields back to `addShields`
+     * alone — zeroing the balance of a paying subscriber. Use [syncProExpiry].
+     */
+    suspend fun applyProGrant(expiresAtIso: String, addShields: Int): Boolean {
+        val uid = userId ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull() ?: return false
+        // Never write a shield total derived from an unloaded profile.
+        if (addShields > 0 && _profile.value == null) {
+            runCatching { loadProfile(uid) }
+            if (_profile.value == null) return false
+        }
         val shields = (_profile.value?.streakShields ?: 0) + maxOf(0, addShields)
-        runCatching {
+        val ok = runCatching {
             client.postgrest["profiles"].update({
                 set("is_pro", true)
                 set("pro_expires_at", expiresAtIso)
                 set("streak_shields", shields)
             }) { filter { eq("id", uid) } }
-        }
+        }.isSuccess
         loadProfile(uid)
+        return ok
+    }
+
+    /**
+     * Refresh ONLY the Pro window — never touches streak_shields. This is what
+     * the launch reconcile needs (iOS StoreManager uses the same split): it can
+     * run before the profile has loaded, and shields are a separate benefit
+     * granted once per billing period, not per reconcile.
+     */
+    suspend fun syncProExpiry(expiresAtIso: String): Boolean {
+        val uid = userId ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull() ?: return false
+        val ok = runCatching {
+            client.postgrest["profiles"].update({
+                set("is_pro", true)
+                set("pro_expires_at", expiresAtIso)
+            }) { filter { eq("id", uid) } }
+        }.isSuccess
+        loadProfile(uid)
+        return ok
     }
 
     /**

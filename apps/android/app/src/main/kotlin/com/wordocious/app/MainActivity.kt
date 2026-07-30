@@ -72,6 +72,14 @@ class MainActivity : ComponentActivity() {
                     // no loading-spinner flash. Falls back to AuthScreen if the
                     // restore reveals no session.
                     val hadSession = remember { AuthService.hadPersistedSession() }
+                    // onResume fires before the session restores on a cold start,
+                    // and PresenceService.start() no-ops without a user id — so
+                    // also (re)connect whenever auth resolves or changes, exactly
+                    // like iOS's onChange(of: userId) (WordociousApp.swift:66).
+                    androidx.compose.runtime.LaunchedEffect(isAuthenticated) {
+                        if (isAuthenticated) com.wordocious.app.data.PresenceService.start()
+                        else com.wordocious.app.data.PresenceService.stop()
+                    }
 
                     when {
                         isAuthenticated || isGuest || (isLoading && hadSession) -> {
@@ -92,6 +100,23 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * Presence socket lifecycle — iOS runs the same start/stop on scenePhase
+     * (WordociousApp.swift:41-66). PresenceService was fully implemented on
+     * Android but never called from anywhere, so Android players were missing
+     * from the server's /presence total and the LIVE count on Home
+     * systematically under-reported the real player base.
+     */
+    override fun onResume() {
+        super.onResume()
+        com.wordocious.app.data.PresenceService.start()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        com.wordocious.app.data.PresenceService.stop()
     }
 
     override fun onNewIntent(intent: android.content.Intent) {

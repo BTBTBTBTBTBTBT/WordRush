@@ -398,8 +398,21 @@ object StoreManager {
                         isRenewalOfSeenOrder(orderId) -> 4              // new billing period found at reconcile
                         else -> 0                                       // first sight after reinstall — record only
                     }
-                    AuthService.applyProGrant(expiry.toString(), addShields = addShields)
-                    orderId?.let { markOrderSeen(it) }
+                    // Only record the order as credited if the write actually
+                    // landed. Marking it seen after a failed PATCH (offline at
+                    // purchase, RLS rejection, 5xx) permanently forfeits that
+                    // period's +4 shields — no later reconcile would retry it,
+                    // because the order would look already-credited.
+                    val ok = if (addShields > 0) {
+                        AuthService.applyProGrant(expiry.toString(), addShields = addShields)
+                    } else {
+                        // No shields to add — refresh the window ONLY. applyProGrant
+                        // would rewrite streak_shields from the in-memory profile,
+                        // which is null during the launch reconcile race and would
+                        // zero a paying subscriber's balance.
+                        AuthService.syncProExpiry(expiry.toString())
+                    }
+                    if (ok) orderId?.let { markOrderSeen(it) }
                 }
             }
         }
