@@ -267,7 +267,11 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // Daily VS uses the shared daily seed for EVERYONE (incl. Pro) so all players
   // play the same puzzle and pair together. The once-per-day limit + already-
   // played screen apply to all; Pro gets an "Unlimited VS" escape there.
-  // Other modes' VS buttons are pro-only and never reach this branch.
+  // Other modes are Pro-only, but this component must not assume that: its
+  // BUTTONS were gated while the ROUTES weren't, so a bookmarked /quordle/vs
+  // walked a free user straight past every check below. VsProGate on each VS
+  // route is what makes the assumption true — keep the checks here anyway
+  // (Quick Match / Invite below), so a future route can't reopen the hole.
   const dailyVsActive = isDaily && mode === GameMode.DUEL;
 
   // The deterministic seed for today's free daily VS puzzle. Intentionally
@@ -940,12 +944,17 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   // the entry chooser can offer Bot Match / Invite first without silently
   // queuing the player).
   const handleQuickMatch = useCallback(() => {
+    // Live VS outside the free daily Classic match is a Pro perk. The route
+    // gate already turns free users away, so this only fires if some future
+    // entry point mounts the chooser unguarded — cheap insurance, not a
+    // second source of truth.
+    if (!isPro && !dailyVsActive && !inviteCode) { router.push('/pro'); return; }
     const queueSeed = dailyVsActive ? generateDailySeed(getTodayUTC(), 'DUEL_VS') : undefined;
     matchService.joinQueue(mode, queueSeed, inviteCode);
     setMessage('');
     setScreen('queue');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchService, mode, dailyVsActive, inviteCode]);
+  }, [matchService, mode, dailyVsActive, inviteCode, isPro, router]);
 
   // Swap the live socket transport for a client-side CPU bot and start a match.
   // Pro-gated in the UI (non-Pro never reaches here).
@@ -1261,9 +1270,12 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                 </div>
               </button>
 
-              {/* Invite a Friend */}
+              {/* Invite a Friend — this MINTS an invite code, which is the
+                  "private matches" bullet /pro sells, so it locks like Bot
+                  Match. Accepting someone else's invite stays free (native
+                  does the same); only creating one is the perk. */}
               <button
-                onClick={() => setShowInvite(true)}
+                onClick={() => (isPro ? setShowInvite(true) : router.push('/pro'))}
                 className="w-full flex items-center gap-4 rounded-2xl border p-4 text-left transition-transform hover:-translate-y-0.5"
                 style={{ borderColor: 'var(--color-border)', background: 'var(--color-surface)' }}
               >
@@ -1271,7 +1283,9 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
                   <Users className="w-6 h-6" style={{ color: '#7c3aed' }} />
                 </div>
                 <div className="flex-1">
-                  <div className="text-base font-black" style={{ color: 'var(--color-text)' }}>Invite a Friend</div>
+                  <div className="flex items-center gap-1.5 text-base font-black" style={{ color: 'var(--color-text)' }}>
+                    Invite a Friend {!isPro && <Lock className="w-3.5 h-3.5 text-gray-400" />}
+                  </div>
                   <div className="text-xs font-bold text-gray-400">Send a private match link or @username</div>
                 </div>
               </button>

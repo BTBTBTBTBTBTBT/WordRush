@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { GameMode, initDictionary } from '@wordle-duel/core';
 import { VsGame } from '@/components/vs/vs-game';
 import { AdGate } from '@/components/ads/ad-gate';
+import { VsProGate } from '@/components/game/unlimited-gate';
 
 function VsClassicInner() {
   const searchParams = useSearchParams();
@@ -14,7 +15,10 @@ function VsClassicInner() {
   useEffect(() => { ensureDictionaryInitialized(); }, []);
   return (
     <AdGate>
-      <VsGame mode={GameMode.DUEL} isDaily={isDaily} inviteCode={inviteCode} />
+      {/* ?daily=true is the one free VS door — the gate lets it through. */}
+      <VsProGate mode={GameMode.DUEL} isDaily={isDaily} inviteCode={inviteCode}>
+        <VsGame mode={GameMode.DUEL} isDaily={isDaily} inviteCode={inviteCode} />
+      </VsProGate>
     </AdGate>
   );
 }

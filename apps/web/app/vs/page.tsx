@@ -42,7 +42,7 @@ interface VsCount { waiting: number; playing: number }
 
 export default function VsLobbyPage() {
   const router = useRouter();
-  const { profile, isProActive, isGuest, exitGuest } = useAuth();
+  const { profile, isProActive, isGuest, exitGuest, loading: authLoading } = useAuth();
 
   const [joinCode, setJoinCode] = useState('');
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -138,7 +138,15 @@ export default function VsLobbyPage() {
           </p>
         </div>
 
-        {isGuest && !profile ? (
+        {authLoading ? (
+          /* Entitlement unknown — a paying Pro subscriber was being shown the
+             "UNLOCK WITH PRO" upsell for the whole auth round trip, because
+             a null profile reads identically to a free account. Show neither
+             branch until we actually know which one is true. */
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--color-text-muted)' }} />
+          </div>
+        ) : isGuest && !profile ? (
           /* VS is account-based (live opponents, recorded results). */
           <div className={card} style={cardStyle}>
             <div className="text-center space-y-3 py-2">
