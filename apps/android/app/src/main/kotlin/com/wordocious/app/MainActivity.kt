@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
@@ -63,7 +64,28 @@ class MainActivity : ComponentActivity() {
         com.wordocious.app.data.AdsManager.start(this)
         setContent {
             WordociousTheme {
-                Surface(modifier = Modifier.fillMaxSize(), color = WTheme.bg) {
+                // Keep content clear of the system navigation bar, app-wide.
+                //
+                // targetSdk 35 opts us into FORCED edge-to-edge on Android 15+:
+                // the window extends under the system bars and it is the app's
+                // job to inset. Only MainScreen's bottom bar and ProfileScreen
+                // ever did, so on Android 15/16 the nav bar sat on top of every
+                // other screen's bottom row — including the keyboard's Z-M row,
+                // backspace and ENTER, which made the game close to unplayable
+                // (reported by the first Play tester on Android 16).
+                //
+                // Applied at the root rather than per screen because ~20 screens
+                // have the same defect. NAVIGATION BARS ONLY, not safeDrawing:
+                // screens hand-roll their top spacing (`padding(top = 48.dp)`),
+                // so adding status-bar padding here would double it. The Surface
+                // keeps painting WTheme.bg behind the bar, so the inset reads as
+                // background rather than a dead strip.
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding(),
+                    color = WTheme.bg,
+                ) {
                     val isLoading by AuthService.isLoading.collectAsState()
                     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
                     val isGuest by AuthService.isGuest.collectAsState()

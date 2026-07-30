@@ -90,7 +90,9 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     ) {
         Box(Modifier.fillMaxWidth().height(1.5.dp).background(WTheme.border))
         Row(
-            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp).navigationBarsPadding(),
+            // Root Surface (MainActivity) now applies the nav-bar inset app-wide;
+            // padding here too would leave a gap above the bar.
+            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp),
         ) {
             TABS.forEachIndexed { i, tab ->
                 val active = selected == i
