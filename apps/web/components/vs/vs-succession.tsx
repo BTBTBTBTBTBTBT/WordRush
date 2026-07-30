@@ -7,6 +7,7 @@ import { OpponentHUD } from './opponent-hud';
 import { Trophy, Clock, Lock } from 'lucide-react';
 import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { isTypingTarget } from '@/lib/keyboard';
 
 const BOARD_ORDER = [0, 1, 2, 3];
 
@@ -121,6 +122,7 @@ export function VsSuccession({ seed, mode, onBoardSolved, onCompleted, onGuessSu
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e)) return;   // don't steal keys from a focused input/modal
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') handleKeyPress('ENTER');
       else if (e.key === 'Backspace') handleKeyPress('BACK');

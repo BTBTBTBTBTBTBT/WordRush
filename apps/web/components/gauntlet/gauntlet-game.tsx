@@ -32,6 +32,7 @@ import { loadGameSession, useGameSnapshot } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { hasDuplicateGuess } from '@/lib/game-utils';
 import { playInvalid } from '@/lib/sounds';
+import { isTypingTarget } from '@/lib/keyboard';
 import { BottomNav } from '@/components/ui/bottom-nav';
 
 function generateSeed(): string {
@@ -292,6 +293,7 @@ export function GauntletGame({ initialSeed, isDaily }: GauntletGameProps = {}) {
   // Keyboard event listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e)) return;   // don't steal keys from a focused input/modal
       if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       if (e.key === 'Enter') {

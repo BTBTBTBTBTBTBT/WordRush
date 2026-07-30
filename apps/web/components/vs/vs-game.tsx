@@ -41,6 +41,7 @@ import {
 } from '@/lib/play-limit-service';
 import { VsLimitModal } from '@/components/modals/vs-limit-modal';
 import { getTodayUTC, fetchDailyVsResult } from '@/lib/daily-service';
+import { isTypingTarget } from '@/lib/keyboard';
 
 import { VsClassic } from './vs-classic';
 import { VsQuadword } from './vs-quadword';
@@ -446,6 +447,7 @@ export function VsGame({ mode, isDaily = false, inviteCode }: VsGameProps) {
   useEffect(() => {
     if (!sharedInputLock) return;
     const block = (e: KeyboardEvent) => {
+      if (isTypingTarget(e)) return;   // don't steal keys from a focused input/modal
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter' || e.key === 'Backspace' || /^[a-zA-Z]$/.test(e.key)) {
         e.preventDefault();

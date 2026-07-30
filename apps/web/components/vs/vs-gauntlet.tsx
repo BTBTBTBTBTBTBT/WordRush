@@ -19,6 +19,7 @@ import { StageTransition } from '@/components/gauntlet/stage-transition';
 import { OpponentHUD } from './opponent-hud';
 import { Lock } from 'lucide-react';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { isTypingTarget } from '@/lib/keyboard';
 
 export interface VsGauntletProps {
   seed: string;
@@ -188,6 +189,7 @@ export function VsGauntlet({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e)) return;   // don't steal keys from a focused input/modal
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') handleKey('ENTER');
       else if (e.key === 'Backspace') handleKey('BACK');

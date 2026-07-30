@@ -7,6 +7,7 @@ import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
 import { Clock } from 'lucide-react';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { isTypingTarget } from '@/lib/keyboard';
 import { useClassicHints } from '@/hooks/use-classic-hints';
 import type { EvaluatedRow } from './vs-result-detail';
 
@@ -141,6 +142,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e)) return;   // don't steal keys from a focused input/modal
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') handleKey('ENTER');
       else if (e.key === 'Backspace') handleKey('BACK');

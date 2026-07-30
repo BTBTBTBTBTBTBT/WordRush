@@ -8,6 +8,7 @@ import { OpponentHUD } from './opponent-hud';
 import { Trophy, Clock } from 'lucide-react';
 import type { VsGameComponentProps } from './vs-classic';
 import { hasDuplicateGuess } from '@/lib/game-utils';
+import { isTypingTarget } from '@/lib/keyboard';
 
 export function VsOctoword({ seed, mode, onBoardSolved, onCompleted, onGuessSubmitted, opponentProgress, opponentTiles, startTime, onTyping }: VsGameComponentProps) {
   const [state, dispatch] = useReducer(
@@ -74,6 +75,7 @@ export function VsOctoword({ seed, mode, onBoardSolved, onCompleted, onGuessSubm
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e)) return;   // don't steal keys from a focused input/modal
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') handleKeyPress('ENTER');
       else if (e.key === 'Backspace') handleKeyPress('BACK');

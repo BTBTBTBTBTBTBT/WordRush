@@ -630,3 +630,54 @@
   }
 }
 
+
+/* ── Keyboard focus ────────────────────────────────────────────────────────
+   There was no focus styling anywhere in this file. Browsers only show their
+   default ring on elements they consider focusable by default, and the app is
+   built almost entirely from styled <button>s and <div>s inside cards — so a
+   keyboard or switch-control user had NO visible indication of where they
+   were. Tabbing through the home screen moved an invisible cursor.
+
+   :focus-visible, not :focus — a mouse click must not leave a ring behind on
+   every button, which is the reason the naive fix usually gets reverted.
+   The ring is drawn with outline (not border/box-shadow) so it never shifts
+   layout, and offset keeps it clear of our rounded card edges. */
+:focus-visible {
+  outline: 3px solid #7c3aed;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* The purple ring disappears against a purple button. Those get a light ring
+   plus a dark halo so it reads on both the button and whatever is behind it. */
+.btn-3d:focus-visible,
+[data-focus-inverse]:focus-visible {
+  outline-color: #ffffff;
+  box-shadow: 0 0 0 5px rgba(76, 29, 149, 0.9);
+}
+
+/* Windows High Contrast / forced-colors ignores our palette entirely; ask the
+   system for its own focus colour rather than shipping an invisible ring. */
+@media (forced-colors: active) {
+  :focus-visible { outline: 3px solid Highlight; }
+}
+
+/* Skip link — first tab stop, hidden until focused. Without it a keyboard user
+   re-tabs the whole header on every navigation to reach the board. */
+.skip-to-content {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(-200%);
+  top: 8px;
+  z-index: 100;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: #7c3aed;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  transition: transform 0.15s ease;
+}
+.skip-to-content:focus {
+  transform: translateX(-50%) translateY(0);
+}

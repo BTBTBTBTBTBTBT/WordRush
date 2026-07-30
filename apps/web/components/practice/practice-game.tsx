@@ -25,6 +25,7 @@ import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { shareResult } from '@/lib/share-utils';
 import { chooseShareVariant } from '@/components/share/share-variant-modal';
 import { playInvalid } from '@/lib/sounds';
+import { isTypingTarget } from '@/lib/keyboard';
 import { loadGameSession, useGameSnapshot, useServerDailyReplay } from '@/hooks/use-game-snapshot';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
 import { BottomNav } from '@/components/ui/bottom-nav';
@@ -266,6 +267,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(e)) return;   // don't steal keys from a focused input/modal
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'Enter') handleKey('ENTER');
       else if (e.key === 'Backspace') handleKey('BACK');
