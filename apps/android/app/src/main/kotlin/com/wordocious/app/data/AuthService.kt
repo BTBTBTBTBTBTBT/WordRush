@@ -116,9 +116,49 @@ object AuthService {
      *  can sign in (used by the "Sign in" prompts on account-only surfaces). */
     fun exitGuest() { _isGuest.value = false }
 
+    /**
+     * Mirror the values the header paints so the NEXT launch can paint them
+     * immediately. The profile row arrives a beat after launch; until it does
+     * the streak and shield pills were absent and the PRO badge was off, so
+     * they all visibly popped in a second late on every cold start. iOS fixed
+     * the Pro half of this on 2026-07-29 and Android never got the port.
+     *
+     * The Pro EXPIRY is stored rather than a boolean, so a lapsed subscription
+     * cannot ride the cache past its end date.
+     */
+    private fun cacheHeaderValues(p: Profile) {
+        SettingsPref.set(CACHED_DAILY_STREAK, p.dailyLoginStreak)
+        SettingsPref.set(CACHED_SHIELDS, p.streakShields)
+        val until = if (!p.isPro) "" else (p.proExpiresAt ?: PRO_NO_EXPIRY)
+        SettingsPref.set(CACHED_PRO_UNTIL, until)
+    }
+
+    /** Last known streak, or null when nothing has been cached (first launch). */
+    val headerStreak: Int?
+        get() = _profile.value?.dailyLoginStreak
+            ?: SettingsPref.get(CACHED_SHIELDS, -1).let {
+                if (it < 0) null else SettingsPref.get(CACHED_DAILY_STREAK, 0)
+            }
+
+    /** Last known shield count, or null when nothing has been cached. */
+    val headerShields: Int?
+        get() = _profile.value?.streakShields
+            ?: SettingsPref.get(CACHED_SHIELDS, -1).takeIf { it >= 0 }
+
+    /** Cached entitlement for the launch window — still expiry-checked here, so
+     *  a cancelled subscription can't linger. */
+    private val cachedProActive: Boolean
+        get() {
+            val until = SettingsPref.get(CACHED_PRO_UNTIL, "")
+            if (until.isEmpty()) return false
+            if (until == PRO_NO_EXPIRY) return true
+            val instant = parseTimestamp(until) ?: return false
+            return instant.isAfter(java.time.Instant.now())
+        }
+
     val isProActive: Boolean
         get() {
-            val p = _profile.value ?: return false
+            val p = _profile.value ?: return cachedProActive
             if (!p.isPro) return false
             val exp = p.proExpiresAt ?: return true // legacy rows w/o expiry
             // FAIL CLOSED on an unparseable expiry (matches web lib/pro.ts). The
@@ -310,6 +350,8 @@ object AuthService {
         _isGuest.value = false
         SettingsPref.set(HAD_SESSION, false)
         SettingsPref.set(CACHED_DAILY_STREAK, 0)
+        SettingsPref.set(CACHED_SHIELDS, -1)
+        SettingsPref.set(CACHED_PRO_UNTIL, "")
     }
 
     /** Persisted copy of the profile's daily-login streak (the SnapshotHero
@@ -317,6 +359,12 @@ object AuthService {
      *  in a cold process where the in-memory profile hasn't restored yet.
      *  Refreshed on every loadProfile; zeroed on sign-out. */
     const val CACHED_DAILY_STREAK = "cached-daily-streak"
+    /** -1 means "never cached", which has to stay distinct from a real 0. */
+    const val CACHED_SHIELDS = "cached-streak-shields"
+    /** ISO-8601 expiry of the last known Pro window; "" = not Pro / unknown. */
+    const val CACHED_PRO_UNTIL = "cached-pro-until"
+    /** Sentinel expiry for a Pro row with no end date (legacy/lifetime). */
+    private const val PRO_NO_EXPIRY = "9999-12-31T00:00:00Z"
 
     /** Persisted hint that the LAST run had a real session — lets MainActivity
      *  render the home immediately on the next launch (while the session quietly
@@ -379,7 +427,7 @@ object AuthService {
             // account (or a hand-off from guest play) starts clean.
             claimSavesFor(userId)
             _profile.value = result
-            result?.let { SettingsPref.set(CACHED_DAILY_STREAK, it.dailyLoginStreak) }
+            result?.let { cacheHeaderValues(it) }
         } catch (e: Exception) {
             // Profile might not exist yet for new sign-ups — that's fine
         }

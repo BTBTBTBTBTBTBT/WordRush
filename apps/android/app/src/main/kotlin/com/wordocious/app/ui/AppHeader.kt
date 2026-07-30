@@ -125,25 +125,31 @@ fun AppHeader(
             )
         }
 
-        // Daily-streak pill (only if a streak exists) — tappable, like iOS.
-        val streak = profile?.dailyLoginStreak ?: 0
+        // Pills read AuthService.headerStreak/headerShields, not `profile`
+        // directly: the profile row lands a beat after launch, so gating on it
+        // made both pills pop in a second late on every cold start. Those fall
+        // back to the last known values for exactly that window, and are null
+        // on a first launch or after sign-out so nothing is drawn. The popovers
+        // still need the real row, so a tap during the window is inert.
+        val streak = com.wordocious.app.data.AuthService.headerStreak ?: 0
         if (streak > 0) {
             HeaderPill(
                 bg = listOf(Color(0xFFFFFBEB), Color(0xFFFFF7ED)), border = Color(0xFFFDE68A),
-                onClick = { streakOpen = true },
+                onClick = { if (profile != null) streakOpen = true },
             ) {
                 Icon(painterResource(R.drawable.ic_flame), null, tint = Color(0xFFF97316), modifier = Modifier.size(13.dp))
                 Text("$streak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF92400E))
             }
         }
-        // Shield pill (always shown when signed in) — tappable, like iOS.
-        if (profile != null) {
+        // Shield pill (shown once we have a value, cached or live) — tappable, like iOS.
+        val shields = com.wordocious.app.data.AuthService.headerShields
+        if (shields != null) {
             HeaderPill(
                 bg = listOf(WTheme.surfaceHover, WTheme.surfaceHover), border = Color(0xFFC4B5FD),
-                onClick = { shieldOpen = true },
+                onClick = { if (profile != null) shieldOpen = true },
             ) {
                 Icon(painterResource(R.drawable.ic_shield), null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(13.dp))
-                Text("${profile?.streakShields ?: 0}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF5B21B6))
+                Text("$shields", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF5B21B6))
             }
         }
 

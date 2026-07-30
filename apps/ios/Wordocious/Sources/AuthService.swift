@@ -77,7 +77,10 @@ final class AuthService: ObservableObject {
     /// didSet keeps the launch-window entitlement cache in step with every
     /// assignment (load, refresh, sign-out) from one place — see isProActive.
     @Published private(set) var profile: Profile? {
-        didSet { AuthService.cacheProEntitlement(from: profile) }
+        didSet {
+            AuthService.cacheProEntitlement(from: profile)
+            AuthService.cacheHeaderValues(from: profile)
+        }
     }
     @Published private(set) var isAuthenticated = false
     /// Last known access token. The VS socket handshake is synchronous but
@@ -257,6 +260,8 @@ final class AuthService: ObservableObject {
         // (badge on, ads hidden) for the second before their own profile
         // loaded — someone else's subscription, briefly wearing their name.
         UserDefaults.standard.removeObject(forKey: AuthService.proCacheKey)
+        UserDefaults.standard.removeObject(forKey: AuthService.streakCacheKey)
+        UserDefaults.standard.removeObject(forKey: AuthService.shieldsCacheKey)
     }
 
     private static let lastOwnerKey = "wordocious.last-save-owner"
@@ -425,6 +430,34 @@ final class AuthService: ObservableObject {
     /// nil and wiped the cache moments before the header read it — so the value
     /// was written every session and destroyed every launch. The cache is
     /// cleared in exactly one place now: an explicit signOut().
+    fileprivate static let streakCacheKey = "wordocious.header-streak"
+    fileprivate static let shieldsCacheKey = "wordocious.header-shields"
+
+    /// Last known header values, or nil when nothing has been cached yet.
+    ///
+    /// Stored as objects rather than read with `integer(forKey:)` on purpose:
+    /// that returns 0 for a missing key, and 0 is a MEANINGFUL value here (zero
+    /// shields). Presence has to be distinguishable from zero or a first-ever
+    /// launch would render a phantom "0" pill.
+    static var cachedStreak: Int? { UserDefaults.standard.object(forKey: streakCacheKey) as? Int }
+    static var cachedShields: Int? { UserDefaults.standard.object(forKey: shieldsCacheKey) as? Int }
+
+    /// Mirror the header's values so the next launch paints them immediately.
+    /// Same window, same fix as the Pro entitlement: the profile row lands a
+    /// beat after launch, and until it does the streak and shield pills were
+    /// simply absent — so they visibly popped in a second late, every launch.
+    private static func cacheHeaderValues(from profile: Profile?) {
+        guard let profile else { return }
+        UserDefaults.standard.set(profile.dailyLoginStreak, forKey: streakCacheKey)
+        UserDefaults.standard.set(profile.streakShields, forKey: shieldsCacheKey)
+    }
+
+    /// Streak/shields for the header — the live profile once it is in hand, the
+    /// cached values during the launch fetch, nil when neither exists (a first
+    /// launch, or after sign-out) so nothing is drawn.
+    var headerStreak: Int? { profile?.dailyLoginStreak ?? AuthService.cachedStreak }
+    var headerShields: Int? { profile?.streakShields ?? AuthService.cachedShields }
+
     private static func cacheProEntitlement(from profile: Profile?) {
         guard let profile else { return }
         guard Wordocious.isProActive(profile) else {

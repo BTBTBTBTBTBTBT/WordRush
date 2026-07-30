@@ -47,23 +47,35 @@ struct AppHeaderView: View {
                 .buttonStyle(.plain)
             }
 
-            if let p = auth.profile, p.dailyLoginStreak > 0 {
-                Button { showStreak = true } label: {
-                    pill(asset: "flame", iconColor: Color(hex: 0xF97316), text: "\(p.dailyLoginStreak)",
+            // Drawn from `headerStreak`/`headerShields`, not from `profile`
+            // directly: the profile row arrives a beat after launch, so gating
+            // the pills on it made them pop in a second late on EVERY cold
+            // start. Those accessors fall back to the last known values for
+            // exactly that window (nil on a first launch or after sign-out, so
+            // nothing is drawn then). The popovers still need the real row, so
+            // a tap during the window is simply inert — an interaction nobody
+            // can win the race to make.
+            if let streak = auth.headerStreak, streak > 0 {
+                Button { if auth.profile != nil { showStreak = true } } label: {
+                    pill(asset: "flame", iconColor: Color(hex: 0xF97316), text: "\(streak)",
                          textColor: Color(hex: 0x92400E),
                          bg: [Color(hex: 0xFFFBEB), Color(hex: 0xFFF7ED)], border: Color(hex: 0xFDE68A))
                 }
                 .buttonStyle(.plain)
-                .popover(isPresented: $showStreak) { streakPopover(p).modifier(CompactPopover()) }
+                .popover(isPresented: $showStreak) {
+                    if let p = auth.profile { streakPopover(p).modifier(CompactPopover()) }
+                }
             }
-            if let p = auth.profile {
-                Button { showShield = true } label: {
-                    pill(asset: "shield", iconColor: Color(hex: 0x8B5CF6), text: "\(p.streakShields)",
+            if let shields = auth.headerShields {
+                Button { if auth.profile != nil { showShield = true } } label: {
+                    pill(asset: "shield", iconColor: Color(hex: 0x8B5CF6), text: "\(shields)",
                          textColor: Color(hex: 0x5B21B6),
                          bg: [Theme.surfaceHover, Theme.surfaceHover], border: Color(hex: 0xC4B5FD))
                 }
                 .buttonStyle(.plain)
-                .popover(isPresented: $showShield) { shieldPopover(p).modifier(CompactPopover()) }
+                .popover(isPresented: $showShield) {
+                    if let p = auth.profile { shieldPopover(p).modifier(CompactPopover()) }
+                }
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 8)
