@@ -6,4 +6,4 @@ export * from './scoring';
 export * from './reducer';
 export * from './prefill';
 export * from './wotd-blocklist';
-export * from './username';
+//# sourceMappingURL=index.d.ts.map

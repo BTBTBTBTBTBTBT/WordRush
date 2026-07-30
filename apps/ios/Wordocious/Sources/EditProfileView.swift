@@ -322,9 +322,24 @@ struct EditProfileView: View {
                 dismiss()
             } catch {
                 let msg = "\(error)"
-                self.error = msg.contains("23505") || msg.lowercased().contains("duplicate")
-                    ? "Username already taken"
-                    : (error.localizedDescription.isEmpty ? "Failed to save" : error.localizedDescription)
+                // enforce_username_policy_trg raises check_violation with an
+                // already user-facing message. Surface THAT rather than the
+                // PostgREST envelope it arrives wrapped in — the client holds
+                // no copy of the word list, so the server's wording is the
+                // only wording available.
+                let policy = [
+                    "That username is not available. Please choose another.",
+                    "Username must be 3-20 characters",
+                    "Username may use letters, numbers, spaces, and . _ - only",
+                    "Username needs at least one letter or number",
+                ].first { msg.contains($0) }
+                if msg.contains("23505") || msg.lowercased().contains("duplicate") {
+                    self.error = "Username already taken"
+                } else if let policy {
+                    self.error = policy
+                } else {
+                    self.error = error.localizedDescription.isEmpty ? "Failed to save" : error.localizedDescription
+                }
                 saving = false
             }
         }

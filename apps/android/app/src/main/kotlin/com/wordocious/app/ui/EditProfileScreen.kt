@@ -245,8 +245,22 @@ fun EditProfileScreen(onDone: () -> Unit) {
                         if (ok.isSuccess) { AuthService.refreshProfile(); onDone() }
                         else {
                             val msg = ok.exceptionOrNull()?.message ?: ""
-                            error = if (msg.contains("23505") || msg.contains("duplicate", true)) "Username already taken"
-                            else msg.ifBlank { "Failed to save" }
+                            // enforce_username_policy_trg raises check_violation
+                            // with an already user-facing message. Surface THAT
+                            // rather than the raw PostgREST envelope it arrives
+                            // wrapped in — the client has no copy of the word
+                            // list, so the server's wording is the only wording.
+                            val policy = listOf(
+                                "That username is not available. Please choose another.",
+                                "Username must be 3-20 characters",
+                                "Username may use letters, numbers, spaces, and . _ - only",
+                                "Username needs at least one letter or number",
+                            ).firstOrNull { msg.contains(it) }
+                            error = when {
+                                msg.contains("23505") || msg.contains("duplicate", true) -> "Username already taken"
+                                policy != null -> policy
+                                else -> msg.ifBlank { "Failed to save" }
+                            }
                             saving = false
                         }
                     }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { validateUsername } from '@wordle-duel/core';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
 import { X as XIcon, Check, Pencil, Star } from 'lucide-react';
@@ -77,8 +78,12 @@ export function ProfileEditModal({ open, onClose }: Props) {
     setError('');
 
     const trimmed = username.trim();
-    if (trimmed.length < 3 || trimmed.length > 20) {
-      setError('Username must be 3-20 characters');
+    // Shape AND content. The DB trigger enforce_username_policy_trg is the
+    // authority (a profile PATCH goes straight to PostgREST, so a check here
+    // is bypassable); this just avoids a round trip and a raw Postgres error.
+    const check = validateUsername(trimmed);
+    if (!check.ok) {
+      setError(check.error ?? 'That username is not available.');
       setSaving(false);
       return;
     }

@@ -1,0 +1,149 @@
+export declare enum GameMode {
+    DUEL = "DUEL",
+    MULTI_DUEL = "MULTI_DUEL",
+    GAUNTLET = "GAUNTLET",
+    QUORDLE = "QUORDLE",
+    OCTORDLE = "OCTORDLE",
+    SEQUENCE = "SEQUENCE",
+    RESCUE = "RESCUE",
+    TOURNAMENT = "TOURNAMENT",
+    PROPERNOUNDLE = "PROPERNOUNDLE",
+    DUEL_6 = "DUEL_6",
+    DUEL_7 = "DUEL_7"
+}
+export declare enum TileState {
+    CORRECT = "CORRECT",
+    PRESENT = "PRESENT",
+    ABSENT = "ABSENT",
+    EMPTY = "EMPTY",
+    HINT_USED = "HINT_USED"
+}
+export declare enum GameStatus {
+    PLAYING = "PLAYING",
+    WON = "WON",
+    LOST = "LOST",
+    ABANDONED = "ABANDONED"
+}
+export interface TileResult {
+    letter: string;
+    state: TileState;
+}
+export interface GuessResult {
+    tiles: TileResult[];
+    isCorrect: boolean;
+}
+export interface PrefilledGuess {
+    word: string;
+    evaluation: GuessResult;
+}
+export interface BoardState {
+    solution: string;
+    guesses: string[];
+    maxGuesses: number;
+    status: GameStatus;
+    prefilledGuesses?: PrefilledGuess[];
+    /** Stores custom evaluations for hint rows (keyed by guess index). */
+    hintEvaluations?: Record<number, GuessResult>;
+}
+export interface GauntletStageConfig {
+    stageIndex: number;
+    name: string;
+    baseMode: GameMode;
+    boardCount: number;
+    maxGuesses: number;
+    sequential: boolean;
+    hasPrefill: boolean;
+}
+export interface GauntletStageResult {
+    stageIndex: number;
+    status: GameStatus;
+    guesses: number;
+    timeMs: number;
+    /**
+     * Snapshot of the stage's final board state (solutions + guesses +
+     * prefilled rows + per-board status). Captured by the reducer when a
+     * stage ends — via NEXT_STAGE on a win, or alongside the failed-stage
+     * push on a loss. Powers the "Review this stage" modal on the Gauntlet
+     * results screen so the player can see exactly how the run ended on the
+     * stage that killed them (or re-inspect a stage they cleared). Optional
+     * because older saved sessions and legacy server-persisted stage
+     * results predate it — absence just disables the Review affordance for
+     * that row.
+     */
+    boardsSnapshot?: BoardState[];
+}
+export interface GauntletProgress {
+    currentStage: number;
+    totalStages: number;
+    stages: GauntletStageConfig[];
+    stageResults: GauntletStageResult[];
+    stageStartTime: number;
+    /**
+     * Active-play milliseconds (from the game-wide timer) at the moment
+     * the current stage began. Used in combination with the `elapsedMs`
+     * passed on NEXT_STAGE to compute stage timing from active play only,
+     * so a stage doesn't inflate when the player backgrounds the tab.
+     * Falls back to Date.now() - stageStartTime when absent (VS gauntlet
+     * keeps wall-clock semantics so the opponent's clock and ours agree).
+     */
+    stageStartElapsedMs?: number;
+    allSolutions: string[];
+    blackoutCount: number;
+}
+export declare const GAUNTLET_STAGES: GauntletStageConfig[];
+export declare const GAUNTLET_TOTAL_SOLUTIONS: number;
+export interface GameState {
+    mode: GameMode;
+    seed: string;
+    startTime: number;
+    boards: BoardState[];
+    currentBoardIndex: number;
+    status: GameStatus;
+    gauntlet?: GauntletProgress;
+}
+export interface ScoreBreakdown {
+    winBonus: number;
+    guessDiff: number;
+    timeDiff: number;
+    dnfPenalty: number;
+    total: number;
+}
+export interface MatchResult {
+    playerWon: boolean;
+    playerGuesses: number;
+    opponentGuesses: number;
+    playerTime: number;
+    opponentTime: number;
+    playerStatus: GameStatus;
+    opponentStatus: GameStatus;
+    score: ScoreBreakdown;
+}
+export type GameAction = {
+    type: 'SUBMIT_GUESS';
+    guess: string;
+    boardIndex?: number;
+    applyToAll?: boolean;
+} | {
+    type: 'SUBMIT_HINT';
+    hintWord: string;
+    hintEvaluation: GuessResult;
+    boardIndex?: number;
+} | {
+    type: 'NEXT_STAGE';
+    elapsedMs?: number;
+} | {
+    type: 'STEAL_GUESS';
+} | {
+    type: 'BLACKOUT_RESTART';
+    boardIndex: number;
+} | {
+    type: 'ABANDON';
+} | {
+    type: 'RESET';
+    seed: string;
+    mode: GameMode;
+} | {
+    type: 'RESTORE_STATE';
+    state: GameState;
+};
+//# sourceMappingURL=types.d.ts.map
