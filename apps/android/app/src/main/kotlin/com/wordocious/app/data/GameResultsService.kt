@@ -319,8 +319,14 @@ object GameResultsService {
                 set("last_played_at", Instant.now().toString())
                 set("daily_login_streak", newDailyStreak)
                 set("best_daily_login_streak", newBestDaily)
-                set("streak_shields", p.streakShields + if (grantShield) 1 else 0)
+                // Shields are NOT written here any more. streak_shields is a
+                // paid benefit (+4 per billing period) and a referral reward, so
+                // a client that can raise it can mint one for free — the column
+                // is server-owned now. The 7-day milestone goes through
+                // /api/shields/grant-milestone, which recomputes the streak from
+                // daily_results rather than trusting the value just written.
             }) { filter { eq("id", userId) } }
+            if (grantShield) ShieldService.grantMilestoneShield()
 
             XpResult(
                 xpGain = xpGain, streakBonus = streakBonus, dailyBonus = dailyBonus,

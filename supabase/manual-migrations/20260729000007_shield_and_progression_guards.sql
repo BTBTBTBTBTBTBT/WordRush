@@ -1,0 +1,105 @@
+-- Guards for the two profile surfaces a client could forge.
+--
+-- PART 1 (apply now, safe): adds profiles.last_shield_milestone, used by
+-- /api/shields/grant-milestone for idempotency. Purely additive.
+--
+-- PART 2 (⚠️ DEFERRED — see the release gate): the triggers that actually stop
+-- the forgery. They block client writes that shipped builds still perform, so
+-- they must wait for adoption exactly like the daily_bonuses lock.
+--
+-- Both guards copy the bypass idiom already used by protect_pro_columns:
+--   if auth.role() is distinct from 'authenticated'
+--   and auth.role() is distinct from 'anon' then return new;   -- service_role
+--   if not coalesce(old.is_admin, false) then ... end if;      -- admins exempt
+
+-- ── PART 1 ──────────────────────────────────────────────────────────────────
+alter table public.profiles
+  add column if not exists last_shield_milestone int not null default 0;
+
+comment on column public.profiles.last_shield_milestone is
+  'Highest 7-day streak milestone already paid out as a shield. Server-owned '
+  '(api/shields/grant-milestone); makes the grant idempotent without trusting '
+  'the client-written daily_login_streak.';
+
+-- ── PART 2 — DO NOT APPLY UNTIL THE GATE BELOW IS MET ───────────────────────
+-- RELEASE GATE: iOS 133 is live on the App Store, 136/137 are on TestFlight,
+-- and the Android build all grant shields and write progression from the
+-- CLIENT. Applying these triggers before those are replaced means:
+--   * milestone shields silently stop being granted on old builds, and
+--   * XP/streak writes get pinned mid-game.
+-- Apply only once a build containing the server-side shield grant is live and
+-- adopted. Until then the forgery stays possible — a deliberate trade, since
+-- silently breaking real players' rewards is worse.
+--
+-- Everything below is commented out on purpose. Uncomment to apply.
+--
+-- create or replace function public.protect_shield_grants()
+--   returns trigger language plpgsql security definer set search_path to 'public'
+-- as $function$
+-- begin
+--   -- service_role (and postgres) write freely: renewals, referral milestones,
+--   -- and /api/shields/grant-milestone all come through here.
+--   if auth.role() is distinct from 'authenticated'
+--      and auth.role() is distinct from 'anon' then
+--     return new;
+--   end if;
+--   if not coalesce(old.is_admin, false) then
+--     -- Clients may SPEND shields, never mint them. streak_shields is a paid
+--     -- subscription benefit (+4 per renewal) and a referral reward, so an
+--     -- increase from an authenticated client is always forgery.
+--     if coalesce(new.streak_shields, 0) > coalesce(old.streak_shields, 0) then
+--       new.streak_shields := old.streak_shields;
+--     end if;
+--     -- Server owns the milestone ledger.
+--     new.last_shield_milestone := old.last_shield_milestone;
+--   end if;
+--   return new;
+-- end;
+-- $function$;
+--
+-- drop trigger if exists protect_shield_grants_trg on public.profiles;
+-- create trigger protect_shield_grants_trg
+--   before update on public.profiles
+--   for each row execute function public.protect_shield_grants();
+--
+-- -- Progression monotonicity. These columns stay CLIENT-WRITTEN (stats-service
+-- -- recomputes them after every game on all three platforms), so pinning them
+-- -- outright would break normal play. Instead they may only move the way real
+-- -- play moves them: forward, and a streak may only tick up by one or reset.
+-- -- This doesn't make forgery impossible — it makes "set it to 9999" impossible,
+-- -- which is the whole practical exploit against the Records rankings.
+-- create or replace function public.guard_progression_monotonic()
+--   returns trigger language plpgsql security definer set search_path to 'public'
+-- as $function$
+-- begin
+--   if auth.role() is distinct from 'authenticated'
+--      and auth.role() is distinct from 'anon' then
+--     return new;
+--   end if;
+--   if not coalesce(old.is_admin, false) then
+--     if coalesce(new.xp, 0)           < coalesce(old.xp, 0)           then new.xp           := old.xp;           end if;
+--     if coalesce(new.total_wins, 0)   < coalesce(old.total_wins, 0)   then new.total_wins   := old.total_wins;   end if;
+--     if coalesce(new.total_losses, 0) < coalesce(old.total_losses, 0) then new.total_losses := old.total_losses; end if;
+--     -- A daily-login streak advances by at most one per update, or resets.
+--     if coalesce(new.daily_login_streak, 0) > coalesce(old.daily_login_streak, 0) + 1 then
+--       new.daily_login_streak := old.daily_login_streak + 1;
+--     end if;
+--     -- Bests may only rise, and never above the live value they track.
+--     if coalesce(new.best_daily_login_streak, 0) > greatest(coalesce(old.best_daily_login_streak, 0),
+--                                                            coalesce(new.daily_login_streak, 0)) then
+--       new.best_daily_login_streak := greatest(coalesce(old.best_daily_login_streak, 0),
+--                                               coalesce(new.daily_login_streak, 0));
+--     end if;
+--     if coalesce(new.best_streak, 0) > greatest(coalesce(old.best_streak, 0),
+--                                                coalesce(new.current_streak, 0)) then
+--       new.best_streak := greatest(coalesce(old.best_streak, 0), coalesce(new.current_streak, 0));
+--     end if;
+--   end if;
+--   return new;
+-- end;
+-- $function$;
+--
+-- drop trigger if exists guard_progression_monotonic_trg on public.profiles;
+-- create trigger guard_progression_monotonic_trg
+--   before update on public.profiles
+--   for each row execute function public.guard_progression_monotonic();

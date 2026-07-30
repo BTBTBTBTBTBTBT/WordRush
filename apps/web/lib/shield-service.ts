@@ -45,19 +45,24 @@ export async function useShield(userId: string): Promise<boolean> {
 }
 
 /**
- * Grant a free shield (e.g., from 7-day streak milestone).
+ * Grant the 7-day streak-milestone shield.
+ *
+ * Delegated to /api/shields/grant-milestone. Shields are a paid benefit (+4 on
+ * every Pro renewal) and a referral reward, and nothing in the DB stopped a
+ * client from simply writing itself more — so the grant can't live here. The
+ * server recomputes the streak from daily_results and keeps its own
+ * already-paid ledger, making replays worthless.
  */
-export async function grantFreeShield(userId: string): Promise<void> {
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('streak_shields')
-    .eq('id', userId)
-    .single() as { data: { streak_shields: number } | null };
-
-  if (profile) {
-    await (supabase as any)
-      .from('profiles')
-      .update({ streak_shields: profile.streak_shields + 1 })
-      .eq('id', userId);
+export async function grantFreeShield(_userId: string): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return;
+  try {
+    await fetch('/api/shields/grant-milestone', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+  } catch {
+    // Best-effort: a missed milestone shield must never break result recording.
+    // The next call re-derives it from the ledger, so nothing is lost.
   }
 }

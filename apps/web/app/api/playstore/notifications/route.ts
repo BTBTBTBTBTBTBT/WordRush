@@ -38,6 +38,9 @@ const PUSH_TOKEN = process.env.PLAY_PUBSUB_TOKEN;
 const DAY_PASS_PRODUCT_ID = 'pro_day';
 
 // ── Service-account OAuth (no SDK: RS256 JWT → token exchange) ─────────────
+/** Shields granted per paid billing period — matches stripe-fulfillment. */
+const RENEWAL_SHIELDS = 4;
+
 let cachedToken: { token: string; exp: number } | null = null;
 
 async function getAccessToken(): Promise<string> {
@@ -97,9 +100,20 @@ async function syncSubscription(purchaseToken: string): Promise<string> {
   const isPro = expiry > Date.now();
 
   const sb = getAdminSupabase();
-  const { error } = await sb.from('profiles')
-    .update({ is_pro: isPro, pro_expires_at: expiry ? new Date(expiry).toISOString() : null })
-    .eq('id', userId);
+  const update: Record<string, unknown> = {
+    is_pro: isPro,
+    pro_expires_at: expiry ? new Date(expiry).toISOString() : null,
+  };
+  // Shields (+4 per paid period) are granted SERVER-side, matching Stripe and
+  // the App Store webhook. The mobile client used to do this, which is what let
+  // any signed-in user mint a paid benefit by PATCHing profiles directly.
+  // Day Pass deliberately grants none (see grantDayPass below).
+  if (isPro) {
+    const { data: shieldRow } = await sb
+      .from('profiles').select('streak_shields').eq('id', userId).maybeSingle();
+    update.streak_shields = (shieldRow?.streak_shields ?? 0) + RENEWAL_SHIELDS;
+  }
+  const { error } = await sb.from('profiles').update(update).eq('id', userId);
   if (error) return `db-error:${error.message}`;
 
   // Referral conversion — pay the inviter when a referred user's sub is live.

@@ -32,6 +32,23 @@ enum ShieldService {
         return true
     }
 
+    /// Claim the 7-day-streak milestone shield.
+    ///
+    /// Server-owned: streak_shields is a paid benefit (+4 per billing period)
+    /// and a referral reward, so a client that can raise it can mint one for
+    /// free. The endpoint recomputes the streak from daily_results and keeps its
+    /// own already-paid ledger, so calling it twice grants nothing.
+    static func grantMilestoneShield() async {
+        guard let token = try? await AuthService.shared.client.auth.session.accessToken,
+              let url = URL(string: "https://wordocious.com/api/shields/grant-milestone")
+        else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        _ = try? await URLSession.shared.data(for: req)
+        await AuthService.shared.refreshProfile()
+    }
+
     /// Decline the shield — reset the daily-login streak to 0.
     static func declineStreak() async {
         let client = AuthService.shared.client

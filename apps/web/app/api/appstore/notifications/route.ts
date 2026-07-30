@@ -54,15 +54,20 @@ const IMMEDIATE_REVOKES = new Set<string>([
   NotificationTypeV2.REVOKE,
   NotificationTypeV2.REFUND,
 ]);
+/** Shields granted per paid billing period — matches stripe-fulfillment. */
+const RENEWAL_SHIELDS = 4;
 const EXPIRY_REVOKES = new Set<string>([
   NotificationTypeV2.EXPIRED,
   NotificationTypeV2.GRACE_PERIOD_EXPIRED,
 ]);
-// NOTE: this webhook does NOT grant streak shields. On mobile the CLIENT grants
-// the +4 per billing period (streak_shields is a game-mechanic column that's
-// spent/earned client-side and is deliberately NOT locked) — the webhook
-// granting them too would double up once the ASSN URL is registered. Web has no
-// client, so Stripe fulfillment grants shields server-side there instead.
+// Shields (+4 per billing period) are granted HERE, matching Stripe
+// fulfillment. They used to be granted by the mobile CLIENT instead, on the
+// reasoning that streak_shields is a game-mechanic column left unlocked — but
+// that is exactly what made it forgeable: any signed-in user could PATCH
+// profiles and mint themselves a paid benefit. With the grant server-side, the
+// column can be pinned against client increases. Day Pass never grants shields
+// (a $1 consumable must not buy a subscription perk), and the eventId
+// idempotency ledger above stops a retried delivery double-granting.
 
 let _rootCAs: Buffer[] | null = null;
 function appleRootCAs(): Buffer[] {
@@ -184,6 +189,15 @@ export async function POST(req: NextRequest) {
   }
 
   const update: Record<string, unknown> = { is_pro: isPro, pro_expires_at: proExpiresAt };
+
+  // Subscription grants also top up streak shields — never Day Pass, and never
+  // on a revoke. Read-modify-write is safe here: duplicate deliveries are
+  // already filtered by the store_webhook_events check above.
+  if (GRANTS.has(type) && productId !== DAY_PASS_ID) {
+    const { data: shieldRow } = await sb
+      .from('profiles').select('streak_shields').eq('id', userId).maybeSingle();
+    update.streak_shields = (shieldRow?.streak_shields ?? 0) + RENEWAL_SHIELDS;
+  }
 
   const { error } = await sb.from('profiles').update(update).eq('id', userId);
   if (error) {

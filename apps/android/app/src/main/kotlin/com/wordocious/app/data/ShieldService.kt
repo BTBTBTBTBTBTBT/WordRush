@@ -1,6 +1,9 @@
 package com.wordocious.app.data
 
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -13,6 +16,31 @@ import kotlinx.serialization.Serializable
  */
 object ShieldService {
     private val client get() = SupabaseConfig.client
+
+    /**
+     * Claim the 7-day-streak milestone shield.
+     *
+     * Server-owned: streak_shields is a paid benefit (+4 per billing period) and
+     * a referral reward, so a client that can raise it can mint one for free.
+     * The endpoint recomputes the streak from daily_results and keeps its own
+     * already-paid ledger, so calling it twice grants nothing.
+     */
+    suspend fun grantMilestoneShield() {
+        runCatching {
+            val token = client.auth.currentSessionOrNull()?.accessToken ?: return
+            withContext(Dispatchers.IO) {
+                val conn = (java.net.URL("https://wordocious.com/api/shields/grant-milestone")
+                    .openConnection() as java.net.HttpURLConnection).apply {
+                    requestMethod = "POST"
+                    setRequestProperty("Authorization", "Bearer $token")
+                    connectTimeout = 10_000
+                    readTimeout = 10_000
+                }
+                conn.responseCode
+                conn.disconnect()
+            }
+        }
+    }
 
     fun isStreakAtRisk(lastPlayedAt: String?): Boolean {
         if (lastPlayedAt == null) return false

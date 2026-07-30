@@ -403,9 +403,16 @@ enum GameResultsService {
                 xp: newXp, level: newLevel,
                 last_played_at: ISO8601DateFormatter().string(from: Date()),
                 daily_login_streak: newDailyStreak, best_daily_login_streak: newBestDaily,
-                streak_shields: p.streakShields + (grantShield ? 1 : 0)
+                // Shields are NOT written here any more. streak_shields is a paid
+                // benefit (+4 per billing period) and a referral reward, and a
+                // client that can raise it can mint one for free — so the column
+                // is server-owned now. The 7-day milestone goes through
+                // /api/shields/grant-milestone, which recomputes the streak from
+                // daily_results instead of trusting the value we just wrote.
+                streak_shields: p.streakShields
             )
             try await client.from("profiles").update(upd).eq("id", value: userId).execute()
+            if grantShield { await ShieldService.grantMilestoneShield() }
             return XpResult(xpGain: xpGain, streakBonus: streakBonus, dailyBonus: dailyBonus,
                             totalXp: xpGain + streakBonus + dailyBonus,
                             newLevel: newLevel, leveledUp: newLevel > (p.level ?? 1))
