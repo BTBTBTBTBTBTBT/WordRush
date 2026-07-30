@@ -80,5 +80,15 @@
                 <action android:name="android.intent.action.TIME_SET" />
             </intent-filter>
         </receiver>
+        <!-- FCM token + message callbacks. Not exported: only the Firebase
+             SDK binds it, via the framework's own MESSAGING_EVENT action. -->
+        <service
+            android:name=".data.WordociousMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
     </application>
 </manifest>

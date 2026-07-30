@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "193086095286",
+    "project_id": "spellstrike-490819",
+    "storage_bucket": "spellstrike-490819.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:193086095286:android:653cb89ce3d816c6b70b17",
+        "android_client_info": {
+          "package_name": "com.wordocious.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "193086095286-2h2smgnt72veffaufh1nuruvlris79d9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAy-S013xitfy_y5d6Upwa8FweO4Yw-tZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "193086095286-2h2smgnt72veffaufh1nuruvlris79d9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "193086095286-4ftdf92g8cnsur8kd7odqq0jueqq5oog.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wordocious.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -77,8 +77,15 @@ class MainActivity : ComponentActivity() {
                     // also (re)connect whenever auth resolves or changes, exactly
                     // like iOS's onChange(of: userId) (WordociousApp.swift:66).
                     androidx.compose.runtime.LaunchedEffect(isAuthenticated) {
-                        if (isAuthenticated) com.wordocious.app.data.PresenceService.start()
-                        else com.wordocious.app.data.PresenceService.stop()
+                        if (isAuthenticated) {
+                            com.wordocious.app.data.PresenceService.start()
+                            // FCM's first token can arrive before sign-in, when
+                            // there is no user id to key the row on — so push it
+                            // again here, mirroring iOS PushRegistration.register().
+                            com.wordocious.app.data.PushRegistration.register()
+                        } else {
+                            com.wordocious.app.data.PresenceService.stop()
+                        }
                     }
 
                     when {

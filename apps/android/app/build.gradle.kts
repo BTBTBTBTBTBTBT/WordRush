@@ -5,6 +5,9 @@ plugins {
     kotlin("android") version "2.0.20"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
     kotlin("plugin.serialization") version "2.0.20"
+    // Reads app/google-services.json and generates the Firebase config
+    // resources. Resolves from google() in settings.gradle.kts pluginManagement.
+    id("com.google.gms.google-services") version "4.4.2"
 }
 
 android {
@@ -82,6 +85,13 @@ dependencies {
     // Socket.IO client for realtime VS (same server.wordocious.com socket.io
     // server the web + iOS connect to). Pulls org.json + OkHttp transitively.
     implementation("io.socket:socket.io-client:2.1.0")
+
+    // Firebase Cloud Messaging — remote push. MESSAGING ONLY: no analytics SDK,
+    // so linking a Google Analytics account during project setup collects
+    // nothing. The server send path already exists (APNs for iOS, same
+    // device_tokens table).
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-messaging-ktx")
 
     // Sentry crash reporting — plain SDK + manifest auto-init (no gradle plugin;
     // it wants source-map/proguard upload tokens we don't have). The DSN lives
