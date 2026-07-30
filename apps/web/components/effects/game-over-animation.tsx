@@ -60,8 +60,8 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
             {/* Single solution word */}
             {solution && (
               <div className="mt-2">
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-text-muted)' }}>The answer was</div>
-                <div className="text-2xl font-black tracking-wider" style={{ color: 'var(--color-text)' }}>
+                <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#6b7280' }}>The answer was</div>
+                <div className="text-2xl font-black tracking-wider" style={{ color: '#1a1a2e' }}>
                   {solution.toUpperCase()}
                 </div>
               </div>
@@ -74,7 +74,7 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
                 style={{ background: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca' }}
               >
                 {singleDef.phonetic && (
-                  <div className="text-xs font-medium mb-1.5" style={{ color: 'var(--color-text-muted)' }}>{singleDef.phonetic}</div>
+                  <div className="text-xs font-medium mb-1.5" style={{ color: '#6b7280' }}>{singleDef.phonetic}</div>
                 )}
                 {singleDef.partOfSpeech && (
                   <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: '#fee2e2', color: '#ef4444' }}>
@@ -97,17 +97,17 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
                   border: '1px solid #fecaca',
                 }}
               >
-                <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Solutions</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: '#6b7280' }}>Solutions</div>
                 <div className="space-y-2">
                   {solutions.map((word, i) => {
                     const def = multiDefs.get(word.toLowerCase());
                     return (
                       <div key={i}>
-                        <span className="font-black tracking-wider text-sm" style={{ color: 'var(--color-text)' }}>
+                        <span className="font-black tracking-wider text-sm" style={{ color: '#1a1a2e' }}>
                           {word.toUpperCase()}
                         </span>
                         {def && (
-                          <p className="text-[11px] font-medium leading-snug mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
+                          <p className="text-[11px] font-medium leading-snug mt-0.5" style={{ color: '#4b5563' }}>
                             {def.partOfSpeech && <span className="italic">{def.partOfSpeech}. </span>}
                             {def.definition}
                           </p>
@@ -124,26 +124,26 @@ export function GameOverAnimation({ onComplete, guesses, maxGuesses, timeSeconds
               <div className="flex justify-center gap-5 mt-4">
                 {boardsSolved != null && totalBoards != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
                       {boardsSolved}/{totalBoards}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Boards Completed</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Boards Completed</div>
                   </div>
                 )}
                 {guesses != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
                       {guesses}{maxGuesses ? `/${maxGuesses}` : ''}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Guesses</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Guesses</div>
                   </div>
                 )}
                 {timeSeconds != null && (
                   <div className="text-center">
-                    <div className="text-xl font-black" style={{ color: 'var(--color-text)' }}>
+                    <div className="text-xl font-black" style={{ color: '#1a1a2e' }}>
                       {formatTime(timeSeconds)}
                     </div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Time</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#6b7280' }}>Time</div>
                   </div>
                 )}
               </div>

@@ -159,7 +159,11 @@ export function AppHeader() {
                 onClick={openShield}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 font-extrabold text-sm transition-transform active:scale-95"
                 style={{
-                  background: 'var(--color-surface-hover)',
+                  // Fixed fill to match the fixed #5b21b6 ink and the fully-fixed
+                  // streak pill beside it. Themed surface-hover put this at 1.46:1
+                  // in Dark, so the shield COUNT vanished while its twin rendered
+                  // fine — on every screen, since the header is persistent.
+                  background: '#f3f0ff',
                   border: '1.5px solid #c4b5fd',
                   borderRadius: '20px',
                   color: '#5b21b6',

@@ -89,7 +89,7 @@ export function VictoryAnimation({ onComplete, guesses, maxGuesses, timeSeconds,
                     {definition.partOfSpeech}
                   </span>
                 )}
-                <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
+                <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
                   {definition.definition}
                 </p>
               </div>

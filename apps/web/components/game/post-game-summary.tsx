@@ -42,7 +42,7 @@ export function PostGameSummary({ solution }: PostGameSummaryProps) {
               </span>
             )}
           </div>
-          <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: '#4a4a6a' }}>
+          <p className="text-sm font-medium mt-1.5 leading-snug" style={{ color: 'var(--color-text-secondary)' }}>
             {definition.definition}
           </p>
         </>
