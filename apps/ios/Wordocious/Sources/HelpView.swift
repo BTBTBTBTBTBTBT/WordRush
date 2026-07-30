@@ -103,7 +103,7 @@ struct HelpView: View {
                     Text(l).font(Brand.font(14, .black))
                         .foregroundStyle(filled ? .white : Theme.textPrimary)
                         .frame(width: 36, height: 36)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(filled ? Theme.tileColor(for: colors[i]) : Color.white))
+                        .background(RoundedRectangle(cornerRadius: 4).fill(filled ? Theme.tileColor(for: colors[i]) : Theme.surface)) // themed: white + themed ink is 1.09:1 in Dark
                         .overlay(RoundedRectangle(cornerRadius: 4).stroke(filled ? Theme.tileColor(for: colors[i]) : Color(hex: 0xD1D5DB), lineWidth: 2))
                 }
             }

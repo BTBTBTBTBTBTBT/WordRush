@@ -436,7 +436,7 @@ internal fun GauntletStageBreakdown(g: GauntletProgress, totalMs: Int) {
                             Text(if (sWon) "✓" else "✗", fontSize = 8.sp, fontWeight = FontWeight.Black, color = if (sWon) Color(0xFF7C3AED) else Color(0xFFDC2626))
                         }
                         Spacer(Modifier.width(6.dp))
-                        Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text, modifier = Modifier.weight(1f))
+                        Text(stage.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A1A2E), modifier = Modifier.weight(1f))
                         Text("${r.guesses}g · ${fmtMs(r.timeMs)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         if (hasBoards) {
                             Spacer(Modifier.width(6.dp))
@@ -543,7 +543,8 @@ private fun ProperNoundleMiniBoard(guesses: List<String>, puzzle: com.wordocious
                             val i = starts[gi] + k
                             val letter = if (isPast && i < letters.size) letters[i] else ""
                             val state = if (isPast && i < tiles.size) tiles[i] else TileState.EMPTY
-                            TileView(letter = letter, state = state, cornerRadius = 3.dp, fontSize = 8f, square = true, modifier = Modifier.size(tileSize))
+                            // fontSize null -> derived: the tile floors at 10dp and an 8sp line box overflows it.
+                            TileView(letter = letter, state = state, cornerRadius = 3.dp, fontSize = null, square = true, modifier = Modifier.size(tileSize))
                         }
                     }
                 }

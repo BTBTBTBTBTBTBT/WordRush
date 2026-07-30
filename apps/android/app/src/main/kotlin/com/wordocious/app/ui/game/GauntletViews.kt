@@ -367,7 +367,7 @@ private fun StageReviewBoard(board: BoardState, stageWon: Boolean, modifier: Mod
             Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 tiles.forEach { (letter, st) ->
                     TileView(
-                        letter = letter, state = st, fontSize = 10f,
+                        letter = letter, state = st, fontSize = null, // derive from the tile: these rows are 9-10dp tall
                         cornerRadius = 4.dp, square = false, mini = true,
                         modifier = Modifier.weight(1f),
                     )

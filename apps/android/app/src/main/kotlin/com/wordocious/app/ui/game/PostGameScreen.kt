@@ -713,7 +713,10 @@ internal fun DefinitionCard(word: String) {
             }
             if (d.definition.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
-                Text(d.definition, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF4A4A6A))
+                // Themed, not a fixed #4A4A6A slate: on the Dark card that was
+                // 2.02:1 and the definition read as a rendering fault next to
+                // the muted lines beside it.
+                Text(d.definition, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary)
             }
         } else {
             Text(

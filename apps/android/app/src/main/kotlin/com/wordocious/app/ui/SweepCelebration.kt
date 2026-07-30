@@ -175,7 +175,15 @@ fun SweepCelebration(
                                         if (card != null) ModeGlyph(card, tint = Color(r.accent), glyphSize = 12.sp, iconSize = 12.dp)
                                         else Text(r.glyph, fontSize = if (r.glyph.length >= 3) 9.sp else 12.sp, fontWeight = FontWeight.Black, color = Color(r.accent))
                                     }
-                                    Text(r.label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text, maxLines = 1)
+                                    // weight(1f) so the LABEL absorbs the squeeze, not the trailing mark: an
+                                    // unweighted label ate the whole row and the win/loss ✓ was
+                                    // measured to zero width and never drawn. Fixed ink because the
+                                    // card gradient is a fixed pastel (#FAF5FF) — themed text on it
+                                    // is 1.05:1 in Dark.
+                                    Text(r.label, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1A1A2E), maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false))
                                     Spacer(Modifier.weight(1f))
                                     Text(if (r.won) "✓" else "✗", fontSize = 12.sp, fontWeight = FontWeight.Black,
                                         color = if (r.won) Color(0xFF16A34A) else Color(0xFFDC2626))
@@ -216,8 +224,9 @@ fun SweepCelebration(
 @Composable
 private fun stat(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        // Fixed ink: the card gradient behind these stats is a fixed pastel.
+        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF1A1A2E))
+        Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280))
     }
 }
 

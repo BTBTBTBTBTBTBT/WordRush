@@ -607,7 +607,7 @@ private fun VsConfettiRect(p: VsConfettiPiece) {
         val fall = maxHeight * progress
         Box(
             Modifier
-                .padding(start = (p.xFrac * 360).dp)
+                .padding(start = maxWidth * p.xFrac) // measured width; 360dp left the right side of every modern phone bare
                 .offset(y = fall - 20.dp)
                 .rotate(rot)
                 .size(12.dp)

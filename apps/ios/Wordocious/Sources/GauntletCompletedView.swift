@@ -76,7 +76,8 @@ struct GauntletCompletedView: View {
                         .foregroundStyle(won ? greenBadge : redBadge)
                         .frame(width: 14, height: 14)
                         .background(Circle().fill(won ? greenBadgeBg : redBadgeBg))
-                    Text(stage.name).font(Brand.font(11, .bold)).foregroundStyle(Theme.textPrimary)
+                    // Fixed pastel row fill demands fixed ink — themed was 1.04:1 in Dark.
+                    Text(stage.name).font(Brand.font(11, .bold)).foregroundStyle(Color(hex: 0x1A1A2E))
                     Spacer(minLength: 6)
                     Text("\(result.guesses)g · \(fmtTime(result.timeMs))")
                         .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)

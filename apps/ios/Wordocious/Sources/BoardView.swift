@@ -76,7 +76,12 @@ struct TileView: View {
         // a faint ghost tile, not a solid gray tile with white text.
         let fg: Color = isInvalid ? Color(hex: 0xEF4444)
             : (filled && revealed ? (state == .hintUsed ? Color(hex: 0xD1D5DB) : .white) : Theme.textPrimary)
-        let bg: Color = isInvalid ? Color(hex: 0xFEF2F2) : (revealed ? Theme.tileColor(for: state) : Color.white)
+        // Theme.surface, NOT Color.white. An unrevealed tile pairs this fill
+        // with Theme.textPrimary above — a FIXED white tile under THEMED ink is
+        // #F0EEF6 on #FFFFFF in Dark, i.e. 1.15:1, and the letters you type are
+        // invisible. Identical in Light (surface is #FFFFFF there); Dark now
+        // matches Android, which already themed both sides.
+        let bg: Color = isInvalid ? Color(hex: 0xFEF2F2) : (revealed ? Theme.tileColor(for: state) : Theme.surface)
         let border: Color = isInvalid ? Color(hex: 0xF87171)
             : (!revealed ? Theme.emptyBorder
                : (state == .hintUsed ? Color(hex: 0xE5E7EB)

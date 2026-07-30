@@ -475,7 +475,11 @@ struct GameScreen: View {
     private func toastView(_ toast: String) -> some View {
         Text(toast).font(Brand.font(12, .bold)).foregroundStyle(.white)
             .padding(.horizontal, 12).padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.textPrimary))
+            // Fixed ink needs a fixed fill: Theme.textPrimary is near-white in
+            // Dark, so the toast was white-on-near-white (1.06:1) and the
+            // player never learned why a guess bounced. #1A1A2E is the Light
+            // value of textPrimary, so Light is unchanged.
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color(hex: 0x1A1A2E)))
             .padding(.top, 90).frame(maxHeight: .infinity, alignment: .top).transition(.opacity)
     }
 }

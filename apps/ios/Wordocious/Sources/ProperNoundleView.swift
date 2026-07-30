@@ -592,7 +592,7 @@ struct NoundleBoard: View {
             case .present: return Theme.present
             case .absent: return Theme.absent
             case .hintUsed: return Color(hex: 0xD1D5DB) // web HINT_USED = gray
-            case .empty: return .white
+            case .empty: return Theme.surface // themed: a fixed white tile under themed ink is invisible in Dark
             }
         }()
         return Text(letter).font(Brand.font(size * 0.5, .heavy))
@@ -632,7 +632,9 @@ struct NoundleKeyboard: View {
             }
         } ?? Theme.keyDefault
         return Button { vm.type(l); Haptics.tap(); SoundManager.shared.playKeyTap() } label: {
-            Text(l).font(Brand.font(18, .bold)).foregroundStyle(st == nil ? Theme.textPrimary : .white)
+            // keyInk: this is a SECOND copy of the keyboard and the themed-ink
+            // fix in KeyboardView never reached it — 1.08:1 on the fixed key in Dark.
+            Text(l).font(Brand.font(18, .bold)).foregroundStyle(st == nil ? Theme.keyInk : .white)
                 .frame(maxWidth: .infinity).frame(height: 52)
                 .background(RoundedRectangle(cornerRadius: 6).fill(bg))
         }.buttonStyle(.plain)
@@ -640,14 +642,14 @@ struct NoundleKeyboard: View {
 
     private func action(_ label: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) {
-            Text(label).font(Brand.font(14, .bold)).foregroundStyle(Theme.textPrimary)
+            Text(label).font(Brand.font(14, .bold)).foregroundStyle(Theme.keyInk)
                 .frame(width: 54, height: 52).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }.buttonStyle(.plain)
     }
 
     private func iconAction(_ systemName: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) {
-            Image(systemName: systemName).font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.textPrimary)
+            Image(systemName: systemName).font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.keyInk)
                 .frame(width: 54, height: 52).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }.buttonStyle(.plain)
     }

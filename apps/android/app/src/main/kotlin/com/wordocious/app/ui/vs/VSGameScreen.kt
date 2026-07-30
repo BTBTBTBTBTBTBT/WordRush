@@ -494,7 +494,11 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
     }
 
     Box(Modifier.fillMaxSize()) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
+    // statusBarsPadding: VS never got the inset the solo screens did — the
+    // earlier status-bar sweep touched only the disconnect banner in this file,
+    // so on Android 15+ the home button, VS title and clock drew underneath the
+    // status bar. Same defect the first Play tester reported for the keyboard.
+    Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 10.dp)) {
         // Header: home button + VS title
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             // Confirm only when leaving would TRULY forfeit (a recorded loss):

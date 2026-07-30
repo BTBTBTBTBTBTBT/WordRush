@@ -857,8 +857,12 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     it, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                        // iOS fills the toast with Theme.textPrimary (palette-driven).
-                        .background(WTheme.text)
+                        // FIXED ink demands a FIXED fill. WTheme.text is near-white
+                        // in Dark, so white-on-near-white made every "Not in word
+                        // list" / "Not enough letters" bounce silent — 1.06:1.
+                        // #1A1A2E is exactly what WTheme.text resolves to in Light,
+                        // so the light look is unchanged.
+                        .background(Color(0xFF1A1A2E))
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                 )
             }
@@ -987,7 +991,10 @@ internal fun SingleBoard(
         // iOS, the reference here, that made the board read as a different game.
         val gapTotal = 4.dp * (rows - 1)
         val tileHValue = (boardH.value - gapTotal.value) / rows
-        val tileFontSp = (tileHValue * 0.5f).coerceIn(14f, 28f)
+        // Floor lowered from 14sp: iOS derives with NO floor (BoardView.swift:85),
+        // and the ProperNoundle catalog runs to 29 letters, where the derived
+        // size is ~4sp and a 14sp glyph overflows its cell.
+        val tileFontSp = (tileHValue * 0.5f).coerceIn(4f, 28f)
         val tileCorner = (tileHValue * 0.14f).dp
         val tileBorder = (tileHValue * 0.09f).coerceIn(1f, 2f).dp
 

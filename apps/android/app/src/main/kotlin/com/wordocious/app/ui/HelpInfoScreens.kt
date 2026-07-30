@@ -112,7 +112,7 @@ private fun ExampleRow(letters: List<String>, highlightIdx: Int, fill: Color, hi
                 val filled = i == highlightIdx
                 Box(
                     Modifier.size(36.dp).clip(RoundedCornerShape(4.dp))
-                        .background(if (filled) fill else Color.White)
+                        .background(if (filled) fill else WTheme.surface) // themed: white + themed ink is 1.09:1 in Dark
                         .border(2.dp, if (filled) fill else Color(0xFFD1D5DB), RoundedCornerShape(4.dp)),
                     contentAlignment = Alignment.Center,
                 ) { Text(l, fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (filled) Color.White else WTheme.text) }

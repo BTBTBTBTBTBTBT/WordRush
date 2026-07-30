@@ -362,7 +362,8 @@ struct DefinitionCard: View {
                     }
                 }
                 if let def = d.definition {
-                    Text(def).font(Brand.font(14, .medium)).foregroundStyle(Color(hex: 0x4A4A6A))
+                    // Themed: #4A4A6A on the Dark card is 2.0:1 and reads as a rendering fault.
+                    Text(def).font(Brand.font(14, .medium)).foregroundStyle(Theme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             } else {
