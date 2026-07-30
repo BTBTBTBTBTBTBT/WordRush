@@ -36,8 +36,12 @@ us and our processors, which Google treats as "collected, not shared."
 - **Users can request data deletion** — **Yes.** Settings → Delete Account
   exists on all three platforms and removes the profile, stats and the avatar
   from Storage (`05e6461` added the Storage cleanup).
-- **Data deletion URL** — https://wordocious.com/settings (in-app path) — the
-  form also accepts an account-deletion web URL.
+- **Data deletion URL** — **https://wordocious.com/delete-account**.
+  `/settings` was tried first and **Play rejected it** ("We found issues with
+  one or more URLs"), correctly: the console requires the link to name the app,
+  show the deletion STEPS, and state what is deleted/kept with retention
+  periods. A signed-in settings screen does none of that and shows a reviewer
+  nothing at all. `786df7a` adds the real page — public, no auth gate.
 - **Committed to the Play Families Policy** — No (not a children's app).
 - **Independent security review** — No.
 
