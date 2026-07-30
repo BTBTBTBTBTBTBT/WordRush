@@ -134,6 +134,16 @@ export default function AdminUserDetailPage() {
             >
               {p.is_pro ? 'Extend Pro' : 'Grant Pro'}
             </button>
+            {/* One-click comp — the common case is handing a friend a look at
+                the full app. 7 days matches the referral trial so there is one
+                trial length to reason about. Adds to any existing window. */}
+            <button
+              onClick={() => doAction(`/api/admin/users/${userId}/pro`, { grant: true, days: 7 })}
+              disabled={actionLoading}
+              className="w-full px-3 py-1.5 border border-purple-200 bg-purple-50 text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-100 disabled:opacity-50"
+            >
+              Gift 7 days (free)
+            </button>
             {p.is_pro && (
               <button
                 onClick={() => doAction(`/api/admin/users/${userId}/pro`, { grant: false })}
