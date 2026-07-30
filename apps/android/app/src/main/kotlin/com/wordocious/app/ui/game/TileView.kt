@@ -82,15 +82,21 @@ fun TileView(
     }
 
     val filled = state != TileState.EMPTY
-    // Spec: invalid = bg #FEF2F2 / border #F87171 / text #EF4444. Empty = WHITE fill
-    // + #D1D5DB border (not transparent — was showing the gradient through the tile).
+    // Spec: invalid = bg #FEF2F2 / border #F87171 / text #EF4444.
+    //
+    // Empty tiles use the THEMED surface, not hard white. They were opaque
+    // Color.White, which is right in the three light themes but drew a grid of
+    // glaring white blocks over the near-black page in Dark. iOS returns .clear
+    // for .empty (Theme.swift:90) and lets the page show through; a flat
+    // surface fill is the same result without the gradient bleeding through the
+    // tile, which is why white was chosen here originally.
     val bgColor = when {
         isInvalid -> Color(0xFFFEF2F2)
         masked -> Color(0xFFF3F4F6)
         filled && mini && WTheme.colorblind && state == TileState.CORRECT -> Color(0xFF0891B2)
         filled && mini && WTheme.colorblind && state == TileState.PRESENT -> Color(0xFFF97316)
         filled -> WTheme.tileColor(state)
-        else -> Color.White
+        else -> WTheme.surface
     }
     val borderColor = when {
         isInvalid -> Color(0xFFF87171)
