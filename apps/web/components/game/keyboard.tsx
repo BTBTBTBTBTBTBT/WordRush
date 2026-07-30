@@ -175,7 +175,10 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 style={{
                   backgroundColor: state ? undefined : '#e8e5f0',
                   border: state ? undefined : '1.5px solid var(--color-border)',
-                  color: !state ? 'var(--color-text)' : undefined,
+                  // Fixed ink over the fixed key surface — see the wide keys
+                  // above. var(--color-text) is near-white in Dark and made
+                  // every unplayed letter invisible.
+                  color: !state ? '#1a1a2e' : undefined,
                 }}
               >
                 {key}
