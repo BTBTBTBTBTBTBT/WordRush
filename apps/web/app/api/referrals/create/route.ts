@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { verifyUser } from '@/lib/api-auth';
+import { isProActive } from '@/lib/pro';
 import { MAX_PENDING_INVITES } from '@/lib/referral-service';
 
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,23 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const sb = getAdminSupabase();
+
+  // Gifting Pro is itself a Pro benefit. This is the authoritative gate: the
+  // three client panels hide themselves, but a hidden button is not a gate —
+  // without this a free account could POST here directly and mint 7-day Pro
+  // trials, which is exactly what shipped. `maybeSingle` + `isProActive` fails
+  // closed: a missing profile row or a lapsed expiry is not Pro.
+  const { data: me } = await sb.from('profiles')
+    .select('is_pro, pro_expires_at')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (!isProActive(me)) {
+    return NextResponse.json(
+      { error: 'Gifting Pro is a Pro feature. Subscribe to gift 7-day trials to friends.' },
+      { status: 403 },
+    );
+  }
+
   const { count } = await sb.from('referrals')
     .select('id', { count: 'exact', head: true })
     .eq('inviter_id', user.id)

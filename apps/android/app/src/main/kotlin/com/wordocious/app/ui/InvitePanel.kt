@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
+import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.ReferralService
 import com.wordocious.app.data.ShareEvents
 import com.wordocious.app.ui.theme.Nunito
@@ -53,6 +55,16 @@ import kotlinx.coroutines.launch
 // Today's Dailies (web order parity).
 @Composable
 fun InvitePanel() {
+    // Gifting Pro is a Pro benefit — a free account must never see this panel.
+    // isProActive is false while the launch profile fetch is in flight, so the
+    // panel appears for subscribers rather than flashing for everyone. The
+    // authoritative gate is server-side in /api/referrals/create; returning
+    // early here also skips the two network reads below for free users.
+    // Collected rather than read bare so the panel appears on its own when the
+    // profile lands, instead of depending on the parent to recompose us.
+    val proProfile by AuthService.profile.collectAsState()
+    if (proProfile == null || !AuthService.isProActive) return
+
     var invites by remember { mutableStateOf<List<ReferralService.ReferralRow>>(emptyList()) }
     var leaders by remember { mutableStateOf<List<ReferralService.Leader>>(emptyList()) }
     var creating by remember { mutableStateOf(false) }

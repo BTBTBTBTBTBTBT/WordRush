@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords, EyeOff, Mail, Bot } from 'lucide-react';
+import { Check, Crown, Shield, BarChart3, Sparkles, Zap, Swords, EyeOff, Mail, Bot, Gift } from 'lucide-react';
 import { WordleGridIcon } from '@/components/ui/wordle-grid-icon';
 import { useAuth } from '@/lib/auth-context';
 import { AppHeader } from '@/components/ui/app-header';
@@ -15,6 +15,7 @@ const benefits = [
   { icon: Bot, text: 'Practice against the CPU — Easy, Medium & Hard bots, anytime' },
   { icon: Mail, text: 'Invite friends to private matches by link or username' },
   { icon: Shield, text: '4 streak shields credited each billing period' },
+  { icon: Gift, text: 'Gift 7 days of Pro to 3 friends — and earn rewards when they join' },
   { icon: Sparkles, text: 'Pro badge on profile & leaderboards' },
   { icon: BarChart3, text: 'Extended stats — win rate trends & avg speed per mode' },
   { icon: Zap, text: 'Early access to new game modes' },
@@ -226,8 +227,9 @@ export default function ProPage() {
                 <p className="mt-2 text-center text-xs font-bold" style={{ color: '#dc2626' }}>{payError}</p>
               )}
               <p className="mt-4 text-center text-[11px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                Invited by a friend? Open their invite link to claim 7 free days — or gift Pro
-                yourself from your <a href="/profile" style={{ color: '#7c3aed' }}>profile</a>.
+                Invited by a friend? Open their invite link to claim 7 free days. Once you&apos;re
+                Pro you can gift 7 days to 3 friends from your{' '}
+                <a href="/profile" style={{ color: '#7c3aed' }}>profile</a>.
               </p>
             </div>
           </>

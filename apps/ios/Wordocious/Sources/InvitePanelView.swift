@@ -50,6 +50,16 @@ struct InvitePanelView: View {
     private var slotsLeft: Int { max(0, 3 - openCount) }
 
     var body: some View {
+        // Gifting Pro is a Pro benefit — a free account must never see this.
+        // `isProActive` is false while the launch profile fetch is in flight,
+        // so the panel appears for subscribers rather than flashing for all.
+        // The authoritative gate is server-side in /api/referrals/create.
+        if auth.isProActive {
+            panel
+        }
+    }
+
+    private var panel: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "gift.fill").foregroundStyle(Color(hex: 0x7C3AED))

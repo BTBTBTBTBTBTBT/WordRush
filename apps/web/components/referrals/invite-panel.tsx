@@ -40,7 +40,7 @@ function timeLeft(expiresAt: string): string {
  * invite links, watch their status, see the monthly Top Inviters.
  */
 export function InvitePanel() {
-  const { user, session } = useAuth();
+  const { user, session, isProActive } = useAuth();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -70,7 +70,11 @@ export function InvitePanel() {
     return () => clearTimeout(t);
   }, [copiedCode]);
 
-  if (!user) return null;
+  // Gifting Pro is a Pro benefit — a free account must never see this panel.
+  // `isProActive` is false while the profile is still loading, so the panel
+  // fades in for subscribers rather than flashing for everyone. The real gate
+  // is server-side in /api/referrals/create; this only keeps the UI honest.
+  if (!user || !isProActive) return null;
 
   const openInvites = (invites ?? []).filter(
     (i) => i.status === 'pending' && new Date(i.expires_at).getTime() > Date.now(),
