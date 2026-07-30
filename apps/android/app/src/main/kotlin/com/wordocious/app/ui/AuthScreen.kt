@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -54,13 +55,23 @@ import kotlinx.coroutines.launch
  * Google and Apple sign-in deferred to the next pass (requires OAuth config).
  */
 @Composable
-fun AuthScreen(onAuthenticated: () -> Unit) {
+fun AuthScreen(
+    onAuthenticated: () -> Unit,
+    /**
+     * Non-null when shown as a DISMISSIBLE overlay from the guest header, which
+     * is how iOS presents it (`.sheet(isPresented: $showAuth) { AuthView() }`).
+     * Null = the root sign-in gate, which has nothing to go back to.
+     */
+    onDismiss: (() -> Unit)? = null,
+) {
     // Pre-auth Privacy/Terms overlay (web parity: the footer links work).
     var infoRoute by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     infoRoute?.let { route ->
         InfoScreen(kind = route, onDone = { infoRoute = null })
         return
     }
+    // Hardware back closes the overlay rather than leaving the app.
+    if (onDismiss != null) androidx.activity.compose.BackHandler { onDismiss() }
     // "signin" | "signup" | "reset" — reset emails a recovery link that finishes
     // on the web reset page (wordocious.com/auth/reset), web/iOS parity.
     var mode by remember { mutableStateOf("signin") }
@@ -81,6 +92,24 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Overlay mode gets a close affordance (iOS sheets get the system grabber).
+        if (onDismiss != null) {
+            Row(Modifier.fillMaxWidth()) {
+                Spacer(Modifier.weight(1f))
+                androidx.compose.foundation.layout.Box(
+                    Modifier.size(30.dp)
+                        .clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(WTheme.surfaceAlt)
+                        .clickableNoRipple(onDismiss),
+                    Alignment.Center,
+                ) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Filled.Close, "Close",
+                        tint = WTheme.textMuted, modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+        }
         // Wordmark
         Text(
             "WORDOCIOUS",

@@ -134,7 +134,11 @@ function Tile({ letter, state, flipDelay, isInvalid }: TileProps) {
   return (
     <div
       className={cn(
-        'h-full aspect-square border-2 flex items-center justify-center text-[clamp(0.875rem,4vmin,1.5rem)] font-black uppercase',
+        // rounded-[14%] is a PERCENTAGE radius, so it tracks the tile as it
+        // resizes — the same proportional corner iOS draws (cornerRadius =
+        // size * 0.14 in BoardView.swift) and Android now mirrors. A fixed
+        // px radius would drift from the natives at other viewport sizes.
+        'h-full aspect-square border-2 rounded-[14%] flex items-center justify-center text-[clamp(0.875rem,4vmin,1.5rem)] font-black uppercase',
         hasFlip ? 'animate-tile-flip' : 'transition-colors',
         colorClass,
         state === TileState.EMPTY && !isInvalid && 'text-gray-800',

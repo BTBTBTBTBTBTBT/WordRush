@@ -118,6 +118,7 @@ fun MainScreen() {
     // non-daily seed); null falls back to today's daily seed.
     var activeSeed by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
+    var showSignIn by remember { mutableStateOf(false) }
     // Help / About / Privacy / Terms / Support overlay route (null = none).
     var infoRoute by remember { mutableStateOf<String?>(null) }
     // VS flow: lobby (true) → active match (mode, isDaily).
@@ -253,6 +254,15 @@ fun MainScreen() {
     }
 
     // Settings overlay (opened from the shared header gear, on any tab)
+    // Guest sign-in overlay (header "Sign In"). Presented OVER the tabs and
+    // dismissible, like iOS's AuthView sheet — guest state is untouched, so
+    // backing out returns you to the exact tab you were on. On success the
+    // auth state flow flips and the root gate re-composes on its own.
+    if (showSignIn) {
+        AuthScreen(onAuthenticated = { showSignIn = false }, onDismiss = { showSignIn = false })
+        return
+    }
+
     if (showSettings) {
         androidx.activity.compose.BackHandler { showSettings = false }
         SettingsScreen(onDone = { showSettings = false }, onOpenInfo = { infoRoute = it })
@@ -273,7 +283,11 @@ fun MainScreen() {
     ) { innerPadding ->
         androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             // Shared header on EVERY tab (wordmark + PRO + Help + Settings + streak/shield)
-            AppHeader(onSettings = { showSettings = true }, onNav = { infoRoute = it })
+            AppHeader(
+                onSettings = { showSettings = true },
+                onNav = { infoRoute = it },
+                onSignIn = { showSignIn = true },
+            )
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 when (selectedTab) {
                     0 -> HomeScreen(

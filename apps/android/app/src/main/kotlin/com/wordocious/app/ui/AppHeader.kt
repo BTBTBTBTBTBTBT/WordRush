@@ -53,6 +53,7 @@ import com.wordocious.app.ui.theme.WTheme
 fun AppHeader(
     onNav: (String) -> Unit = {},
     onSettings: () -> Unit = {},
+    onSignIn: () -> Unit = {},
 ) {
     val profile by AuthService.profile.collectAsState()
     val isGuest by AuthService.isGuest.collectAsState()
@@ -96,14 +97,17 @@ fun AppHeader(
         }
 
         // Guest — prominent Sign In entry (account tabs also prompt, but Home
-        // had none). exitGuest() returns to the AuthScreen.
+        // had none). Opens sign-in as a DISMISSIBLE overlay, matching iOS.
+        // This used to call exitGuest(), which flipped the root gate and tore
+        // MainScreen down: you lost your tab and your place, and backing out
+        // stranded you on the sign-in gate instead of where you started.
         if (isGuest) {
             Text(
                 "Sign In", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color.White,
                 modifier = Modifier
                     .clip(CircleShape)   // iOS Capsule()
                     .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
-                    .clickableNoRipple { AuthService.exitGuest() }
+                    .clickableNoRipple(onSignIn)
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
@@ -115,7 +119,7 @@ fun AppHeader(
                 bg = listOf(Color(0xFFFFFBEB), Color(0xFFFFF7ED)), border = Color(0xFFFDE68A),
                 onClick = { streakOpen = true },
             ) {
-                Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(13.dp))
+                Icon(painterResource(R.drawable.ic_flame), null, tint = Color(0xFFF97316), modifier = Modifier.size(13.dp))
                 Text("$streak", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF92400E))
             }
         }
@@ -137,7 +141,7 @@ fun AppHeader(
         if (streakOpen && p != null) {
             HeaderInfoPopover(onDismiss = { streakOpen = false }) {
                 PopoverTitle(iconTint = Color(0xFFF97316), title = "Daily Streak") {
-                    Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(16.dp))
+                    Icon(painterResource(R.drawable.ic_flame), null, tint = Color(0xFFF97316), modifier = Modifier.size(16.dp))
                 }
                 PopoverStatRow("Current", "${p.dailyLoginStreak} ${if (p.dailyLoginStreak == 1) "day" else "days"}")
                 PopoverStatRow("Best", "${p.bestDailyLoginStreak} ${if (p.bestDailyLoginStreak == 1) "day" else "days"}")
