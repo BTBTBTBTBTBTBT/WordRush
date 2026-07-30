@@ -262,14 +262,28 @@ object AuthService {
             _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
             null
         } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
-            null // user dismissed the sheet — not an error
+            // A real dismissal is silent by design. But Play Services ALSO
+            // reports some genuine failures as a cancellation, which is
+            // indistinguishable here and looks to the user like the button did
+            // nothing — the first Play tester picked his account and the screen
+            // just sat there. Report it so the real cause is visible remotely;
+            // a user who actually tapped away costs one harmless event.
+            runCatching {
+                io.sentry.Sentry.captureMessage(
+                    "google sign-in cancelled: ${e.type} ${e.errorMessage ?: e.message ?: ""}",
+                )
+            }
+            null
         } catch (e: androidx.credentials.exceptions.NoCredentialException) {
             // Both flows came back empty. The raw text is the bare "No
             // credentials available", which reads like our bug and tells the
             // user nothing they can act on.
             "No Google account available on this device. Add one in Settings, or sign in with email and password."
         } catch (e: Exception) {
-            e.message?.take(120) ?: "Google sign-in failed"
+            // Everything else, with the exception TYPE — "nothing happened" and
+            // a truncated message are not enough to act on from a text thread.
+            runCatching { io.sentry.Sentry.captureException(e) }
+            e.message?.take(120) ?: "Google sign-in failed (${e.javaClass.simpleName})"
         }
     }
 

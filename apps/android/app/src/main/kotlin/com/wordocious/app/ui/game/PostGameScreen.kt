@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -159,7 +160,7 @@ fun PostGameScreen(
     // animated GauntletResultsView — the generic header below reports the FINAL
     // STAGE's boards/guesses, not the run's.
     if (gauntletProgress != null) {
-        Box(modifier = Modifier.fillMaxSize().appBackground()) {
+        Box(modifier = Modifier.fillMaxSize().appBackground().statusBarsPadding()) {
             GauntletResultsScreen(
                 g = gauntletProgress, won = won, seed = seed, elapsedSeconds = elapsedSeconds,
                 hintsUsed = hintsUsed, onHome = onBack, onShare = onSharePressed,
@@ -173,10 +174,10 @@ fun PostGameScreen(
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize().appBackground()) {
+    Box(modifier = Modifier.fillMaxSize().appBackground().statusBarsPadding()) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp).padding(top = 56.dp, bottom = 24.dp),
+                .padding(horizontal = 12.dp).padding(top = 12.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -319,7 +320,7 @@ private fun GauntletResultsScreen(
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp).padding(top = 56.dp, bottom = 24.dp),
+            .padding(horizontal = 16.dp).padding(top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

@@ -18,6 +18,7 @@ import com.wordocious.app.data.CpuProgressionStore
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -139,7 +140,7 @@ fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? =
         // (cleared by opponent_reconnected / match_ended).
         vm.opponentDisconnectedSeconds?.let { secs ->
             if (vm.screen == VSScreen.MATCH || vm.screen == VSScreen.WAITING) {
-                Box(Modifier.fillMaxSize().padding(top = 52.dp), Alignment.TopCenter) {
+                Box(Modifier.fillMaxSize().statusBarsPadding().padding(top = 8.dp), Alignment.TopCenter) {
                     Row(
                         Modifier.padding(horizontal = 24.dp).clip(RoundedCornerShape(12.dp))
                             .background(Color(0xEBDC2626))

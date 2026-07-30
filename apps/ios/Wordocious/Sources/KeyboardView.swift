@@ -37,7 +37,10 @@ struct KeyboardView: View {
     private func letterKey(_ letter: String) -> some View {
         let state = vm.keyState(for: letter)
         let bg = state.map { Theme.keyColor(for: $0) } ?? Theme.keyDefault
-        let fg: Color = state == nil ? Theme.textPrimary : .white
+        // Theme.keyInk, not Theme.textPrimary: the unstated key's background is
+        // the fixed brand lavender, so a themed foreground rendered near-white
+        // on near-white in Dark and the letters vanished.
+        let fg: Color = state == nil ? Theme.keyInk : .white
         return Button {
             vm.type(letter)
             Haptics.tap()
@@ -133,7 +136,7 @@ struct KeyboardView: View {
                     Text(label).font(Brand.font(14, .heavy))
                 }
             }
-            .foregroundStyle(Theme.textPrimary)
+            .foregroundStyle(Theme.keyInk) // fixed key surface -> fixed ink (see above)
             .frame(width: 54, height: 52)
             .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }

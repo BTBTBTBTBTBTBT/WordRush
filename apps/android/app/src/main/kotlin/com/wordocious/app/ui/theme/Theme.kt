@@ -114,6 +114,10 @@ object WTheme {
 
     // Keyboard keys — darker 700-weight + slate-400 (distinct from board tiles)
     val keyDefault = Color(0xFFE8E5F0)
+    /** Ink for keys drawn on [keyDefault]. That surface is FIXED (it does not
+     *  follow the theme), so its text must be fixed too — using the themed
+     *  `text` made Dark render near-white letters on the near-white key. */
+    val keyInk = Color(0xFF1A1A2E)
     val keyCorrect = Color(0xFF6D28D9)       // violet-700
     val keyPresent = Color(0xFFD97706)       // amber-600
     val keyAbsent = Color(0xFF94A3B8)        // slate-400

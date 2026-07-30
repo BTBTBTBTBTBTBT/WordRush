@@ -192,7 +192,9 @@ private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onCli
     ) {
         Text(
             label,
-            color = if (unstated) WTheme.text else Color.White,
+            // Fixed ink on the fixed key surface — WTheme.text is near-white
+            // in Dark and disappeared against it.
+            color = if (unstated) WTheme.keyInk else Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
         )
@@ -204,7 +206,7 @@ private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onCli
 private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .weight(1.5f)
+            .weight(1.7f)
             .height(52.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(WTheme.keyDefault)
@@ -217,9 +219,19 @@ private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         if (label == "BACK") {
-            Icon(Icons.AutoMirrored.Outlined.Backspace, contentDescription = "Backspace", tint = WTheme.text, modifier = Modifier.size(20.dp))
+            Icon(Icons.AutoMirrored.Outlined.Backspace, contentDescription = "Backspace", tint = WTheme.keyInk, modifier = Modifier.size(20.dp))
         } else {
-            Text(label, color = WTheme.text, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+            // maxLines/softWrap + a slightly smaller face: "ENTER" wrapped to
+            // "ENTE / R" on a Galaxy S23, where the key is narrower than the
+            // label at 14sp. Never let this key wrap.
+            Text(
+                label,
+                color = WTheme.keyInk,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 13.sp,
+                maxLines = 1,
+                softWrap = false,
+            )
         }
     }
 }

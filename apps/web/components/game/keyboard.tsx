@@ -116,9 +116,13 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
                   style={{
+                    // Fixed dark ink, NOT var(--color-text). The key SURFACE is a
+                    // fixed brand lavender that does not follow the theme, so a
+                    // themed foreground put near-white #F0EEF6 on #E8E5F0 in Dark
+                    // and the letters became invisible.
                     backgroundColor: '#e8e5f0',
                     border: '1.5px solid var(--color-border)',
-                    color: 'var(--color-text)',
+                    color: '#1a1a2e',
                   }}
                 >
                   {key === 'BACK' ? <Delete className="h-5 w-5" aria-hidden="true" /> : key}

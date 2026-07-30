@@ -49,6 +49,10 @@ enum Theme {
     static let absent = Color(hex: 0x64748B)             // slate-500
     static let emptyBorder = Color(hex: 0xD1D5DB)        // Tailwind gray-300 (web board empty tile)
     static let keyDefault = Color(hex: 0xE8E5F0)
+    /// Ink for keys drawn on `keyDefault`. That surface is FIXED (it does not
+    /// follow the theme), so its text has to be fixed too — using the themed
+    /// text color made Dark render near-white letters on the near-white key.
+    static let keyInk = Color(hex: 0x1A1A2E)
 
     // Keyboard keys use the darker 600/700-weight purple/amber + slate-400
     // (distinct from the lighter board tiles), matching the web --key-* vars.

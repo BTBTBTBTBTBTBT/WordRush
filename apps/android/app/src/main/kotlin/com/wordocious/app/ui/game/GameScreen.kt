@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -611,13 +612,19 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 androidx.compose.ui.graphics.Brush.verticalGradient(
                     listOf(WTheme.bg, WTheme.surfaceHover), // #F8F7FF → #F3F0FF
                 ),
-            ),
+            )
+            // Keep content below the status bar. The gradient still paints
+            // behind it (the inset is applied AFTER the background), but the
+            // corner Home/? buttons were colliding with the clock and status
+            // icons on a real device — targetSdk 35 draws under the status bar
+            // on Android 15+ exactly as it does under the nav bar.
+            .statusBarsPadding(),
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp)) {
             // Centered gradient mode title + progress + live clock (spec Part 2 Headers)
             val board0 = state.boards[0]
             Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Gauntlet gets a 5-node stepper above the stage name (spec line 102).
