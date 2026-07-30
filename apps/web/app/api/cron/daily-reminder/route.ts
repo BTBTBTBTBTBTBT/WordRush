@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { sendApns, isApnsConfigured, type ApnsMessage } from '@/lib/push/apns';
+import { sendFcm, isFcmConfigured, type FcmMessage } from '@/lib/push/fcm';
 import webpush from 'web-push';
 
 // Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
@@ -43,7 +44,9 @@ export async function GET(req: NextRequest) {
   // deduped below so they don't get told twice.
   const [{ data: subs }, { data: devices }] = await Promise.all([
     sb.from('push_subscriptions').select('user_id, endpoint, keys'),
-    sb.from('device_tokens').select('user_id, token').eq('platform', 'ios'),
+    // Both natives: platform decides which sender each token goes to. This
+    // used to filter to 'ios', so Android tokens were stored and never used.
+    sb.from('device_tokens').select('user_id, token, platform').in('platform', ['ios', 'android']),
   ]);
 
   if ((!subs || subs.length === 0) && (!devices || devices.length === 0)) {
@@ -111,21 +114,30 @@ export async function GET(req: NextRequest) {
 
   // Native pass: win-back for lapsed players only (see recentSet above), minus
   // anyone already reached over web push this run.
-  const apnsTargets: ApnsMessage[] = (devices ?? [])
-    .filter((d: any) => !recentSet.has(d.user_id) && !notifiedUsers.has(d.user_id))
-    .map((d: any) => ({
-      token: d.token,
-      title: 'WE MISS YOU! 🧩',
-      body: "Your streak is waiting. Today's nine puzzles are live.",
-      url: '/daily',
-    }));
+  const nativeTargets = (devices ?? []).filter(
+    (d: any) => !recentSet.has(d.user_id) && !notifiedUsers.has(d.user_id),
+  );
+  const nativeNote = {
+    title: 'WE MISS YOU! 🧩',
+    body: "Your streak is waiting. Today's nine puzzles are live.",
+    url: '/daily',
+  };
 
-  const apns = await sendApns(apnsTargets);
+  const apnsTargets: ApnsMessage[] = nativeTargets
+    .filter((d: any) => d.platform === 'ios')
+    .map((d: any) => ({ token: d.token, ...nativeNote }));
+  const fcmTargets: FcmMessage[] = nativeTargets
+    .filter((d: any) => d.platform === 'android')
+    .map((d: any) => ({ token: d.token, ...nativeNote }));
 
-  // Apple only reports a token as dead at send time, so this is the one place
-  // device_tokens gets pruned.
-  if (apns.staleTokens.length > 0) {
-    await sb.from('device_tokens').delete().in('token', apns.staleTokens);
+  // Independent so one provider being down or unconfigured can't stop the other.
+  const [apns, fcm] = await Promise.all([sendApns(apnsTargets), sendFcm(fcmTargets)]);
+
+  // Both providers only report a token as dead at send time, so this is the one
+  // place device_tokens gets pruned.
+  const deadTokens = [...apns.staleTokens, ...fcm.staleTokens];
+  if (deadTokens.length > 0) {
+    await sb.from('device_tokens').delete().in('token', deadTokens);
   }
 
   return NextResponse.json({
@@ -140,6 +152,14 @@ export async function GET(req: NextRequest) {
       failed: apns.failed,
       staleRemoved: apns.staleTokens.length,
       errors: apns.errors,
+    },
+    fcm: {
+      configured: isFcmConfigured(),
+      targeted: fcmTargets.length,
+      sent: fcm.sent,
+      failed: fcm.failed,
+      staleRemoved: fcm.staleTokens.length,
+      errors: fcm.errors,
     },
   });
 }
