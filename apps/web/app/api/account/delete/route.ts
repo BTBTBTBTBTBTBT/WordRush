@@ -60,6 +60,17 @@ export async function POST(req: NextRequest) {
       admin.from('purchases').delete().eq('user_id', userId),
       admin.from('device_tokens').delete().eq('user_id', userId),
       admin.from('profiles').delete().eq('id', userId),
+      // STORAGE, not just tables. Both buckets are `public = true`, so an
+      // avatar left behind stays fetchable at a guessable URL forever — while
+      // the privacy policy and the in-app legal text both promise that account
+      // deletion removes the user's personal data. Deleting rows and leaving
+      // the photograph is the version of this that is worse than not offering
+      // deletion at all, because it is stated and untrue.
+      admin.storage.from('avatars').remove([`${userId}/avatar.jpg`]),
+      admin.storage.from('share-images').list(userId).then(async (r) => {
+        const files = (r.data ?? []).map((f) => `${userId}/${f.name}`);
+        if (files.length) await admin.storage.from('share-images').remove(files);
+      }),
     ]);
     const leftovers = sweep.filter((r) => r.status === 'rejected');
     if (leftovers.length > 0) {

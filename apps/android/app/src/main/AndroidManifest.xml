@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- androidx.biometric arrives transitively via credentials-play-services-auth
+         and contributes these two. NOTHING in the app uses biometrics, and
+         USE_FINGERPRINT has been deprecated since API 28 — a deprecated
+         fingerprint permission on a word game is exactly the kind of thing that
+         draws a review question and shows up on the Play listing's permission
+         list for no reason. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove" />
 
     <application
         android:name=".App"
