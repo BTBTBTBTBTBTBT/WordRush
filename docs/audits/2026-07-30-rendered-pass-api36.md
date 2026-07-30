@@ -89,8 +89,32 @@ no comment at all — the same failure shape as the dead `NEXT_BOARD` action.
 Both fixes were **verified by re-capture on the emulator**, not by reasoning:
 dark icons → white icons, white strip → themed strip.
 
+### Side-by-side against iOS (first one ever done)
+
+Classic captured on both at the same state — Android API 36 emulator vs an
+iPhone 17 Pro simulator. **Structurally identical**: circled Home and ? buttons
+flanking a gradient title, the same guess/timer subhead, a 5x6 grid, and a
+3-row keyboard with backspace left and ENTER right on the bottom row. The
+remaining differences are device geometry (aspect ratio, corner radius), not
+divergence.
+
+One thing it surfaced, chased down, and **did not** turn out to be a bug: iOS
+read `3248:46` where Android read `0:06`. The timer is not running while
+backgrounded — `scenePhase` and `onDisappear` both call `pauseTimer()`, and the
+game-start interstitial pauses it too. The sim had simply been foregrounded for
+54 hours. The only real residue is cosmetic: the formatter is
+`"\(s / 60):\(s % 60)"` with no roll into hours (`GameScreen.swift:387` and
+four sibling copies), so an extremely long single session reads as minutes.
+Low severity, logged rather than fixed.
+
+Recording the non-finding deliberately: an audit file that lists only
+confirmed bugs teaches the next reader nothing about what was checked and
+cleared.
+
 ### Still open after the dark pass
 
-Guest-session-only, no VS/Gauntlet/ProperNoundle rendered, emulator not device,
-and no side-by-side against iOS. Those limits from the light pass all still
-stand.
+- **Guest session only.** Every populated surface still unrendered.
+- **No VS / Gauntlet / ProperNoundle** — VS needs a live opponent.
+- **Emulator and simulator, not devices.** No notch, no OEM skin.
+- **Only Classic compared side-by-side.** Home, the tabs, and the multi-board
+  modes have Android captures but no iOS counterpart yet.
