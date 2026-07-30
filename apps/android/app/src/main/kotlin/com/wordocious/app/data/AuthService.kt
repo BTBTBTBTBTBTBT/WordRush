@@ -179,15 +179,38 @@ object AuthService {
      */
     suspend fun signInWithGoogle(context: android.content.Context): String? {
         return try {
-            val option = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
+            val manager = androidx.credentials.CredentialManager.create(context)
+
+            // Two shots, because the bottom-sheet flow reports "No credentials
+            // available" for reasons that have nothing to do with the user:
+            // Play Services applies a 24h cooldown after the sheet is dismissed
+            // a couple of times, and it stays empty while a newly-registered
+            // signing SHA-1 propagates. GetSignInWithGoogleOption is the flow
+            // Google actually recommends behind an explicit "Continue with
+            // Google" button — it opens the full account picker instead of the
+            // sheet, and is subject to neither. Both hand back a
+            // GoogleIdTokenCredential, so the rest of this is unchanged.
+            val idOption = com.google.android.libraries.identity.googleid.GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(GOOGLE_WEB_CLIENT_ID)
                 .build()
-            val request = androidx.credentials.GetCredentialRequest.Builder()
-                .addCredentialOption(option)
+            val buttonOption = com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+                .Builder(GOOGLE_WEB_CLIENT_ID)
                 .build()
-            val result = androidx.credentials.CredentialManager.create(context)
-                .getCredential(context, request)
+
+            suspend fun request(option: androidx.credentials.CredentialOption) =
+                manager.getCredential(
+                    context,
+                    androidx.credentials.GetCredentialRequest.Builder()
+                        .addCredentialOption(option)
+                        .build(),
+                )
+
+            val result = try {
+                request(idOption)
+            } catch (_: androidx.credentials.exceptions.NoCredentialException) {
+                request(buttonOption)
+            }
             val googleCred = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
                 .createFrom(result.credential.data)
             client.auth.signInWith(io.github.jan.supabase.auth.providers.builtin.IDToken) {
@@ -200,6 +223,11 @@ object AuthService {
             null
         } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
             null // user dismissed the sheet — not an error
+        } catch (e: androidx.credentials.exceptions.NoCredentialException) {
+            // Both flows came back empty. The raw text is the bare "No
+            // credentials available", which reads like our bug and tells the
+            // user nothing they can act on.
+            "No Google account available on this device. Add one in Settings, or sign in with email and password."
         } catch (e: Exception) {
             e.message?.take(120) ?: "Google sign-in failed"
         }
