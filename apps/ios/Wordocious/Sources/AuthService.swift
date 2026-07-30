@@ -413,8 +413,17 @@ final class AuthService: ObservableObject {
     /// Mirror the profile's entitlement into the cache on every load, so the
     /// next launch paints the right tier immediately. Storing the EXPIRY (not a
     /// bool) is what keeps a cancelled subscription from lingering.
+    ///
+    /// A NIL profile means "not loaded yet" and must leave the cache alone.
+    /// Clearing on nil is why build 137 still flashed the free tier: the auth
+    /// listener can emit a transient signedOut at launch, which sets profile =
+    /// nil and wiped the cache moments before the header read it — so the value
+    /// was written every session and destroyed every launch. The cache is
+    /// cleared in exactly one place now: an explicit signOut().
     private static func cacheProEntitlement(from profile: Profile?) {
-        guard let profile, Wordocious.isProActive(profile) else {
+        guard let profile else { return }
+        guard Wordocious.isProActive(profile) else {
+            // A loaded profile that ISN'T Pro is real information — drop it.
             UserDefaults.standard.removeObject(forKey: proCacheKey)
             return
         }
