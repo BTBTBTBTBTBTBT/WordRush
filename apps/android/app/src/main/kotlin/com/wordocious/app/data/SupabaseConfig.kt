@@ -29,7 +29,19 @@ object SupabaseConfig {
                 ignoreUnknownKeys = true
                 coerceInputValues = true
             })
-            install(Auth)
+            // scheme/host define the redirect Supabase sends the browser back
+            // to after a web OAuth round-trip: wordocious://auth-callback.
+            // Needed by the browser fallback in AuthService.signInWithGoogle —
+            // when Credential Manager can't mint a token (a device Google
+            // account stuck in "reauth required" kills EVERY on-device path),
+            // the browser flow still works because it authenticates against the
+            // user's Google session, not the device account.
+            // MUST be listed in Supabase → Authentication → URL Configuration →
+            // Redirect URLs, or Supabase refuses the redirect.
+            install(Auth) {
+                scheme = "wordocious"
+                host = "auth-callback"
+            }
             install(Postgrest)
             install(Storage)
             // Android HTTP engine

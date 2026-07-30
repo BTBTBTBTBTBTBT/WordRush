@@ -34,13 +34,15 @@ import java.time.Instant
  * Google Play Billing wrapper — Android analogue of the iOS StoreKit 2
  * StoreManager (apps/ios/Wordocious/Sources/StoreManager.swift) and the web's
  * lib/payment/purchase-service.ts fulfillment:
- *   pro_monthly  $6.99  auto-renewing sub  → +30d,  +4 streak shields
- *   pro_yearly   $59.99 auto-renewing sub  → +365d, +4 streak shields
+ *   pro_monthly  $6.99  auto-renewing sub  → +30d
+ *   pro_yearly   $59.99 auto-renewing sub  → +365d
  *   pro_day      $1.00  consumable         → +24h stacked on any existing
- *                                            future expiry, no shields
+ *                                            future expiry
  *
  * Entitlement is written to the same `profiles` columns every client uses
- * (is_pro / pro_expires_at / streak_shields) via AuthService.applyProGrant.
+ * (is_pro / pro_expires_at) via AuthService.applyProGrant. The +4 streak
+ * shields per paid period are NOT granted here — the Play RTDN webhook owns
+ * them (see PAYMENTS_RUNBOOK "streak shields").
  * Everything is wrapped in runCatching — on emulators without Play services
  * or before the Play Console products exist, the screen simply keeps its
  * hardcoded fallback prices and purchase attempts surface a friendly error.
@@ -63,14 +65,14 @@ object StoreManager {
     private var productDetails: Map<String, ProductDetails> = emptyMap()
 
     /**
-     * Play orderIds whose one-time effects (+4 sub shields, Day Pass +24h) have
-     * been applied — Android analogue of iOS StoreManager.processedTxIDs. Play
-     * mints a NEW orderId per billing period on the SAME purchaseToken (renewals
-     * are "GPA.xxxx..0", "..1", … on the initial order's base), so an unseen
-     * renewal-shaped orderId at launch reconcile = a new billing period → that's
-     * where renewal shields are granted (the Play webhook grants none — the
-     * client is the single shield authority on mobile, see PAYMENTS_RUNBOOK).
-     * Persisted so relaunches can't re-credit; volume is ~1 orderId per renewal.
+     * Play orderIds whose one-time effect (Day Pass +24h) has been applied —
+     * Android analogue of iOS StoreManager.processedTxIDs. Without it a Day Pass
+     * re-delivered after a failed consume would stack a second 24h for free.
+     *
+     * It no longer tracks subscription orders: its other job was deciding when
+     * to credit renewal shields client-side, and those are granted server-side
+     * from the RTDN webhook now — which sees a renewal whether or not the app is
+     * ever reopened.
      */
     private const val PREFS_NAME = "wordocious_store"
     private const val KEY_SEEN_ORDERS = "seen-order-ids"
@@ -82,15 +84,6 @@ object StoreManager {
         // putStringSet must get a fresh copy — SharedPreferences may not persist
         // in-place mutations of the set it handed out.
         prefs?.edit()?.putStringSet(KEY_SEEN_ORDERS, HashSet(seenOrderIds))?.apply()
-    }
-
-    /** True when [orderId] is a new billing period of a sub we've already
-     *  credited: same base order ("GPA.xxxx" before the ".." renewal suffix) as
-     *  a previously seen orderId. First sight of an entirely unknown order (a
-     *  reinstall / new device) is NOT a renewal — record it, credit nothing. */
-    private fun isRenewalOfSeenOrder(orderId: String): Boolean {
-        val base = orderId.substringBefore("..")
-        return seenOrderIds.any { it != orderId && it.substringBefore("..") == base }
     }
 
     private val _prices = MutableStateFlow(FALLBACK_PRICES)
@@ -326,7 +319,7 @@ object StoreManager {
                             val existing = loaded.proExpiresAt?.let { AuthService.parseTimestamp(it) }
                             val base = if (existing != null && existing.isAfter(now)) existing else now
                             val target = base.plus(Duration.ofDays(1))
-                            AuthService.applyProGrant(target.toString(), addShields = 0)
+                            AuthService.applyProGrant(target.toString())
                             // iOS only finishes a Day Pass transaction once the
                             // entitlement is durably written, leaving it
                             // unfinished for retry otherwise (StoreManager.swift
@@ -365,54 +358,43 @@ object StoreManager {
                     }
                     val days = if (productId == PRO_YEARLY) 365L else 30L
                     val now = Instant.now()
-                    val expiry: Instant = if (isNewPurchase) {
-                        now.plus(Duration.ofDays(days))
-                    } else {
-                        // RECONCILE/RESTORE. Play only returns a sub here while
-                        // it's ACTIVE, but Purchase carries no expiry — purchaseTime
-                        // is the ORIGINAL purchase, so purchaseTime+days is months
-                        // in the PAST for a renewed sub, and the old code wrote that
-                        // → Restore literally revoked Pro (F5). Never write a past
-                        // date: keep an already-future stored expiry, else set a
-                        // conservative now+days (the RTDN webhook / server sweep is
-                        // the real authority once live). max() also prevents this
-                        // launch reconcile from shrinking a good webhook expiry.
-                        val existing = AuthService.profile.value?.proExpiresAt
-                            ?.let { AuthService.parseTimestamp(it) }
-                        val floor = now.plus(Duration.ofDays(days))
-                        if (existing != null && existing.isAfter(floor)) existing else floor
+                    val existing = AuthService.profile.value?.proExpiresAt
+                        ?.let { AuthService.parseTimestamp(it) }
+                    val floor = now.plus(Duration.ofDays(days))
+
+                    if (isNewPurchase) {
+                        // A real payment: extend by the plan's length. This used
+                        // to write now+days flat, which threw away every day the
+                        // player already held from other sources — referral
+                        // rewards, admin comps, stacked Day Passes. Someone with
+                        // 97 banked days who bought monthly landed on 30 and lost
+                        // the other 67, with no record to restore from.
+                        // applyProGrant takes the later of this and the stored
+                        // window, so the purchase can only ever add.
+                        AuthService.applyProGrant(floor.toString())
+                    } else if (existing == null || !existing.isAfter(now)) {
+                        // RECONCILE/RESTORE with no live window. Play only returns
+                        // a sub here while it's ACTIVE, but Purchase carries no
+                        // expiry — purchaseTime is the ORIGINAL purchase, so
+                        // purchaseTime+days is months in the PAST for a renewed
+                        // sub, and writing that made Restore revoke Pro (F5).
+                        // Re-establish with a conservative now+days; the RTDN
+                        // webhook / server sweep is the real authority once live.
+                        AuthService.applyProGrant(floor.toString())
                     }
-                    // Shields: the CLIENT is the single +4-per-billing-period
-                    // authority on mobile (the Play webhook grants none — see
-                    // PAYMENTS_RUNBOOK "streak shields model"). Credit once per
-                    // orderId: initial purchase now, each renewal when its new
-                    // orderId ("base..N") shows up at launch reconcile. First
-                    // sight of an unknown base order (reinstall / new device) is
-                    // recorded but NOT credited, so a device swap can't re-mint
-                    // shields already granted on the old device.
-                    val orderId = purchase.orderId
-                    val addShields = when {
-                        orderId == null -> if (isNewPurchase) 4 else 0 // no orderId (test store) — old rule
-                        orderId in seenOrderIds -> 0                    // already credited this period
-                        isNewPurchase -> 4                              // initial purchase
-                        isRenewalOfSeenOrder(orderId) -> 4              // new billing period found at reconcile
-                        else -> 0                                       // first sight after reinstall — record only
-                    }
-                    // Only record the order as credited if the write actually
-                    // landed. Marking it seen after a failed PATCH (offline at
-                    // purchase, RLS rejection, 5xx) permanently forfeits that
-                    // period's +4 shields — no later reconcile would retry it,
-                    // because the order would look already-credited.
-                    val ok = if (addShields > 0) {
-                        AuthService.applyProGrant(expiry.toString(), addShields = addShields)
-                    } else {
-                        // No shields to add — refresh the window ONLY. applyProGrant
-                        // would rewrite streak_shields from the in-memory profile,
-                        // which is null during the launch reconcile race and would
-                        // zero a paying subscriber's balance.
-                        AuthService.syncProExpiry(expiry.toString())
-                    }
-                    if (ok) orderId?.let { markOrderSeen(it) }
+                    // else: the stored window is already live, so leave it alone.
+                    // Writing now+days on every launch would push a monthly
+                    // subscriber's expiry out another 30 days each time the app
+                    // opened — and now that the webhook never shrinks an expiry
+                    // either, that inflation would be permanent free Pro.
+                    //
+                    // No shield grant on any of these paths. The +4 per billing
+                    // period comes from the RTDN webhook (PURCHASED / RENEWED /
+                    // RECOVERED), which is the only side that sees a renewal for
+                    // a player who never reopens the app, and the only side a
+                    // user can't fake by PATCHing their own profiles row. This
+                    // client used to add its own +4 on top, so every subscriber
+                    // was quietly getting 8 shields a period instead of 4.
                 }
             }
         }

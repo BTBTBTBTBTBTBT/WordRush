@@ -48,6 +48,17 @@
                 <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/auth/reset" />
                 <data android:scheme="https" android:host="wordocious.com" android:pathPrefix="/auth/confirm" />
             </intent-filter>
+            <!-- Return leg of the browser Google sign-in fallback. Supabase
+                 sends the browser here after the OAuth round-trip; the session
+                 is parsed by handleDeeplinks() in MainActivity. Custom scheme,
+                 so no autoVerify / assetlinks involvement. Must match the
+                 scheme+host configured on install(Auth) in SupabaseConfig. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="wordocious" android:host="auth-callback" />
+            </intent-filter>
         </activity>
 
         <!-- Sentry crash reporting (manifest auto-init, no gradle plugin).

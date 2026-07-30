@@ -1,6 +1,7 @@
 package com.wordocious.app.data
 
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.handleDeeplinks
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.postgrest.postgrest
@@ -277,21 +278,85 @@ object AuthService {
             // 16 after the tester reported picking an account and landing back
             // on an empty sign-in screen. Say so instead of failing silently.
             if (detail.contains("reauth", ignoreCase = true)) {
-                "Google needs you to sign in to your Google account again on this device. " +
-                    "Open Settings > Passwords & accounts > Google and re-verify, or use email and password."
+                // "Account reauth failed" means the DEVICE's Google account
+                // can't mint a token. Every Credential Manager option — the
+                // bottom sheet AND the account picker — is dead in that state,
+                // so retrying on-device is pointless. The browser flow is not:
+                // it authenticates against the user's Google session in the
+                // browser and never touches the device account. Hand off to it
+                // rather than dead-ending the user on an error they'd have to
+                // fix in system Settings.
+                startBrowserGoogleSignIn(context)
+                null
             } else {
                 null // a genuine dismissal stays silent
             }
         } catch (e: androidx.credentials.exceptions.NoCredentialException) {
-            // Both flows came back empty. The raw text is the bare "No
-            // credentials available", which reads like our bug and tells the
-            // user nothing they can act on.
-            "No Google account available on this device. Add one in Settings, or sign in with email and password."
+            // Both on-device flows came back empty — no usable Google account,
+            // or a signing SHA-1 that hasn't propagated yet. Same conclusion as
+            // the reauth case: nothing on-device can succeed, but the browser
+            // can. Go there instead of telling the user to go add an account.
+            runCatching { io.sentry.Sentry.captureMessage("google sign-in: no credential, using browser fallback") }
+            startBrowserGoogleSignIn(context)
+            null
         } catch (e: Exception) {
             // Everything else, with the exception TYPE — "nothing happened" and
             // a truncated message are not enough to act on from a text thread.
             runCatching { io.sentry.Sentry.captureException(e) }
             e.message?.take(120) ?: "Google sign-in failed (${e.javaClass.simpleName})"
+        }
+    }
+
+    /**
+     * Browser Google sign-in — the fallback for every state Credential Manager
+     * can't get out of.
+     *
+     * The first real Play tester hit "Account reauth failed": the Google
+     * account ON THE DEVICE was in a state where Play Services would not mint
+     * an ID token. That kills the bottom sheet and the account picker alike,
+     * because both go through Credential Manager, and no amount of retrying or
+     * reconfiguring on our side changes it — the previous build's only answer
+     * was an error message asking him to go fix it in system Settings.
+     *
+     * This flow doesn't use the device account at all. Supabase opens Google's
+     * consent page in a Custom Tab, the user picks the account with their
+     * BROWSER Google session, and Google redirects to wordocious://auth-callback
+     * (the manifest intent-filter), where completeBrowserSignIn picks the
+     * session up. Same provider, same Supabase user, same `profiles` row — the
+     * only difference is which side of the device mints the token.
+     *
+     * Fire-and-forget: the result arrives via the deep link, not a return value.
+     */
+    private fun startBrowserGoogleSignIn(context: android.content.Context) {
+        scope.launch {
+            runCatching {
+                client.auth.signInWith(
+                    io.github.jan.supabase.auth.providers.Google,
+                )
+            }.onFailure { e ->
+                runCatching { io.sentry.Sentry.captureException(e) }
+            }
+        }
+    }
+
+    /**
+     * Return leg of startBrowserGoogleSignIn. Called from MainActivity for
+     * every intent; a no-op unless this one carries a Supabase session.
+     *
+     * The profile load and the authenticated flip have to happen HERE too —
+     * the browser path never returns through signInWithGoogle, so nothing else
+     * would ever run them and the user would land back on a sign-in screen
+     * holding a perfectly good session.
+     */
+    fun completeBrowserSignIn(intent: android.content.Intent) {
+        client.handleDeeplinks(intent) { _ ->
+            scope.launch {
+                val uid = client.auth.currentUserOrNull()?.id ?: return@launch
+                if (!loadProfile(uid)) return@launch   // suspended account
+                _isAuthenticated.value = true
+                _isGuest.value = false
+                SettingsPref.set(HAD_SESSION, true)
+            }
         }
     }
 
@@ -463,52 +528,41 @@ object AuthService {
     }
 
     /**
-     * Write Pro entitlement after a verified Play Billing purchase — mirrors
-     * iOS AuthService.applyProGrant and web purchase-service fulfillSubscription:
-     * is_pro=true + pro_expires_at, plus +addShields streak shields for
-     * monthly/yearly (0 for the day pass and for launch/restore reconciles).
-     */
-    /**
-     * Grant Pro and ADD shields. Returns false if the write did not land, so the
-     * caller can leave the purchase unconsumed and retry — a swallowed failure
-     * here permanently loses a paid entitlement.
+     * Write Pro entitlement after a verified Play Billing purchase / restore —
+     * mirrors iOS AuthService.applyProGrant and web stripe-fulfillment:
+     * is_pro=true + pro_expires_at, never shrinking an existing window.
      *
-     * Callers must not use this to merely refresh an expiry: it reads
-     * `streak_shields` from the in-memory profile, which is null during the
-     * launch reconcile race, and would then write shields back to `addShields`
-     * alone — zeroing the balance of a paying subscriber. Use [syncProExpiry].
+     * Returns false if the write did not land, so the caller can leave the
+     * purchase unconsumed and retry — a swallowed failure here permanently
+     * loses a paid entitlement.
+     *
+     * This deliberately does NOT write `streak_shields`. It used to add +4 on a
+     * purchase while the Play RTDN webhook added its own +4, so a subscriber
+     * banked 8 a period instead of 4; and since the column is client-writable,
+     * the client half was the forgeable one. Paid shields are server-only now
+     * (PAYMENTS_RUNBOOK "streak shields"). Dropping the write also retires a
+     * live hazard: the old read-modify-write took the total from the in-memory
+     * profile, which is null during the launch reconcile race, and would then
+     * store `addShields` alone — zeroing a paying subscriber's balance.
      */
-    suspend fun applyProGrant(expiresAtIso: String, addShields: Int): Boolean {
+    suspend fun applyProGrant(expiresAtIso: String): Boolean {
         val uid = userId ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull() ?: return false
-        // Never write a shield total derived from an unloaded profile.
-        if (addShields > 0 && _profile.value == null) {
-            runCatching { loadProfile(uid) }
-            if (_profile.value == null) return false
-        }
-        val shields = (_profile.value?.streakShields ?: 0) + maxOf(0, addShields)
+        // Never shrink a longer stored window. Play tells us what Play sold;
+        // pro_expires_at also carries referral rewards (+3d per redemption, +90d
+        // when a referred friend goes annual), admin comps and stacked Day
+        // Passes. Overwriting it took a player holding 97 banked days who then
+        // bought monthly down to 30 — 67 days destroyed with nothing to restore
+        // them from. If the profile hasn't loaded we have no window to preserve;
+        // the RTDN webhook re-reads the row itself and is the real backstop.
+        val target = parseTimestamp(expiresAtIso)
+        val existing = _profile.value?.proExpiresAt?.let { parseTimestamp(it) }
+        val effective =
+            if (target != null && existing != null && existing.isAfter(target)) existing.toString()
+            else expiresAtIso
         val ok = runCatching {
             client.postgrest["profiles"].update({
                 set("is_pro", true)
-                set("pro_expires_at", expiresAtIso)
-                set("streak_shields", shields)
-            }) { filter { eq("id", uid) } }
-        }.isSuccess
-        loadProfile(uid)
-        return ok
-    }
-
-    /**
-     * Refresh ONLY the Pro window — never touches streak_shields. This is what
-     * the launch reconcile needs (iOS StoreManager uses the same split): it can
-     * run before the profile has loaded, and shields are a separate benefit
-     * granted once per billing period, not per reconcile.
-     */
-    suspend fun syncProExpiry(expiresAtIso: String): Boolean {
-        val uid = userId ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull() ?: return false
-        val ok = runCatching {
-            client.postgrest["profiles"].update({
-                set("is_pro", true)
-                set("pro_expires_at", expiresAtIso)
+                set("pro_expires_at", effective)
             }) { filter { eq("id", uid) } }
         }.isSuccess
         loadProfile(uid)
