@@ -122,7 +122,10 @@ final class AuthService: ObservableObject {
             return
         }
         if let session = try? await client.auth.session {
+            // handleSignedIn claims save ownership for this user.
             await handleSignedIn(userId: session.user.id.uuidString)
+        } else {
+            AuthService.discardUnattributedSaves()
         }
         isLoading = false
 
@@ -263,6 +266,17 @@ final class AuthService: ObservableObject {
             GamePersistence.shared.clearAllSaves()
         }
         UserDefaults.standard.set(owner, forKey: lastOwnerKey)
+    }
+
+    /// Upgrade path: builds before the ownership change wiped saves on SIGN-OUT,
+    /// so a device sitting signed out has no owner recorded AND — under that old
+    /// behavior — no saves worth keeping. Any files still on disk in that state
+    /// are unattributable, and leaving them would hand the next account to sign
+    /// in someone else's boards. Discard them once, then let the normal claim
+    /// take over. Only ever runs when no owner has been recorded yet.
+    static func discardUnattributedSaves() {
+        guard UserDefaults.standard.string(forKey: lastOwnerKey) == nil else { return }
+        GamePersistence.shared.clearAllSaves()
     }
 
     /// Permanently delete the account. The native client only holds the anon

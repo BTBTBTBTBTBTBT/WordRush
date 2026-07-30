@@ -100,6 +100,18 @@ object AuthService {
         }
         SettingsPref.set(LAST_OWNER, owner)
     }
+
+    /** Upgrade path: builds before the ownership change wiped saves on SIGN-OUT,
+     *  so a device sitting signed out has no owner recorded AND — under that old
+     *  behavior — no saves worth keeping. Anything still on disk in that state is
+     *  unattributable, and leaving it would hand the next account to sign in
+     *  someone else's boards. Discard once, then let the normal claim take over.
+     *  Only ever runs when no owner has been recorded yet. */
+    fun discardUnattributedSaves() {
+        if (SettingsPref.get(LAST_OWNER, "").isNotEmpty()) return
+        runCatching { DailyCompletionsService.clearCache() }
+        runCatching { GamePersistence.clearAll() }
+    }
     /** Leave guest mode → the MainActivity gate shows AuthScreen so the guest
      *  can sign in (used by the "Sign in" prompts on account-only surfaces). */
     fun exitGuest() { _isGuest.value = false }
@@ -136,7 +148,10 @@ object AuthService {
                 client.auth.awaitInitialization()
                 val user = runCatching { client.auth.currentUserOrNull() }.getOrNull()
                 if (user != null && loadProfile(user.id)) {
+                    // loadProfile claims save ownership for this user.
                     _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
+                } else {
+                    discardUnattributedSaves()
                 }
             } catch (_: Exception) {
                 // No session — stay unauthenticated

@@ -91,31 +91,26 @@ export async function redeemReferral(userId: string, code: string): Promise<
   // Friend's 7-day trial.
   await extendPro(userId, REFERRAL_TRIAL_DAYS);
 
-  // Inviter's instant rewards, capped by lifetime redemption count. Isolated
-  // in try/catch because the row is already claimed and the friend's trial is
-  // already granted at this point — a failure paying the INVITER must not
+  // Inviter's instant rewards. One atomic RPC rather than count → extend →
+  // read shields → write shields: those four round trips let two simultaneous
+  // redemptions read the same count (double reward) or interleave the shield
+  // read/write and lose one. The function locks the inviter's profile row, so
+  // concurrent redemptions for the same inviter queue instead of racing, and
+  // stamps a milestone flag so the shields land exactly once ever.
+  //
+  // Isolated in try/catch because the row is already claimed and the friend's
+  // trial already granted at this point — a failure paying the INVITER must not
   // report the redemption as failed to the FRIEND, who would then retry and be
   // told the code was already used.
   try {
-    const { count } = await sb.from('referrals')
-      .select('id', { count: 'exact', head: true })
-      .eq('inviter_id', ref.inviter_id)
-      .in('status', ['redeemed', 'converted']);
-    const redemptions = count ?? 1;
-    if (redemptions <= INSTANT_REWARD_CAP) {
-      await extendPro(ref.inviter_id, INSTANT_REWARD_DAYS);
-    }
-    // Known race: two redemptions landing together can both read the same
-    // count, double-granting (or skipping) the milestone shields. Left as-is —
-    // shields are cosmetic-ish and the fix needs an atomic RPC. Revisit if
-    // referral volume ever makes simultaneous redemptions likely.
-    if (redemptions === MILESTONE_SHIELDS_AT) {
-      const { data: inv } = await sb.from('profiles')
-        .select('streak_shields').eq('id', ref.inviter_id).maybeSingle();
-      await sb.from('profiles')
-        .update({ streak_shields: (inv?.streak_shields ?? 0) + MILESTONE_SHIELDS })
-        .eq('id', ref.inviter_id);
-    }
+    const { error: rewardErr } = await sb.rpc('grant_referral_inviter_rewards', {
+      p_inviter: ref.inviter_id,
+      p_instant_days: INSTANT_REWARD_DAYS,
+      p_cap: INSTANT_REWARD_CAP,
+      p_milestone_at: MILESTONE_SHIELDS_AT,
+      p_milestone_shields: MILESTONE_SHIELDS,
+    });
+    if (rewardErr) throw new Error(rewardErr.message);
   } catch (e) {
     console.error('[referrals] inviter reward failed (friend trial unaffected):', e);
   }
