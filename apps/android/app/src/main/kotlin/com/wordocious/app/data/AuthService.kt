@@ -268,12 +268,20 @@ object AuthService {
             // nothing — the first Play tester picked his account and the screen
             // just sat there. Report it so the real cause is visible remotely;
             // a user who actually tapped away costs one harmless event.
-            runCatching {
-                io.sentry.Sentry.captureMessage(
-                    "google sign-in cancelled: ${e.type} ${e.errorMessage ?: e.message ?: ""}",
-                )
+            val detail = "${e.type} ${e.errorMessage ?: e.message ?: ""}"
+            runCatching { io.sentry.Sentry.captureMessage("google sign-in cancelled: $detail") }
+            // Play Services raises TYPE_USER_CANCELED for "Account reauth
+            // failed" — the Google account on the DEVICE is in a state where it
+            // cannot mint a token and needs re-verification. Nothing to do with
+            // our client config; confirmed via Sentry on a Galaxy S23 / Android
+            // 16 after the tester reported picking an account and landing back
+            // on an empty sign-in screen. Say so instead of failing silently.
+            if (detail.contains("reauth", ignoreCase = true)) {
+                "Google needs you to sign in to your Google account again on this device. " +
+                    "Open Settings > Passwords & accounts > Google and re-verify, or use email and password."
+            } else {
+                null // a genuine dismissal stays silent
             }
-            null
         } catch (e: androidx.credentials.exceptions.NoCredentialException) {
             // Both flows came back empty. The raw text is the bare "No
             // credentials available", which reads like our bug and tells the
