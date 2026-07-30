@@ -196,7 +196,8 @@ private fun tileBrush(state: TileState): Brush = when (state) {
     TileState.PRESENT -> Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706)))
     // Solo hint style: faint gray-100 ghost tile (TileView / WTheme.hintUsed).
     TileState.HINT_USED -> Brush.linearGradient(listOf(Color(0xFFF3F4F6), Color(0xFFF3F4F6)))
-    else -> Brush.linearGradient(listOf(Color(0xFF9CA3AF), Color(0xFF9CA3AF)))
+    // Theme-driven (iOS Theme.textMuted) so Ocean/Forest tint the gray tiles too.
+    else -> Brush.linearGradient(listOf(WTheme.textMuted, WTheme.textMuted))
 }
 
 @Composable

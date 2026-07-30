@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Grid3x3
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.TheaterComedy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -135,6 +136,7 @@ private fun RadarChart(data: StatsDeepService.SkillRadarData) {
 @Composable
 fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
     var data by remember { mutableStateOf<StatsDeepService.SkillRadarData?>(null) }
+    var radarLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(isPro) {
         if (isPro) AuthService.userId?.let { uid ->
             // P-cache: seed from the session memo (instant repaint), refresh, store back.
@@ -144,11 +146,18 @@ fun SkillRadarCard(isPro: Boolean, onGoPro: () -> Unit) {
                 data = fresh
                 com.wordocious.app.data.StatsMemo.set(memoKey, fresh)
             }
+            radarLoaded = true
         }
     }
     // Locked preview uses the web's static sample so free users see the shape.
     val d = if (isPro) data else StatsDeepService.SkillRadarData(62, 74, 55, 40, 68)
-    if (d == null) return
+    if (d == null) {
+        // Pro user with too little history — say why, don't vanish (iOS parity).
+        if (isPro && radarLoaded) {
+            StatsEmptyCard("Skill Radar", hint = "Play 5+ solo games to generate your skill radar.")
+        }
+        return
+    }
     // F3: fade+rise when the fetch lands (static sample for free users → instant).
     AsyncEntrance(visible = true) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -407,10 +416,8 @@ private fun StageBreakdownCard(stages: List<StatsDeepService.GauntletStageStat>)
     KitCard {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(
-                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_skull), null,
-                    tint = Color(0xFFD97706), modifier = Modifier.size(14.dp),
-                )
+                // Theatre masks, not the skull (which is the Gauntlet/Nemesis glyph) — iOS.
+                Icon(Icons.Filled.TheaterComedy, null, tint = Color(0xFFD97706), modifier = Modifier.size(14.dp))
                 Text("Stage Breakdown", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

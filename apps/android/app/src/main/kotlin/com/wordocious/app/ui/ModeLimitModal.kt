@@ -2,10 +2,8 @@ package com.wordocious.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +22,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -56,11 +55,12 @@ fun ModeLimitModal(
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            Modifier.widthIn(max = 360.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp))
+            Modifier.widthIn(max = 360.dp).fillMaxWidth().shadow(20.dp, RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(WTheme.surface).clickableNoRipple {}.padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Icon(Icons.Filled.Lock, null, tint = WTheme.textMuted, modifier = Modifier.size(48.dp))
+            Icon(Icons.Filled.Lock, null, tint = WTheme.textMuted, modifier = Modifier.size(40.dp))
             Spacer(Modifier.height(12.dp))
             Text("$modeName — Played Today", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, textAlign = TextAlign.Center)
             Spacer(Modifier.height(4.dp))
@@ -75,13 +75,17 @@ fun ModeLimitModal(
                 Text("Play again tomorrow in $countdown", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
             }
             Spacer(Modifier.height(16.dp))
-            Row(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                    .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
-                    .clickableNoRipple { onClose(); onGoPro() }.padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+            // btn-3d amber (iOS carries a #92400E 4pt bottom edge on this button).
+            Button3D(
+                onClick = { onClose(); onGoPro() },
+                face = Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))),
+                shadow = Color(0xFF92400E),
+                modifier = Modifier.fillMaxWidth(),
+                height = 45.dp,
+                depth = 4.dp,
+                shape = RoundedCornerShape(12.dp),
             ) {
-                Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_crown), null, tint = Color.White, modifier = Modifier.size(16.dp))
+                Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_crown), null, tint = Color.White, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.size(6.dp))
                 Text("Upgrade to Pro", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
             }

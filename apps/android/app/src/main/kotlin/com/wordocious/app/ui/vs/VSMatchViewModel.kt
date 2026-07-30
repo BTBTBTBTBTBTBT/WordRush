@@ -108,6 +108,10 @@ class VSMatchViewModel(
     /** Total guesses I have submitted this match (web myGuessLog.length). */
     var myGuessCount by mutableStateOf(0)
     var myStatus by mutableStateOf<GameStatus?>(null)   // set when I finish (waiting screen stakes)
+    /** My reported total once I complete (web playerStats / iOS myFinalGuesses).
+     *  NOT myGuessCount: Six/Seven hint reveals add a board row without going
+     *  through onGuessCommitted, so the counter undercounts them. */
+    var myFinalGuesses by mutableStateOf<Int?>(null)
     /** Moment callout (top toast); deduped while one is visible, auto-dismissed at 2.5s. */
     var callout by mutableStateOf<String?>(null)
     /** Bumps once per opponent guess row — drives the UI's light haptic. */
@@ -286,6 +290,13 @@ class VSMatchViewModel(
      *  the bot grind out its boards. */
     fun finishCpuNow() { if (isCpu) service.resolveNow() }
 
+    /** Leaving now would actually forfeit (a recorded loss): only while still
+     *  MID-GAME. Once finished (waiting screen) — or once the match is over /
+     *  gone, or it's CPU practice — leaving records nothing, so the scary
+     *  "counts as a loss" confirm would be lying (iOS leaveWouldForfeit). */
+    val leaveWouldForfeit: Boolean
+        get() = screen == VSScreen.MATCH && myStatus == null && !isCpu && !matchGone && !resultRecorded
+
     fun forfeit() {
         // Forfeiting an IN-PROGRESS match counts as a loss and (for daily VS)
         // consumes today's play — you can't replay. The server credits the
@@ -325,9 +336,11 @@ class VSMatchViewModel(
                 DailyResultsService.recordDailyVsResult(m, false)
             }
         }
-        // No match left server-side → nothing to abandon (avoids a stray
-        // "Not in a match" error on the way out).
-        if (!matchGone) service.abandonMatch()
+        // Only abandon while still mid-game (or on CPU teardown). A FINISHED
+        // player emitting abandon_match would turn their already-submitted
+        // result into a forfeit win for the opponent — disconnect instead and
+        // let the server resolve on merit. A gone match has nothing to abandon.
+        if (isCpu || (myStatus == null && !matchGone)) service.abandonMatch()
         service.disconnect()
         game?.stopTimer()
     }
@@ -551,6 +564,7 @@ class VSMatchViewModel(
         myGuessCount = 0
         myGuessLog.clear()
         myStatus = null
+        myFinalGuesses = null
         callout = null; lastCallout = ""; calloutJob?.cancel(); calloutJob = null
         opponentTyping = false; typingHideJob?.cancel()
         prevOppBoardsSolved = 0
@@ -575,6 +589,7 @@ class VSMatchViewModel(
             val timeMs = max(0, (System.currentTimeMillis() - matchStartMs).toInt())
             playerTimeMs = timeMs
             myStatus = status
+            myFinalGuesses = guesses
             // .WAITING BEFORE playerCompleted: a fast CPU can end the match
             // synchronously here (screen=RESULT); setting WAITING after would
             // clobber it and strand the match on the spectator screen.

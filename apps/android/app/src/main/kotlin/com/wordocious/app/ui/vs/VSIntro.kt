@@ -23,7 +23,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,12 +74,16 @@ fun VSOverlayWordmark(boxScope: androidx.compose.foundation.layout.BoxScope) = w
     // transition.
     Column(Modifier.fillMaxSize()) {
         Spacer(Modifier.fillMaxHeight(0.19f))
+        // Shrink-to-fit on narrow screens / large font scales, matching iOS's
+        // minimumScaleFactor(0.6) on the 58pt wordmark.
+        var wordmarkSize by remember { mutableStateOf(58.sp) }
         Text(
             "WORDOCIOUS",
-            fontSize = 52.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp,
-            maxLines = 1,
+            fontSize = wordmarkSize, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp,
+            maxLines = 1, softWrap = false,
+            onTextLayout = { r -> if (r.didOverflowWidth && wordmarkSize > 35.sp) wordmarkSize *= 0.9f },
             style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))), fontFamily = Nunito),
-            modifier = Modifier.align(Alignment.CenterHorizontally),
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(horizontal = 12.dp),
         )
     }
 }
@@ -111,7 +118,8 @@ fun MatchIntro(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IntroPlayerCard(me, fromLeft = true)
                 VsPop()
-                IntroPlayerCard(opp, fromLeft = false)
+                // The two cards land a beat apart (opponent +0.12s) for a duel feel — iOS parity.
+                IntroPlayerCard(opp, fromLeft = false, delayMs = 120)
             }
             if (opponent != null && headToHead != null) {
                 H2HLine(HeadToHeadService.headToHeadLine(opp.username, headToHead))
@@ -126,11 +134,12 @@ fun MatchIntro(
 
 /** Avatar card slamming in from its side with overshoot (web vs-slam keyframes). */
 @Composable
-private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean) {
+private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean, delayMs: Long = 0) {
     val offset = remember { Animatable(if (WTheme.reducedMotion) 0f else if (fromLeft) -1.3f else 1.3f) }
     val alpha = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
     LaunchedEffect(Unit) {
         if (!WTheme.reducedMotion) {
+            if (delayMs > 0) delay(delayMs)
             // Spring with mild bounce ≈ cubic-bezier(0.22, 1.4, 0.36, 1) overshoot.
             coroutineScope {
                 launch {
@@ -167,13 +176,13 @@ private fun IntroPlayerCard(player: IntroPlayer, fromLeft: Boolean) {
     }
 }
 
-/** Rotated gradient "VS" — scale-pop with overshoot, 0.25s after the cards. */
+/** Rotated gradient "VS" — scale-pop with overshoot, 0.5s after the cards. */
 @Composable
 private fun VsPop() {
     val scale = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
     LaunchedEffect(Unit) {
         if (!WTheme.reducedMotion) {
-            delay(250)
+            delay(500)
             scale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMedium))
         }
     }
@@ -190,12 +199,12 @@ private fun VsPop() {
     )
 }
 
-/** Head-to-head line slides up + fades in (web vs-h2h-in, 0.6s delay). */
+/** Head-to-head line slides up + fades in (0.85s delay, after the VS settles). */
 @Composable
 private fun H2HLine(text: String) {
     val progress = remember { Animatable(if (WTheme.reducedMotion) 1f else 0f) }
     LaunchedEffect(Unit) {
-        if (!WTheme.reducedMotion) { delay(600); progress.animateTo(1f, tween(400)) }
+        if (!WTheme.reducedMotion) { delay(850); progress.animateTo(1f, tween(450)) }
     }
     Text(
         text, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold,

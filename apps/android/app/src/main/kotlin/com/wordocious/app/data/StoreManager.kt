@@ -54,7 +54,7 @@ object StoreManager {
     private val FALLBACK_PRICES = mapOf(
         PRO_MONTHLY to "$6.99",
         PRO_YEARLY to "$59.99",
-        PRO_DAY to "$1.00",
+        PRO_DAY to "$1",
     )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -140,6 +140,11 @@ object StoreManager {
                         // renewals, so without this an Android sub's Pro is set
                         // once and never re-reflected until the user taps Restore.
                         scope.launch { runCatching { reconcileActiveSubs() } }
+                        // A Day Pass left unconsumed because its grant didn't
+                        // land is only ever redelivered by an INAPP query — the
+                        // listener never re-fires for it. This is the retry path
+                        // iOS gets for free from Transaction.updates.
+                        scope.launch { runCatching { reconcileDayPasses() } }
                     }
                 }
 
@@ -269,6 +274,15 @@ object StoreManager {
         activeSubs(client).forEach { runCatching { handlePurchase(it, isNewPurchase = false) } }
     }
 
+    /** Silent launch retry for a Day Pass that was paid for but never granted. */
+    private suspend fun reconcileDayPasses() {
+        val client = billingClient ?: return
+        if (!client.isReady) return
+        client.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build()
+        ).purchasesList.forEach { runCatching { handlePurchase(it, isNewPurchase = false) } }
+    }
+
     private suspend fun activeSubs(client: BillingClient): List<Purchase> =
         client.queryPurchasesAsync(
             QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()
@@ -277,36 +291,66 @@ object StoreManager {
     // MARK: Fulfillment
 
     private suspend fun handlePurchase(purchase: Purchase, isNewPurchase: Boolean) {
-        if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return
+        if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) {
+            // Play's PENDING state (slow card / cash payment / parental approval)
+            // arrives on the OK branch — tell the user, same as iOS StoreKit's
+            // `case .pending`. Only for a fresh purchase; a pending order found
+            // by the silent launch reconcile must stay silent.
+            if (isNewPurchase && purchase.purchaseState == Purchase.PurchaseState.PENDING) {
+                _lastError.value = "Your purchase is pending approval."
+            }
+            return
+        }
         val client = billingClient ?: return
         for (productId in purchase.products) {
             when (productId) {
                 PRO_DAY -> {
-                    // Consumable: consume so it can be bought again, then stack
-                    // 24h on any existing future Pro window (max semantics — same
-                    // as iOS StoreManager.expiryDate(.day) and the web).
-                    runCatching {
-                        client.consumePurchase(
-                            ConsumeParams.newBuilder()
-                                .setPurchaseToken(purchase.purchaseToken)
-                                .build()
-                        )
-                    }
                     // Re-delivery of an already-stacked Day Pass (a consume that
                     // failed and retried) must not add a second 24h — iOS
                     // hasProcessed parity.
                     val dayOrderId = purchase.orderId
-                    if (dayOrderId == null || dayOrderId !in seenOrderIds) {
+                    var granted = dayOrderId != null && dayOrderId in seenOrderIds
+                    if (!granted) {
+                        // Stack 24h on any existing future Pro window (max
+                        // semantics — same as iOS StoreManager.expiryDate(.day)
+                        // and the web). The grant needs the signed-in profile as
+                        // its base; without one, leave the purchase untouched so
+                        // a later reconcile retries it.
                         val now = Instant.now()
-                        // AuthService.parseTimestamp handles PostgREST's offset
-                        // format — Instant.parse rejected it, so stacking never
-                        // saw the existing window and every Day Pass reset to
-                        // now+24h.
-                        val existing = AuthService.profile.value?.proExpiresAt
-                            ?.let { AuthService.parseTimestamp(it) }
-                        val base = if (existing != null && existing.isAfter(now)) existing else now
-                        AuthService.applyProGrant(base.plus(Duration.ofDays(1)).toString(), addShields = 0)
-                        dayOrderId?.let { markOrderSeen(it) }
+                        val loaded = AuthService.profile.value
+                        if (loaded != null) {
+                            // AuthService.parseTimestamp handles PostgREST's offset
+                            // format — Instant.parse rejected it, so stacking never
+                            // saw the existing window and every Day Pass reset to
+                            // now+24h.
+                            val existing = loaded.proExpiresAt?.let { AuthService.parseTimestamp(it) }
+                            val base = if (existing != null && existing.isAfter(now)) existing else now
+                            val target = base.plus(Duration.ofDays(1))
+                            AuthService.applyProGrant(target.toString(), addShields = 0)
+                            // iOS only finishes a Day Pass transaction once the
+                            // entitlement is durably written, leaving it
+                            // unfinished for retry otherwise (StoreManager.swift
+                            // `case .failed: break`). applyProGrant re-reads the
+                            // row from the server, so a stored expiry that
+                            // reached the target IS that confirmation.
+                            val written = AuthService.profile.value?.proExpiresAt
+                                ?.let { AuthService.parseTimestamp(it) }
+                            granted = written != null && !written.isBefore(target.minusSeconds(5))
+                            if (granted) dayOrderId?.let { markOrderSeen(it) }
+                        }
+                    }
+                    // Consumable: consume so it can be bought again — but only
+                    // after a confirmed grant. Consuming first would burn the
+                    // purchase token (Play never redelivers it) and the $1 would
+                    // be lost outright if the write then failed.
+                    if (granted) {
+                        runCatching {
+                            client.consumePurchase(
+                                ConsumeParams.newBuilder()
+                                    .setPurchaseToken(purchase.purchaseToken)
+                                    .build()
+                            )
+                        }
                     }
                 }
                 PRO_MONTHLY, PRO_YEARLY -> {

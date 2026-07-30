@@ -64,10 +64,21 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     var colorblind by remember { mutableStateOf(SettingsPref.get(SettingsPref.COLORBLIND, false)) }
     var reducedMotion by remember { mutableStateOf(SettingsPref.get(SettingsPref.REDUCED_MOTION, false)) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val isAuthenticated by AuthService.isAuthenticated.collectAsState()
+    var reminderDenied by remember { mutableStateOf(false) }
     // Permission launcher for the daily-reminder toggle (API 33+ runtime perm).
     val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) com.wordocious.app.data.NotificationService.schedule(context) }
+    ) { granted ->
+        if (granted) {
+            com.wordocious.app.data.NotificationService.schedule(context)
+        } else {
+            // iOS snaps the toggle back off and explains (SettingsView.swift:142).
+            dailyReminder = false
+            SettingsPref.set(SettingsPref.DAILY_REMINDER, false)
+            reminderDenied = true
+        }
+    }
     // Account deletion flow (Play compliance — web/iOS parity).
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
@@ -79,10 +90,12 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("SETTINGS", fontSize = 18.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
+            Text("SETTINGS", fontSize = 17.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
             Spacer(Modifier.weight(1f))
             Text(
-                "Done", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
+                // iOS leaves this toolbar Button untinted, so it renders in the
+                // system default blue rather than brand purple.
+                "Done", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF007AFF),
                 modifier = Modifier.clickableNoRipple(onDone),
             )
         }
@@ -106,7 +119,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                                Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
                                 Text(desc, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                             }
                             if (active) Icon(Icons.Filled.CheckCircle, null, tint = WTheme.primary, modifier = Modifier.size(20.dp))
@@ -137,8 +150,14 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                                 ) != android.content.pm.PackageManager.PERMISSION_GRANTED
                             ) {
                                 notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
+                            } else if (androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()) {
                                 com.wordocious.app.data.NotificationService.schedule(context)
+                            } else {
+                                // Notifications switched off in system settings (or a
+                                // previously-denied 33+ perm) — same revert-and-explain as iOS.
+                                dailyReminder = false
+                                SettingsPref.set(SettingsPref.DAILY_REMINDER, false)
+                                reminderDenied = true
                             }
                         } else {
                             com.wordocious.app.data.NotificationService.cancel(context)
@@ -190,28 +209,39 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 }
             }
 
-            // Account
-            Text(
-                "Sign Out",
-                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.5.dp, Color(0xFFDC2626), RoundedCornerShape(12.dp))
-                    .clickableNoRipple { scope.launch { AuthService.signOut(); onDone() } }
-                    .padding(vertical = 12.dp),
-            )
+            // Account — hidden for guests, matching SettingsView.swift:104
+            // (`if auth.isAuthenticated`); a guest has no session to sign out of
+            // and no account to delete.
+            if (isAuthenticated) {
+                // iOS uses .buttonStyle(.bordered).tint(red) — a soft tinted fill
+                // at a fixed 46pt height, not a hard outline.
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFDC2626).copy(alpha = 0.12f))
+                        .clickableNoRipple { scope.launch { AuthService.signOut(); onDone() } },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("Sign Out", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626))
+                }
 
-            Text(
-                "Delete Account",
-                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFDC2626))
-                    .clickableNoRipple { showDeleteConfirm = true }
-                    .padding(vertical = 12.dp),
-            )
+                // Quiet outlined card matching the Section cards above (iOS
+                // SettingsView.swift:111-122), not a solid-red slab.
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(WTheme.surface)
+                        .border(1.5.dp, Color(0xFFFECACA), RoundedCornerShape(14.dp))
+                        .clickableNoRipple { if (!deleting) showDeleteConfirm = true }
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Filled.Delete, null, tint = Color(0xFFDC2626), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text("Delete Account", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFDC2626))
+                }
+            }
 
             Text(
                 "Wordocious · v1.0.0",
@@ -223,6 +253,16 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
         }
     }
 
+    if (reminderDenied) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { reminderDenied = false },
+            title = { Text("Notifications are off", fontWeight = FontWeight.Black) },
+            text = { Text("Enable notifications for Wordocious in Android Settings to get a daily reminder.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { reminderDenied = false }) { Text("OK") }
+            },
+        )
+    }
     if (showDeleteConfirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { if (!deleting) showDeleteConfirm = false },
@@ -269,7 +309,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.1.sp)
+        Text(title, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted, letterSpacing = 1.1.sp)
         content()
     }
 }
@@ -286,8 +326,19 @@ private fun Card(content: @Composable () -> Unit) {
 
 @Composable
 private fun ToggleRow(title: String, sub: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    // SwiftUI's Toggle makes label + switch one tap target; mirror that here so
+    // tapping the title flips the switch (the Switch itself no longer handles it).
+    val interaction = remember { MutableInteractionSource() }
     Row(
-        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        modifier = Modifier.fillMaxWidth()
+            .toggleable(
+                value = checked,
+                interactionSource = interaction,
+                indication = null,
+                role = Role.Switch,
+                onValueChange = onChange,
+            )
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -295,7 +346,7 @@ private fun ToggleRow(title: String, sub: String, checked: Boolean, onChange: (B
             Text(sub, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted)
         }
         Switch(
-            checked = checked, onCheckedChange = onChange,
+            checked = checked, onCheckedChange = null,
             colors = SwitchDefaults.colors(checkedTrackColor = WTheme.primary),
         )
     }

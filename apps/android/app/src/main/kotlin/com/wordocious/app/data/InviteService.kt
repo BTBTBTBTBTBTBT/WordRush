@@ -73,11 +73,13 @@ object InviteService {
     /**
      * Which mode a shared invite code is for (joiner side) — web/iOS lookupMode.
      * Returns the game_mode string, or null if the code is unknown/expired.
+     * No status filter (iOS parity): this resolves the mode, it isn't the
+     * redemption gate — an already-accepted code must still re-enter the match.
      */
     suspend fun lookupMode(code: String): String? = runCatching {
         client.postgrest["match_invites"]
             .select(Columns.raw("game_mode")) {
-                filter { eq("invite_code", code); eq("status", "pending") }
+                filter { eq("invite_code", code) }
                 limit(1)
             }
             .decodeSingleOrNull<GameModeRow>()?.gameMode
@@ -88,6 +90,7 @@ object InviteService {
         runCatching {
             client.postgrest["match_invites"].update({
                 set("status", "accepted")
+                set("accepted_at", java.time.Instant.now().toString())
                 if (matchId != null) set("match_id", matchId)
             }) {
                 filter { eq("invite_code", code); eq("status", "pending") }

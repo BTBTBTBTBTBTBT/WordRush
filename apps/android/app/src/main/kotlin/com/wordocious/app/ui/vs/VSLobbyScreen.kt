@@ -16,7 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,10 +28,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -72,6 +78,11 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode,
         }
     }
 
+    // Free daily VS already used → tapping the greyed card explains + upsells
+    // instead of doing nothing (iOS VSLobbyView showVSLimit overlay).
+    var showVSLimit by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(WTheme.bg, WTheme.surfaceHover)))) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Back", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onClose))
@@ -91,11 +102,7 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode,
 
             if (profile == null) {
                 // Guest — VS is account-based (live opponents + recorded results).
-                CtaCard(
-                    title = "Sign in to play VS",
-                    subtitle = "VS pits you against a live opponent and records results — it needs an account.",
-                    gradient = listOf(Color(0xFF14B8A6), Color(0xFF0D9488)),
-                ) { AuthService.exitGuest() }
+                GuestPrompt { AuthService.exitGuest() }
             } else if (isPro) {
                 SectionLabel("QUICK MATCH")
                 VS_MODES.forEach { m -> ModeRow(m, counts[m.name]) { onPlay(m, false) } }
@@ -110,13 +117,15 @@ fun VSLobbyScreen(onPlay: (GameMode, Boolean) -> Unit, onEnterInvite: (GameMode,
                 val used = VSPlayLimit.hasPlayedToday() || serverUsed
                 CtaCard(
                     title = "Play Daily VS",
-                    subtitle = if (used) "Used today · resets at midnight" else "One free Classic match a day",
+                    subtitle = if (used) "Used today · tap for details" else "One free Classic match a day",
                     gradient = if (used) listOf(Color(0xFF94A3B8), Color(0xFF64748B)) else listOf(Color(0xFF14B8A6), Color(0xFF0D9488)),
-                ) { if (!used) onPlay(GameMode.DUEL, true) }
+                ) { if (used) showVSLimit = true else onPlay(GameMode.DUEL, true) }
                 ProUpsell(onGoPro)
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+        if (showVSLimit) VSDailyLimitModal(onGoPro = onGoPro, onClose = { showVSLimit = false })
     }
 }
 
@@ -146,6 +155,26 @@ private fun ModeRow(mode: GameMode, count: com.wordocious.app.data.VSCountsServi
     }
 }
 
+/** Guest sign-in prompt — a surface card with its own primary button, not the
+ *  teal play CTA (iOS VSLobbyView.guestPrompt). */
+@Composable
+private fun GuestPrompt(onSignIn: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text("Sign in to play VS", fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        Text(
+            "VS Battle pits you against a live opponent and records your results — it needs an account.",
+            fontSize = 13.sp, fontWeight = FontWeight.Medium, color = WTheme.textSecondary, textAlign = TextAlign.Center,
+        )
+        Box(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.primary).clickableNoRipple(onSignIn).padding(vertical = 13.dp),
+            Alignment.Center,
+        ) { Text("Sign in", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White) }
+    }
+}
+
 @Composable
 private fun CtaCard(title: String, subtitle: String, gradient: List<Color>, onClick: () -> Unit) {
     Column(
@@ -161,65 +190,94 @@ private fun CtaCard(title: String, subtitle: String, gradient: List<Color>, onCl
 private fun PrivateMatchSection(onEnterInvite: (GameMode, String) -> Unit) {
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    // Which mode's invite is being created, so that tile can show a spinner and
+    // the rest of the grid dims (iOS creatingInvite).
+    var creatingMode by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<GameMode?>(null) }
     var error by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var joinCode by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    val canJoin = joinCode.trim().length >= 4
 
     Spacer(Modifier.height(4.dp))
     SectionLabel("PRIVATE MATCH")
-    Text(
-        "Create a code to share, or enter a friend's code.",
-        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-        modifier = Modifier.fillMaxWidth(),
-    )
+    // Join — enter a friend's code (iOS puts this card above the create grid).
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("Join with a code", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            BasicTextField(
+                value = joinCode, onValueChange = { joinCode = it.uppercase().take(8) },
+                singleLine = true,
+                textStyle = TextStyle(fontFamily = Nunito, fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.text),
+                cursorBrush = SolidColor(WTheme.primary),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false),
+                modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
+                    .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp)).padding(10.dp),
+                decorationBox = { inner ->
+                    if (joinCode.isEmpty()) {
+                        Text("CODE", fontSize = 15.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp, color = WTheme.textMuted)
+                    }
+                    inner()
+                },
+            )
+            Box(
+                Modifier.clip(RoundedCornerShape(10.dp)).background(WTheme.primary).alpha(if (canJoin) 1f else 0.5f)
+                    .clickableNoRipple {
+                        val code = joinCode.trim()
+                        if (code.length < 4 || busy) return@clickableNoRipple
+                        busy = true; error = null
+                        scope.launch {
+                            val modeStr = InviteService.lookupMode(code)
+                            busy = false
+                            val gm = modeStr?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
+                            if (gm != null) onEnterInvite(gm, code) else error = "No match found for that code."
+                        }
+                    }.padding(horizontal = 18.dp, vertical = 11.dp),
+                Alignment.Center,
+            ) { Text("Join", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
+        }
+        error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
+    }
     // Create — pick a mode; we generate a shareable code and drop you into the
     // waiting lobby (2-column grid, matching iOS createInvite).
-    VS_MODES.chunked(2).forEach { pair ->
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            pair.forEach { m ->
-                Row(
-                    Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
-                        .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp))
-                        .clickableNoRipple {
-                            if (busy) return@clickableNoRipple
-                            busy = true; error = null
-                            scope.launch {
-                                val res = InviteService.createInvite(m.name, null)
-                                busy = false
-                                if (res.code != null) onEnterInvite(m, res.code) else error = res.error ?: "Couldn't create an invite."
-                            }
-                        }.padding(vertical = 10.dp),
-                    horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(modeTitle(m), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text("Create a private match", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary)
+        Text(
+            "Pick a mode — we'll generate a code to share. Your friend joins with it.",
+            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+        )
+        VS_MODES.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                pair.forEach { m ->
+                    Row(
+                        Modifier.weight(1f).alpha(if (creatingMode == null) 1f else 0.5f).clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
+                            .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp))
+                            .clickableNoRipple {
+                                if (creatingMode != null) return@clickableNoRipple
+                                creatingMode = m; error = null
+                                scope.launch {
+                                    val res = InviteService.createInvite(m.name, null)
+                                    creatingMode = null
+                                    if (res.code != null) onEnterInvite(m, res.code) else error = res.error ?: "Couldn't create an invite."
+                                }
+                            }.padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (creatingMode == m) {
+                            CircularProgressIndicator(modifier = Modifier.size(14.dp), color = WTheme.text, strokeWidth = 2.dp)
+                            Spacer(Modifier.size(6.dp))
+                        }
+                        Text(modeTitle(m), fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    }
                 }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
             }
-            if (pair.size == 1) Spacer(Modifier.weight(1f))
         }
     }
-    // Join — enter a friend's code.
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.material3.OutlinedTextField(
-            value = joinCode, onValueChange = { joinCode = it.uppercase().take(8) },
-            placeholder = { Text("Enter code") }, singleLine = true,
-            modifier = Modifier.weight(1f),
-        )
-        Box(
-            Modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.primary)
-                .clickableNoRipple {
-                    val code = joinCode.trim()
-                    if (code.isEmpty() || busy) return@clickableNoRipple
-                    busy = true; error = null
-                    scope.launch {
-                        val modeStr = InviteService.lookupMode(code)
-                        busy = false
-                        val gm = modeStr?.let { runCatching { GameMode.valueOf(it) }.getOrNull() }
-                        if (gm != null) onEnterInvite(gm, code) else error = "No match found for that code."
-                    }
-                }.padding(horizontal = 18.dp, vertical = 14.dp),
-            Alignment.Center,
-        ) { Text("Join", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
-    }
-    error?.let { Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626)) }
 }
 
 @Composable
@@ -230,7 +288,7 @@ private fun ProUpsell(onGoPro: () -> Unit) {
     ) {
         Text("Unlock with Pro", fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.6.sp, color = WTheme.textMuted)
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("All modes in VS — unlimited matches", "Rematches", "Ad-free battles").forEach { t ->
+            listOf("All modes in VS — unlimited matches", "Private matches: invite friends by code", "Rematches").forEach { t ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
                     Text(t, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary)

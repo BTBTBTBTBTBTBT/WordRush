@@ -26,6 +26,11 @@ object GamePersistence {
      *  DAILY_CROSS_MIDNIGHT_GRACE_MS parity — 4h). */
     const val CROSS_MIDNIGHT_GRACE_MS = 4L * 60 * 60 * 1000
 
+    /** Practice/unlimited (non-daily) saves expire after 24h — web
+     *  PRACTICE_TTL_MS / iOS ProperNoundleView.practiceTTLms. Daily saves are
+     *  gated by date instead (above). */
+    const val PRACTICE_TTL_MS = 24L * 60 * 60 * 1000
+
     /** Versioned envelope. Legacy entries are a bare GameState — decoded as v1
      *  by the fallback in [decodeVersionedSave], so shipping this doesn't wipe
      *  anyone's in-flight game. savedAt powers the cross-midnight grace

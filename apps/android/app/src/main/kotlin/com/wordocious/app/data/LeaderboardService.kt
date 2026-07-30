@@ -53,6 +53,14 @@ object LeaderboardService {
     fun cachedBoard(key: String): CachedBoard? = boardCache[key]
     fun cacheBoard(key: String, board: CachedBoard) { boardCache[key] = board }
 
+    /** Same stale-while-revalidate treatment for the Daily Sweep board (iOS
+     *  SweepCache). Keyed "sweep:<local-day>" so it self-invalidates at midnight. */
+    data class CachedSweep(val entries: List<SweepEntry>, val rank: RankInfo?)
+    private val sweepCache = mutableMapOf<String, CachedSweep>()
+    fun sweepCacheKey(day: String) = "sweep:$day"
+    fun cachedSweep(key: String): CachedSweep? = sweepCache[key]
+    fun cacheSweep(key: String, board: CachedSweep) { sweepCache[key] = board }
+
     @Serializable
     data class ProfileRef(
         val username: String? = null,

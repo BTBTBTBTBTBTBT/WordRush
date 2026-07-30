@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ExpandMore
@@ -38,6 +39,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -80,6 +82,8 @@ fun InviteSheet(onDismiss: () -> Unit) {
     var sentTo by remember { mutableStateOf<String?>(null) }
     var copied by remember { mutableStateOf(false) }
     val purple = Color(0xFF7C3AED)
+    // Action buttons are the pink gradient on iOS; only the tabs stay purple.
+    val pinkGradient = Brush.linearGradient(listOf(Color(0xFFEC4899), Color(0xFFDB2777)))
 
     fun reset() { inviteUrl = null; sentTo = null; username = ""; error = null; copied = false }
 
@@ -119,15 +123,17 @@ fun InviteSheet(onDismiss: () -> Unit) {
 
             // Tabs: Share link / Username.
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                TabButton("Share link", Icons.Filled.Link, tab == "link", Modifier.weight(1f), purple) { tab = "link"; reset() }
-                TabButton("Username", Icons.Filled.Person, tab == "username", Modifier.weight(1f), purple) { tab = "username"; reset() }
+                // Only the error clears on a tab switch — a generated link or a
+                // sent invite survives peeking at the other tab (iOS parity).
+                TabButton("Share link", Icons.Filled.Link, tab == "link", Modifier.weight(1f), purple) { tab = "link"; error = null }
+                TabButton("Username", Icons.Filled.Person, tab == "username", Modifier.weight(1f), purple) { tab = "username"; error = null }
             }
 
             Spacer(Modifier.size(16.dp))
 
             Column(modifier = Modifier.heightIn(min = 220.dp)) {
                 // Mode picker — brand-color dropdown with glyph.
-                Text("MODE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                Text("GAME MODE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
                 Spacer(Modifier.size(4.dp))
                 // Inline dropdown (expands in place + pushes content down) instead
                 // of a floating menu that overlapped the buttons underneath.
@@ -181,7 +187,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                 if (tab == "link") {
                     val url = inviteUrl
                     if (url == null) {
-                        PrimaryButton(if (busy) "Creating…" else "Generate invite link", purple, !busy) {
+                        PrimaryButton(if (busy) "Creating…" else "Create Invite Link", pinkGradient, !busy) {
                             busy = true; error = null; copied = false
                             scope.launch {
                                 val r = InviteService.createInvite(card.engineMode!!.name, null)
@@ -200,29 +206,46 @@ fun InviteSheet(onDismiss: () -> Unit) {
                         ) {
                             Text(url, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.text,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                            Box(
-                                Modifier.size(28.dp).clip(RoundedCornerShape(6.dp))
-                                    .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))
-                                    .clickable { clipboard.setText(AnnotatedString(url)); copied = true },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(if (copied) Icons.Filled.Check else Icons.Filled.ContentCopy, "Copy",
-                                    tint = if (copied) Color(0xFF16A34A) else purple, modifier = Modifier.size(14.dp))
-                            }
                         }
                         Spacer(Modifier.size(12.dp))
-                        PrimaryButton("Share", purple, true, Icons.Filled.Share) {
-                            com.wordocious.app.data.ShareEvents.log(
-                                "link_invite", card.engineMode?.name?.lowercase() ?: "", "invite_sheet",
-                            )
-                            val text = "Come play me on Wordocious — ${card.title}."
-                            val intent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "$text\n$url")
+                        // Two equal labelled buttons under the URL pill — Copy
+                        // flips to "Copied!" (iOS linkTab).
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(WTheme.surfaceHover)
+                                    .clickable { clipboard.setText(AnnotatedString(url)); copied = true }
+                                    .padding(vertical = 11.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(if (copied) Icons.Filled.Check else Icons.Filled.ContentCopy, null,
+                                    tint = WTheme.text, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text(if (copied) "Copied!" else "Copy", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Invite a friend").apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            })
+                            Row(
+                                modifier = Modifier.weight(1f).clip(RoundedCornerShape(10.dp)).background(pinkGradient)
+                                    .clickable {
+                                        com.wordocious.app.data.ShareEvents.log(
+                                            "link_invite", card.engineMode?.name ?: "", "invite_sheet",
+                                        )
+                                        val text = "Come play me on Wordocious — ${card.title}."
+                                        val intent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_TEXT, "$text\n$url")
+                                        }
+                                        context.startActivity(Intent.createChooser(intent, "Invite a friend").apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        })
+                                    }
+                                    .padding(vertical = 11.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Icon(Icons.Filled.Share, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Share", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            }
                         }
                         Spacer(Modifier.size(8.dp))
                         Text("Link expires in 24 hours.", fontSize = 10.sp, fontWeight = FontWeight.Bold,
@@ -242,7 +265,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Spacer(Modifier.size(12.dp))
-                        PrimaryButton(if (busy) "Sending…" else "Send invite", purple, !busy) {
+                        PrimaryButton(if (busy) "Sending…" else "Send Invite", pinkGradient, !busy) {
                             val clean = username.trim().trimStart('@')
                             if (clean.isEmpty()) { error = "Enter a username"; return@PrimaryButton }
                             busy = true; error = null
@@ -253,27 +276,28 @@ fun InviteSheet(onDismiss: () -> Unit) {
                             }
                         }
                     } else {
+                        // No card chrome — theme tokens on the sheet background, so
+                        // the confirmation blends into every palette (iOS parity).
                         Column(
-                            modifier = Modifier.fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFFF0FDF4))
-                                .border(1.5.dp, Color(0xFF86EFAC), RoundedCornerShape(12.dp))
-                                .padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Icon(Icons.Filled.Check, null, tint = Color(0xFF16A34A), modifier = Modifier.size(24.dp))
-                            Spacer(Modifier.size(6.dp))
-                            Text("Invite sent to @$sent", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFF166534))
+                            Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF22C55E), modifier = Modifier.size(32.dp))
+                            Spacer(Modifier.size(8.dp))
+                            Text("Invite sent to @$sent", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                             Text("They'll see it the next time they open Wordocious.",
-                                fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A),
-                                modifier = Modifier.padding(top = 4.dp))
+                                fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                                modifier = Modifier.padding(top = 4.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            Text("Send another", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                                modifier = Modifier.padding(top = 8.dp).clickable { reset() })
                         }
                     }
                 }
 
                 error?.let {
                     Spacer(Modifier.size(12.dp))
-                    Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFEF4444),
+                    Text(it, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
                         modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
@@ -304,13 +328,14 @@ private fun TabButton(
 
 @Composable
 private fun PrimaryButton(
-    label: String, color: Color, enabled: Boolean,
+    label: String, brush: Brush, enabled: Boolean,
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null, onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth()
+            .alpha(if (enabled) 1f else 0.5f)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (enabled) color else color.copy(alpha = 0.5f))
+            .background(brush)
             .clickable(enabled = enabled) { onClick() }
             .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.Center,

@@ -236,9 +236,11 @@ object BotEngine {
                     Random.nextInt(max(0, p.minGuesses - 2), max(1, p.maxGuesses - 2) + 1),
                 ))
             }
-            // Fillers must not accidentally solve a board they weren't credited for.
+            // Exclude ALL the match's solutions (not just this segment's) so a
+            // Gauntlet stage-1 filler can't be a later stage's answer, plus every
+            // word already played this match.
             val fillers = if (fillerCount > 0)
-                realWordPath(sols[n - 1], fillerCount, false, excluding = sols + playedWords)
+                realWordPath(sols[n - 1], fillerCount, false, excluding = solutions + playedWords)
             else emptyList()
             val solvedLocal = HashSet<Int>()
             val solveOrder = (0 until n).shuffled().take(solveCount)
@@ -265,12 +267,26 @@ object BotEngine {
                 if (remaining <= 0) return
                 val isLast = li == sols.size - 1
                 val fails = !solveAll && isLast
-                val reserve = sols.size - 1 - li // ≥1 guess for each later board
-                val steps = if (fails) remaining
-                else max(1, min(remaining - reserve, Random.nextInt(1, max(1, min(3, p.maxGuesses - 2)) + 1)))
-                // Exclude the other boards' solutions too: a filler that equals a
-                // later board's solution would repeat when that board is solved.
-                val path = realWordPath(sol, steps, !fails, excluding = sols.filter { it != sol } + playedWords)
+                // Reserve 2 guesses per later board (was 1) so later boards
+                // aren't budget-starved into the same lone-solve look.
+                val reserve = 2 * (sols.size - 1 - li)
+                // At least 2 guesses per board when the budget allows: the old
+                // 1..3 roll routinely "solved" a board on its very first guess,
+                // so the opponent strip showed boards holding a single solved
+                // row. 1-guess solves now only happen when budget-starved.
+                val steps: Int
+                if (fails) {
+                    steps = remaining
+                } else {
+                    val maxSteps = max(1, remaining - reserve)
+                    val lo = min(2, maxSteps)
+                    val hi = max(lo, min(maxSteps, max(1, min(3, p.maxGuesses - 2))))
+                    steps = Random.nextInt(lo, hi + 1)
+                }
+                // Exclude every match solution (not just this segment's): a filler
+                // that equals another board's answer would repeat when that board
+                // is solved.
+                val path = realWordPath(sol, steps, !fails, excluding = solutions + playedWords)
                 for ((i, word) in path.withIndex()) {
                     val solving = !fails && i == path.size - 1
                     if (solving) boardsSolved += 1

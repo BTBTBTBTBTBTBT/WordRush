@@ -2,13 +2,14 @@ package com.wordocious.app.data
 
 import android.app.Activity
 import android.content.Context
+import androidx.core.content.pm.PackageInfoCompat
 import com.google.android.play.core.review.ReviewManagerFactory
 import kotlinx.coroutines.delay
 
 /**
  * Play in-app review with deliberate timing (replaces ReviewPrompter):
  * only after a WIN once the player has 5+ lifetime wins, at most once every
- * 14 days, and once per app version — delayed ~2s so it never competes with
+ * 14 days, and once per build (versionCode) — delayed ~2s so it never competes with
  * the confetti. NEVER on a loss or at launch. Play itself also quota-limits
  * the sheet: when it declines, launchReviewFlow shows no UI, which is fine.
  */
@@ -30,7 +31,7 @@ object RatingsPrompt {
 
     /**
      * Ask for a review when all gates pass: wins >= 5, >= 14 days since the
-     * last ask, and not yet asked on this versionName. Call from the WIN path
+     * last ask, and not yet asked on this versionCode. Call from the WIN path
      * only; suspends ~2s first so the celebration lands before the sheet.
      */
     suspend fun maybeAsk(activity: Activity) {
@@ -41,14 +42,18 @@ object RatingsPrompt {
         val lastAsk = p.getLong(KEY_LAST_ASK_MS, 0L)
         if (lastAsk != 0L && now - lastAsk < MIN_INTERVAL_MS) return
 
-        val version = runCatching {
-            activity.packageManager.getPackageInfo(activity.packageName, 0).versionName
+        // versionCode, not versionName: iOS keys this on CFBundleVersion (the
+        // build number), so the ask re-arms on every shipped build rather than
+        // once per marketing version.
+        val build = runCatching {
+            val info = activity.packageManager.getPackageInfo(activity.packageName, 0)
+            PackageInfoCompat.getLongVersionCode(info).toString()
         }.getOrNull() ?: "0"
-        val versionKey = "asked-v$version"
-        if (p.getBoolean(versionKey, false)) return
+        val buildKey = "asked-b$build"
+        if (p.getBoolean(buildKey, false)) return
 
         // Mark BEFORE launching so a crash/quota-decline still consumes the ask.
-        p.edit().putLong(KEY_LAST_ASK_MS, now).putBoolean(versionKey, true).apply()
+        p.edit().putLong(KEY_LAST_ASK_MS, now).putBoolean(buildKey, true).apply()
 
         delay(2000) // let the win celebration land first
         runCatching {

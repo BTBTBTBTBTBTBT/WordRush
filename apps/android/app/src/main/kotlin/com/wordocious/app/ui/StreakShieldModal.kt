@@ -1,5 +1,9 @@
 package com.wordocious.app.ui
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,6 +24,7 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,8 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,13 +62,28 @@ fun StreakShieldModal(
 ) {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
+    // iOS fires a warning haptic and springs the card in from 0.9×/0 opacity.
+    val haptics = LocalHapticFeedback.current
+    var shown by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        shown = true
+    }
+    val appear by animateFloatAsState(
+        targetValue = if (shown) 1f else 0f,
+        animationSpec = if (WTheme.reducedMotion) snap()
+                        else spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow),
+        label = "shieldAppear",
+    )
 
     Box(
         Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)).clickableNoRipple { if (!busy) onClose() },
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            Modifier.padding(24.dp).fillMaxWidth()
+            Modifier.padding(24.dp).widthIn(max = 340.dp).fillMaxWidth()
+                .graphicsLayer { scaleX = 0.9f + 0.1f * appear; scaleY = 0.9f + 0.1f * appear; alpha = appear }
+                .shadow(20.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x1F000000), spotColor = Color(0x1F000000))
                 .clip(RoundedCornerShape(20.dp))
                 .background(WTheme.surface)
                 .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
@@ -103,21 +128,25 @@ fun StreakShieldModal(
                 Text("$shields", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF5B21B6))
             }
             if (shields > 0) {
-                Text(
-                    if (busy) "Using Shield..." else "Use Shield ($shields left)",
-                    fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))))
-                        .clickableNoRipple {
-                            if (!busy) {
-                                busy = true
-                                scope.launch { onUseShield(); busy = false }
-                            }
+                // iOS gives this the signature 3D purple (solid #4C1D95 offset shadow).
+                Button3D(
+                    onClick = {
+                        if (!busy) {
+                            busy = true
+                            scope.launch { onUseShield(); busy = false }
                         }
-                        .padding(vertical = 12.dp),
-                )
+                    },
+                    face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),
+                    shadow = Color(0xFF4C1D95),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    enabled = !busy,
+                ) {
+                    Text(
+                        if (busy) "Using Shield..." else "Use Shield ($shields left)",
+                        fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+                    )
+                }
             } else {
                 Text(
                     "You have no streak shields. Pro subscribers get 4 shields per billing period.",
@@ -127,12 +156,14 @@ fun StreakShieldModal(
             Text(
                 "Let Streak Reset",
                 fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                modifier = Modifier.clickableNoRipple {
+                textAlign = TextAlign.Center,
+                // iOS spans the full card width so the whole row is the tap target.
+                modifier = Modifier.fillMaxWidth().clickableNoRipple {
                     if (!busy) {
                         busy = true
                         scope.launch { onDecline(); busy = false }
                     }
-                }.padding(8.dp),
+                }.padding(vertical = 6.dp),
             )
         }
     }

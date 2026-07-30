@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
@@ -56,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -101,6 +103,7 @@ private data class ProfileMainMemo(
 private data class ProfileChartsMemo(
     val guessDist: List<com.wordocious.app.data.MatchStatsService.GuessBucket>,
     val activity7: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
+    val modeCal: List<com.wordocious.app.data.MatchStatsService.DayActivity>,
     val solveTimes: List<com.wordocious.app.data.MatchStatsService.SolvePoint>,
     val timeOfDay: List<com.wordocious.app.data.MatchStatsService.HourBucket>,
     val topWords: List<com.wordocious.app.data.MatchStatsService.TopWord>,
@@ -123,6 +126,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     var guessDist by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.GuessBucket>>(emptyList()) }
     var activity7 by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DayActivity>>(emptyList()) }
     var activityCal by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DayActivity>>(emptyList()) }
+    // Mode-scoped 90-day calendar for the mode-detail view (iOS renders
+    // ActivityCalendarView(mode:) there; the global one above is All-view only).
+    var modeCal by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.DayActivity>>(emptyList()) }
     var solveTimes by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.SolvePoint>>(emptyList()) }
     var timeOfDay by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.HourBucket>>(emptyList()) }
     var topWords by remember { mutableStateOf<List<com.wordocious.app.data.MatchStatsService.TopWord>>(emptyList()) }
@@ -138,6 +144,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
     // mode-stats-card / iOS mode-detail streak. Play-type-scoped (restat B1),
     // so it reloads when the Solo/VS/VS-CPU toggle changes.
     var modeStreaks by remember { mutableStateOf<Map<String, Pair<Int, Int>>>(emptyMap()) }
+    // True once the chart fetches have landed at least once — gates the Top Words
+    // empty card so it never flashes before the first result (iOS `loaded`).
+    var chartsLoaded by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
     // Account section (web §H) — Delete Account inline confirm + error/in-flight state.
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -219,6 +228,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         com.wordocious.app.data.StatsMemo.get<ProfileChartsMemo>(memoKey)?.let { saved ->
             guessDist = saved.guessDist
             activity7 = saved.activity7
+            modeCal = saved.modeCal
             solveTimes = saved.solveTimes
             timeOfDay = saved.timeOfDay
             topWords = saved.topWords
@@ -232,6 +242,13 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             // LAST 7 DAYS is GLOBAL (web fetchActivityByDay takes no mode and no
             // play-type) and only rendered in the All view — load it unfiltered.
             val a7D = async { com.wordocious.app.data.MatchStatsService.activity(uid, days = 7, mode = null) }
+            // Mode-scoped 90-day calendar for the mode-detail view (iOS
+            // ActivityCalendarView(mode:)); skipped in the All view, which uses
+            // the global dailyCalendar fetched above.
+            val calD = async {
+                if (m == null) emptyList()
+                else com.wordocious.app.data.MatchStatsService.activity(uid, days = 90, mode = m)
+            }
             val stD = async { com.wordocious.app.data.MatchStatsService.solveTimes(uid, m, playType = activeTab) }
             val todD = async { com.wordocious.app.data.MatchStatsService.timeOfDay(uid, m, activeTab) }
             val twD = async { com.wordocious.app.data.MatchStatsService.topWords(uid, m, playType = activeTab) }
@@ -244,6 +261,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             val streaksD = async { com.wordocious.app.data.MatchStatsService.modeWinStreaks(uid, activeTab) }
             guessDist = gdD.await()
             activity7 = a7D.await()
+            modeCal = calD.await()
             solveTimes = stD.await()
             timeOfDay = todD.await()
             topWords = twD.await()
@@ -251,10 +269,11 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
             modeStreaks = streaksD.await()
         }
         com.wordocious.app.data.StatsMemo.set(memoKey, ProfileChartsMemo(
-            guessDist = guessDist, activity7 = activity7, solveTimes = solveTimes,
+            guessDist = guessDist, activity7 = activity7, modeCal = modeCal, solveTimes = solveTimes,
             timeOfDay = timeOfDay, topWords = topWords, proInsights = proInsights,
             modeStreaks = modeStreaks,
         ))
+        chartsLoaded = true
     }
 
     val isGuest by AuthService.isGuest.collectAsState()
@@ -290,7 +309,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
 
         // ── A. Header ─────────────────────────────────────────────
         item {
-            ProfileHeader(profile, onGoPro, onEditProfile, onShare = {
+            ProfileHeader(profile, isProActive, onGoPro, onEditProfile, onShare = {
                 profile?.let { pr ->
                     val total = pr.totalWins + pr.totalLosses
                     val achTotal = com.wordocious.app.data.AchievementCatalog.cached().size
@@ -384,16 +403,25 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         }
                         if (activityCal.any { it.played > 0 }) DailyCalendarCard(activityCal)
                         if (activity7.isNotEmpty()) ActivityCard(activity7)
-                        // All view hides empty charts (web gates on data).
-                        if (guessDist.any { it.count > 0 }) GuessDistributionCard(guessDist)
-                        if (solveTimes.size >= 2) SolveTimeCard(solveTimes)
+                        // Guess distribution + solve time always render — their own
+                        // empty copy is the guidance (iOS keeps both cards visible).
+                        GuessDistributionCard(guessDist)
+                        SolveTimeCard(solveTimes)
                         // Daily points trend (sweep/flawless days marked).
                         DailyPointsChartCard(sweepPoints)
                         if (topWords.isNotEmpty()) TopWordsCard(topWords)
+                        else if (chartsLoaded && tab != "vs_cpu") {
+                            StatsEmptyCard(
+                                "Top Words", accent = Color(0xFFD97706),
+                                hint = "Your most-guessed words appear here as you play.",
+                            )
+                        }
                         // Opener Lab (basic): favorite starting words + conversion.
                         OpenerLabCard(playType = tab)
                         // Weekday form: your best day of the week.
                         WeekdayFormCard(playType = tab)
+                        // WHEN YOU PLAY (time-of-day) — closes the All view on iOS too.
+                        if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
                         // Insights — up to two derived one-liners.
                         val insights = profileInsights(stats, activity7, profile, todayDailies)
                         if (insights.isNotEmpty()) InsightsCard(insights)
@@ -407,25 +435,23 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         // ── Mode-detail view (web mode-detail-panel.tsx). ──
                         ModeDetailHeader(mode, tab)
                         val tabStats = stats.filter { it.playType == tab && it.gameMode == mode }
-                        if (tabStats.isEmpty()) {
-                            Box(
-                                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-                                    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(24.dp),
-                                Alignment.Center,
-                            ) {
-                                Text(
-                                    "No ${if (tab == "solo") "solo" else if (tab == "vs") "VS" else "VS CPU"} games played in this mode yet",
-                                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                                )
-                            }
-                        } else {
-                            ModeStatsGrid(tabStats, modeStreaks[mode])
-                        }
+                        // Always the grid — the aggregations zero out on an empty
+                        // list, so an unplayed mode reads 0/0/0 instead of swapping
+                        // in a placeholder box (iOS modeStats renders unconditionally).
+                        ModeStatsGrid(tabStats, modeStreaks[mode])
                         // Gauntlet: 50 guesses across 21 boards — histogram meaningless.
                         if (mode != "GAUNTLET") GuessDistributionCard(guessDist)
-                        if (solveTimes.size >= 2) SolveTimeCard(solveTimes)
+                        // Per-mode 90-day heatmap (iOS ActivityCalendarView(mode:)).
+                        if (modeCal.any { it.played > 0 }) DailyCalendarCard(modeCal)
+                        SolveTimeCard(solveTimes)
                         if (topWords.isNotEmpty()) TopWordsCard(topWords)
-                        // WHEN YOU PLAY (time-of-day) — standalone here (Android extra).
+                        else if (chartsLoaded && tab != "vs_cpu") {
+                            StatsEmptyCard(
+                                "Top Words", accent = Color(0xFFD97706),
+                                hint = "Your most-guessed words appear here as you play.",
+                            )
+                        }
+                        // WHEN YOU PLAY (time-of-day).
                         if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
                         // Per-mode Pro Insights — self-gates.
                         if (!isProActive || proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
@@ -460,7 +486,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // ── Recent matches ────────────────────────────────────────
         // Web parity (profile/page.tsx): skeleton rows while loading, then the
         // matches or "No matches played yet." — the section never just vanishes.
-        item { SectionLabel("RECENT MATCHES") }
+        item { SectionHeader("Recent Matches", accent = Color(0xFF2563EB)) }
         if (loading) {
             item {
                 Column { repeat(5) { SkeletonBlock(height = 52.dp, cornerRadius = 12.dp); Spacer(Modifier.height(8.dp)) } }
@@ -518,13 +544,14 @@ private fun memberSince(createdAt: String?): String? {
 }
 
 @Composable
-private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onShare: () -> Unit = {}) {
+private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive: Boolean, onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onShare: () -> Unit = {}) {
     val level = profile?.level ?: 1
     val xp = profile?.xp ?: 0
     val tier = levelTier(level)
     val levelProgress = (xp % 1000) / 10f / 100f       // (xp%1000)/10 as a 0..1 fraction
     val xpToNext = 1000 - (xp % 1000)
-    val initial = (profile?.username?.firstOrNull() ?: 'P').uppercaseChar().toString()
+    // Two-character initials fallback (web avatar-upload.tsx slice(0, 2) / iOS AvatarView).
+    val initial = (profile?.username?.take(2) ?: "P").uppercase()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -560,11 +587,14 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
                     ),
                 )
             }
-            if (profile?.isPro == true) {
+            // Gold capsule, and gated on isProActive so an expired subscription
+            // drops the badge (iOS ProfileTab header).
+            if (isProActive) {
                 Text(
                     "PRO", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White,
-                    modifier = Modifier.clip(RoundedCornerShape(6.dp))
-                        .background(Brush.linearGradient(listOf(WTheme.wordmarkStart, WTheme.wordmarkEnd)))
+                    letterSpacing = 0.6.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(50))
+                        .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
             }
@@ -602,8 +632,8 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(
                 modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                    .pressScale { onEditProfile() }.padding(horizontal = 12.dp, vertical = 6.dp),
+                    .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
+                    .pressScale { onEditProfile() }.padding(horizontal = 14.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Icon(Icons.Filled.Edit, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
@@ -611,8 +641,8 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
             }
             Row(
                 modifier = Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-                    .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
-                    .pressScale { onShare() }.padding(horizontal = 12.dp, vertical = 6.dp),
+                    .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
+                    .pressScale { onShare() }.padding(horizontal = 14.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Icon(Icons.Filled.Share, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
@@ -622,7 +652,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, onGoPro: ()
 
         // Go Pro (non-Pro) + Simulate/Disable Pro (admin) — side by side (web `flex gap-2`).
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (profile?.isPro != true) {
+            if (!isProActive) {
                 Box(
                     Modifier.clip(RoundedCornerShape(8.dp))
                         .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
@@ -680,11 +710,23 @@ private fun TodaysDailies(today: Map<String, DailyCompletionsService.Completion>
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (allDone) {
-            Text(
-                if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!",
-                fontSize = if (flawless) 18.sp else 16.sp, fontWeight = FontWeight.Black,
-                color = if (flawless) Color(0xFFB45309) else Color(0xFF7C3AED),
-            )
+            // Flanking trophy/sparkle glyphs + gradient banner text (iOS ProfileTab).
+            val bannerIcon = if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome
+            val iconSize = if (flawless) 18.dp else 15.dp
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(bannerIcon, null, tint = if (flawless) Color(0xFFB45309) else Color(0xFF7C3AED), modifier = Modifier.size(iconSize))
+                Text(
+                    if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!",
+                    fontSize = 16.sp, fontWeight = FontWeight.Black,
+                    style = androidx.compose.ui.text.TextStyle(
+                        brush = Brush.linearGradient(
+                            if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309))
+                            else listOf(Color(0xFFA78BFA), Color(0xFFEC4899)),
+                        ),
+                    ),
+                )
+                Icon(bannerIcon, null, tint = if (flawless) Color(0xFFB45309) else Color(0xFFEC4899), modifier = Modifier.size(iconSize))
+            }
         }
         listOf(DAILY_MODES.take(5), DAILY_MODES.drop(5)).forEach { rowModes ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -819,7 +861,7 @@ private fun ModeDetailHeader(modeId: String, activeTab: String) {
                     androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
                     tint = accent, modifier = Modifier.size(12.dp),
                 )
-                else -> Text("🤖", fontSize = 10.sp)
+                else -> Icon(Icons.Filled.Memory, null, tint = accent, modifier = Modifier.size(12.dp))
             }
             Text(
                 if (activeTab == "solo") "Solo" else if (activeTab == "vs") "VS" else "VS CPU",
@@ -841,7 +883,8 @@ private fun ModeStatsGrid(rows: List<ProfileService.UserStat>, streak: Pair<Int,
     val cells = listOf(
         "Wins" to "$wins", "Losses" to "$losses", "Games" to "$games", "Win Rate" to "$winRate%",
         "Best" to (best?.let { "${it.toInt()}" } ?: "-"),
-        "Fastest" to (fastest?.let { if (it < 60) "${it}s" else "${it / 60}m ${it % 60}s" } ?: "-"),
+        // Whole minutes drop the trailing "0s" (iOS fmtTime).
+        "Fastest" to (fastest?.let { if (it < 60) "${it}s" else if (it % 60 > 0) "${it / 60}m ${it % 60}s" else "${it / 60}m" } ?: "-"),
         "Streak" to "${streak?.first ?: 0}", "Best Streak" to "${streak?.second ?: 0}",
     )
     KitCard {
@@ -922,7 +965,6 @@ private fun DailyMedals(profile: com.wordocious.app.data.Profile?, medals: List<
     val gold = profile?.goldMedals?.takeIf { it > 0 } ?: medals.count { it.medalType == "gold" }
     val silver = profile?.silverMedals?.takeIf { it > 0 } ?: medals.count { it.medalType == "silver" }
     val bronze = profile?.bronzeMedals?.takeIf { it > 0 } ?: medals.count { it.medalType == "bronze" }
-    if (gold == 0 && silver == 0 && bronze == 0 && medals.isEmpty()) return
 
     var showAll by remember { mutableStateOf(false) }
     SectionLabel("DAILY MEDALS")
@@ -948,6 +990,15 @@ private fun DailyMedals(profile: com.wordocious.app.data.Profile?, medals: List<
                     modifier = Modifier.fillMaxWidth().clickableNoRipple { showAll = !showAll },
                 )
             }
+        } else {
+            // The section always exists — empty copy where the history would be,
+            // so the feature is discoverable before the first medal (iOS parity).
+            Text(
+                "Play daily challenges to earn medals!", fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                color = WTheme.textMuted,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }
@@ -1039,9 +1090,15 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
                     Text(b.label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textSecondary, modifier = Modifier.width(24.dp))
                     Box(Modifier.weight(1f).height(20.dp), contentAlignment = Alignment.CenterStart) {
                         val frac = (b.count.toFloat() / max).coerceIn(0f, 1f)
+                        // Bucket colour ramp: fast wins purple → mid amber → slow grey (iOS).
+                        val barColor = when {
+                            b.guesses <= 2 -> Color(0xFF7C3AED)
+                            b.guesses <= 4 -> Color(0xFFF59E0B)
+                            else -> Color(0xFF9CA3AF)
+                        }
                         Box(
                             Modifier.fillMaxWidth(frac.coerceAtLeast(if (b.count > 0) 0.06f else 0f)).height(20.dp)
-                                .clip(RoundedCornerShape(4.dp)).background(if (dimmed) WTheme.correct.copy(alpha = 0.35f) else WTheme.correct),
+                                .clip(RoundedCornerShape(4.dp)).background(if (dimmed) barColor.copy(alpha = 0.35f) else barColor),
                             contentAlignment = Alignment.CenterEnd,
                         ) {
                             if (b.count > 0) Text("${b.count}", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White, modifier = Modifier.padding(end = 6.dp))
@@ -1049,15 +1106,21 @@ private fun GuessDistributionCard(buckets: List<com.wordocious.app.data.MatchSta
                     }
                 }
             }
-            selected?.let { sel ->
-                buckets.firstOrNull { it.label == sel && it.count > 0 }?.let { b ->
-                    val pct = (b.count * 100f / totalWins.coerceAtLeast(1)).toInt()
-                    Text(
-                        "$sel guess${if (sel == "1") "" else "es"} · ${b.count} win${if (b.count == 1) "" else "s"} · $pct% of wins",
-                        fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
+            // Footer: tapped-bar detail, or the plain running total (iOS parity).
+            val selBucket = selected?.let { sel -> buckets.firstOrNull { it.label == sel && it.count > 0 } }
+            if (selBucket != null) {
+                val pct = (selBucket.count * 100f / totalWins.coerceAtLeast(1)).toInt()
+                Text(
+                    "${selBucket.label} guess${if (selBucket.label == "1") "" else "es"} · ${selBucket.count} win${if (selBucket.count == 1) "" else "s"} · $pct% of wins",
+                    fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            } else {
+                Text(
+                    "$totalWins win${if (totalWins == 1) "" else "s"}",
+                    fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
         }
     }
@@ -1127,6 +1190,8 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
         }.getOrDefault("")
         if (m.isNotEmpty() && m != lastMonth) { monthLabels.add(m to wi); lastMonth = m }
     }
+    // Drop a first label that would collide with the second one column over.
+    if (monthLabels.size >= 2 && monthLabels[1].second - monthLabels[0].second < 3) monthLabels.removeAt(0)
 
     fun cellColor(d: com.wordocious.app.data.MatchStatsService.DayActivity?): Color {
         if (d == null || d.played == 0) return WTheme.surfaceHover
@@ -1140,7 +1205,7 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionLabel("ACTIVITY")
+        SectionLabel("ACTIVITY (LAST 90 DAYS)")
         Column(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
@@ -1205,7 +1270,12 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
             }
+            // Totals lead, Less→More legend trails (iOS footer order).
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "$totalDaysPlayed day${if (totalDaysPlayed == 1) "" else "s"} played · $totalGames games",
+                    fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("Less", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     listOf(0xFFF3F0FF, 0xFFC4B5FD, 0xFFA78BFA, 0xFF7C3AED, 0xFF6D28D9).forEach { c ->
@@ -1213,7 +1283,6 @@ private fun DailyCalendarCard(data: List<com.wordocious.app.data.MatchStatsServi
                     }
                     Text("More", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 }
-                Text("$totalDaysPlayed days · $totalGames games", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
         }
     }
@@ -1317,7 +1386,7 @@ private fun SoloVsToggle(active: String, onSelect: (String) -> Unit) {
                         androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_swords), null,
                         tint = accent, modifier = Modifier.size(14.dp),
                     )
-                    else -> Text("🤖", fontSize = 12.sp)
+                    else -> Icon(Icons.Filled.Memory, null, tint = accent, modifier = Modifier.size(14.dp))
                 }
                 Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = accent)
             }
@@ -1338,11 +1407,11 @@ private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
     val bestStreak = com.wordocious.app.data.CpuProgressionStore.load().bestStreak
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
+            .dashedBorder(WTheme.border, 16.dp).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFF64748B).copy(alpha = 0.10f)), Alignment.Center) {
-            Text("🤖", fontSize = 18.sp)
+            Icon(Icons.Filled.Memory, null, tint = Color(0xFF64748B), modifier = Modifier.size(18.dp))
         }
         Column(Modifier.weight(1f)) {
             Text("VS CPU", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp, color = Color(0xFF64748B))
@@ -1352,7 +1421,10 @@ private fun CpuRecordCard(stats: List<ProfileService.UserStat>) {
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(if (total == 0) "—" else "$winRate%", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF64748B))
-            Text(if (total == 0) "No games yet" else "Win rate · $total ${if (total == 1) "match" else "matches"}", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+            Text(
+                if (total == 0) "NO GAMES YET" else "WIN RATE · $total ${if (total == 1) "MATCH" else "MATCHES"}",
+                fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = WTheme.textMuted,
+            )
         }
     }
 }
@@ -1387,8 +1459,8 @@ private fun VsRecordCard(stats: List<ProfileService.UserStat>) {
         Column(horizontalAlignment = Alignment.End) {
             Text("$winRate%", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
             Text(
-                "Win rate · $total ${if (total == 1) "match" else "matches"}",
-                fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted,
+                "WIN RATE · $total ${if (total == 1) "MATCH" else "MATCHES"}",
+                fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, color = WTheme.textMuted,
             )
         }
     }
@@ -1624,10 +1696,12 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
                 Text("No games yet — play to build your stats.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 24.dp))
             } else {
                 val cells = buildList {
-                    s.fastestTime?.let { add(Triple("Fastest Win", fmtTime(it), Icons.Filled.Bolt)) }
-                    s.fewestGuesses?.let { add(Triple("Fewest Guesses", "$it", Icons.Filled.TrackChanges)) }
+                    // The four base cells always render — an em dash where the
+                    // metric is missing, so the 2×2 grid never reflows (iOS).
+                    add(Triple("Fastest Win", s.fastestTime?.let { fmtTime(it) } ?: "—", Icons.Filled.Bolt))
+                    add(Triple("Fewest Guesses", s.fewestGuesses?.let { "$it" } ?: "—", Icons.Filled.TrackChanges))
                     add(Triple("Perfect Games", "${s.perfectGames}", Icons.Filled.Star))
-                    if (s.consistencySample >= 3) add(Triple("Consistency", "${s.consistency}", Icons.Filled.TrackChanges))
+                    add(Triple("Consistency", if (s.consistencySample >= 3) "${s.consistency}" else "—", Icons.Filled.TrackChanges))
                     if (s.currentStreak > 0) add(Triple("Win Streak", "${s.currentStreak}", Icons.Filled.LocalFireDepartment))
                     if (s.avgGuesses > 0) add(Triple("Avg Guesses", fmtG(s.avgGuesses), Icons.Filled.TrackChanges))
                     if (s.firstTryRate > 0) add(Triple("First Try Rate", "${s.firstTryRate}%", Icons.Filled.Star))
@@ -1750,6 +1824,22 @@ private fun ProLockedTeaser(label: String, onGoPro: () -> Unit) {
     }
 }
 
+/** Dashed rounded outline — the "unranked/informal" cue iOS draws on the CPU
+ *  practice card (StrokeStyle(lineWidth: 1.5, dash: [5])). */
+private fun Modifier.dashedBorder(color: Color, radius: androidx.compose.ui.unit.Dp) = this.drawBehind {
+    val w = 1.5.dp.toPx()
+    drawRoundRect(
+        color = color,
+        topLeft = androidx.compose.ui.geometry.Offset(w / 2f, w / 2f),
+        size = androidx.compose.ui.geometry.Size(size.width - w, size.height - w),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(radius.toPx()),
+        style = androidx.compose.ui.graphics.drawscope.Stroke(
+            width = w,
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 5f)),
+        ),
+    )
+}
+
 /** "1m 23s" / "45s" — matches iOS fmt(seconds). */
 private fun fmtTime(s: Int): String = if (s < 60) "${s}s" else "${s / 60}:${(s % 60).toString().padStart(2, '0')}"
 private fun fmtG(v: Double): String = if (v == v.toInt().toDouble()) "${v.toInt()}" else "$v"
@@ -1769,7 +1859,7 @@ private fun modeLabel(mode: String) = when (mode) {
 /** Short titles for the mode-picker chips — matches web PROFILE_MODES.shortTitle. */
 private fun shortModeLabel(mode: String) = when (mode) {
     "DUEL" -> "Classic"; "QUORDLE" -> "Quad"; "OCTORDLE" -> "Octo"
-    "SEQUENCE" -> "Succ."; "RESCUE" -> "Deliv."
+    "SEQUENCE" -> "Succ"; "RESCUE" -> "Deliv"
     "DUEL_6" -> "Six"; "DUEL_7" -> "Seven"
     "GAUNTLET" -> "Gauntlet"; "PROPERNOUNDLE" -> "Proper"
     else -> mode

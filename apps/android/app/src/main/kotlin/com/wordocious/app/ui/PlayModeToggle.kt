@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -43,7 +44,7 @@ fun PlayModeToggle(value: PlayMode, onChange: (PlayMode) -> Unit) {
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(50)).padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         TogglePill("Daily", Icons.Filled.Star, value == PlayMode.DAILY, Modifier.weight(1f)) { onChange(PlayMode.DAILY) }
         TogglePill("Unlimited", Icons.Filled.AllInclusive, value == PlayMode.UNLIMITED, Modifier.weight(1f)) { onChange(PlayMode.UNLIMITED) }
@@ -53,11 +54,24 @@ fun PlayModeToggle(value: PlayMode, onChange: (PlayMode) -> Unit) {
 @Composable
 private fun TogglePill(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, active: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Row(
-        modifier.clip(RoundedCornerShape(50)).background(if (active) WTheme.surface else Color.Transparent)
-            .clickableNoRipple(onClick).padding(vertical = 6.dp),
+        modifier
+            // iOS gives the selected segment a soft purple lift.
+            .then(
+                if (active) {
+                    Modifier.shadow(
+                        3.dp, RoundedCornerShape(50),
+                        spotColor = Color(0xFF7C3AED).copy(alpha = 0.12f),
+                        ambientColor = Color(0xFF7C3AED).copy(alpha = 0.12f),
+                    )
+                } else {
+                    Modifier
+                }
+            )
+            .clip(RoundedCornerShape(50)).background(if (active) WTheme.surface else Color.Transparent)
+            .clickableNoRipple(onClick).padding(vertical = 7.dp),
         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, null, tint = if (active) Color(0xFF7C3AED) else WTheme.textMuted, modifier = Modifier.size(14.dp))
+        Icon(icon, null, tint = if (active) Color(0xFF7C3AED) else WTheme.textMuted, modifier = Modifier.size(12.dp))
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = if (active) Color(0xFF7C3AED) else WTheme.textMuted, modifier = Modifier.padding(start = 4.dp))
     }
 }
