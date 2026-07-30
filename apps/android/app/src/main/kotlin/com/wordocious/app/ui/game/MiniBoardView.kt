@@ -78,8 +78,10 @@ fun MiniBoardView(
     val totalRows = prefills.size + board.maxGuesses
     val lastSubmittedRow = if (board.guesses.isNotEmpty()) board.guesses.size - 1 else -1
 
-    // Tile font size: larger when expanded (web `isExpanded ? text-base sm:text-lg : text-[10px]`)
-    val fontSize = if (isExpanded) 18f else 10f
+    // Font is derived per tile now (TileView: min(w,h) * 0.5, iOS parity).
+    // A fixed 10sp/18sp could not survive OctoWord's 13 rows in a mini card —
+    // the glyph was taller than the cell and every letter rendered clipped.
+    val fontSize: Float? = null
     val wordLen = board.solution.length
 
     Box(

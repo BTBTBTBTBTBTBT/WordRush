@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,7 +58,14 @@ fun TileView(
     cornerRadius: Dp = 4.dp,
     /** iOS scales the stroke with the tile (0.09 × size, clamped 1–2pt). */
     borderWidth: Dp = 2.dp,
-    fontSize: Float = 20f,
+    /**
+     * Explicit point size, or null to derive it from the tile the way iOS does
+     * (BoardView.swift:72-85 — `min(width, height) * 0.5`). A FIXED size is
+     * wrong whenever the tile can shrink: OctoWord squeezes 13 rows into a small
+     * card, the cell became shorter than a 10sp glyph, and every letter was
+     * clipped in half. Callers that own their geometry still pass a number.
+     */
+    fontSize: Float? = null,
     // square=true forces a 1:1 tile (single-board). false = fill the cell
     // (multi-board in-play, non-square per spec — prevents overlap).
     square: Boolean = true,
@@ -118,7 +126,7 @@ fun TileView(
     }
     val showBorder = !filled || state == TileState.HINT_USED || state == TileState.ABSENT || masked
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .then(if (square) Modifier.aspectRatio(1f) else Modifier.fillMaxSize())
             .graphicsLayer {
@@ -134,10 +142,14 @@ fun TileView(
             } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
+        // Half the SHORTER side, matching iOS. Floored so a sliver of a tile
+        // still renders something legible rather than nothing.
+        val resolved = fontSize ?: (minOf(maxWidth, maxHeight).value * 0.5f).coerceAtLeast(6f)
         Text(
             text = letter.uppercase(),
             color = textColor,
-            fontSize = fontSize.sp,
+            fontSize = resolved.sp,
+            maxLines = 1,
             fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
         )
