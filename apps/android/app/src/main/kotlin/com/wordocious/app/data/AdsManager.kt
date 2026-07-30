@@ -7,15 +7,15 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 
 /**
- * AdMob lifecycle + the game-start rewarded interstitial — Android port of iOS
+ * AdMob lifecycle + the game-start interstitial — Android port of iOS
  * AdsManager (which mirrors the web AdGate). Ads only show for non-Pro users.
  *
  * Flow per Google: UMP consent (GDPR/UK/EEA form when required) → initialize
@@ -33,7 +33,13 @@ import com.google.android.ump.UserMessagingPlatform
 object AdsManager {
     private const val ENABLED = true
 
-    private const val INTERSTITIAL_UNIT = "ca-app-pub-3015627373086578/6697119876"
+    // STANDARD interstitial, not rewarded. A rewarded interstitial forces the
+    // full ~30s watch because the user is nominally earning something — and we
+    // granted nothing, so free players sat through the whole ad for no benefit.
+    // Standard interstitials show a close button after a few seconds, which is
+    // the normal pattern for a game-start gate. (Old rewarded unit
+    // .../6697119876 left in AdMob, unused.)
+    private const val INTERSTITIAL_UNIT = "ca-app-pub-3015627373086578/8174953152"
 
     const val BANNER_UNIT = "ca-app-pub-3015627373086578/3452009437"
 
@@ -48,7 +54,7 @@ object AdsManager {
     var initialized by androidx.compose.runtime.mutableStateOf(false)
 
     private var started = false
-    private var interstitial: RewardedInterstitialAd? = null
+    private var interstitial: InterstitialAd? = null
 
     /** Call once from the launcher activity. Consent → init → preload. */
     fun start(activity: Activity) {
@@ -83,10 +89,10 @@ object AdsManager {
 
     private fun preload(context: Context) {
         runCatching {
-            RewardedInterstitialAd.load(
+            InterstitialAd.load(
                 context, INTERSTITIAL_UNIT, AdRequest.Builder().build(),
-                object : RewardedInterstitialAdLoadCallback() {
-                    override fun onAdLoaded(ad: RewardedInterstitialAd) { interstitial = ad }
+                object : InterstitialAdLoadCallback() {
+                    override fun onAdLoaded(ad: InterstitialAd) { interstitial = ad }
                     override fun onAdFailedToLoad(error: LoadAdError) { interstitial = null }
                 },
             )
@@ -106,7 +112,7 @@ object AdsManager {
             override fun onAdDismissedFullScreenContent() { preload(activity); onDone() }
             override fun onAdFailedToShowFullScreenContent(error: AdError) { preload(activity); onDone() }
         }
-        runCatching { ad.show(activity) { /* cosmetic reward; play proceeds either way */ } }
-            .onFailure { onDone() }
+        // Standard interstitial: no reward callback, dismissal drives onDone.
+        runCatching { ad.show(activity) }.onFailure { onDone() }
     }
 }

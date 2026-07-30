@@ -14,9 +14,15 @@ enum AdsConfig {
 
     // Real AdMob unit IDs (Wordocious AdMob app, created 2026-06-03).
     static let bannerUnitID = "ca-app-pub-3015627373086578/4287985559"
-    /// Rewarded interstitial = the full skippable-video format shown on game
-    /// start ("Wordocious Game Start" unit).
-    static let interstitialUnitID = "ca-app-pub-3015627373086578/6909445311"
+    /// STANDARD interstitial shown on game start ("Game Start Interstitial").
+    ///
+    /// This was a *rewarded* interstitial, which is the wrong format here: the
+    /// rewarded contract requires the user to watch the whole thing to earn
+    /// something, so AdMob suppresses the close button for the full ~30s — and
+    /// we granted nothing for watching. A standard interstitial shows ✕ after a
+    /// few seconds, which is what players expect from a game-start gate. (The
+    /// old rewarded unit .../6909445311 still exists in AdMob, unused.)
+    static let interstitialUnitID = "ca-app-pub-3015627373086578/1609544807"
 
     /// Whether ads should be shown right now (enabled + not Pro).
     @MainActor static var active: Bool { enabled && !AuthService.shared.isProActive }
@@ -27,7 +33,7 @@ enum AdsConfig {
 final class AdsManager: NSObject, ObservableObject {
     static let shared = AdsManager()
 
-    private var interstitial: GADRewardedInterstitialAd?
+    private var interstitial: GADInterstitialAd?
     private var started = false
 
     /// Call once the app is foreground-active. Resolves Google UMP consent, then
@@ -127,7 +133,7 @@ final class AdsManager: NSObject, ObservableObject {
 
     private func preloadInterstitial() {
         guard AdsConfig.enabled else { return }
-        GADRewardedInterstitialAd.load(withAdUnitID: AdsConfig.interstitialUnitID, request: GADRequest()) { [weak self] ad, _ in
+        GADInterstitialAd.load(withAdUnitID: AdsConfig.interstitialUnitID, request: GADRequest()) { [weak self] ad, _ in
             // GoogleMobileAds delivers the load completion on the main thread, so
             // touching main-actor state here is safe — assumeIsolated makes that
             // contract explicit without deferring onto a later runloop turn.
@@ -146,7 +152,9 @@ final class AdsManager: NSObject, ObservableObject {
             completion(); return
         }
         onDismiss = completion
-        ad.present(fromRootViewController: vc, userDidEarnRewardHandler: { /* cosmetic reward; play proceeds either way */ })
+        // No reward handler — standard interstitial. Dismissal (delegate) drives
+        // the completion, same as before.
+        ad.present(fromRootViewController: vc)
     }
 
     private var onDismiss: (() -> Void)?

@@ -21,9 +21,8 @@ Swap in your real IDs before release.
 1. **AdMob console** → create account (can share payments with your AdSense
    account) → **Add app** → iOS, bundle id `com.wordocious.app`. Copy the real
    **App ID** `ca-app-pub-XXXXXXXXXXXXXXXX~YYYYYYYYYY`.
-2. Create two **ad units**: a **Banner** and an **Interstitial** (or Rewarded
-   Interstitial if you want the longer opt-in video). Copy each unit ID
-   `ca-app-pub-XXXX/ZZZZ`.
+2. Create two **ad units**: a **Banner** and an **Interstitial**. Copy each
+   unit ID `ca-app-pub-XXXX/ZZZZ`.
 3. **Replace the test IDs** in two files:
    - `project.yml` → `GADApplicationIdentifier:` → your real app ID, then run
      `xcodegen generate`.
@@ -40,11 +39,13 @@ Swap in your real IDs before release.
 ## Notes / parity with web
 - The web uses AdSense (`AdGate` interstitial + bottom `AdBanner`); native uses
   AdMob — same free-vs-Pro gating, same "ad on game start + bottom banner" model.
-- The game-start ad uses a **Rewarded Interstitial** (`GADRewardedInterstitialAd`)
-  — the full skippable-video format (verified: video plays, "Reward in Ns" →
-  "Reward granted" → close). Real unit ID type to create: **Rewarded
-  Interstitial**. (To use the shorter plain interstitial instead, swap back to
-  `GADInterstitialAd` + unit `.../4411468910`.)
+- The game-start ad uses a plain **Interstitial** (`GADInterstitialAd`), which
+  shows a ✕ after a few seconds. Real unit ID type to create: **Interstitial**.
+  It used to be a *Rewarded* Interstitial, and that was wrong: the rewarded
+  contract makes AdMob hold the close button for the full ~30s because the user
+  is nominally earning something — and we granted nothing for watching, so free
+  players sat through every ad with no way out (reported 2026-07-30). Don't
+  switch back unless there's an actual reward attached.
 - It fires on **solo `GameScreen`, `VSGameView` (before matchmaking), and
   `ProperNoundleView`** — all gated to free users; the game timer starts only
   after the ad is dismissed. Gauntlet/Six/Seven run through `GameScreen` so
