@@ -71,41 +71,36 @@ enum MedalService {
     /// (sweep, flawless) split so the XP toast can render the distinct
     /// "+200 sweep" / "+400 flawless" chips (web xp-toast.tsx parity).
     static func awardDailyBonusesIfComplete(_ client: SupabaseClient, userId: String) async -> (sweep: Int, flawless: Int) {
+        // Delegated to wordocious.com/api/daily/award-bonuses. The app used to
+        // write the daily_bonuses row itself, but that row IS the all-time
+        // sweep leaderboard (alltime_sweep_leaderboard counts rows with
+        // sweep_awarded = true), so a client able to write the flag could award
+        // itself sweeps for days it never played. The server recomputes the
+        // award from daily_results and grants the XP.
         let day = LeaderboardService.todayLocal()
-        struct B: Decodable { let sweep_awarded: Bool?; let flawless_awarded: Bool? }
-        let existingRows: [B] = (try? await client.from("daily_bonuses")
-            .select("sweep_awarded, flawless_awarded").eq("user_id", value: userId)
-            .eq("day", value: day).limit(1).execute().value) ?? []
-        let sweepAlready = existingRows.first?.sweep_awarded ?? false
-        let flawlessAlready = existingRows.first?.flawless_awarded ?? false
-        if sweepAlready && flawlessAlready { return (0, 0) }
+        guard let token = try? await client.auth.session.accessToken,
+              let url = URL(string: "https://wordocious.com/api/daily/award-bonuses")
+        else { return (0, 0) }
 
-        struct R: Decodable { let completed: Bool }
-        guard let results: [R] = try? await client.from("daily_results")
-            .select("completed").eq("user_id", value: userId).eq("day", value: day)
-            .eq("play_type", value: "solo").execute().value, results.count >= Self.dailyModeCount else { return (0, 0) }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: ["day": day])
 
-        let wonAll = results.allSatisfy { $0.completed }
-        let sweepXp = sweepAlready ? 0 : 200
-        let flawlessXp = (wonAll && !flawlessAlready) ? 400 : 0
-        let bonus = sweepXp + flawlessXp
-        guard bonus > 0 else { return (0, 0) }
-        let sweepNew = sweepXp > 0, flawlessNew = flawlessXp > 0
-
-        struct BonusUpsert: Encodable { let user_id, day: String; let sweep_awarded, flawless_awarded: Bool; let updated_at: String }
-        _ = try? await client.from("daily_bonuses").upsert(BonusUpsert(
-            user_id: userId, day: day, sweep_awarded: sweepAlready || sweepNew,
-            flawless_awarded: flawlessAlready || flawlessNew,
-            updated_at: ISO8601DateFormatter().string(from: Date())), onConflict: "user_id,day").execute()
-
-        struct PR: Decodable { let xp: Int?; let level: Int? }
-        struct XpUpd: Encodable { let xp: Int; let level: Int }
-        if let prof: [PR] = try? await client.from("profiles")
-            .select("xp, level").eq("id", value: userId).limit(1).execute().value, let cur = prof.first {
-            let newXp = (cur.xp ?? 0) + bonus
-            _ = try? await client.from("profiles").update(XpUpd(xp: newXp, level: newXp / 1000 + 1))
-                .eq("id", value: userId).execute()
+        struct AwardResponse: Decodable {
+            let awarded: Bool?
+            let sweepAwarded: Bool?
+            let flawlessAwarded: Bool?
         }
-        return (sweepXp, flawlessXp)
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
+              let res = try? JSONDecoder().decode(AwardResponse.self, from: data),
+              res.awarded == true
+        else { return (0, 0) }
+
+        // XP values stay client-side ONLY to size the toast chips; the profile
+        // XP itself was already written by the server.
+        return (res.sweepAwarded == true ? 200 : 0,
+                res.flawlessAwarded == true ? 400 : 0)
     }
 }

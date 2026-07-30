@@ -3,8 +3,14 @@ package com.wordocious.app.data
 import com.wordocious.app.todayLocalDate
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Client-side medal + daily-bonus awarding — Android port of the web
@@ -123,51 +129,39 @@ object MedalService {
      * (200, 0), (0, 400) or (0, 0) — so the XP toast can show distinct chips.
      */
     suspend fun awardDailyBonusesIfComplete(userId: String): Pair<Int, Int> = runCatching {
+        // Delegated to wordocious.com/api/daily/award-bonuses. The app used to
+        // write the daily_bonuses row itself, but that row IS the all-time
+        // sweep leaderboard (alltime_sweep_leaderboard counts rows with
+        // sweep_awarded = true), so a client able to write the flag could award
+        // itself sweeps for days it never played. The server recomputes the
+        // award from daily_results and grants the XP.
         val day = todayLocalDate()
-        val existing = client.postgrest["daily_bonuses"]
-            .select(Columns.raw("sweep_awarded, flawless_awarded")) {
-                filter { eq("user_id", userId); eq("day", day) }; limit(1)
+        val token = SupabaseConfig.client.auth.currentSessionOrNull()?.accessToken
+            ?: return@runCatching 0 to 0
+
+        val body = withContext(Dispatchers.IO) {
+            val conn = (java.net.URL("https://wordocious.com/api/daily/award-bonuses")
+                .openConnection() as java.net.HttpURLConnection).apply {
+                requestMethod = "POST"
+                setRequestProperty("Content-Type", "application/json")
+                setRequestProperty("Authorization", "Bearer $token")
+                doOutput = true
+                connectTimeout = 10_000
+                readTimeout = 10_000
             }
-            .decodeSingleOrNull<BonusRow>()
-        val sweepAlready = existing?.sweepAwarded ?: false
-        val flawlessAlready = existing?.flawlessAwarded ?: false
-        if (sweepAlready && flawlessAlready) return@runCatching 0 to 0
+            conn.outputStream.use { it.write("""{"day":"$day"}""".toByteArray()) }
+            if (conn.responseCode !in 200..299) return@withContext null
+            conn.inputStream.bufferedReader().use { it.readText() }
+        } ?: return@runCatching 0 to 0
 
-        val results = client.postgrest["daily_results"]
-            .select(Columns.raw("completed")) {
-                filter { eq("user_id", userId); eq("day", day); eq("play_type", "solo") }
-            }
-            .decodeList<CompletedRow>()
-        if (results.size < DAILY_MODE_COUNT) return@runCatching 0 to 0
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+            .parseToJsonElement(body).jsonObject
+        fun flag(k: String) = json[k]?.jsonPrimitive?.booleanOrNull ?: false
+        if (!flag("awarded")) return@runCatching 0 to 0
 
-        val wonAll = results.all { it.completed }
-        val sweepNew = !sweepAlready
-        val flawlessNew = wonAll && !flawlessAlready
-        val xpBonus = (if (sweepNew) DAILY_SWEEP_XP else 0) + (if (flawlessNew) FLAWLESS_EXTRA_XP else 0)
-        if (xpBonus == 0) return@runCatching 0 to 0
-
-        client.postgrest["daily_bonuses"].upsert(
-            BonusUpsert(
-                userId = userId, day = day,
-                sweepAwarded = sweepAlready || sweepNew,
-                flawlessAwarded = flawlessAlready || flawlessNew,
-                updatedAt = java.time.Instant.now().toString(),
-            )
-        ) { onConflict = "user_id,day" }
-
-        // Add the bonus XP to the profile (re-read first to avoid racing the
-        // progression write inside GameResultsService).
-        val p = client.postgrest["profiles"]
-            .select(Columns.raw("xp, level")) { filter { eq("id", userId) }; limit(1) }
-            .decodeSingleOrNull<XpRow>()
-        if (p != null) {
-            val newXp = p.xp + xpBonus
-            client.postgrest["profiles"].update({
-                set("xp", newXp)
-                set("level", newXp / 1000 + 1)
-            }) { filter { eq("id", userId) } }
-        }
-
-        (if (sweepNew) DAILY_SWEEP_XP else 0) to (if (flawlessNew) FLAWLESS_EXTRA_XP else 0)
+        // XP values are only used to size the toast chips; the profile XP was
+        // already written by the server.
+        (if (flag("sweepAwarded")) DAILY_SWEEP_XP else 0) to
+            (if (flag("flawlessAwarded")) FLAWLESS_EXTRA_XP else 0)
     }.getOrDefault(0 to 0)
 }

@@ -1021,66 +1021,37 @@ export interface DailyBonusResult {
  * Returns null when nothing new was awarded (still short of 7, or
  * already awarded today).
  */
-export async function awardDailyBonusesIfComplete(userId: string): Promise<DailyBonusResult | null> {
+export async function awardDailyBonusesIfComplete(_userId: string): Promise<DailyBonusResult | null> {
   const day = getTodayLocal();
 
-  const { data: existing } = await (supabase as any)
-    .from('daily_bonuses')
-    .select('sweep_awarded, flawless_awarded')
-    .eq('user_id', userId)
-    .eq('day', day)
-    .maybeSingle() as { data: { sweep_awarded: boolean; flawless_awarded: boolean } | null };
+  // Delegated to /api/daily/award-bonuses. The client used to write the
+  // daily_bonuses row itself, but that row IS the all-time sweep leaderboard —
+  // alltime_sweep_leaderboard ranks players by counting rows with
+  // sweep_awarded = true, so a client that can write the flag can award itself
+  // any number of sweeps for days it never played. The server recomputes the
+  // whole thing from daily_results and grants the XP.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return null;
 
-  const sweepAlready = existing?.sweep_awarded ?? false;
-  const flawlessAlready = existing?.flawless_awarded ?? false;
-  if (sweepAlready && flawlessAlready) return null; // nothing to do
-
-  const { data: results } = await (supabase as any)
-    .from('daily_results')
-    .select('completed')
-    .eq('user_id', userId)
-    .eq('day', day)
-    .eq('play_type', 'solo') as { data: Array<{ completed: boolean }> | null };
-
-  if (!results || results.length < DAILY_MODE_COUNT) return null;
-
-  const wonAll = results.every((r) => r.completed);
-  let xpBonus = 0;
-  const sweepNew = !sweepAlready;
-  const flawlessNew = wonAll && !flawlessAlready;
-  if (sweepNew) xpBonus += DAILY_SWEEP_XP;
-  if (flawlessNew) xpBonus += FLAWLESS_EXTRA_XP;
-  if (xpBonus === 0) return null;
-
-  await (supabase as any)
-    .from('daily_bonuses')
-    .upsert(
-      {
-        user_id: userId,
-        day,
-        sweep_awarded: sweepAlready || sweepNew,
-        flawless_awarded: flawlessAlready || flawlessNew,
-        updated_at: new Date().toISOString(),
+  try {
+    const res = await fetch('/api/daily/award-bonuses', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
       },
-      { onConflict: 'user_id,day' },
-    );
-
-  // Add the bonus XP to profile. Re-read first so we don't race with
-  // other concurrent writers inside recordGameResult.
-  const { data: profile } = await (supabase as any)
-    .from('profiles')
-    .select('xp, level')
-    .eq('id', userId)
-    .single() as { data: { xp: number; level: number } | null };
-
-  if (profile) {
-    const newXp = (profile.xp ?? 0) + xpBonus;
-    const newLevel = Math.floor(newXp / 1000) + 1;
-    await (supabase as any)
-      .from('profiles')
-      .update({ xp: newXp, level: newLevel })
-      .eq('id', userId);
+      body: JSON.stringify({ day }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data?.awarded) return null;
+    return {
+      sweepAwarded: !!data.sweepAwarded,
+      flawlessAwarded: !!data.flawlessAwarded,
+      xpBonus: data.xpBonus ?? 0,
+    };
+  } catch {
+    // Best-effort: a failed bonus call must never break result recording.
+    return null;
   }
-
-  return { sweepAwarded: sweepNew, flawlessAwarded: flawlessNew, xpBonus };
 }
