@@ -89,6 +89,19 @@ class VSMatchViewModel(
      *  same BoardState path, so one snapshot covers all modes. Cleared on
      *  rematch (beginMatch). */
     var myFinalBoards by mutableStateOf<List<BoardState>?>(null)
+
+    /**
+     * Boards I have solved THIS MATCH — cumulative across Gauntlet stages
+     * (iOS VSMatchViewModel.myBoardsSolved).
+     *
+     * The tug-of-war bar used to count `state.boards` instead, which NextStage
+     * swaps out at every stage boundary. My half of the bar therefore reset to
+     * zero each time I cleared a stage while the opponent's kept climbing —
+     * the opponent reports a cumulative count over the socket — so winning a
+     * stage visibly destroyed my lead. Denominator is the MODE's board total
+     * (21 for Gauntlet), so this has to be cumulative to match it.
+     */
+    var myBoardsSolved by mutableStateOf(0)
         private set
     var playerTimeMs by mutableStateOf(0)
     var rematch by mutableStateOf(RematchState.IDLE)
@@ -540,6 +553,7 @@ class VSMatchViewModel(
         countdownIsRematch = false
         opponent.attempts = 0; opponent.solved = false
         opponent.boardsSolved = 0; opponent.totalBoards = 0
+        myBoardsSolved = 0
         opponent.stagesCleared = 0; opponent.tiles = emptyMap()
         result = null
         myFinalBoards = null
@@ -581,11 +595,18 @@ class VSMatchViewModel(
             myGuessLog.add(guess)
             service.submitGuess(guess, boardIndex)
         }
-        vm.onBoardSolved = { idx -> service.boardSolved(idx) }
+        vm.onBoardSolved = { idx ->
+            service.boardSolved(idx)
+            myBoardsSolved += 1   // cumulative across stages — see the property
+        }
         // Gauntlet VS: relay each cleared stage so the opponent's "Stage N" badge
         // advances (mirrors iOS VSMatchViewModel onStageCompleted).
         vm.onStageCompleted = { stage -> service.stageCompleted(stage) }
         vm.onCompleted = { status, guesses ->
+            // Backstop for any single-board path that finishes without firing
+            // onBoardSolved (iOS does the same on its ProperNoundle branch):
+            // a win must never leave the bar reading zero solved.
+            if (status == GameStatus.WON && myBoardsSolved == 0) myBoardsSolved = 1
             val timeMs = max(0, (System.currentTimeMillis() - matchStartMs).toInt())
             playerTimeMs = timeMs
             myStatus = status

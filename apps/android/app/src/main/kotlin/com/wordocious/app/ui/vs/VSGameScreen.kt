@@ -535,7 +535,12 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
                 avatarUrl = profile?.avatarUrl,
                 guesses = vm.myGuessCount,
                 progress = computeVsProgress(
-                    boardsSolved = state.boards.count { it.status == GameStatus.WON },
+                    // vm.myBoardsSolved, NOT state.boards: NextStage swaps the
+                    // board list out, so counting it reset my half of the bar to
+                    // zero every time I CLEARED a Gauntlet stage while the
+                    // opponent's cumulative count kept climbing. Winning visibly
+                    // destroyed your lead.
+                    boardsSolved = vm.myBoardsSolved,
                     // The MODE's board count (21 for Gauntlet), not the current
                     // stage's — the opponent reports cumulative boardsSolved.
                     totalBoards = vm.totalBoards,
