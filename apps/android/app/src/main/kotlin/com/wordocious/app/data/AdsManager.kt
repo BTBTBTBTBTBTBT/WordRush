@@ -21,19 +21,21 @@ import com.google.android.ump.UserMessagingPlatform
  * Flow per Google: UMP consent (GDPR/UK/EEA form when required) → initialize
  * the Mobile Ads SDK (gated on canRequestAds) → preload the interstitial.
  *
- * IDs: Google's TEST app/unit IDs until a Wordocious ANDROID AdMob app exists
- * (the approved AdMob app ca-app-pub-3015627373086578~8393761846 is iOS-only —
- * Android needs its own app + units in the AdMob console; swap the manifest
- * APPLICATION_ID meta-data and INTERSTITIAL_UNIT below when created).
+ * IDs: the REAL Wordocious Android AdMob app, created 2026-07-30 under the same
+ * publisher as iOS (pub-3015627373086578). App ~3743919404 is Android; iOS is
+ * the separate ~8393761846. Both are declared by the single app-ads.txt on
+ * wordocious.com, which is per-publisher, not per-app.
+ *
+ * The app shows "Requires review" until it is live on Play and the store link
+ * is added — ad serving is LIMITED, not off, until then (same review the iOS
+ * app just cleared).
  */
 object AdsManager {
     private const val ENABLED = true
 
-    /** Google TEST rewarded-interstitial unit — replace with the real Android unit. */
-    private const val INTERSTITIAL_UNIT = "ca-app-pub-3940256099942544/5354046379"
+    private const val INTERSTITIAL_UNIT = "ca-app-pub-3015627373086578/6697119876"
 
-    /** Google TEST banner unit — replace with the real Android unit alongside the above. */
-    const val BANNER_UNIT = "ca-app-pub-3940256099942544/6300978111"
+    const val BANNER_UNIT = "ca-app-pub-3015627373086578/3452009437"
 
     /** Whether ads should show right now (enabled + not Pro) — web AdGate gate. */
     val active: Boolean get() = ENABLED && !AuthService.isProActive

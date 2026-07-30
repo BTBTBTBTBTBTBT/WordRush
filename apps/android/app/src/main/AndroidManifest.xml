@@ -55,7 +55,7 @@
              replace this (+ the unit ID in AdsManager.kt) before release. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-3015627373086578~3743919404" />
 
         <!-- Share-image pipeline: exposes the rendered PNG in cacheDir/share to
              the system share sheet (read-only, per-grant). -->
