@@ -34,9 +34,7 @@ reading the diff.
 
 ## What it did NOT cover — read this before trusting it
 
-- **Light theme only.** The contrast bugs (`1.03–2.26:1`) were all *Dark*, and
-  the script's dark pass needs the theme switched in-app first. **The dark sweep
-  is still unrun** — the single largest remaining gap.
+- ~~Light theme only.~~ **The dark sweep has since been run** — see below.
 - **Guest session.** Every signed-in surface — profile with real stats, the
   invite panel, Pro badges, records with data — rendered empty. A populated
   account will lay out differently, and long usernames/ranks are exactly where
@@ -60,3 +58,39 @@ the launcher and silently captured the wrong screen. That is why this is a
 script and not a session of clicks.
 
 Screenshots are not committed (≈3.5 MB); regenerate with the command above.
+
+
+---
+
+## Dark pass (same session, same device)
+
+Theme flipped by writing `theme=dark` straight into `shared_prefs/
+wordocious_prefs.xml` via `run-as`, then re-running the sweep — faster and more
+repeatable than driving the settings UI.
+
+**The dark keyboard fix holds**: light keys, dark ink, fully readable, and the
+board tiles read correctly against the dark background.
+
+**It also found two defects that light theme cannot expose, both outside the
+app's own drawing** — which is why no amount of source review or light-theme
+screenshotting would have caught them:
+
+| Finding | Cause | Fix |
+|---|---|---|
+| Status bar clock/wifi/battery near-black on a near-black bar | Nothing ever set `isAppearanceLightStatusBars`. On API 35+ `android:statusBarColor` is deprecated **and ignored**, so icon colour comes only from that flag; unset, it defaults to dark icons | `a7f070a` |
+| White strip behind the gesture pill, under a dark keyboard | `navigationBarsPadding()` was on the root `Surface`, so the Surface stopped at the bar and the light `windowBackground` showed through | `a7f070a` |
+
+The second one is worth dwelling on: the code carried a comment claiming the
+Surface "keeps painting WTheme.bg behind the bar, so the inset reads as
+background rather than a dead strip." It did the exact opposite. A confident
+comment asserting the behaviour it prevents is harder to catch by reading than
+no comment at all — the same failure shape as the dead `NEXT_BOARD` action.
+
+Both fixes were **verified by re-capture on the emulator**, not by reasoning:
+dark icons → white icons, white strip → themed strip.
+
+### Still open after the dark pass
+
+Guest-session-only, no VS/Gauntlet/ProperNoundle rendered, emulator not device,
+and no side-by-side against iOS. Those limits from the light pass all still
+stand.
