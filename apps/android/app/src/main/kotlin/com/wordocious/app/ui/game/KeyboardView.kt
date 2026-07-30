@@ -57,8 +57,8 @@ fun KeyboardView(
     // Quadrant mode (Quad/Octo/Deliverance): per-board states drive sub-cell colors.
     perBoardStates: List<Map<String, TileState>>? = null,
 ) {
-    // Web parity (keyboard.tsx): playKeyTap on EVERY key; light haptic on
-    // letters, medium on ENTER, none on BACK.
+    // iOS parity (KeyboardView.swift): playKeyTap on EVERY key, and the SAME
+    // light `Haptics.tap()` on letters, ⌫ and ENTER alike.
     val haptics = LocalHapticFeedback.current
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
@@ -72,6 +72,7 @@ fun KeyboardView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (rowIdx == 2) WideKey("BACK") {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     com.wordocious.app.data.SoundManager.playKeyTap()
                     onDelete()
                 }
@@ -89,7 +90,7 @@ fun KeyboardView(
                     }
                 }
                 if (rowIdx == 2) WideKey("ENTER") {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     com.wordocious.app.data.SoundManager.playKeyTap()
                     onEnter()
                 }
@@ -165,13 +166,13 @@ private fun RowScope.QuadrantKey(
 private fun quadColor(state: TileState): Color = when (state) {
     TileState.CORRECT -> if (WTheme.colorblind) Color(0xFFF5793A) else Color(0xFF7C3AED)
     TileState.PRESENT, TileState.HINT_USED -> if (WTheme.colorblind) Color(0xFF85C0F9) else Color(0xFFF59E0B)
-    TileState.ABSENT -> Color(0xFF9CA3AF)
+    TileState.ABSENT -> WTheme.keyAbsent
     TileState.EMPTY -> Color(0xFFE8E5F0)
 }
 
-// Spec Part 2 Keyboard: letter key 52 tall, rounded6, Nunito font-black 18;
-// unstated keys get a 1.5px border (web: `1.5px solid var(--color-border)`);
-// colored (stated) keys are borderless — exactly like keyboard.tsx.
+// Keyboard letter key: 52 tall, rounded6, Nunito bold 18. iOS letterKey
+// (KeyboardView.swift:46-51) is a flat fill with NO stroke — only the wide
+// action keys and the quadrant keys are stroked.
 @Composable
 private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onClick: () -> Unit) {
     val unstated = bg == WTheme.keyDefault
@@ -182,7 +183,6 @@ private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onCli
             .height(52.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
-            .then(if (unstated) Modifier.border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp)) else Modifier)
             .semantics {
                 role = Role.Button
                 contentDescription = if (stateName.isEmpty()) label else "$label, $stateName"
@@ -193,7 +193,7 @@ private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onCli
         Text(
             label,
             color = if (unstated) WTheme.text else Color.White,
-            fontWeight = FontWeight.Black,
+            fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
         )
     }

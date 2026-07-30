@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Text
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +65,9 @@ fun VictoryOverlay(
     val board = state.boards[0]
     val multi = state.boards.size > 1
     val boardsSolved = state.boards.count { it.status == GameStatus.WON }
+    // iOS feeds the overlay vm.rowsUsed (max across boards), not board 0's count —
+    // on multi-board modes board 0 stops accumulating once it solves.
+    val rowsUsed = state.boards.maxOf { it.guesses.size }
 
     // Web parity: victory-animation plays the success jingle on mount,
     // game-over-animation the descending jingle (gauntlet losses never mount
@@ -120,13 +124,48 @@ fun VictoryOverlay(
                 }
                 Spacer(Modifier.height(8.dp))
                 if (!multi) {
-                    Text(board.solution.uppercase(), fontSize = 22.sp, fontWeight = FontWeight.Black,
-                        color = if (won) WTheme.winText else WTheme.lossText)
+                    // ProperNoundle answers are stored normalized ("TAYLORSWIFT");
+                    // iOS passes the spaced display name into the overlay.
+                    val display = if (mode == GameMode.PROPERNOUNDLE)
+                        com.wordocious.core.ProperNoundle.puzzleFor(board.solution)?.display ?: board.solution
+                    else board.solution
+                    Text(display.uppercase(), fontSize = 22.sp, fontWeight = FontWeight.Black,
+                        letterSpacing = 2.sp, color = WTheme.text)
+                    // iOS shows the dictionary definition right under the word —
+                    // ProperNoundle skips it (proper noun; its Wikipedia clue stands in).
+                    if (mode != GameMode.PROPERNOUNDLE) {
+                        Spacer(Modifier.height(12.dp))
+                        DefinitionCard(board.solution.uppercase())
+                    }
+                } else {
+                    // Multi-board reveal: 2 columns (≤4 boards) / 4 columns (>4).
+                    val solutions = state.boards.map { it.solution.uppercase() }
+                    val cols = if (solutions.size > 4) 4 else 2
+                    Column(
+                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                            .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        solutions.chunked(cols).forEach { rowWords ->
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                rowWords.forEach { w ->
+                                    Text(
+                                        w, fontSize = if (solutions.size > 4) 13.sp else 16.sp,
+                                        fontWeight = FontWeight.Black, letterSpacing = 1.sp, maxLines = 1,
+                                        color = WTheme.text, textAlign = TextAlign.Center,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
+                                repeat(cols - rowWords.size) { Spacer(Modifier.weight(1f)) }
+                            }
+                        }
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                     if (multi) StatBlock("Boards", "$boardsSolved/${state.boards.size}")
-                    StatBlock("Guesses", "${board.guesses.size}")
+                    StatBlock("Guesses", if (board.maxGuesses > 0) "$rowsUsed/${board.maxGuesses}" else "$rowsUsed")
                     StatBlock("Time", fmtVTime(elapsedSeconds))
                 }
                 Spacer(Modifier.height(16.dp))
@@ -139,8 +178,8 @@ fun VictoryOverlay(
 @Composable
 private fun StatBlock(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontSize = 22.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-        Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = WTheme.textMuted)
     }
 }
 
@@ -186,7 +225,7 @@ private fun ConfettiRect(p: ConfettiPiece) {
         val fall = maxHeight * progress
         Box(
             Modifier
-                .padding(start = (p.xFrac * 360).dp)
+                .padding(start = maxWidth * p.xFrac)
                 .offset(y = fall - 20.dp)
                 .rotate(rot)
                 .size(12.dp)
@@ -196,4 +235,5 @@ private fun ConfettiRect(p: ConfettiPiece) {
     }
 }
 
-private fun fmtVTime(secs: Int): String = "%d:%02d".format(secs / 60, secs % 60)
+/** iOS PostGameEffects.timeStr — compact "45s" / "2m 5s", not m:ss. */
+private fun fmtVTime(secs: Int): String = if (secs < 60) "${secs}s" else "${secs / 60}m ${secs % 60}s"

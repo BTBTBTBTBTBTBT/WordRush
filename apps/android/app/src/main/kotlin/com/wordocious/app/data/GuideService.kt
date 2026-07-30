@@ -34,8 +34,9 @@ object GuideService {
 
     private var cache: Map<String, ModeGuide>? = null
 
-    /** GameMode → guide slug (matches lib/guide-content.ts). */
-    private fun slugFor(mode: GameMode): String = when (mode) {
+    /** GameMode → guide slug (matches lib/guide-content.ts). Also the pre-fetch
+     *  title fallback on the Guides index (iOS: `GuideService.slug(for:)`). */
+    fun slugFor(mode: GameMode): String = when (mode) {
         GameMode.DUEL -> "classic"
         GameMode.DUEL_6 -> "six"
         GameMode.DUEL_7 -> "seven"

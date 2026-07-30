@@ -2,7 +2,8 @@ package com.wordocious.app.ui
 
 import com.wordocious.app.ui.theme.Nunito
 
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -33,13 +34,20 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -75,6 +83,24 @@ fun SweepCelebration(
     val borderC = if (flawless) Color(0xFFF59E0B) else Color(0xFFC4B5FD)
     val accentText = if (flawless) Color(0xFFB45309) else Color(0xFF6D28D9)
 
+    // iOS fires the success haptic + jingle on appear — the biggest daily
+    // milestone shouldn't land quieter than an ordinary win.
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(Unit) {
+        com.wordocious.app.data.SoundManager.playSuccess()
+        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
+
+    // Diagonal foil shimmer sweeping the card (iOS FoilShimmer) — stronger for
+    // Flawless, off entirely under reduced motion.
+    val shimmerAlpha = if (WTheme.reducedMotion) 0f else if (flawless) 0.7f else 0.45f
+    val foil = rememberInfiniteTransition(label = "foil")
+    val foilPhase by foil.animateFloat(
+        initialValue = -1f, targetValue = 1.2f,
+        animationSpec = infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Restart),
+        label = "foilPhase",
+    )
+
     Box(
         Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onClose() },
@@ -86,6 +112,21 @@ fun SweepCelebration(
             Modifier.padding(horizontal = 24.dp).fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
                 .background(Brush.verticalGradient(cardGrad))
+                .drawBehind {
+                    if (shimmerAlpha <= 0f) return@drawBehind
+                    val bandW = size.width * 0.4f
+                    val x = foilPhase * size.width * 1.6f
+                    rotate(-18f) {
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                listOf(Color.Transparent, Color.White.copy(alpha = shimmerAlpha), Color.Transparent),
+                                startX = x, endX = x + bandW,
+                            ),
+                            topLeft = Offset(x, -size.height),
+                            size = Size(bandW, size.height * 3f),
+                        )
+                    }
+                }
                 .border(1.5.dp, borderC, RoundedCornerShape(18.dp))
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -101,7 +142,7 @@ fun SweepCelebration(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
                         tint = if (flawless) Color(0xFFD97706) else Color(0xFF7C3AED), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
-                    Text(if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!", fontSize = 24.sp, fontWeight = FontWeight.Black,
+                    Text(if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!", fontSize = 26.sp, fontWeight = FontWeight.Black,
                         style = TextStyle(brush = Brush.linearGradient(titleColors), fontFamily = Nunito))
                     Icon(if (flawless) Icons.Filled.EmojiEvents else Icons.Filled.AutoAwesome, null,
                         tint = if (flawless) Color(0xFFD97706) else Color(0xFFEC4899), modifier = Modifier.size(if (flawless) 26.dp else 22.dp))
@@ -114,7 +155,7 @@ fun SweepCelebration(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                     stat("${totals.won}/${totals.total}", "Won")
                     stat(fmt(totals.totalTimeSeconds), "Total Time")
-                    stat("${totals.totalScore}", "Total Pts")
+                    stat(formatScore(totals.totalScore.toDouble()), "Total Pts")
                 }
 
                 // Per-game list (3 columns)
@@ -185,13 +226,18 @@ private fun stat(value: String, label: String) {
 private fun ParticleBurst(flawless: Boolean) {
     val count = if (flawless) 28 else 20
     val transition = rememberInfiniteTransition(label = "burst")
-    val t by transition.animateFloat(
-        initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(if (flawless) 1600 else 1900, easing = LinearEasing), RepeatMode.Restart),
-        label = "t",
-    )
     Box(Modifier.fillMaxSize()) {
         repeat(count) { i ->
+            // iOS staggers each particle by (i % 7) * 0.12s and eases out, so the
+            // burst shimmers continuously instead of pulsing as one synced ring.
+            val t by transition.animateFloat(
+                initialValue = 0f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    tween(if (flawless) 1600 else 1900, delayMillis = (i % 7) * 120, easing = EaseOut),
+                    RepeatMode.Restart,
+                ),
+                label = "t$i",
+            )
             val angle = i.toDouble() / count * Math.PI * 2 + (i % 2) * 0.4
             val dist = (if (flawless) 180.0 else 140.0) + (i % 5) * 22
             val dx = (cos(angle) * dist * t).dp

@@ -336,15 +336,23 @@ object AchievementService {
         }
 
         // Gauntlet God (complete gauntlet with all boards solved)
-        if (gameMode == "GAUNTLET" && won && "gauntlet_god" !in alreadyUnlocked) {
+        // iOS scopes this to TODAY'S DAILY run and requires both counts to be
+        // present. Without the day filter and the isDaily gate, any past perfect
+        // Gauntlet row re-unlocked it after an unrelated non-daily win.
+        if (gameMode == "GAUNTLET" && won && isDaily && "gauntlet_god" !in alreadyUnlocked) {
             val gauntletResult = client.postgrest["daily_results"]
                 .select(Columns.raw("boards_solved, total_boards")) {
-                    filter { eq("user_id", userId); eq("game_mode", "GAUNTLET"); eq("completed", true) }
+                    filter {
+                        eq("user_id", userId); eq("game_mode", "GAUNTLET")
+                        eq("completed", true); eq("day", todayLocalDate())
+                    }
                     order("created_at", Order.DESCENDING)
                     limit(1)
                 }
                 .decodeSingleOrNull<GauntletBoardsRow>()
-            if (gauntletResult != null && gauntletResult.boardsSolved == gauntletResult.totalBoards) {
+            if (gauntletResult?.boardsSolved != null && gauntletResult.totalBoards != null &&
+                gauntletResult.boardsSolved == gauntletResult.totalBoards
+            ) {
                 tryUnlock("gauntlet_god")
             }
         }
@@ -371,7 +379,11 @@ object AchievementService {
         if (playType == "vs" && won && "triple_threat" !in alreadyUnlocked) {
             val today = todayLocalDate()
             val todayDaily = client.postgrest["daily_results"]
-                .select(Columns.raw("vs_wins")) { filter { eq("user_id", userId); eq("day", today) } }
+                // completed=true — iOS counts only finished rows; in-progress
+                // rows were inflating the daily VS win total.
+                .select(Columns.raw("vs_wins")) {
+                    filter { eq("user_id", userId); eq("day", today); eq("completed", true) }
+                }
                 .decodeList<VsWinsRow>()
             val totalVsWins = todayDaily.sumOf { it.vsWins ?: 0 }
             if (totalVsWins >= 3) tryUnlock("triple_threat")

@@ -7,8 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -255,12 +254,14 @@ private fun prettyDate(key: String): String = runCatching {
 
 @Composable
 private fun OverlayScaffold(title: String, onDone: () -> Unit, leading: (@Composable () -> Unit)? = null, content: @Composable () -> Unit) {
-    Column(Modifier.fillMaxSize().background(WTheme.surface)) {
+    Column(Modifier.fillMaxSize().background(WTheme.bg)) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (leading != null) { leading(); Spacer(Modifier.size(8.dp)) }
-            Text(title.uppercase(), fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
-            Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple(onDone))
+            Text(title.uppercase(), fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f), style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
+            Box(Modifier.size(30.dp).clip(CircleShape).background(WTheme.surfaceAlt).clickableNoRipple(onDone), Alignment.Center) {
+                Icon(Icons.Filled.Close, "Close", tint = WTheme.textMuted, modifier = Modifier.size(14.dp))
+            }
         }
         content()
     }
@@ -268,8 +269,8 @@ private fun OverlayScaffold(title: String, onDone: () -> Unit, leading: (@Compos
 
 @Composable
 private fun infoCardMod() = Modifier
-    .fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(WTheme.surface)
-    .border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp))
+    .fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+    .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
 
 // ── Strategy ──────────────────────────────────────────────────────────────────
 
@@ -283,12 +284,16 @@ fun StrategyScreen(onDone: () -> Unit) {
         OverlayScaffold(a.title, onDone = onDone, leading = {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = WTheme.textMuted, modifier = Modifier.size(20.dp).clickableNoRipple { selected = null })
         }) {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("STRATEGY · ${a.minutes} MIN READ", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = WTheme.primary)
-                Text(a.dek, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("STRATEGY · ${a.minutes} MIN READ", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.8.sp, color = Color(0xFFF59E0B))
+                Text(a.dek, fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                 a.sections.forEach { s ->
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(s.heading, fontSize = 17.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    Column(infoCardMod().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            // Amber rule before each heading (iOS: 4×16 rounded bar).
+                            Box(Modifier.width(4.dp).height(16.dp).clip(RoundedCornerShape(2.dp)).background(Color(0xFFF59E0B)))
+                            Text(s.heading, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                        }
                         s.body.forEach { Text(it, fontSize = 13.sp, color = WTheme.textSecondary, lineHeight = 19.sp) }
                     }
                 }
@@ -299,7 +304,7 @@ fun StrategyScreen(onDone: () -> Unit) {
     }
 
     OverlayScaffold("Strategy", onDone) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Practical, original strategy for solving daily word puzzles faster and in fewer guesses.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (articles.isEmpty()) {
                 CircularProgressIndicator(color = WTheme.primary, modifier = Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
@@ -334,7 +339,7 @@ fun WordsScreen(onDone: () -> Unit, navTitle: String = "Words") {
     }
 
     OverlayScaffold(navTitle, onDone) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Every day Wordocious surfaces a Word of the Day — the shared answer thousands of players race to solve.", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             if (words.isEmpty()) {
                 CircularProgressIndicator(color = WTheme.primary, modifier = Modifier.padding(top = 32.dp).align(Alignment.CenterHorizontally))
@@ -387,7 +392,12 @@ private fun WordDetail(w: WordsService.Entry, onDone: () -> Unit, onBack: () -> 
                 WordSectionCard("Meaning", Icons.Filled.MenuBook, Color(0xFF7C3AED)) {
                     Text(w.definition, fontSize = 13.sp, color = WTheme.text, lineHeight = 18.sp)
                     if (w.example.isNotEmpty()) Text("“${w.example}”", fontSize = 12.sp, fontStyle = FontStyle.Italic, color = WTheme.textMuted)
-                    w.extraSenses.forEach { Text("${it.partOfSpeech}  ${it.definition}", fontSize = 12.sp, color = WTheme.textMuted) }
+                    w.extraSenses.forEach {
+                        Text(buildAnnotatedString {
+                            withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = WTheme.primary)) { append(it.partOfSpeech + " ") }
+                            append(it.definition)
+                        }, fontSize = 12.sp, color = WTheme.textMuted)
+                    }
                 }
             }
             WordSectionCard("$word as a puzzle answer", Icons.Filled.Lightbulb, Color(0xFFF59E0B)) {
@@ -429,11 +439,16 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
     }
 
     OverlayScaffold("Guides", onDone) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             (guides.ifEmpty { modes.map { it to null } }).forEach { (mode, g) ->
-                Row(infoCardMod().clickableNoRipple { selected = mode }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                val accent = modeAccent(mode)
+                Row(infoCardMod().clickableNoRipple { selected = mode }.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.size(40.dp).clip(RoundedCornerShape(11.dp)).background(accent.copy(alpha = 0.14f)), Alignment.Center) {
+                        Icon(Icons.Filled.MenuBook, null, tint = accent, modifier = Modifier.size(16.dp))
+                    }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(g?.title ?: mode.name, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                        // Before /api/guides resolves, iOS falls back to the capitalized slug ("Six"), not the enum name.
+                        Text(g?.title ?: com.wordocious.app.data.GuideService.slugFor(mode).replaceFirstChar { it.uppercase() }, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
                         if (g?.tagline != null) Text(g.tagline, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                     }
                     Icon(Icons.Filled.ChevronRight, null, tint = WTheme.textMuted, modifier = Modifier.size(18.dp))
@@ -446,17 +461,25 @@ fun GuidesIndexScreen(onDone: () -> Unit) {
 
 // ── Home footer link row (web footer parity) ──────────────────────────────────
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun InfoFooter(onNav: (String) -> Unit) {
-    FlowRow(
+    // iOS splits the 8 links into two fixed rows of four rather than letting them
+    // wrap by measured width, so the grid stays balanced on every device.
+    val half = (INFO_NAV.size + 1) / 2
+    Column(
         Modifier.fillMaxWidth().padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        INFO_NAV.forEach { item ->
-            Text(item.label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                modifier = Modifier.clickableNoRipple { onNav(item.route) })
+        listOf(INFO_NAV.take(half), INFO_NAV.drop(half)).forEach { line ->
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
+            ) {
+                line.forEach { item ->
+                    Text(item.label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        modifier = Modifier.clickableNoRipple { onNav(item.route) })
+                }
+            }
         }
     }
 }

@@ -83,14 +83,14 @@ fun StageTransitionOverlay(
                     .border(4.dp, Color(0xFFA78BFA), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Check, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(40.dp))
+                Icon(Icons.Filled.Check, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(34.dp))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     "STAGE COMPLETE",
-                    color = Color(0xFFA78BFA), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp,
+                    color = Color(0xFFA78BFA), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp,
                 )
-                Text(completed.name, color = Color.White.copy(alpha = 0.6f), fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                Text(completed.name, color = Color.White.copy(alpha = 0.6f), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
             // Final stage: prompt the player to tap when ready (no auto-advance).
             if (next == null) {
@@ -108,15 +108,15 @@ fun StageTransitionOverlay(
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFACC15), modifier = Modifier.size(16.dp))
-                        Text("NEXT UP", color = Color(0xFFFACC15), fontSize = 13.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        Text("NEXT UP", color = Color(0xFFFACC15), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
                         Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFACC15), modifier = Modifier.size(16.dp))
                     }
                     Text(
                         next.name,
-                        fontSize = 34.sp, fontWeight = FontWeight.Black,
+                        fontSize = 30.sp, fontWeight = FontWeight.Black,
                         style = TextStyle(
                             brush = Brush.horizontalGradient(
-                                listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA)),
+                                listOf(Color(0xFFFACC15), Color(0xFFF472B6), Color(0xFFC084FC)),
                             ),
                         ),
                     )
@@ -126,7 +126,7 @@ fun StageTransitionOverlay(
                             if (next.sequential) append(" · sequential")
                             if (next.hasPrefill) append(" · pre-filled clues")
                         },
-                        color = Color.White.copy(alpha = 0.4f), fontSize = 13.sp, fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.4f), fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     )
                     // The overlay has ALWAYS been tap-to-skip, but only the final
                     // stage said so — mid-run it read as a cutscene you had to sit
@@ -157,7 +157,7 @@ fun GauntletStagesCard(g: GauntletProgress, won: Boolean, onReview: (Int) -> Uni
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("STAGES", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+        Text("STAGE BREAKDOWN", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
         g.stages.forEachIndexed { i, stage ->
             val result = g.stageResults.firstOrNull { it.stageIndex == i }
             val cleared = result?.status == GameStatus.WON

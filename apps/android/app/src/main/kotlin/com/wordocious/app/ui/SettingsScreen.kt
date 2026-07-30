@@ -12,19 +12,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,16 +62,31 @@ private val THEMES = listOf(
 @Composable
 fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     val scope = rememberCoroutineScope()
+    val isAuthenticated by AuthService.isAuthenticated.collectAsState()
     var theme by remember { mutableStateOf(ThemePref.current()) }
     var sound by remember { mutableStateOf(SettingsPref.get(SettingsPref.SOUND, true)) }
     var dailyReminder by remember { mutableStateOf(SettingsPref.get(SettingsPref.DAILY_REMINDER, false)) }
     var colorblind by remember { mutableStateOf(SettingsPref.get(SettingsPref.COLORBLIND, false)) }
     var reducedMotion by remember { mutableStateOf(SettingsPref.get(SettingsPref.REDUCED_MOTION, false)) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    // Declared before the launcher below, which assigns it from its callback.
+    var reminderDenied by remember { mutableStateOf(false) }
     // Permission launcher for the daily-reminder toggle (API 33+ runtime perm).
     val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-    ) { granted -> if (granted) com.wordocious.app.data.NotificationService.schedule(context) }
+    ) { granted ->
+        if (granted) {
+            com.wordocious.app.data.NotificationService.schedule(context)
+        } else {
+            // iOS reverts the switch when the permission prompt is declined
+            // (SettingsView.onChange -> requestAndSchedule returns false). Leaving
+            // it ON persisted pref-daily-reminder=true while nothing was ever
+            // scheduled, so the user believed reminders were on.
+            dailyReminder = false
+            SettingsPref.set(SettingsPref.DAILY_REMINDER, false)
+            reminderDenied = true
+        }
+    }
     // Account deletion flow (Play compliance — web/iOS parity).
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
@@ -79,7 +98,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("SETTINGS", fontSize = 18.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
+            Text("SETTINGS", fontSize = 17.sp, fontWeight = FontWeight.Black, style = androidx.compose.ui.text.TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito))
             Spacer(Modifier.weight(1f))
             Text(
                 "Done", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.primary,
@@ -106,7 +125,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(Modifier.weight(1f)) {
-                                Text(label, fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                                Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
                                 Text(desc, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                             }
                             if (active) Icon(Icons.Filled.CheckCircle, null, tint = WTheme.primary, modifier = Modifier.size(20.dp))
@@ -190,28 +209,43 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                 }
             }
 
-            // Account
-            Text(
-                "Sign Out",
-                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC2626),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(1.5.dp, Color(0xFFDC2626), RoundedCornerShape(12.dp))
-                    .clickableNoRipple { scope.launch { AuthService.signOut(); onDone() } }
-                    .padding(vertical = 12.dp),
-            )
+            // Account — iOS wraps BOTH of these in `if auth.isAuthenticated`
+            // (SettingsView.swift:104). Android showed them to guests too, so a
+            // guest saw a Sign Out row for a session they never started and a
+            // Delete Account button wired to a destructive call.
+            if (isAuthenticated) {
+                Text(
+                    "Sign Out",
+                    fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFDC2626),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        // iOS uses a TINTED .bordered fill, not a hard 1.5pt outline.
+                        .background(Color(0xFFDC2626).copy(alpha = 0.12f))
+                        .clickableNoRipple { scope.launch { AuthService.signOut(); onDone() } }
+                        .wrapContentHeight(),
+                )
 
-            Text(
-                "Delete Account",
-                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFDC2626))
-                    .clickableNoRipple { showDeleteConfirm = true }
-                    .padding(vertical = 12.dp),
-            )
+                // iOS renders this as an OUTLINED card with a leading trash icon,
+                // not a solid red slab — the solid fill read as the primary action
+                // of the whole screen.
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.5.dp, Color(0xFFDC2626), RoundedCornerShape(14.dp))
+                        .clickableNoRipple { showDeleteConfirm = true }
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(Icons.Filled.Delete, null, tint = Color(0xFFDC2626), modifier = Modifier.size(15.dp))
+                    Text(
+                        "Delete Account",
+                        fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFDC2626),
+                    )
+                }
+            }
 
             Text(
                 "Wordocious · v1.0.0",
@@ -221,6 +255,27 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             )
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    // Permission was declined — say so, rather than leaving a switch that
+    // silently snapped back with no explanation (iOS surfaces the same alert).
+    if (reminderDenied) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { reminderDenied = false },
+            title = { Text("Notifications are off", fontWeight = FontWeight.Black) },
+            text = {
+                Text(
+                    "Enable notifications for Wordocious in your device settings " +
+                        "to get a daily reminder to play.",
+                )
+            },
+            confirmButton = {
+                Text(
+                    "OK", fontWeight = FontWeight.Black, color = WTheme.primary,
+                    modifier = Modifier.clickableNoRipple { reminderDenied = false }.padding(12.dp),
+                )
+            },
+        )
     }
 
     if (showDeleteConfirm) {
@@ -269,7 +324,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.1.sp)
+        Text(title, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted, letterSpacing = 1.1.sp)
         content()
     }
 }
@@ -287,7 +342,17 @@ private fun Card(content: @Composable () -> Unit) {
 @Composable
 private fun ToggleRow(title: String, sub: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        // iOS's Toggle makes its whole label part of the hit target; on Android
+        // only the switch thumb was tappable, so the row read as inert.
+        modifier = Modifier.fillMaxWidth()
+            .toggleable(
+                value = checked,
+                onValueChange = onChange,
+                role = androidx.compose.ui.semantics.Role.Switch,
+                indication = null,
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+            )
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -295,7 +360,7 @@ private fun ToggleRow(title: String, sub: String, checked: Boolean, onChange: (B
             Text(sub, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textMuted)
         }
         Switch(
-            checked = checked, onCheckedChange = onChange,
+            checked = checked, onCheckedChange = null,
             colors = SwitchDefaults.colors(checkedTrackColor = WTheme.primary),
         )
     }

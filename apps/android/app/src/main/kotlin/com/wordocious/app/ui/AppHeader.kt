@@ -62,11 +62,24 @@ fun AppHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        // iOS shrinks the wordmark rather than clipping it
+        // (`.minimumScaleFactor(0.6)`), so a Pro badge + streak + shield pill can
+        // never push the trailing controls off the row. Compose 1.7 has no
+        // autoSize, so step the size down until it stops overflowing — 12sp is
+        // the same 0.6 floor.
+        var wordmarkSize by remember { mutableStateOf(20.sp) }
         Text(
             "WORDOCIOUS",
-            fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
+            fontSize = wordmarkSize, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
             style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
             maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.weight(1f, fill = false),
+            onTextLayout = { result ->
+                if (result.hasVisualOverflow && wordmarkSize > 12.sp) {
+                    wordmarkSize = (wordmarkSize.value - 1f).coerceAtLeast(12f).sp
+                }
+            },
         )
         if (AuthService.isProActive) {
             Text(

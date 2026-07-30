@@ -96,6 +96,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
+        // singleTask routes app links here instead of relaunching. setIntent
+        // makes this the activity's current intent, so anything that later reads
+        // getIntent() (and a config change) sees the link, not the launch intent.
+        setIntent(intent)
         com.wordocious.app.data.DeepLinkRouter.handle(intent.data)
     }
 }

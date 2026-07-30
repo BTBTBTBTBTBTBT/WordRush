@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.TileState
 
 /**
  * Help screen — 1:1 port of iOS HelpView / web help-modal.tsx. Three tabs
@@ -71,7 +72,8 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
                 }
             }
         }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
+            // Per-tab spacing (iOS: 16 / 8 / 12), so each tab keeps its own rhythm.
             when (tab) {
                 0 -> HowToPlay()
                 1 -> GameModesHelp(content?.helpModes ?: emptyList())
@@ -84,19 +86,22 @@ fun HelpScreen(onDone: () -> Unit, initialTab: Int = 0, showTabs: Boolean = true
 
 @Composable
 private fun HowToPlay() {
-    Text(
-        "Guess the 5-letter word. Each guess must be a valid word. After each guess, the tiles change color to show how close you are.",
-        fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary,
-    )
-    ExampleRow(listOf("W", "E", "A", "R", "Y"), 0, Color(0xFF7C3AED), "W", Color(0xFF7C3AED), " is in the word and in the correct spot.")
-    ExampleRow(listOf("P", "I", "L", "L", "S"), 1, Color(0xFFF59E0B), "I", Color(0xFFF59E0B), " is in the word but in the wrong spot.")
-    ExampleRow(listOf("V", "A", "G", "U", "E"), 3, Color(0xFF6B7280), "U", Color(0xFF6B7280), " is not in the word at all.")
-    Text(
-        "Daily puzzles reset at your local midnight. Every player gets the same word of the day so you can compare results.",
-        fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary,
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.bg)
-            .border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
-    )
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(
+            "Guess the 5-letter word. Each guess must be a valid word. After each guess, the tiles change color to show how close you are.",
+            fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary,
+        )
+        // Example tiles paint from the live tile palette so colorblind mode matches the board.
+        ExampleRow(listOf("W", "E", "A", "R", "Y"), 0, Color(0xFF7C3AED), "W", Color(0xFF7C3AED), " is in the word and in the correct spot.")
+        ExampleRow(listOf("P", "I", "L", "L", "S"), 1, WTheme.tileColor(TileState.PRESENT), "I", WTheme.tileColor(TileState.PRESENT), " is in the word but in the wrong spot.")
+        ExampleRow(listOf("V", "A", "G", "U", "E"), 3, WTheme.tileColor(TileState.ABSENT), "U", WTheme.tileColor(TileState.ABSENT), " is not in the word at all.")
+        Text(
+            "Daily puzzles reset at your local midnight. Every player gets the same word of the day so you can compare results.",
+            fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary,
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.bg)
+                .border(1.dp, WTheme.border, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
+        )
+    }
 }
 
 @Composable
@@ -122,23 +127,39 @@ private fun ExampleRow(letters: List<String>, highlightIdx: Int, fill: Color, hi
 
 @Composable
 private fun GameModesHelp(modes: List<com.wordocious.app.data.ContentService.HelpMode>) {
-    modes.forEach { mode ->
-        Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
-                .border(1.dp, WTheme.divider, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
-        ) {
-            Text(mode.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text(mode.desc, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
+    // iOS drives this list from the local mode catalog and uses /api/content only to
+    // override the description, so the tab is complete offline and keeps its icons.
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        MODE_CARDS.forEach { card ->
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(WTheme.surfaceHover)
+                    .border(1.dp, WTheme.divider, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(card.accent.copy(alpha = 0.08f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ModeGlyph(card, card.accent, glyphSize = 11.sp, iconSize = 16.dp)
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(card.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    Text(modes.firstOrNull { it.title == card.title }?.desc ?: card.desc,
+                        fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
+                }
+            }
         }
     }
 }
 
 @Composable
 private fun Faq(items: List<com.wordocious.app.data.ContentService.FaqItem>) {
-    items.forEach { item ->
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(item.q, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            Text(item.a, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        items.forEach { item ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(item.q, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Text(item.a, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = WTheme.textSecondary)
+            }
         }
     }
 }
@@ -165,7 +186,7 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
     ) { if (fromApi) value = com.wordocious.app.data.ContentService.load() }
     val contentSections = if (kind == "about") content?.about else content?.support
 
-    Column(Modifier.fillMaxSize().background(WTheme.surface)) {
+    Column(Modifier.fillMaxSize().background(WTheme.bg)) {
         // Accent bar — matches How to Play / the other menu screens.
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -229,10 +250,10 @@ private fun InfoSectionCard(s: InfoSec) {
 private fun infoSections(kind: String): List<InfoSec> = when (kind) {
     "privacy" -> listOf(
         InfoSec("Introduction", "This policy explains what Wordocious collects, how we use it, and your choices."),
-        InfoSec("Information We Collect", bullets = listOf("Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — browser type, usage patterns, anonymous analytics")),
+        InfoSec("Information We Collect", bullets = listOf("Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — device type, usage patterns, anonymous analytics, and advertising identifiers (Google Advertising ID)")),
         InfoSec("How We Use Your Information", bullets = listOf("To create and manage your account", "To track game progress, streaks, and statistics", "To display leaderboards and records", "To improve and maintain the app", "To communicate important service updates")),
-        InfoSec("Third-Party Services", bullets = listOf("Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name", "Google ads — advertisements may be shown to free-tier users; ad-related data collection is governed by Google's privacy policies. Pro subscribers are not shown ads.")),
-        InfoSec("Advertising & Data Sharing", "Wordocious may show advertisements to free-tier users, served by Google and subject to Google's Privacy Policy. Pro subscribers enjoy a completely ad-free experience. We do not sell or rent your personal data for marketing beyond what is necessary for ad delivery."),
+        InfoSec("Third-Party Services", bullets = listOf("Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name", "Google AdMob — displays advertisements to free-tier users; ad-related data collection is governed by Google's privacy policies. Pro subscribers are not shown ads.")),
+        InfoSec("Advertising & Data Sharing", "Wordocious shows advertisements to free-tier users. On Android these are served by Google AdMob and are subject to Google's Privacy Policy. Where required, we ask for your consent through Google's User Messaging Platform prompt before showing personalized ads; if you decline, you'll see non-personalized ads. Pro subscribers enjoy a completely ad-free experience. We do not sell or rent your personal data for marketing beyond what is necessary for ad delivery."),
         InfoSec("Data Security", "We use industry-standard measures to protect your data. No method of transmission or storage is 100% secure, but we work to safeguard your information."),
         InfoSec("Your Rights", "You may request access to, correction of, or deletion of your personal data at any time. You can delete your account from Settings or by contacting us; upon deletion your personal data is removed from our systems."),
         InfoSec("Children's Privacy", "Wordocious is not intended for children under 13. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us data, contact us so we can remove it."),

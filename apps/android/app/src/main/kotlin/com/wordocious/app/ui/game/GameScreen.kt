@@ -1,5 +1,6 @@
 package com.wordocious.app.ui.game
 
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
@@ -117,8 +119,9 @@ fun HintPills(
     onVowel: () -> Unit, onConsonant: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        // iOS classicHintButtons: HStack(spacing: 12) inset 16pt, 4pt bottom.
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         HintPill(
             accent = accent, used = vowelUsed,
@@ -173,6 +176,30 @@ fun ProperNoundleHints(
     }
 }
 
+/** ProperNoundle category labels/colors — iOS ProperNoundleView.swift:4-13. */
+internal val PN_CATEGORY_LABELS = mapOf(
+    "music" to "Music", "videogames" to "Video Games", "movies" to "Movies & TV", "sports" to "Sports",
+    "history" to "History", "science" to "Science", "currentevents" to "Current Events",
+)
+private val PN_CATEGORY_COLORS = mapOf(
+    "music" to Color(0xFFEC4899), "videogames" to Color(0xFF8B5CF6), "movies" to Color(0xFFF59E0B),
+    "sports" to Color(0xFF10B981), "history" to Color(0xFF6366F1), "science" to Color(0xFF06B6D4),
+    "currentevents" to Color(0xFFEF4444),
+)
+
+/** Theme-category capsule under the ProperNoundle title (iOS header parity). */
+@Composable
+private fun PnCategoryPill(category: String) {
+    Text(
+        PN_CATEGORY_LABELS[category] ?: category,
+        color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
+        modifier = Modifier
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
+            .background(PN_CATEGORY_COLORS[category] ?: Color(0xFF7C3AED))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
 @Composable
 private fun NoundlePill(
     label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, used: Boolean,
@@ -204,7 +231,7 @@ private fun HintPill(accent: Color, used: Boolean, label: String, onClick: () ->
             .background(if (used) WTheme.surfaceHover else accent.copy(alpha = 0.08f))
             .border(1.5.dp, if (used) WTheme.border else accent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
             .then(if (used) Modifier else Modifier.clickableNoRipple(onClick))
-            .padding(vertical = 10.dp),
+            .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -216,43 +243,79 @@ private fun HintPill(accent: Color, used: Boolean, label: String, onClick: () ->
 }
 
 /**
- * Gauntlet 5-node stepper (spec line 102): done = green ✓, active = purple
- * (glow), future = number; connectors between nodes (green up to active).
+ * Gauntlet 5-node stepper — 1:1 with iOS `gauntletStageNode` (GameScreen.swift
+ * 330-347): a 20dp circle with a light tinted fill, a 2dp colored ring and a
+ * colored glyph (✓ done / play active / number future), 16dp connectors, and a
+ * pulsing halo on the active node (iOS StageGlow, 1.25s autoreversing).
  */
 @Composable
 fun GauntletStepper(current: Int, total: Int) {
-    val green = Color(0xFF6D28D9)
-    val purple = Color(0xFFA855F7)
-    val gray = Color(0xFFD1D5DB)
+    val glow = Color(0xFFA855F7)
+    val pulse = if (WTheme.reducedMotion) 0f else {
+        val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "stageGlow")
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                androidx.compose.animation.core.tween(1250, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                androidx.compose.animation.core.RepeatMode.Reverse,
+            ),
+            label = "stageGlowRadius",
+        ).value
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         for (i in 0 until total) {
             val done = i < current
             val active = i == current
-            val nodeColor = when { done -> green; active -> purple; else -> WTheme.surfaceAlt }
-            Box(
-                modifier = Modifier
-                    .size(if (active) 26.dp else 22.dp)
-                    .then(if (active) Modifier.shadow(8.dp, androidx.compose.foundation.shape.CircleShape, clip = false, spotColor = purple) else Modifier)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(nodeColor)
-                    .border(if (done || active) 0.dp else 1.5.dp, gray, androidx.compose.foundation.shape.CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    if (done) "✓" else "${i + 1}",
-                    color = if (done || active) Color.White else WTheme.textMuted,
-                    fontSize = if (active) 13.sp else 11.sp,
-                    fontWeight = FontWeight.Black,
+            // iOS draws the connector BEFORE node i, colored by node i's state.
+            if (i > 0) {
+                Box(
+                    Modifier.padding(horizontal = 2.dp).width(16.dp).height(2.dp)
+                        .background(
+                            when {
+                                done -> Color(0xFF8B5CF6)
+                                active -> Color(0xFFD8B4FE)
+                                else -> Color(0xFFE5E7EB)
+                            },
+                        ),
                 )
             }
-            if (i < total - 1) {
-                Box(
-                    Modifier.width(14.dp).height(2.dp)
-                        .background(if (i < current) green else gray),
-                )
+            val bg = when { done -> Color(0xFFEDE9FE); active -> Color(0xFFF3E8FF); else -> Color(0xFFF9FAFB) }
+            val ring = when { done -> Color(0xFF8B5CF6); active -> Color(0xFFC084FC); else -> Color(0xFFE5E7EB) }
+            val fg = when { done -> Color(0xFF6D28D9); active -> Color(0xFF9333EA); else -> Color(0xFF9CA3AF) }
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .then(
+                        if (active) Modifier.shadow(
+                            elevation = (3f + 5f * pulse).dp,
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            clip = false,
+                            ambientColor = glow, spotColor = glow,
+                        ) else Modifier,
+                    )
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(bg)
+                    .border(2.dp, ring, androidx.compose.foundation.shape.CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                when {
+                    done -> Text("✓", color = fg, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    active -> Icon(Icons.Filled.PlayArrow, null, tint = fg, modifier = Modifier.size(10.dp))
+                    else -> Text("${i + 1}", color = fg, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
+}
+
+/** Per-stage Gauntlet title gradient — mirrors iOS `gauntletStageGradient`. */
+private fun gauntletStageGradient(name: String): List<Color> = when (name) {
+    "QuadWord" -> listOf(Color(0xFFFACC15), Color(0xFFF472B6), Color(0xFFC084FC))
+    "Succession" -> listOf(Color(0xFFFACC15), Color(0xFFFB923C), Color(0xFFF87171))
+    "Deliverance" -> listOf(Color(0xFF818CF8), Color(0xFFC084FC), Color(0xFFE879F9))
+    "OctoWord" -> listOf(Color(0xFF22D3EE), Color(0xFFC084FC), Color(0xFFF472B6))
+    else -> listOf(Color(0xFFC084FC), Color(0xFFF472B6)) // The Opening / fallback
 }
 
 @Composable
@@ -565,56 +628,92 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     )
                     Spacer(Modifier.height(6.dp))
                 }
-                Text(
-                    com.wordocious.app.ui.modeTitle(mode),
-                    // Web headers are text-3xl (30px) font-black.
-                    fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
-                    style = androidx.compose.ui.text.TextStyle(
-                        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
-                            com.wordocious.app.ui.modeTitleGradient(mode),
+                // iOS titles the CURRENT STAGE in Gauntlet (gauntletHeader) and
+                // draws ProperNoundle flat red at 24pt (ProperNoundleView header);
+                // every other mode gets the 28pt gradient mode title.
+                val stageName = state.gauntlet?.let { it.stages.getOrNull(it.currentStage)?.name }
+                when {
+                    mode == GameMode.GAUNTLET -> Text(
+                        stageName ?: com.wordocious.app.ui.modeTitle(mode),
+                        fontSize = 18.sp, fontWeight = FontWeight.Black,
+                        style = androidx.compose.ui.text.TextStyle(
+                            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                gauntletStageGradient(stageName ?: ""),
+                            ),
                         ),
-                    ),
-                )
+                    )
+                    mode == GameMode.PROPERNOUNDLE -> Text(
+                        com.wordocious.app.ui.modeTitle(mode),
+                        color = Color(0xFFDC2626),
+                        fontSize = 24.sp, fontWeight = FontWeight.Black,
+                    )
+                    else -> Text(
+                        com.wordocious.app.ui.modeTitle(mode),
+                        fontSize = 28.sp, fontWeight = FontWeight.Black,
+                        style = androidx.compose.ui.text.TextStyle(
+                            brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                com.wordocious.app.ui.modeTitleGradient(mode),
+                            ),
+                        ),
+                    )
+                }
                 Spacer(Modifier.height(2.dp))
-                // Web header stat row: gap-3 spans (no "·" separators) — Trophy
-                // (amber) solved count on multi modes, "{used}/{max} guesses",
-                // Clock (blue) time. Gauntlet keeps its stage label.
+                // Header stat row — iOS `progressLabel` / `gauntletHeader`:
+                // Gauntlet = trophy solved-count + guesses at 11pt; other
+                // multi-board modes = ONE "x/n solved · u/m guesses" line (no
+                // trophy — iOS reserves the amber trophy for Gauntlet).
+                val statSp = if (mode == GameMode.GAUNTLET) 11.sp else 12.sp
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    // Daily ProperNoundle puzzle number (web "#{getDailyPuzzleNumber()}").
-                    if (mode == GameMode.PROPERNOUNDLE && seed.startsWith("daily-")) {
+                    val used = state.boards.maxOf { it.guesses.size }
+                    if (mode == GameMode.PROPERNOUNDLE) {
+                        // iOS ProperNoundleView header: category capsule, daily
+                        // puzzle number, answer length — no guess counter.
+                        vm.pnPuzzle?.themeCategory?.let { PnCategoryPill(it) }
+                        if (seed.startsWith("daily-")) {
+                            Text(
+                                "#${com.wordocious.core.ProperNoundle.dailyPuzzleNumber(com.wordocious.app.todayLocalDate())}",
+                                color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            )
+                        }
                         Text(
-                            "#${com.wordocious.core.ProperNoundle.dailyPuzzleNumber(com.wordocious.app.todayLocalDate())}",
+                            "${board0.solution.length} letters",
                             color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                         )
-                    }
-                    if (mode == GameMode.GAUNTLET) {
-                        val sn = (state.gauntlet?.currentStage ?: 0) + 1
+                    } else if (mode == GameMode.GAUNTLET) {
+                        if (state.boards.size > 1) {
+                            val solved = state.boards.count { it.status == GameStatus.WON }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    androidx.compose.material.icons.Icons.Filled.EmojiEvents, null,
+                                    tint = Color(0xFFD97706), modifier = Modifier.size(12.dp),
+                                )
+                                Spacer(Modifier.width(3.dp))
+                                Text("$solved/${state.boards.size}", color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                         Text(
-                            "Stage $sn / ${state.gauntlet?.totalStages ?: 5}",
-                            color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            "$used/${board0.maxGuesses} guesses",
+                            color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold,
                         )
                     } else if (state.boards.size > 1) {
                         val solved = state.boards.count { it.status == GameStatus.WON }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                androidx.compose.material.icons.Icons.Filled.EmojiEvents, null,
-                                tint = Color(0xFFD97706), modifier = Modifier.size(12.dp),
-                            )
-                            Spacer(Modifier.width(3.dp))
-                            Text("$solved/${state.boards.size}", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
+                        Text(
+                            "$solved/${state.boards.size} solved · $used/${board0.maxGuesses} guesses",
+                            color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold,
+                        )
+                    } else {
+                        Text(
+                            "$used/${board0.maxGuesses} guesses",
+                            color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold,
+                        )
                     }
-                    Text(
-                        "${state.boards.maxOf { it.guesses.size }}/${board0.maxGuesses} guesses",
-                        color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                    )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             androidx.compose.material.icons.Icons.Filled.Schedule, null,
                             tint = Color(0xFF60A5FA), modifier = Modifier.size(12.dp),
                         )
                         Spacer(Modifier.width(3.dp))
-                        Text(fmtClock(elapsed), color = WTheme.textSecondary, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                        Text(fmtClock(elapsed), color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
                     }
                 }
                 // ProperNoundle Clue text (italic, centered) once revealed (spec).
@@ -653,6 +752,11 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     isInvalid = invalid,
                     shakeKey = shakeKey,
                     modifier = Modifier.fillMaxSize(),
+                    // ProperNoundle answers can be multi-word ("Taylor Swift") —
+                    // iOS NoundleBoard splits the row on those word boundaries.
+                    wordGroups = if (mode == GameMode.PROPERNOUNDLE) {
+                        vm.pnPuzzle?.let { com.wordocious.core.ProperNoundle.wordGroups(it.display) }
+                    } else null,
                 )
             }
         }
@@ -700,15 +804,21 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         CornerHomeButton(accent = accent, onClick = onBack, modifier = Modifier.padding(8.dp))
 
         // Help "?" button (top-right corner) — opens this mode's strategy guide
-        // and pauses the clock while it's open. Sound toggle shifts left of it.
+        // and pauses the clock while it's open. iOS only shows a second corner
+        // button (the sound toggle) in Gauntlet, so the help button only shifts
+        // left there (GameScreen.swift:148).
         var showGuide by remember { mutableStateOf(false) }
+        val isGauntlet = mode == GameMode.GAUNTLET
         CornerHelpButton(
             accent = accent,
             onClick = { showGuide = true; vm.pauseTimer() },
-            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+            modifier = Modifier.align(Alignment.TopEnd)
+                .padding(top = 8.dp, end = if (isGauntlet) 60.dp else 8.dp, start = 8.dp, bottom = 8.dp),
         )
-        // Sound toggle — sits to the left of the help button.
-        SoundToggleButton(accent = accent, modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 60.dp))
+        // Sound toggle — Gauntlet only, in the corner the help button vacated.
+        if (isGauntlet) {
+            SoundToggleButton(accent = accent, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp))
+        }
         if (showGuide) {
             GuideSheet(mode = mode, onDismiss = { showGuide = false; vm.resumeTimer() })
         }
@@ -740,7 +850,8 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     it, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                        .background(Color(0xFF1A1A2E))
+                        // iOS fills the toast with Theme.textPrimary (palette-driven).
+                        .background(WTheme.text)
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                 )
             }
@@ -833,14 +944,22 @@ internal fun SingleBoard(
     isInvalid: Boolean = false,
     shakeKey: Int = 0,
     modifier: Modifier = Modifier,
+    // ProperNoundle: per-word letter counts, so a multi-word name renders as
+    // groups separated by a wider gap (iOS NoundleBoard). null = one flat row.
+    // Trails `modifier` so existing positional callers keep compiling.
+    wordGroups: List<Int>? = null,
 ) {
     val wordLen = board.solution.length
     val rows = board.maxGuesses
     val lastSubmittedRow = if (board.guesses.isNotEmpty()) board.guesses.size - 1 else -1
+    val groups = wordGroups?.takeIf { it.size > 1 && it.sum() == wordLen }
 
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+        // Inter-word gaps are 14dp where intra-word gaps are 4dp (iOS NoundleBoard),
+        // so each extra group eats another 10dp of board width.
+        val extraGroupGap = 10.dp * ((groups?.size ?: 1) - 1)
         // Max board width per web (400px ≈ 380dp accounting for padding)
-        val maxBoardW = minOf(maxWidth, 380.dp)
+        val maxBoardW = minOf(maxWidth, 380.dp) - extraGroupGap
         val maxBoardH = maxHeight
 
         // Board aspect ratio is wordLen:rows (each tile square)
@@ -866,64 +985,87 @@ internal fun SingleBoard(
         val tileBorder = (tileHValue * 0.09f).coerceIn(1f, 2f).dp
 
         Column(
-            modifier = Modifier.size(boardW, boardH),
+            modifier = Modifier.size(boardW + extraGroupGap, boardH),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // Submitted rows
             for (rowIdx in 0 until board.guesses.size) {
-                val guess = board.guesses[rowIdx]
-                val eval = evaluateGuess(board.solution, guess)
-                val isLastSubmitted = rowIdx == lastSubmittedRow
-                Row(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    eval.tiles.forEachIndexed { col, tile ->
-                        TileView(
-                            letter = tile.letter,
-                            state = tile.state,
-                            flipDelay = if (isLastSubmitted) col * 150 else null,
-                            flipDuration = 500, // web tile-flip 0.5s (full board)
-                            fontSize = tileFontSp,
-                            cornerRadius = tileCorner,
-                            borderWidth = tileBorder,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                // Hint rows (Clue / vowel / consonant) carry a stored evaluation
+                // keyed by row index — use it so the row paints as iOS's faint
+                // HINT_USED ghost instead of being re-evaluated into solid ABSENT
+                // tiles, and so a revealed letter lands in its real slot.
+                val hintEval = board.hintEvaluations?.get(rowIdx.toString())
+                val eval = hintEval ?: evaluateGuess(board.solution, board.guesses[rowIdx])
+                val isLastSubmitted = rowIdx == lastSubmittedRow && hintEval == null
+                BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth()) { col ->
+                    val tile = eval.tiles.getOrNull(col)
+                    TileView(
+                        letter = tile?.letter?.takeIf { it.isNotBlank() } ?: "",
+                        state = tile?.state ?: TileState.EMPTY,
+                        flipDelay = if (isLastSubmitted) col * 150 else null,
+                        flipDuration = 500, // web tile-flip 0.5s (full board)
+                        fontSize = tileFontSp,
+                        cornerRadius = tileCorner,
+                        borderWidth = tileBorder,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
             // Current input row — turns red + shakes on a rejected guess.
             if (board.guesses.size < board.maxGuesses && board.status == GameStatus.PLAYING) {
-                Row(
-                    modifier = Modifier.weight(1f).fillMaxWidth().shakeOnReject(shakeKey),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    for (col in 0 until wordLen) {
-                        val letter = currentGuess.getOrNull(col)?.toString() ?: ""
-                        TileView(
-                            letter = letter,
-                            state = TileState.EMPTY,
-                            isInvalid = isInvalid && letter.isNotEmpty(),
-                            fontSize = tileFontSp,
-                            cornerRadius = tileCorner,
-                            borderWidth = tileBorder,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth().shakeOnReject(shakeKey)) { col ->
+                    val letter = currentGuess.getOrNull(col)?.toString() ?: ""
+                    TileView(
+                        letter = letter,
+                        state = TileState.EMPTY,
+                        isInvalid = isInvalid && letter.isNotEmpty(),
+                        fontSize = tileFontSp,
+                        cornerRadius = tileCorner,
+                        borderWidth = tileBorder,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
             // Empty rows
             val emptyStart = board.guesses.size + if (board.status == GameStatus.PLAYING) 1 else 0
             for (rowIdx in emptyStart until board.maxGuesses) {
-                Row(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    repeat(wordLen) {
-                        TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontSp, cornerRadius = tileCorner, borderWidth = tileBorder, modifier = Modifier.weight(1f))
-                    }
+                BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth()) {
+                    TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontSp, cornerRadius = tileCorner, borderWidth = tileBorder, modifier = Modifier.weight(1f))
                 }
             }
+        }
+    }
+}
+
+/**
+ * One board row of [count] tiles. When [groups] is non-null the tiles are split
+ * into word groups laid out with a 14dp inter-word gap (iOS NoundleBoard);
+ * otherwise it is one flat 4dp-spaced row.
+ */
+@Composable
+private fun BoardRow(
+    groups: List<Int>?,
+    count: Int,
+    modifier: Modifier = Modifier,
+    tile: @Composable androidx.compose.foundation.layout.RowScope.(Int) -> Unit,
+) {
+    if (groups == null) {
+        Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            for (col in 0 until count) tile(col)
+        }
+        return
+    }
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        var start = 0
+        for (len in groups) {
+            val offset = start
+            Row(
+                modifier = Modifier.weight(len.toFloat()),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                for (k in 0 until len) tile(offset + k)
+            }
+            start += len
         }
     }
 }

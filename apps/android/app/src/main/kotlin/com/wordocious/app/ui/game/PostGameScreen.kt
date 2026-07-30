@@ -15,14 +15,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -150,6 +155,24 @@ fun PostGameScreen(
         )
     }
 
+    // iOS GameScreen routes EVERY Gauntlet finish (win or loss) to the dedicated
+    // animated GauntletResultsView — the generic header below reports the FINAL
+    // STAGE's boards/guesses, not the run's.
+    if (gauntletProgress != null) {
+        Box(modifier = Modifier.fillMaxSize().appBackground()) {
+            GauntletResultsScreen(
+                g = gauntletProgress, won = won, seed = seed, elapsedSeconds = elapsedSeconds,
+                hintsUsed = hintsUsed, onHome = onBack, onShare = onSharePressed,
+                onPlayAgain = if (seed.startsWith("unlimited-") &&
+                    com.wordocious.app.data.AuthService.isProActive
+                ) onPlayAgain else null,
+                onOpenDaily = onOpenDaily,
+            )
+            CornerHomeButton(accent, onBack)
+        }
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize().appBackground()) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -157,23 +180,6 @@ fun PostGameScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Gauntlet: stage rows + tap-to-review (web gauntlet-results parity).
-            if (mode == GameMode.GAUNTLET) {
-                state.gauntlet?.let { g ->
-                    var reviewIndex by androidx.compose.runtime.remember {
-                        androidx.compose.runtime.mutableStateOf<Int?>(null)
-                    }
-                    GauntletStagesCard(g, won = won, onReview = { reviewIndex = it })
-                    reviewIndex?.let { idx ->
-                        val res = g.stageResults.firstOrNull { it.stageIndex == idx }
-                        val stage = g.stages.getOrNull(idx)
-                        if (res != null && stage != null) {
-                            StageReviewModal(stage = stage, result = res, onClose = { reviewIndex = null })
-                        }
-                    }
-                }
-            }
-
             // ProperNoundle: Wikipedia photo + display-name result line (web parity:
             // win = name in green; loss = "The answer was: X" in red).
             if (mode == GameMode.PROPERNOUNDLE) {
@@ -183,7 +189,8 @@ fun PostGameScreen(
                 val imageUrl by androidx.compose.runtime.produceState<String?>(initialValue = null, key1 = puzzle?.id) {
                     value = puzzle?.let { com.wordocious.app.data.WikipediaHint.fetchImageUrl(it.display, it.wikiTitle) }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                // iOS stacks the thumbnail ABOVE a centered 20pt name.
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     imageUrl?.let { url ->
                         coil.compose.AsyncImage(
                             model = url, contentDescription = null,
@@ -194,7 +201,7 @@ fun PostGameScreen(
                     }
                     Text(
                         if (won) (puzzle?.display ?: solution) else "The answer was: ${puzzle?.display ?: solution}",
-                        fontSize = 18.sp, fontWeight = FontWeight.Black,
+                        fontSize = 20.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
                         color = if (won) Color(0xFF7C3AED) else Color(0xFFEF4444),
                     )
                 }
@@ -220,7 +227,9 @@ fun PostGameScreen(
                 ) onPlayAgain else null,
             )
 
-            DailyRankBadge(mode)
+            // Daily-only, like iOS GameScreen (`if vm.isDaily`) — an Unlimited
+            // game's result has nothing to do with today's leaderboard.
+            if (seed == com.wordocious.app.todayLocalSeed(mode.name)) DailyRankBadge(mode)
 
             // Board reveal (the actual finished board with colors).
             if (multiBoard) {
@@ -258,17 +267,181 @@ fun PostGameScreen(
             }
         }
 
-        // Corner Home button (top-left) — accent circle, matches the in-game one.
-        Box(
-            modifier = Modifier.padding(8.dp).size(44.dp)
-                .shadow(4.dp, CircleShape, clip = false).clip(CircleShape)
-                .background(WTheme.surface).border(2.dp, accent, CircleShape)
-                .clickableNoRipple(onBack),
-            contentAlignment = Alignment.Center,
+        CornerHomeButton(accent, onBack)
+    }
+}
+
+/** Corner Home button (top-left) — accent circle, matches the in-game one. */
+@Composable
+private fun CornerHomeButton(accent: Color, onBack: () -> Unit) {
+    Box(
+        modifier = Modifier.padding(8.dp).size(44.dp)
+            .shadow(4.dp, CircleShape, clip = false).clip(CircleShape)
+            .background(WTheme.surface).border(2.dp, accent, CircleShape)
+            .clickableNoRipple(onBack),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Filled.Home, "Home", tint = accent, modifier = Modifier.size(20.dp))
+    }
+}
+
+/**
+ * Full Gauntlet results screen — ports iOS GauntletResultsView: 60dp trophy /
+ * ✗ icon, CLEARED/FAILED gradient headline, Home·Share·Play Again links, daily
+ * rank badge, three boxed RUN-level stat cards (the run's stages/guesses/time,
+ * not the final stage's), score breakdown, next-daily handoff, then the stage
+ * breakdown — all on a staggered fade-and-rise entrance.
+ */
+@Composable
+private fun GauntletResultsScreen(
+    g: com.wordocious.core.GauntletProgress, won: Boolean, seed: String, elapsedSeconds: Int, hintsUsed: Int,
+    onHome: () -> Unit, onShare: () -> Unit,
+    onPlayAgain: (() -> Unit)?, onOpenDaily: ((GameMode) -> Unit)?,
+) {
+    val cleared = g.stageResults.count { it.status == GameStatus.WON }
+    val totalGuesses = g.stageResults.sumOf { it.guesses }
+    val totalTimeMs = g.stageResults.sumOf { it.timeMs }.takeIf { it > 0 } ?: (elapsedSeconds * 1000)
+    val cumBoards = g.stageResults.sumOf { r ->
+        if (r.status == GameStatus.WON) (g.stages.firstOrNull { it.stageIndex == r.stageIndex }?.boardCount ?: 0)
+        else (r.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0)
+    }
+    val cumTotal = max(1, g.stages.sumOf { it.boardCount })
+    val isDaily = seed == com.wordocious.app.todayLocalSeed(GameMode.GAUNTLET.name)
+    var reviewIndex by remember { mutableStateOf<Int?>(null) }
+
+    var appeared by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { appeared = true }
+    val iconScale by androidx.compose.animation.core.animateFloatAsState(
+        if (appeared) 1f else 0.6f,
+        androidx.compose.animation.core.tween(if (WTheme.reducedMotion) 0 else 400, 50, androidx.compose.animation.core.EaseOut),
+        label = "gauntletIcon",
+    )
+
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp).padding(top = 56.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(Icons.Filled.Home, "Home", tint = accent, modifier = Modifier.size(20.dp))
+            Icon(
+                if (won) Icons.Filled.EmojiEvents else Icons.Filled.Cancel, null,
+                tint = if (won) Color(0xFFD97706) else Color(0xFFF87171),
+                modifier = Modifier.size(60.dp)
+                    .graphicsLayer { scaleX = iconScale; scaleY = iconScale; alpha = iconScale },
+            )
+            if (won) {
+                Text(
+                    "GAUNTLET CLEARED!", fontSize = 34.sp, fontWeight = FontWeight.Black,
+                    textAlign = TextAlign.Center, modifier = Modifier.riseIn(appeared, 150),
+                    style = TextStyle(
+                        brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF472B6), Color(0xFFC084FC))),
+                        fontFamily = Nunito,
+                    ),
+                )
+            } else {
+                Text(
+                    "GAUNTLET FAILED", fontSize = 34.sp, fontWeight = FontWeight.Black,
+                    color = Color(0xFFFCA5A5), textAlign = TextAlign.Center,
+                    modifier = Modifier.riseIn(appeared, 150),
+                )
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.riseIn(appeared, 250),
+            ) {
+                Text(
+                    "Home", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onHome),
+                )
+                Text(
+                    "Share", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6),
+                    textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onShare),
+                )
+                if (onPlayAgain != null) {
+                    Text(
+                        "Play Again", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFA855F7),
+                        textDecoration = TextDecoration.Underline, modifier = Modifier.clickableNoRipple(onPlayAgain),
+                    )
+                }
+            }
+            if (isDaily) Box(Modifier.riseIn(appeared, 300)) { DailyRankBadge(GameMode.GAUNTLET) }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().riseIn(appeared, 400),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            GauntletStatCard(Icons.Filled.EmojiEvents, Color(0xFF7C3AED), "$cleared/${g.totalStages}", "Stages", Modifier.weight(1f))
+            GauntletStatCard(Icons.Filled.Tag, Color(0xFF60A5FA), "$totalGuesses", "Guesses", Modifier.weight(1f))
+            GauntletStatCard(Icons.Filled.Schedule, Color(0xFFFB923C), fmtRunTime(totalTimeMs), "Time", Modifier.weight(1f))
+        }
+
+        Box(Modifier.riseIn(appeared, 500)) {
+            ScoreBreakdownCard(
+                mode = GameMode.GAUNTLET, won = won, guessCount = totalGuesses,
+                elapsedSeconds = totalTimeMs / 1000, boardsSolved = cumBoards, totalBoards = cumTotal,
+                hintsUsed = hintsUsed, stagesCompleted = cleared,
+                day = com.wordocious.core.getDailySeedDate(seed),
+            )
+        }
+
+        if (onOpenDaily != null && isDaily) {
+            Box(Modifier.riseIn(appeared, 550)) { NextDailyRow(currentMode = GameMode.GAUNTLET, onOpenDaily = onOpenDaily) }
+        }
+
+        Box(Modifier.riseIn(appeared, 600)) {
+            GauntletStagesCard(g, won = won, onReview = { reviewIndex = it })
+        }
+        reviewIndex?.let { idx ->
+            val res = g.stageResults.firstOrNull { it.stageIndex == idx }
+            val stage = g.stages.getOrNull(idx)
+            if (res != null && stage != null) {
+                StageReviewModal(stage = stage, result = res, onClose = { reviewIndex = null })
+            }
         }
     }
+}
+
+/** iOS RiseIn: fade in while rising 14pt, eased out after [delayMs]. */
+@Composable
+private fun Modifier.riseIn(appeared: Boolean, delayMs: Int): Modifier {
+    val reduced = WTheme.reducedMotion
+    val t by androidx.compose.animation.core.animateFloatAsState(
+        if (appeared) 1f else 0f,
+        androidx.compose.animation.core.tween(
+            if (reduced) 0 else 400, if (reduced) 0 else delayMs, androidx.compose.animation.core.EaseOut,
+        ),
+        label = "riseIn",
+    )
+    return this.graphicsLayer { alpha = t; translationY = (1f - t) * 14.dp.toPx() }
+}
+
+/** Boxed run stat (iOS GauntletResultsView.statCard). */
+@Composable
+private fun GauntletStatCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color,
+    value: String, label: String, modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.clip(RoundedCornerShape(14.dp)).background(WTheme.surfaceHover)
+            .border(1.dp, WTheme.border, RoundedCornerShape(14.dp)).padding(vertical = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(icon, null, tint = color, modifier = Modifier.size(18.dp))
+        Text(value, fontSize = 22.sp, fontWeight = FontWeight.Black, color = WTheme.text, maxLines = 1)
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+    }
+}
+
+/** iOS GauntletResultsView.fmt — compact "45s" / "2m 5s" from milliseconds. */
+private fun fmtRunTime(ms: Int): String {
+    val s = ms / 1000
+    return if (s < 60) "${s}s" else "${s / 60}m ${s % 60}s"
 }
 
 /** m:ss clock string. */
@@ -396,7 +569,8 @@ internal fun ScoreBreakdownCard(
     val timeUnder = max(0, b.timeCap - elapsedSeconds)
 
     Column(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+        // iOS caps the card at 400pt so tablet/landscape doesn't stretch the rows.
+        modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp))
             .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -453,6 +627,10 @@ private fun fmtSecs(s: Int): String = if (s <= 0) "0s" else if (s >= 60) "${s / 
  */
 @Composable
 private fun NextDailyRow(currentMode: GameMode, onOpenDaily: (GameMode) -> Unit) {
+    // Dailies only record for signed-in accounts; guests get nothing — so a
+    // guest's completions map is always empty and "next" would be a lie (iOS
+    // PostGameViews wraps the whole CTA in the same check).
+    if (AuthService.profile.value == null) return
     // Seed from the day-keyed cache (updated the instant this game recorded via
     // noteCompletion), then confirm against the server; re-fetch on completionTick.
     val tick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
@@ -473,23 +651,30 @@ private fun NextDailyRow(currentMode: GameMode, onOpenDaily: (GameMode) -> Unit)
     // gap); render nothing rather than a wrong claim if state is mid-flight.
     if (next == null && !allDone) return
 
-    Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-            .background(WTheme.bg).border(1.dp, WTheme.border, RoundedCornerShape(12.dp))
-            .then(
-                if (next?.engineMode != null) Modifier.clickableNoRipple { onOpenDaily(next.engineMode) }
-                else Modifier
-            )
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (next != null) Text(
-            "Next Daily: ${next.title} →",
-            fontSize = 13.sp, fontWeight = FontWeight.Black, color = next.accent,
-        ) else Text(
+    // iOS renders a compact accent-tinted CAPSULE (two-tone label + arrow glyph),
+    // not a full-width neutral card.
+    if (next != null) {
+        Row(
+            modifier = Modifier.clip(RoundedCornerShape(50))
+                .background(next.accent.copy(alpha = 0.08f))
+                .border(1.5.dp, next.accent.copy(alpha = 0.5f), RoundedCornerShape(50))
+                .then(
+                    if (next.engineMode != null) Modifier.clickableNoRipple { onOpenDaily(next.engineMode) }
+                    else Modifier
+                )
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Next Daily:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            Text(next.title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = next.accent)
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = next.accent, modifier = Modifier.size(11.dp))
+        }
+    } else {
+        Text(
             "All 9 dailies done — Sweep complete! 🏆",
-            fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+            fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+            modifier = Modifier.padding(vertical = 4.dp),
         )
     }
 }
@@ -500,7 +685,7 @@ private fun NextDailyRow(currentMode: GameMode, onOpenDaily: (GameMode) -> Unit)
  * gap when the dictionary has no entry.
  */
 @Composable
-private fun DefinitionCard(word: String) {
+internal fun DefinitionCard(word: String) {
     var loaded by remember(word) { mutableStateOf(false) }
     val def by produceState<com.wordocious.app.data.DefinitionService.WordDefinition?>(initialValue = null, key1 = word) {
         value = com.wordocious.app.data.DefinitionService.fetch(word)

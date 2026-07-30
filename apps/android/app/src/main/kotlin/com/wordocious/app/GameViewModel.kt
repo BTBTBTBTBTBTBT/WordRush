@@ -201,7 +201,11 @@ class GameViewModel(
     private var rejectJob: kotlinx.coroutines.Job? = null
 
     fun typeLetter(c: Char) {
-        if (isFinished || rejecting) return
+        // No `rejecting` guard: iOS (GameViewModel.swift:427-428) keeps taking
+        // input during the 600ms shake and simply declines to clear it if the
+        // player has already started retyping. Swallowing keys here dropped
+        // letters from fast players.
+        if (isFinished) return
         if (_input.value.length >= wordLength) return
         if (!c.isLetter()) return
         _invalidWord.value = false
@@ -210,7 +214,6 @@ class GameViewModel(
     }
 
     fun deleteLetter() {
-        if (rejecting) return
         if (_input.value.isNotEmpty()) {
             _invalidWord.value = false
             _rejectMessage.value = null
@@ -229,7 +232,11 @@ class GameViewModel(
         val activeBoard = if (mode == GameMode.SEQUENCE)
             (_state.value.boards.firstOrNull { it.status == GameStatus.PLAYING } ?: _state.value.boards[0])
         else _state.value.boards[_state.value.currentBoardIndex]
-        if (activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }) { reject("Already guessed"); return false }
+        // iOS's ProperNoundle VM has no duplicate-guess rule; the "Already
+        // guessed" rejection was Android-only and blocked legitimate retries.
+        if (mode != GameMode.PROPERNOUNDLE &&
+            activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }
+        ) { reject("Already guessed"); return false }
         val before = _state.value
         // Capture which board this guess lands on BEFORE the reducer runs — for
         // SEQUENCE the active board advances once it's solved, so reading the
@@ -310,6 +317,7 @@ class GameViewModel(
      * Web timing: keys ignored + input cleared at 600ms, toast gone at 1500ms.
      */
     private fun reject(message: String) {
+        val rejected = _input.value
         if (_input.value.length == wordLength) _invalidWord.value = true
         _shakeKey.value = _shakeKey.value + 1
         _rejectMessage.value = message
@@ -318,7 +326,9 @@ class GameViewModel(
         rejectJob?.cancel()
         rejectJob = viewModelScope.launch {
             delay(600)
-            _input.value = ""
+            // Only wipe what was rejected — if the player retyped during the
+            // shake, their new letters survive (iOS parity).
+            if (_input.value == rejected) _input.value = ""
             _invalidWord.value = false
             rejecting = false
             delay(900)
@@ -454,8 +464,13 @@ class GameViewModel(
         }
     }
 
-    private fun categoryLabel(c: String?): String =
-        (c ?: "general").replaceFirstChar { it.uppercase() }
+    /** Humanized category name — shares the in-game header's map so the clue
+     *  fallback and the header can never disagree ("Videogames" vs "Video Games"). */
+    private fun categoryLabel(c: String?): String {
+        val key = (c ?: "general").lowercase()
+        return com.wordocious.app.ui.game.PN_CATEGORY_LABELS[key]
+            ?: key.replaceFirstChar { it.uppercase() }
+    }
 
     fun revealVowel() = revealHint(vowels = true)
     fun revealConsonant() = revealHint(vowels = false)
@@ -468,7 +483,11 @@ class GameViewModel(
         val solution = board.solution.uppercase()
         val guessed = board.guesses.joinToString("").uppercase().toSet()
         val candidates = solution.filter { c ->
-            c in 'A'..'Z' && (if (vowels) c in vset else c !in vset) && c !in guessed
+            // PN's hint pool is EVERY distinct vowel/consonant in the answer —
+            // iOS ProperNoundleView.reveal() does not exclude already-guessed
+            // letters, so excluding them here made PN hints run out early.
+            c in 'A'..'Z' && (if (vowels) c in vset else c !in vset) &&
+                (mode == GameMode.PROPERNOUNDLE || c !in guessed)
         }.toSet().toList()
 
         val pick = candidates.randomOrNull()
@@ -476,8 +495,10 @@ class GameViewModel(
             // None of that type left — mark used, reveal "—", add no row.
             // Still counts toward the hint penalty (web sets used=true here).
             noCandidateHints += 1
-            if (vowels) { _vowelUsed.value = true; _vowelRevealed.value = "—" }
-            else { _consonantUsed.value = true; _consonantRevealed.value = "—" }
+            // PN spells it out; the 6/7 hint pills use the em dash.
+            val none = if (mode == GameMode.PROPERNOUNDLE) "None" else "—"
+            if (vowels) { _vowelUsed.value = true; _vowelRevealed.value = none }
+            else { _consonantUsed.value = true; _consonantRevealed.value = none }
             persistHints()
             return
         }

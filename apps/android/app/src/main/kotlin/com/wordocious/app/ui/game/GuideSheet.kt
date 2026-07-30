@@ -3,7 +3,6 @@ package com.wordocious.app.ui.game
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.GuideService
+import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 
@@ -52,9 +52,22 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WTheme.bg) {
         val g = guide
+        // iOS puts a "Done" button in the sheet toolbar — the drag handle alone is
+        // not a discoverable way to close.
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
+            Text(
+                "Done", fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.primary,
+                modifier = Modifier.clickableNoRipple(onDismiss).padding(4.dp),
+            )
+        }
         if (g == null) {
-            Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+            Column(
+                Modifier.fillMaxWidth().height(220.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            ) {
                 CircularProgressIndicator(color = WTheme.primary)
+                Text("Loading guide…", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
             }
         } else {
             val accent = runCatching { Color(android.graphics.Color.parseColor(g.accent)) }.getOrDefault(WTheme.primary)

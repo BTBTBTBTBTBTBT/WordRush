@@ -26,15 +26,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +61,8 @@ private data class TabItem(
     val outlineIcon: ImageVector?,
     /** Vector-asset fallback for icons Material doesn't ship (Records = crown). */
     val drawable: Int? = null,
+    /** Filled twin of [drawable], shown while the tab is active. */
+    val drawableFilled: Int? = null,
 )
 
 private val TABS = listOf(
@@ -61,7 +70,7 @@ private val TABS = listOf(
     TabItem("Leaderboard", Icons.Filled.EmojiEvents, Icons.Outlined.EmojiEvents),
     TabItem("Profile", Icons.Filled.Person, Icons.Outlined.Person),
     // iOS/web use a crown for Records; Material has no crown, so use our asset.
-    TabItem("Records", null, null, R.drawable.ic_crown),
+    TabItem("Records", null, null, R.drawable.ic_crown, R.drawable.ic_crown_filled),
 )
 
 /**
@@ -75,6 +84,7 @@ private val TABS = listOf(
  */
 @Composable
 private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
+    val haptics = LocalHapticFeedback.current
     Column(
         Modifier.fillMaxWidth().background(WTheme.bg),
     ) {
@@ -86,12 +96,19 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                 val active = selected == i
                 val tint = if (active) WTheme.primary else WTheme.textMuted
                 Column(
-                    Modifier.weight(1f).clickableNoRipple { onSelect(i) },
+                    Modifier.weight(1f).clickableNoRipple {
+                        // iOS pairs every tab tap with Haptics.tap() (RootTabView.swift:162);
+                        // ripple is suppressed here, so this is the only press feedback.
+                        if (!WTheme.reducedMotion) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSelect(i)
+                    },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                 ) {
                     if (tab.drawable != null) {
-                        Icon(painterResource(tab.drawable), tab.label, tint = tint, modifier = Modifier.size(20.dp))
+                        // Same outline→filled swap the Material tabs get.
+                        val res = if (active) (tab.drawableFilled ?: tab.drawable) else tab.drawable
+                        Icon(painterResource(res), tab.label, tint = tint, modifier = Modifier.size(20.dp))
                     } else {
                         Icon(
                             (if (active) tab.icon else tab.outlineIcon)!!,
@@ -109,6 +126,45 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
         }
     }
 }
+
+/**
+ * Unlimited seed for a mode — 1:1 port of iOS `resolvedUnlimitedSeed`
+ * (HomeView.swift:613-626). Resumes the in-progress non-daily puzzle if one
+ * exists, isn't finished, and is <24h old (web purges practice saves after a
+ * day); otherwise mints a fresh seed and remembers it as the current one.
+ * Without this, every tap of an Unlimited card discarded a half-solved board.
+ */
+private fun resolvedUnlimitedSeed(mode: com.wordocious.core.GameMode): String {
+    val key = "unlimited-current-${mode.name}"
+    val saved = com.wordocious.app.data.SettingsPref.get(key, "")
+    if (saved.isNotEmpty()) {
+        val state = com.wordocious.app.data.GamePersistence.load(saved, mode)
+        if (state != null && state.status == com.wordocious.core.GameStatus.PLAYING &&
+            System.currentTimeMillis() - state.startTime < 24.0 * 3600 * 1000
+        ) {
+            return saved
+        }
+    }
+    val fresh = "unlimited-${mode.name}-${System.currentTimeMillis()}"
+    com.wordocious.app.data.SettingsPref.set(key, fresh)
+    return fresh
+}
+
+/**
+ * Hidden-but-alive tab: kept in composition so its state survives a tab switch
+ * (iOS `TabView` keeps every tab alive — RootTabView.swift:8-9), but drawn as
+ * nothing, laid under the active tab, and blocked from receiving touches.
+ */
+private fun Modifier.hiddenTab(): Modifier = this
+    .zIndex(0f)
+    .drawWithContent { /* inactive tab: composed for state only, never drawn */ }
+    .pointerInput(Unit) {
+        awaitPointerEventScope {
+            while (true) {
+                awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+            }
+        }
+    }
 
 @Composable
 fun MainScreen() {
@@ -177,12 +233,6 @@ fun MainScreen() {
             onHome = { vsInvite = null },
             onGoPro = { vsInvite = null; infoRoute = "pro" },
         )
-        return
-    }
-
-    publicProfileId?.let { pid ->
-        androidx.activity.compose.BackHandler { publicProfileId = null }
-        PublicProfileScreen(userId = pid, onClose = { publicProfileId = null })
         return
     }
 
@@ -277,7 +327,9 @@ fun MainScreen() {
             // disappear together on immersive game screens (RootTabView.swift).
             Column(Modifier.fillMaxWidth()) {
                 AdBannerContainer()
-                BottomNav(selected = selectedTab, onSelect = { selectedTab = it })
+                // Switching tabs pops the public-profile push, mirroring iOS's
+                // per-tab path reset (RootTabView.swift:38-47).
+                BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; selectedTab = it })
             }
         },
     ) { innerPadding ->
@@ -289,38 +341,64 @@ fun MainScreen() {
                 onSignIn = { showSignIn = true },
             )
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
-                when (selectedTab) {
-                    0 -> HomeScreen(
-                        onJoinInvite = { m, code -> vsInvite = m to code },
-                        onSelectMode = { card, unlimited ->
-                            if (card.id == "vs") {
-                                // Unlimited VS (Pro): the mode-picker lobby. Daily VS:
-                                // launch the shared daily Classic match directly (queue
-                                // or already-played finished screen).
-                                if (unlimited) vsLobby = true
-                                else vsActive = com.wordocious.core.GameMode.DUEL to true
-                            } else {
-                                activeGame = card
-                                activeSeed = if (unlimited && card.engineMode != null)
-                                    "unlimited-${card.engineMode.name}-${System.nanoTime()}" else null
-                            }
-                        },
-                        onGoPro = { infoRoute = "pro" },
-                        onVs = { card -> card.engineMode?.let { vsActive = it to false } },
-                        onNavigate = { infoRoute = it },
-                    )
-                    1 -> LeaderboardScreen(
-                        onOpenProfile = { publicProfileId = it },
-                        onPlay = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
-                    )
-                    2 -> ProfileScreen(
-                        onGoPro = { infoRoute = "pro" },
-                        onEditProfile = { infoRoute = "edit" },
-                        // Today's Dailies badge → open that mode's daily game (completed
-                        // puzzle if played, fresh if not) — web parity.
-                        onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
-                    )
-                    3 -> RecordsScreen(onOpenProfile = { publicProfileId = it })
+                // iOS hosts all four tabs in a TabView, "which keeps every tab's
+                // state alive" (RootTabView.swift:8-9). A `when` disposed the whole
+                // subtree, so e.g. the leaderboard's mode pick, scroll position and
+                // fetched rows reset on every tab switch. Compose each tab on first
+                // visit and keep it alive thereafter, hidden when inactive.
+                // Plain (non-snapshot) set: adding to it must not itself trigger a
+                // recomposition — the tab switch already did.
+                val visitedTabs = remember { mutableSetOf(0) }
+                visitedTabs.add(selectedTab)
+                // Insertion-ordered and append-only, so each tab keeps its slot
+                // (and therefore its state) across recompositions.
+                visitedTabs.forEach { tab ->
+                    val activeTab = tab == selectedTab
+                    Box(Modifier.fillMaxSize().then(if (activeTab) Modifier.zIndex(1f) else Modifier.hiddenTab())) {
+                        when (tab) {
+                            0 -> HomeScreen(
+                                onJoinInvite = { m, code -> vsInvite = m to code },
+                                onSelectMode = { card, unlimited ->
+                                    if (card.id == "vs") {
+                                        // Unlimited VS (Pro): the mode-picker lobby. Daily VS:
+                                        // launch the shared daily Classic match directly (queue
+                                        // or already-played finished screen).
+                                        if (unlimited) vsLobby = true
+                                        else vsActive = com.wordocious.core.GameMode.DUEL to true
+                                    } else {
+                                        activeGame = card
+                                        activeSeed = if (unlimited && card.engineMode != null)
+                                            resolvedUnlimitedSeed(card.engineMode) else null
+                                    }
+                                },
+                                onGoPro = { infoRoute = "pro" },
+                                onVs = { card -> card.engineMode?.let { vsActive = it to false } },
+                                onNavigate = { infoRoute = it },
+                            )
+                            1 -> LeaderboardScreen(
+                                onOpenProfile = { publicProfileId = it },
+                                onPlay = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
+                            )
+                            2 -> ProfileScreen(
+                                onGoPro = { infoRoute = "pro" },
+                                onEditProfile = { infoRoute = "edit" },
+                                // Today's Dailies badge → open that mode's daily game (completed
+                                // puzzle if played, fresh if not) — web parity.
+                                onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
+                            )
+                            3 -> RecordsScreen(onOpenProfile = { publicProfileId = it })
+                        }
+                    }
+                }
+
+                // Public profile is a PUSH INSIDE the tab, not a new root: iOS
+                // renders it in the tab's NavigationStack without .hidesBottomNav
+                // (ProfileTab.swift:1005-1015), so header + nav + ad banner stay.
+                publicProfileId?.let { pid ->
+                    androidx.activity.compose.BackHandler { publicProfileId = null }
+                    Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
+                        PublicProfileScreen(userId = pid, onClose = { publicProfileId = null })
+                    }
                 }
 
                 if (showShieldModal) {
