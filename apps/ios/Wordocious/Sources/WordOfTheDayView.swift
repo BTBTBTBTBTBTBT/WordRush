@@ -164,6 +164,33 @@ struct WordOfTheDayView: View {
         UserDefaults.standard.set(dict, forKey: cacheKey)
     }
 
+    /// Words never FEATURED as Word of the Day — the home card prints the word
+    /// with its dictionary definition, and these read as clinical anatomy,
+    /// excretion, drugs, or (BLOOD) a street gang. They remain valid puzzle
+    /// ANSWERS; dropping them from the solutions list would shift every later
+    /// day's index and rewrite played history. Mirror of
+    /// packages/core/src/wotd-blocklist.ts — keep the two in step.
+    private static let blocked: Set<String> = [
+        "HYMEN",
+        "OVARY",
+        "PUBIC",
+        "GROIN",
+        "BOSOM",
+        "FECES",
+        "FECAL",
+        "URINE",
+        "VOMIT",
+        "ENEMA",
+        "BOWEL",
+        "MUCUS",
+        "OPIUM",
+        "BOOZE",
+        "LEPER",
+        "TUMOR",
+        "ULCER",
+        "BLOOD",
+    ]
+
     private func fetch() async -> WordInfo {
         // Pool for THIS displayed local date — pre-cutover dates keep the legacy
         // word (matches the archive), curated after.
@@ -173,9 +200,16 @@ struct WordOfTheDayView: View {
 
         for offset in 0..<20 {
             let word = solutions[(daysSinceEpoch + offset) % solutions.count]
+            if Self.blocked.contains(word.uppercased()) { continue }
             if let info = await lookup(word) { return info }
         }
-        return WordInfo(word: solutions[daysSinceEpoch % solutions.count])
+        // Last-resort fallback: walk forward to the first non-blocked word so a
+        // day where all 20 candidates lack definitions still can't surface one.
+        let fallback = (0..<solutions.count)
+            .lazy
+            .map { solutions[(daysSinceEpoch + $0) % solutions.count] }
+            .first { !Self.blocked.contains($0.uppercased()) }
+        return WordInfo(word: fallback ?? solutions[daysSinceEpoch % solutions.count])
     }
 
     private func lookup(_ word: String) async -> WordInfo? { await Self.definition(for: word) }

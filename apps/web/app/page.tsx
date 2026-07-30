@@ -22,7 +22,7 @@ import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { SweepCelebration } from '@/components/effects/sweep-celebration';
 import { shareDailySweep } from '@/lib/daily-share';
 import { MODES } from '@/lib/modes.generated';
-import { SOLUTIONS_CUTOVER_DATE } from '@wordle-duel/core';
+import { SOLUTIONS_CUTOVER_DATE, isBlockedWordOfDay } from '@wordle-duel/core';
 import { hasPlayedModeToday, cleanupOldPlayData, getSecondsUntilMidnightLocal as getResetSeconds, formatCountdown, syncPlayLimits, setActivePlayUser } from '@/lib/play-limit-service';
 
 interface WordDefinition {
@@ -71,6 +71,10 @@ function WordOfTheDay() {
       // Try up to 20 words starting from today's index until we find one with a definition
       for (let offset = 0; offset < 20; offset++) {
         const word = solutions[(daysSinceEpoch + offset) % solutions.length];
+        // Never FEATURE a blocked word (anatomical/excretory/drug definitions).
+        // It stays a valid puzzle answer; it just isn't printed on the home card
+        // under a dictionary definition. See core/wotd-blocklist.
+        if (isBlockedWordOfDay(word)) continue;
         try {
           const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`);
           if (res.ok) {

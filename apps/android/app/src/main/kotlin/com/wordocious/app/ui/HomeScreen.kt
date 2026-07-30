@@ -492,6 +492,15 @@ private data class WordOfTheDay(
     val definition: com.wordocious.app.data.DefinitionService.WordDefinition?,
 )
 
+/**
+ * Words never FEATURED as Word of the Day. The card prints the word with its
+ * dictionary definition, and these read as clinical anatomy, excretion, drugs,
+ * or -- BLOOD -- a street gang. They stay valid puzzle ANSWERS: removing them
+ * from the solutions list would shift every later day's index and rewrite
+ * already-played history. Mirror of packages/core/src/wotd-blocklist.ts.
+ */
+private val WOTD_BLOCKED = setOf("HYMEN", "OVARY", "PUBIC", "GROIN", "BOSOM", "FECES", "FECAL", "URINE", "VOMIT", "ENEMA", "BOWEL", "MUCUS", "OPIUM", "BOOZE", "LEPER", "TUMOR", "ULCER", "BLOOD")
+
 @Composable
 private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
     val wotd by produceState<WordOfTheDay?>(initialValue = null) {
@@ -513,13 +522,22 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
         // visit costs no network.)
         for (offset in 0 until 20) {
             val candidate = sols[(daysSinceEpoch + offset) % sols.size]
+            if (candidate.uppercase() in WOTD_BLOCKED) continue
             val d = com.wordocious.app.data.DefinitionService.fetch(candidate)
             if (d != null) {
                 value = WordOfTheDay(candidate, d)
                 return@produceState
             }
         }
-        value = WordOfTheDay(sols[daysSinceEpoch % sols.size], null)
+        // Walk to the first non-blocked word so a day where nothing resolves
+        // still can't surface one.
+        value = WordOfTheDay(
+            (0 until sols.size)
+                .map { sols[(daysSinceEpoch + it) % sols.size] }
+                .firstOrNull { it.uppercase() !in WOTD_BLOCKED }
+                ?: sols[daysSinceEpoch % sols.size],
+            null,
+        )
     }
     Column(
         modifier = Modifier.fillMaxWidth()

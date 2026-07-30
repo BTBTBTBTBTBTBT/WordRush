@@ -1,4 +1,4 @@
-import { SOLUTIONS_CUTOVER_DATE } from '@wordle-duel/core';
+import { SOLUTIONS_CUTOVER_DATE, isBlockedWordOfDay } from '@wordle-duel/core';
 import solutions from '@/data/solutions.json';
 import legacySolutions from '@/data/solutions-legacy.json';
 import definitions from '@/data/word-definitions.json';
@@ -92,8 +92,16 @@ export function candidateWords(date: Date): string[] {
   return Array.from({ length: 20 }, (_, o) => list[(idx + o) % list.length]);
 }
 
-/** Look up a word in the local dictionary; null when absent or a recorded miss. */
+/**
+ * Look up a word in the local dictionary; null when absent or a recorded miss.
+ *
+ * Also null for anything on the Word-of-the-Day blocklist, which makes every
+ * caller skip it exactly the way a definition-less word is already skipped —
+ * the word keeps its place in the answer pool, it just never gets FEATURED.
+ * See packages/core/src/wotd-blocklist.ts for why the list exists.
+ */
 export function dictEntry(word: string): { phonetic: string; senses: WordSense[] } | null {
+  if (isBlockedWordOfDay(word)) return null;
   const rec = DICT[word.toLowerCase()];
   if (!rec || rec.miss || !rec.senses?.length) return null;
   return { phonetic: rec.phonetic || '', senses: rec.senses };
