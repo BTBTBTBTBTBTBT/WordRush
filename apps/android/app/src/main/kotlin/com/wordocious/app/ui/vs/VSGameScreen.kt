@@ -468,7 +468,7 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
     val isSequential = mode(vm) == GameMode.SEQUENCE
     val useQuadrant = multiBoard && !isSequential
     val letterStates = if (isSequential)
-        computeCombinedLetterStates(listOf(state.boards[state.currentBoardIndex]))
+        computeCombinedLetterStates(listOf(state.boards[game.activeBoardIndex]))
     else computeCombinedLetterStates(state.boards)
     val perBoardStates = if (useQuadrant) computePerBoardLetterStates(state.boards) else null
 
@@ -588,7 +588,7 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
         Box(Modifier.weight(1f).fillMaxWidth().padding(vertical = 4.dp)) {
             if (multiBoard) {
                 MultiBoardLayout(
-                    boards = state.boards, currentGuess = input, currentBoardIndex = state.currentBoardIndex,
+                    boards = state.boards, currentGuess = input, currentBoardIndex = game.activeBoardIndex,
                     isSequential = isSequential, isInvalid = invalid, shakeKey = shakeKey,
                     modifier = Modifier.fillMaxSize().padding(4.dp),
                 )

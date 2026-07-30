@@ -60,7 +60,7 @@ class GameViewModel(
     // VS-facing helpers (mirror iOS GameViewModel surface used by VSMatchViewModel).
     val boardCount: Int get() = _state.value.boards.size
     val boardsSolvedCount: Int get() = _state.value.boards.count { it.status == GameStatus.WON }
-    val maxGuesses: Int get() = _state.value.boards[_state.value.currentBoardIndex].maxGuesses
+    val maxGuesses: Int get() = _state.value.boards[activeBoardIndex].maxGuesses
     /** The mode's starting per-board row budget, captured before any play — VS
      *  opponent frames render this many empty rows from match start (the live
      *  maxGuesses can shrink mid-game, e.g. Gauntlet steal-guess). */
@@ -173,7 +173,7 @@ class GameViewModel(
 
     /** Active board's solution length — guess/input length must match it. */
     val wordLength: Int
-        get() = _state.value.boards[_state.value.currentBoardIndex].solution.length
+        get() = _state.value.boards[activeBoardIndex].solution.length
 
     val isFinished: Boolean
         get() = _state.value.status != GameStatus.PLAYING
@@ -217,6 +217,24 @@ class GameViewModel(
             refreshLiveInvalid()
         }
     }
+
+    /**
+     * Index of the board the player is actually on.
+     *
+     * NOTHING on any platform advances `state.currentBoardIndex` — the reducer
+     * has a NextBoard action and no caller dispatches it, on web, iOS or here.
+     * iOS never noticed because it derives the active board instead
+     * (GameViewModel.swift:146, `firstIndex { $0.status == .playing }`). Android
+     * got that right for guess ROUTING below and then handed the raw, forever-0
+     * field to the UI — so in Succession the second board never unlocked, the
+     * first was already won and refused input, and the mode was unplayable past
+     * one word. Every UI consumer must use this, not the raw field.
+     */
+    val activeBoardIndex: Int
+        get() = if (mode == GameMode.SEQUENCE)
+            _state.value.boards.indexOfFirst { it.status == GameStatus.PLAYING }
+                .let { if (it < 0) _state.value.boards.lastIndex else it }
+        else _state.value.currentBoardIndex
 
     /** The board a guess lands on. Sequence's active board = first still-PLAYING
      *  (currentBoardIndex is never advanced); other modes use board 0's shared history. */

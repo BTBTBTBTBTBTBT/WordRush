@@ -95,7 +95,6 @@ private fun updateBoardWithGuess(board: BoardState, guess: String): BoardState {
 fun gameReducer(state: GameState, action: GameAction): GameState = when (action) {
     is GameAction.SubmitGuess -> reduceSubmitGuess(state, action)
     is GameAction.SubmitHint -> reduceSubmitHint(state, action)
-    GameAction.NextBoard -> reduceNextBoard(state)
     is GameAction.NextStage -> reduceNextStage(state, action.elapsedMs)
     GameAction.StealGuess -> reduceStealGuess(state)
     is GameAction.BlackoutRestart -> reduceBlackout(state, action.boardIndex)
@@ -185,13 +184,9 @@ private fun reduceSubmitHint(state: GameState, a: GameAction.SubmitHint): GameSt
     return state.copy(boards = newBoards, status = gameStatus)
 }
 
-private fun reduceNextBoard(state: GameState): GameState {
-    val cur = state.boards[state.currentBoardIndex]
-    if (cur.status != GameStatus.WON) return state
-    val next = state.currentBoardIndex + 1
-    if (next >= state.boards.size) return state
-    return state.copy(currentBoardIndex = next)
-}
+// reduceNextBoard deliberately removed — see packages/core/src/reducer.ts. It
+// was never dispatched anywhere, and its existence is why the UI here trusted a
+// currentBoardIndex that never moved.
 
 private fun reduceNextStage(state: GameState, elapsedMs: Double?): GameState {
     if (state.mode != GameMode.GAUNTLET) return state

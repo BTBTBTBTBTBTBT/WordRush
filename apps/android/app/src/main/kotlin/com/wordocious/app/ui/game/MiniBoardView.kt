@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,7 +69,9 @@ fun MiniBoardView(
     val bgColor = when {
         isWon -> Color(0xFFF5F3FF)   // green-50
         isLost -> Color(0xFFFEF2F2)  // red-50
-        locked -> Color(0xFFF9FAFB)  // web locked board: bg-gray-50
+        // No locked tint: iOS conveys locked purely by the 0.6 dim that
+        // MultiBoardLayout applies. A gray-50 card UNDER that dim read as a
+        // second, muddier state that iOS never shows.
         else -> Color.White
     }
 
@@ -171,14 +172,10 @@ fun MiniBoardView(
             }
         }
 
-        // Locked: centered Lock icon overlay (web: w-8 h-8 text-gray-300, z-10).
-        if (locked) {
-            Icon(
-                Icons.Filled.Lock, contentDescription = null,
-                tint = Color(0xFFD1D5DB),
-                modifier = Modifier.align(Alignment.Center).size(32.dp),
-            )
-        }
+        // NO lock-icon overlay. Web draws one; iOS does not (BoardView.swift:152
+        // dims to 0.6 and masks committed rows as bullets, nothing more), and a
+        // 32dp padlock stamped over a grid of bullets reads as clutter on a
+        // phone — the tester's word was "horrendous". Android follows iOS here.
 
         // Won: green ✓ badge top-right (web: absolute -top-1.5 -right-1.5)
         if (isWon) {

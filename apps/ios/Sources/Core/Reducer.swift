@@ -254,14 +254,9 @@ public func gameReducer(state: GameState, action: GameAction) -> GameState {
 
         return newState
 
-    case .nextBoard:
-        let currentBoard = state.boards[state.currentBoardIndex]
-        guard currentBoard.status == .won else { return state }
-        let nextIndex = state.currentBoardIndex + 1
-        guard nextIndex < state.boards.count else { return state }
-        var newState = state
-        newState.currentBoardIndex = nextIndex
-        return newState
+    // .nextBoard deliberately removed — see packages/core/src/reducer.ts. Never
+    // dispatched on any platform; Succession advances because the UI derives the
+    // active board (GameViewModel.sequenceActiveIndex).
 
     case let .nextStage(elapsedMs):
         guard state.mode == .gauntlet, var gauntlet = state.gauntlet else { return state }

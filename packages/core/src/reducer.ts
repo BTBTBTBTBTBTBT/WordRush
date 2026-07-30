@@ -293,23 +293,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return { ...state, boards: newBoards, status: gameStatus };
     }
 
-    case 'NEXT_BOARD': {
-      // For sequential modes: advance to the next board within the current stage/game
-      const currentBoard = state.boards[state.currentBoardIndex];
-      if (currentBoard.status !== GameStatus.WON) {
-        return state;
-      }
-
-      const nextIndex = state.currentBoardIndex + 1;
-      if (nextIndex >= state.boards.length) {
-        return state;
-      }
-
-      return {
-        ...state,
-        currentBoardIndex: nextIndex
-      };
-    }
+    // NEXT_BOARD deliberately removed. It looked like the mechanism that
+    // advances Succession and it never was: no call site dispatched it on web,
+    // iOS or Android, so `currentBoardIndex` stayed 0 for the whole game.
+    // Advancement actually comes from the UI deriving the active board as the
+    // first still-PLAYING one. Android read the raw field instead and locked
+    // the mode after a single word (2026-07-30, found by the first Play
+    // tester). A convincing dead action is worse than no action.
 
     case 'NEXT_STAGE': {
       if (state.mode !== GameMode.GAUNTLET || !state.gauntlet) {

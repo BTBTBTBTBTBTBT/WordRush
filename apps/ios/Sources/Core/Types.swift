@@ -249,7 +249,6 @@ public struct MatchResult: Codable, Equatable {
 public enum GameAction {
     case submitGuess(guess: String, boardIndex: Int? = nil, applyToAll: Bool = false)
     case submitHint(hintWord: String, hintEvaluation: GuessResult, boardIndex: Int? = nil)
-    case nextBoard
     case nextStage(elapsedMs: Double? = nil)
     case stealGuess
     case blackoutRestart(boardIndex: Int)

@@ -103,7 +103,6 @@ data class GameState(
 sealed interface GameAction {
     data class SubmitGuess(val guess: String, val boardIndex: Int? = null, val applyToAll: Boolean = false) : GameAction
     data class SubmitHint(val hintWord: String, val hintEvaluation: GuessResult, val boardIndex: Int? = null) : GameAction
-    data object NextBoard : GameAction
     data class NextStage(val elapsedMs: Double? = null) : GameAction
     data object StealGuess : GameAction
     data class BlackoutRestart(val boardIndex: Int) : GameAction

@@ -746,7 +746,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 MultiBoardLayout(
                     boards = state.boards,
                     currentGuess = input,
-                    currentBoardIndex = state.currentBoardIndex,
+                    currentBoardIndex = vm.activeBoardIndex, // NOT state.currentBoardIndex — never advances
                     isSequential = isSequential,
                     isInvalid = invalid,
                     shakeKey = shakeKey,
