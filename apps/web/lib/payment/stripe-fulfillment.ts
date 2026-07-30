@@ -11,6 +11,20 @@ import { maybeGrantReferralReward } from '@/lib/referral-service';
 const DAY_MS = 86_400_000;
 const RENEWAL_SHIELDS = 4;
 
+/**
+ * Read-only duplicate check. Separate from claimEvent so the ledger row is
+ * written only once the entitlement actually landed — see fulfillStripePurchase.
+ */
+async function eventAlreadyHandled(eventId: string): Promise<boolean> {
+  const sb = getAdminSupabase();
+  const { data } = await sb
+    .from('store_webhook_events')
+    .select('event_id')
+    .eq('event_id', eventId)
+    .maybeSingle();
+  return !!data;
+}
+
 /** Returns false if this event id was already processed (caller should no-op). */
 async function claimEvent(eventId: string): Promise<boolean> {
   const sb = getAdminSupabase();
@@ -27,7 +41,18 @@ export async function fulfillStripePurchase(opts: {
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
 }): Promise<void> {
-  if (!(await claimEvent(opts.eventId))) return; // duplicate delivery
+  // NOTE the ordering: the ledger claim happens AFTER the entitlement write,
+  // near the bottom of this function. It used to be the first statement, which
+  // meant a transient failure on the profiles update below charged the customer
+  // and delivered nothing, permanently: the throw made Stripe retry, the retry
+  // hit the already-claimed event, returned early, and the route answered 200 —
+  // so Stripe stopped retrying and the period was lost with no trace but a 500
+  // in the logs. The Apple route already got this right and says so
+  // (appstore/notifications/route.ts: "Record only after a successful write").
+  //
+  // The duplicate check still has to happen up front, but as a READ that does
+  // not consume the event.
+  if (await eventAlreadyHandled(opts.eventId)) return; // duplicate delivery
 
   const sb = getAdminSupabase();
   const now = Date.now();
@@ -60,6 +85,12 @@ export async function fulfillStripePurchase(opts: {
 
   const { error } = await sb.from('profiles').update(update).eq('id', opts.userId);
   if (error) throw new Error(`stripe fulfillment write failed: ${error.message}`);
+
+  // Entitlement is in the database. NOW consume the event, so a retry of a
+  // failed delivery still fulfils. A race between two concurrent deliveries of
+  // the same event grants the same window twice, which is idempotent here
+  // (Math.max above) — far cheaper than the alternative.
+  await claimEvent(opts.eventId);
 
   // If this buyer joined via a referral, pay the inviter (subscriptions only;
   // internally guarded against pro_day and double-pay, and it never throws).

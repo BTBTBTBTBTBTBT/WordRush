@@ -101,8 +101,14 @@ fun TileView(
     val bgColor = when {
         isInvalid -> Color(0xFFFEF2F2)
         masked -> Color(0xFFF3F4F6)
-        filled && mini && WTheme.colorblind && state == TileState.CORRECT -> Color(0xFF0891B2)
-        filled && mini && WTheme.colorblind && state == TileState.PRESENT -> Color(0xFFF97316)
+        // Orange = CORRECT, blue = PRESENT — matching this app's own keyboard
+        // (KeyboardView.quadColor), iOS and web. These two were reversed
+        // (cyan=correct, orange=present) against a web behaviour that no longer
+        // exists, so in Quad/Octo with colourblind mode ON, orange meant
+        // "present" on the board and "correct" on the keys. It actively misled
+        // the exact users the feature is for.
+        filled && mini && WTheme.colorblind && state == TileState.CORRECT -> Color(0xFFF5793A)
+        filled && mini && WTheme.colorblind && state == TileState.PRESENT -> Color(0xFF85C0F9)
         filled -> WTheme.tileColor(state)
         else -> WTheme.surface
     }
@@ -144,7 +150,15 @@ fun TileView(
     ) {
         // Half the SHORTER side, matching iOS. Floored so a sliver of a tile
         // still renders something legible rather than nothing.
-        val resolved = fontSize ?: (minOf(maxWidth, maxHeight).value * 0.5f).coerceAtLeast(6f)
+        // Convert through density instead of reading .value and emitting it as
+        // sp. Dp.value is a dp count; handing it to .sp re-multiplies it by the
+        // user's fontScale inside a tile whose aspectRatio box did NOT scale, so
+        // at 2x text size the glyph doubled and clipped. Ironically Android was
+        // the only platform to break here BECAUSE it is the only one that
+        // honours font scale at all.
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val derivedSp = with(density) { (minOf(maxWidth, maxHeight) * 0.5f).toSp().value }
+        val resolved = fontSize ?: derivedSp.coerceAtLeast(6f)
         Text(
             text = letter.uppercase(),
             color = textColor,
