@@ -49,8 +49,36 @@ const evaluateGuess = (guess: string, solution: string) => {
   return result;
 };
 
+/**
+ * Spoken description of one submitted row: the word, then each letter's
+ * result. A screen-reader user gets no information at all from the tile
+ * COLOURS, which is the entire feedback mechanism of the game — without this
+ * the multi-board modes are unplayable rather than merely awkward.
+ */
+function describeRow(letters: string, tiles: TileState[]): string {
+  const parts = tiles.map((t, i) => {
+    const ch = letters[i]?.toUpperCase() ?? '';
+    switch (t) {
+      case TileState.CORRECT: return `${ch} correct`;
+      case TileState.PRESENT: return `${ch} wrong position`;
+      case TileState.HINT_USED: return `${ch} revealed`;
+      default: return `${ch} not in word`;
+    }
+  });
+  return `${letters.toUpperCase()}: ${parts.join(', ')}`;
+}
+
+/** "Board 3 of 8, solved in 4 guesses" — announced when the board is focused. */
+function describeBoard(board: { status: string; guesses: string[]; maxGuesses: number },
+                       index: number, total: number): string {
+  const used = board.guesses.length;
+  if (board.status === 'WON') return `Board ${index + 1} of ${total}, solved in ${used} ${used === 1 ? 'guess' : 'guesses'}`;
+  if (board.status === 'LOST') return `Board ${index + 1} of ${total}, not solved`;
+  return `Board ${index + 1} of ${total}, ${used} of ${board.maxGuesses} guesses used`;
+}
+
 // Memoized MiniBoard — only re-renders when its own board data or currentGuess changes
-const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord, isShaking }: {
+const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBlind, onClick, isExpanded, invisible, isInvalidWord, isShaking, ariaLabel }: {
   board: BoardState;
   index: number;
   currentGuess?: string;
@@ -60,6 +88,7 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   invisible?: boolean;
   isInvalidWord?: boolean;
   isShaking?: boolean;
+  ariaLabel?: string;
 }) {
   const prefills = board.prefilledGuesses || [];
   const prefillCount = prefills.length;
@@ -84,6 +113,16 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
   return (
     <div
       onClick={onClick}
+      // A clickable div is invisible to assistive tech AND unreachable by
+      // keyboard. Give it a button role and Enter/Space handling only when it
+      // is genuinely interactive (OctoWord's tap-to-expand); a non-clickable
+      // board stays a plain group so it isn't announced as actionable.
+      role={onClick ? 'button' : 'group'}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); }
+      } : undefined}
+      aria-label={ariaLabel}
       className={`relative p-1 rounded-lg border-2 h-full flex flex-col ${
         onClick ? 'cursor-pointer' : ''
       } ${
@@ -110,7 +149,15 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
           if (isPrefillRow) {
             const prefill = prefills[rowIndex];
             return (
-              <div key={rowIndex} className="grid grid-cols-5 gap-[2px] min-h-0 opacity-75">
+              <div
+                key={rowIndex}
+                role="img"
+                aria-label={`Given clue, ${describeRow(
+                  prefill.evaluation.tiles.map((t) => t.letter).join(String()),
+                  prefill.evaluation.tiles.map((t) => t.state),
+                )}`}
+                className="grid grid-cols-5 gap-[2px] min-h-0 opacity-75"
+              >
                 {prefill.evaluation.tiles.map((tile, letterIndex) => (
                   <div
                     key={letterIndex}
@@ -130,7 +177,12 @@ const MiniBoard = memo(function MiniBoard({ board, index, currentGuess, colorBli
           const tiles = isPastGuess ? evaluateGuess(guess, board.solution) : Array(5).fill(TileState.EMPTY);
 
           return (
-            <div key={rowIndex} className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}>
+            <div
+              key={rowIndex}
+              role={isPastGuess ? 'img' : undefined}
+              aria-label={isPastGuess ? describeRow(guess, tiles as TileState[]) : undefined}
+              className={`grid grid-cols-5 gap-[2px] min-h-0 ${isCurrentRow && isShaking ? 'animate-shake' : ''}`}
+            >
               {Array.from({ length: 5 }).map((_, letterIndex) => {
                 const letter = guess[letterIndex] || '';
                 const tileState = isPastGuess ? tiles[letterIndex] : TileState.EMPTY;
@@ -246,6 +298,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
             className="h-full min-h-0"
           >
             <MiniBoard
+              ariaLabel={describeBoard(board, index, boards.length)}
               board={board}
               index={index}
               currentGuess={board.status === 'PLAYING' ? currentGuess : undefined}
@@ -281,6 +334,7 @@ export function MultiBoard({ boards, currentGuess, colorBlind, isInvalidWord, is
               className="w-full h-full"
             >
               <MiniBoard
+                ariaLabel={describeBoard(boards[expandedIndex], expandedIndex, boards.length)}
                 board={boards[expandedIndex]}
                 index={expandedIndex}
                 currentGuess={boards[expandedIndex].status === 'PLAYING' ? currentGuess : undefined}
