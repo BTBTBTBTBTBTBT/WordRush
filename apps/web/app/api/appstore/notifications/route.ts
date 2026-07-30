@@ -54,6 +54,17 @@ const IMMEDIATE_REVOKES = new Set<string>([
   NotificationTypeV2.REVOKE,
   NotificationTypeV2.REFUND,
 ]);
+/** The subset of GRANTS that represents money actually changing hands, and so
+ *  the ONLY events allowed to mint shields. DID_CHANGE_RENEWAL_STATUS and
+ *  DID_CHANGE_RENEWAL_PREF stay in GRANTS above (they carry the period's real
+ *  expiry and the Math.max below makes re-affirming it harmless) but they are
+ *  NOT purchases: a subscriber toggling auto-renew off in iOS Settings, then
+ *  back on, used to collect +4 shields per flip, forever, for free. OFFER_
+ *  REDEEMED is excluded too — a redeemed offer can be a free period. */
+const PAYMENT_EVENTS = new Set<string>([
+  NotificationTypeV2.SUBSCRIBED,   // initial buy / resubscribe
+  NotificationTypeV2.DID_RENEW,    // a billing period was paid for
+]);
 /** Shields granted per paid billing period — matches stripe-fulfillment. */
 const RENEWAL_SHIELDS = 4;
 const EXPIRY_REVOKES = new Set<string>([
@@ -66,8 +77,12 @@ const EXPIRY_REVOKES = new Set<string>([
 // that is exactly what made it forgeable: any signed-in user could PATCH
 // profiles and mint themselves a paid benefit. With the grant server-side, the
 // column can be pinned against client increases. Day Pass never grants shields
-// (a $1 consumable must not buy a subscription perk), and the eventId
-// idempotency ledger above stops a retried delivery double-granting.
+// (a $1 consumable must not buy a subscription perk).
+//
+// The grant is keyed on the BILLING PERIOD, not on the notification. The
+// eventId ledger above is per-delivery and cannot police this: every renewal-
+// preference toggle arrives with its own fresh notificationUUID, so it always
+// looks like a brand-new event. See PAYMENT_EVENTS + shieldPeriodKey below.
 
 let _rootCAs: Buffer[] | null = null;
 function appleRootCAs(): Buffer[] {
@@ -190,13 +205,27 @@ export async function POST(req: NextRequest) {
 
   const update: Record<string, unknown> = { is_pro: isPro, pro_expires_at: proExpiresAt };
 
-  // Subscription grants also top up streak shields — never Day Pass, and never
-  // on a revoke. Read-modify-write is safe here: duplicate deliveries are
-  // already filtered by the store_webhook_events check above.
-  if (GRANTS.has(type) && productId !== DAY_PASS_ID) {
-    const { data: shieldRow } = await sb
-      .from('profiles').select('streak_shields').eq('id', userId).maybeSingle();
-    update.streak_shields = (shieldRow?.streak_shields ?? 0) + RENEWAL_SHIELDS;
+  // Subscription grants also top up streak shields — never Day Pass, never on a
+  // revoke, and only for an event that means a period was PAID for.
+  //
+  // The key is the billing period (original transaction + that period's expiry
+  // date), not the notification id. Apple sends several notifications per
+  // period, each with its own notificationUUID, so a per-notification ledger
+  // would happily credit +4 for each one: the auto-renew toggle in iOS Settings
+  // was an unlimited shield faucet — off, +4; on, +4; repeat. A period key can
+  // only ever be claimed once, no matter how many notifications describe it.
+  let shieldPeriodKey: string | undefined;
+  if (PAYMENT_EVENTS.has(type) && productId !== DAY_PASS_ID && isPro) {
+    const periodId = tx?.originalTransactionId ?? tx?.transactionId ?? userId;
+    const key = `shields:${periodId}:${expiresMs ?? 0}`;
+    const { data: alreadyPaid } = await sb
+      .from('store_webhook_events').select('event_id').eq('event_id', key).maybeSingle();
+    if (!alreadyPaid) {
+      shieldPeriodKey = key;
+      const { data: shieldRow } = await sb
+        .from('profiles').select('streak_shields').eq('id', userId).maybeSingle();
+      update.streak_shields = (shieldRow?.streak_shields ?? 0) + RENEWAL_SHIELDS;
+    }
   }
 
   const { error } = await sb.from('profiles').update(update).eq('id', userId);
@@ -207,8 +236,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Record only after a successful write, so a failed-then-retried event isn't
-  // skipped as "already processed".
+  // skipped as "already processed". Same reasoning for the period key: claiming
+  // it before the update would let a transient DB failure swallow a paid
+  // period's shields permanently (see stripe-fulfillment's note on ordering).
   if (eventId) await sb.from('store_webhook_events').insert({ event_id: eventId, source: 'appstore' });
+  if (shieldPeriodKey) {
+    await sb.from('store_webhook_events').insert({ event_id: shieldPeriodKey, source: 'appstore-shields' });
+  }
 
   // Referral conversion: pay the inviter when a referred user SUBSCRIBES.
   // Map the reverse-DNS product id to the short plan id the service expects;

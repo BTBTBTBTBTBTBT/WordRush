@@ -2,13 +2,15 @@ import Foundation
 import StoreKit
 
 /// StoreKit 2 wrapper for the Pro subscription. Mirrors the web's Pro plans
-/// (lib/payment/types.ts) and fulfillment (lib/payment/purchase-service.ts):
-///   pro_monthly  $6.99  auto-renewable  → +30d, +4 shields
-///   pro_yearly   $59.99 auto-renewable  → +365d, +4 shields
-///   pro_day      $1.00  consumable      → +24h (stacks on existing window), no shields
+/// (lib/payment/types.ts) and fulfillment (lib/payment/stripe-fulfillment.ts):
+///   pro_monthly  $6.99  auto-renewable  → +30d
+///   pro_yearly   $59.99 auto-renewable  → +365d
+///   pro_day      $1.00  consumable      → +24h (stacks on existing window)
 ///
 /// Entitlement is written to the same `profiles` columns the web uses
-/// (is_pro / pro_expires_at / streak_shields) so Pro is identical across clients.
+/// (is_pro / pro_expires_at) so Pro is identical across clients. The +4
+/// per-period streak shields are NOT granted here: the App Store Server
+/// Notifications webhook owns them (see PAYMENTS_RUNBOOK "streak shields").
 @MainActor
 final class StoreManager: ObservableObject {
     static let shared = StoreManager()
@@ -20,7 +22,6 @@ final class StoreManager: ObservableObject {
 
         /// Days added per purchase (day pass handled with stacking semantics).
         var addedDays: Int { self == .yearly ? 365 : (self == .monthly ? 30 : 1) }
-        var grantsShields: Bool { self != .day }
     }
 
     @Published private(set) var products: [Product] = []
@@ -29,11 +30,10 @@ final class StoreManager: ObservableObject {
 
     private var updatesTask: Task<Void, Never>?
 
-    /// Transaction IDs whose one-time effects (shield grant, Day Pass +24h) have
-    /// already been applied — so the .success and Transaction.updates paths
-    /// can't double-apply the same delivery, and a re-delivered consumable
-    /// after a crash can't stack a second 24h. A new billing period carries a
-    /// new transaction.id, so this still grants shields once PER renewal.
+    /// Transaction IDs whose one-time effect (Day Pass +24h) has already been
+    /// applied — so the .success and Transaction.updates paths can't
+    /// double-apply the same delivery, and a re-delivered consumable after a
+    /// crash can't stack a second 24h.
     /// Persisted (bounded) so it survives relaunch.
     private static let processedKey = "storekit-processed-tx-ids"
     private var processedTxIDs: Set<UInt64> = {
@@ -49,22 +49,10 @@ final class StoreManager: ObservableObject {
         UserDefaults.standard.set(processedTxIDs.map { NSNumber(value: $0) }, forKey: Self.processedKey)
     }
 
-    /// Original transaction IDs of subscriptions this install has already
-    /// credited at least once. Lets the launch reconcile tell a RENEWAL of a
-    /// known sub (unseen tx.id + known originalID → credit +4) apart from the
-    /// FIRST sight of a sub on a fresh install / new device (unknown originalID
-    /// → record only, so a device swap can't re-mint shields already granted
-    /// elsewhere). Android's seen-orderId ledger, iOS edition.
-    private static let originalsKey = "storekit-seen-original-ids"
-    private var seenOriginalIDs: Set<UInt64> = {
-        let raw = UserDefaults.standard.array(forKey: originalsKey) as? [NSNumber] ?? []
-        return Set(raw.map(\.uint64Value))
-    }()
-
-    private func markOriginalSeen(_ id: UInt64) {
-        seenOriginalIDs.insert(id)
-        UserDefaults.standard.set(seenOriginalIDs.map { NSNumber(value: $0) }, forKey: Self.originalsKey)
-    }
+    // NOTE: the "seen original transaction ids" ledger that used to live here is
+    // gone. Its only job was deciding when the client should credit +4 shields
+    // for a renewal, and shields are now granted server-side from the ASSN
+    // webhook — which sees renewals whether or not the app is ever reopened.
 
     func product(for plan: Plan) -> Product? { products.first { $0.id == plan.rawValue } }
 
@@ -183,7 +171,7 @@ final class StoreManager: ObservableObject {
                 await AuthService.shared.refreshProfile()   // pull the server-written entitlement
                 await transaction.finish()
             case .notConfigured:
-                if await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: 0) {
+                if await AuthService.shared.applyProGrant(expiresAt: expiry) {
                     markProcessed(transaction.id)
                     await transaction.finish()
                 }
@@ -202,22 +190,19 @@ final class StoreManager: ObservableObject {
         // gate finish() on it.
         _ = await verifyOnServer(verification, transaction)
 
-        // The +4 renewal shields are granted CLIENT-side: streak_shields is a
-        // game-mechanic column (spend/earn), deliberately NOT locked, and the
-        // store webhooks deliberately do NOT grant shields — so this is the
-        // single source and can't double up with them. Once per delivery (per
-        // billing period): granted unless this exact transaction was already
-        // processed — covers first purchase, each renewal, and Ask-to-Buy
-        // approvals without double-granting on the .success/.updates race.
-        let shields = (plan.grantsShields && !hasProcessed(transaction.id)) ? 4 : 0
-        let ok = await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: shields)
+        // No shield grant here. The +4 per billing period is granted by the ASSN
+        // webhook (SUBSCRIBED / DID_RENEW), which is the only side that sees a
+        // renewal for a player who never reopens the app, and the only side a
+        // user can't fake by PATCHing their own profiles row. This client used
+        // to add its own +4 on top of the webhook's, so every subscriber was
+        // quietly getting 8 shields a period instead of 4.
+        let ok = await AuthService.shared.applyProGrant(expiresAt: expiry)
 
         // Only mark + finish once the entitlement is durably written. On failure
         // the transaction stays unfinished → StoreKit re-delivers it via
         // Transaction.updates for retry.
         if ok {
             markProcessed(transaction.id)
-            markOriginalSeen(transaction.originalID)   // this sub is now credit-known
             await transaction.finish()
         }
     }
@@ -269,13 +254,10 @@ final class StoreManager: ObservableObject {
     }
 
     /// On launch / restore: reflect any active auto-renewable entitlement into
-    /// the profile. Renewals that happened while the app was CLOSED surface
-    /// here (not on Transaction.updates) as the sub's latest transaction with a
-    /// new tx.id — an unseen period of a credit-known sub earns its +4 shields
-    /// now, or they'd silently never land for users who background the app
-    /// (which is everyone). First sight of an UNKNOWN sub (fresh install / new
-    /// device) records without crediting, so a device swap can't re-mint
-    /// shields granted elsewhere. Android reconcile+orderId-ledger parity.
+    /// the profile, so a renewal that happened while the app was CLOSED (it
+    /// never reaches Transaction.updates) still shows as Pro. Entitlement only —
+    /// the renewal's +4 shields come from the ASSN webhook, which doesn't need
+    /// the app to be opened at all.
     private func syncCurrentEntitlements() async {
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result,
@@ -285,15 +267,8 @@ final class StoreManager: ObservableObject {
             // Skip expired (StoreKit usually omits these, but be safe).
             if let exp = transaction.expirationDate, exp < Date() { continue }
             let expiry = expiryDate(for: plan, transaction: transaction)
-            let isNewPeriod = !hasProcessed(transaction.id)
-            let isKnownSub = seenOriginalIDs.contains(transaction.originalID)
-            let shields = (plan.grantsShields && isNewPeriod && isKnownSub) ? 4 : 0
-            let ok = shields > 0
-                ? await AuthService.shared.applyProGrant(expiresAt: expiry, addShields: shields)
-                : await AuthService.shared.syncProExpiry(expiresAt: expiry)
-            if ok {
+            if await AuthService.shared.applyProGrant(expiresAt: expiry) {
                 markProcessed(transaction.id)
-                markOriginalSeen(transaction.originalID)
             }
         }
     }
@@ -309,13 +284,16 @@ final class StoreManager: ObservableObject {
     private func expiryDate(for plan: Plan, transaction: Transaction) -> Date {
         switch plan {
         case .monthly, .yearly:
-            // Trust StoreKit's expiration for auto-renewables (keeps renewals in sync).
+            // Trust StoreKit's expiration for auto-renewables (keeps renewals in
+            // sync). It is not the whole picture, though: it describes only what
+            // Apple sold, while pro_expires_at may also hold referral/comp/Day
+            // Pass time. applyProGrant clamps this to the later of the two so a
+            // subscribe can't wipe out days the player already banked.
             return transaction.expirationDate ?? Date().addingTimeInterval(Double(plan.addedDays) * 86_400)
         case .day:
             // Day pass stacks on the existing Pro window (max semantics), like the web.
             let now = Date()
-            let existing = AuthService.shared.profile?.proExpiresAt.flatMap(parseTimestamp)
-            let base = max(existing ?? now, now)
+            let base = max(AuthService.shared.profile?.proExpiryDate ?? now, now)
             return base.addingTimeInterval(86_400)
         }
     }

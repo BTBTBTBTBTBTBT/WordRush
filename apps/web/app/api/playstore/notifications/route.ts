@@ -37,6 +37,20 @@ const PUSH_TOKEN = process.env.PLAY_PUBSUB_TOKEN;
 
 const DAY_PASS_PRODUCT_ID = 'pro_day';
 
+// RTDN subscriptionNotification types we care about by name. Play sends ~15 of
+// them for one subscription's life; only three mean a period was actually paid
+// for, and exactly one means "take it away now".
+const PLAY_RECOVERED = 1;   // billing recovered after account hold → period paid
+const PLAY_RENEWED = 2;     // a new period was paid for
+const PLAY_PURCHASED = 4;   // initial purchase
+const PLAY_REVOKED = 12;    // refunded/revoked → entitlement ends immediately
+/** The only types allowed to mint shields — the Play analogue of the App Store
+ *  route's PAYMENT_EVENTS. Everything else (CANCELED, PAUSED, PRICE_CHANGE_
+ *  CONFIRMED, DEFERRED, …) is a state change a user can trigger from the Play
+ *  UI at will, and used to be worth +4 shields per trigger because this route
+ *  granted on EVERY notification type with no filter and no ledger. */
+const PAYMENT_NOTIFICATION_TYPES = new Set([PLAY_RECOVERED, PLAY_RENEWED, PLAY_PURCHASED]);
+
 // ── Service-account OAuth (no SDK: RS256 JWT → token exchange) ─────────────
 /** Shields granted per paid billing period — matches stripe-fulfillment. */
 const RENEWAL_SHIELDS = 4;
@@ -84,7 +98,7 @@ async function playApi(path: string): Promise<any | null> {
 }
 
 // ── Entitlement sync ────────────────────────────────────────────────────────
-async function syncSubscription(purchaseToken: string): Promise<string> {
+async function syncSubscription(purchaseToken: string, notificationType: number): Promise<string> {
   const sub = await playApi(`purchases/subscriptionsv2/tokens/${purchaseToken}`);
   if (!sub) return 'verify-failed';
 
@@ -97,24 +111,64 @@ async function syncSubscription(purchaseToken: string): Promise<string> {
     .map((li: any) => Date.parse(li.expiryTime ?? ''))
     .filter((t: number) => Number.isFinite(t));
   const expiry = expiryTimes.length ? Math.max(...expiryTimes) : 0;
-  const isPro = expiry > Date.now();
 
   const sb = getAdminSupabase();
+
+  // pro_expires_at is NOT owned by Play alone. Referral rewards (+3 days per
+  // redemption, +90 when a friend goes annual), admin comps and stacked Day
+  // Passes all bank time in the same column, so writing Play's expiry straight
+  // over it destroys days the user already owns and there is nothing to restore
+  // from: a player sitting on 97 banked days who then subscribes monthly used to
+  // land on now+30 and silently lose 67 of them. Take the later of the two, the
+  // way stripe-fulfillment.ts does.
+  const { data: current } = await sb
+    .from('profiles').select('pro_expires_at').eq('id', userId).maybeSingle();
+  const storedMs = current?.pro_expires_at ? new Date(current.pro_expires_at).getTime() : 0;
+
+  // The one case where "never shrink" must NOT apply: a refund/revoke has to
+  // take effect now, or refunding an annual sub would leave its year of Pro
+  // sitting in the row untouched.
+  const isRevoke = notificationType === PLAY_REVOKED;
+  const effectiveExpiry = isRevoke ? expiry : Math.max(expiry, storedMs);
+  const isPro = !isRevoke && effectiveExpiry > Date.now();
+
   const update: Record<string, unknown> = {
     is_pro: isPro,
-    pro_expires_at: expiry ? new Date(expiry).toISOString() : null,
+    pro_expires_at: effectiveExpiry ? new Date(effectiveExpiry).toISOString() : null,
   };
   // Shields (+4 per paid period) are granted SERVER-side, matching Stripe and
-  // the App Store webhook. The mobile client used to do this, which is what let
-  // any signed-in user mint a paid benefit by PATCHing profiles directly.
+  // the App Store webhook. The mobile client used to do this too, so a subscribe
+  // minted +8; the client half is gone (see PAYMENTS_RUNBOOK "shields model").
   // Day Pass deliberately grants none (see grantDayPass below).
-  if (isPro) {
-    const { data: shieldRow } = await sb
-      .from('profiles').select('streak_shields').eq('id', userId).maybeSingle();
-    update.streak_shields = (shieldRow?.streak_shields ?? 0) + RENEWAL_SHIELDS;
+  //
+  // Gated on a payment event AND keyed on the billing period. Without the gate
+  // this ran on every RTDN type, so a user could cancel/restart or confirm a
+  // price change to farm +4 a time; without the period key, Play's own retries
+  // and duplicate deliveries (there is no per-notification ledger on this route)
+  // would each pay out again.
+  let shieldPeriodKey: string | undefined;
+  if (isPro && PAYMENT_NOTIFICATION_TYPES.has(notificationType)) {
+    // The purchase token is stable across renewals and can be ~1KB; hash it and
+    // pair it with this period's expiry for a short, unique-per-period key.
+    const tokenHash = crypto.createHash('sha256').update(purchaseToken).digest('hex').slice(0, 32);
+    const key = `play-shields:${tokenHash}:${expiry}`;
+    const { data: alreadyPaid } = await sb
+      .from('store_webhook_events').select('event_id').eq('event_id', key).maybeSingle();
+    if (!alreadyPaid) {
+      shieldPeriodKey = key;
+      const { data: shieldRow } = await sb
+        .from('profiles').select('streak_shields').eq('id', userId).maybeSingle();
+      update.streak_shields = (shieldRow?.streak_shields ?? 0) + RENEWAL_SHIELDS;
+    }
   }
   const { error } = await sb.from('profiles').update(update).eq('id', userId);
   if (error) return `db-error:${error.message}`;
+
+  // Claim the period only after the entitlement landed, so a transient DB
+  // failure can't swallow a paid period's shields on the Pub/Sub retry.
+  if (shieldPeriodKey) {
+    await sb.from('store_webhook_events').insert({ event_id: shieldPeriodKey, source: 'playstore-shields' });
+  }
 
   // Referral conversion — pay the inviter when a referred user's sub is live.
   // lineItems carry the short product id (pro_monthly / pro_yearly) directly;
@@ -169,7 +223,10 @@ export async function POST(req: NextRequest) {
 
   try {
     if (notification.subscriptionNotification?.purchaseToken) {
-      const result = await syncSubscription(notification.subscriptionNotification.purchaseToken);
+      const result = await syncSubscription(
+        notification.subscriptionNotification.purchaseToken,
+        Number(notification.subscriptionNotification.notificationType),
+      );
       // A DB write failure must 500 so Pub/Sub retries — returning 200 silently
       // loses the entitlement change (parity with the Apple webhook / audit #4).
       if (result.startsWith('db-error:')) return NextResponse.json({ error: result }, { status: 500 });

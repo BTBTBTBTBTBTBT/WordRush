@@ -17,6 +17,37 @@ func reportRejectedWrite(_ operation: String, gameMode: String, _ error: Error) 
     #endif
 }
 
+/// Report a finished game that was dropped outright — not "the write failed and
+/// will be retried", but "we never even got as far as queueing it". There is no
+/// underlying Error for this: it is a state we should not be able to reach, and
+/// it silently costs the player a completed game, so it must arrive as evidence
+/// rather than as a shrug.
+func reportDroppedResult(_ operation: String, gameMode: String, reason: String) {
+    #if !DEBUG
+    SentrySDK.capture(message: "result dropped: \(operation) — \(reason)") { scope in
+        scope.setLevel(.error)
+        scope.setTag(value: gameMode, key: "game_mode")
+        scope.setContext(value: ["operation": operation, "game_mode": gameMode, "reason": reason],
+                         key: "dropped_result")
+    }
+    #endif
+}
+
+/// The signed-in user id read from LOCAL storage only.
+///
+/// `client.auth.session` refreshes an expired access token, which is a network
+/// call — so the recording paths, which used it purely to learn who the player
+/// was, threw and bailed in exactly the situation the pending-record queue
+/// exists for: a game finished offline. The finished game was dropped before
+/// PendingRecords.register() ever ran — no queue entry, no retry, no telemetry,
+/// and no self-heal once the connection came back. `currentSession` is a
+/// keychain read that cannot fail for lack of a network, and an expired token
+/// is irrelevant here: the id is only needed to key the payload, and drain()
+/// re-authenticates properly before replaying it.
+func localUserId() -> String? {
+    AuthService.shared.client.auth.currentSession?.user.id.uuidString
+}
+
 /// Records a finished game's full progression, porting the core of
 /// lib/stats-service.ts recordGameResult(): user_stats (wins/losses/games/
 /// best/avg/fastest), profile XP + level + win-streak + daily-login-streak
@@ -74,8 +105,15 @@ enum GameResultsService {
         seed: String, solutions: [String], guesses: [String], hintsUsed: Int = 0
     ) async {
         let client = AuthService.shared.client
-        guard let session = try? await client.auth.session else { return }
-        let userId = session.user.id.uuidString
+        // Local id, NOT `try? await client.auth.session` — see localUserId().
+        // The refreshing accessor threw offline and returned right here, one
+        // line above the register() that exists to survive exactly that, so an
+        // offline finish lost its match-history row permanently.
+        guard let userId = localUserId() else {
+            reportDroppedResult("recordSoloMatch", gameMode: gameMode.rawValue,
+                                reason: "no local session while recording a finished game")
+            return
+        }
         PendingRecords.register(
             userId: userId, gameMode: gameMode.rawValue, seed: seed,
             soloMatch: .init(won: won, score: score, timeSeconds: timeSeconds,
@@ -229,8 +267,19 @@ enum GameResultsService {
         isDraw: Bool = false
     ) async -> XpResult? {
         let client = AuthService.shared.client
-        guard let session = try? await client.auth.session else { return nil }
-        let userId = session.user.id.uuidString
+        // THE line that dropped finished games. This was
+        // `guard let session = try? await client.auth.session` — a refreshing,
+        // network-touching accessor — so a game finished offline returned nil
+        // here, at the very first statement, before the register() below. The
+        // one failure the pending-record queue was built for was the one
+        // failure that bypassed it: no queue entry, no user feedback, no
+        // telemetry, and no self-heal for the rest of the session. localUserId()
+        // reads the stored session instead, which is available offline.
+        guard let userId = localUserId() else {
+            reportDroppedResult("record", gameMode: gameMode.rawValue,
+                                reason: "no local session while recording a finished game")
+            return nil
+        }
         let mode = gameMode.rawValue
 
         // Crash-protection: persist the args locally BEFORE any network call so
@@ -251,12 +300,6 @@ enum GameResultsService {
                               isDraw: isDraw)
         let xp = await updateProfileProgression(client, userId: userId, won: won, seed: seed,
                                                 isDraw: isDraw, mode: mode)
-        // Profile progression succeeding is the success proxy (web parity: a
-        // failed/offline run keeps the payload; the drain's matches-row dedupe
-        // prevents double-increments when everything landed but the clear didn't).
-        if trackPending && xp != nil {
-            PendingRecords.markDone(gameMode: mode, seed: seed, part: .gameResult)
-        }
 
         var result = xp
         if playType == "vs" {
@@ -287,6 +330,19 @@ enum GameResultsService {
                                   sweepBonus: sweep, flawlessBonus: flawless)
             }
         }
+
+        // Release the crash-protection payload only now, AFTER the daily row,
+        // the streak/perfect medals and the sweep bonus — web's ordering
+        // (stats-service.ts marks done below its daily writes). This used to
+        // fire right after the progression call, above the block, which left a
+        // window where a connection blip between the two cost the player their
+        // daily leaderboard row, their medal and the +200/+400 sweep bonus with
+        // nothing queued to retry any of it. Success proxy stays the profile
+        // progression (a failed/offline run keeps the payload).
+        if trackPending && xp != nil {
+            PendingRecords.markDone(gameMode: mode, seed: seed, part: .gameResult)
+        }
+
         // Refresh the in-memory profile so XP/streak/Pro reflect immediately.
         await AuthService.shared.refreshProfile()
 

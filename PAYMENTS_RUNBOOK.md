@@ -13,13 +13,20 @@ be automated from the repo. Written 2026-07-17 after the Pro payment audit.
 ## Where things stand (code side, done)
 
 - **Client purchase bugs fixed** (commit `d8296f2`): iOS refund-revoke, durable
-  write before `finish()`, appAccountToken check, per-period renewal shields;
-  Android expiry-parse (fail-closed), restore-no-longer-revokes, launch
-  reconcile, ProScreen `isProActive`. These ride the next iOS/Android builds.
+  write before `finish()`, appAccountToken check; Android expiry-parse
+  (fail-closed), restore-no-longer-revokes, launch reconcile, ProScreen
+  `isProActive`. These ride the next iOS/Android builds. (The client-side
+  renewal-shield grant listed here originally has since been REMOVED — see the
+  shields model below.)
+- **Clients never overwrite `pro_expires_at`** — every grant path takes the
+  later of the store's expiry and the stored one, because the column also holds
+  referral rewards, admin comps and stacked Day Passes. A subscribe that
+  overwrote it destroyed banked days outright, with nothing to restore from.
 - **Apple webhook hardened**: 500-on-failed-write, out-of-order/stale-expiry
-  guard, sandbox-rejected-in-production, idempotency ledger. Writes ONLY
-  `is_pro`/`pro_expires_at` — it does NOT grant streak shields (see the shields
-  model below). Still **fails closed (503)** until the certs + env below exist.
+  guard, sandbox-rejected-in-production, idempotency ledger. Writes
+  `is_pro`/`pro_expires_at`, and grants the per-period streak shields (see the
+  shields model below). Still **fails closed (503)** until the certs + env
+  below exist.
 - **Server expiry sweep**: `/api/cron/expire-pro` runs daily at 08:00 UTC, flips
   `is_pro` off for lapsed rows (added to `vercel.json`). Needs `CRON_SECRET`
   (already set for the other crons). NOTE: the Vercel account is on the **Hobby**
@@ -40,26 +47,43 @@ be automated from the repo. Written 2026-07-17 after the Pro payment audit.
 
 `streak_shields` is a game-mechanic column: the client spends it (−1, use a
 shield) and earns it (+1, every 7-day login streak) on all three platforms, so
-it is **deliberately NOT locked** and the client is trusted to write it.
-Purchase/renewal shields (+4) therefore follow a per-platform rule to avoid ever
-double-granting:
+it is **deliberately NOT locked** and the client is trusted to write it *for
+game mechanics*. **Purchase/renewal shields (+4) are granted SERVER-SIDE ONLY,
+on every platform.** No client grants them.
 
-- **iOS / Android (StoreKit / Play):** the **client** grants the +4 (per new
-  transaction / billing period). The App Store + Play **webhooks do NOT grant
-  shields.** (If both did, a subscribe would mint +8 once the ASSN URL is
-  registered.)
-- **Web (Stripe):** there is no client, so **Stripe fulfillment grants the +4
-  server-side** (initial + each renewal).
+- **Web (Stripe):** `lib/payment/stripe-fulfillment.ts` (initial + each renewal).
+- **iOS (StoreKit):** the App Store Server Notifications webhook,
+  `/api/appstore/notifications`, on `SUBSCRIBED` / `DID_RENEW` only.
+- **Android (Play):** the RTDN webhook, `/api/playstore/notifications`, on
+  notification types `PURCHASED` (4) / `RENEWED` (2) / `RECOVERED` (1) only.
 - The **verify endpoint never grants shields** (it only writes is_pro/expiry), so
-  it can't double with the client on a sub confirm.
+  a sub confirm can't double with the webhook.
+- **Day Pass never grants shields** on any platform — a $1 consumable must not
+  buy a subscription perk.
 
-✅ **Android renewal shields — FIXED (client-side, iOS-matching):** Play mints a
-new `orderId` per billing period on the same purchase ("GPA.xxxx..0", "..1", …),
-so `StoreManager.kt` tracks seen orderIds (persisted) and credits +4 when launch
-reconcile finds a new period of an already-known order. First sight of an
-unknown base order (reinstall / new device) records without crediting, so a
-device swap can't re-mint shields. The same ledger de-dupes Day Pass
-re-delivery (+24h once per orderId). Rides the next Android build.
+⚠️ **This reverses the earlier rule** (which said the mobile *client* granted the
++4 and the webhooks did not). Both halves ended up live at once, so every mobile
+subscriber was collecting **+8 per period**. The server was chosen as the owner
+because it (a) sees a renewal even for a player who never reopens the app —
+client grants silently never landed for those users — and (b) is not spoofable:
+`streak_shields` is client-writable, so a client-side grant is a paid benefit any
+signed-in user could PATCH onto their own row. The client code that granted
+shields is gone (`StoreManager.swift`, `StoreManager.kt`), along with the local
+"seen original transaction / order id" ledgers whose only purpose was deciding
+when to credit. `applyProGrant` on both platforms no longer writes
+`streak_shields` at all.
+
+**Shields are keyed on the BILLING PERIOD, not on the notification.** The
+`store_webhook_events` ledger is per-delivery and structurally cannot police
+this: Apple sends `DID_CHANGE_RENEWAL_STATUS` with a fresh `notificationUUID`
+every time a subscriber toggles auto-renew in iOS Settings, so it always looks
+like a new event — that was an unlimited shield faucet (off +4, on +4, repeat,
+no payment). Both webhooks now claim a `shields:<period>` key before crediting,
+and only for genuine payment event types.
+
+**Day Pass de-dupe is unchanged:** `StoreManager.kt` still keeps a persisted
+seen-orderId set so a Day Pass re-delivered after a failed consume can't stack a
+second +24h (iOS uses `processedTxIDs` for the same job).
 
 ## ⚠️ The live security hole (do this first)
 
@@ -114,9 +138,11 @@ NOT swept — the lock is the real fix).
    same app as production, so this is low-risk.
 5. **Sandbox-verify:** make a sandbox purchase of monthly/yearly, watch the
    preview deployment logs — confirm the webhook 200s and the `profiles` row
-   flips `is_pro`/`pro_expires_at`. (`streak_shields += 4` comes from the CLIENT,
-   not the webhook — see the shields model above — so verify shields on-device,
-   not in the webhook log.) Test a renewal (sandbox renews fast) and a refund
+   flips `is_pro`/`pro_expires_at` **and** `streak_shields += 4` (the webhook
+   grants those now — see the shields model above — so verify them in the
+   webhook log / the row, not on-device). While you're there, toggle auto-renew
+   off and on in Settings and confirm shields do **not** move: that used to be
+   a free +4 per toggle. Test a renewal (sandbox renews fast) and a refund
    (App Store Connect → refund) → confirm revoke.
 6. **Day Pass caveat (must resolve before step 7):** Apple does NOT reliably
    send ASSN for consumables, so the Day Pass may never reach the webhook.

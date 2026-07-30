@@ -1,10 +1,11 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from './supabase-client';
 import type { Database } from './database.types';
 import { isProActive } from './pro';
+import { reportRejectedWrite } from './supabase-error-handler';
 import { migrateLegacyStorageKeys } from './storage-migration';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -19,6 +20,14 @@ interface AuthContextType {
    * raw write-side marker that can remain true after `pro_expires_at` passes.
    */
   isProActive: boolean;
+  /**
+   * True when the profile row could NOT be read (transport/RLS failure), as
+   * opposed to a signed-out visitor or a brand-new account with no row yet.
+   * Callers that gate on `profile` are gating on a network fetch: this lets
+   * them tell "not signed in" from "signed in but we couldn't load you", and
+   * say so, instead of silently behaving as if the user had no account.
+   */
+  profileError: boolean;
   /**
    * Guest mode — a signed-out visitor who chose "Play without an account".
    * Apple 5.1.1(v) / Google Play require the single-player daily to be playable
@@ -56,6 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  const [profileError, setProfileError] = useState(false);
+  const profileRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const enterGuest = () => {
     try { localStorage.setItem('wordocious-guest', '1'); } catch {}
@@ -67,7 +78,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsGuest(false);
   };
 
-  const fetchProfile = async (userId: string, userData?: User) => {
+  /**
+   * Load the signed-in user's profile row.
+   *
+   * Three outcomes that are NOT interchangeable, and used to collapse into one
+   * silent fall-through:
+   *   1. row found            → set it
+   *   2. row genuinely absent → auto-create (an OAuth account's first visit)
+   *   3. fetch FAILED         → transport/RLS error; the row probably exists
+   *
+   * Case 3 read as case 2 is what loses finished games. `user`/`session` come
+   * from local storage and keep reporting SIGNED IN, but `profile` stays null
+   * forever, and every game component gates its recording on `profile` — so
+   * the result is never written AND never queued (the pending-record payload
+   * is registered inside those recording calls, which are never reached). The
+   * game vanishes with no retry, no toast and no telemetry, and nothing
+   * re-fires it later in the session. So: a failed fetch retries on a short
+   * backoff to self-heal, and is reported once it gives up.
+   */
+  const PROFILE_RETRY_DELAYS_MS = [1000, 4000, 15000];
+
+  const fetchProfile = async (userId: string, userData?: User, attempt: number = 0) => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -85,38 +116,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(null);
         return;
       }
+      setProfileError(false);
       setProfile(profile);
-    } else if (!error || error.code === 'PGRST116') {
-      // No profile exists — auto-create for OAuth users
-      const u = userData;
-      if (u) {
-        const avatarUrl = u.user_metadata?.avatar_url || u.user_metadata?.picture || null;
+      return;
+    }
 
-        // Generate anonymous default username — never expose real names
-        let newProfile = null;
-        for (let attempt = 0; attempt < 3; attempt++) {
-          const suffix = Math.floor(10000 + Math.random() * 90000);
-          const username = `Wordocious${suffix}`;
-          const { data, error: insertErr } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              username,
-              avatar_url: avatarUrl,
-              has_onboarded: false,
-            } as any)
-            .select()
-            .single();
-
-          if (data) { newProfile = data; break; }
-          // 23505 = unique violation — retry with new suffix
-          if (insertErr?.code !== '23505') break;
-        }
-
-        if (newProfile) {
-          setProfile(newProfile as Profile);
-        }
+    // maybeSingle() reports a genuinely-absent row as data:null + error:null;
+    // PGRST116 is single()'s equivalent of the same thing. ANY other error is
+    // a failed read, not an absent account — auto-creating on it would race a
+    // row that already exists, and swallowing it strands the session.
+    if (error && error.code !== 'PGRST116') {
+      const delay = PROFILE_RETRY_DELAYS_MS[attempt];
+      if (delay !== undefined) {
+        if (profileRetry.current) clearTimeout(profileRetry.current);
+        profileRetry.current = setTimeout(() => {
+          void fetchProfile(userId, userData, attempt + 1);
+        }, delay);
+        return;
       }
+      // Out of retries. Flag it so `profile === null` stops being mistaken for
+      // "signed out", and capture it — a stranded session drops every game the
+      // user finishes, so the next occurrence must be evidence, not silence.
+      setProfileError(true);
+      reportRejectedWrite('auth fetchProfile', error);
+      return;
+    }
+
+    // No profile exists — auto-create for OAuth users
+    const u = userData;
+    if (!u) return;
+
+    const avatarUrl = u.user_metadata?.avatar_url || u.user_metadata?.picture || null;
+
+    // Generate anonymous default username — never expose real names
+    let newProfile = null;
+    let lastInsertErr: any = null;
+    for (let tries = 0; tries < 3; tries++) {
+      const suffix = Math.floor(10000 + Math.random() * 90000);
+      const username = `Wordocious${suffix}`;
+      const { data, error: insertErr } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          username,
+          avatar_url: avatarUrl,
+          has_onboarded: false,
+        } as any)
+        .select()
+        .single();
+
+      if (data) { newProfile = data; break; }
+      lastInsertErr = insertErr;
+      // 23505 = unique violation — retry with new suffix
+      if (insertErr?.code !== '23505') break;
+    }
+
+    if (newProfile) {
+      setProfileError(false);
+      setProfile(newProfile as Profile);
+    } else {
+      // Same stranded-session consequence as a failed read: signed in, no
+      // profile, every finished game dropped. Flag and report it.
+      setProfileError(true);
+      reportRejectedWrite('auth fetchProfile create', lastInsertErr ?? new Error('profile insert returned no row'));
     }
   };
 
@@ -160,12 +222,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await fetchProfile(session.user.id, session.user);
         } else {
           setProfile(null);
+          setProfileError(false);
         }
         setLoading(false);
       })();
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (profileRetry.current) clearTimeout(profileRetry.current);
+    };
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
@@ -301,9 +367,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (k && k.startsWith('wordocious-session-')) localStorage.removeItem(k);
       }
     } catch {}
+    if (profileRetry.current) clearTimeout(profileRetry.current);
     setIsGuest(false);
     setUser(null);
     setProfile(null);
+    setProfileError(false);
     setSession(null);
   };
 
@@ -315,6 +383,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         loading,
         isProActive: isProActive(profile),
+        profileError,
         isGuest,
         enterGuest,
         exitGuest,

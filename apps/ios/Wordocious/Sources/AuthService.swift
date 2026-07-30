@@ -313,12 +313,19 @@ final class AuthService: ObservableObject {
 
     // MARK: - Pro entitlement (StoreKit fulfillment)
 
-    private struct ProGrant: Encodable { let is_pro: Bool; let pro_expires_at: String; let streak_shields: Int }
-    private struct ProSync: Encodable { let is_pro: Bool; let pro_expires_at: String }
+    private struct ProGrant: Encodable { let is_pro: Bool; let pro_expires_at: String }
 
-    /// Write Pro entitlement after a verified StoreKit purchase/renewal — mirrors
-    /// apps/web/lib/payment/purchase-service.ts fulfillSubscription (is_pro +
-    /// pro_expires_at, plus +`addShields` streak shields for monthly/yearly).
+    /// Write Pro entitlement after a verified StoreKit purchase/renewal/restore —
+    /// mirrors apps/web/lib/payment/stripe-fulfillment.ts (is_pro +
+    /// pro_expires_at, never shrinking an existing window).
+    ///
+    /// This deliberately does NOT touch `streak_shields`. It used to add +4 on a
+    /// purchase, at the same time as the App Store / Play webhooks were adding
+    /// their own +4, so a subscriber got 8 shields per billing period — and
+    /// because the column is client-writable, the client half was also the
+    /// forgeable half. Shields for a paid period are granted server-side only
+    /// now (PAYMENTS_RUNBOOK "streak shields"); the client still spends/earns
+    /// them for game mechanics elsewhere.
     ///
     /// Returns whether the write reached the server. StoreManager MUST NOT
     /// finish() the transaction on `false` — the network hiccup would otherwise
@@ -326,28 +333,20 @@ final class AuthService: ObservableObject {
     /// re-appear in currentEntitlements). A false return leaves the transaction
     /// unfinished so StoreKit re-delivers it via Transaction.updates.
     @discardableResult
-    func applyProGrant(expiresAt: Date, addShields: Int) async -> Bool {
+    func applyProGrant(expiresAt: Date) async -> Bool {
         guard let userId = try? await client.auth.session.user.id.uuidString else { return false }
-        let iso = ISO8601DateFormatter().string(from: expiresAt)
-        let body = ProGrant(is_pro: true, pro_expires_at: iso,
-                            streak_shields: (profile?.streakShields ?? 0) + max(0, addShields))
+        // Never shrink a longer stored window. StoreKit's expirationDate covers
+        // only what Apple sold; pro_expires_at also holds referral rewards (+3d
+        // per redemption, +90d when a referred friend goes annual), admin comps
+        // and stacked Day Passes. Writing the StoreKit date straight over the
+        // row took a user with 97 banked days who bought monthly down to 30 —
+        // 67 days gone, unrecoverable. Uses the last-loaded profile: if it never
+        // loaded we have no window to preserve, and the server-side webhook
+        // (which reads the row transactionally) is the real backstop.
+        let target = max(expiresAt, profile?.proExpiryDate ?? expiresAt)
+        let iso = ISO8601DateFormatter().string(from: target)
         do {
-            try await client.from("profiles").update(body).eq("id", value: userId).execute()
-        } catch {
-            return false
-        }
-        await refreshProfile()
-        return true
-    }
-
-    /// Reconcile an active subscription into the profile on launch/restore — no
-    /// shield grant (not a new purchase). Returns write success (see applyProGrant).
-    @discardableResult
-    func syncProExpiry(expiresAt: Date) async -> Bool {
-        guard let userId = try? await client.auth.session.user.id.uuidString else { return false }
-        let iso = ISO8601DateFormatter().string(from: expiresAt)
-        do {
-            try await client.from("profiles").update(ProSync(is_pro: true, pro_expires_at: iso))
+            try await client.from("profiles").update(ProGrant(is_pro: true, pro_expires_at: iso))
                 .eq("id", value: userId).execute()
         } catch {
             return false
