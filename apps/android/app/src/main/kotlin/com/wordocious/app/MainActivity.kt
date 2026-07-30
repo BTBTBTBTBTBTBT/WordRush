@@ -32,6 +32,10 @@ import java.util.TimeZone
  *   - MainScreen / 4-tab shell (signed in)
  */
 class MainActivity : ComponentActivity() {
+    private companion object {
+        const val LAST_LAUNCHED_VERSION = "last-launched-version-code"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // App links (wordocious.com/vs/join/*) — cold-start delivery. Warm
@@ -62,6 +66,7 @@ class MainActivity : ComponentActivity() {
         com.wordocious.app.data.StoreManager.start(this)
         // UMP consent -> Mobile Ads init -> preload the game-start interstitial.
         com.wordocious.app.data.AdsManager.start(this)
+        tagLaunchAfterUpdate()
         setContent {
             WordociousTheme {
                 // Keep content clear of the system navigation bar, app-wide.
@@ -128,6 +133,34 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Tag whether THIS launch is the first one after the installed version
+     * changed, so the next crash report says so instead of leaving us guessing.
+     *
+     * Two real users hit a fatal `RuntimeException: Window couldn't find
+     * content container view` inside setContent on 2026-07-30, and both were on
+     * the build that had just been replaced — one within eight minutes of the
+     * new bundle going out. Every occurrence seen locally was also immediately
+     * after `adb install -r` swapped the APK under a running app. That points
+     * at stale resources after an in-place update rather than a defect in the
+     * layout, but "points at" is not "proved", and a speculative theme change
+     * to a crash that cannot be reproduced on demand is how you make it worse.
+     *
+     * The tag rides on any event Sentry sends from this process, so a single
+     * further occurrence settles it: true means update-race and it will fade as
+     * the build churn stops; false means a real defect and this comment is
+     * wrong.
+     */
+    private fun tagLaunchAfterUpdate() {
+        runCatching {
+            val current = packageManager.getPackageInfo(packageName, 0).longVersionCode.toInt()
+            val previous = com.wordocious.app.data.SettingsPref.get(LAST_LAUNCHED_VERSION, -1)
+            io.sentry.Sentry.setTag("first_launch_after_update", (previous != -1 && previous != current).toString())
+            io.sentry.Sentry.setTag("previous_version_code", previous.toString())
+            if (previous != current) com.wordocious.app.data.SettingsPref.set(LAST_LAUNCHED_VERSION, current)
         }
     }
 
