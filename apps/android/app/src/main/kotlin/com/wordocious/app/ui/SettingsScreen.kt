@@ -155,7 +155,7 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                     }
                     Divider()
                     ToggleRow("Reduced Motion", "Minimize animations", reducedMotion) {
-                        reducedMotion = it; SettingsPref.set(SettingsPref.REDUCED_MOTION, it); WTheme.reducedMotion = it
+                        reducedMotion = it; SettingsPref.set(SettingsPref.REDUCED_MOTION, it); WTheme.reducedMotionPref = it
                     }
                 }
             }

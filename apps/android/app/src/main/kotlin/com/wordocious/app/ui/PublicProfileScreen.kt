@@ -147,7 +147,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
     }
 
     Column(
-        Modifier.fillMaxSize().background(WTheme.bg)
+        Modifier.fillMaxSize().appBackground()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),

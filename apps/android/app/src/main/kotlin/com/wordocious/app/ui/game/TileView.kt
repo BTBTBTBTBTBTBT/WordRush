@@ -55,6 +55,8 @@ fun TileView(
     flipDuration: Int = 300,  // web: tile-flip 500ms full board, tile-flip-mini 300ms
     isInvalid: Boolean = false,
     cornerRadius: Dp = 4.dp,
+    /** iOS scales the stroke with the tile (0.09 × size, clamped 1–2pt). */
+    borderWidth: Dp = 2.dp,
     fontSize: Float = 20f,
     // square=true forces a 1:1 tile (single-board). false = fill the cell
     // (multi-board in-play, non-square per spec — prevents overlap).
@@ -119,7 +121,7 @@ fun TileView(
             }
             .clip(RoundedCornerShape(cornerRadius))
             .background(bgColor)
-            .then(if (showBorder) Modifier.border(2.dp, borderColor, RoundedCornerShape(cornerRadius)) else Modifier)
+            .then(if (showBorder) Modifier.border(borderWidth, borderColor, RoundedCornerShape(cornerRadius)) else Modifier)
             // TalkBack reads the letter plus its evaluation instead of a bare glyph.
             .then(if (letter.isNotBlank() && !masked) Modifier.semantics {
                 contentDescription = if (filled) "$letter, ${tileStateName(state)}" else letter

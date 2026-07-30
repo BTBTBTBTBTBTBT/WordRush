@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -75,7 +76,7 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(WTheme.bg)
+            .appBackground()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -95,14 +96,16 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
             modifier = Modifier.padding(top = 4.dp, bottom = 28.dp),
         )
 
-        // Card
+        // Card — iOS AuthView: 20pt radius, 18pt padding, 16pt stack spacing, and
+        // a violet-300 stroke (NOT the neutral --color-border used elsewhere).
+        // The purple edge is what makes the sign-in card feel on-brand.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(WTheme.surface, RoundedCornerShape(16.dp))
-                .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .background(WTheme.surface, RoundedCornerShape(20.dp))
+                .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(20.dp))
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
                 when (mode) { "signin" -> "Welcome Back!"; "signup" -> "Join the Fun!"; else -> "Reset Password" },
@@ -124,11 +127,11 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                 GoogleSignInButton(onError = { error = it })
 
                 // Divider
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     androidx.compose.foundation.layout.Box(
                         Modifier.weight(1f).height(1.dp).background(WTheme.border)
                     )
-                    Text("or", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+                    Text("or", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
                     androidx.compose.foundation.layout.Box(
                         Modifier.weight(1f).height(1.dp).background(WTheme.border)
                     )
@@ -163,9 +166,9 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                     color = Color(0xFF047857),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFECFDF5), RoundedCornerShape(10.dp))
-                        .border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(10.dp))
-                        .padding(10.dp),
+                        .background(Color(0xFFECFDF5), RoundedCornerShape(12.dp))
+                        .border(1.dp, Color(0xFFA7F3D0), RoundedCornerShape(12.dp))
+                        .padding(12.dp),
                 )
             }
 
@@ -178,9 +181,9 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
                     color = WTheme.lossText,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFFFEE2E2), RoundedCornerShape(10.dp))
-                        .border(1.dp, Color(0xFFFECACA), RoundedCornerShape(10.dp))
-                        .padding(10.dp),
+                        .background(Color(0xFFFEE2E2), RoundedCornerShape(12.dp))
+                        .border(1.dp, Color(0xFFFECACA), RoundedCornerShape(12.dp))
+                        .padding(12.dp),
                 )
             }
 
@@ -261,10 +264,10 @@ fun AuthScreen(onAuthenticated: () -> Unit) {
 
         // Footer — functional legal links (App Review expects these to work),
         // opening the in-app Privacy/Terms pages like the web's <Link> footer.
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             listOf("Privacy Policy" to "privacy", "Terms of Service" to "terms").forEach { (label, route) ->
                 Text(
-                    label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
                     modifier = Modifier.clickableNoRipple { infoRoute = route },
                 )
             }
@@ -306,7 +309,9 @@ private fun GoogleSignInButton(onError: (String) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White)
+            // iOS fills with Theme.background, not hard white — a hardcoded
+            // white button with dark-grey text was unreadable in the dark theme.
+            .background(WTheme.bg)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
             .clickableNoRipple {
                 if (!busy) {
@@ -322,11 +327,16 @@ private fun GoogleSignInButton(onError: (String) -> Unit) {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("G", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color(0xFF4285F4))
-        Spacer(Modifier.width(8.dp))
+        // The official four-colour mark at 20dp, matching iOS's Image("google").
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_google),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(12.dp))
         Text(
             if (busy) "Signing in…" else "Continue with Google",
-            fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF1F2937),
+            fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
         )
     }
 }

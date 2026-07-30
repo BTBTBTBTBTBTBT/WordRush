@@ -123,7 +123,7 @@ private fun RowScope.QuadrantKey(
             .height(52.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(if (allAbsent) Color(0xFF9CA3AF) else WTheme.keyDefault)
-            .border(1.5.dp, WTheme.borderAlt, RoundedCornerShape(6.dp))
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))
             .semantics {
                 role = Role.Button
                 // Spoken per-board summary, e.g. "A, board 1 correct, board 3 not in word".
@@ -182,7 +182,7 @@ private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onCli
             .height(52.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
-            .then(if (unstated) Modifier.border(1.5.dp, WTheme.borderAlt, RoundedCornerShape(6.dp)) else Modifier)
+            .then(if (unstated) Modifier.border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp)) else Modifier)
             .semantics {
                 role = Role.Button
                 contentDescription = if (stateName.isEmpty()) label else "$label, $stateName"
@@ -208,7 +208,7 @@ private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
             .height(52.dp)
             .clip(RoundedCornerShape(6.dp))
             .background(WTheme.keyDefault)
-            .border(1.5.dp, WTheme.borderAlt, RoundedCornerShape(6.dp))
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))
             .semantics {
                 role = Role.Button
                 contentDescription = if (label == "BACK") "Delete" else "Submit guess"
@@ -219,7 +219,7 @@ private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
         if (label == "BACK") {
             Icon(Icons.AutoMirrored.Outlined.Backspace, contentDescription = "Backspace", tint = WTheme.text, modifier = Modifier.size(20.dp))
         } else {
-            Text(label, color = WTheme.text, fontWeight = FontWeight.Black, fontSize = 13.sp)
+            Text(label, color = WTheme.text, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
         }
     }
 }

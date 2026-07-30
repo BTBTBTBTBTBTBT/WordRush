@@ -281,7 +281,7 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
         // navigationBarsPadding keeps the bottom of the scroll (Sign Out / Delete
         // Account) clear of the system gesture-nav inset; the host Scaffold already
         // reserves the bottom-nav height. Extra 24dp tail matches web's pb-32.
-        modifier = Modifier.fillMaxSize().background(WTheme.bg).navigationBarsPadding()
+        modifier = Modifier.fillMaxSize().appBackground().navigationBarsPadding()
             .padding(horizontal = 16.dp),
         contentPadding = PaddingValues(bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),

@@ -54,6 +54,7 @@ import com.wordocious.app.ui.clickableNoRipple
 import com.wordocious.app.ui.modeAccent
 import com.wordocious.app.ui.modeTitle
 import com.wordocious.app.ui.modeTitleGradient
+import com.wordocious.app.ui.appBackground
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
@@ -149,7 +150,7 @@ fun PostGameScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
+    Box(modifier = Modifier.fillMaxSize().appBackground()) {
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp).padding(top = 56.dp, bottom = 24.dp),

@@ -854,10 +854,16 @@ internal fun SingleBoard(
             (maxBoardH * ratio) to maxBoardH
         }
 
-        // Scale font size to tile height
+        // Scale font size to tile height.
+        // Ratios match iOS TileView (BoardView.swift): letter = 0.5 × tile,
+        // corner = 0.14 × tile, border = 0.09 × tile clamped to 1–2dp. Android
+        // previously used 0.44 letters and SHARP corners (web parity) — against
+        // iOS, the reference here, that made the board read as a different game.
         val gapTotal = 4.dp * (rows - 1)
         val tileHValue = (boardH.value - gapTotal.value) / rows
-        val tileFontSp = (tileHValue * 0.44f).coerceIn(14f, 28f)
+        val tileFontSp = (tileHValue * 0.5f).coerceIn(14f, 28f)
+        val tileCorner = (tileHValue * 0.14f).dp
+        val tileBorder = (tileHValue * 0.09f).coerceIn(1f, 2f).dp
 
         Column(
             modifier = Modifier.size(boardW, boardH),
@@ -879,7 +885,8 @@ internal fun SingleBoard(
                             flipDelay = if (isLastSubmitted) col * 150 else null,
                             flipDuration = 500, // web tile-flip 0.5s (full board)
                             fontSize = tileFontSp,
-                            cornerRadius = 0.dp, // web single-board tiles are sharp-cornered
+                            cornerRadius = tileCorner,
+                            borderWidth = tileBorder,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -898,7 +905,8 @@ internal fun SingleBoard(
                             state = TileState.EMPTY,
                             isInvalid = isInvalid && letter.isNotEmpty(),
                             fontSize = tileFontSp,
-                            cornerRadius = 0.dp,
+                            cornerRadius = tileCorner,
+                            borderWidth = tileBorder,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -912,7 +920,7 @@ internal fun SingleBoard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     repeat(wordLen) {
-                        TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontSp, cornerRadius = 0.dp, modifier = Modifier.weight(1f))
+                        TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontSp, cornerRadius = tileCorner, borderWidth = tileBorder, modifier = Modifier.weight(1f))
                     }
                 }
             }

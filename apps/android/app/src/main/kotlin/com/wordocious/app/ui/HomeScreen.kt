@@ -151,7 +151,7 @@ fun HomeScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-    Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
+    Column(modifier = Modifier.fillMaxSize().appBackground()) {
         // (Shared AppHeader is rendered by MainScreen above all tabs.)
         Column(
             modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())

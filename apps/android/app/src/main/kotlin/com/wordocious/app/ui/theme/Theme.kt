@@ -125,7 +125,24 @@ object WTheme {
     // Accessibility flags (read in-game; set from Settings, persisted via SettingsPref).
     // Colorblind swaps correct→orange / present→blue on tiles AND keyboard (web parity).
     var colorblind by mutableStateOf(false)
-    var reducedMotion by mutableStateOf(false)
+
+    /** The in-app Settings toggle. */
+    var reducedMotionPref by mutableStateOf(false)
+
+    /**
+     * OS-level "Remove animations" (ANIMATOR_DURATION_SCALE == 0), sampled at
+     * launch by ThemePref.
+     */
+    var osReducedMotion by mutableStateOf(false)
+
+    /**
+     * Single reduced-motion source of truth. iOS ORs the in-app toggle with the
+     * system setting (`UIAccessibility.isReduceMotionEnabled`) and the web kills
+     * animation under both `[data-reduced-motion]` and `prefers-reduced-motion`.
+     * Android honored only the in-app toggle, so a user who had turned
+     * animations off system-wide still got every flip and slide.
+     */
+    val reducedMotion: Boolean get() = reducedMotionPref || osReducedMotion
 
     /** Board-tile fill per letter state. EMPTY = transparent (border only). */
     fun tileColor(state: TileState): Color = when (state) {

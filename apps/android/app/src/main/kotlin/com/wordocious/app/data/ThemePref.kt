@@ -18,7 +18,17 @@ object ThemePref {
     fun load() {
         WTheme.palette = Palettes.byKey(current())
         WTheme.colorblind = SettingsPref.get(SettingsPref.COLORBLIND, false)
-        WTheme.reducedMotion = SettingsPref.get(SettingsPref.REDUCED_MOTION, false)
+        WTheme.reducedMotionPref = SettingsPref.get(SettingsPref.REDUCED_MOTION, false)
+        // Fold in the OS accessibility setting, like iOS does with
+        // UIAccessibility.isReduceMotionEnabled. Users who disable animations
+        // system-wide expect apps to obey without hunting for an in-app toggle.
+        WTheme.osReducedMotion = runCatching {
+            android.provider.Settings.Global.getFloat(
+                App.instance.contentResolver,
+                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            ) == 0f
+        }.getOrDefault(false)
     }
 
     fun set(key: String) {

@@ -1,17 +1,25 @@
 package com.wordocious.app.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,11 +29,16 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.wordocious.app.R
 import com.wordocious.app.ui.game.GameScreen
 import com.wordocious.app.ui.theme.WTheme
 
@@ -33,14 +46,69 @@ import com.wordocious.app.ui.theme.WTheme
  * Root 4-tab shell — matches the web BottomNav (Home / Leaderboard / Profile / Records).
  * The tab bar is hidden when a game screen is active (web hides it on game pages too).
  */
-private data class TabItem(val label: String, val icon: ImageVector)
+private data class TabItem(
+    val label: String,
+    /** Filled variant — shown only while the tab is active (iOS `<icon>.fill`). */
+    val icon: ImageVector?,
+    /** Outline variant — the inactive state. */
+    val outlineIcon: ImageVector?,
+    /** Vector-asset fallback for icons Material doesn't ship (Records = crown). */
+    val drawable: Int? = null,
+)
 
 private val TABS = listOf(
-    TabItem("Home", Icons.Filled.Home),
-    TabItem("Leaderboard", Icons.Filled.EmojiEvents),
-    TabItem("Profile", Icons.Filled.Person),
-    TabItem("Records", Icons.Filled.BarChart),
+    TabItem("Home", Icons.Filled.Home, Icons.Outlined.Home),
+    TabItem("Leaderboard", Icons.Filled.EmojiEvents, Icons.Outlined.EmojiEvents),
+    TabItem("Profile", Icons.Filled.Person, Icons.Outlined.Person),
+    // iOS/web use a crown for Records; Material has no crown, so use our asset.
+    TabItem("Records", null, null, R.drawable.ic_crown),
 )
+
+/**
+ * Bottom navigation — a 1:1 port of iOS `BottomNav` (RootTabView.swift).
+ *
+ * WHY THIS IS HAND-ROLLED: Material3's `NavigationBar` draws a tonal pill
+ * behind the selected item and sits on `surface`. iOS draws neither — it uses
+ * the page background, a 1.5dp top hairline, an outline→filled icon swap, and a
+ * 4dp dot under the active label. Using the Material default made the single
+ * most permanently-visible element of the app read as a different product.
+ */
+@Composable
+private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().background(WTheme.bg),
+    ) {
+        Box(Modifier.fillMaxWidth().height(1.5.dp).background(WTheme.border))
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 2.dp).navigationBarsPadding(),
+        ) {
+            TABS.forEachIndexed { i, tab ->
+                val active = selected == i
+                val tint = if (active) WTheme.primary else WTheme.textMuted
+                Column(
+                    Modifier.weight(1f).clickableNoRipple { onSelect(i) },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    if (tab.drawable != null) {
+                        Icon(painterResource(tab.drawable), tab.label, tint = tint, modifier = Modifier.size(20.dp))
+                    } else {
+                        Icon(
+                            (if (active) tab.icon else tab.outlineIcon)!!,
+                            tab.label, tint = tint, modifier = Modifier.size(20.dp),
+                        )
+                    }
+                    Text(tab.label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = tint, maxLines = 1)
+                    // 4dp active dot — transparent when inactive so labels stay aligned.
+                    Box(
+                        Modifier.size(4.dp).clip(CircleShape)
+                            .background(if (active) WTheme.primary else Color.Transparent),
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun MainScreen() {
@@ -194,31 +262,12 @@ fun MainScreen() {
     Scaffold(
         containerColor = WTheme.bg,
         bottomBar = {
-            NavigationBar(
-                containerColor = WTheme.surface,
-                tonalElevation = androidx.compose.ui.unit.Dp.Unspecified,
-            ) {
-                TABS.forEachIndexed { i, tab ->
-                    NavigationBarItem(
-                        selected = selectedTab == i,
-                        onClick = { selectedTab = i },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
-                        label = {
-                            Text(
-                                tab.label,
-                                fontSize = 10.sp,
-                                fontWeight = if (selectedTab == i) FontWeight.Black else FontWeight.Bold,
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = WTheme.primary,
-                            selectedTextColor = WTheme.primary,
-                            unselectedIconColor = WTheme.textMuted,
-                            unselectedTextColor = WTheme.textMuted,
-                            indicatorColor = WTheme.primary.copy(alpha = 0.12f),
-                        ),
-                    )
-                }
+            // iOS mounts the ad banner and the nav in ONE bottom inset so the
+            // banner always sits directly above the nav on every tab and both
+            // disappear together on immersive game screens (RootTabView.swift).
+            Column(Modifier.fillMaxWidth()) {
+                AdBannerContainer()
+                BottomNav(selected = selectedTab, onSelect = { selectedTab = it })
             }
         },
     ) { innerPadding ->

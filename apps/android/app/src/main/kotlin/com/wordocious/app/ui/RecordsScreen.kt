@@ -69,7 +69,7 @@ fun RecordsScreen(onOpenProfile: (String) -> Unit = {}) {
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Daily", "All-Time", "You")
 
-    Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
+    Column(modifier = Modifier.fillMaxSize().appBackground()) {
         // (Shared AppHeader is above.) Page title per spec: RECORDS gradient.
         Text(
             "RECORDS",

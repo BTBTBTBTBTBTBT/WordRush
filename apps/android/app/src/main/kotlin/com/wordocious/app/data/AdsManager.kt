@@ -9,6 +9,8 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 
@@ -30,8 +32,18 @@ object AdsManager {
     /** Google TEST rewarded-interstitial unit — replace with the real Android unit. */
     private const val INTERSTITIAL_UNIT = "ca-app-pub-3940256099942544/5354046379"
 
+    /** Google TEST banner unit — replace with the real Android unit alongside the above. */
+    const val BANNER_UNIT = "ca-app-pub-3940256099942544/6300978111"
+
     /** Whether ads should show right now (enabled + not Pro) — web AdGate gate. */
     val active: Boolean get() = ENABLED && !AuthService.isProActive
+
+    /**
+     * True once the Mobile Ads SDK has actually initialized (consent resolved).
+     * The banner must not build an AdView before this or the request is dropped
+     * and the slot renders empty for the rest of the session.
+     */
+    var initialized by androidx.compose.runtime.mutableStateOf(false)
 
     private var started = false
     private var interstitial: RewardedInterstitialAd? = null
@@ -62,7 +74,7 @@ object AdsManager {
 
     private fun initAds(context: Context) {
         runCatching {
-            MobileAds.initialize(context) {}
+            MobileAds.initialize(context) { initialized = true }
             preload(context)
         }
     }
