@@ -41,3 +41,6 @@ next-env.d.ts
 # capacitor native projects (regenerate with `npx cap add ios/android`)
 apps/web/ios/
 apps/web/android/
+
+# Play Developer API service-account key (should live in ~/.android-keys, never here)
+play-publisher*.json
