@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -153,12 +154,12 @@ fun ScoreCard(me: ScoreCardPlayer, opponent: ScoreCardPlayer, isDraw: Boolean) {
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text("FINAL SCORE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, color = WTheme.textMuted)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ScoreColumn(me, Color(0xFF7C3AED), isDraw, ::clock, Modifier.weight(1f))
-            Text("VS", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.padding(top = 32.dp))
+            Text("VS", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.padding(top = 34.dp))
             ScoreColumn(opponent, Color(0xFFEC4899), isDraw, ::clock, Modifier.weight(1f))
         }
         Text(
@@ -174,15 +175,24 @@ private fun ScoreColumn(p: ScoreCardPlayer, accent: Color, isDraw: Boolean, cloc
     val highlighted = p.isWinner || isDraw
     val timePenalty = max(0.0, p.score - p.guesses)
     Column(
-        modifier.then(if (highlighted) Modifier else Modifier.graphicsLayer { alpha = 0.75f }),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp),
+        // iOS does NOT fade the losing column — it signals the loser purely by
+        // dropping the score to textMuted. The extra 0.75 alpha here dimmed that
+        // player's guesses and clock too, which iOS keeps at full strength.
+        modifier,
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            if (p.isWinner && !isDraw) Text("👑", fontSize = 10.sp)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            // iOS uses the amber crown.fill glyph, not a multicolour emoji.
+            if (p.isWinner && !isDraw) {
+                Icon(
+                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown),
+                    null, tint = Color(0xFFF59E0B), modifier = Modifier.size(10.dp),
+                )
+            }
             Text(p.name, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Text(
-            String.format("%.2f", p.score), fontSize = 34.sp, fontWeight = FontWeight.Black,
+            String.format("%.2f", p.score), fontSize = 36.sp, fontWeight = FontWeight.Black,
             color = if (highlighted) accent else WTheme.textMuted,
         )
         Text("${p.guesses} guesses + ${String.format("%.2f", timePenalty)} time", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)

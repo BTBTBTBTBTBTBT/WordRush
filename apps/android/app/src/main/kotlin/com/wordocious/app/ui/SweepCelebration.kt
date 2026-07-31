@@ -169,11 +169,18 @@ fun SweepCelebration(
                                 Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                                     // Real game icon (same as the home cards) in an accent box;
                                     // falls back to the letter glyph if the mode can't be resolved.
-                                    Box(Modifier.size(22.dp).clip(RoundedCornerShape(7.dp)).background(Color(r.accent).copy(alpha = 0.10f)),
-                                        contentAlignment = Alignment.Center) {
-                                        val card = runCatching { com.wordocious.core.GameMode.valueOf(r.dbKey) }.getOrNull()?.let { modeCardFor(it) }
+                                    val card = runCatching { com.wordocious.core.GameMode.valueOf(r.dbKey) }.getOrNull()?.let { modeCardFor(it) }
+                                    // iOS ModeIconView: accent at 8% behind an accent-tinted
+                                    // glyph, corner = box * 0.27. The letter FALLBACK is the
+                                    // other way round — a SOLID accent chip with a white
+                                    // glyph — so it stays legible without a real icon to read.
+                                    Box(
+                                        Modifier.size(22.dp).clip(RoundedCornerShape(6.dp))
+                                            .background(if (card != null) Color(r.accent).copy(alpha = 0.08f) else Color(r.accent)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
                                         if (card != null) ModeGlyph(card, tint = Color(r.accent), glyphSize = 12.sp, iconSize = 12.dp)
-                                        else Text(r.glyph, fontSize = if (r.glyph.length >= 3) 9.sp else 12.sp, fontWeight = FontWeight.Black, color = Color(r.accent))
+                                        else Text(r.glyph, fontSize = if (r.glyph.length >= 3) 9.sp else 12.sp, fontWeight = FontWeight.Black, color = Color.White)
                                     }
                                     // weight(1f) so the LABEL absorbs the squeeze, not the trailing mark: an
                                     // unweighted label ate the whole row and the win/loss ✓ was

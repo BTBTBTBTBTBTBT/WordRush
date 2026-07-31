@@ -264,6 +264,7 @@ private fun CpuChooserBody(vm: VSMatchViewModel, onGoPro: () -> Unit, ghostRun: 
                         .border(1.5.dp, Color(p.color), RoundedCornerShape(12.dp))
                         .clickableNoRipple { vm.startCpu(CpuKind.valueOf(tier.name)) }.padding(vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp), // iOS VStack(spacing: 2)
                 ) {
                     Text(p.avatar, fontSize = 20.sp)
                     Text(BotPersonas.tierLabel(tier), fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color(p.color))
