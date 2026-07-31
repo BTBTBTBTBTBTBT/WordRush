@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { Mail, Lock, User } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -25,6 +25,8 @@ export function LoginScreen() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,9 +34,23 @@ export function LoginScreen() {
     setLoading(true);
 
     if (mode === 'signup') {
+      // Confirm-password is checked HERE, not by the browser: a typo in a
+      // masked field creates an account the user can never sign into, and
+      // there is no reveal toggle to catch it by eye.
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        setLoading(false);
+        return;
+      }
       const { error } = await signUp(email, password, username);
       if (error) {
         setError(error.message);
+      } else {
+        // Email confirmation is ON, so a successful sign-up looks EXACTLY
+        // like a dead button: no session, no navigation, no message. The
+        // founder hit this on his first real sign-up — "it gives zero
+        // confirmation that anything happens". Say something.
+        setSent(true);
       }
     } else if (mode === 'reset') {
       const { error } = await resetPassword(email);
@@ -57,6 +73,7 @@ export function LoginScreen() {
     setMode(next);
     setError('');
     setSent(false);
+    setConfirmPassword('');
   };
 
   const handleGoogleSignIn = async () => {
@@ -200,20 +217,57 @@ export function LoginScreen() {
                     </button>
                   )}
                 </div>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
-                  style={{
-                    color: 'var(--color-text)',
-                    background: 'var(--color-bg)',
-                    border: '1.5px solid var(--color-border)',
-                  }}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    className="w-full px-3 py-2.5 pr-10 rounded-xl text-sm font-bold outline-none"
+                    style={{
+                      color: 'var(--color-text)',
+                      background: 'var(--color-bg)',
+                      border: '1.5px solid var(--color-border)',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {mode === 'signup' && (
+                  <div className="space-y-1.5 pt-1.5">
+                    <label className="text-xs font-extrabold flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                      <Lock className="w-3.5 h-3.5" />
+                      Confirm password
+                    </label>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
+                      style={{
+                        color: 'var(--color-text)',
+                        background: 'var(--color-bg)',
+                        border: `1.5px solid ${
+                          confirmPassword && password !== confirmPassword
+                            ? '#fca5a5'
+                            : 'var(--color-border)'
+                        }`,
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -222,7 +276,9 @@ export function LoginScreen() {
                 className="p-3 rounded-xl text-xs font-bold"
                 style={{ background: 'var(--color-win-bg, #ecfdf5)', border: '1px solid #a7f3d0', color: '#047857' }}
               >
-                Check your email — if an account exists for that address, a reset link is on its way.
+                {mode === 'signup'
+                  ? 'Account created. Check your email for a confirmation link, then sign in.'
+                  : 'Check your email — if an account exists for that address, a reset link is on its way.'}
               </div>
             )}
 
@@ -235,9 +291,15 @@ export function LoginScreen() {
               </div>
             )}
 
+            {/*
+              `sent` is only ever true after a reset or a sign-up, and switchMode
+              clears it — so disabling on it covers exactly the two cases where
+              pressing again is a mistake. Sign-up without this returns
+              "User already registered" for the account you just made.
+            */}
             <button
               type="submit"
-              disabled={loading || (mode === 'reset' && sent)}
+              disabled={loading || sent}
               className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
               style={{
                 background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
