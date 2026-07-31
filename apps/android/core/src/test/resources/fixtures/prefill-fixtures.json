@@ -2,10 +2,10 @@
   {
     "seed": "test",
     "solutions": [
-      "PENCE",
-      "CLOUT",
-      "STILL",
-      "VOWED"
+      "DROVE",
+      "POLAR",
+      "BLUFF",
+      "SPICE"
     ],
     "prefillWords": [
       "SCALL",
@@ -14,7 +14,7 @@
     ],
     "boardPrefills": [
       {
-        "solution": "PENCE",
+        "solution": "DROVE",
         "prefillGuesses": [
           {
             "word": "SCALL",
@@ -26,7 +26,7 @@
                 },
                 {
                   "letter": "C",
-                  "state": "PRESENT"
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "A",
@@ -50,7 +50,7 @@
               "tiles": [
                 {
                   "letter": "P",
-                  "state": "CORRECT"
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "I",
@@ -58,7 +58,7 @@
                 },
                 {
                   "letter": "N",
-                  "state": "CORRECT"
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "N",
@@ -82,11 +82,11 @@
                 },
                 {
                   "letter": "E",
-                  "state": "CORRECT"
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "R",
-                  "state": "ABSENT"
+                  "state": "PRESENT"
                 },
                 {
                   "letter": "S",
@@ -103,7 +103,7 @@
         ]
       },
       {
-        "solution": "CLOUT",
+        "solution": "POLAR",
         "prefillGuesses": [
           {
             "word": "SCALL",
@@ -115,7 +115,96 @@
                 },
                 {
                   "letter": "C",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
                   "state": "PRESENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "L",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "PINNA",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "P",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "I",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "N",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "N",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "A",
+                  "state": "PRESENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "MERSE",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "M",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "R",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          }
+        ]
+      },
+      {
+        "solution": "BLUFF",
+        "prefillGuesses": [
+          {
+            "word": "SCALL",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "C",
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "A",
@@ -192,7 +281,7 @@
         ]
       },
       {
-        "solution": "STILL",
+        "solution": "SPICE",
         "prefillGuesses": [
           {
             "word": "SCALL",
@@ -204,7 +293,7 @@
                 },
                 {
                   "letter": "C",
-                  "state": "ABSENT"
+                  "state": "PRESENT"
                 },
                 {
                   "letter": "A",
@@ -212,11 +301,11 @@
                 },
                 {
                   "letter": "L",
-                  "state": "CORRECT"
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "L",
-                  "state": "CORRECT"
+                  "state": "ABSENT"
                 }
               ],
               "isCorrect": false
@@ -228,7 +317,7 @@
               "tiles": [
                 {
                   "letter": "P",
-                  "state": "ABSENT"
+                  "state": "PRESENT"
                 },
                 {
                   "letter": "I",
@@ -272,96 +361,7 @@
                 },
                 {
                   "letter": "E",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          }
-        ]
-      },
-      {
-        "solution": "VOWED",
-        "prefillGuesses": [
-          {
-            "word": "SCALL",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "S",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "C",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "PINNA",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "P",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "I",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "N",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "N",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "MERSE",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "M",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "E",
-                  "state": "PRESENT"
-                },
-                {
-                  "letter": "R",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "S",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "E",
-                  "state": "ABSENT"
+                  "state": "CORRECT"
                 }
               ],
               "isCorrect": false
