@@ -52,9 +52,18 @@ DATA = os.path.join(REPO, 'apps', 'web', 'data')
 SCRIPT_DATA = os.path.join(REPO, 'scripts', 'data')
 OUT = os.path.join(REPO, 'scripts', 'out')
 SHUFFLE_SEED = 'wordocious-2026-07-08'
-DEFAULT_THRESHOLD = 2.3
+DEFAULT_THRESHOLD = 3.0
 ALLOWED_THRESHOLD = 1.0  # guess list: any corpus presence at all
-MIN_COUNT, MAX_COUNT = 2100, 3000
+# Informational only. These are NOT a target to tune the threshold towards —
+# that inversion is exactly how the bank rotted: the bar was walked down until
+# the count fit, so the bank's SIZE was setting its QUALITY. Every rarest word
+# in the 2026-07 bank sat at precisely the then-threshold (GUNNY, PAISA, SOPPY,
+# BARMY at zipf 2.30), which is the fingerprint of a floor chosen by headcount.
+#
+# The threshold is the INPUT. The count is the OUTPUT. If the count comes out
+# smaller than you hoped, that is the honest answer — Wordle ships ~2,300
+# answers and has run six years on one puzzle a day.
+COMFORTABLE_MIN = 1200   # ~3.3 years of a once-daily mode before any repeat
 
 # Every bundle location that ships solutions.json (server reads the web copy).
 BUNDLE_DIRS = [
@@ -325,7 +334,7 @@ def main():
         return
 
     print('threshold sweep (kept counts):')
-    for t in (2.1, 2.3, 2.5, 2.7):
+    for t in (2.5, 3.0, 3.2, 3.5, 4.0):
         k, _, _, _ = curate(t, args.promote)
         print(f'  zipf>={t}: {len(k)} words')
 
@@ -336,8 +345,13 @@ def main():
           f'(promoted-in: {len(promoted)}, cut-from-legacy: {len(cut)})')
     print(f'review files → {os.path.relpath(OUT, REPO)}/(kept|cut|promoted).txt')
 
-    if not (MIN_COUNT <= len(kept) <= MAX_COUNT):
-        print(f'\n!! kept={len(kept)} outside [{MIN_COUNT},{MAX_COUNT}] — adjust --threshold')
+    years = len(kept) / 365.0
+    print(f'\n  bank size {len(kept)} -> {years:.1f} years before a Classic answer repeats')
+    if len(kept) < COMFORTABLE_MIN:
+        print(f'  !! below {COMFORTABLE_MIN}: repeats get noticeable. Consider a LOWER bar')
+        print( '     only if you accept the rarer words that come with it.')
+    else:
+        print( '  Size is comfortable. Do NOT lower the threshold to grow it further.')
         if args.write:
             sys.exit('refusing to --write an out-of-range list')
 
