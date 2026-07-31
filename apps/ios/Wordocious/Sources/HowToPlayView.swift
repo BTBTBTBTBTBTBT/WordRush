@@ -35,12 +35,18 @@ final class HowToPlayService: ObservableObject {
         }
     }
 
-    /// Fetch once per launch; cached copy shows immediately, this silently
-    /// refreshes it in the background and persists the fresh payload.
+    /// Cached copy shows immediately; this refreshes it and persists the result.
+    ///
+    /// Was once-per-launch AND on `URLSession.shared`, which honours the
+    /// response's `max-age=3600` — so a backgrounded app never refetched, and a
+    /// cold launch could still serve an hour-old copy. That is two layers of
+    /// staleness over content whose whole point is that it updates on a deploy
+    /// without a release. See ContentService.load for the same fix.
     func load() async {
-        guard !loaded else { return }
         guard let url = URL(string: "https://wordocious.com/api/howtoplay") else { return }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         sections = payload.sections
         loaded = true

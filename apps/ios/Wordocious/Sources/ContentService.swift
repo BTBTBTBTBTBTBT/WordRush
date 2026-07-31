@@ -31,11 +31,23 @@ final class ContentService: ObservableObject {
 
     init() { if let p = Self.readCache() { apply(p) } }
 
-    /// Fetch once per launch (after the first success the cache also seeds init).
+    /// Refresh the remote copy. The on-disk cache seeds `init`, so the screen
+    /// still renders instantly — this only decides how fast an EDIT reaches a
+    /// phone.
+    ///
+    /// It used to return early once per launch AND go through
+    /// `URLSession.shared`, which honours the response's `max-age=3600`. Two
+    /// layers of staleness on top of each other: a backgrounded app never
+    /// refetched at all, and even a cold launch could serve an hour-old copy.
+    /// Editing this content is supposed to be a deploy, not a release — a new
+    /// How to Play section was live on the web and still missing on the phone.
+    /// Fetch every time, and go past the URL cache to do it; the payload is a
+    /// few KB and these screens are opened rarely.
     func load() async {
-        if loaded { return }
         guard let url = URL(string: "https://wordocious.com/api/content") else { return }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
               let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return }
         loaded = true
         apply(payload)
