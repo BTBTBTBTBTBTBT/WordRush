@@ -83,8 +83,8 @@ export default function AdminReferralsPage() {
     { label: 'Open Invites', value: stats.openPending, icon: Users, color: 'text-blue-600 bg-blue-50', drill: { metric: 'referrals', key: 'pending' } },
     { label: 'Friends Joined', value: stats.redeemed, icon: Users, color: 'text-green-600 bg-green-50', drill: { metric: 'referrals', key: 'redeemed' } },
     { label: 'Subscribed', value: stats.converted, icon: Crown, color: 'text-amber-600 bg-amber-50', drill: { metric: 'referrals', key: 'converted' } },
-    { label: 'Join → Sub Rate', value: `${stats.conversionRate}%`, icon: Percent, color: 'text-pink-600 bg-pink-50' },
-    { label: 'Pro Days Granted', value: stats.proDaysGranted, icon: CalendarPlus, color: 'text-indigo-600 bg-indigo-50' },
+    { label: 'Join → Sub Rate', value: `${stats.conversionRate}%`, icon: Percent, color: 'text-pink-600 bg-pink-50', drill: { metric: 'referrals', key: 'converted' } },
+    { label: 'Pro Days Granted', value: stats.proDaysGranted, icon: CalendarPlus, color: 'text-indigo-600 bg-indigo-50', drill: { metric: 'referrals', key: 'redeemed' } },
   ] : [];
 
   return (

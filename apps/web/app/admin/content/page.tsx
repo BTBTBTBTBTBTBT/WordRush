@@ -22,11 +22,6 @@ export default function AdminContentPage() {
   const [formType, setFormType] = useState('info');
   const [formExpiry, setFormExpiry] = useState('');
 
-  // Daily seed override
-  const [seedDay, setSeedDay] = useState('');
-  const [seedMode, setSeedMode] = useState('DUEL');
-  const [seedWord, setSeedWord] = useState('');
-  const [seedStatus, setSeedStatus] = useState('');
   const [pushStatus, setPushStatus] = useState('');
   const [pushSending, setPushSending] = useState(false);
 
@@ -88,25 +83,6 @@ export default function AdminContentPage() {
     fetchAnnouncements();
   };
 
-  const overrideSeed = async () => {
-    if (!seedDay || !seedWord) return;
-    const seed = `daily-${seedDay}-${seedMode}-override`;
-    const res = await fetch('/api/admin/games/seeds', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        day: seedDay, game_mode: seedMode, seed,
-        solutions: [seedWord.toUpperCase()],
-      }),
-    });
-    if (res.ok) {
-      setSeedStatus(`Seed set for ${seedDay} (${seedMode}): ${seedWord.toUpperCase()}`);
-      setSeedWord('');
-    } else {
-      setSeedStatus('Failed to set seed');
-    }
-    setTimeout(() => setSeedStatus(''), 3000);
-  };
 
   return (
     <div className="space-y-6">
@@ -197,43 +173,11 @@ export default function AdminContentPage() {
         )}
       </div>
 
-      {/* Daily Seed Override */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Daily Word Override</h2>
-        <p className="text-xs text-gray-500 mb-3">Override the daily puzzle word for a future date. This upserts into the daily_seeds table.</p>
-        <div className="flex gap-2 flex-wrap">
-          <input
-            type="date" value={seedDay} onChange={e => setSeedDay(e.target.value)}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium"
-          />
-          <select
-            value={seedMode} onChange={e => setSeedMode(e.target.value)}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium"
-          >
-            <option value="DUEL">Classic</option>
-            <option value="QUORDLE">QuadWord</option>
-            <option value="OCTORDLE">OctoWord</option>
-            <option value="SEQUENCE">Succession</option>
-            <option value="RESCUE">Deliverance</option>
-            <option value="GAUNTLET">Gauntlet</option>
-            <option value="PROPERNOUNDLE">ProperNoundle</option>
-          </select>
-          <input
-            type="text" value={seedWord} onChange={e => setSeedWord(e.target.value)}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium uppercase"
-            placeholder="WORD"
-            maxLength={5}
-          />
-          <button
-            onClick={overrideSeed}
-            disabled={!seedDay || !seedWord}
-            className="px-4 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700 disabled:opacity-50"
-          >
-            Override
-          </button>
-        </div>
-        {seedStatus && <p className="text-xs text-green-600 font-medium mt-2">{seedStatus}</p>}
-      </div>
+      {/* The old "Daily Word Override" card was removed 2026-08-01: it wrote
+          daily_seeds rows that NO client reads — every platform derives the
+          day's words deterministically from the date hash against bundled
+          lists, so the override was a placebo (and one word is meaningless for
+          multi-board modes anyway). The real pipeline lives at /admin/words. */}
 
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <h2 className="text-sm font-black text-gray-900 mb-1">Push notifications</h2>

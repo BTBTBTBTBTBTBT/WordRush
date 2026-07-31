@@ -496,5 +496,29 @@ export async function GET(request: NextRequest) {
     ], rows);
   }
 
+  // ── Messaging: registered push devices ────────────────────────────────────
+  if (metric === 'tokens') {
+    let q = admin.from('device_tokens').select('user_id, platform, created_at').order('created_at', { ascending: false }).limit(300);
+    if (key) q = q.eq('platform', key);
+    const { data } = await q;
+    const names = await nameOf((data ?? []).map((r) => r.user_id));
+    const rows = (data ?? []).map((r) => ({
+      userId: r.user_id,
+      player: names.get(r.user_id) ?? r.user_id,
+      platform: r.platform,
+      registered: fmtTime(r.created_at),
+    }));
+    return ok(
+      key ? `Push devices — ${key}` : 'Push devices',
+      `${rows.length} registered device${rows.length === 1 ? '' : 's'}`,
+      [
+        { key: 'player', label: 'Player' },
+        { key: 'platform', label: 'Platform' },
+        { key: 'registered', label: 'Registered' },
+      ],
+      rows,
+    );
+  }
+
   return NextResponse.json({ error: `Unknown metric "${metric}"` }, { status: 400 });
 }

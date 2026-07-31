@@ -11,7 +11,7 @@ interface OpsData {
     recent: { event_id: string; source: string; processed_at: string }[];
     byDay: { day: string; appstore: number; playstore: number }[];
   };
-  suspects: { username: string; day: string; mode: string; playType: string; score: number; reasons: string[] }[];
+  suspects: { userId: string; username: string; day: string; mode: string; playType: string; score: number; reasons: string[] }[];
   vsHealth: {
     matches14d: number;
     completed14d: number;
@@ -115,7 +115,9 @@ export default function AdminOpsPage() {
             <tbody>
               {data.suspects.map((s, i) => (
                 <tr key={i} className="border-b border-gray-50">
-                  <td className="px-4 py-2 font-black text-gray-900">{s.username}</td>
+                  <td className="px-4 py-2 font-black text-gray-900">
+                    <a href={`/admin/users/${s.userId}`} className="hover:text-purple-600">{s.username}</a>
+                  </td>
                   <td className="px-4 py-2 font-bold text-gray-500">{s.day}</td>
                   <td className="px-4 py-2 font-bold text-gray-700">{s.mode} <span className="text-gray-400">({s.playType})</span></td>
                   <td className="px-4 py-2 font-black text-red-500">{s.score}</td>

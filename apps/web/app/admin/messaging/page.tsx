@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Megaphone, BellRing, Send } from 'lucide-react';
+import { useDrill } from '../components/drill-panel';
 
 // Monitoring for the two outbound channels: announcements (authored on the
 // Content page, displayed by all three apps) and push notifications (APNs/FCM,
@@ -28,6 +29,7 @@ const STATE_STYLES: Record<string, string> = {
 };
 
 export default function AdminMessagingPage() {
+  const drill = useDrill();
   const [data, setData] = useState<MessagingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -65,19 +67,19 @@ export default function AdminMessagingPage() {
           <BellRing className="w-4 h-4" /> Push Reach
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          <div>
+          <button type="button" onClick={() => drill({ metric: 'tokens' })} className="rounded hover:bg-gray-50 py-1">
             <p className="text-2xl font-black text-gray-900">{data.push.totalUsers}</p>
             <p className="text-xs font-bold text-gray-400">reachable users</p>
-          </div>
-          <div>
+          </button>
+          <button type="button" onClick={() => drill({ metric: 'tokens' })} className="rounded hover:bg-gray-50 py-1">
             <p className="text-2xl font-black text-gray-900">{data.push.totalTokens}</p>
             <p className="text-xs font-bold text-gray-400">devices</p>
-          </div>
+          </button>
           {Object.entries(data.push.byPlatform).map(([platform, v]) => (
-            <div key={platform}>
+            <button type="button" key={platform} onClick={() => drill({ metric: 'tokens', key: platform })} className="rounded hover:bg-gray-50 py-1">
               <p className="text-2xl font-black text-gray-900">{v.users}</p>
               <p className="text-xs font-bold text-gray-400 uppercase">{platform} users ({v.tokens} devices)</p>
-            </div>
+            </button>
           ))}
         </div>
         <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-3 text-xs font-medium">

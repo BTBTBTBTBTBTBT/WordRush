@@ -22,34 +22,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ seeds: data || [], day });
 }
 
-export async function POST(request: NextRequest) {
-  const auth = await verifyAdmin(request);
-  if ('error' in auth) return auth.error;
-
-  const admin = getAdminSupabase();
-  const { day, game_mode, seed, solutions } = await request.json();
-
-  if (!day || !game_mode || !seed) {
-    return NextResponse.json({ error: 'day, game_mode, and seed are required' }, { status: 400 });
-  }
-
-  // Upsert — override if exists, create if not
-  const { data, error } = await admin
-    .from('daily_seeds')
-    .upsert(
-      { day, game_mode, seed, solutions: solutions || [] },
-      { onConflict: 'day,game_mode' }
-    )
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  await admin.from('admin_audit_log').insert({
-    admin_id: auth.admin.id,
-    action: 'override_daily_seed',
-    details: { day, game_mode, seed },
-  });
-
-  return NextResponse.json({ seed: data });
-}
+// The POST override handler was removed 2026-08-01 with the admin "Daily Word
+// Override" card: it upserted rows no client ever reads (all platforms derive
+// daily words from the date hash against bundled lists). GET stays — the admin
+// Games page lists the day's seed rows with it.

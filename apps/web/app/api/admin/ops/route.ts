@@ -76,6 +76,7 @@ export async function GET(request: NextRequest) {
       if (r.time_seconds >= 172800) reasons.push('time at 48h clamp (real value unknowable)');
       if ((r.vs_games ?? 0) >= 1000) reasons.push('vs_games at clamp ceiling');
       return {
+        userId: r.user_id,
         username: (r as { profiles?: { username?: string } }).profiles?.username ?? r.user_id,
         day: String(r.day).slice(0, 10),
         mode: r.game_mode,
