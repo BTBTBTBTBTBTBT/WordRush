@@ -13,8 +13,11 @@ type Col = { key: string; label: string };
 const iso = (d: Date) => d.toISOString();
 const dayStart = (key: string) => `${key}T00:00:00.000Z`;
 const dayEnd = (key: string) => `${key}T23:59:59.999Z`;
+// ALWAYS include the year. The first version omitted it, "Jun 30, 9:47 PM"
+// read as a lapsed subscription when it was Jun 30 of NEXT year, and a false
+// "three subscribers expired" alarm cost an hour of chasing a healthy cron.
 const fmtTime = (t: string) =>
-  new Date(t).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  new Date(t).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 export async function GET(request: NextRequest) {
   const auth = await verifyAdmin(request);
