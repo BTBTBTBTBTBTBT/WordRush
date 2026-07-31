@@ -1,7 +1,7 @@
 import { GameState, GameAction, GameMode, GameStatus, BoardState, GauntletStageConfig, GauntletStageResult, GAUNTLET_STAGES, GAUNTLET_TOTAL_SOLUTIONS } from './types';
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from './seed';
 import { evaluateGuess } from './evaluator';
-import { isValidWord, getAllowedWords } from './dictionary';
+import { isValidWord, getAllowedWords, getSolutionPoolForDate } from './dictionary';
 import { generatePrefillGuesses, generatePrefillWords } from './prefill';
 
 export function initializeGame(seed: string, mode: GameMode): GameState {
@@ -25,8 +25,13 @@ function createStageBoardsFromSolutions(
   const boards = solutions.map(sol => createBoardState(sol, stage.maxGuesses));
 
   if (stage.hasPrefill) {
-    const allowedWords = getAllowedWords();
-    const prefillWords = generatePrefillWords(seed, solutions, allowedWords);
+    // Prefills come from the curated ANSWER bank, not the allowed-guess list.
+    // The guess list is ~13k Scrabble-dictionary entries; drawing from it served
+    // PASSO / LYTTA / HOGGY as the three "clues" on 2026-07-30 — words no
+    // ordinary player knows, which makes the clue rows useless and the mode
+    // look broken. Same bug the bot filler pool had.
+    const prefillPool = getSolutionPoolForDate(null);
+    const prefillWords = generatePrefillWords(seed, solutions, prefillPool);
     boards.forEach((board) => {
       board.prefilledGuesses = generatePrefillGuesses(prefillWords, board.solution);
     });
@@ -117,8 +122,13 @@ export function createInitialState(seed: string, mode: GameMode): GameState {
   const boards = solutions.map(sol => createBoardState(sol, maxGuesses));
 
   if (mode === GameMode.RESCUE) {
-    const allowedWords = getAllowedWords();
-    const prefillWords = generatePrefillWords(seed, solutions, allowedWords);
+    // Prefills come from the curated ANSWER bank, not the allowed-guess list.
+    // The guess list is ~13k Scrabble-dictionary entries; drawing from it served
+    // PASSO / LYTTA / HOGGY as the three "clues" on 2026-07-30 — words no
+    // ordinary player knows, which makes the clue rows useless and the mode
+    // look broken. Same bug the bot filler pool had.
+    const prefillPool = getSolutionPoolForDate(null);
+    const prefillWords = generatePrefillWords(seed, solutions, prefillPool);
     boards.forEach((board) => {
       board.prefilledGuesses = generatePrefillGuesses(prefillWords, board.solution);
     });
@@ -407,8 +417,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const newBoard = createBoardState(newSolution, stageConfig.maxGuesses);
 
       if (stageConfig.hasPrefill) {
-        const allowedWords = getAllowedWords();
-        const prefillWords = generatePrefillWords(replacementSeed, [newSolution], allowedWords);
+        // Answer bank, not the guess list — see createInitialState.
+        const prefillWords = generatePrefillWords(replacementSeed, [newSolution], getSolutionPoolForDate(null));
         newBoard.prefilledGuesses = generatePrefillGuesses(prefillWords, newSolution);
       }
 

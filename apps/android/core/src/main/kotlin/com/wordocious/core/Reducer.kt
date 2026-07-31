@@ -21,7 +21,7 @@ private fun createBoardState(solution: String, maxGuesses: Int = 6): BoardState 
 private fun createStageBoardsFromSolutions(seed: String, stage: GauntletStageConfig, solutions: List<String>): List<BoardState> {
     val boards = solutions.map { createBoardState(it, stage.maxGuesses) }
     if (!stage.hasPrefill) return boards
-    val prefillWords = generatePrefillWords(seed, solutions, GameDictionary.getAllowedWords())
+    val prefillWords = generatePrefillWords(seed, solutions, GameDictionary.solutionPool(null))
     return boards.map { it.copy(prefilledGuesses = generatePrefillGuesses(prefillWords, it.solution)) }
 }
 
@@ -57,7 +57,7 @@ fun createInitialState(seed: String, mode: GameMode): GameState {
         GameMode.DUEL_7 -> simpleLen(1, 8, 7)
         GameMode.RESCUE -> {
             val solutions = generateSolutionsFromSeed(seed, 4)
-            val prefillWords = generatePrefillWords(seed, solutions, GameDictionary.getAllowedWords())
+            val prefillWords = generatePrefillWords(seed, solutions, GameDictionary.solutionPool(null))
             val boards = solutions.map {
                 createBoardState(it, 6).copy(prefilledGuesses = generatePrefillGuesses(prefillWords, it))
             }
@@ -236,7 +236,7 @@ private fun reduceBlackout(state: GameState, boardIndex: Int): GameState {
     val stageConfig = g.stages[g.currentStage]
     var newBoard = createBoardState(newSolution, stageConfig.maxGuesses)
     if (stageConfig.hasPrefill) {
-        val prefillWords = generatePrefillWords(replacementSeed, listOf(newSolution), GameDictionary.getAllowedWords())
+        val prefillWords = generatePrefillWords(replacementSeed, listOf(newSolution), GameDictionary.solutionPool(null))
         newBoard = newBoard.copy(prefilledGuesses = generatePrefillGuesses(prefillWords, newSolution))
     }
     val newBoards = state.boards.toMutableList().also { it[boardIndex] = newBoard }

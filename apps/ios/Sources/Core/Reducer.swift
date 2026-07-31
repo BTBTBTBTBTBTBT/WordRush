@@ -19,7 +19,7 @@ private func createStageBoardsFromSolutions(seed: String, stage: GauntletStageCo
 
     if stage.hasPrefill {
         let allowedWords = dict.getAllowedWords()
-        let prefillWords = generatePrefillWords(seed: seed, solutions: solutions, allowedWords: allowedWords)
+        let prefillWords = generatePrefillWords(seed: seed, solutions: solutions, allowedWords: GameDictionary.shared.solutionPool(forDateKey: nil))
         for i in 0..<boards.count {
             boards[i].prefilledGuesses = generatePrefillGuesses(words: prefillWords, solution: boards[i].solution)
         }
@@ -91,7 +91,7 @@ public func createInitialState(seed: String, mode: GameMode) -> GameState {
         var boards = solutions.map { createBoardState(solution: $0, maxGuesses: 6) }
         let dict = GameDictionary.shared
         let allowedWords = dict.getAllowedWords()
-        let prefillWords = generatePrefillWords(seed: seed, solutions: solutions, allowedWords: allowedWords)
+        let prefillWords = generatePrefillWords(seed: seed, solutions: solutions, allowedWords: GameDictionary.shared.solutionPool(forDateKey: nil))
         for i in 0..<boards.count {
             boards[i].prefilledGuesses = generatePrefillGuesses(words: prefillWords, solution: boards[i].solution)
         }
@@ -333,7 +333,7 @@ public func gameReducer(state: GameState, action: GameAction) -> GameState {
         if stageConfig.hasPrefill {
             let dict = GameDictionary.shared
             let allowedWords = dict.getAllowedWords()
-            let prefillWords = generatePrefillWords(seed: replacementSeed, solutions: [newSolution], allowedWords: allowedWords)
+            let prefillWords = generatePrefillWords(seed: replacementSeed, solutions: [newSolution], allowedWords: GameDictionary.shared.solutionPool(forDateKey: nil))
             newBoard.prefilledGuesses = generatePrefillGuesses(words: prefillWords, solution: newSolution)
         }
 
