@@ -297,7 +297,17 @@ class GameViewModel(
         val committedBoardIndex = if (isSequentialStage)
             before.boards.indexOfFirst { it.status == GameStatus.PLAYING }.coerceAtLeast(0)
         else 0
-        val after = gameReducer(before, GameAction.SubmitGuess(guess, applyToAll = applyToAll))
+        // Pass the index rather than letting the reducer default it. Its fallback
+        // is `a.boardIndex ?: state.currentBoardIndex` — and currentBoardIndex is
+        // never advanced by anything, so ANY caller that reaches the single-board
+        // path on a sequential stage silently loses every guess after the first
+        // solve (board 0 is WON, and the reducer returns state unchanged, which
+        // surfaces as "Not in word list"). Callers have gotten `applyToAll` wrong
+        // twice now; make the routing correct even when they do.
+        val after = gameReducer(
+            before,
+            GameAction.SubmitGuess(guess, boardIndex = committedBoardIndex, applyToAll = applyToAll),
+        )
         if (after === before || after == before) { reject("Not in word list"); return false } // dictionary-rejected
         _invalidWord.value = false
         _rejectMessage.value = null

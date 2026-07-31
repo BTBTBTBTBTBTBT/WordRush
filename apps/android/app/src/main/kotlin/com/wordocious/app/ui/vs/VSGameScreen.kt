@@ -641,7 +641,13 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
             letterStates = letterStates,
             onKey = { game.typeLetter(it) },
             onDelete = { game.deleteLetter() },
-            onEnter = { game.submit(applyToAll = useQuadrant) },
+            // applyToAll tracks BOARD COUNT, not the keyboard layout. They differ
+            // on exactly one case — a sequential stage — and passing useQuadrant
+            // here sent VS Succession guesses down the single-board path, where
+            // the reducer falls back to currentBoardIndex (always 0, already WON)
+            // and drops every guess. Same stall the solo screen had; solo already
+            // uses `multiBoard`, and iOS uses `isMultiBoard`.
+            onEnter = { game.submit(applyToAll = multiBoard) },
             perBoardStates = perBoardStates,
         )
         Spacer(Modifier.height(6.dp))

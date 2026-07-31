@@ -76,4 +76,46 @@ class ReducerTest {
         assertEquals(1, s.gauntlet!!.stageResults.size)
         assertEquals(GameStatus.WON, s.gauntlet!!.stageResults[0].status)
     }
+
+    /**
+     * The Succession trap, pinned. A sequential stage leaves EVERY unsolved board
+     * PLAYING, and nothing anywhere advances `currentBoardIndex` — so a guess that
+     * reaches the single-board path defaults to board 0, finds it already WON, and
+     * the reducer returns state unchanged. The UI reports that as "Not in word
+     * list", which is what a stalled Succession stage actually looks like.
+     *
+     * Both call routes must survive board 0 being solved: applyToAll (what the
+     * screens send for any multi-board stage) and an explicit boardIndex (what
+     * GameViewModel.submit now always passes).
+     */
+    @Test
+    fun sequential_stage_keeps_accepting_guesses_after_board0_is_solved() {
+        var s = createInitialState("test", GameMode.SEQUENCE)
+        assert(s.boards.size > 1) { "SEQUENCE must be multi-board for this test to mean anything" }
+
+        // Solve board 0 the way the screens do.
+        s = gameReducer(s, GameAction.SubmitGuess(s.boards[0].solution, applyToAll = true))
+        assertEquals(GameStatus.WON, s.boards[0].status)
+        assertEquals(GameStatus.PLAYING, s.boards[1].status)
+        // currentBoardIndex is the trap: it did NOT move.
+        assertEquals(0, s.currentBoardIndex)
+
+        // Route 1 — applyToAll. Must land on the still-playing board 1.
+        val before1 = s.boards[1].guesses.size
+        s = gameReducer(s, GameAction.SubmitGuess(s.boards[1].solution, applyToAll = true))
+        assert(s.boards[1].guesses.size > before1) { "applyToAll dropped the guess after board 0 was won" }
+        assertEquals(GameStatus.WON, s.boards[1].status)
+
+        // Route 2 — explicit index, the single-board path. Omitting boardIndex
+        // here would silently no-op; that omission is the bug this pins.
+        val active = s.boards.indexOfFirst { it.status == GameStatus.PLAYING }
+        assert(active > 0) { "expected a later board to still be playing" }
+        val before2 = s.boards[active].guesses.size
+        s = gameReducer(
+            s,
+            GameAction.SubmitGuess(s.boards[active].solution, boardIndex = active, applyToAll = false),
+        )
+        assert(s.boards[active].guesses.size > before2) { "explicit boardIndex dropped the guess" }
+        assertEquals(GameStatus.WON, s.boards[active].status)
+    }
 }
