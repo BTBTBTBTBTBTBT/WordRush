@@ -370,12 +370,13 @@ object ShareImage {
             val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = (if (stageWon) 0xFFF5F3FF else 0xFFFEF2F2).toInt()
             }
-            c.drawRoundRect(rect, 18f, 18f, fill)
+            // iOS gauntletChip: cornerRadius 16, stroke 3.
+            c.drawRoundRect(rect, 16f, 16f, fill)
             val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE; strokeWidth = 3f
                 color = (if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
             }
-            c.drawRoundRect(rect, 18f, 18f, stroke)
+            c.drawRoundRect(rect, 16f, 16f, stroke)
 
             p.typeface = black; p.isFakeBoldText = false
             p.textAlign = Paint.Align.LEFT
@@ -388,9 +389,9 @@ object ShareImage {
             c.drawText("$solved/$boardCount boards · ${res?.guesses ?: 0} guesses", rect.left + 80f, rect.centerY() + 24f, p)
             p.typeface = black
             p.textAlign = Paint.Align.RIGHT
-            p.textSize = 56f
+            p.textSize = 48f   // iOS gauntletChip mark is 48, not 56
             p.color = (if (stageWon) 0xFF7C3AED else 0xFFDC2626).toInt()
-            c.drawText(if (stageWon) "✓" else "✗", rect.right - 28f, rect.centerY() + 20f, p)
+            c.drawText(if (stageWon) "✓" else "✗", rect.right - 28f, rect.centerY() + 18f, p)
             p.textAlign = Paint.Align.CENTER
         }
     }
