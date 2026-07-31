@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.R
 import com.wordocious.app.data.AuthService
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import com.wordocious.app.ui.theme.WTheme
 
 /**
@@ -62,36 +65,63 @@ fun AppHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // iOS shrinks the wordmark rather than clipping it
-        // (`.minimumScaleFactor(0.6)`), so a Pro badge + streak + shield pill can
-        // never push the trailing controls off the row. Compose 1.7 has no
-        // autoSize, so step the size down until it stops overflowing — 12sp is
-        // the same 0.6 floor.
-        var wordmarkSize by remember { mutableStateOf(20.sp) }
-        Text(
-            "WORDOCIOUS",
-            fontSize = wordmarkSize, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
-            style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier.weight(1f, fill = false),
-            onTextLayout = { result ->
-                if (result.hasVisualOverflow && wordmarkSize > 12.sp) {
-                    wordmarkSize = (wordmarkSize.value - 1f).coerceAtLeast(12f).sp
+        // Wordmark + PRO badge share one weighted cell that fills all the space
+        // the trailing pills leave. That fill is what right-aligns the pills —
+        // it replaces the old `Spacer(Modifier.weight(1f))`, which was half the
+        // bug: the spacer and the wordmark BOTH had weight(1f), so the title was
+        // only ever allocated HALF the leftover width and got clipped by the
+        // parent long before it tried to shrink.
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            BoxWithConstraints(Modifier.weight(1f, fill = false)) {
+                // The other half of the bug: the old code shrank on
+                // `hasVisualOverflow`, which NEVER fires here. With
+                // softWrap = false the Text measures at its INTRINSIC width and
+                // is then clipped by the parent's constraint, so as far as the
+                // Text is concerned it laid out fine — it reported no overflow
+                // and never stepped down. The tester saw "WORDOCIC".
+                //
+                // Measure directly instead, which also converges in one pass
+                // rather than one recomposition per lost sp. 12sp floor = iOS's
+                // .minimumScaleFactor(0.6) on a 20pt wordmark.
+                val measurer = rememberTextMeasurer()
+                val avail = constraints.maxWidth
+                val fitted = remember(avail, measurer) {
+                    var size = 20f
+                    while (size > 12f) {
+                        val w = measurer.measure(
+                            AnnotatedString("WORDOCIOUS"),
+                            TextStyle(fontSize = size.sp, fontWeight = FontWeight.Black,
+                                      letterSpacing = 0.5.sp, fontFamily = Nunito),
+                            maxLines = 1, softWrap = false,
+                        ).size.width
+                        if (w <= avail) break
+                        size -= 1f
+                    }
+                    size.sp
                 }
-            },
-        )
-        if (AuthService.isProActive) {
-            Text(
-                "PRO",
-                fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = Color.White,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            )
+                Text(
+                    "WORDOCIOUS",
+                    fontSize = fitted, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
+                    style = TextStyle(brush = WTheme.wordmarkGradient, fontFamily = Nunito),
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
+            if (AuthService.isProActive) {
+                Text(
+                    "PRO",
+                    fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp, color = Color.White,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Brush.linearGradient(listOf(Color(0xFFF59E0B), Color(0xFFD97706))))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                )
+            }
         }
-        Spacer(Modifier.weight(1f))
 
         var menuOpen by remember { mutableStateOf(false) }
         var streakOpen by remember { mutableStateOf(false) }

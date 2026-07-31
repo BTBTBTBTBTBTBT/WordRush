@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -208,7 +209,13 @@ fun EditProfileScreen(onDone: () -> Unit) {
         )
     }
 
-    Column(Modifier.fillMaxSize().background(WTheme.bg)) {
+    // statusBarsPadding: this screen paints its own gradient bar at y=0 and
+    // does NOT hand-roll a top inset the way the game surfaces do, so under
+    // targetSdk 35 edge-to-edge the clock sat on top of Cancel / EDIT PROFILE
+    // / Save. The root fix in MainActivity covers the NAVIGATION bar only —
+    // adding status-bar padding there would double the game screens' own
+    // 48dp. Reported by the Play tester on the profile editor.
+    Column(Modifier.fillMaxSize().background(WTheme.bg).statusBarsPadding()) {
         Box(Modifier.fillMaxWidth().height(6.dp).background(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899), Color(0xFFFBBF24)))))
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("Cancel", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.clickableNoRipple(onDone))
