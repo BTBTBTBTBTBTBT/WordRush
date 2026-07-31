@@ -11,8 +11,11 @@ export async function GET(request: NextRequest) {
   const admin = getAdminSupabase();
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get('limit') || '20');
-  // Mode filter follows the page's dropdown; 'ALL' (or absent) means everything.
+  // Filters follow the page's dropdowns; 'ALL' (or absent) means everything.
+  // Solo vs VS uses the codebase's canonical rule (MatchStatsService et al.):
+  // a solo game is a matches row with player2_id NULL; VS has an opponent.
   const mode = searchParams.get('mode') || 'ALL';
+  const playType = searchParams.get('play_type') || 'vs';
 
   let query = admin
     .from('matches')
@@ -23,6 +26,8 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(limit);
   if (mode !== 'ALL') query = query.eq('game_mode', mode);
+  if (playType === 'solo') query = query.is('player2_id', null);
+  else query = query.not('player2_id', 'is', null);
 
   const { data, error } = await query;
 

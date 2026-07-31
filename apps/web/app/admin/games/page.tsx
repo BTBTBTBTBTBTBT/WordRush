@@ -25,7 +25,7 @@ export default function AdminGamesPage() {
     Promise.all([
       fetch(`/api/admin/games/leaderboard?day=${day}&mode=${mode}&play_type=${playType}`).then(r => r.json()),
       fetch(`/api/admin/games/seeds?day=${day}`).then(r => r.json()),
-      fetch(`/api/admin/games/matches?limit=15&mode=${mode}`).then(r => r.json()),
+      fetch(`/api/admin/games/matches?limit=15&mode=${mode}&play_type=${playType}`).then(r => r.json()),
     ]).then(([lb, sd, mt]) => {
       setLeaderboard(lb.results || []);
       setSeeds(sd.seeds || []);
@@ -110,7 +110,7 @@ export default function AdminGamesPage() {
       {/* Recent VS Matches */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-          <Swords className="w-4 h-4" /> Recent VS Matches{mode !== 'ALL' ? ` — ${modeLabel(mode)}` : ''}
+          <Swords className="w-4 h-4" /> Recent {playType === 'solo' ? 'Solo Games' : 'VS Matches'}{mode !== 'ALL' ? ` — ${modeLabel(mode)}` : ''}
         </h2>
         {matches.length === 0 ? (
           <p className="text-sm text-gray-400">No matches yet.</p>
@@ -120,9 +120,9 @@ export default function AdminGamesPage() {
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="text-left px-3 py-2 font-bold text-gray-500">Mode</th>
-                  <th className="text-left px-3 py-2 font-bold text-gray-500">Player 1</th>
-                  <th className="text-left px-3 py-2 font-bold text-gray-500">Player 2</th>
-                  <th className="text-left px-3 py-2 font-bold text-gray-500">Winner</th>
+                  <th className="text-left px-3 py-2 font-bold text-gray-500">{playType === 'solo' ? 'Player' : 'Player 1'}</th>
+                  {playType !== 'solo' && <th className="text-left px-3 py-2 font-bold text-gray-500">Player 2</th>}
+                  {playType !== 'solo' && <th className="text-left px-3 py-2 font-bold text-gray-500">Winner</th>}
                   <th className="text-left px-3 py-2 font-bold text-gray-500">Date</th>
                 </tr>
               </thead>
@@ -139,14 +139,18 @@ export default function AdminGamesPage() {
                     <td className="px-3 py-2">
                       <a href={`/admin/users/${m.player1_id}`} className="text-purple-600 hover:underline">{p1}</a>
                     </td>
-                    <td className="px-3 py-2">
-                      {m.player2_id ? (
-                        <a href={`/admin/users/${m.player2_id}`} className="text-purple-600 hover:underline">{p2}</a>
-                      ) : '-'}
-                    </td>
-                    <td className="px-3 py-2 font-bold">
-                      {winner ? <span className="text-green-600">{winner}</span> : <span className="text-gray-400">Draw</span>}
-                    </td>
+                    {playType !== 'solo' && (
+                      <td className="px-3 py-2">
+                        {m.player2_id ? (
+                          <a href={`/admin/users/${m.player2_id}`} className="text-purple-600 hover:underline">{p2}</a>
+                        ) : '-'}
+                      </td>
+                    )}
+                    {playType !== 'solo' && (
+                      <td className="px-3 py-2 font-bold">
+                        {winner ? <span className="text-green-600">{winner}</span> : <span className="text-gray-400">Draw</span>}
+                      </td>
+                    )}
                     <td className="px-3 py-2 text-gray-400">{new Date(m.created_at).toLocaleString()}</td>
                   </tr>
                   );
