@@ -27,6 +27,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SportsScore
+import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Lock
@@ -829,21 +831,39 @@ private fun WaitingScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: (
                     val target = if (behind) myGuesses - 1 else myGuesses
                     target <= 0 || vm.opponent.attempts >= target
                 }
+                val skipHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+                // iOS makes this the screen's full-width primary CTA (13pt tall,
+                // icon + label). Android hugged its text, so the one action that
+                // matters here read as a small chip, and the emoji prefixes
+                // replaced iOS's flag.checkered / forward.fill glyphs.
                 Box(
-                    Modifier.clip(RoundedCornerShape(14.dp))
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
                         .then(
                             if (winLocked) Modifier.background(Brush.horizontalGradient(gradient))
                             else Modifier.background(WTheme.surfaceHover).border(1.5.dp, WTheme.border, RoundedCornerShape(14.dp)),
                         )
-                        .clickableNoRipple { vm.finishCpuNow() }
-                        .padding(horizontal = 22.dp, vertical = 12.dp),
+                        .clickableNoRipple {
+                            skipHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                            vm.finishCpuNow()
+                        }
+                        .padding(vertical = 13.dp),
                     Alignment.Center,
                 ) {
-                    Text(
-                        if (winLocked) "🏁 Claim your win" else "⏩ Skip to result",
-                        fontSize = 15.sp, fontWeight = FontWeight.Black,
-                        color = if (winLocked) Color.White else WTheme.primary,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        val tint = if (winLocked) Color.White else WTheme.primary
+                        Icon(
+                            if (winLocked) Icons.Filled.SportsScore
+                            else Icons.Filled.FastForward,
+                            null, tint = tint, modifier = Modifier.size(18.dp),
+                        )
+                        Text(
+                            if (winLocked) "Claim your win" else "Skip to result",
+                            fontSize = 15.sp, fontWeight = FontWeight.Black, color = tint,
+                        )
+                    }
                 }
             }
         }

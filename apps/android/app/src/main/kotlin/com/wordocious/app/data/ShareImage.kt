@@ -52,7 +52,10 @@ object ShareImage {
     private val TILE = mapOf(
         TileState.CORRECT to 0xFF7C3AED.toInt(),
         TileState.PRESENT to 0xFFF59E0B.toInt(),
-        TileState.HINT_USED to 0xFFF59E0B.toInt(),
+        // iOS ShareCardView.tileColor folds .hintUsed in with .absent — GREY, not
+        // amber. Painting it amber made a hint row read as a real PRESENT hit, so
+        // the same game shared from each platform produced different cards.
+        TileState.HINT_USED to 0xFF9CA3AF.toInt(),
         TileState.ABSENT to 0xFF9CA3AF.toInt(),
         TileState.EMPTY to 0xFFE5E7EB.toInt(),
     )
