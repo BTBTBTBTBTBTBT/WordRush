@@ -103,7 +103,7 @@ struct InfoPage: View {
     private var subtitle: String? {
         switch kind {
         case .about: return "Epic Word Battles — Daily Puzzles & Multiplayer Showdowns"
-        case .privacy: return "Effective April 14, 2026"
+        case .privacy: return "Effective July 30, 2026"
         case .terms: return "Effective April 10, 2026"
         case .support: return "Got a question? We've got answers."
         }
@@ -118,9 +118,9 @@ struct InfoPage: View {
         case .about, .support: return []
         case .privacy: return [
             InfoSection("Introduction", "This policy explains what Wordocious collects, how we use it, and your choices."),
-            InfoSection("Information We Collect", bullets: ["Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — device type, usage patterns, anonymous analytics, and (with your permission) advertising identifiers"]),
+            InfoSection("Information We Collect", bullets: ["Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — device type, usage patterns, anonymous analytics, and (with your permission) advertising identifiers", "Crash and diagnostic data — when the app crashes or hits an error we record the fault, device model, OS version, and app version so we can fix it", "Push notification token — stored only if you enable notifications, so we can send daily-puzzle and match reminders"]),
             InfoSection("How We Use Your Information", bullets: ["To create and manage your account", "To track game progress, streaks, and statistics", "To display leaderboards and records", "To improve and maintain the app", "To communicate important service updates"]),
-            InfoSection("Third-Party Services", bullets: ["Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name", "Google AdMob — displays advertisements to free-tier users; ad-related data collection is governed by Google's privacy policies. Pro subscribers are not shown ads."]),
+            InfoSection("Third-Party Services", bullets: ["Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth and Sign in with Apple — optional sign-in; we receive only email + display name", "Sentry — crash and error reporting; receives diagnostic data about faults, including your account identifier, so we can trace and fix them", "Apple Push Notification service — delivers push notifications if you enable them", "Apple App Store — processes Pro purchases made in the app and tells our servers when a subscription starts, renews, or ends", "Stripe — payment processor for purchases made on our website; card details go directly to Stripe and we never see or store them", "Google AdMob — displays advertisements to free-tier users; ad-related data collection is governed by Google's privacy policies. Pro subscribers are not shown ads."]),
             InfoSection("Advertising & Data Sharing", "Wordocious shows advertisements to free-tier users. On iOS these are served by Google AdMob and are subject to Google's Privacy Policy. With your permission — requested through Apple's App Tracking Transparency prompt — ads may be personalized; if you decline, you'll see non-personalized ads. Pro subscribers enjoy a completely ad-free experience. We do not sell or rent your personal data for marketing beyond what is necessary for ad delivery."),
             InfoSection("Data Security", "We use industry-standard measures to protect your data. No method of transmission or storage is 100% secure, but we work to safeguard your information."),
             InfoSection("Your Rights", "You may request access to, correction of, or deletion of your personal data at any time. You can delete your account from Settings or by contacting us; upon deletion your personal data is removed from our systems."),
@@ -137,7 +137,7 @@ struct InfoPage: View {
             InfoSection("Intellectual Property", "Wordocious and its content are owned by us and protected by law."),
             InfoSection("Disclaimer & Limitation of Liability", "The Service is provided \"as is\" without warranties; liability is limited to the extent permitted by law."),
             InfoSection("Termination", "We may suspend or terminate accounts that violate these terms."),
-            InfoSection("Contact Us", "Questions about these terms?"),
+            InfoSection("Contact Us", "Questions about these terms? Contact us at legal@wordocious.com."),
         ]
         }
     }

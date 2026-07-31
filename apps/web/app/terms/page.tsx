@@ -8,7 +8,7 @@ export default function TermsPage() {
     <div className="min-h-screen pb-12" style={{ backgroundColor: 'var(--color-bg)' }}>
       <InfoPageHeader title="Terms of Service" />
       <div className="max-w-2xl mx-auto px-4 pt-1 pb-6">
-        <p className="text-xs font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Effective April 10, 2026</p>
+        <p className="text-xs font-bold mb-6" style={{ color: 'var(--color-text-muted)' }}>Effective August 1, 2026</p>
 
         <div className="space-y-4">
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
@@ -53,13 +53,13 @@ export default function TermsPage() {
           <div style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }} className="p-5">
             <h2 className="text-sm font-black mb-2" style={{ color: 'var(--color-text)' }}>Free Tier &amp; Pro Subscription</h2>
             <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)' }}>
-              Wordocious is free to play. We also offer an optional <strong>Pro subscription</strong> that unlocks additional features and game modes.
+              Wordocious is free to play. We also offer an optional <strong>Pro subscription</strong> that removes ads and unlocks unlimited replays and other extras. Every game mode and daily puzzle remains free.
             </p>
             <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: 'var(--color-text-secondary)' }}>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Pro subscriptions are purchased and billed through the app store you use &mdash; the <strong>Apple App Store</strong> or <strong>Google Play</strong> &mdash; via their in-app purchase systems, and are subject to that store&apos;s terms.</span></li>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>You may <strong>cancel at any time</strong> in your Apple App Store or Google Play account settings. You will retain Pro access through the end of your current billing period.</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>In the mobile apps, Pro is purchased and billed through the <strong>Apple App Store</strong> or <strong>Google Play</strong> via their in-app purchase systems, subject to that store&apos;s terms. On the website, Pro is billed by <strong>Stripe</strong>, our payment processor.</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>You may <strong>cancel at any time</strong> &mdash; in your Apple App Store or Google Play account settings for store purchases, or via <strong>Manage Subscription</strong> in Settings for purchases made on the website. You retain Pro access through the end of your current billing period.</span></li>
               <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Subscription prices may change with advance notice. Existing subscribers will be notified before any price change takes effect.</span></li>
-              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Refunds are handled by <strong>Apple</strong> or <strong>Google</strong> under their respective policies. Contact the relevant store to request a refund.</span></li>
+              <li className="flex gap-2"><span style={{ color: '#7c3aed' }}>&#8226;</span> <span>Refunds for store purchases are handled by <strong>Apple</strong> or <strong>Google</strong> under their respective policies &mdash; contact the relevant store. For purchases made on the website, contact <strong>support@wordocious.com</strong>.</span></li>
             </ul>
           </div>
 

@@ -91,8 +91,11 @@ struct SettingsView: View {
                                 // Present as sheets (same as the "?" menu) rather than pushing —
                                 // InfoPage hides the nav bar, so pushing it animated the bar
                                 // in/out on back (the flicker). Sheets have no nav bar.
-                                Button { infoKind = .about } label: { linkRow("About Wordocious") }.buttonStyle(.plain)
-                                Divider().overlay(Theme.border)
+                                //
+                                // "About Wordocious" led this section until 2026-08-01 —
+                                // dropped for the same reason it left the "?" menu: it
+                                // restated How to Play in older copy. Section now opens
+                                // with Help & Support.
                                 Button { infoKind = .support } label: { linkRow("Help & Support") }.buttonStyle(.plain)
                                 Divider().overlay(Theme.border)
                                 Button { infoKind = .privacy } label: { linkRow("Privacy Policy") }.buttonStyle(.plain)

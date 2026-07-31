@@ -174,7 +174,7 @@ fun InfoScreen(kind: String, onDone: () -> Unit) {
     }
     val subtitle = when (kind) {
         "about" -> "Epic Word Battles — Daily Puzzles & Multiplayer Showdowns"
-        "privacy" -> "Effective April 14, 2026"
+        "privacy" -> "Effective July 30, 2026"
         "terms" -> "Effective April 10, 2026"
         else -> "Got a question? We've got answers."
     }
@@ -250,9 +250,9 @@ private fun InfoSectionCard(s: InfoSec) {
 private fun infoSections(kind: String): List<InfoSec> = when (kind) {
     "privacy" -> listOf(
         InfoSec("Introduction", "This policy explains what Wordocious collects, how we use it, and your choices."),
-        InfoSec("Information We Collect", bullets = listOf("Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — device type, usage patterns, anonymous analytics, and advertising identifiers (Google Advertising ID)")),
+        InfoSec("Information We Collect", bullets = listOf("Email address — provided during sign-up or via Google OAuth", "Username / display name — chosen when creating your profile", "Game statistics — scores, win/loss, completion times across all modes", "Streak data — daily streak counts and history", "Device and usage information — device type, usage patterns, anonymous analytics, and advertising identifiers (Google Advertising ID)", "Crash and diagnostic data — when the app crashes or hits an error we record the fault, device model, OS version, and app version so we can fix it", "Push notification token — stored only if you enable notifications, so we can send daily-puzzle and match reminders")),
         InfoSec("How We Use Your Information", bullets = listOf("To create and manage your account", "To track game progress, streaks, and statistics", "To display leaderboards and records", "To improve and maintain the app", "To communicate important service updates")),
-        InfoSec("Third-Party Services", bullets = listOf("Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name", "Google AdMob — displays advertisements to free-tier users; ad-related data collection is governed by Google's privacy policies. Pro subscribers are not shown ads.")),
+        InfoSec("Third-Party Services", bullets = listOf("Supabase — authentication and secure data storage", "Vercel — web hosting", "Google OAuth — optional sign-in; we receive only email + display name", "Sentry — crash and error reporting; receives diagnostic data about faults, including your account identifier, so we can trace and fix them", "Firebase Cloud Messaging — delivers push notifications if you enable them", "Google Play — processes Pro purchases made in the app and tells our servers when a subscription starts, renews, or ends", "Stripe — payment processor for purchases made on our website; card details go directly to Stripe and we never see or store them", "Google AdMob — displays advertisements to free-tier users; ad-related data collection is governed by Google's privacy policies. Pro subscribers are not shown ads.")),
         InfoSec("Advertising & Data Sharing", "Wordocious shows advertisements to free-tier users. On Android these are served by Google AdMob and are subject to Google's Privacy Policy. Where required, we ask for your consent through Google's User Messaging Platform prompt before showing personalized ads; if you decline, you'll see non-personalized ads. Pro subscribers enjoy a completely ad-free experience. We do not sell or rent your personal data for marketing beyond what is necessary for ad delivery."),
         InfoSec("Data Security", "We use industry-standard measures to protect your data. No method of transmission or storage is 100% secure, but we work to safeguard your information."),
         InfoSec("Your Rights", "You may request access to, correction of, or deletion of your personal data at any time. You can delete your account from Settings or by contacting us; upon deletion your personal data is removed from our systems."),
@@ -269,7 +269,7 @@ private fun infoSections(kind: String): List<InfoSec> = when (kind) {
         InfoSec("Intellectual Property", "Wordocious and its content are owned by us and protected by law."),
         InfoSec("Disclaimer & Limitation of Liability", "The Service is provided \"as is\" without warranties; liability is limited to the extent permitted by law."),
         InfoSec("Termination", "We may suspend or terminate accounts that violate these terms."),
-        InfoSec("Contact Us", "Questions about these terms?"),
+        InfoSec("Contact Us", "Questions about these terms? Contact us at legal@wordocious.com."),
     )
     else -> emptyList()
 }

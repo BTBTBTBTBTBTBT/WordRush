@@ -216,7 +216,9 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
             // ABOUT
             Section("ABOUT") {
                 Card {
-                    LinkRow("About Wordocious") { onOpenInfo("about") }; Divider()
+                    // "About Wordocious" led this card until 2026-08-01 — dropped for
+                    // the same reason it left the "?" menu (restated How to Play in
+                    // older copy). Section opens with Help & Support, like iOS.
                     LinkRow("Help & Support") { onOpenInfo("support") }; Divider()
                     LinkRow("Privacy Policy") { onOpenInfo("privacy") }; Divider()
                     // Ad-consent withdrawal. UMP requires a PERSISTENT entry
