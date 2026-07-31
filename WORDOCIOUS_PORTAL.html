@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Wordocious — Engineering Portal</title>
+<style>
+  :root {
+    --bg: #f8f7ff; --surface: #ffffff; --border: #ede9f6; --text: #1a1a2e;
+    --muted: #6b7280; --accent: #7c3aed; --accent2: #ec4899; --code-bg: #f3f0ff;
+    --warn-bg: #fffbeb; --warn-border: #fde68a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a2e; --surface: #252542; --border: #3a3a5c; --text: #f0eef6;
+      --muted: #a0a0b8; --accent: #a78bfa; --accent2: #f472b6; --code-bg: #2e2e4a;
+      --warn-bg: #422006; --warn-border: #92400e;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 0 0 80px; }
+  .bar { height: 6px; background: linear-gradient(90deg, #a78bfa, #ec4899, #fbbf24); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px; }
+  h1 { font-size: 30px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { color: var(--muted); font-weight: 700; font-size: 13px; margin: 4px 0 24px; }
+  h2 { font-size: 20px; font-weight: 900; margin: 40px 0 12px; padding-top: 16px; border-top: 2px solid var(--border); }
+  h2 .num { color: var(--accent); margin-right: 8px; }
+  h3 { font-size: 15px; font-weight: 800; margin: 18px 0 6px; }
+  p, li { color: var(--text); margin-bottom: 8px; }
+  ul { margin: 0 0 12px 22px; }
+  li { margin-bottom: 5px; }
+  code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 13.5px; }
+  th { text-align: left; font-weight: 800; padding: 8px 10px; border-bottom: 2px solid var(--border); }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 18px; margin: 12px 0; }
+  .warn { background: var(--warn-bg); border: 1.5px solid var(--warn-border); border-radius: 12px; padding: 12px 16px; margin: 12px 0; font-size: 13.5px; }
+  .toc { columns: 2; gap: 24px; font-size: 13.5px; font-weight: 700; }
+  .toc a { color: var(--accent); text-decoration: none; display: block; margin-bottom: 4px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  strong { font-weight: 800; }
+  @media print { .bar { display: none; } body { padding: 0; } h2 { break-after: avoid; } .card, table { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<div class="wrap">
+
+<h1>WORDOCIOUS — ENGINEERING PORTAL</h1>
+<p class="sub">How Wordocious is built and works &middot; ShowLoud, LLC &middot; as of August 1, 2026 &middot; contains no secrets — services and key locations only</p>
+
+<div class="card toc">
+  <a href="#overview">1. Overview &amp; status</a>
+  <a href="#repo">2. Repository map</a>
+  <a href="#core">3. The deterministic core</a>
+  <a href="#words">4. Word bank</a>
+  <a href="#scoring">5. Scoring</a>
+  <a href="#backend">6. Backend (Supabase)</a>
+  <a href="#web">7. Web app &amp; content APIs</a>
+  <a href="#vs">8. VS multiplayer &amp; bots</a>
+  <a href="#payments">9. Payments — three rails</a>
+  <a href="#ads">10. Ads, push, crash reporting</a>
+  <a href="#referrals">11. Referrals</a>
+  <a href="#release">12. Release &amp; deploy runbook</a>
+  <a href="#integrations">13. Integrations directory</a>
+  <a href="#secrets">14. Secrets &amp; access</a>
+  <a href="#conventions">15. Conventions &amp; guard rails</a>
+</div>
+
+<h2 id="overview"><span class="num">1</span>Overview &amp; status</h2>
+<p><strong>Wordocious</strong> is a daily word-puzzle game — ten modes, daily leaderboards, real-time multiplayer — shipped by <strong>ShowLoud, LLC</strong> on three clients that share one deterministic game engine:</p>
+<table>
+  <tr><th>Surface</th><th>Stack</th><th>Status (Aug 1, 2026)</th></tr>
+  <tr><td>Web — wordocious.com</td><td>Next.js (App Router), Vercel Pro</td><td>Live; deploys on every push to main</td></tr>
+  <tr><td>iOS</td><td>SwiftUI + WordociousCore Swift package</td><td>1.1 live on the App Store (148 countries); 1.2 in review; 1.3 build 141 staged</td></tr>
+  <tr><td>Android</td><td>Kotlin / Jetpack Compose + :core module</td><td>Internal testing (build 46); Play Billing being enabled</td></tr>
+  <tr><td>VS server</td><td>Node + socket.io</td><td>Live on Railway; auto-deploys from main</td></tr>
+</table>
+<p>Modes: Classic, Six, Seven, QuadWord, OctoWord, Succession, Deliverance, Gauntlet (5 stages), ProperNoundle (famous names), VS Battle. Every mode has one shared daily puzzle worldwide; Pro unlocks unlimited replays.</p>
+
+<h2 id="repo"><span class="num">2</span>Repository map</h2>
+<p>One monorepo: <code>github.com/BTBTBTBTBTBTBT/WordRush</code> (directory names predate the Wordocious rename).</p>
+<table>
+  <tr><th>Path</th><th>What it is</th></tr>
+  <tr><td><code>packages/core</code></td><td>The canonical TypeScript game engine: seeds, reducer, dictionary, prefills. Web and the VS server consume it directly.</td></tr>
+  <tr><td><code>apps/web</code></td><td>Next.js site + every API route (content, payments webhooks, push, referrals, admin, cron).</td></tr>
+  <tr><td><code>apps/ios</code></td><td>SwiftUI app + <code>Sources/Core</code>, a 1:1 Swift port of the engine, pinned by shared fixtures.</td></tr>
+  <tr><td><code>apps/android</code></td><td>Compose app + <code>:core</code>, the Kotlin port of the same engine, same fixtures.</td></tr>
+  <tr><td><code>apps/server</code></td><td>socket.io VS server (Railway). Loads the same word lists so both sides resolve identical seeds.</td></tr>
+  <tr><td><code>supabase/migrations</code></td><td>Every schema change, in order. The database is rebuildable from these.</td></tr>
+  <tr><td><code>scripts/</code></td><td>Operational tooling: word-bank curation, Play upload/product creation, screenshot rigs, fixtures generators.</td></tr>
+  <tr><td><code>WORDOCIOUS_BIBLE.md</code></td><td>The chronicle — 195 numbered entries of every decision, bug, and lesson. This portal is the map; the bible is the history.</td></tr>
+</table>
+
+<h2 id="core"><span class="num">3</span>The deterministic core</h2>
+<ul>
+  <li><strong>Seeded dailies.</strong> A puzzle is fully determined by its seed (<code>daily-YYYY-MM-DD-MODE</code>). No server round-trip is needed to start a game; every client derives the same answers from the same seed and word lists.</li>
+  <li><strong>One engine, three ports.</strong> TypeScript is canonical; Swift and Kotlin ports mirror it exactly. Shared JSON fixtures (<code>seed-fixtures</code>, <code>prefill-fixtures</code>, scoring fixtures) are generated from the TS core and asserted by all three test suites — an engine change that lands without regenerating them fails the web tests first, not the native ones days later.</li>
+  <li><strong>The reducer</strong> (<code>packages/core/src/reducer.ts</code> + ports) is the single state machine for every mode: guess validation, multi-board apply-to-all, sequential-stage advancement, Gauntlet stage chaining, prefills. UI layers never re-implement rules.</li>
+  <li><strong>ProperNoundle</strong> is the deliberate exception: answers are famous names from a curated pool (669 puzzles, categories + Wikipedia clues), and guesses skip dictionary validation on every platform.</li>
+</ul>
+
+<h2 id="words"><span class="num">4</span>Word bank</h2>
+<ul>
+  <li><strong>Two tiers, one player-facing "word bank".</strong> Answers are small curated lists (zipf-frequency bar ~3.0, no proper nouns, blocklists applied); guesses are far more permissive (5-letter: 10,140; 6: 11,180; 7: 12,728).</li>
+  <li><strong>The G1–G8 rule set</strong> (documented in <code>scripts/curate-solutions.py</code>) governs the guess lists: length purity, answers-always-guessable, lexicon-derived candidates, generated inflections (-S/-ED/-ER/-ING…), offensive blocklist (applied to inflection bases too), proper-noun exclusion, <strong>monotonic growth</strong> (the guess list never shrinks — asserted in code), and a hand-vouched modern-words list.</li>
+  <li><strong>History is protected by tests</strong> (<code>apps/web/scripts/word-list-sync.test.ts</code>): every answer ever served must stay guessable, all bundle copies must be byte-identical across the three platforms, and no shipped guess may derive from a slur. Replaying a finished game pushes stored guesses back through the reducer, so a word leaving the list would silently rewrite history — the tests make that impossible to ship.</li>
+  <li>Players report gaps to <strong>support@wordocious.com</strong> (invited in-app under How to Play → Which Words Count?).</li>
+</ul>
+
+<h2 id="scoring"><span class="num">5</span>Scoring</h2>
+<ul>
+  <li><strong>V2, guess-first</strong> (days ≥ 2026-07-14): 1,000 base + a per-mode guess bonus for every unused guess (Classic 300) + a speed bonus capped at 80% of one guess-step (time only breaks ties) + completion up to 200 + hint penalties (PN 60, Six/Seven 75). Losses bank partial credit (letters, boards, Gauntlet stages).</li>
+  <li><strong>V1 is frozen forever</strong> and selected by the puzzle's date, so pre-cutover leaderboards recompute exactly what was recorded.</li>
+  <li>Single source: <code>apps/web/lib/composite-scoring.ts</code>, mirrored by <code>DailyScoring.swift</code> / <code>DailyScoring.kt</code>, pinned by generated fixtures. VS matches use a separate small ELO-style breakdown in <code>packages/core/src/scoring.ts</code>.</li>
+</ul>
+
+<h2 id="backend"><span class="num">6</span>Backend (Supabase)</h2>
+<p>Project ref <code>eniiqqsxpmuyrspvepiw</code> — Postgres + Auth + RLS. There is no bespoke app server for game data; clients talk to Supabase directly under row-level security, and privileged writes go through Next.js API routes using the service-role key.</p>
+<ul>
+  <li><strong>Auth:</strong> Google OAuth, Sign in with Apple (iOS), email+password with confirmation, password reset. Guests can play without an account; results then live only on-device.</li>
+  <li><strong>Key tables:</strong> <code>profiles</code> (identity + <code>is_pro</code>/<code>pro_expires_at</code> — the single Pro entitlement all three clients read), <code>daily_results</code> (materialized per-day scores that power leaderboards — stats are stored, never recomputed from guesses), <code>matches</code> (VS history incl. guess logs), <code>medals</code>, <code>streak_shields</code>, <code>daily_bonuses</code>, <code>referrals</code>, <code>device_tokens</code>, <code>announcements</code>, <code>reports</code>, <code>store_webhook_events</code> (payments idempotency ledger), <code>daily_seeds</code>.</li>
+  <li><strong>RLS posture:</strong> users write only their own rows with value clamps; Pro columns are locked by a trigger (<code>protect_pro_columns_trg</code>) so only admin/service-role can grant entitlements; moderation adds <code>is_banned</code> filtering and a reports pipeline.</li>
+  <li><strong>Admin:</strong> <code>profiles.role = 'admin'</code> gates the portal at <code>/admin</code> (server-side in <code>middleware.ts</code>) and every <code>/api/admin/*</code> route re-verifies.</li>
+</ul>
+
+<h2 id="web"><span class="num">7</span>Web app &amp; content APIs</h2>
+<ul>
+  <li><strong>Hosting:</strong> Vercel (Pro plan), project <code>wordocious</code>, domain wordocious.com. Push to <code>main</code> = production deploy. Nothing deploys from branches.</li>
+  <li><strong>Crons</strong> (vercel.json): daily medals 12:05 UTC, daily reminder push 14:00 UTC, <code>expire-pro</code> hourly (Pro-plan feature — on Hobby an hourly cron silently breaks ALL deploys; see bible if the plan ever changes).</li>
+  <li><strong>Single-sourced editorial content:</strong> How to Play, FAQ, mode help, About, Support, Guides, Strategy, and Word-of-Day archives live in <code>apps/web/lib/*-content.ts</code> and are served at <code>/api/howtoplay</code>, <code>/api/content</code>, <code>/api/guides</code>, <code>/api/strategy</code>, <code>/api/words</code>. <strong>Both native apps fetch and cache these</strong> — editing app help copy is a web deploy, not an app release. Only Privacy/Terms are hardcoded per platform (offline compliance).</li>
+  <li><strong>Public pages</strong> for SEO/AdSense: guides, strategy articles, word archives, FAQ, privacy, terms, delete-account. <code>AuthGate</code> keeps them crawlable while gating gameplay.</li>
+</ul>
+
+<h2 id="vs"><span class="num">8</span>VS multiplayer &amp; bots</h2>
+<ul>
+  <li><strong>Live matches:</strong> socket.io server (<code>apps/server</code>) on Railway, auto-deployed from main. It validates guesses server-side with the same core engine and word lists, relays opponent progress, and records results.</li>
+  <li><strong>Three ways to get an opponent:</strong> friend invite links (<code>/vs/join/CODE</code>), the live queue, or <strong>built-in bots</strong> — client-side personas with difficulty tiers including an adaptive one (<code>BotEngine</code>/<code>BotPersonas</code> per platform). Bot matches satisfy the same transport interface as the socket, so the match UI cannot tell them apart; they record under a separate <code>vs_cpu</code> play type that stays out of human stats.</li>
+  <li>Daily VS uses one shared daily puzzle; free players have a daily VS limit, Pro adds invites and rematches.</li>
+</ul>
+
+<h2 id="payments"><span class="num">9</span>Payments — three independent rails</h2>
+<div class="warn"><strong>Policy fact that shapes everything here:</strong> Apple mandates IAP in the iOS app, Google mandates Play Billing in the Android app, and Stripe may only sell on the web. The three rails never mix; parity of products and prices across them is a deliberate invariant.</div>
+<table>
+  <tr><th>Product</th><th>Price</th><th>Type</th></tr>
+  <tr><td><code>pro_monthly</code></td><td>$6.99</td><td>Auto-renewing monthly</td></tr>
+  <tr><td><code>pro_yearly</code></td><td>$59.99</td><td>Auto-renewing yearly</td></tr>
+  <tr><td><code>pro_day</code></td><td>$1.00</td><td>Consumable 24h day pass</td></tr>
+</table>
+<ul>
+  <li><strong>Entitlement is one row:</strong> <code>profiles.is_pro</code> + <code>pro_expires_at</code>, read by each client's <code>isProActive</code>. A grant from any rail lights up all three platforms instantly — no build required.</li>
+  <li><strong>Server-authoritative fulfillment:</strong> App Store Server Notifications → <code>/api/appstore/notifications</code>; Play RTDN → <code>/api/playstore/notifications</code>; Stripe webhooks → <code>/api/stripe/*</code>. All claim events in the <code>store_webhook_events</code> ledger (idempotent) and extend entitlement additively (<code>Math.max</code> pattern — a grant never truncates an existing window). An hourly cron expires lapsed Pro.</li>
+  <li><strong>Status:</strong> Apple — all three products APPROVED and live. Stripe — live on /pro. Google — merchant account created Aug 1 (identity verified, 15% small-business fee enrolled, payout bank pending micro-deposit verification); products created via <code>scripts/play-create-products.mjs</code> once console permission propagates.</li>
+</ul>
+
+<h2 id="ads"><span class="num">10</span>Ads, push, crash reporting</h2>
+<ul>
+  <li><strong>Ads:</strong> Google AdMob in both native apps (banner + interstitial), gated by consent — Apple ATT on iOS, Google UMP where required — with a persistent "Ad Privacy Settings" row in Settings. Pro removes all ads. Web uses AdSense (application under review). Emulators show Google test ads by design.</li>
+  <li><strong>Push:</strong> APNs (iOS, live since build 134) and FCM (Android, code-complete; needs <code>FCM_SERVICE_ACCOUNT</code> in Vercel env). Tokens in <code>device_tokens</code>, sends via <code>/api/push</code>, daily-reminder cron at 14:00 UTC.</li>
+  <li><strong>Crash reporting:</strong> Sentry on web, iOS, and Android, including capture of rejected Supabase writes so silent RLS failures surface.</li>
+</ul>
+
+<h2 id="referrals"><span class="num">11</span>Referrals</h2>
+<ul>
+  <li>Any signed-in player creates up to 3 pending invite links (<code>/join/CODE</code>, 30-day expiry). A new user who redeems gets <strong>7 days of Pro</strong>; if they later subscribe, the inviter gets <strong>+30 days</strong> (monthly) or <strong>+60</strong> (yearly), granted once via <code>reward_granted_at</code> so renewals never double-pay.</li>
+  <li>Anti-fraud: one redemption per account ever (DB-enforced), no self-referral, redeemer must never have had Pro, <code>pro_day</code> never triggers rewards.</li>
+  <li>Hooked into all three fulfillment paths; native apps deep-link via universal links (AASA) / Android App Links. Top Inviters leaderboard on web + native panels.</li>
+</ul>
+
+<h2 id="release"><span class="num">12</span>Release &amp; deploy runbook</h2>
+<table>
+  <tr><th>Surface</th><th>How it ships</th></tr>
+  <tr><td><strong>Web</strong></td><td>Merge/push to <code>main</code> → Vercel builds and aliases wordocious.com. Diagnose a "push didn't deploy" with <code>vercel deploy --prod</code> locally or the deployments dashboard.</td></tr>
+  <tr><td><strong>iOS</strong></td><td>Bump <code>CURRENT_PROJECT_VERSION</code> in <code>apps/ios/project.yml</code> (app + widget) → <code>xcodegen generate</code> → archive unsigned → export with the manual-signing plist → <strong>re-sign restoring the four stripped entitlements</strong> (applesignin, associated-domains, application-groups, aps-environment; frameworks → appex → app) → <code>altool</code> validate + upload. Release to users is always a manual App Store Connect action.</td></tr>
+  <tr><td><strong>Android</strong></td><td>Bump <code>versionCode</code> in <code>apps/android/app/build.gradle.kts</code> → <code>node scripts/play-upload.mjs</code> builds the AAB and uploads to the <strong>internal track</strong>. The upload key deliberately cannot reach production — promotion is a manual Play Console click. The console, not git, is the authority on used version codes.</td></tr>
+  <tr><td><strong>VS server</strong></td><td>Railway auto-deploys <code>apps/server</code> from main.</td></tr>
+  <tr><td><strong>Database</strong></td><td>SQL files in <code>supabase/migrations</code>, applied via the Supabase dashboard/CLI. Never edit production schema outside a migration file.</td></tr>
+</table>
+
+<h2 id="integrations"><span class="num">13</span>Integrations directory</h2>
+<table>
+  <tr><th>Service</th><th>Purpose</th><th>Identifier</th></tr>
+  <tr><td>Vercel</td><td>Web hosting, crons, env secrets</td><td>project <code>wordocious</code></td></tr>
+  <tr><td>Supabase</td><td>Auth + Postgres + RLS</td><td><code>eniiqqsxpmuyrspvepiw</code></td></tr>
+  <tr><td>Railway</td><td>VS socket server</td><td>auto-deploy from main</td></tr>
+  <tr><td>GitHub</td><td>Monorepo</td><td><code>BTBTBTBTBTBTBT/WordRush</code></td></tr>
+  <tr><td>App Store Connect</td><td>iOS distribution + IAP</td><td>app <code>6775966055</code>, team <code>Q32F6GRDYG</code></td></tr>
+  <tr><td>Google Play Console</td><td>Android distribution + billing</td><td>org account <code>ShowLoud</code>, pkg <code>com.wordocious.app</code></td></tr>
+  <tr><td>Google Payments</td><td>Play merchant account / payouts</td><td>profile: ShowLoud LLC, statement name Wordocious</td></tr>
+  <tr><td>Google Cloud</td><td>OAuth clients + service accounts</td><td>project <code>spellstrike-490819</code></td></tr>
+  <tr><td>Stripe</td><td>Web Pro billing</td><td>live on /pro</td></tr>
+  <tr><td>Google AdMob / AdSense</td><td>Native / web ads</td><td>AdSense pending review</td></tr>
+  <tr><td>Sentry</td><td>Crash + error reporting, all platforms</td><td>three DSNs (web/iOS/Android)</td></tr>
+  <tr><td>APNs / FCM</td><td>Push delivery</td><td>via <code>/api/push</code></td></tr>
+</table>
+
+<h2 id="secrets"><span class="num">14</span>Secrets &amp; access</h2>
+<ul>
+  <li><strong>This document contains no secrets.</strong> Web/server secrets (Supabase service role, Stripe keys, webhook secrets, FCM service account) live in <strong>Vercel environment variables</strong>. Local signing material lives outside the repo: <code>~/.appstoreconnect/</code> (ASC API key + export plists), <code>~/.android-keys/</code> (upload keystore + Play publisher service-account JSON).</li>
+  <li>The Play service account is least-privilege by design: testing tracks + store presence, <strong>no production release, no financial data</strong>. Production pushes on both stores are human console actions.</li>
+  <li>Admin portal access = <code>profiles.role = 'admin'</code>, enforced server-side. This page is inside that gate; the standalone HTML copy should be treated as internal.</li>
+</ul>
+
+<h2 id="conventions"><span class="num">15</span>Conventions &amp; guard rails</h2>
+<ul>
+  <li><strong>iOS is the design foundation; Android matches it.</strong> Render-parity audits are scoped by user flow, not by filename (bible §189).</li>
+  <li><strong>Drift guards over discipline:</strong> engine parity fixtures, word-list sync tests, scoring fixtures, and content invariants all fail builds rather than relying on memory.</li>
+  <li><strong>The bible</strong> (<code>WORDOCIOUS_BIBLE.md</code>) records every incident and decision as numbered entries — read it before re-deriving any past decision. This portal is regenerated from <code>apps/web/lib/portal-html.ts</code> via <code>node scripts/gen-portal-html.mjs</code>; a sync test keeps the copies identical.</li>
+  <li><strong>Editorial copy is code:</strong> it ships through the content APIs, rots silently, and gets audited (bible §195). When a formula or feature changes, grep the content files for every description of it.</li>
+</ul>
+
+<p class="muted" style="margin-top:40px">Wordocious &middot; ShowLoud, LLC &middot; questions: bt@showloud.com &middot; regenerate from apps/web/lib/portal-html.ts</p>
+</div>
+</body>
+</html>

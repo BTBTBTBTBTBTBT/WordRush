@@ -2,6 +2,12 @@ const { withSentryConfig } = require('@sentry/nextjs');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // /portal is Jasson's short URL for the engineering portal. The real page
+  // lives under /admin so middleware.ts's admin gate covers it — this doc
+  // describes the whole stack and must never be public.
+  async redirects() {
+    return [{ source: '/portal', destination: '/admin/portal', permanent: false }];
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
