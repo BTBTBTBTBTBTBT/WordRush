@@ -214,6 +214,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       (async () => {
+        // Mirror the access token into a cookie for the /admin middleware and
+        // the verifyAdmin cookie fallback. supabase-js keeps the session in
+        // localStorage, which the server can never see — this cookie is the
+        // ONLY thing that lets a server-side gate recognize a signed-in user.
+        // Without it /admin bounced every admin, always (found 2026-08-01 when
+        // Jasson — role=admin — reported being redirected home). The name must
+        // contain "auth-token": both server-side readers match on that.
+        // Not httpOnly by necessity (set from JS), same exposure class as the
+        // localStorage session itself. autoRefreshToken keeps it fresh via
+        // TOKEN_REFRESHED events while any tab is open.
+        try {
+          if (session?.access_token) {
+            document.cookie = 'wr-auth-token=' + session.access_token +
+              '; path=/; max-age=3600; secure; samesite=lax';
+          } else {
+            document.cookie = 'wr-auth-token=; path=/; max-age=0; secure; samesite=lax';
+          }
+        } catch {}
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {

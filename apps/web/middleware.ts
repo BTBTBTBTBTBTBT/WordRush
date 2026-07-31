@@ -32,8 +32,24 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // No token, or a stale one (access tokens live 1h; supabase-js refreshes the
+  // localStorage session client-side, which a server gate can't see): bounce
+  // through /admin-auth, a public client page that refreshes the session,
+  // rewrites the wr-auth-token cookie, and returns here. wr_retried=1 marks the
+  // second pass so a genuinely signed-out visitor exits to home instead of
+  // looping. Before this relay existed the gate redirected home on ANY cookie
+  // miss — which, with no code ever setting the cookie, meant /admin bounced
+  // every admin, always.
+  const retried = request.nextUrl.searchParams.get('wr_retried') === '1';
+  const bounce = () => {
+    if (retried) return NextResponse.redirect(new URL('/', request.url));
+    const relay = new URL('/admin-auth', request.url);
+    relay.searchParams.set('next', request.nextUrl.pathname);
+    return NextResponse.redirect(relay);
+  };
+
   if (!accessToken) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return bounce();
   }
 
   // Verify session and check admin role using service role client
@@ -50,7 +66,8 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser(accessToken);
   if (!user) {
-    return NextResponse.redirect(new URL('/', request.url));
+    // Expired/invalid token — same relay: a fresh one usually exists client-side.
+    return bounce();
   }
 
   const { data: profile } = await supabase
