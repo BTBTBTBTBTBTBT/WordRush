@@ -11,19 +11,31 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const admin = getAdminSupabase();
   const userId = params.id;
 
-  const [profileRes, statsRes, matchesRes, auditRes] = await Promise.all([
+  const [profileRes, statsRes, matchesRes, auditRes, authRes, refRes] = await Promise.all([
     admin.from('profiles').select('*').eq('id', userId).single(),
     admin.from('user_stats').select('*').eq('user_id', userId),
     admin.from('matches').select('*').or(`player1_id.eq.${userId},player2_id.eq.${userId}`).order('created_at', { ascending: false }).limit(10),
     admin.from('admin_audit_log').select('*').eq('target_user_id', userId).order('created_at', { ascending: false }).limit(10),
+    // Acquisition: email + auth provider from auth.users; referral attribution
+    // from referrals (invited-by username, else organic).
+    admin.auth.admin.getUserById(userId),
+    admin.from('referrals').select('status, redeemed_at, inviter:profiles!referrals_inviter_id_fkey(username)').eq('invitee_id', userId).maybeSingle(),
   ]);
 
   if (profileRes.error || !profileRes.data) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
+  const authUser: any = (authRes as any).data?.user ?? null;
+  const referral: any = (refRes as any).data ?? null;
+
   return NextResponse.json({
     profile: profileRes.data,
+    email: authUser?.email ?? null,
+    provider: authUser?.app_metadata?.provider ?? null,
+    referral: referral
+      ? { inviter: referral.inviter?.username ?? null, status: referral.status, redeemed_at: referral.redeemed_at }
+      : null,
     stats: statsRes.data || [],
     recentMatches: matchesRes.data || [],
     auditLog: auditRes.data || [],

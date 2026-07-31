@@ -9,6 +9,9 @@ interface UserDetail {
   stats: any[];
   recentMatches: any[];
   auditLog: any[];
+  email: string | null;
+  provider: string | null;   // google | apple | email — apple implies the iOS app
+  referral: { inviter: string | null; status: string; redeemed_at: string | null } | null;
 }
 
 const MODE_LABELS: Record<string, string> = {
@@ -105,6 +108,12 @@ export default function AdminUserDetailPage() {
           ))}
         </div>
         <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-500 font-medium">
+          <div><span className="text-gray-400">Email:</span> {data.email || '—'}</div>
+          <div>
+            <span className="text-gray-400">Source:</span>{' '}
+            {data.provider === 'apple' ? 'Apple sign-in (iOS app)' : data.provider === 'google' ? 'Google sign-in' : data.provider === 'email' ? 'Email sign-up' : '—'}
+            {data.referral ? <span className="text-emerald-700 font-bold"> · Referred by {data.referral.inviter || 'unknown'}</span> : ' · Organic'}
+          </div>
           <div><span className="text-gray-400">Joined:</span> {new Date(p.created_at).toLocaleString()}</div>
           <div><span className="text-gray-400">Last Active:</span> {p.last_played_at ? new Date(p.last_played_at).toLocaleString() : 'Never'}</div>
           <div><span className="text-gray-400">Pro Expires:</span> {p.pro_expires_at ? new Date(p.pro_expires_at).toLocaleString() : 'N/A'}</div>

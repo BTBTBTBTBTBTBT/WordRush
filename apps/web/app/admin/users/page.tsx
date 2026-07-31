@@ -14,6 +14,9 @@ interface UserRow {
   last_played_at: string | null;
   created_at: string;
   role: string;
+  email: string | null;
+  provider: string | null;      // google | apple | email — apple implies iOS
+  referred_by: string | null;   // inviter username, null = organic
 }
 
 export default function AdminUsersPage() {
@@ -78,6 +81,8 @@ export default function AdminUsersPage() {
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50">
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">User</th>
+              <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Email</th>
+              <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Source</th>
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Level</th>
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Status</th>
               <th className="text-left px-4 py-3 font-bold text-gray-500 text-xs uppercase tracking-wide">Last Active</th>
@@ -110,6 +115,21 @@ export default function AdminUsersPage() {
                       <span className="font-bold text-gray-900">{user.username}</span>
                       {user.role === 'admin' && (
                         <span className="text-[10px] font-extrabold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">ADMIN</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs font-medium">{user.email || '—'}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-extrabold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded uppercase">
+                        {user.provider === 'apple' ? 'Apple (iOS)' : user.provider === 'google' ? 'Google' : user.provider === 'email' ? 'Email' : '—'}
+                      </span>
+                      {user.referred_by ? (
+                        <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded" title={'Invited by ' + user.referred_by}>
+                          REF: {user.referred_by}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-gray-400">Organic</span>
                       )}
                     </div>
                   </td>
