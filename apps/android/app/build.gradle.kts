@@ -19,7 +19,7 @@ android {
         minSdk = 26          // Android 8.0 — matches the modern install base; web/iOS parity not affected
         targetSdk = 35       // Play requires new apps target API 35 (Android 15) as of 2025-08
 
-        versionCode = 44
+        versionCode = 45
         versionName = "1.0"
         vectorDrawables { useSupportLibrary = true }
     }
