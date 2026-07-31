@@ -375,7 +375,12 @@ def grow_allowed(n, threshold):
 
     # G3 + G4: lemmas of the right length, plus inflections of any shorter lemma
     # — including the modern list, so EBOOK yields EBOOKS at n=6.
-    bases = common | modern
+    # G5 applies to the BASE as well as the result. The blocklist holds NEGRO but
+    # not NEGROS/NEGROES, and inflecting a slur produces a slur — without this the
+    # 6- and 7-letter runs proposed exactly those two. Checked on the base rather
+    # than by prefix, because prefix matching condemns SQUAWK, NEGRONI and
+    # PONCEAU, which are ordinary words that merely start with one.
+    bases = {b for b in (common | modern) if b not in offensive}
     cands = {w for w in bases if len(w) == n}
     for base in bases:
         if 2 <= len(base) < n:

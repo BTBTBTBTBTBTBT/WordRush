@@ -75,7 +75,40 @@ ARABS
 HIJAB
 EBOLA
 
-# British / Commonwealth spellings
+# British / Commonwealth spellings.
+#
+# The app is live in 148 countries and the source lexicon is American, so these
+# were simply absent — a UK player typing HONOUR or REALISE got "not in word
+# list" for a word they spell correctly every day. The -OUR forms are the bulk
+# of it; the American spelling of each was already accepted.
 METRE
 ODOUR
 TONNE
+ARBOUR
+ARDOUR
+FAVOUR
+HONOUR
+MOULDY
+ODOURS
+RIGOUR
+RUMOUR
+STOREY
+TUMOUR
+VALOUR
+VAPOUR
+VIGOUR
+CANDOUR
+CLAMOUR
+COLOURS
+FAVOURS
+FERVOUR
+FUELLED
+HONOURS
+RANCOUR
+REALISE
+RIGOURS
+RUMOURS
+STOREYS
+SUCCOUR
+TUMOURS
+VAPOURS
