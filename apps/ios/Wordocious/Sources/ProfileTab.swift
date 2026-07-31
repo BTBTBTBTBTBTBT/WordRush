@@ -332,7 +332,7 @@ struct ProfileTab: View {
         let tier = levelTier(p.level)
         let progress = Double(p.xp % 1000) / 10.0
         let toNext = 1000 - (p.xp % 1000)
-        return VStack(spacing: 10) {
+        return VStack(spacing: 8) {
             AvatarView(url: p.avatarUrl, username: p.username, size: 96, accentHex: p.accentColor, emoji: p.avatarEmoji)
             HStack(spacing: 6) {
                 if ProfileAccent.isCustom(p.accentColor) {
@@ -357,44 +357,48 @@ struct ProfileTab: View {
             .foregroundStyle(tier.color)
             .padding(.horizontal, 12).padding(.vertical, 5)
             .background(Capsule().fill(tier.bg)).overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
-            VStack(spacing: 2) {
+            // XP progress and member-since fold into one caption line under the
+            // bar — they were separate rows, and with the buttons below also
+            // stacked one-per-row the header read as a tall loose list
+            // (founder: "looks sloppy"). Same elements, tighter rhythm.
+            VStack(spacing: 3) {
                 ZStack(alignment: .leading) {
                     Capsule().fill(Theme.border).frame(width: 160, height: 6)
                     Capsule().fill(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xF97316)], startPoint: .leading, endPoint: .trailing))
                         .frame(width: 160 * progress / 100, height: 6)
                 }
-                Text("\(toNext) XP to next").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                Text(memberSince(p).map { "\(toNext) XP to next  ·  Member since \($0)" } ?? "\(toNext) XP to next")
+                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
             }
-            if let since = memberSince(p) {
-                Text("Member since \(since)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+            // Edit + Share side by side — equal-weight actions, one row.
+            HStack(spacing: 8) {
+                Button { showEditProfile = true } label: {
+                    Label("Edit profile", systemImage: "pencil").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
+                        .padding(.horizontal, 14).padding(.vertical, 6)
+                        .background(Capsule().fill(Theme.surfaceHover))
+                        .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                }
+                .buttonStyle(PressableStyle())
+                .sheet(isPresented: $showEditProfile) { EditProfileView() }
+                Button {
+                    ShareEvents.log(kind: "image", gameMode: "", surface: "profile")
+                    let total = p.totalWins + p.totalLosses
+                    ShareService.shareProfile(ProfileShareInput(
+                        username: p.username, level: p.level, tier: levelTier(p.level).label,
+                        accentHex: ProfileAccent.hex(p.accentColor),
+                        totalWins: p.totalWins,
+                        winRate: total > 0 ? Int((Double(p.totalWins) / Double(total) * 100).rounded()) : 0,
+                        currentStreak: p.currentStreak, dailyStreak: p.dailyLoginStreak,
+                        gold: p.goldMedals, silver: p.silverMedals, bronze: p.bronzeMedals,
+                        achievementsUnlocked: unlockedAchievements.count, achievementsTotal: achievementCatalog.all.count))
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
+                        .padding(.horizontal, 14).padding(.vertical, 6)
+                        .background(Capsule().fill(Theme.surfaceHover))
+                        .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                }
+                .buttonStyle(PressableStyle())
             }
-            Button { showEditProfile = true } label: {
-                Label("Edit profile", systemImage: "pencil").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
-                    .padding(.horizontal, 14).padding(.vertical, 6)
-                    .background(Capsule().fill(Theme.surfaceHover))
-                    .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-            }
-            .buttonStyle(PressableStyle())
-            .padding(.top, 2)
-            .sheet(isPresented: $showEditProfile) { EditProfileView() }
-            Button {
-                ShareEvents.log(kind: "image", gameMode: "", surface: "profile")
-                let total = p.totalWins + p.totalLosses
-                ShareService.shareProfile(ProfileShareInput(
-                    username: p.username, level: p.level, tier: levelTier(p.level).label,
-                    accentHex: ProfileAccent.hex(p.accentColor),
-                    totalWins: p.totalWins,
-                    winRate: total > 0 ? Int((Double(p.totalWins) / Double(total) * 100).rounded()) : 0,
-                    currentStreak: p.currentStreak, dailyStreak: p.dailyLoginStreak,
-                    gold: p.goldMedals, silver: p.silverMedals, bronze: p.bronzeMedals,
-                    achievementsUnlocked: unlockedAchievements.count, achievementsTotal: achievementCatalog.all.count))
-            } label: {
-                Label("Share", systemImage: "square.and.arrow.up").font(Brand.font(12, .heavy)).foregroundStyle(Theme.primary)
-                    .padding(.horizontal, 14).padding(.vertical, 6)
-                    .background(Capsule().fill(Theme.surfaceHover))
-                    .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
-            }
-            .buttonStyle(PressableStyle())
             .padding(.top, 2)
             socialLinksRow()
             if !auth.isProActive {
@@ -412,13 +416,12 @@ struct ProfileTab: View {
             // renders ONLY for the developer's account (never for App Review or
             // real users; mirrors the web gate).
             if auth.profile?.isAdmin == true {
+                // Plain text link, not a boxed button — a dev-only toggle was
+                // visually competing with the real actions above it.
                 let isPro = auth.isProActive
                 Button { Task { await auth.setSimulatePro(!isPro) } } label: {
-                    Text(isPro ? "Disable Pro" : "Simulate Pro").font(Brand.font(12, .heavy))
+                    Text(isPro ? "Disable Pro (dev)" : "Simulate Pro (dev)").font(Brand.font(10, .heavy))
                         .foregroundStyle(isPro ? Color(hex: 0xDC2626) : Color(hex: 0x16A34A))
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(isPro ? Color(hex: 0xFEF2F2) : Color(hex: 0xF0FDF4)))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(isPro ? Color(hex: 0xFCA5A5) : Color(hex: 0x86EFAC), lineWidth: 1.5))
                 }
                 .padding(.top, 2)
             }

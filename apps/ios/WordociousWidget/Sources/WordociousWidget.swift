@@ -148,8 +148,9 @@ struct SmallView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("DAILIES").font(.system(size: 10, weight: .black, design: .rounded))
+                Text("WORDOCIOUS DAILIES").font(.system(size: 10, weight: .black, design: .rounded))
                     .tracking(1).foregroundStyle(brandGradient)
+                    .lineLimit(1).minimumScaleFactor(0.7)
                 Spacer()
                 StreakBadge(streak: snap.streak)
             }

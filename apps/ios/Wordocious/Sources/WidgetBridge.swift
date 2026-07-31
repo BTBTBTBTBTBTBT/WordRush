@@ -27,7 +27,12 @@ enum WidgetBridge {
     /// Called whenever today's completions change (record, refetch, sign-out).
     @MainActor
     static func update(completions byMode: [String: DailyCompletion]) {
-        let streak = AuthService.shared.profile?.currentStreak ?? 0
+        // The DAILY streak (play each day), same source as the header pill —
+        // including its launch cache. This was `currentStreak`, the consecutive
+        // -WIN streak, which resets on any loss: the founder's widget read 🔥1
+        // while his header read 🔥19 the day after a lost game. Next to
+        // "puzzles played today", the flame means the daily streak.
+        let streak = AuthService.shared.headerStreak ?? 0
         let modes = ModeGen.daily.map { m -> ModeEntry in
             let c = m.dbKey.flatMap { byMode[$0] }
             return ModeEntry(key: m.dbKey ?? m.id, title: m.shortTitle,
