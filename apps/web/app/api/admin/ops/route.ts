@@ -57,24 +57,34 @@ export async function GET(request: NextRequest) {
     else c.playstore++;
   }
 
-  // Anti-cheat: annotate why each row was flagged.
-  const suspects = (suspectsRes.data ?? []).map((r) => {
-    const reasons: string[] = [];
-    if (r.play_type === 'solo' && r.composite_score > SOLO_LEGIT_MAX) reasons.push(`score ${r.composite_score} > legit solo max ${SOLO_LEGIT_MAX}`);
-    if (r.play_type === 'vs' && r.composite_score > VS_LEGIT_MAX) reasons.push(`score ${r.composite_score} > legit vs max ${VS_LEGIT_MAX}`);
-    if (r.guess_count >= 200) reasons.push('guess_count at clamp ceiling');
-    if (r.total_boards >= 21) reasons.push('total_boards at clamp ceiling');
-    if (r.time_seconds >= 172800) reasons.push('time at 48h clamp (real value unknowable)');
-    if ((r.vs_games ?? 0) >= 1000) reasons.push('vs_games at clamp ceiling');
-    return {
-      username: (r as { profiles?: { username?: string } }).profiles?.username ?? r.user_id,
-      day: String(r.day).slice(0, 10),
-      mode: r.game_mode,
-      playType: r.play_type,
-      score: r.composite_score,
-      reasons,
-    };
-  });
+  // Anti-cheat: annotate why each row was flagged, then drop rows whose only
+  // "reason" turns out to be legitimate.
+  //
+  // GAUNTLET legitimately totals 21 boards (1+4+8+4+4 across its five stages),
+  // which is exactly the clamp ceiling — so a blanket total_boards>=21 rule
+  // flags every honest Gauntlet run. The first live look at this page was
+  // nothing but Gauntlet false positives. A watchlist that cries wolf gets
+  // ignored, which is worse than not having one, so the board ceiling only
+  // applies to non-Gauntlet modes (max there is Octordle's 8).
+  const suspects = (suspectsRes.data ?? [])
+    .map((r) => {
+      const reasons: string[] = [];
+      if (r.play_type === 'solo' && r.composite_score > SOLO_LEGIT_MAX) reasons.push(`score ${r.composite_score} > legit solo max ${SOLO_LEGIT_MAX}`);
+      if (r.play_type === 'vs' && r.composite_score > VS_LEGIT_MAX) reasons.push(`score ${r.composite_score} > legit vs max ${VS_LEGIT_MAX}`);
+      if (r.guess_count >= 200) reasons.push('guess_count at clamp ceiling');
+      if (r.game_mode !== 'GAUNTLET' && r.total_boards > 8) reasons.push(`total_boards ${r.total_boards} exceeds the 8 of Octordle, the widest non-Gauntlet mode`);
+      if (r.time_seconds >= 172800) reasons.push('time at 48h clamp (real value unknowable)');
+      if ((r.vs_games ?? 0) >= 1000) reasons.push('vs_games at clamp ceiling');
+      return {
+        username: (r as { profiles?: { username?: string } }).profiles?.username ?? r.user_id,
+        day: String(r.day).slice(0, 10),
+        mode: r.game_mode,
+        playType: r.play_type,
+        score: r.composite_score,
+        reasons,
+      };
+    })
+    .filter((s) => s.reasons.length > 0);
 
   // VS health from human matches (CPU games write user_stats only — they never
   // create a matches row, so bot fill is invisible here by design).
