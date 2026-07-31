@@ -121,19 +121,30 @@ export async function GET(request: NextRequest) {
       .select('id, username, pro_expires_at, stripe_customer_id, stripe_subscription_id, created_at')
       .eq('is_pro', true)
       .order('pro_expires_at', { ascending: true });
-    const rows = (data ?? []).map((r) => ({
-      userId: r.id,
-      player: r.username ?? r.id,
-      rail: r.stripe_customer_id ? 'Stripe (web)' : 'Store (App Store / Play)',
-      expires: r.pro_expires_at ? fmtTime(r.pro_expires_at) : 'no expiry',
-      member: fmtTime(r.created_at),
-    }));
-    return ok('Active Pro subscribers', `${rows.length} account${rows.length === 1 ? '' : 's'}`, [
-      { key: 'player', label: 'Player' },
-      { key: 'rail', label: 'Billing rail' },
-      { key: 'expires', label: 'Expires' },
-      { key: 'member', label: 'Member since' },
-    ], rows);
+    const rows = (data ?? []).map((r) => {
+      const live = !r.pro_expires_at || new Date(r.pro_expires_at).getTime() > now.getTime();
+      return {
+        userId: r.id,
+        player: r.username ?? r.id,
+        state: live ? 'active' : 'LAPSED — awaiting sweep',
+        rail: r.stripe_customer_id ? 'Stripe (web)' : 'Store (App Store / Play)',
+        expires: r.pro_expires_at ? fmtTime(r.pro_expires_at) : 'no expiry',
+        member: fmtTime(r.created_at),
+      };
+    });
+    const live = rows.filter((r) => r.state === 'active').length;
+    return ok(
+      'Pro subscribers',
+      `${live} active${rows.length - live ? `, ${rows.length - live} lapsed but still flagged is_pro (the hourly sweep demotes these)` : ''}`,
+      [
+        { key: 'player', label: 'Player' },
+        { key: 'state', label: 'State' },
+        { key: 'rail', label: 'Billing rail' },
+        { key: 'expires', label: 'Expires' },
+        { key: 'member', label: 'Member since' },
+      ],
+      rows,
+    );
   }
 
   if (metric === 'signups') {

@@ -124,13 +124,20 @@ export async function GET(request: NextRequest) {
       u.app_metadata?.providers ?? (u.app_metadata?.provider ? [u.app_metadata.provider] : []);
     for (const p of list) providers.set(p, (providers.get(p) ?? 0) + 1);
   }
+  // Same fail-closed rule the apps use (lib/pro.ts isProActive): the DB flag
+  // lags reality by up to an hour (the expiry sweep's cadence), so counting
+  // raw is_pro reports subscribers who have already lapsed.
+  const proActive = (p: { is_pro?: boolean | null; pro_expires_at?: string | null }) =>
+    !!p.is_pro && (!p.pro_expires_at || new Date(p.pro_expires_at).getTime() > now.getTime());
   const summary = {
     totalProfiles: profiles.length,
-    activePro: profiles.filter((p) => p.is_pro).length,
+    activePro: profiles.filter(proActive).length,
     webCustomers: profiles.filter((p) => p.stripe_customer_id).length,
     proPct: profiles.length
-      ? Math.round((10000 * profiles.filter((p) => p.is_pro).length) / profiles.length) / 100
+      ? Math.round((10000 * profiles.filter(proActive).length) / profiles.length) / 100
       : 0,
+    // Rows the sweep hasn't demoted yet — a standing count of DB drift.
+    lapsedNotSwept: profiles.filter((p) => p.is_pro && !proActive(p)).length,
     guestConversions: profiles.filter((p) => p.converted_from_guest).length,
     signups7d: profiles.filter((p) => p.created_at >= new Date(now.getTime() - 7 * 86400000).toISOString()).length,
   };

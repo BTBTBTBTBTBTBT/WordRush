@@ -24,6 +24,7 @@ interface MetricsData {
     proPct: number;
     guestConversions: number;
     signups7d: number;
+    lapsedNotSwept?: number;
   };
   providers: { key: string; count: number }[];
   reportsDaily: { day: string; count: number }[];
@@ -97,7 +98,11 @@ export default function AdminMetricsPage() {
         />
         <DrillCard
           label="Pro conversion" value={`${summary.proPct}%`}
-          sub={`${summary.activePro} Pro / ${summary.totalProfiles} accounts`}
+          sub={
+            summary.lapsedNotSwept
+              ? `${summary.activePro} active / ${summary.totalProfiles} accounts · ${summary.lapsedNotSwept} lapsed still flagged`
+              : `${summary.activePro} Pro / ${summary.totalProfiles} accounts`
+          }
           drill={{ metric: 'pro' }}
         />
         <DrillCard

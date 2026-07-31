@@ -23,7 +23,14 @@ export async function GET(request: NextRequest) {
   ] = await Promise.all([
     admin.from('profiles').select('id', { count: 'exact', head: true }),
     admin.from('profiles').select('id', { count: 'exact', head: true }).gte('last_played_at', `${today}T00:00:00Z`),
-    admin.from('profiles').select('id', { count: 'exact', head: true }).eq('is_pro', true),
+    // is_pro alone overstates: the expiry sweep only runs hourly, so a lapsed
+    // row reads Pro until it fires. Match the clients' isProActive rule —
+    // flag set AND (no expiry OR expiry in the future).
+    admin
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_pro', true)
+      .or(`pro_expires_at.is.null,pro_expires_at.gt.${new Date().toISOString()}`),
     admin.from('daily_results').select('id', { count: 'exact', head: true }).eq('day', today),
     admin.from('profiles').select('id, username, avatar_url, created_at, is_pro, level').order('created_at', { ascending: false }).limit(5),
     admin.from('user_stats').select('game_mode, total_games'),
