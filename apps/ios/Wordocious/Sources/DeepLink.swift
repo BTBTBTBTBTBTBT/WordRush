@@ -25,6 +25,8 @@ final class DeepLink: ObservableObject {
     }
 
     @Published var vsInvite: VSInviteLink?
+    /// A widget tap: open TODAY'S daily for this mode (wordocious://daily/<MODE>).
+    @Published var dailyMode: GameMode?
     /// A recovery link was consumed and a session established — show the
     /// native "set a new password" sheet.
     @Published var showNewPasswordSheet = false
@@ -36,6 +38,15 @@ final class DeepLink: ObservableObject {
     /// Returns true when the URL is ours and was consumed (so the caller can
     /// skip handing it to other URL handlers like GoogleSignIn).
     func handle(url: URL) -> Bool {
+        // Widget deep link: wordocious://daily/<GameMode.rawValue>. The custom
+        // scheme exists ONLY for the widget — everything user-facing stays on
+        // universal links. Set state and let HomeView launch the daily.
+        if url.scheme == "wordocious", url.host?.lowercased() == "daily",
+           let key = url.pathComponents.filter({ $0 != "/" }).first,
+           let mode = GameMode(rawValue: key.uppercased()) {
+            dailyMode = mode
+            return true
+        }
         guard let host = url.host?.lowercased(),
               host == "wordocious.com" || host == "www.wordocious.com" else { return false }
         let parts = url.pathComponents.filter { $0 != "/" }

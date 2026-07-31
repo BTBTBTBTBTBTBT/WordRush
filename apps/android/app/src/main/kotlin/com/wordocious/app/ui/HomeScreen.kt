@@ -161,6 +161,15 @@ fun HomeScreen(
         if (seen == token || seen == "$day:flawless") return@LaunchedEffect
         com.wordocious.app.data.SettingsPref.set("sweep-celebrated-day", token)
         showSweep = true
+        // Rating ask rides the Flawless celebration only (peak-delight moment,
+        // iOS parity): let the banner land for 3s first. 30-day self-throttle
+        // + Play's own quota live inside maybeAsk.
+        if (totals.flawless) {
+            delay(3_000)
+            (context as? android.app.Activity)?.let {
+                com.wordocious.app.data.RatingPrompt.maybeAsk(it)
+            }
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

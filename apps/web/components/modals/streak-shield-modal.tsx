@@ -23,15 +23,22 @@ export function StreakShieldModal({
   onClose,
 }: StreakShieldModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
+  // After a shield is spent, swap the card to a "Streak saved!" beat for 1.8s
+  // before closing (iOS/Android parity) — the modal owns its own dismissal.
+  const [saved, setSaved] = useState(false);
   const focusRef = useRef<HTMLDivElement>(null);
   useFocusTrap(focusRef, open);
 
   useEffect(() => {
-    if (!open) return;
+    if (open) setSaved(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || saved) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [open, onClose]);
+  }, [open, saved, onClose]);
 
   const handleAction = async (action: () => Promise<void>, key: string) => {
     setLoading(key);
@@ -40,6 +47,12 @@ export function StreakShieldModal({
     } finally {
       setLoading(null);
     }
+  };
+
+  const handleShield = async () => {
+    await handleAction(onUseShield, 'shield');
+    setSaved(true);
+    setTimeout(onClose, 1800);
   };
 
   return (
@@ -62,15 +75,26 @@ export function StreakShieldModal({
             aria-modal="true"
             aria-label="Streak shield"
           >
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 transition-opacity hover:opacity-80"
-              style={{ color: 'var(--color-text-muted)' }}
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {!saved && (
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 transition-opacity hover:opacity-80"
+                style={{ color: 'var(--color-text-muted)' }}
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
 
+            {saved ? (
+              <div className="text-center space-y-3 py-4 animate-fade-in-scale">
+                <div className="text-[44px] leading-none">🛡</div>
+                <h2 className="text-2xl font-black" style={{ color: 'var(--color-text)' }}>Streak saved!</h2>
+                <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  Your {streak}-day streak is protected · {Math.max(shields - 1, 0)} shields left
+                </p>
+              </div>
+            ) : (
             <div className="text-center space-y-4">
               {/* Streak at risk */}
               <div className="flex justify-center">
@@ -109,7 +133,7 @@ export function StreakShieldModal({
               <div className="space-y-2 pt-2">
                 {shields > 0 ? (
                   <button
-                    onClick={() => handleAction(onUseShield, 'shield')}
+                    onClick={handleShield}
                     disabled={loading !== null}
                     className="w-full py-3 rounded-xl text-white font-black text-sm btn-3d disabled:opacity-50"
                     style={{
@@ -135,6 +159,7 @@ export function StreakShieldModal({
                 </button>
               </div>
             </div>
+            )}
           </div>
         </div>
       )}

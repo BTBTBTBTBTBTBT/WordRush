@@ -39,6 +39,15 @@ struct HomeView: View {
         if sweepCelebratedDay == token || sweepCelebratedDay == "\(day):flawless" { return }
         sweepCelebratedDay = token
         showSweepCeleb = true
+        // A Flawless Victory is the app's peak moment — the only place we ask
+        // for an App Store rating (self-throttled in RatingPrompt; Apple caps
+        // the rest). Delayed so the celebration lands first.
+        if completions.flawless {
+            Task {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                RatingPrompt.maybeAsk()
+            }
+        }
     }
 
     /// An Unlimited ProperNoundle run (PN has its own view, not GameScreen).
@@ -127,7 +136,9 @@ struct HomeView: View {
                 if showShieldModal, let p = auth.profile {
                     StreakShieldModal(
                         streak: p.dailyLoginStreak, shields: p.streakShields,
-                        onUseShield: { await ShieldService.useShield(); closeShield() },
+                        // The modal shows its "Streak saved" beat then calls
+                        // onClose itself — closing here would cut it off.
+                        onUseShield: { await ShieldService.useShield() },
                         onDecline: { await ShieldService.declineStreak(); closeShield() },
                         onClose: { closeShield() })
                     .transition(.opacity)
@@ -190,6 +201,16 @@ struct HomeView: View {
                 vsDailyWon = await won
                 checkStreakAtRisk()
                 checkSweepCelebration()
+            }
+            // Widget deep link (wordocious://daily/<MODE>): launch today's
+            // daily exactly as tapping its home tile would. PN's daily is a
+            // NavigationLink with no state hook, so the widget doesn't link it
+            // — its dot just opens the app to Home.
+            .onReceive(DeepLink.shared.$dailyMode) { m in
+                guard let m, m != .propernoundle else { return }
+                DeepLink.shared.dailyMode = nil
+                let title = ModeGen.daily.first { $0.dbKey == m.rawValue }?.title ?? m.rawValue
+                pendingGame = ActiveGame(seed: DailySeed.today(mode: m), mode: m, title: title)
             }
             // Refresh today's daily completions whenever Home reappears (returning
             // from a daily push like ProperNoundle) so a just-finished game shows
@@ -391,10 +412,19 @@ struct HomeView: View {
     // MARK: - Streak shield (ports StreakShieldProvider)
 
     private func checkStreakAtRisk() {
-        guard !shieldChecked, let p = auth.profile else { return }
+        guard !shieldChecked, auth.profile != nil else { return }
         shieldChecked = true
-        if p.dailyLoginStreak > 0 && ShieldService.isStreakAtRisk(lastPlayedAt: p.lastPlayedAt) {
-            withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { showShieldModal = true }
+        Task {
+            // The cached profile can predate a game played on ANOTHER device
+            // (web, iPad) — the founder kept getting this modal after having
+            // played. Refresh so last_played_at is the server's truth, and
+            // treat any completion already recorded today (completions.load()
+            // ran just before this) as proof of play regardless.
+            await auth.refreshProfile()
+            guard completions.completedCount == 0, let p = auth.profile else { return }
+            if p.dailyLoginStreak > 0 && ShieldService.isStreakAtRisk(lastPlayedAt: p.lastPlayedAt) {
+                withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { showShieldModal = true }
+            }
         }
     }
 

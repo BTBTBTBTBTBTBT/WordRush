@@ -42,6 +42,26 @@ object ShieldService {
         }
     }
 
+    @Serializable
+    private data class FreshRow(
+        @SerialName("last_played_at") val lastPlayedAt: String? = null,
+        @SerialName("daily_login_streak") val dailyStreak: Int = 0,
+    )
+
+    /**
+     * At-risk check against the SERVER's profile row, not the cached one. The
+     * cached profile can predate a game played on another device (web, iOS) —
+     * the founder kept getting the modal after having played today. Returns
+     * null when the fetch fails (show nothing rather than a false alarm).
+     */
+    suspend fun freshStreakAtRisk(userId: String): Pair<Int, Boolean>? = runCatching {
+        val row = client.postgrest["profiles"]
+            .select(io.github.jan.supabase.postgrest.query.Columns.raw("last_played_at,daily_login_streak")) {
+                filter { eq("id", userId) }
+            }.decodeSingle<FreshRow>()
+        row.dailyStreak to (row.dailyStreak > 0 && isStreakAtRisk(row.lastPlayedAt))
+    }.getOrNull()
+
     fun isStreakAtRisk(lastPlayedAt: String?): Boolean {
         if (lastPlayedAt == null) return false
         return runCatching {

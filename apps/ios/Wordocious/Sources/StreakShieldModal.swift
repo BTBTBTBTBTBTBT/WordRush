@@ -12,13 +12,32 @@ struct StreakShieldModal: View {
 
     @State private var loading: String?
     @State private var shown = false
+    /// Post-use confirmation beat — the shield's work was invisible before:
+    /// tap, modal gone, nothing acknowledged the save.
+    @State private var saved = false
 
     private let lilac = Color(hex: 0xC4B5FD)
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.4).ignoresSafeArea()
-                .onTapGesture { onClose() }
+                .onTapGesture { if !saved { onClose() } }
+
+            if saved {
+                VStack(spacing: 10) {
+                    Text("🛡").font(.system(size: 44))
+                    Text("Streak saved!").font(Brand.title(22)).foregroundStyle(Theme.textPrimary)
+                    Text("Your \(streak)-day streak is protected · \(max(shields - 1, 0)) shields left")
+                        .font(Brand.font(13, .bold)).foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(28)
+                .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(lilac, lineWidth: 1.5))
+                .padding(.horizontal, 40)
+                .transition(.scale(scale: 0.9).combined(with: .opacity))
+                .zIndex(2)
+            }
 
             VStack(spacing: 16) {
                 // Flame with "!" badge
@@ -58,7 +77,13 @@ struct StreakShieldModal: View {
                     if shields > 0 {
                         Button {
                             loading = "shield"
-                            Task { await onUseShield(); loading = nil }
+                            Task {
+                                await onUseShield()
+                                loading = nil
+                                withAnimation(Theme.animation(.easeInOut(duration: 0.2))) { saved = true }
+                                try? await Task.sleep(nanoseconds: 1_800_000_000)
+                                onClose()
+                            }
                         } label: {
                             Text(loading == "shield" ? "Using Shield..." : "Use Shield (\(shields) left)")
                                 .font(Brand.font(14, .black)).foregroundStyle(.white)

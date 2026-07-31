@@ -62,6 +62,9 @@ fun StreakShieldModal(
 ) {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
+    // After a shield is spent, swap the card to a "Streak saved!" beat for
+    // 1.8s before closing (iOS/web parity) — the modal owns its own dismissal.
+    var saved by remember { mutableStateOf(false) }
     // iOS fires a warning haptic and springs the card in from 0.9×/0 opacity.
     val haptics = LocalHapticFeedback.current
     var shown by remember { mutableStateOf(false) }
@@ -77,7 +80,7 @@ fun StreakShieldModal(
     )
 
     Box(
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)).clickableNoRipple { if (!busy) onClose() },
+        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)).clickableNoRipple { if (!busy && !saved) onClose() },
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -92,6 +95,15 @@ fun StreakShieldModal(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (saved) {
+                Text("\uD83D\uDEE1", fontSize = 44.sp)
+                Text("Streak saved!", fontSize = 22.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                Text(
+                    "Your $streak-day streak is protected \u00B7 ${(shields - 1).coerceAtLeast(0)} shields left",
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
+                )
+                return@Column
+            }
             Box(Modifier.fillMaxWidth()) {
                 Icon(
                     Icons.Filled.Close, "Close", tint = WTheme.textMuted,
@@ -133,7 +145,13 @@ fun StreakShieldModal(
                     onClick = {
                         if (!busy) {
                             busy = true
-                            scope.launch { onUseShield(); busy = false }
+                            scope.launch {
+                                onUseShield()
+                                busy = false
+                                saved = true
+                                kotlinx.coroutines.delay(1_800)
+                                onClose()
+                            }
                         }
                     },
                     face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),

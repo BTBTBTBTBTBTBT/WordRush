@@ -224,9 +224,11 @@ fun MainScreen() {
         val p = profile ?: return@LaunchedEffect
         if (shieldChecked) return@LaunchedEffect
         shieldChecked = true
-        if (p.dailyLoginStreak > 0 && com.wordocious.app.data.ShieldService.isStreakAtRisk(p.lastPlayedAt)) {
-            showShieldModal = true
-        }
+        // Fresh server check — the cached profile here can predate a game
+        // played on another device, which showed this modal after the user
+        // had already played today (iOS/web get the same fix).
+        val fresh = com.wordocious.app.data.ShieldService.freshStreakAtRisk(p.id) ?: return@LaunchedEffect
+        if (fresh.second) showShieldModal = true
     }
 
     vsInvite?.let { (inviteMode, code) ->
@@ -425,7 +427,7 @@ fun MainScreen() {
                         onUseShield = {
                             p?.id?.let { com.wordocious.app.data.ShieldService.useShield(it) }
                             com.wordocious.app.data.AuthService.refreshProfile()
-                            showShieldModal = false
+                            // Modal shows its "Streak saved!" beat, then calls onClose itself.
                         },
                         onDecline = {
                             p?.id?.let { com.wordocious.app.data.ShieldService.declineStreak(it) }

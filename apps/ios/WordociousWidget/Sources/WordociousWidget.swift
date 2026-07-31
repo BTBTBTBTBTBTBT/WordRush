@@ -197,10 +197,19 @@ struct MediumView: View {
             Spacer(minLength: 0)
             LazyVGrid(columns: cols, spacing: 6) {
                 ForEach(snap.modes, id: \.key) { m in
-                    VStack(spacing: 2) {
+                    // Deep link: tap a chip, land in that daily (DeepLink.swift
+                    // handles wordocious://daily/<key>). ProperNoundle's daily
+                    // has no programmatic launch path, so its chip just opens
+                    // the app (no Link).
+                    let cell = VStack(spacing: 2) {
                         ModeCell(mode: m, size: 26)
                         Text(m.title).font(.system(size: 7.5, weight: .bold, design: .rounded))
                             .foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    if m.key != "PROPERNOUNDLE", let url = URL(string: "wordocious://daily/\(m.key)") {
+                        Link(destination: url) { cell }
+                    } else {
+                        cell
                     }
                 }
                 // 10th cell: call-to-action / celebration.
@@ -221,17 +230,38 @@ struct MediumView: View {
     }
 }
 
+// MARK: - Lock screen (accessoryRectangular): count + streak at a glance
+
+struct AccessoryRectangularView: View {
+    let snap: WSnapshot
+    private var done: Int { snap.modes.filter(\.played).count }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("WORDOCIOUS").font(.system(size: 11, weight: .black, design: .rounded))
+                .widgetAccentable()
+            Text("\(done)/\(snap.modes.count) dailies played")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+            if snap.streak > 0 {
+                Label("\(snap.streak) day streak", systemImage: "flame.fill")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 // MARK: - Widget
 
 struct WordociousDailyWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "WordociousDaily", provider: DailyProvider()) { entry in
             WidgetRootView(entry: entry)
-                .containerBackgroundCompat()
+                .containerBackgroundCompatAuto()
         }
         .configurationDisplayName("Daily Puzzles")
         .description("Today's daily progress and your streak.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
     }
 }
 
@@ -242,19 +272,30 @@ struct WidgetRootView: View {
     var body: some View {
         switch family {
         case .systemMedium: MediumView(snap: entry.snap)
+        case .accessoryRectangular: AccessoryRectangularView(snap: entry.snap)
         default: SmallView(snap: entry.snap)
         }
     }
 }
 
+private struct BGAuto: ViewModifier {
+    @Environment(\.widgetFamily) private var family
+    func body(content: Content) -> some View {
+        content.containerBackgroundCompat(accessory: family == .accessoryRectangular)
+    }
+}
 extension View {
+    func containerBackgroundCompatAuto() -> some View { modifier(BGAuto()) }
+
     /// iOS 17 requires containerBackground; iOS 16 uses plain padding.
     @ViewBuilder
-    func containerBackgroundCompat() -> some View {
+    func containerBackgroundCompat(accessory: Bool = false) -> some View {
         if #available(iOS 17.0, *) {
-            containerBackground(for: .widget) { Color(widgetHex: "#f8f7ff") }
+            // Lock-screen accessories tint themselves; a solid brand background
+            // would render as an opaque slab there.
+            containerBackground(for: .widget) { accessory ? Color.clear : Color(widgetHex: "#f8f7ff") }
         } else {
-            padding(12).background(Color(widgetHex: "#f8f7ff"))
+            if accessory { self } else { padding(12).background(Color(widgetHex: "#f8f7ff")) }
         }
     }
 }

@@ -28,7 +28,7 @@ export function StreakShieldProvider({ children }: { children: React.ReactNode }
     if (!user) return;
     await useShield(user.id);
     await refreshProfile();
-    setShowModal(false);
+    // Modal shows its "Streak saved!" beat, then calls onClose itself.
   };
 
   const handleDecline = async () => {

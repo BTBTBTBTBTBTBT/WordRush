@@ -69,6 +69,10 @@ targets:
           - CFBundleURLName: com.wordocious.app.auth
             CFBundleURLSchemes:
               - com.wordocious.app
+          # Widget deep links (wordocious://daily/<MODE>) — widget-only scheme.
+          - CFBundleURLName: com.wordocious.app.widget
+            CFBundleURLSchemes:
+              - wordocious
           # Google Sign-In callback — the reversed iOS OAuth client ID.
           - CFBundleURLName: com.wordocious.app.google
             CFBundleURLSchemes:
