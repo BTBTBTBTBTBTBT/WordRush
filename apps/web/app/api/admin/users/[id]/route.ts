@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   const admin = getAdminSupabase();
   const userId = params.id;
 
-  const [profileRes, statsRes, matchesRes, auditRes, authRes, refRes] = await Promise.all([
+  const [profileRes, statsRes, matchesRes, auditRes, authRes, refRes, devicesRes, sentRes, reportsRes] = await Promise.all([
     admin.from('profiles').select('*').eq('id', userId).single(),
     admin.from('user_stats').select('*').eq('user_id', userId),
     admin.from('matches').select('*').or(`player1_id.eq.${userId},player2_id.eq.${userId}`).order('created_at', { ascending: false }).limit(10),
@@ -20,6 +20,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     // from referrals (invited-by username, else organic).
     admin.auth.admin.getUserById(userId),
     admin.from('referrals').select('status, redeemed_at, inviter:profiles!referrals_inviter_id_fkey(username)').eq('invitee_id', userId).maybeSingle(),
+    // CRM extras: devices (reachability + which platforms they actually use),
+    // their own invites (referral value both directions), and moderation
+    // context (reports filed by or against them).
+    admin.from('device_tokens').select('platform, created_at').eq('user_id', userId),
+    admin.from('referrals').select('status, created_at, invitee:profiles!referrals_invitee_id_fkey(username)').eq('inviter_id', userId).order('created_at', { ascending: false }),
+    admin.from('reports').select('id, reporter_id, reported_user_id, reason, context, created_at').or(`reporter_id.eq.${userId},reported_user_id.eq.${userId}`).order('created_at', { ascending: false }).limit(10),
   ]);
 
   if (profileRes.error || !profileRes.data) {
@@ -36,6 +42,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     referral: referral
       ? { inviter: referral.inviter?.username ?? null, status: referral.status, redeemed_at: referral.redeemed_at }
       : null,
+    devices: (devicesRes as any).data || [],
+    invitesSent: ((sentRes as any).data || []).map((r: any) => ({
+      invitee: r.invitee?.username ?? null, status: r.status, created_at: r.created_at,
+    })),
+    reports: ((reportsRes as any).data || []).map((r: any) => ({
+      ...r, direction: r.reporter_id === userId ? 'filed' : 'against',
+    })),
     stats: statsRes.data || [],
     recentMatches: matchesRes.data || [],
     auditLog: auditRes.data || [],

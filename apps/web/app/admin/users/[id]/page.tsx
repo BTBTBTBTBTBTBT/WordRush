@@ -12,6 +12,9 @@ interface UserDetail {
   email: string | null;
   provider: string | null;   // google | apple | email — apple implies the iOS app
   referral: { inviter: string | null; status: string; redeemed_at: string | null } | null;
+  devices: { platform: string; created_at: string }[];
+  invitesSent: { invitee: string | null; status: string; created_at: string }[];
+  reports: { id: string; direction: 'filed' | 'against'; reason: string; context: string; created_at: string }[];
 }
 
 const MODE_LABELS: Record<string, string> = {
@@ -117,6 +120,84 @@ export default function AdminUserDetailPage() {
           <div><span className="text-gray-400">Joined:</span> {new Date(p.created_at).toLocaleString()}</div>
           <div><span className="text-gray-400">Last Active:</span> {p.last_played_at ? new Date(p.last_played_at).toLocaleString() : 'Never'}</div>
           <div><span className="text-gray-400">Pro Expires:</span> {p.pro_expires_at ? new Date(p.pro_expires_at).toLocaleString() : 'N/A'}</div>
+        </div>
+      </div>
+
+      {/* CRM: billing, reachability, referral activity, moderation context */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Billing</h2>
+          <div className="space-y-1.5 text-xs text-gray-600 font-medium">
+            <div>
+              <span className="text-gray-400">Rail:</span>{' '}
+              {p.stripe_customer_id ? 'Stripe (web)' : p.is_pro ? 'App Store / Google Play (store-managed)' : 'None — free user'}
+            </div>
+            <div><span className="text-gray-400">Pro:</span> {p.is_pro ? `Active until ${p.pro_expires_at ? new Date(p.pro_expires_at).toLocaleString() : '—'}` : 'Not active'}</div>
+            {p.stripe_customer_id && (
+              <div>
+                <a href={`https://dashboard.stripe.com/customers/${p.stripe_customer_id}`} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline font-bold">Open in Stripe dashboard ↗</a>
+                {p.stripe_subscription_id && (
+                  <> · <a href={`https://dashboard.stripe.com/subscriptions/${p.stripe_subscription_id}`} target="_blank" rel="noreferrer" className="text-purple-600 hover:underline font-bold">Subscription ↗</a></>
+                )}
+              </div>
+            )}
+            <p className="text-gray-400 pt-1.5 border-t border-gray-50">
+              {p.stripe_customer_id
+                ? 'Refunds and cancellations for this user are executed in Stripe.'
+                : 'Store purchases: refunds and cancellations happen in the Apple App Store / Google Play — we cannot execute them. Goodwill Pro time can be granted below.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Devices &amp; Reach</h2>
+          {data.devices.length === 0 ? (
+            <p className="text-xs text-gray-400">No push-registered devices — not reachable by notification. (Web-only players never register.)</p>
+          ) : (
+            <div className="space-y-1.5 text-xs text-gray-600 font-medium">
+              {data.devices.map((d, i) => (
+                <div key={i}>
+                  <span className="font-bold text-gray-800 uppercase">{d.platform}</span>
+                  <span className="text-gray-400"> · registered {new Date(d.created_at).toLocaleDateString()}</span>
+                </div>
+              ))}
+              <p className="text-gray-400 pt-1.5 border-t border-gray-50">Push-reachable. Platforms listed are where the app is installed and notifications allowed.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Referral Activity</h2>
+          <div className="space-y-1.5 text-xs text-gray-600 font-medium">
+            <div>
+              <span className="text-gray-400">Came from:</span>{' '}
+              {data.referral ? `Referral — invited by ${data.referral.inviter || 'unknown'}` : 'Organic'}
+            </div>
+            <div><span className="text-gray-400">Invites sent:</span> {data.invitesSent.length}</div>
+            {data.invitesSent.slice(0, 5).map((inv, i) => (
+              <div key={i} className="text-gray-500">
+                → {inv.invitee || 'unclaimed'} <span className="uppercase text-[10px] font-bold text-gray-400">{inv.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Moderation Context</h2>
+          {data.reports.length === 0 ? (
+            <p className="text-xs text-gray-400">No reports filed by or against this user.</p>
+          ) : (
+            <div className="space-y-1.5 text-xs text-gray-600 font-medium">
+              {data.reports.map((r) => (
+                <div key={r.id}>
+                  <span className={r.direction === 'against' ? 'text-red-600 font-bold' : 'text-gray-700 font-bold'}>
+                    {r.direction === 'against' ? 'REPORTED' : 'FILED'}
+                  </span>{' '}
+                  <span className="text-gray-500">{r.reason || '(no reason)'} · {new Date(r.created_at).toLocaleDateString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
