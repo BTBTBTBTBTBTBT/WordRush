@@ -311,7 +311,10 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
             } else if (isSweep) {
                 if (sweepEntries.isEmpty()) {
                     Column(Modifier.fillMaxWidth().padding(vertical = 30.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = WTheme.textMuted.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
+                        // The broom brands the CARD HEADER; the body's empty state
+                        // uses the same trophy every other empty board uses (iOS
+                        // sweepCard). Drawing the broom here repeated it twice.
+                        Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
                         Spacer(Modifier.height(8.dp))
                         Text("No sweeps yet today. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
