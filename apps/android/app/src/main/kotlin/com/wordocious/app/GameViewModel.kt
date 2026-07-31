@@ -219,6 +219,24 @@ class GameViewModel(
     }
 
     /**
+     * Is the player on a one-board-at-a-time stage?
+     *
+     * True for standalone Succession AND for the Gauntlet "Succession" stage —
+     * a sequential stage whose `mode` is GAUNTLET, not SEQUENCE. Web keys this
+     * off `currentStageConfig.sequential` and iOS off `isSequence`; keying it
+     * off the mode alone silently misses the Gauntlet case.
+     *
+     * THE SINGLE DEFINITION. This predicate previously existed in four places —
+     * GameScreen, VSGameScreen, submitGuess and (mode-only) the two accessors
+     * below — and two of them omitted the Gauntlet clause. That drift is what
+     * broke the Gauntlet Succession stage after the standalone mode was fixed.
+     * Derive from here; do not re-spell it.
+     */
+    val isSequentialStage: Boolean
+        get() = mode == GameMode.SEQUENCE ||
+            (_state.value.gauntlet?.let { gauntletStages.getOrNull(it.currentStage)?.sequential } == true)
+
+    /**
      * Index of the board the player is actually on.
      *
      * NOTHING on any platform advances `state.currentBoardIndex` — the reducer
@@ -231,14 +249,15 @@ class GameViewModel(
      * one word. Every UI consumer must use this, not the raw field.
      */
     val activeBoardIndex: Int
-        get() = if (mode == GameMode.SEQUENCE)
+        get() = if (isSequentialStage)
             _state.value.boards.indexOfFirst { it.status == GameStatus.PLAYING }
                 .let { if (it < 0) _state.value.boards.lastIndex else it }
         else _state.value.currentBoardIndex
 
-    /** The board a guess lands on. Sequence's active board = first still-PLAYING
-     *  (currentBoardIndex is never advanced); other modes use board 0's shared history. */
-    private fun activeBoard() = if (mode == GameMode.SEQUENCE)
+    /** The board a guess lands on. A sequential stage's active board = first
+     *  still-PLAYING (currentBoardIndex is never advanced); other modes use
+     *  board 0's shared history. */
+    private fun activeBoard() = if (isSequentialStage)
         (_state.value.boards.firstOrNull { it.status == GameStatus.PLAYING } ?: _state.value.boards[0])
     else _state.value.boards[_state.value.currentBoardIndex]
 
@@ -273,9 +292,9 @@ class GameViewModel(
         // server's evaluation) target the right board. Also covers the Gauntlet
         // "Succession" stage (a sequential stage inside GAUNTLET mode) — mirrors
         // iOS's isSequence = mode == .sequence || currentGauntletStage.sequential.
-        val sequentialStage = mode == GameMode.SEQUENCE ||
-            (before.gauntlet?.let { gauntletStages.getOrNull(it.currentStage)?.sequential } == true)
-        val committedBoardIndex = if (sequentialStage)
+        // `_state.value` is still `before` here (the reducer runs on the next
+        // line), so the shared predicate sees the same stage the guess lands on.
+        val committedBoardIndex = if (isSequentialStage)
             before.boards.indexOfFirst { it.status == GameStatus.PLAYING }.coerceAtLeast(0)
         else 0
         val after = gameReducer(before, GameAction.SubmitGuess(guess, applyToAll = applyToAll))

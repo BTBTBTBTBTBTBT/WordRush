@@ -465,7 +465,9 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
     val invalid by game.invalidWord.collectAsState()
     val shakeKey by game.shakeKey.collectAsState()
     val multiBoard = state.boards.size > 1
-    val isSequential = mode(vm) == GameMode.SEQUENCE
+    // Same predicate the solo screen uses: VS Gauntlet has a Succession stage
+    // too, and a mode-only test rendered it as QuadWord with a frozen board.
+    val isSequential = game.isSequentialStage
     val useQuadrant = multiBoard && !isSequential
     val letterStates = if (isSequential)
         computeCombinedLetterStates(listOf(state.boards[game.activeBoardIndex]))
