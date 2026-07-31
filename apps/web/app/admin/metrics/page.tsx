@@ -37,8 +37,11 @@ function Bars({ points, color }: { points: { day: string; value: number }[]; col
   const max = Math.max(1, ...points.map((p) => p.value));
   return (
     <div className="flex items-end gap-1 h-16">
+      {/* h-full on the column is load-bearing: a percentage height resolves
+          against a parent with a DEFINITE height, and without it every bar
+          collapsed to minHeight regardless of value. */}
       {[...points].reverse().map((p) => (
-        <div key={p.day} className="flex-1 flex flex-col items-center gap-0.5" title={`${fmtDay(p.day)}: ${p.value}`}>
+        <div key={p.day} className="flex-1 flex flex-col justify-end h-full" title={`${fmtDay(p.day)}: ${p.value}`}>
           <div className="w-full rounded-t" style={{ height: `${(p.value / max) * 100}%`, minHeight: p.value > 0 ? 3 : 1, background: p.value > 0 ? color : '#e5e7eb' }} />
         </div>
       ))}
