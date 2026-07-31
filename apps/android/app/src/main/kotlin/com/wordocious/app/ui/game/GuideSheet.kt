@@ -80,6 +80,7 @@ fun GuideSheet(mode: GameMode, onDismiss: () -> Unit) {
                     Text(
                         g.title.uppercase(), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp,
                         style = androidx.compose.ui.text.TextStyle(
+                            fontFamily = com.wordocious.app.ui.theme.Nunito,
                             brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
                                 com.wordocious.app.ui.modeTitleGradient(mode),
                             ),

@@ -145,11 +145,18 @@ fun AuthScreen(
                 .padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            // iOS's card is a VStack, which centres its children by default;
+            // Compose's Column defaults to Start, so this heading sat
+            // left-aligned against a centred wordmark and centred everything
+            // else. Centre it explicitly rather than centring the whole Column,
+            // which would drag the field labels off their leading edge.
             Text(
-                when (mode) { "signin" -> "Welcome Back!"; "signup" -> "Join the Fun!"; else -> "Reset Password" },
+                when (mode) { "signin" -> "WELCOME BACK!"; "signup" -> "JOIN THE FUN!"; else -> "RESET PASSWORD" },
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Black,
                 color = WTheme.text,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
             )
 
             if (mode == "reset") {

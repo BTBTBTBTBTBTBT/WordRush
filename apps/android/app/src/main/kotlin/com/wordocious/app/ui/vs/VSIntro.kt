@@ -189,6 +189,7 @@ private fun VsPop() {
     Text(
         "VS", fontSize = 48.sp, fontWeight = FontWeight.Black,
         style = TextStyle(
+            fontFamily = com.wordocious.app.ui.theme.Nunito,
             brush = Brush.linearGradient(listOf(Color(0xFFFACC15), Color(0xFFEC4899), Color(0xFFA855F7))),
         ),
         modifier = Modifier.graphicsLayer {

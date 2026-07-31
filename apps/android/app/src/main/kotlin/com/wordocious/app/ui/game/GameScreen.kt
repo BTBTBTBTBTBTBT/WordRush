@@ -648,6 +648,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         stageName ?: com.wordocious.app.ui.modeTitle(mode),
                         fontSize = 18.sp, fontWeight = FontWeight.Black,
                         style = androidx.compose.ui.text.TextStyle(
+                            fontFamily = com.wordocious.app.ui.theme.Nunito,
                             brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
                                 gauntletStageGradient(stageName ?: ""),
                             ),
@@ -662,6 +663,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                         com.wordocious.app.ui.modeTitle(mode),
                         fontSize = 28.sp, fontWeight = FontWeight.Black,
                         style = androidx.compose.ui.text.TextStyle(
+                            fontFamily = com.wordocious.app.ui.theme.Nunito,
                             brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
                                 com.wordocious.app.ui.modeTitleGradient(mode),
                             ),

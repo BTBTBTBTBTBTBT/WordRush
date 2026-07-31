@@ -288,6 +288,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                     p.username ?: "Player",
                     fontSize = 30.sp, fontWeight = FontWeight.Black,
                     style = TextStyle(
+                        fontFamily = com.wordocious.app.ui.theme.Nunito,
                         brush = Brush.horizontalGradient(
                             listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA)),
                         ),

@@ -103,6 +103,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                         "INVITE A FRIEND",
                         fontSize = 24.sp, fontWeight = FontWeight.Black,
                         style = androidx.compose.ui.text.TextStyle(
+                            fontFamily = com.wordocious.app.ui.theme.Nunito,
                             brush = Brush.linearGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899))),
                         ),
                     )

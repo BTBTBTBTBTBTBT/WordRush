@@ -116,6 +116,7 @@ fun StageTransitionOverlay(
                         next.name,
                         fontSize = 30.sp, fontWeight = FontWeight.Black,
                         style = TextStyle(
+                            fontFamily = com.wordocious.app.ui.theme.Nunito,
                             brush = Brush.horizontalGradient(
                                 listOf(Color(0xFFFACC15), Color(0xFFF472B6), Color(0xFFC084FC)),
                             ),

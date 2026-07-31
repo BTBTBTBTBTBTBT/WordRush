@@ -61,7 +61,7 @@ struct AuthView: View {
 
     private var card: some View {
         VStack(spacing: 16) {   // web card space-y-4 between header / social / divider / form
-            Text(mode == .signin ? "Welcome Back!" : mode == .signup ? "Join the Fun!" : "Reset Password")
+            Text(mode == .signin ? "WELCOME BACK!" : mode == .signup ? "JOIN THE FUN!" : "RESET PASSWORD")
                 .font(Brand.font(18, .black)).foregroundStyle(Theme.textPrimary)
 
             if mode == .reset {

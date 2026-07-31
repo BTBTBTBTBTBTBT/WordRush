@@ -583,6 +583,7 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
                 Text(
                     profile?.username ?: "Player", fontSize = 28.sp, fontWeight = FontWeight.Black,
                     style = androidx.compose.ui.text.TextStyle(
+                        fontFamily = com.wordocious.app.ui.theme.Nunito,
                         brush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA))),
                     ),
                 )
@@ -719,6 +720,7 @@ private fun TodaysDailies(today: Map<String, DailyCompletionsService.Completion>
                     if (flawless) "FLAWLESS VICTORY!" else "DAILY SWEEP!",
                     fontSize = 16.sp, fontWeight = FontWeight.Black,
                     style = androidx.compose.ui.text.TextStyle(
+                        fontFamily = com.wordocious.app.ui.theme.Nunito,
                         brush = Brush.linearGradient(
                             if (flawless) listOf(Color(0xFFD97706), Color(0xFFB45309))
                             else listOf(Color(0xFFA78BFA), Color(0xFFEC4899)),

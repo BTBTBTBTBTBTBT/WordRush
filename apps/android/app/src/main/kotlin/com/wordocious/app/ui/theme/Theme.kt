@@ -220,8 +220,16 @@ fun WordociousTheme(content: @Composable () -> Unit) {
         colorScheme = scheme,
         typography = WordociousTypography,
     ) {
-        // Make EVERY Text() default to Nunito (brand font) unless it overrides
-        // fontFamily itself — none of our Texts do, so the whole app uses Nunito.
+        // Make every Text() default to Nunito (brand font).
+        //
+        // CAVEAT, and it bit us: this only covers Texts that INHERIT the style.
+        // `Text(style = TextStyle(...))` REPLACES LocalTextStyle wholesale — it
+        // does not merge — so any gradient title written as
+        // `style = TextStyle(brush = ...)` silently drops Nunito and renders in
+        // the platform default. Nine of them did, including the in-game mode
+        // title, which is why the founder spotted "the font looks a little off"
+        // on the game screen while the home screen looked right.
+        // Gradient text MUST spell out `fontFamily = Nunito` alongside `brush`.
         androidx.compose.runtime.CompositionLocalProvider(
             androidx.compose.material3.LocalTextStyle provides
                 androidx.compose.material3.LocalTextStyle.current.copy(fontFamily = Nunito),
