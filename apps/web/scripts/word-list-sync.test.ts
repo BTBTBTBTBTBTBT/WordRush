@@ -65,3 +65,59 @@ describe('bundled word-list copies are identical everywhere', () => {
     }
   });
 });
+
+/**
+ * The invariants that protect ALREADY-PLAYED games from a word-list change.
+ *
+ * Replaying a finished game (the completed-daily board, VS result detail, every
+ * share card) pushes the STORED guesses back through the reducer, and the
+ * reducer drops any guess that fails `isValidWord`. So a word that leaves a
+ * guess list does not merely stop being typeable — it silently rewrites history
+ * for anyone who ever played it, and the wrong board is what gets shared.
+ *
+ * `--grow-allowed` enforces monotonicity (G7) when it runs. These assert the
+ * consequences on what actually ships, so a hand-edit of a JSON file fails here
+ * rather than in someone's saved game.
+ */
+describe('word lists cannot rewrite finished games', () => {
+  const read = (name: string): string[] =>
+    JSON.parse(readFileSync(join(repoRoot, 'apps/web/data', name), 'utf8')).map((w: string) => w.toUpperCase());
+  const offensive = new Set(
+    readFileSync(join(repoRoot, 'scripts/data/offensive-blocklist.txt'), 'utf8')
+      .split('\n').map((l) => l.trim().toUpperCase()).filter((l) => l && !l.startsWith('#')),
+  );
+
+  for (const [n, allowed, solutions, legacy] of [
+    [5, 'allowed.json', 'solutions.json', 'solutions-legacy.json'],
+    [6, 'allowed-6.json', 'solutions-6.json', 'solutions-6-legacy.json'],
+    [7, 'allowed-7.json', 'solutions-7.json', 'solutions-7-legacy.json'],
+  ] as Array<[number, string, string, string]>) {
+    describe(`${n}-letter`, () => {
+      const guesses = new Set(read(allowed));
+
+      // Every answer ever served must stay guessable, or replaying the day it
+      // was the answer drops the winning row. Offensive-blocklist words are the
+      // one accepted exception (bible §129).
+      it('every current and legacy answer is still a valid guess', () => {
+        for (const w of [...read(solutions), ...read(legacy)]) {
+          if (offensive.has(w)) continue;
+          expect(guesses.has(w), `${w} is an answer in ${solutions}/${legacy} but not in ${allowed}`).toBe(true);
+        }
+      });
+
+      // A wrong-length entry can never be typed on this board, but it can be
+      // picked by anything that indexes the list positionally.
+      it(`every entry is exactly ${n} letters, sorted and deduplicated`, () => {
+        const raw: string[] = JSON.parse(readFileSync(join(repoRoot, 'apps/web/data', allowed), 'utf8'));
+        const bad = raw.filter((w) => !new RegExp(`^[A-Z]{${n}}$`).test(w));
+        expect(bad, `${allowed} holds entries that are not ${n} uppercase letters`).toEqual([]);
+        expect(raw.length, `${allowed} has duplicates`).toBe(new Set(raw).size);
+        expect(raw, `${allowed} is not sorted`).toEqual([...raw].sort());
+      });
+
+      it('no guess derives from a blocked slur', () => {
+        for (const w of guesses) expect(offensive.has(w), `${w} is on the offensive blocklist`).toBe(false);
+      });
+    });
+  }
+});
