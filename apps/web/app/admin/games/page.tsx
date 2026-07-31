@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calendar, Trophy, Swords } from 'lucide-react';
+import { Calendar, Trophy, Swords, Flame } from 'lucide-react';
 
 const MODE_LABELS: Record<string, string> = {
   DUEL: 'Classic', DUEL_6: 'Six', DUEL_7: 'Seven', QUORDLE: 'QuadWord', OCTORDLE: 'OctoWord',
@@ -18,10 +18,21 @@ export default function AdminGamesPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [seeds, setSeeds] = useState<any[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
+  const [streaks, setStreaks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
+    if (mode === 'STREAKS') {
+      // Streaks are a NOW snapshot per player — no day, no solo/vs dimension.
+      // Reuses the portal-wide drill endpoint so this table and the Puzzles
+      // page's streak drill can never disagree.
+      fetch('/api/admin/drill?metric=streaks').then(r => r.json()).then((d) => {
+        setStreaks(d.rows || []);
+        setLoading(false);
+      });
+      return;
+    }
     Promise.all([
       fetch(`/api/admin/games/leaderboard?day=${day}&mode=${mode}&play_type=${playType}`).then(r => r.json()),
       fetch(`/api/admin/games/seeds?day=${day}`).then(r => r.json()),
@@ -40,19 +51,70 @@ export default function AdminGamesPage() {
 
       {/* Filters */}
       <div className="flex gap-2 flex-wrap">
-        <input type="date" value={day} onChange={e => setDay(e.target.value)}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium" />
+        {/* Streaks is a NOW snapshot: the date and solo/VS filters have no
+            meaning for it, so they disappear rather than sit dead on screen. */}
+        {mode !== 'STREAKS' && (
+          <input type="date" value={day} onChange={e => setDay(e.target.value)}
+            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium" />
+        )}
         <select value={mode} onChange={e => setMode(e.target.value)}
           className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium">
           <option value="ALL">All Games</option>
           {MODES.map(m => <option key={m} value={m}>{MODE_LABELS[m]}</option>)}
+          <option value="STREAKS">Streaks</option>
         </select>
-        <select value={playType} onChange={e => setPlayType(e.target.value)}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium">
-          <option value="solo">Solo</option>
-          <option value="vs">VS</option>
-        </select>
+        {mode !== 'STREAKS' && (
+          <select value={playType} onChange={e => setPlayType(e.target.value)}
+            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium">
+            <option value="solo">Solo</option>
+            <option value="vs">VS</option>
+          </select>
+        )}
       </div>
+
+      {mode === 'STREAKS' && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            <Flame className="w-4 h-4" /> Daily Streaks — every player, longest first
+          </h2>
+          {loading ? (
+            <div className="h-40 bg-gray-100 rounded animate-pulse" />
+          ) : streaks.length === 0 ? (
+            <p className="text-sm text-gray-400">No players yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left px-3 py-2 font-bold text-gray-500">Player</th>
+                    <th className="text-left px-3 py-2 font-bold text-gray-500">Current streak</th>
+                    <th className="text-left px-3 py-2 font-bold text-gray-500">Best ever</th>
+                    <th className="text-left px-3 py-2 font-bold text-gray-500">Shields</th>
+                    <th className="text-left px-3 py-2 font-bold text-gray-500">Pro</th>
+                    <th className="text-left px-3 py-2 font-bold text-gray-500">Last played</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {streaks.map((r: any) => (
+                    <tr key={r.userId} className="border-b border-gray-50">
+                      <td className="px-3 py-2">
+                        <a href={`/admin/users/${r.userId}`} className="font-bold text-purple-600 hover:underline">{r.player}</a>
+                      </td>
+                      <td className="px-3 py-2 font-black text-gray-900">{r.streak > 0 ? `${r.streak}d 🔥` : '—'}</td>
+                      <td className="px-3 py-2 font-bold text-gray-700">{r.best}d</td>
+                      <td className="px-3 py-2 font-bold text-gray-700">{r.shields}</td>
+                      <td className="px-3 py-2 font-bold text-gray-500">{r.pro}</td>
+                      <td className="px-3 py-2 text-gray-500">{r.lastPlayed}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode !== 'STREAKS' && (<>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Daily Leaderboard */}
@@ -160,6 +222,7 @@ export default function AdminGamesPage() {
           </div>
         )}
       </div>
+      </>)}
     </div>
   );
 }
