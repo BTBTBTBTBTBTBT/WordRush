@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, Share2, Flag, UserPlus } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
+import { modeLabel } from '@/lib/mode-labels';
 
 // The Weekly Five as a page — the founders' agreed metric set (distribution
 // memo §14), previously only runnable as SQL by hand. DAU, retention cohorts,
@@ -179,7 +180,7 @@ export default function AdminMetricsPage() {
                     onClick={() => drill({ ...dp, key: r.key })}
                     className="w-full flex justify-between text-sm hover:bg-gray-50 rounded px-1 -mx-1 py-0.5"
                   >
-                    <span className="font-bold text-gray-600">{r.key}</span>
+                    <span className="font-bold text-gray-600">{title === 'Shares by mode' ? modeLabel(r.key) : r.key}</span>
                     <span className="font-black text-gray-900">{r.count}</span>
                   </button>
                 ))}

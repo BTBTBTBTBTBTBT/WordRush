@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { modeLabel } from '@/lib/mode-labels';
 
 // Drill-down behind every number in the admin portal: "5.1% share rate" is
 // only actionable if you can ask WHICH shares. One route serves every page
@@ -74,7 +75,7 @@ export async function GET(request: NextRequest) {
         dailies: c.games,
         wins: c.wins,
         vs: c.vs,
-        modes: [...c.modes].sort().join(', ') || '—',
+        modes: [...c.modes].sort().map(modeLabel).join(', ') || '—',
       }))
       .sort((a, b) => b.dailies + b.vs - (a.dailies + a.vs));
     return ok(`Active players — ${d}`, `${rows.length} player${rows.length === 1 ? '' : 's'} recorded a game`, [
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
     const rows = (data ?? []).map((r) => ({
       userId: r.user_id,
       player: r.user_id ? names.get(r.user_id) ?? r.user_id : 'guest',
-      mode: r.game_mode || '—',
+      mode: r.game_mode ? modeLabel(r.game_mode) : '—',
       kind: r.kind,
       surface: r.surface || '—',
       platform: r.platform,
@@ -319,7 +320,7 @@ export async function GET(request: NextRequest) {
       userId: r.user_id,
       player: names.get(r.user_id) ?? r.user_id,
       day: String(r.day).slice(0, 10),
-      mode: r.game_mode,
+      mode: modeLabel(r.game_mode),
       result: r.completed ? 'win' : 'loss',
       guesses: r.guess_count,
       boards: `${r.boards_solved}/${r.total_boards}`,
@@ -400,7 +401,7 @@ export async function GET(request: NextRequest) {
       userId: m.player1_id,
       player1: names.get(m.player1_id) ?? m.player1_id,
       player2: m.player2_id ? names.get(m.player2_id) ?? m.player2_id : 'solo',
-      mode: m.game_mode,
+      mode: modeLabel(m.game_mode),
       winner: m.winner_id ? names.get(m.winner_id) ?? m.winner_id : m.completed_at ? 'draw' : 'unfinished',
       score: `${m.player1_score ?? 0} – ${m.player2_score ?? 0}`,
       duration: m.completed_at

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Puzzle, Flame, Shield } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
+import { modeLabel } from '@/lib/mode-labels';
 
 // Puzzle analytics — which dailies were brutal, which modes get played, and
 // whether the streak/shield economy is actually being used.
@@ -86,7 +87,7 @@ export default function AdminPuzzlesPage() {
             {data.popularity.map((m) => (
               <tr key={m.mode} onClick={() => drill({ metric: 'plays', key: m.mode })}
                   className="border-b border-gray-50 cursor-pointer hover:bg-gray-50" title="Click for every play of this mode">
-                <td className="px-4 py-2 font-black text-gray-900">{m.mode}</td>
+                <td className="px-4 py-2 font-black text-gray-900">{modeLabel(m.mode)}</td>
                 <td className="px-4 py-2 font-bold text-gray-700">{m.plays}</td>
                 <td className="px-4 py-2 font-bold text-gray-500">{m.vsPlays}</td>
                 <td className={`px-4 py-2 font-black ${winColor(m.winRate)}`}>{m.winRate}%</td>
@@ -149,7 +150,7 @@ export default function AdminPuzzlesPage() {
                     className={`border-b border-gray-50 cursor-pointer hover:bg-gray-50 ${i === 0 ? 'border-t border-gray-100' : ''}`}
                     title="Click for the individual results behind this row">
                   <td className="px-4 py-2 font-bold text-gray-500 whitespace-nowrap">{i === 0 ? fmtDay(day) : ''}</td>
-                  <td className="px-4 py-2 font-black text-gray-900">{r.mode}</td>
+                  <td className="px-4 py-2 font-black text-gray-900">{modeLabel(r.mode)}</td>
                   <td className="px-4 py-2 font-bold text-gray-700">{r.plays}</td>
                   <td className={`px-4 py-2 font-black ${winColor(r.winRate)}`}>{r.winRate}%</td>
                   <td className="px-4 py-2 font-bold text-gray-500 hidden md:table-cell">{r.avgGuesses || '—'}</td>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, AlertTriangle, Webhook, Swords, ExternalLink } from 'lucide-react';
 import { DrillCard, useDrill } from '../components/drill-panel';
+import { modeLabel } from '@/lib/mode-labels';
 
 // Operational health — the "is anything quietly broken" page: cron heartbeats,
 // the store-webhook ledger, an anti-cheat watchlist, and VS match health.
@@ -119,7 +120,7 @@ export default function AdminOpsPage() {
                     <a href={`/admin/users/${s.userId}`} className="hover:text-purple-600">{s.username}</a>
                   </td>
                   <td className="px-4 py-2 font-bold text-gray-500">{s.day}</td>
-                  <td className="px-4 py-2 font-bold text-gray-700">{s.mode} <span className="text-gray-400">({s.playType})</span></td>
+                  <td className="px-4 py-2 font-bold text-gray-700">{modeLabel(s.mode)} <span className="text-gray-400">({s.playType})</span></td>
                   <td className="px-4 py-2 font-black text-red-500">{s.score}</td>
                   <td className="px-4 py-2 text-xs font-bold text-gray-500">{s.reasons.join('; ')}</td>
                 </tr>

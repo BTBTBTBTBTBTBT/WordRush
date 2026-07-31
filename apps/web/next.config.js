@@ -66,7 +66,12 @@ const nextConfig = {
         source: '/:path*',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'DENY' },
+          // SAMEORIGIN, not DENY: the admin engineering portal renders
+          // /admin/portal/doc in a same-origin iframe (a real URL, because
+          // srcdoc iframes can't do fragment navigation — bible §196). DENY
+          // blocked our own frame and broke the Portal page; SAMEORIGIN keeps
+          // the identical protection against third-party clickjacking.
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         ],
       },

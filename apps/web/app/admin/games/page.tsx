@@ -3,12 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Trophy, Swords, Flame } from 'lucide-react';
 
-const MODE_LABELS: Record<string, string> = {
-  DUEL: 'Classic', DUEL_6: 'Six', DUEL_7: 'Seven', QUORDLE: 'QuadWord', OCTORDLE: 'OctoWord',
-  SEQUENCE: 'Succession', RESCUE: 'Deliverance', GAUNTLET: 'Gauntlet', PROPERNOUNDLE: 'ProperNoundle',
-};
-const MODES = Object.keys(MODE_LABELS);
-const modeLabel = (m: string) => MODE_LABELS[m] || m;
+import { MODE_LABELS, modeLabel } from '@/lib/mode-labels';
+
+const MODES = Object.keys(MODE_LABELS).filter((m) => m !== 'VS');
 
 export default function AdminGamesPage() {
   const today = new Date().toISOString().split('T')[0];
