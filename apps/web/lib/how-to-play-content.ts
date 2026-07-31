@@ -76,35 +76,6 @@ export const HOW_TO_PLAY: HTPSection[] = [
     ],
   },
   {
-    title: 'Which Words Count?',
-    intro:
-      'Wordocious keeps two separate word lists, and they have different jobs. The answer list is small and hand-picked: everyday words that nobody should have to look up. The guess list is much larger and far more forgiving — it exists so your guesses are not rejected, not to test your vocabulary.',
-    bullets: [
-      {
-        strong: 'Answers are always common words.',
-        text: ' No proper nouns, no abbreviations, no obscure trivia. If you have never seen it before, it will not be the answer.',
-      },
-      {
-        strong: 'Guesses can be far more obscure.',
-        text: ' Anything with real presence in modern English is accepted, so you can burn a guess on a word you are not sure about.',
-      },
-      {
-        strong: 'Regular word endings count.',
-        text: ' If a word is valid, so are its -S, -ED, -ER and -ING forms whenever they are the right length — ASKED, BORED, LOOKS and NUKED are all fair game.',
-      },
-      {
-        strong: 'No names or places.',
-        text: ' DAVID, PARIS and TEXAS are not accepted. Proper nouns are excluded from both lists — the exceptions are words that happen to also be names, like ROBIN or PEARL.',
-      },
-      {
-        strong: 'Slurs are never accepted,',
-        text: ' as a guess or as an answer.',
-      },
-    ],
-    outro:
-      "Missing a word you are sure is real, or think something should not be accepted? Email support@wordocious.com. No dictionary is ever finished, and player reports are how we catch the ones that slip through.",
-  },
-  {
     title: 'Game Mode Guide',
     modes: [
       {
@@ -113,7 +84,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
       },
       {
         name: 'VS Battle — Real-Time Multiplayer', accent: '#0d9488',
-        body: 'Challenge another player to a head-to-head race. Both players see the same word and compete to solve it first. The match happens in real time — you can see when your opponent submits guesses. Speed matters, but accuracy matters more. A wrong guess wastes precious time. Challenge friends directly or get matched with a random opponent of similar skill.',
+        body: 'A head-to-head race on the same puzzle. The match happens in real time — you can see when your opponent submits guesses. Speed matters, but accuracy matters more: a wrong guess wastes precious time. Invite a friend with a link, queue up for a live opponent, or battle one of the built-in bot opponents — each has its own personality and difficulty, so there is always a match waiting.',
       },
       {
         name: 'QuadWord — 4 Words, 9 Guesses', accent: '#ec4899',
@@ -141,26 +112,56 @@ export const HOW_TO_PLAY: HTPSection[] = [
       },
       {
         name: 'Gauntlet — 5 Stages of Increasing Difficulty', accent: '#d97706',
-        body: 'A multi-stage endurance test. You start with a single Classic puzzle, then face progressively harder challenges through QuadWord and OctoWord-style stages. Each stage is more demanding than the last. Completing the full Gauntlet requires consistent performance across every difficulty level. Only the most skilled players finish all five stages.',
+        body: 'A five-stage endurance test: The Opening (a single word), then QuadWord, Succession, Deliverance, and finally OctoWord. Each stage is more demanding than the last, and one failed stage ends the run. Completing the full Gauntlet requires consistent performance across every style of play — only the most skilled players finish all five stages.',
       },
       {
         name: 'ProperNoundle — Famous Names & Cultural References', accent: '#dc2626',
-        body: 'A twist on the classic formula: instead of dictionary words, you guess proper nouns — famous people, places, landmarks, and cultural references. Each daily puzzle belongs to a themed category such as current events, music, movies, sports, video games, history, or science. The answer can be multiple words long, and the board displays word breaks to help you visualize the full name. With over 670 puzzles in the pool, every day brings a fresh challenge.',
+        body: 'A twist on the classic formula: instead of dictionary words, you guess proper nouns — famous people, places, landmarks, and cultural references. Each daily puzzle belongs to a themed category such as current events, music, movies, sports, video games, history, or science. The answer can be multiple words long, and the board displays word breaks to help you visualize the full name. With more than 650 puzzles in the pool, every day brings a fresh challenge.',
       },
     ],
   },
   {
-    title: 'Scoring System',
-    intro: 'Every solved puzzle earns a composite score — the number your daily-leaderboard rank is based on:',
+    title: 'Which Words Count?',
+    intro:
+      'Every guess is checked against the Wordocious word bank — thousands of English words, kept far more generous than the daily answers ever are. Answers are everyday words nobody should have to look up; the bank accepts much more than that, so a long-shot guess is never wasted on a technicality.',
     bullets: [
-      { strong: 'Base score (1,000 points)', text: ' — awarded for solving the puzzle, regardless of performance' },
-      { strong: 'Speed bonus', text: ' — your mode’s time cap minus your solve time. The clock starts when the puzzle loads and stops on the winning guess, so finishing faster is worth more (Classic’s cap is 5 minutes; longer modes allow more time)' },
-      { strong: 'Completion bonus (up to 200 points)', text: ' — scaled by how many boards you solved, so multi-board modes reward partial progress' },
-      { strong: 'Guess bonus', text: ' — in Six, Seven, and ProperNoundle only, extra points for solving in fewer guesses' },
-      { strong: 'Hint penalty', text: ' — in Six, Seven, and ProperNoundle, each revealed hint is subtracted from your score (120 points each in ProperNoundle, 150 in Six and Seven). A winning score never drops below zero' },
+      {
+        strong: 'Answers are always common words.',
+        text: ' No abbreviations, no obscure trivia. If you have never seen the word before, it will not be the answer.',
+      },
+      {
+        strong: 'Guesses can be more obscure.',
+        text: ' Any real English word in modern use is accepted, so you can try a word you are not sure about.',
+      },
+      {
+        strong: 'Regular word endings count.',
+        text: ' If a word is in the bank, so are its -S, -ED, -ER and -ING forms whenever they fit the board — ASKED, BORED, LOOKS and NUKED are all fair game.',
+      },
+      {
+        strong: 'No names or places in the word modes.',
+        text: ' DAVID, PARIS and TEXAS are not accepted — unless the name is also an everyday word, like ROBIN or PEARL. The one exception is ProperNoundle, where famous names are the whole game and your guesses are not checked against the word bank at all.',
+      },
+      {
+        strong: 'Slurs are never accepted,',
+        text: ' as a guess or as an answer.',
+      },
     ],
     outro:
-      'For example, solving a Classic puzzle in 27 seconds earns 1,000 (base) + 273 (speed) + 200 (completion) = 1,473 points. The dictionary modes have no guess bonus or hint penalty — speed and completion are what move your score.',
+      "Missing a word you are sure is real, or think something should not be accepted? Email support@wordocious.com. No word bank is ever finished, and player reports are how we catch the ones that slip through.",
+  },
+  {
+    title: 'Scoring System',
+    intro:
+      'Every solved puzzle earns a composite score — the number your daily-leaderboard rank is based on. The rule of thumb: fewer guesses always wins, and speed breaks ties.',
+    bullets: [
+      { strong: 'Base score (1,000 points)', text: ' — awarded for solving the puzzle, regardless of performance' },
+      { strong: 'Guess bonus', text: ' — every guess you did not need is worth a fixed amount for your mode: 300 points each in Classic, with other modes scaled to their guess budget' },
+      { strong: 'Speed bonus', text: ' — scaled by how far under your mode’s time cap you finish. It is always worth less than a single saved guess, so a faster solve never outranks a more efficient one' },
+      { strong: 'Completion bonus (up to 200 points)', text: ' — scaled by how many boards you solved, so multi-board modes reward partial progress' },
+      { strong: 'Hint penalty', text: ' — in Six, Seven, and ProperNoundle, each revealed hint costs a flat penalty (60 points in ProperNoundle, 75 in Six and Seven) and fills a board row, which also costs one step of guess bonus. A winning score never drops below zero' },
+    ],
+    outro:
+      'For example, solving a Classic puzzle in 3 guesses at 37 seconds earns 1,000 (base) + 900 (guess bonus) + about 210 (speed) + 200 (completion) — roughly 2,310 points. Even a loss banks partial credit for progress: correct letters on a near-miss, boards solved in multi-board modes, or stages reached in the Gauntlet.',
   },
   {
     title: 'XP, Levels & Achievements',
