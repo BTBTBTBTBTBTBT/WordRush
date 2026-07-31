@@ -152,27 +152,32 @@ fun ProperNoundleHints(
     vowelRevealed: String?, consonantRevealed: String?,
     onClue: () -> Unit, onVowel: () -> Unit, onConsonant: () -> Unit,
 ) {
+    // iOS sizes each pill to its own label and centres the row, so "Clue" is
+    // narrow and "Consonant" wide — and a pill SHRINKS when its label collapses
+    // to the revealed letter. weight(1f) forced three equal full-bleed pills
+    // that never changed width, which is the main reason this row read as a
+    // different control set from iOS.
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     ) {
         NoundlePill(
             label = "Clue",
             icon = if (loadingClue) Icons.Filled.HourglassEmpty else Icons.Filled.Lightbulb,
             used = clueUsed, text = Color(0xFF9333EA), border = Color(0xFFD8B4FE), bg = Color(0xFFFAF5FF),
-            onClick = onClue, modifier = Modifier.weight(1f),
+            onClick = onClue,
         )
         NoundlePill(
             label = vowelRevealed ?: "Vowel",
             icon = Icons.Filled.Visibility,
             used = vowelRevealed != null, text = Color(0xFF2563EB), border = Color(0xFF93C5FD), bg = Color(0xFFEFF6FF),
-            onClick = onVowel, modifier = Modifier.weight(1f),
+            onClick = onVowel,
         )
         NoundlePill(
             label = consonantRevealed ?: "Consonant",
             icon = Icons.Filled.Tag,
             used = consonantRevealed != null, text = Color(0xFF0D9488), border = Color(0xFF5EEAD4), bg = Color(0xFFF0FDFA),
-            onClick = onConsonant, modifier = Modifier.weight(1f),
+            onClick = onConsonant,
         )
     }
 }

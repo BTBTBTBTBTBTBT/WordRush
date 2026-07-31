@@ -244,7 +244,19 @@ fun PostGameScreen(
                     modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    SingleBoard(board = board, currentGuess = "", modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp))
+                    SingleBoard(
+                        board = board, currentGuess = "",
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
+                        // The in-play board splits a multi-word ProperNoundle answer
+                        // on its word boundaries (iOS NoundleBoard); omitting the
+                        // groups here made the SAME answer collapse into one flat
+                        // run of tiles the moment the game ended — "TAYLOR SWIFT"
+                        // finished as eleven undifferentiated squares.
+                        wordGroups = if (mode == GameMode.PROPERNOUNDLE) {
+                            com.wordocious.core.ProperNoundle.puzzleFor(board.solution)
+                                ?.let { com.wordocious.core.ProperNoundle.wordGroups(it.display) }
+                        } else null,
+                    )
                 }
             }
 
