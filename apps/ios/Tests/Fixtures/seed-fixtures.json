@@ -4,31 +4,31 @@
       "seed": "test",
       "count": 1,
       "solutions": [
-        "QUEST"
+        "DROVE"
       ]
     },
     {
       "seed": "test",
       "count": 4,
       "solutions": [
-        "QUEST",
-        "SAGGY",
-        "SPOOL",
-        "SAVIN"
+        "DROVE",
+        "POLAR",
+        "BLUFF",
+        "SPICE"
       ]
     },
     {
       "seed": "test",
       "count": 8,
       "solutions": [
-        "QUEST",
-        "SAGGY",
-        "SPOOL",
-        "SAVIN",
-        "KNACK",
-        "LANKY",
-        "POKED",
-        "MEDIC"
+        "DROVE",
+        "POLAR",
+        "BLUFF",
+        "SPICE",
+        "BINGO",
+        "AIMED",
+        "QUOTE",
+        "BASIC"
       ]
     },
     {
@@ -86,73 +86,73 @@
       "seed": "daily-2026-08-01-DUEL",
       "count": 1,
       "solutions": [
-        "FLASK"
+        "QUACK"
       ]
     },
     {
       "seed": "daily-2026-08-01-QUORDLE",
       "count": 4,
       "solutions": [
-        "CURLY",
-        "LOCUS",
-        "SIXTY",
-        "AIMED"
+        "DECAY",
+        "TRACK",
+        "NASTY",
+        "BANJO"
       ]
     },
     {
       "seed": "daily-2026-08-01-OCTORDLE",
       "count": 8,
       "solutions": [
-        "BRASS",
-        "GANJA",
-        "SEINE",
-        "BUZZY",
-        "CLINE",
-        "MEDIA",
-        "OWNED",
-        "STOOL"
+        "CHURN",
+        "PAPER",
+        "SCUBA",
+        "FLAIR",
+        "CHECK",
+        "PEARL",
+        "CHARM",
+        "AIDED"
       ]
     },
     {
       "seed": "gauntlet-abc-123",
       "count": 21,
       "solutions": [
-        "WHERE",
-        "ARGON",
-        "MERRY",
-        "PESTO",
-        "TIMER",
-        "WHEEL",
-        "COLIC",
-        "QUAKE",
-        "SITAR",
-        "CAMEL",
-        "FROTH",
-        "STEAL",
-        "OZONE",
-        "GROUP",
-        "RANCH",
-        "RATED",
-        "GABBY",
-        "SWEAT",
+        "ALIVE",
+        "SWISS",
+        "DOUGH",
+        "ERROR",
+        "CLOWN",
+        "SHARP",
+        "QUEST",
+        "GRAPE",
+        "BELLY",
+        "BATCH",
+        "NAKED",
+        "TERRA",
+        "SHARD",
+        "CHORE",
         "FOGGY",
-        "FAMED",
-        "SCENT"
+        "TRUTH",
+        "TALLY",
+        "CAGED",
+        "OUTER",
+        "HIRED",
+        "SWIPE"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 1,
       "solutions": [
-        "LEVEL"
+        "TABLE"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 2,
       "solutions": [
-        "LEVEL",
-        "OWING"
+        "TABLE",
+        "ERODE"
       ]
     }
   ],

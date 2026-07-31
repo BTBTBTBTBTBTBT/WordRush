@@ -55,10 +55,16 @@ describe('blocklist mirrors', () => {
 describe('the blocked words are really in the answer pool', () => {
   // If a word is not in solutions.json it can never be featured anyway, and a
   // stale entry here is dead weight that hides a real gap.
-  it('each entry is a current solution', () => {
-    const solutions: string[] = JSON.parse(read('apps/web/data/solutions.json'));
-    const pool = new Set(solutions);
+  it('each entry is reachable as a Word of the Day', () => {
+    // Either pool counts. Word of the Day walks the answer bank by date, and
+    // PRE-CUTOVER dates read solutions-legacy.json (frozen), so a word only
+    // needs blocking if it can still surface from one of the two. The 2026-07-30
+    // re-curation at zipf 3.0 dropped HYMEN/OVARY/ENEMA/LEPER from the CURRENT
+    // bank — they remain in legacy, so the entries are still load-bearing.
+    const current: string[] = JSON.parse(read('apps/web/data/solutions.json'));
+    const legacy: string[] = JSON.parse(read('apps/web/data/solutions-legacy.json'));
+    const pool = new Set([...current, ...legacy]);
     const absent = WOTD_BLOCKLIST.filter((w) => !pool.has(w));
-    expect(absent, `not in solutions.json: ${absent.join(', ')}`).toEqual([]);
+    expect(absent, `in neither answer pool (dead weight): ${absent.join(', ')}`).toEqual([]);
   });
 });

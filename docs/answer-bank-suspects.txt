@@ -1,0 +1,119 @@
+ANSWER BANK — WORDS THAT NEED YOUR RULING
+============================================================
+
+These are my picks out of the 582-word review band (zipf 3.0-3.5).
+The other ~490 are ordinary words (KIOSK, FEMUR, ZEBRA) and need no
+decision. Frequency already cleared all of these; the problem with each
+is REGISTER, which no threshold can see.
+
+HOW TO USE: cross out any you want to KEEP. I cut whatever is left.
+Default recommendation: cut them all.
+
+
+BRANDS & PROPER NOUNS — a name is never a fair answer
+-----------------------------------------------------
+  [ ] CISCO   zipf 3.49
+  [ ] TWAIN   zipf 3.39
+  [ ] KRAFT   zipf 3.38
+  [ ] GEMMA   zipf 3.33
+  [ ] ROWAN   zipf 3.32
+  [ ] BANJO   zipf 3.27
+  [ ] DROID   zipf 3.23
+  [ ] SEINE   zipf 3.17
+  [ ] TONGA   zipf 3.10
+  [ ] SAVOY   zipf 3.09
+  [ ] PINOT   zipf 3.09
+  [ ] ASCOT   zipf 3.06
+  [ ] XEROX   zipf 3.01
+
+CLINICAL / BODILY — you already block these for Word of the Day
+---------------------------------------------------------------
+  [ ] RENAL   zipf 3.44
+  [ ] TUMMY   zipf 3.43
+  [ ] NATAL   zipf 3.41
+  [ ] FETAL   zipf 3.40
+  [ ] BASAL   zipf 3.40
+  [ ] SINUS   zipf 3.28
+  [ ] POLIO   zipf 3.27
+  [ ] GROIN   zipf 3.26
+  [ ] POTTY   zipf 3.26
+  [ ] FECES   zipf 3.22
+  [ ] LUPUS   zipf 3.20
+  [ ] PALSY   zipf 3.20
+  [ ] THONG   zipf 3.16
+  [ ] MUCUS   zipf 3.15
+  [ ] HAREM   zipf 3.13
+  [ ] PUBIC   zipf 3.07
+  [ ] BOSOM   zipf 3.05
+  [ ] FECAL   zipf 3.01
+  [ ] APNEA   zipf 3.00
+
+BRITISH / REGIONAL — common in a corpus, not in a US player's head
+------------------------------------------------------------------
+  [ ] FELLA   zipf 3.49
+  [ ] LITER   zipf 3.46
+  [ ] MOULD   zipf 3.45
+  [ ] VICAR   zipf 3.37
+  [ ] CRORE   zipf 3.37
+  [ ] DODGY   zipf 3.32
+  [ ] MERCH   zipf 3.22
+  [ ] FIRTH   zipf 3.18
+  [ ] SPELT   zipf 3.18
+  [ ] CROFT   zipf 3.17
+  [ ] AUNTY   zipf 3.16
+  [ ] FOOTY   zipf 3.15
+  [ ] BRILL   zipf 3.06
+  [ ] SWEDE   zipf 3.05
+  [ ] LOLLY   zipf 2.81
+
+ARCHAIC / LITERARY
+------------------
+  [ ] MATER   zipf 3.47
+  [ ] SHALT   zipf 3.34
+  [ ] SYNOD   zipf 3.32
+  [ ] THINE   zipf 3.31
+  [ ] PETIT   zipf 3.27
+  [ ] WIGHT   zipf 3.23
+  [ ] DOWRY   zipf 3.13
+  [ ] EDICT   zipf 3.10
+  [ ] FRIAR   zipf 3.04
+  [ ] SWAIN   zipf 3.00
+
+FOREIGN LOANWORDS many players won't know
+-----------------------------------------
+  [ ] KAPPA   zipf 3.46
+  [ ] DEMOS   zipf 3.40
+  [ ] JUNTA   zipf 3.34
+  [ ] SERGE   zipf 3.22
+  [ ] CARTE   zipf 3.16
+  [ ] PASHA   zipf 3.14
+  [ ] AEGIS   zipf 3.06
+  [ ] SWAMI   zipf 3.04
+  [ ] CADRE   zipf 3.04
+  [ ] CABAL   zipf 3.04
+  [ ] RONDO   zipf 3.03
+  [ ] BANCO   zipf 3.03
+  [ ] SCION   zipf 3.03
+  [ ] AMOUR   zipf 3.03
+  [ ] SAHIB   zipf 3.01
+
+OBSCURE / TECHNICAL
+-------------------
+  [ ] FITCH   zipf 3.26
+  [ ] TAKIN   zipf 3.21
+  [ ] IONIC   zipf 3.21
+  [ ] PLAYA   zipf 3.18
+  [ ] CODEX   zipf 3.18
+  [ ] LOCUS   zipf 3.18
+  [ ] THETA   zipf 3.16
+  [ ] ACTIN   zipf 3.14
+  [ ] LUMEN   zipf 3.09
+  [ ] BUTTE   zipf 3.09
+  [ ] ROPER   zipf 3.07
+  [ ] HERTZ   zipf 3.06
+  [ ] QUARK   zipf 3.05
+  [ ] MORAY   zipf 3.02
+
+
+TOTAL: 86 words to rule on (out of 582 in the band).
+Cutting all of them takes the bank from 1818 to about 1732, still ~4.7 years of Classic.

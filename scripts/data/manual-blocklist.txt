@@ -55,3 +55,99 @@ BASTARD
 CRIPPLE
 VULVA
 LABIA
+
+# Round 3 (2026-07-30, user-reviewed). The zipf floor was raised 2.3 -> 3.0,
+# which killed the STIPE/BARMY tail automatically. These 85 CLEARED 3.0 and
+# are still wrong: frequency measures how often a word appears in a corpus,
+# not whether an ordinary player knows it. Corpora blend British English,
+# historical text, brands and clinical writing, so PASHA and FOOTY score
+# higher than PURGE. No threshold separates these; a human has to.
+# Grouped as reviewed: brands/proper nouns, clinical/bodily (same call
+# already made for Word of the Day), British/regional, archaic, foreign
+# loanwords, obscure/technical. BANJO was proposed and KEPT — it is an
+# instrument, not a brand; my grouping was wrong.
+CISCO
+TWAIN
+KRAFT
+GEMMA
+ROWAN
+DROID
+SEINE
+TONGA
+SAVOY
+PINOT
+ASCOT
+XEROX
+RENAL
+TUMMY
+NATAL
+FETAL
+BASAL
+SINUS
+POLIO
+GROIN
+POTTY
+FECES
+LUPUS
+PALSY
+THONG
+MUCUS
+HAREM
+PUBIC
+BOSOM
+FECAL
+APNEA
+FELLA
+LITER
+MOULD
+VICAR
+CRORE
+DODGY
+MERCH
+FIRTH
+SPELT
+CROFT
+AUNTY
+FOOTY
+BRILL
+SWEDE
+LOLLY
+MATER
+SHALT
+SYNOD
+THINE
+PETIT
+WIGHT
+DOWRY
+EDICT
+FRIAR
+SWAIN
+KAPPA
+DEMOS
+JUNTA
+SERGE
+CARTE
+PASHA
+AEGIS
+SWAMI
+CADRE
+CABAL
+RONDO
+BANCO
+SCION
+AMOUR
+SAHIB
+FITCH
+TAKIN
+IONIC
+PLAYA
+CODEX
+LOCUS
+THETA
+ACTIN
+LUMEN
+BUTTE
+ROPER
+HERTZ
+QUARK
+MORAY
