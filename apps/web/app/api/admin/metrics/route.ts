@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const since14 = new Date(now.getTime() - 14 * 86400000).toISOString();
   const since35 = new Date(now.getTime() - 35 * 86400000).toISOString();
 
-  const [dailyRes, matchesRes, sharesRes, profilesRes, reportsRes, usersRes] = await Promise.all([
+  const [dailyRes, matchesRes, sharesRes, profilesRes, reportsRes, usersRes, historyRes] = await Promise.all([
     admin.from('daily_results').select('user_id, day, play_type, created_at').gte('created_at', since35),
     admin.from('matches').select('player1_id, player2_id, created_at').gte('created_at', since14),
     admin.from('share_events').select('kind, game_mode, surface, created_at').gte('created_at', since14),
@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
     admin.from('profiles').select('*'),
     admin.from('reports').select('created_at').gte('created_at', new Date(now.getTime() - 30 * 86400000).toISOString()),
     admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    // FULL history (user_id + day only) for retention cohorts. The windowed
+    // fetch above miscohorted anyone whose real first play predates the
+    // window and made D30 structurally impossible — and disagreed with the
+    // cohort drill-down, which always used full history.
+    admin.from('daily_results').select('user_id, day'),
   ]);
 
   const daily = dailyRes.data ?? [];
@@ -56,10 +61,10 @@ export async function GET(request: NextRequest) {
     return { day: d, dau: dauByDay.get(d)?.size ?? 0 };
   });
 
-  // 2. D1/D7/D30 retention by first-played cohort (last 30 cohort days).
+  // 2. D1/D7/D30 retention by first-played cohort — from FULL history.
   const firstDay = new Map<string, string>();
   const activeDays = new Map<string, Set<string>>();
-  for (const r of daily) {
+  for (const r of historyRes.data ?? []) {
     const d = String(r.day).slice(0, 10);
     if (!firstDay.has(r.user_id) || d < firstDay.get(r.user_id)!) firstDay.set(r.user_id, d);
     if (!activeDays.has(r.user_id)) activeDays.set(r.user_id, new Set());

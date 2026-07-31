@@ -30,7 +30,11 @@ export async function GET(request: NextRequest) {
   const since30 = new Date(now - 30 * 86400000).toISOString().slice(0, 10);
 
   const [webhooksRes, suspectsRes, matchesRes, heartbeatsRes] = await Promise.all([
-    admin.from('store_webhook_events').select('event_id, source, processed_at').order('processed_at', { ascending: false }).limit(50),
+    // Windowed, not top-N: per-day counts derived from a recency LIMIT
+    // silently understate busy days. 2000 is a declared safety bound far above
+    // current volume; if it's ever hit the subtitle math breaks visibly, not
+    // quietly.
+    admin.from('store_webhook_events').select('event_id, source, processed_at').gte('processed_at', since14).order('processed_at', { ascending: false }).limit(2000),
     admin
       .from('daily_results')
       .select('user_id, day, game_mode, play_type, composite_score, guess_count, total_boards, time_seconds, vs_games, profiles(username)')

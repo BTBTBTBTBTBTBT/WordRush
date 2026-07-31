@@ -41,6 +41,10 @@ export async function GET(request: NextRequest) {
   const ok = (title: string, subtitle: string, columns: Col[], rows: Record<string, unknown>[]) =>
     NextResponse.json({ title, subtitle, columns, rows });
 
+  // No silent caps: when a fetch comes back exactly at its limit, say so —
+  // "300 plays" reads as a total when it's a truncation.
+  const capped = (n: number, limit: number) => (n >= limit ? ` (showing the first ${limit} — more exist)` : '');
+
   if (metric === 'dau') {
     const d = day ?? iso(now).slice(0, 10);
     const [drRes, mRes] = await Promise.all([
@@ -105,7 +109,7 @@ export async function GET(request: NextRequest) {
     }));
     return ok(
       day ? `Shares — ${day}` : key ? `Shares — ${key}` : 'Shares — last 14 days',
-      `${rows.length} share event${rows.length === 1 ? '' : 's'}`,
+      `${rows.length} share event${rows.length === 1 ? '' : 's'}${capped(rows.length, 200)}`,
       [
         { key: 'player', label: 'Player' },
         { key: 'mode', label: 'Mode' },
@@ -285,7 +289,7 @@ export async function GET(request: NextRequest) {
     }));
     return ok(
       metric === 'banned' ? 'Banned accounts' : 'All accounts',
-      `${rows.length} account${rows.length === 1 ? '' : 's'}`,
+      `${rows.length} account${rows.length === 1 ? '' : 's'}${capped(rows.length, 500)}`,
       [
         { key: 'player', label: 'Player' },
         ...(metric === 'banned' ? [{ key: 'reason', label: 'Reason' }] : []),
@@ -325,7 +329,7 @@ export async function GET(request: NextRequest) {
     const won = rows.filter((r) => r.result === 'win').length;
     return ok(
       day && key ? `${key} — ${day}` : key ? `${key} — last 14 days` : 'Daily results — last 14 days',
-      `${rows.length} play${rows.length === 1 ? '' : 's'}, ${won} won (${rows.length ? Math.round((1000 * won) / rows.length) / 10 : 0}%)`,
+      `${rows.length} play${rows.length === 1 ? '' : 's'}, ${won} won (${rows.length ? Math.round((1000 * won) / rows.length) / 10 : 0}%)${capped(rows.length, 300)}`,
       [
         { key: 'player', label: 'Player' },
         { key: 'day', label: 'Day' },
@@ -407,7 +411,7 @@ export async function GET(request: NextRequest) {
     }));
     return ok(
       key ? `VS matches — ${key}` : 'VS matches — last 14 days',
-      `${rows.length} match${rows.length === 1 ? '' : 'es'}`,
+      `${rows.length} match${rows.length === 1 ? '' : 'es'}${capped(rows.length, 300)}`,
       [
         { key: 'player1', label: 'Player 1' },
         { key: 'player2', label: 'Player 2' },
@@ -432,7 +436,7 @@ export async function GET(request: NextRequest) {
       source: e.source,
       when: fmtTime(e.processed_at),
     }));
-    return ok(day ? `Store webhooks — ${day}` : 'Store webhooks', `${rows.length} processed event${rows.length === 1 ? '' : 's'}`, [
+    return ok(day ? `Store webhooks — ${day}` : 'Store webhooks', `${rows.length} processed event${rows.length === 1 ? '' : 's'}${capped(rows.length, 300)}`, [
       { key: 'event', label: 'Event id' },
       { key: 'source', label: 'Source' },
       { key: 'when', label: 'Processed' },
@@ -460,7 +464,7 @@ export async function GET(request: NextRequest) {
       rewarded: r.reward_granted_at ? fmtTime(r.reward_granted_at) : '—',
       created: fmtTime(r.created_at),
     }));
-    return ok(`Referrals${key ? ` — ${key}` : ''}`, `${rows.length} invite${rows.length === 1 ? '' : 's'}`, [
+    return ok(`Referrals${key ? ` — ${key}` : ''}`, `${rows.length} invite${rows.length === 1 ? '' : 's'}${capped(rows.length, 300)}`, [
       { key: 'inviter', label: 'Inviter' },
       { key: 'invitee', label: 'Friend' },
       { key: 'code', label: 'Code' },
@@ -510,7 +514,7 @@ export async function GET(request: NextRequest) {
     }));
     return ok(
       key ? `Push devices — ${key}` : 'Push devices',
-      `${rows.length} registered device${rows.length === 1 ? '' : 's'}`,
+      `${rows.length} registered device${rows.length === 1 ? '' : 's'}${capped(rows.length, 300)}`,
       [
         { key: 'player', label: 'Player' },
         { key: 'platform', label: 'Platform' },
