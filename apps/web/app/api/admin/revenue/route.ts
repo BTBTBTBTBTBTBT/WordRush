@@ -29,10 +29,10 @@ const PLAN_MONTHLY_CENTS: Record<string, number> = {
   pro_yearly: Math.round(5999 / 12),
 };
 
-async function googleAccessToken(): Promise<string | null> {
+async function googleAccessToken(refreshOverride?: string): Promise<string | null> {
   const id = process.env.REVENUE_GOOGLE_CLIENT_ID;
   const secret = process.env.REVENUE_GOOGLE_CLIENT_SECRET;
-  const refresh = process.env.REVENUE_GOOGLE_REFRESH_TOKEN;
+  const refresh = refreshOverride ?? process.env.REVENUE_GOOGLE_REFRESH_TOKEN;
   if (!id || !secret || !refresh) return null;
   try {
     const r = await fetch('https://oauth2.googleapis.com/token', {
@@ -182,10 +182,18 @@ export async function GET(request: NextRequest) {
   }
 
   // ── Google ad networks: live only once the one-time grant exists ──────────
+  // AdMob lives under bterchin@gmail; AdSense (the Wordocious application)
+  // lives under bt@showloud — two logins, so optionally two refresh tokens.
+  // The _ADSENSE token wins for AdSense when present; otherwise both use the
+  // main grant.
   const token = await googleAccessToken();
-  const [admob, adsense] = token
-    ? await Promise.all([fetchAdmob(token), fetchAdsense(token)])
-    : [null, null];
+  const adsenseToken = process.env.REVENUE_GOOGLE_REFRESH_TOKEN_ADSENSE
+    ? await googleAccessToken(process.env.REVENUE_GOOGLE_REFRESH_TOKEN_ADSENSE)
+    : token;
+  const [admob, adsense] = await Promise.all([
+    token ? fetchAdmob(token) : Promise.resolve(null),
+    adsenseToken ? fetchAdsense(adsenseToken) : Promise.resolve(null),
+  ]);
 
   return NextResponse.json({
     subs,

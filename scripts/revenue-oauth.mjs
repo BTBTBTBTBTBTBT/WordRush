@@ -29,7 +29,7 @@ const CLIENT_ID = process.env.REVENUE_GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.REVENUE_GOOGLE_CLIENT_SECRET;
 const PORT = 8765;
 const REDIRECT = `http://localhost:${PORT}/callback`;
-const SCOPES = [
+const SCOPES = process.env.SCOPES ?? [
   'https://www.googleapis.com/auth/admob.readonly',
   'https://www.googleapis.com/auth/adsense.readonly',
 ].join(' ');
