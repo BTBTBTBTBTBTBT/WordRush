@@ -3,9 +3,14 @@ import WordociousCore
 
 /// The site-nav items shown in the header "?" dropdown AND the home footer link
 /// row — a 1:1 parity of the web footer (How to Play, Guides, Strategy, Words,
-/// About, FAQ, Privacy, Terms). Each presents its native screen.
+/// FAQ, Privacy, Terms). Each presents its native screen.
+///
+/// "About" used to sit between Words and FAQ. It was dropped everywhere on
+/// 2026-07-31: it restated How to Play in older, dryer copy, so two adjacent
+/// menu rows answered the same question. The /about PAGE still exists and is
+/// still served — it is only unlinked from the app's navigation.
 enum InfoMenuDestination: String, Identifiable, CaseIterable {
-    case howToPlay, guides, strategy, words, about, faq, privacy, terms
+    case howToPlay, guides, strategy, words, faq, privacy, terms
     var id: String { rawValue }
 
     var title: String {
@@ -14,7 +19,6 @@ enum InfoMenuDestination: String, Identifiable, CaseIterable {
         case .guides:    return "Guides"
         case .strategy:  return "Strategy"
         case .words:     return "Words"
-        case .about:     return "About"
         case .faq:       return "FAQ"
         case .privacy:   return "Privacy"
         case .terms:     return "Terms"
@@ -28,7 +32,6 @@ enum InfoMenuDestination: String, Identifiable, CaseIterable {
         case .guides:    return "Strategy for all 9 modes"
         case .strategy:  return "Solve faster, in fewer guesses"
         case .words:     return "Every Word of the Day"
-        case .about:     return "What is Wordocious?"
         case .faq:       return "Common questions"
         case .privacy:   return "How we handle your data"
         case .terms:     return "Terms of service"
@@ -41,7 +44,6 @@ enum InfoMenuDestination: String, Identifiable, CaseIterable {
         case .guides:    return "book.fill"
         case .strategy:  return "lightbulb.fill"
         case .words:     return "calendar"
-        case .about:     return "info.circle.fill"
         case .faq:       return "bubble.left.and.bubble.right.fill"
         case .privacy:   return "lock.shield.fill"
         case .terms:     return "doc.text.fill"
@@ -56,7 +58,6 @@ enum InfoMenuDestination: String, Identifiable, CaseIterable {
         case .guides:    return Color(hex: 0x3B82F6)
         case .strategy:  return Color(hex: 0xF59E0B)
         case .words:     return Color(hex: 0xEC4899)
-        case .about:     return Color(hex: 0x14B8A6)
         case .faq:       return Color(hex: 0x8B5CF6)
         case .privacy:   return Color(hex: 0x10B981)
         case .terms:     return Color(hex: 0x6B7280)
@@ -73,7 +74,6 @@ func infoMenuDestinationView(_ dest: InfoMenuDestination) -> some View {
     case .guides:    GuidesIndexView()
     case .strategy:  StrategyView()
     case .words:     WordsView()
-    case .about:     InfoPage(.about)
     case .privacy:   InfoPage(.privacy)
     case .terms:     InfoPage(.terms)
     }
@@ -494,7 +494,7 @@ func prettyDate(_ key: String) -> String {
 
 struct InfoFooterLinks: View {
     @State private var dest: InfoMenuDestination?
-    private let order: [InfoMenuDestination] = [.howToPlay, .guides, .strategy, .words, .about, .faq, .privacy, .terms]
+    private let order: [InfoMenuDestination] = [.howToPlay, .guides, .strategy, .words, .faq, .privacy, .terms]
 
     var body: some View {
         let half = (order.count + 1) / 2

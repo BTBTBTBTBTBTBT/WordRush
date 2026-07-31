@@ -91,7 +91,6 @@ export default function HowToPlayPage() {
           <div style={cardStyle} className="p-5">
             <h2 className="text-sm font-black mb-3" style={{ color: 'var(--color-text)' }}>More Information</h2>
             <div className="flex flex-wrap gap-3">
-              <Link href="/about" className="text-xs font-bold underline" style={{ color: '#7c3aed' }}>About Wordocious</Link>
               <Link href="/privacy" className="text-xs font-bold underline" style={{ color: '#7c3aed' }}>Privacy Policy</Link>
               <Link href="/terms" className="text-xs font-bold underline" style={{ color: '#7c3aed' }}>Terms of Service</Link>
             </div>

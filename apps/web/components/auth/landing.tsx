@@ -163,7 +163,6 @@ export function Landing() {
           </button>
         </div>
         <div className="flex items-center justify-center gap-3 text-[11px] font-bold flex-wrap" style={{ color: 'var(--color-text-muted)' }}>
-          <Link href="/about">About</Link><span>·</span>
           <Link href="/how-to-play">How to Play</Link><span>·</span>
           <Link href="/guides">Mode Guides</Link><span>·</span>
           <Link href="/faq">FAQ</Link><span>·</span>

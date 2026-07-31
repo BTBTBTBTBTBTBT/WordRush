@@ -9,7 +9,6 @@ import {
   BookOpen,
   Lightbulb,
   Calendar,
-  Info,
   MessagesSquare,
   ShieldCheck,
   FileText,
@@ -35,7 +34,9 @@ const MENU_ITEMS: {
   { href: '/guides', title: 'Guides', subtitle: 'Strategy for all 9 modes', icon: BookOpen, accent: '#3B82F6' },
   { href: '/strategy', title: 'Strategy', subtitle: 'Solve faster, in fewer guesses', icon: Lightbulb, accent: '#F59E0B' },
   { href: '/words', title: 'Words', subtitle: 'Every Word of the Day', icon: Calendar, accent: '#EC4899' },
-  { href: '/about', title: 'About', subtitle: 'What is Wordocious?', icon: Info, accent: '#14B8A6' },
+  // "About" sat here until 2026-07-31 — it restated How to Play in older, dryer
+  // copy, so two adjacent rows answered the same question. The page still exists
+  // and is still in the sitemap; it is only unlinked from navigation.
   { href: '/faq', title: 'FAQ', subtitle: 'Common questions', icon: MessagesSquare, accent: '#8B5CF6' },
   { href: '/privacy', title: 'Privacy', subtitle: 'How we handle your data', icon: ShieldCheck, accent: '#10B981' },
   { href: '/terms', title: 'Terms', subtitle: 'Terms of service', icon: FileText, accent: '#6B7280' },

@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MenuBook
@@ -83,7 +82,10 @@ val INFO_NAV = listOf(
     InfoNavItem("guides", "Guides", "Strategy for all 9 modes", Icons.Filled.MenuBook, Color(0xFF3B82F6)),
     InfoNavItem("strategy", "Strategy", "Solve faster, in fewer guesses", Icons.Filled.Lightbulb, Color(0xFFF59E0B)),
     InfoNavItem("words", "Words", "Every Word of the Day", Icons.Filled.CalendarMonth, Color(0xFFEC4899)),
-    InfoNavItem("about", "About", "What is Wordocious?", Icons.Filled.Info, Color(0xFF14B8A6)),
+    // "About" sat here until 2026-07-31. It restated How to Play in older, dryer
+    // copy, so two adjacent rows answered the same question. Dropped from this
+    // list, which feeds BOTH the "?" menu and the home footer. The about screen
+    // itself still renders (HelpInfoScreens "about") — it is only unlinked.
     InfoNavItem("faq", "FAQ", "Common questions", Icons.Filled.QuestionAnswer, Color(0xFF8B5CF6)),
     InfoNavItem("privacy", "Privacy", "How we handle your data", Icons.Filled.Lock, Color(0xFF10B981)),
     InfoNavItem("terms", "Terms", "Terms of service", Icons.Filled.Description, Color(0xFF6B7280)),
