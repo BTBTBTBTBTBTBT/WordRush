@@ -4,31 +4,31 @@
       "seed": "test",
       "count": 1,
       "solutions": [
-        "QUEST"
+        "PENCE"
       ]
     },
     {
       "seed": "test",
       "count": 4,
       "solutions": [
-        "QUEST",
-        "SAGGY",
-        "SPOOL",
-        "SAVIN"
+        "PENCE",
+        "CLOUT",
+        "STILL",
+        "VOWED"
       ]
     },
     {
       "seed": "test",
       "count": 8,
       "solutions": [
-        "QUEST",
-        "SAGGY",
-        "SPOOL",
-        "SAVIN",
-        "KNACK",
-        "LANKY",
-        "POKED",
-        "MEDIC"
+        "PENCE",
+        "CLOUT",
+        "STILL",
+        "VOWED",
+        "LASER",
+        "STATS",
+        "WIELD",
+        "CELLO"
       ]
     },
     {
@@ -86,73 +86,73 @@
       "seed": "daily-2026-08-01-DUEL",
       "count": 1,
       "solutions": [
-        "FLASK"
+        "CATCH"
       ]
     },
     {
       "seed": "daily-2026-08-01-QUORDLE",
       "count": 4,
       "solutions": [
-        "CURLY",
-        "LOCUS",
-        "SIXTY",
-        "AIMED"
+        "LOWLY",
+        "VIRUS",
+        "SPIED",
+        "TRICK"
       ]
     },
     {
       "seed": "daily-2026-08-01-OCTORDLE",
       "count": 8,
       "solutions": [
-        "BRASS",
-        "GANJA",
-        "SEINE",
-        "BUZZY",
-        "CLINE",
+        "CLOAK",
+        "RODEO",
+        "ACUTE",
+        "FAULT",
+        "SCRUB",
         "MEDIA",
-        "OWNED",
-        "STOOL"
+        "INPUT",
+        "BIRTH"
       ]
     },
     {
       "seed": "gauntlet-abc-123",
       "count": 21,
       "solutions": [
-        "WHERE",
-        "ARGON",
-        "MERRY",
-        "PESTO",
-        "TIMER",
-        "WHEEL",
-        "COLIC",
-        "QUAKE",
-        "SITAR",
-        "CAMEL",
-        "FROTH",
-        "STEAL",
-        "OZONE",
-        "GROUP",
-        "RANCH",
-        "RATED",
-        "GABBY",
-        "SWEAT",
-        "FOGGY",
-        "FAMED",
-        "SCENT"
+        "BUNCH",
+        "FULLY",
+        "GREED",
+        "TANGO",
+        "BLINK",
+        "CODEX",
+        "TRIES",
+        "MOUTH",
+        "STOOD",
+        "TREAD",
+        "BRAVO",
+        "ROUGE",
+        "GUEST",
+        "AVAIL",
+        "BOSOM",
+        "REMIX",
+        "STINT",
+        "HONOR",
+        "SHOOT",
+        "MOUNT",
+        "HELLO"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 1,
       "solutions": [
-        "LEVEL"
+        "NEVER"
       ]
     },
     {
       "seed": "match-seed-xyz",
       "count": 2,
       "solutions": [
-        "LEVEL",
-        "OWING"
+        "NEVER",
+        "GNOME"
       ]
     }
   ],

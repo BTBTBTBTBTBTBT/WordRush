@@ -350,10 +350,11 @@ def main():
     if len(kept) < COMFORTABLE_MIN:
         print(f'  !! below {COMFORTABLE_MIN}: repeats get noticeable. Consider a LOWER bar')
         print( '     only if you accept the rarer words that come with it.')
+        if args.write:
+            sys.exit(f'refusing to --write: {len(kept)} words is below the comfort floor '
+                     f'({COMFORTABLE_MIN}). Lower --threshold deliberately, or accept repeats.')
     else:
         print( '  Size is comfortable. Do NOT lower the threshold to grow it further.')
-        if args.write:
-            sys.exit('refusing to --write an out-of-range list')
 
     if args.write:
         print('\nwriting curated list to bundle dirs:')
