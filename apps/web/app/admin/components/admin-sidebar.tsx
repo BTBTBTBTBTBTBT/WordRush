@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Gamepad2, FileText, Shield, Gift, BookOpen, CreditCard, BellRing, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Users, Gamepad2, FileText, Shield, Gift, BookOpen, CreditCard, BellRing, ArrowLeft, SpellCheck } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: '/admin/content', label: 'Content', icon: FileText },
   { href: '/admin/moderation', label: 'Moderation', icon: Shield },
   { href: '/admin/messaging', label: 'Messaging', icon: BellRing },
+  { href: '/admin/words', label: 'Words', icon: SpellCheck },
   { href: '/admin/portal', label: 'Portal', icon: BookOpen },
 ];
 

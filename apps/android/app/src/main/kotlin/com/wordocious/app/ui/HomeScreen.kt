@@ -517,6 +517,21 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
         // Pool for THIS displayed local date — pre-cutover dates keep the legacy
         // word (matches the archive), curated after.
         val localDay = com.wordocious.app.todayLocalDate()
+        // SERVER FIRST (iOS/web parity): /api/words is rendered by the same
+        // module as the Past Words archive, so taking today's entry from it
+        // makes the card and the archive agree by construction. The local walk
+        // below is the offline fallback only — its live dictionaryapi.dev
+        // checks use a different dictionary than the server's committed
+        // dataset, which made the two surfaces feature different words.
+        runCatching { WordsService.words().firstOrNull { it.date == localDay } }.getOrNull()?.let { e ->
+            value = WordOfTheDay(
+                e.word,
+                if (e.definition.isNotEmpty())
+                    com.wordocious.app.data.DefinitionService.WordDefinition(e.phonetic, e.partOfSpeech, e.definition)
+                else null,
+            )
+            return@produceState
+        }
         val sols = GameDictionary.solutionPool(localDay)
         if (sols.isEmpty()) return@produceState
         // Day index of the LOCAL calendar date (not currentTimeMillis/86400000,

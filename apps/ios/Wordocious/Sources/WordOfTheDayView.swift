@@ -192,6 +192,15 @@ struct WordOfTheDayView: View {
     ]
 
     private func fetch() async -> WordInfo {
+        // SERVER FIRST: /api/words is rendered by the same lib/word-of-day.ts
+        // module as the Past Words archive, so taking today's entry from it
+        // makes the card and the archive agree BY CONSTRUCTION. The local walk
+        // below survives as the offline fallback only. (Before this, the card
+        // checked definitions against live dictionaryapi.dev while the server
+        // checked its committed word-definitions.json — different dictionary,
+        // different skip pattern, and the founder's phone featured SHIRE while
+        // Past Words said OTTER for the same day.)
+        if let server = await Self.serverToday() { return server }
         // Pool for THIS displayed local date — pre-cutover dates keep the legacy
         // word (matches the archive), curated after.
         let solutions = GameDictionary.shared.solutionPool(forDateKey: LeaderboardService.todayLocal())
@@ -210,6 +219,36 @@ struct WordOfTheDayView: View {
             .map { solutions[(daysSinceEpoch + $0) % solutions.count] }
             .first { !Self.blocked.contains($0.uppercased()) }
         return WordInfo(word: fallback ?? solutions[daysSinceEpoch % solutions.count])
+    }
+
+    private struct ArchivePayload: Decodable {
+        struct Entry: Decodable {
+            let date: String
+            let word: String
+            let phonetic: String
+            let partOfSpeech: String
+            let definition: String
+        }
+        let words: [Entry]
+    }
+
+    /// Today's entry from the server archive, matched by LOCAL date key.
+    /// reloadIgnoringLocalCacheData: URLSession's shared cache honors the
+    /// response's max-age and served hour-stale content (§193) — the day-keyed
+    /// wotdCache above already limits this to one network hit per day.
+    private static func serverToday() async -> WordInfo? {
+        guard let url = URL(string: "https://wordocious.com/api/words") else { return nil }
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.timeoutInterval = 8
+        guard let (data, _) = try? await URLSession.shared.data(for: req),
+              let payload = try? JSONDecoder().decode(ArchivePayload.self, from: data),
+              let e = payload.words.first(where: { $0.date == LeaderboardService.todayLocal() })
+        else { return nil }
+        return WordInfo(word: e.word,
+                        phonetic: e.phonetic.isEmpty ? nil : e.phonetic,
+                        partOfSpeech: e.partOfSpeech.isEmpty ? nil : e.partOfSpeech,
+                        definition: e.definition.isEmpty ? nil : e.definition)
     }
 
     private func lookup(_ word: String) async -> WordInfo? { await Self.definition(for: word) }
