@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
 
   const admin = getAdminSupabase();
 
-  const [proRes, eventsRes] = await Promise.all([
+  const soonIso = new Date(Date.now() + 7 * 86400000).toISOString();
+  const [proRes, eventsRes, referralsRes] = await Promise.all([
     admin
       .from('profiles')
       .select('id, username, is_pro, pro_expires_at, stripe_customer_id, stripe_subscription_id')
@@ -36,12 +37,30 @@ export async function GET(request: NextRequest) {
       .select('event_id, source, processed_at')
       .order('processed_at', { ascending: false })
       .limit(25),
+    admin.from('referrals').select('status, redeemed_at, reward_granted_at, expires_at'),
   ]);
 
   const proUsers = (proRes.data || []).map((p) => ({
     ...p,
     rail: p.stripe_customer_id ? 'stripe' : 'store',
   }));
+
+  // Forward-looking Pro lifecycle: who is ABOUT to expire (CS gets ahead of
+  // "my Pro vanished" tickets), plus the referral-gift pipeline state.
+  const refs = referralsRes.data || [];
+  const lifecycle = {
+    expiringSoon: proUsers
+      .filter((p) => p.pro_expires_at && p.pro_expires_at <= soonIso)
+      .map((p) => ({ username: p.username, expiresAt: p.pro_expires_at, rail: p.rail })),
+    referrals: {
+      pending: refs.filter((r) => r.status === 'pending').length,
+      redeemed: refs.filter((r) => r.status === 'redeemed').length,
+      converted: refs.filter((r) => r.status === 'converted').length,
+      // Redeemed trials whose conversion reward hasn't fired — inviters still
+      // waiting on their friend's first paid invoice.
+      awaitingConversion: refs.filter((r) => r.status === 'redeemed' && !r.reward_granted_at).length,
+    },
+  };
 
   // Live Stripe data — degrade gracefully when the key isn't configured (local
   // dev) instead of failing the whole page.
@@ -93,5 +112,6 @@ export async function GET(request: NextRequest) {
     proUsers,
     webhookEvents: eventsRes.data || [],
     stripe,
+    lifecycle,
   });
 }

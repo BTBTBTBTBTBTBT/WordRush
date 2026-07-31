@@ -13,6 +13,10 @@ import { CreditCard, Users, Activity, LifeBuoy } from 'lucide-react';
 interface PaymentsData {
   proUsers: { id: string; username: string; pro_expires_at: string | null; rail: 'stripe' | 'store' }[];
   webhookEvents: { event_id: string; source: string; processed_at: string }[];
+  lifecycle?: {
+    expiringSoon: { username: string; expiresAt: string; rail: string }[];
+    referrals: { pending: number; redeemed: number; converted: number; awaitingConversion: number };
+  };
   stripe: {
     configured: boolean;
     error?: string;
@@ -53,6 +57,45 @@ export default function AdminPaymentsPage() {
           <li><b>Entitlement disputes</b> (&quot;I paid but no Pro&quot;): check the user&apos;s Billing card, then the webhook feed below — if events stopped arriving, fulfillment is the problem, not the purchase.</li>
         </ul>
       </div>
+
+      {/* Forward-looking lifecycle — get ahead of "my Pro vanished" */}
+      {data.lifecycle && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Expiring within 7 days</h2>
+            {data.lifecycle.expiringSoon.length === 0 ? (
+              <p className="text-sm font-bold text-gray-300">Nobody expires this week.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {data.lifecycle.expiringSoon.map((u) => (
+                  <div key={u.username} className="flex justify-between text-sm">
+                    <span className="font-black text-gray-900">{u.username} <span className="text-[10px] font-bold text-gray-400 uppercase">{u.rail}</span></span>
+                    <span className="font-bold text-amber-600">{new Date(u.expiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-[11px] font-bold text-gray-300 mt-2">Store renewals extend automatically via webhook; a Stripe sub here with cancel-at-period-end is a real churn.</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Referral gift pipeline</h2>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              {([
+                ['Pending', data.lifecycle.referrals.pending],
+                ['Redeemed', data.lifecycle.referrals.redeemed],
+                ['Converted', data.lifecycle.referrals.converted],
+                ['Awaiting pay', data.lifecycle.referrals.awaitingConversion],
+              ] as const).map(([label, n]) => (
+                <div key={label}>
+                  <p className="text-xl font-black text-gray-900">{n}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">{label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] font-bold text-gray-300 mt-3">Redeemed = friend has the 7-day trial; awaiting pay = inviter&apos;s 30/60-day reward fires on the friend&apos;s first paid invoice.</p>
+          </div>
+        </div>
+      )}
 
       {/* Pro subscribers */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">

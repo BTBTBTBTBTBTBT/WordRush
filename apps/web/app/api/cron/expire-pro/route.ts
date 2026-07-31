@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { stampHeartbeat } from '@/lib/heartbeat';
 
 // Server-side Pro-expiry sweep. The clients each compare pro_expires_at to
 // their OWN device clock, so without this the DB `is_pro` stays true forever
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
     .select('id');
 
   if (error) {
+    await stampHeartbeat('expire-pro', false, error.message);
     return NextResponse.json({ error: 'sweep failed', detail: error.message }, { status: 500 });
   }
 
@@ -50,5 +52,6 @@ export async function GET(req: NextRequest) {
     .lt('processed_at', cutoff);
   if (pruneErr) console.error('store_webhook_events prune failed:', pruneErr.message);
 
+  await stampHeartbeat('expire-pro', true, `expired ${data?.length ?? 0}`);
   return NextResponse.json({ ok: true, expired: data?.length ?? 0, pruned: pruneErr ? 'error' : 'ok' });
 }

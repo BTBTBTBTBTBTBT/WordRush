@@ -3,6 +3,7 @@ import { getAdminSupabase } from '@/lib/supabase-admin';
 import { sendApns, isApnsConfigured, type ApnsMessage } from '@/lib/push/apns';
 import { sendFcm, isFcmConfigured, type FcmMessage } from '@/lib/push/fcm';
 import webpush from 'web-push';
+import { stampHeartbeat } from '@/lib/heartbeat';
 
 // Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
 // route batches over rows, so give it headroom to finish instead of timing out.
@@ -27,7 +28,8 @@ const LAPSED_AFTER_DAYS = 2;
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await stampHeartbeat('daily-reminder', true);
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   webpush.setVapidDetails(
@@ -50,6 +52,7 @@ export async function GET(req: NextRequest) {
   ]);
 
   if ((!subs || subs.length === 0) && (!devices || devices.length === 0)) {
+    await stampHeartbeat('daily-reminder', true, 'no tokens');
     return NextResponse.json({ sent: 0, failed: 0 });
   }
 

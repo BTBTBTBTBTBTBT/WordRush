@@ -531,10 +531,33 @@ object AuthService {
             claimSavesFor(userId)
             _profile.value = result
             result?.let { cacheHeaderValues(it) }
+            stampPresence(userId)
         } catch (e: Exception) {
             // Profile might not exist yet for new sign-ups — that's fine
         }
         return true
+    }
+
+    /** Version/platform/last-seen stamp, once per process — powers the admin
+     *  portal's build-adoption view. Fire-and-forget: must never block or fail
+     *  sign-in, and the columns may lag the 20260801 manual migration. */
+    private var presenceStamped = false
+    private fun stampPresence(userId: String) {
+        if (presenceStamped) return
+        presenceStamped = true
+        scope.launch {
+            runCatching {
+                val ctx = com.wordocious.app.App.instance
+                val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+                val code = androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(info)
+                val version = "${info.versionName} ($code)"
+                client.postgrest["profiles"].update({
+                    set("app_version", version)
+                    set("app_platform", "android")
+                    set("last_seen_at", java.time.Instant.now().toString())
+                }) { filter { eq("id", userId) } }
+            }
+        }
     }
 
     /** Refresh profile (e.g. after recording a game result). */

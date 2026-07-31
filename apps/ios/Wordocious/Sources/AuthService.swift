@@ -484,6 +484,7 @@ final class AuthService: ObservableObject {
         // Same user back after a sign-out keeps their boards; a different
         // account (or a hand-off from guest play) starts clean.
         AuthService.claimSavesFor(userId)
+        stampPresence(userId: userId)
         if let row = await fetchProfileRow(userId: userId) {
             if row.isBanned { await signOut(); return }
             profile = row
@@ -494,6 +495,30 @@ final class AuthService: ObservableObject {
         // provider metadata + has_onboarded:false), then re-fetch.
         await createProfileForOAuth(userId: userId)
         profile = await fetchProfileRow(userId: userId)
+    }
+
+    /// Version/platform/last-seen stamp, once per launch — powers the admin
+    /// portal's build-adoption view ("how many users are still on 1.2").
+    /// Fire-and-forget: visibility instrumentation must never block sign-in,
+    /// and the columns may not exist until the 20260801 manual migration runs.
+    private var presenceStamped = false
+    private func stampPresence(userId: String) {
+        guard !presenceStamped else { return }
+        presenceStamped = true
+        let version = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")
+            + " (" + (Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?") + ")"
+        Task {
+            struct Stamp: Encodable {
+                let app_version: String
+                let app_platform: String
+                let last_seen_at: String
+            }
+            _ = try? await client.from("profiles")
+                .update(Stamp(app_version: version, app_platform: "ios",
+                              last_seen_at: ISO8601DateFormatter().string(from: Date())))
+                .eq("id", value: userId)
+                .execute()
+        }
     }
 
     private func fetchProfileRow(userId: String) async -> Profile? {

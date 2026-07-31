@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { stampHeartbeat } from '@/lib/heartbeat';
 
 // Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
 // route batches over rows, so give it headroom to finish instead of timing out.
@@ -14,7 +15,8 @@ export async function GET(req: NextRequest) {
   // Verify cron secret (Vercel sends this automatically for cron jobs)
   const authHeader = req.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await stampHeartbeat('daily-medals', true);
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const sb = getAdminSupabase();

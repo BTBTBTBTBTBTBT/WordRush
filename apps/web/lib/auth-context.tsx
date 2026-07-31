@@ -59,6 +59,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// One presence stamp per page load (see stampPresence in AuthProvider).
+let presenceStamped = false;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -194,13 +197,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // first persisted state. Idempotent via internal flag.
     migrateLegacyStorageKeys();
 
+    // Presence stamp: version/platform/last-seen, once per page load. Fire and
+    // forget — visibility instrumentation must never block auth. Guarded by a
+    // module flag so getSession + onAuthStateChange don't double-write.
+    const stampPresence = (userId: string, wasGuest: boolean) => {
+      if (presenceStamped) return;
+      presenceStamped = true;
+      const patch: Record<string, unknown> = {
+        app_version: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'dev',
+        app_platform: 'web',
+        last_seen_at: new Date().toISOString(),
+      };
+      // Guest→account conversion: this runs exactly where the guest flag is
+      // superseded by a real session, which is the conversion moment for both
+      // email and OAuth signups on this browser. (An email confirmation opened
+      // in a DIFFERENT browser won't see the flag — accepted gap.)
+      if (wasGuest) patch.converted_from_guest = true;
+      (supabase as any).from('profiles').update(patch).eq('id', userId).then(() => {}, () => {});
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       (async () => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
           // A real session supersedes guest mode.
+          const wasGuest = (() => { try { return localStorage.getItem('wordocious-guest') === '1'; } catch { return false; } })();
           try { localStorage.removeItem('wordocious-guest'); } catch {}
+          stampPresence(session.user.id, wasGuest);
           await fetchProfile(session.user.id, session.user);
         } else {
           // Restore a prior "Play without an account" choice across refreshes.
@@ -235,8 +259,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          const wasGuest = (() => { try { return localStorage.getItem('wordocious-guest') === '1'; } catch { return false; } })();
           try { localStorage.removeItem('wordocious-guest'); } catch {}
           setIsGuest(false);
+          stampPresence(session.user.id, wasGuest);
           await fetchProfile(session.user.id, session.user);
         } else {
           setProfile(null);
