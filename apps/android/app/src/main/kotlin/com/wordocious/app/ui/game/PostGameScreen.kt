@@ -26,6 +26,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.Icon
@@ -218,15 +220,32 @@ fun PostGameScreen(
                     )
                 }
             }
-            FinishedStatsHeader(
-                mode = mode, won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
-                timeSeconds = elapsedSeconds, boardsSolved = boardsSolved, totalBoards = totalBoards,
-                onHome = onBack, onShare = onSharePressed,
-                // Web parity: Play Again only on non-daily (Unlimited) games for Pro.
-                onPlayAgain = if (seed.startsWith("unlimited-") &&
-                    com.wordocious.app.data.AuthService.isProActive
-                ) onPlayAgain else null,
-            )
+            // Web parity: Play Again only on non-daily (Unlimited) games for Pro.
+            val playAgain = if (seed.startsWith("unlimited-") &&
+                com.wordocious.app.data.AuthService.isProActive
+            ) onPlayAgain else null
+
+            if (mode == GameMode.PROPERNOUNDLE) {
+                // iOS ProperNoundleView.result is deliberately lighter than the
+                // generic header: no 28sp gradient mode title and no stat row,
+                // because the screen header above the board already names the
+                // mode and shows the letter count. Just the solved line and an
+                // icon action row in the PN accent.
+                if (won) {
+                    Text(
+                        "Solved in $guessCount ${if (guessCount == 1) "guess" else "guesses"} · ${pnTime(elapsedSeconds)}",
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                    )
+                }
+                PnResultActions(onHome = onBack, onShare = onSharePressed, onPlayAgain = playAgain)
+            } else {
+                FinishedStatsHeader(
+                    mode = mode, won = won, guessCount = guessCount, maxGuesses = board.maxGuesses,
+                    timeSeconds = elapsedSeconds, boardsSolved = boardsSolved, totalBoards = totalBoards,
+                    onHome = onBack, onShare = onSharePressed,
+                    onPlayAgain = playAgain,
+                )
+            }
 
             // Daily-only, like iOS GameScreen (`if vm.isDaily`) — an Unlimited
             // game's result has nothing to do with today's leaderboard.
@@ -461,6 +480,46 @@ private fun fmtRunTime(ms: Int): String {
 
 /** m:ss clock string. */
 private fun clock(s: Int): String = "%d:%02d".format(s / 60, s % 60)
+
+/** Web/iOS ProperNoundle formatTime: "m:ss" at a minute or more, else "Ns". */
+private fun pnTime(s: Int): String = if (s >= 60) "%d:%02d".format(s / 60, s % 60) else "${s}s"
+
+/**
+ * ProperNoundle result actions — iOS ProperNoundleView.result renders Home /
+ * Share / Play Again as icon+label buttons tinted the PN accent, not as the
+ * generic underlined text links every other mode uses.
+ */
+@Composable
+private fun PnResultActions(onHome: () -> Unit, onShare: () -> Unit, onPlayAgain: (() -> Unit)?) {
+    val pnAccent = Color(0xFFDC2626)
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 2.dp),
+    ) {
+        PnAction(Icons.Filled.Home, "Home", pnAccent, onHome)
+        PnAction(Icons.Filled.Share, "Share", pnAccent, onShare)
+        // Amber, matching every other mode's Play Again.
+        onPlayAgain?.let { PnAction(Icons.Filled.Refresh, "Play Again", Color(0xFFD97706), it) }
+    }
+}
+
+@Composable
+private fun PnAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    tint: Color,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.clickableNoRipple(onClick),
+    ) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Black, color = tint)
+    }
+}
 
 /**
  * Finished-game header (ports iOS FinishedStatsHeader): gradient mode title,
