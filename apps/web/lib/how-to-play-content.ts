@@ -76,6 +76,35 @@ export const HOW_TO_PLAY: HTPSection[] = [
     ],
   },
   {
+    title: 'Which Words Count?',
+    intro:
+      'Wordocious keeps two separate word lists, and they have different jobs. The answer list is small and hand-picked: everyday words that nobody should have to look up. The guess list is much larger and far more forgiving — it exists so your guesses are not rejected, not to test your vocabulary.',
+    bullets: [
+      {
+        strong: 'Answers are always common words.',
+        text: ' No proper nouns, no abbreviations, no obscure trivia. If you have never seen it before, it will not be the answer.',
+      },
+      {
+        strong: 'Guesses can be far more obscure.',
+        text: ' Anything with real presence in modern English is accepted, so you can burn a guess on a word you are not sure about.',
+      },
+      {
+        strong: 'Regular word endings count.',
+        text: ' If a word is valid, so are its -S, -ED, -ER and -ING forms whenever they are the right length — ASKED, BORED, LOOKS and NUKED are all fair game.',
+      },
+      {
+        strong: 'No names or places.',
+        text: ' DAVID, PARIS and TEXAS are not accepted. Proper nouns are excluded from both lists — the exceptions are words that happen to also be names, like ROBIN or PEARL.',
+      },
+      {
+        strong: 'Slurs are never accepted,',
+        text: ' as a guess or as an answer.',
+      },
+    ],
+    outro:
+      "Missing a word you are sure is real, or think something should not be accepted? Email support@wordocious.com. No dictionary is ever finished, and player reports are how we catch the ones that slip through.",
+  },
+  {
     title: 'Game Mode Guide',
     modes: [
       {

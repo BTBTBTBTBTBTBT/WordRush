@@ -1,0 +1,25 @@
+# Proper nouns that the automatic filter misses.
+#
+# The filter in curate-solutions.py --grow-allowed reads /usr/share/dict/words
+# (web2) and treats a word as a proper noun when web2 lists it ONLY capitalised
+# — that catches PARIS, INDIA, DAVID, ASIAN, LATIN and ~25k others for free.
+# These slipped through because web2 happens to list them lowercase, or because
+# they are inflections that landed on a name by accident (MARYS = MARY + S).
+#
+# Names that are ALSO ordinary words (ROBIN, PEARL) belong in
+# name-word-allowlist.txt instead — that file wins over this one.
+#
+# This list will never be complete, and it does not need to be: players report
+# stragglers to support@wordocious.com (surfaced in the How to Play screen), and
+# they get added here. Guess-list only — the answer bank is gated separately.
+DENYS
+GREER
+MARYS
+NIGER
+NILES
+TABER
+WALES
+LEEDS
+MILAN
+DELHI
+VEGAS

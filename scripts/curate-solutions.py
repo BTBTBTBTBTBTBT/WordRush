@@ -31,6 +31,8 @@ Usage:
   python3 scripts/curate-solutions.py --write        # sync curated list to bundles
   python3 scripts/curate-solutions.py --curate-allowed 6 [--write]
                                                      # curate the GUESS list (see below)
+  python3 scripts/curate-solutions.py --grow-allowed 5 [--write]
+                                                     # GROW the guess list (see below)
 
 --curate-allowed curates allowed-{6,7}.json — the guess-validation dictionary,
 NOT the answer bank. That list was a raw scrape of a ~1913 dictionary and half
@@ -39,6 +41,40 @@ word iff zipf >= ALLOWED_THRESHOLD (any real corpus presence) OR it is a
 current/legacy answer (every past + future daily must stay guessable). Guesses
 stay a permissive superset of the answers on purpose: the answer bank cuts at
 zipf 2.3, so real-but-obscure words (EVINCE, PARSEC) remain valid guesses.
+
+--grow-allowed is the other half, and the one that was missing. Every mode above
+only ever CUTS. Nothing ever ADDED to a guess list, and the source it was built
+from — /usr/share/dict/words, the 1934 Webster's — lists only LEMMAS. It has no
+ASKED, no LOOKS, no WANTS, no BORED. So the guess list inherited a systematic
+hole in inflected forms: of the 205 -ED words we accepted, 43 were there solely
+because rule G2 forces every answer to stay guessable. That is why POSED was
+accepted (it is an answer) and NUKED was not (it is neither an answer nor a
+Webster's lemma) — there was never an "-ed rule" at all, just a gap.
+
+THE RULE SET (guess list, per length n):
+  G1 shape        exactly n letters, A-Z, deduplicated, sorted.
+  G2 answers      every current + legacy answer is guessable, always.
+  G3 lexicon      candidates are web2 lemmas of length n, PLUS every regular
+                  inflection of a web2 lemma that lands at exactly n letters.
+  G4 inflections  -S/-ES, -ED/-D, -ING, -ER, -IES/-IED. This is the rule whose
+                  absence produced the whole problem.
+  G5 offensive    offensive-blocklist.txt words are never guessable.
+  G6 proper nouns excluded. web2 lists proper nouns CAPITALISED, so "appears in
+                  web2 only capitalised" identifies ~25k of them for free
+                  (PARIS, INDIA, DAVID, ASIAN); name-word-allowlist.txt wins
+                  (ROBIN, PEARL), and proper-noun-blocklist.txt mops up the few
+                  that web2 happens to lowercase.
+  G7 monotonic    THE GUESS LIST NEVER SHRINKS. Union with what already ships,
+                  minus G5. A word that worked yesterday must work tomorrow;
+                  the run asserts this rather than trusting it.
+
+Crude-but-not-slur words (BOOBS, CRAPS) stay guessable, consistent with the
+existing split: offensive-blocklist = slurs = never typeable; manual-blocklist =
+crude = typeable, never an answer. Growing the guess list cannot change what the
+game SHOWS, because the answer bank is curated separately at a much higher bar.
+
+Safe to ship at any time: guess lookup is a set membership test, so adding words
+cannot alter any past or future daily. Only the ANSWER array is order-locked.
 """
 import argparse
 import json
@@ -54,6 +90,13 @@ OUT = os.path.join(REPO, 'scripts', 'out')
 SHUFFLE_SEED = 'wordocious-2026-07-08'
 DEFAULT_THRESHOLD = 3.0
 ALLOWED_THRESHOLD = 1.0  # guess list: any corpus presence at all
+# Bar for GROWING a guess list (--grow-allowed). Higher than ALLOWED_THRESHOLD
+# because that one only decides whether to KEEP a word a human already put in a
+# dictionary, whereas this one admits machine-generated inflections and has to
+# reject the junk they produce. At 2.0 the -ED forms players actually type all
+# clear it (NUKED 2.39 is the closest call); below ~1.5 the additions stop
+# looking like words anyone would guess.
+GROW_THRESHOLD = 2.0
 # Informational only. These are NOT a target to tune the threshold towards —
 # that inversion is exactly how the bank rotted: the bar was walked down until
 # the count fit, so the bank's SIZE was setting its QUALITY. Every rarest word
@@ -265,9 +308,97 @@ def curate_allowed(n):
 def write_allowed_bundles(n, kept):
     blob = json.dumps(kept, indent=2) + '\n'
     for d in BUNDLE_DIRS + FIXTURE_DIRS:
-        with open(os.path.join(d, f'allowed-{n}.json'), 'w') as f:
+        with open(os.path.join(d, allowed_name(n)), 'w') as f:
             f.write(blob)
-        print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, f"allowed-{n}.json"), REPO)}')
+        print(f'  wrote {len(kept)} → {os.path.relpath(os.path.join(d, allowed_name(n)), REPO)}')
+
+
+def allowed_name(n):
+    """The 5-letter guess list predates the multi-length ones and is just
+    allowed.json; 6/7 are allowed-N.json."""
+    return 'allowed.json' if n == 5 else f'allowed-{n}.json'
+
+
+def load_lexicon():
+    """web2 (/usr/share/dict/words), split by case.
+
+    The case split IS the proper-noun filter (G6): web2 capitalises PARIS,
+    INDIA, DAVID, ASIAN and ~25k others, and lowercases ordinary words. Returned
+    as (common, proper) with `proper` already excluding anything that also
+    appears lowercase — CHINA and ROBIN are both, and must stay guessable.
+    """
+    path = os.environ.get('WORDOCIOUS_LEXICON', '/usr/share/dict/words')
+    if not os.path.exists(path):
+        sys.exit(f'No lexicon at {path}. Set WORDOCIOUS_LEXICON to a word list '
+                 '(one word per line, proper nouns capitalised).')
+    with open(path) as f:
+        raw = [w.strip() for w in f if w.strip().isalpha() and w.strip().isascii()]
+    common = {w.upper() for w in raw if w.islower()}
+    return common, {w.upper() for w in raw if not w.islower()} - common
+
+
+def inflections(base):
+    """Regular English inflections of `base` (G4).
+
+    Deliberately conservative: no consonant doubling (STOP→STOPPED), no
+    irregulars. Everything generated here still has to clear the frequency bar,
+    so over-generating (SAKED, WOVED) costs nothing — the corpus rejects it.
+    """
+    out = set()
+    if base.endswith('E'):
+        out |= {base + 'D', base + 'S', base + 'R'}          # BAKE → BAKED/BAKES/BAKER
+    elif base.endswith('Y'):
+        out |= {base[:-1] + 'IED', base[:-1] + 'IES', base + 'S'}   # DRY → DRIED/DRIES
+    else:
+        out |= {base + 'ED', base + 'ES', base + 'S', base + 'ER'}  # ASK → ASKED/ASKS
+    return out | {base + 'ING'}
+
+
+def grow_allowed(n, threshold):
+    """Grow the n-letter GUESS list under the G1-G7 rule set in the module
+    docstring. Returns (final, added) — and asserts G7, that nothing was lost."""
+    z = zipf()
+    common, proper = load_lexicon()
+    current = {w for w in load_json_list(os.path.join(DATA, allowed_name(n)))}
+    offensive = load_wordset(os.path.join(SCRIPT_DATA, 'offensive-blocklist.txt'))
+    name_ok = load_wordset(os.path.join(SCRIPT_DATA, 'name-word-allowlist.txt'))
+    blocked = load_wordset(os.path.join(SCRIPT_DATA, 'proper-noun-blocklist.txt')) - name_ok
+    sols = os.path.join(DATA, 'solutions.json' if n == 5 else f'solutions-{n}.json')
+    leg = os.path.join(DATA, 'solutions-legacy.json' if n == 5 else f'solutions-{n}-legacy.json')
+    must = set(load_json_list(sols)) | set(load_json_list(leg))
+    pat = re.compile(rf'^[A-Z]{{{n}}}$')
+
+    # G8: hand-checked modern vocabulary the 1934 lexicon predates or omits.
+    # These bypass the frequency bar and the proper-noun filter (a human already
+    # made both calls) but never the offensive blocklist.
+    modern = load_wordset(os.path.join(SCRIPT_DATA, 'modern-words.txt'))
+
+    # G3 + G4: lemmas of the right length, plus inflections of any shorter lemma
+    # — including the modern list, so EBOOK yields EBOOKS at n=6.
+    bases = common | modern
+    cands = {w for w in bases if len(w) == n}
+    for base in bases:
+        if 2 <= len(base) < n:
+            cands |= {w for w in inflections(base) if len(w) == n}
+
+    added = set()
+    for w in cands:
+        if w in current or w in offensive or not pat.match(w):
+            continue
+        if w in modern:                                              # G8: vouched for
+            added.add(w)
+            continue
+        if (w in proper or w in blocked) and w not in name_ok:       # G6
+            continue
+        if z(w) >= threshold:                                        # frequency bar
+            added.add(w)
+
+    # G1 shape + G2 answers + G7 monotonic (union with what already ships).
+    final = {w for w in (current | added | must) if pat.match(w)} - offensive
+    lost = {w for w in current if pat.match(w)} - final
+    assert not lost, f'G7 violated — these words would stop being guessable: {sorted(lost)}'
+    assert (must - offensive) <= final, 'G2 violated — an answer is not guessable'
+    return sorted(final), sorted(added)
 
 
 def scan_lengths():
@@ -296,10 +427,30 @@ def main():
                     help='curate the 6- or 7-letter bank instead of the 5-letter one')
     ap.add_argument('--curate-allowed', type=int, choices=(6, 7),
                     help='curate the 6- or 7-letter GUESS list (allowed-N.json)')
+    ap.add_argument('--grow-allowed', type=int, choices=(5, 6, 7),
+                    help='GROW the n-letter guess list under the G1-G7 rule set (additive)')
+    ap.add_argument('--grow-threshold', type=float, default=GROW_THRESHOLD,
+                    help=f'frequency bar for grown words (default {GROW_THRESHOLD})')
     args = ap.parse_args()
 
     if args.scan_only:
         scan_lengths()
+        return
+
+    if args.grow_allowed:
+        n = args.grow_allowed
+        final, added = grow_allowed(n, args.grow_threshold)
+        before = len({w for w in load_json_list(os.path.join(DATA, allowed_name(n)))
+                      if re.match(rf'^[A-Z]{{{n}}}$', w)})
+        os.makedirs(OUT, exist_ok=True)
+        with open(os.path.join(OUT, f'allowed-{n}-added.txt'), 'w') as f:
+            f.write('\n'.join(added) + '\n')
+        print(f'{allowed_name(n)}: {before} → {len(final)}  (+{len(added)} added, 0 removed — G7)')
+        print(f'  review: {os.path.relpath(os.path.join(OUT, f"allowed-{n}-added.txt"), REPO)}')
+        if args.write:
+            write_allowed_bundles(n, final)
+        else:
+            print('  (dry run — pass --write to sync the bundles)')
         return
 
     if args.curate_allowed:

@@ -8,20 +8,28 @@
       "SPICE"
     ],
     "prefillWords": [
-      "SCALL",
-      "PINNA",
-      "MERSE"
+      "YOICK",
+      "TSERE",
+      "SPEWS"
     ],
     "boardPrefills": [
       {
         "solution": "DROVE",
         "prefillGuesses": [
           {
-            "word": "SCALL",
+            "word": "YOICK",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "S",
+                  "letter": "Y",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "I",
                   "state": "ABSENT"
                 },
                 {
@@ -29,15 +37,7 @@
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "A",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
+                  "letter": "K",
                   "state": "ABSENT"
                 }
               ],
@@ -45,39 +45,15 @@
             }
           },
           {
-            "word": "PINNA",
+            "word": "TSERE",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "P",
+                  "letter": "T",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "I",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "N",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "N",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "MERSE",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "M",
+                  "letter": "S",
                   "state": "ABSENT"
                 },
                 {
@@ -89,12 +65,36 @@
                   "state": "PRESENT"
                 },
                 {
+                  "letter": "E",
+                  "state": "CORRECT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "SPEWS",
+            "evaluation": {
+              "tiles": [
+                {
                   "letter": "S",
                   "state": "ABSENT"
                 },
                 {
+                  "letter": "P",
+                  "state": "ABSENT"
+                },
+                {
                   "letter": "E",
-                  "state": "CORRECT"
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "W",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
                 }
               ],
               "isCorrect": false
@@ -106,39 +106,15 @@
         "solution": "POLAR",
         "prefillGuesses": [
           {
-            "word": "SCALL",
+            "word": "YOICK",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "S",
+                  "letter": "Y",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "C",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
-                  "state": "PRESENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "PRESENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "PINNA",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "P",
+                  "letter": "O",
                   "state": "CORRECT"
                 },
                 {
@@ -146,27 +122,27 @@
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "N",
+                  "letter": "C",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "N",
+                  "letter": "K",
                   "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
-                  "state": "PRESENT"
                 }
               ],
               "isCorrect": false
             }
           },
           {
-            "word": "MERSE",
+            "word": "TSERE",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "M",
+                  "letter": "T",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
                   "state": "ABSENT"
                 },
                 {
@@ -178,11 +154,35 @@
                   "state": "PRESENT"
                 },
                 {
+                  "letter": "E",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "SPEWS",
+            "evaluation": {
+              "tiles": [
+                {
                   "letter": "S",
                   "state": "ABSENT"
                 },
                 {
+                  "letter": "P",
+                  "state": "PRESENT"
+                },
+                {
                   "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "W",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
                   "state": "ABSENT"
                 }
               ],
@@ -195,39 +195,15 @@
         "solution": "BLUFF",
         "prefillGuesses": [
           {
-            "word": "SCALL",
+            "word": "YOICK",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "S",
+                  "letter": "Y",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "C",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "PRESENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "PINNA",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "P",
+                  "letter": "O",
                   "state": "ABSENT"
                 },
                 {
@@ -235,15 +211,11 @@
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "N",
+                  "letter": "C",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "N",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
+                  "letter": "K",
                   "state": "ABSENT"
                 }
               ],
@@ -251,11 +223,15 @@
             }
           },
           {
-            "word": "MERSE",
+            "word": "TSERE",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "M",
+                  "letter": "T",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
                   "state": "ABSENT"
                 },
                 {
@@ -267,11 +243,35 @@
                   "state": "ABSENT"
                 },
                 {
+                  "letter": "E",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "SPEWS",
+            "evaluation": {
+              "tiles": [
+                {
                   "letter": "S",
                   "state": "ABSENT"
                 },
                 {
+                  "letter": "P",
+                  "state": "ABSENT"
+                },
+                {
                   "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "W",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
                   "state": "ABSENT"
                 }
               ],
@@ -284,27 +284,27 @@
         "solution": "SPICE",
         "prefillGuesses": [
           {
-            "word": "SCALL",
+            "word": "YOICK",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "S",
+                  "letter": "Y",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "I",
                   "state": "CORRECT"
                 },
                 {
                   "letter": "C",
-                  "state": "PRESENT"
+                  "state": "CORRECT"
                 },
                 {
-                  "letter": "A",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "L",
+                  "letter": "K",
                   "state": "ABSENT"
                 }
               ],
@@ -312,40 +312,16 @@
             }
           },
           {
-            "word": "PINNA",
+            "word": "TSERE",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "P",
+                  "letter": "T",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
                   "state": "PRESENT"
-                },
-                {
-                  "letter": "I",
-                  "state": "PRESENT"
-                },
-                {
-                  "letter": "N",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "N",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "A",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "MERSE",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "M",
-                  "state": "ABSENT"
                 },
                 {
                   "letter": "E",
@@ -356,12 +332,36 @@
                   "state": "ABSENT"
                 },
                 {
+                  "letter": "E",
+                  "state": "CORRECT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "SPEWS",
+            "evaluation": {
+              "tiles": [
+                {
                   "letter": "S",
-                  "state": "PRESENT"
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "P",
+                  "state": "CORRECT"
                 },
                 {
                   "letter": "E",
-                  "state": "CORRECT"
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "W",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
                 }
               ],
               "isCorrect": false
@@ -380,28 +380,28 @@
       "MINOR"
     ],
     "prefillWords": [
-      "FRYER",
-      "JIFFY",
-      "MOOCH"
+      "PAVES",
+      "ROSES",
+      "SOZIN"
     ],
     "boardPrefills": [
       {
         "solution": "SPOKE",
         "prefillGuesses": [
           {
-            "word": "FRYER",
+            "word": "PAVES",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "F",
+                  "letter": "P",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "A",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "R",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "Y",
+                  "letter": "V",
                   "state": "ABSENT"
                 },
                 {
@@ -409,7 +409,35 @@
                   "state": "PRESENT"
                 },
                 {
+                  "letter": "S",
+                  "state": "PRESENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "ROSES",
+            "evaluation": {
+              "tiles": [
+                {
                   "letter": "R",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "S",
                   "state": "ABSENT"
                 }
               ],
@@ -417,11 +445,19 @@
             }
           },
           {
-            "word": "JIFFY",
+            "word": "SOZIN",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "J",
+                  "letter": "S",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "O",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "Z",
                   "state": "ABSENT"
                 },
                 {
@@ -429,43 +465,7 @@
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "Y",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "MOOCH",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "M",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "O",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "O",
-                  "state": "CORRECT"
-                },
-                {
-                  "letter": "C",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "H",
+                  "letter": "N",
                   "state": "ABSENT"
                 }
               ],
@@ -478,39 +478,75 @@
         "solution": "ARRAY",
         "prefillGuesses": [
           {
-            "word": "FRYER",
+            "word": "PAVES",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "F",
+                  "letter": "P",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "R",
-                  "state": "CORRECT"
+                  "letter": "A",
+                  "state": "PRESENT"
                 },
                 {
-                  "letter": "Y",
-                  "state": "PRESENT"
+                  "letter": "V",
+                  "state": "ABSENT"
                 },
                 {
                   "letter": "E",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "R",
-                  "state": "PRESENT"
+                  "letter": "S",
+                  "state": "ABSENT"
                 }
               ],
               "isCorrect": false
             }
           },
           {
-            "word": "JIFFY",
+            "word": "ROSES",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "J",
+                  "letter": "R",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "SOZIN",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "Z",
                   "state": "ABSENT"
                 },
                 {
@@ -518,43 +554,7 @@
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "Y",
-                  "state": "CORRECT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "MOOCH",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "M",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "O",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "O",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "C",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "H",
+                  "letter": "N",
                   "state": "ABSENT"
                 }
               ],
@@ -567,19 +567,19 @@
         "solution": "RIGID",
         "prefillGuesses": [
           {
-            "word": "FRYER",
+            "word": "PAVES",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "F",
+                  "letter": "P",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "R",
-                  "state": "PRESENT"
+                  "letter": "A",
+                  "state": "ABSENT"
                 },
                 {
-                  "letter": "Y",
+                  "letter": "V",
                   "state": "ABSENT"
                 },
                 {
@@ -587,7 +587,7 @@
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "R",
+                  "letter": "S",
                   "state": "ABSENT"
                 }
               ],
@@ -595,11 +595,47 @@
             }
           },
           {
-            "word": "JIFFY",
+            "word": "ROSES",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "J",
+                  "letter": "R",
+                  "state": "CORRECT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "SOZIN",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "O",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "Z",
                   "state": "ABSENT"
                 },
                 {
@@ -607,43 +643,7 @@
                   "state": "CORRECT"
                 },
                 {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "Y",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "MOOCH",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "M",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "O",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "O",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "C",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "H",
+                  "letter": "N",
                   "state": "ABSENT"
                 }
               ],
@@ -656,19 +656,19 @@
         "solution": "MINOR",
         "prefillGuesses": [
           {
-            "word": "FRYER",
+            "word": "PAVES",
             "evaluation": {
               "tiles": [
                 {
-                  "letter": "F",
+                  "letter": "P",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "R",
+                  "letter": "A",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "Y",
+                  "letter": "V",
                   "state": "ABSENT"
                 },
                 {
@@ -676,64 +676,64 @@
                   "state": "ABSENT"
                 },
                 {
+                  "letter": "S",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "ROSES",
+            "evaluation": {
+              "tiles": [
+                {
                   "letter": "R",
-                  "state": "CORRECT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "JIFFY",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "J",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "I",
-                  "state": "CORRECT"
-                },
-                {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "F",
-                  "state": "ABSENT"
-                },
-                {
-                  "letter": "Y",
-                  "state": "ABSENT"
-                }
-              ],
-              "isCorrect": false
-            }
-          },
-          {
-            "word": "MOOCH",
-            "evaluation": {
-              "tiles": [
-                {
-                  "letter": "M",
-                  "state": "CORRECT"
+                  "state": "PRESENT"
                 },
                 {
                   "letter": "O",
                   "state": "PRESENT"
                 },
                 {
+                  "letter": "S",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "E",
+                  "state": "ABSENT"
+                },
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                }
+              ],
+              "isCorrect": false
+            }
+          },
+          {
+            "word": "SOZIN",
+            "evaluation": {
+              "tiles": [
+                {
+                  "letter": "S",
+                  "state": "ABSENT"
+                },
+                {
                   "letter": "O",
+                  "state": "PRESENT"
+                },
+                {
+                  "letter": "Z",
                   "state": "ABSENT"
                 },
                 {
-                  "letter": "C",
-                  "state": "ABSENT"
+                  "letter": "I",
+                  "state": "PRESENT"
                 },
                 {
-                  "letter": "H",
-                  "state": "ABSENT"
+                  "letter": "N",
+                  "state": "PRESENT"
                 }
               ],
               "isCorrect": false

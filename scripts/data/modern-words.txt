@@ -1,0 +1,81 @@
+# Modern vocabulary the source lexicon predates.
+#
+# --grow-allowed builds its candidates from /usr/share/dict/words (web2), which
+# is the 1934 Webster's. Anything coined since — and anything web2 simply omits
+# (it has no entry for "box", which is why BOXED was missing) — can never be
+# generated from it, no matter how common the word is today.
+#
+# Mining the modern corpus automatically does NOT work: at any threshold low
+# enough to catch EBOOK and CARBS, the same sweep drags in HTTPS, EVANS, NAZIS,
+# LAGOS and the misspelling THIER. Words absent from web2 entirely are invisible
+# to the capitalisation-based proper-noun filter, so there is nothing to catch
+# them with. Hence a hand-checked list.
+#
+# Rules for adding here: an ordinary English word in current use, not a proper
+# noun, not a brand, not an acronym, not a misspelling. Inflections of these are
+# generated automatically, so list the base and the length-fitting forms you
+# actually want. Still filtered by offensive-blocklist.txt.
+#
+# Guess list only — none of these become answers unless separately curated into
+# the answer bank, which has a much higher bar.
+
+# Technology / internet
+BLOGS
+EBOOK
+BYTES
+COMMS
+EMOJI
+SCIFI
+
+# Food, health, lifestyle
+CARBS
+CAFES
+CHEMO
+PALEO
+VEGAN
+DETOX
+RAMEN
+BOTOX
+VAPES
+VAPED
+
+# Everyday modern nouns
+CONDO
+CELEB
+CONVO
+EXECS
+PROMS
+MINIS
+FAVES
+LAYUP
+TELLY
+BLING
+KIDDO
+HOMIE
+MACHO
+GEEKY
+
+# Words web2 omits outright (not modern — just missing from the 1934 source)
+BOXED
+MULTI
+VERSA
+SYNTH
+NEURO
+INTRA
+OUTRO
+MODUS
+VITAE
+SUPRA
+COVEN
+SABRE
+ALOHA
+HAIKU
+MAFIA
+ARABS
+HIJAB
+EBOLA
+
+# British / Commonwealth spellings
+METRE
+ODOUR
+TONNE
