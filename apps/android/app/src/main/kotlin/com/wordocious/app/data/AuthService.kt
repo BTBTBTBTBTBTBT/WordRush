@@ -395,7 +395,21 @@ object AuthService {
      * no session is created until the user clicks the email link — we surface that
      * as a confirmation prompt rather than a failure (matches the web flow).
      */
-    suspend fun signUpWithEmail(email: String, password: String, username: String): String? {
+    /**
+     * Outcome of an email sign-up.
+     *
+     * [ConfirmEmail] is a SUCCESS. It used to be returned as a plain String
+     * alongside the real errors, and the caller rendered every non-null return
+     * in the red error card — so creating an account correctly looked like it
+     * had failed.
+     */
+    sealed interface SignUpOutcome {
+        object SignedIn : SignUpOutcome
+        object ConfirmEmail : SignUpOutcome
+        data class Failed(val message: String) : SignUpOutcome
+    }
+
+    suspend fun signUpWithEmail(email: String, password: String, username: String): SignUpOutcome {
         return try {
             // Confirmation links land on /auth/confirm — a path the app claims
             // as an app link, so tapping the email on this phone confirms
@@ -410,15 +424,17 @@ object AuthService {
             val user = client.auth.currentUserOrNull()
             when {
                 user != null -> {
-                    if (!loadProfile(user.id)) return "This account has been suspended."
+                    if (!loadProfile(user.id)) return SignUpOutcome.Failed("This account has been suspended.")
                     _isAuthenticated.value = true; _isGuest.value = false; SettingsPref.set(HAD_SESSION, true)
-                    null
+                    SignUpOutcome.SignedIn
                 }
-                result != null -> "Check your email to confirm your account, then sign in."
-                else -> "Registration failed"
+                // Email confirmation is ON, so there is no session yet. The
+                // account WAS created — the caller shows the green banner.
+                result != null -> SignUpOutcome.ConfirmEmail
+                else -> SignUpOutcome.Failed("Registration failed")
             }
         } catch (e: Exception) {
-            e.message?.take(120) ?: "Sign up failed"
+            SignUpOutcome.Failed(e.message?.take(120) ?: "Sign up failed")
         }
     }
 

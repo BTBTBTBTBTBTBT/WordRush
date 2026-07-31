@@ -20,9 +20,14 @@ struct AuthView: View {
     @State private var mode: Mode = .signin
     @State private var email = ""
     @State private var password = ""
+    @State private var confirmPassword = ""
+    /// A masked field with no reveal makes a typo uncatchable, and a typo on
+    /// sign-up creates an account nobody can ever sign into.
+    @State private var showPassword = false
     @State private var username = ""
     @State private var error: String?
     @State private var resetSent = false
+    @State private var signupSent = false
     @State private var working = false
     @State private var appleNonce: String?
 
@@ -98,11 +103,17 @@ struct AuthView: View {
                 labeledField("Email", "envelope", $email, "your@email.com", keyboard: .emailAddress)
                 if mode != .reset {
                     labeledSecure("Password", "lock", $password,
-                                  trailing: mode == .signin ? ("Forgot password?", { mode = .reset; error = nil; resetSent = false }) : nil)
+                                  trailing: mode == .signin ? ("Forgot password?", { mode = .reset; error = nil; resetSent = false; signupSent = false }) : nil)
+                }
+                if mode == .signup {
+                    labeledSecure("Confirm password", "lock", $confirmPassword,
+                                  isMismatched: !confirmPassword.isEmpty && confirmPassword != password)
                 }
 
-                if resetSent {
-                    Text("Check your email — if an account exists for that address, a reset link is on its way.")
+                if resetSent || signupSent {
+                    Text(signupSent
+                         ? "Account created. Check your email for a confirmation link, then sign in."
+                         : "Check your email — if an account exists for that address, a reset link is on its way.")
                         .font(Brand.font(12, .bold)).foregroundStyle(Color(hex: 0x047857))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
@@ -128,13 +139,14 @@ struct AuthView: View {
                         .shadow(color: Color(hex: 0x4C1D95), radius: 0, x: 0, y: 4))   // btn-3d
                 }
                 .buttonStyle(.plain)
-                .disabled(working || !SupabaseConfig.isConfigured || (mode == .reset && resetSent))
+                .disabled(working || !SupabaseConfig.isConfigured || (mode == .reset && resetSent)
+                          || (mode == .signup && signupSent))
 
                 Button(mode == .signin ? "Don't have an account? Sign up"
                        : mode == .signup ? "Already have an account? Sign in"
                        : "Back to sign in") {
                     mode = mode == .reset ? .signin : (mode == .signin ? .signup : .signin)
-                    error = nil; resetSent = false
+                    error = nil; resetSent = false; signupSent = false; confirmPassword = ""
                 }
                 .font(Brand.body(13)).foregroundStyle(Theme.primary)
             }
@@ -187,7 +199,8 @@ struct AuthView: View {
     }
 
     private func labeledSecure(_ label: String, _ icon: String, _ text: Binding<String>,
-                               trailing: (String, () -> Void)? = nil) -> some View {
+                               trailing: (String, () -> Void)? = nil,
+                               isMismatched: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Label(label, systemImage: icon).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
@@ -198,9 +211,25 @@ struct AuthView: View {
                         .buttonStyle(.plain)
                 }
             }
-            SecureField("••••••••", text: text)
-                .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.border, lineWidth: 1.5))
+            HStack(spacing: 8) {
+                // One reveal toggle drives BOTH password fields, so confirming
+                // means comparing what you can actually read.
+                if showPassword {
+                    TextField("••••••••", text: text)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                } else {
+                    SecureField("••••••••", text: text)
+                }
+                Button { showPassword.toggle() } label: {
+                    Image(systemName: showPassword ? "eye.slash" : "eye")
+                        .font(.system(size: 14)).foregroundStyle(Theme.textMuted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(showPassword ? "Hide password" : "Show password")
+            }
+            .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+            .overlay(RoundedRectangle(cornerRadius: 10)
+                .stroke(isMismatched ? Color(hex: 0xFCA5A5) : Theme.border, lineWidth: 1.5))
         }
     }
 
@@ -228,16 +257,24 @@ struct AuthView: View {
             guard (3...20).contains(trimmedUsername.count) else {
                 error = "Username must be 3-20 characters."; return
             }
+            guard password == confirmPassword else {
+                error = "Passwords do not match"; return
+            }
         }
         working = true
         Task {
             do {
                 if mode == .signup {
-                    try await auth.signUp(email: email, password: password, username: trimmedUsername)
+                    let signedIn = try await auth.signUp(email: email, password: password, username: trimmedUsername)
+                    working = false
+                    // No session means confirmation is pending — say so and stay
+                    // put. Dismissing here dropped the user back to a signed-out
+                    // app with no indication the account had been created.
+                    if signedIn { dismiss() } else { signupSent = true }
                 } else {
                     try await auth.signIn(email: email, password: password)
+                    working = false; dismiss()
                 }
-                working = false; dismiss()
             } catch {
                 self.error = error.localizedDescription; working = false
             }

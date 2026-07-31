@@ -169,7 +169,13 @@ final class AuthService: ObservableObject {
             email, redirectTo: URL(string: "https://wordocious.com/auth/reset"))
     }
 
-    func signUp(email: String, password: String, username: String) async throws {
+    /// - Returns: `true` when a session was created (confirmation is off, so the
+    ///   user is signed in); `false` when the account was created but is waiting
+    ///   on the emailed confirmation link. `false` is a SUCCESS — the caller
+    ///   used to treat both alike and just dismissed the sheet, leaving the user
+    ///   signed out with no explanation.
+    @discardableResult
+    func signUp(email: String, password: String, username: String) async throws -> Bool {
         // Pass the username as user metadata; the DB trigger handle_new_user()
         // creates the profiles row (SECURITY DEFINER). We don't insert it here —
         // with email confirmation on there's no session yet, so a client insert
@@ -184,7 +190,9 @@ final class AuthService: ObservableObject {
         // user must confirm their email first.
         if response.session != nil {
             await handleSignedIn(userId: response.user.id.uuidString)
+            return true
         }
+        return false
     }
 
     // MARK: - OAuth (Apple / Google)

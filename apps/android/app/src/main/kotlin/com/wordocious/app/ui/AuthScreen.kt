@@ -25,6 +25,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -78,9 +82,14 @@ fun AuthScreen(
     val isSignIn = mode == "signin"
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    // A masked field with no reveal makes a typo uncatchable, and a typo on
+    // sign-up creates an account nobody can ever sign into.
+    var showPassword by remember { mutableStateOf(false) }
     var username by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var resetSent by remember { mutableStateOf(false) }
+    var signupSent by remember { mutableStateOf(false) }
     var working by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -173,7 +182,18 @@ fun AuthScreen(
             }
             AuthField("Email", email, onValue = { email = it }, keyboardType = KeyboardType.Email)
             if (mode != "reset") {
-                AuthField("Password", password, onValue = { password = it }, isPassword = true)
+                AuthField(
+                    "Password", password, onValue = { password = it }, isPassword = true,
+                    revealed = showPassword, onToggleReveal = { showPassword = !showPassword },
+                )
+            }
+            if (mode == "signup") {
+                AuthField(
+                    "Confirm password", confirmPassword, onValue = { confirmPassword = it },
+                    isPassword = true, revealed = showPassword,
+                    onToggleReveal = { showPassword = !showPassword },
+                    isError = confirmPassword.isNotEmpty() && confirmPassword != password,
+                )
             }
             if (mode == "signin") {
                 Text(
@@ -186,10 +206,13 @@ fun AuthScreen(
             }
 
             // Reset-link confirmation (deliberately shown for any address — no
-            // account probing, web/iOS parity).
-            if (resetSent) {
+            // account probing, web/iOS parity) and the sign-up confirmation.
+            // The sign-up case used to arrive as a plain string in the RED error
+            // card, so a successful registration read as a failure.
+            if (resetSent || signupSent) {
                 Text(
-                    "Check your email — if an account exists for that address, a reset link is on its way.",
+                    if (signupSent) "Account created. Check your email for a confirmation link, then sign in."
+                    else "Check your email — if an account exists for that address, a reset link is on its way.",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF047857),
@@ -234,13 +257,24 @@ fun AuthScreen(
                     email.isBlank() || password.isBlank() -> error = "Email and password are required"
                     password.length < 6 -> error = "Password must be at least 6 characters."
                     mode == "signup" && username.trim().length !in 3..20 -> error = "Username must be 3-20 characters."
+                    mode == "signup" && password != confirmPassword -> error = "Passwords do not match"
                     else -> {
                         working = true
                         scope.launch {
-                            val err = if (isSignIn) AuthService.signInWithEmail(email.trim(), password)
-                            else AuthService.signUpWithEmail(email.trim(), password, username.trim())
-                            working = false
-                            if (err != null) error = err else onAuthenticated()
+                            if (isSignIn) {
+                                val err = AuthService.signInWithEmail(email.trim(), password)
+                                working = false
+                                if (err != null) error = err else onAuthenticated()
+                            } else {
+                                when (val out = AuthService.signUpWithEmail(email.trim(), password, username.trim())) {
+                                    // Confirmation is on, so this is the normal
+                                    // path: the account exists, there's just no
+                                    // session until the email link is tapped.
+                                    is AuthService.SignUpOutcome.ConfirmEmail -> { working = false; signupSent = true }
+                                    is AuthService.SignUpOutcome.SignedIn -> { working = false; onAuthenticated() }
+                                    is AuthService.SignUpOutcome.Failed -> { working = false; error = out.message }
+                                }
+                            }
                         }
                     }
                 }
@@ -314,6 +348,10 @@ private fun AuthField(
     onValue: (String) -> Unit,
     keyboardType: KeyboardType = KeyboardType.Text,
     isPassword: Boolean = false,
+    /** Password fields get an eye toggle; null keeps the field plain. */
+    revealed: Boolean = false,
+    onToggleReveal: (() -> Unit)? = null,
+    isError: Boolean = false,
 ) {
     OutlinedTextField(
         value = value,
@@ -321,8 +359,20 @@ private fun AuthField(
         label = { Text(label, fontSize = 13.sp) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
+        isError = isError,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        visualTransformation = if (isPassword) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+        visualTransformation = if (isPassword && !revealed) PasswordVisualTransformation()
+            else androidx.compose.ui.text.input.VisualTransformation.None,
+        trailingIcon = if (isPassword && onToggleReveal != null) {
+            {
+                Icon(
+                    if (revealed) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                    contentDescription = if (revealed) "Hide password" else "Show password",
+                    tint = WTheme.textMuted,
+                    modifier = Modifier.size(20.dp).clickableNoRipple(onToggleReveal),
+                )
+            }
+        } else null,
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = WTheme.primary,
