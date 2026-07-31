@@ -88,5 +88,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log('Opening Google consent — approve with the account that owns AdMob/AdSense…');
-  try { execFileSync('open', [authUrl]); } catch { console.log('Open this URL manually:\n' + authUrl); }
+  if (process.env.NO_OPEN) console.log('AUTH_URL=' + authUrl);
+  else try { execFileSync('open', [authUrl]); } catch { console.log('Open this URL manually:\n' + authUrl); }
 });

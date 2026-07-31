@@ -72,19 +72,21 @@ async function fetchAdmob(token: string) {
     body: JSON.stringify({
       reportSpec: {
         dateRange: { startDate: d(start), endDate: d(end) },
-        dimensions: ['APP'],
+        // APP alone was ambiguous — both apps are named "Wordocious", so the
+        // two rows were indistinguishable. PLATFORM disambiguates them.
+        dimensions: ['APP', 'PLATFORM'],
         metrics: ['ESTIMATED_EARNINGS', 'IMPRESSIONS'],
       },
     }),
   });
   if (!repRes.ok) return { error: `AdMob report: HTTP ${repRes.status}` };
   const rows = (await repRes.json()) as {
-    row?: { dimensionValues?: { APP?: { displayLabel?: string } }; metricValues?: { ESTIMATED_EARNINGS?: { microsValue?: string }; IMPRESSIONS?: { integerValue?: string } } };
+    row?: { dimensionValues?: { APP?: { displayLabel?: string }; PLATFORM?: { value?: string } }; metricValues?: { ESTIMATED_EARNINGS?: { microsValue?: string }; IMPRESSIONS?: { integerValue?: string } } };
   }[];
   const apps = rows
     .filter((r) => r.row)
     .map((r) => ({
-      app: r.row!.dimensionValues?.APP?.displayLabel ?? 'unknown',
+      app: `${r.row!.dimensionValues?.APP?.displayLabel ?? 'unknown'}${r.row!.dimensionValues?.PLATFORM?.value ? ` (${r.row!.dimensionValues.PLATFORM.value})` : ''}`,
       earnings: Number(r.row!.metricValues?.ESTIMATED_EARNINGS?.microsValue ?? 0) / 1e6,
       impressions: Number(r.row!.metricValues?.IMPRESSIONS?.integerValue ?? 0),
     }));
