@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Puzzle, Flame, Shield } from 'lucide-react';
+import { DrillCard, useDrill } from '../components/drill-panel';
 
 // Puzzle analytics — which dailies were brutal, which modes get played, and
 // whether the streak/shield economy is actually being used.
@@ -27,6 +28,7 @@ const fmtDay = (key: string) => {
 const winColor = (r: number) => (r < 40 ? 'text-red-500' : r < 65 ? 'text-amber-600' : 'text-green-600');
 
 export default function AdminPuzzlesPage() {
+  const drill = useDrill();
   const [data, setData] = useState<PuzzlesData | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(14);
@@ -82,7 +84,8 @@ export default function AdminPuzzlesPage() {
           </thead>
           <tbody>
             {data.popularity.map((m) => (
-              <tr key={m.mode} className="border-b border-gray-50">
+              <tr key={m.mode} onClick={() => drill({ metric: 'plays', key: m.mode })}
+                  className="border-b border-gray-50 cursor-pointer hover:bg-gray-50" title="Click for every play of this mode">
                 <td className="px-4 py-2 font-black text-gray-900">{m.mode}</td>
                 <td className="px-4 py-2 font-bold text-gray-700">{m.plays}</td>
                 <td className="px-4 py-2 font-bold text-gray-500">{m.vsPlays}</td>
@@ -95,24 +98,29 @@ export default function AdminPuzzlesPage() {
 
       {/* Streak & shield economy */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-wide"><Flame className="w-3.5 h-3.5" /> Longest active</div>
-          <p className="text-2xl font-black text-gray-900 mt-1">{se.longestActive} days</p>
-          <p className="text-xs font-bold text-gray-400">best ever: {se.bestEver}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-wide"><Shield className="w-3.5 h-3.5" /> Shields held</div>
-          <p className="text-2xl font-black text-gray-900 mt-1">{se.shieldsHeld}</p>
-          <p className="text-xs font-bold text-gray-400">across {se.shieldHolders} players ({se.proHolders} Pro)</p>
-        </div>
+        <DrillCard
+          label="Longest active" icon={<Flame className="w-3.5 h-3.5" />}
+          value={`${se.longestActive} days`} sub={`best ever: ${se.bestEver}`}
+          drill={{ metric: 'streaks' }}
+        />
+        <DrillCard
+          label="Shields held" icon={<Shield className="w-3.5 h-3.5" />}
+          value={se.shieldsHeld} sub={`across ${se.shieldHolders} players (${se.proHolders} Pro)`}
+          drill={{ metric: 'shields' }}
+        />
         <div className="col-span-2 bg-white border border-gray-200 rounded-xl p-4">
           <p className="text-xs font-black text-gray-400 uppercase tracking-wide mb-2">Streak distribution</p>
           <div className="flex gap-2">
             {se.distribution.map((b) => (
-              <div key={b.label} className="flex-1 text-center">
+              <button
+                type="button" key={b.label}
+                onClick={() => drill({ metric: 'streaks', key: b.label })}
+                className="flex-1 text-center rounded hover:bg-gray-50 py-1"
+                title="Click for the players in this bucket"
+              >
                 <p className="text-lg font-black text-gray-900">{b.count}</p>
                 <p className="text-[10px] font-bold text-gray-400">{b.label}d</p>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -137,7 +145,9 @@ export default function AdminPuzzlesPage() {
           <tbody>
             {[...dayGroups.entries()].map(([day, rows]) =>
               rows.map((r, i) => (
-                <tr key={`${day}-${r.mode}`} className={`border-b border-gray-50 ${i === 0 ? 'border-t border-gray-100' : ''}`}>
+                <tr key={`${day}-${r.mode}`} onClick={() => drill({ metric: 'plays', day, key: r.mode })}
+                    className={`border-b border-gray-50 cursor-pointer hover:bg-gray-50 ${i === 0 ? 'border-t border-gray-100' : ''}`}
+                    title="Click for the individual results behind this row">
                   <td className="px-4 py-2 font-bold text-gray-500 whitespace-nowrap">{i === 0 ? fmtDay(day) : ''}</td>
                   <td className="px-4 py-2 font-black text-gray-900">{r.mode}</td>
                   <td className="px-4 py-2 font-bold text-gray-700">{r.plays}</td>

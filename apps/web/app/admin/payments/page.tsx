@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CreditCard, Users, Activity, LifeBuoy } from 'lucide-react';
+import { useDrill } from '../components/drill-panel';
 
 // The customer-service payments view. Design rule: an agent reading this page
 // should be able to answer "what is this user paying, through which rail, and
@@ -29,6 +30,7 @@ const money = (amount: number | null, currency: string | null) =>
   amount == null ? '—' : `${(amount / 100).toFixed(2)} ${(currency || 'usd').toUpperCase()}`;
 
 export default function AdminPaymentsPage() {
+  const drill = useDrill();
   const [data, setData] = useState<PaymentsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +64,10 @@ export default function AdminPaymentsPage() {
       {data.lifecycle && (
         <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Expiring within 7 days</h2>
+            <button type="button" onClick={() => drill({ metric: 'expiring' })}
+              className="text-sm font-bold text-gray-400 hover:text-purple-600 uppercase tracking-wide mb-3 block">
+              Expiring within 7 days →
+            </button>
             {data.lifecycle.expiringSoon.length === 0 ? (
               <p className="text-sm font-bold text-gray-300">Nobody expires this week.</p>
             ) : (
@@ -81,15 +86,16 @@ export default function AdminPaymentsPage() {
             <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3">Referral gift pipeline</h2>
             <div className="grid grid-cols-4 gap-2 text-center">
               {([
-                ['Pending', data.lifecycle.referrals.pending],
-                ['Redeemed', data.lifecycle.referrals.redeemed],
-                ['Converted', data.lifecycle.referrals.converted],
-                ['Awaiting pay', data.lifecycle.referrals.awaitingConversion],
-              ] as const).map(([label, n]) => (
-                <div key={label}>
+                ['Pending', data.lifecycle.referrals.pending, 'pending'],
+                ['Redeemed', data.lifecycle.referrals.redeemed, 'redeemed'],
+                ['Converted', data.lifecycle.referrals.converted, 'converted'],
+                ['Awaiting pay', data.lifecycle.referrals.awaitingConversion, 'awaiting'],
+              ] as const).map(([label, n, k]) => (
+                <button type="button" key={label} onClick={() => drill({ metric: 'referrals', key: k })}
+                  className="rounded hover:bg-gray-50 py-1">
                   <p className="text-xl font-black text-gray-900">{n}</p>
                   <p className="text-[10px] font-bold text-gray-400 uppercase">{label}</p>
-                </div>
+                </button>
               ))}
             </div>
             <p className="text-[11px] font-bold text-gray-300 mt-3">Redeemed = friend has the 7-day trial; awaiting pay = inviter&apos;s 30/60-day reward fires on the friend&apos;s first paid invoice.</p>
@@ -100,7 +106,10 @@ export default function AdminPaymentsPage() {
       {/* Pro subscribers */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-          <Users className="w-4 h-4" /> Active Pro — {data.proUsers.length} ({stripeSubs} Stripe, {data.proUsers.length - stripeSubs} store)
+          <Users className="w-4 h-4" />
+          <button type="button" onClick={() => drill({ metric: 'pro' })} className="hover:text-purple-600">
+            Active Pro — {data.proUsers.length} ({stripeSubs} Stripe, {data.proUsers.length - stripeSubs} store) →
+          </button>
         </h2>
         {data.proUsers.length === 0 ? (
           <p className="text-sm text-gray-400">No active Pro users.</p>

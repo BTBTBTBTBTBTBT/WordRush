@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Activity, AlertTriangle, Webhook, Swords, ExternalLink } from 'lucide-react';
+import { DrillCard, useDrill } from '../components/drill-panel';
 
 // Operational health — the "is anything quietly broken" page: cron heartbeats,
 // the store-webhook ledger, an anti-cheat watchlist, and VS match health.
@@ -30,6 +31,7 @@ const CRON_STYLES: Record<string, string> = {
 };
 
 export default function AdminOpsPage() {
+  const drill = useDrill();
   const [data, setData] = useState<OpsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -82,28 +84,14 @@ export default function AdminOpsPage() {
 
       {/* VS health */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-wide"><Swords className="w-3.5 h-3.5" /> Matches (14d)</div>
-          <p className="text-2xl font-black text-gray-900 mt-1">{vs.matches14d}</p>
-          <p className="text-xs font-bold text-gray-400">{vs.distinctPlayers} distinct players</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="text-xs font-black text-gray-400 uppercase tracking-wide">Completed</div>
-          <p className="text-2xl font-black text-gray-900 mt-1">{vs.completed14d}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="text-xs font-black text-gray-400 uppercase tracking-wide">Abandon rate</div>
-          <p className="text-2xl font-black text-gray-900 mt-1">{vs.abandonRate}%</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="text-xs font-black text-gray-400 uppercase tracking-wide">Forfeits</div>
-          <p className="text-2xl font-black text-gray-900 mt-1">{vs.forfeits14d}</p>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="text-xs font-black text-gray-400 uppercase tracking-wide">Avg duration</div>
-          <p className="text-2xl font-black text-gray-900 mt-1">{vs.avgDurationSec}s</p>
-          <p className="text-xs font-bold text-gray-400">bot games aren&apos;t match rows</p>
-        </div>
+        <DrillCard label="Matches (14d)" icon={<Swords className="w-3.5 h-3.5" />}
+          value={vs.matches14d} sub={`${vs.distinctPlayers} distinct players`}
+          drill={{ metric: 'matches' }} />
+        <DrillCard label="Completed" value={vs.completed14d} drill={{ metric: 'matches', key: 'completed' }} />
+        <DrillCard label="Abandon rate" value={`${vs.abandonRate}%`} drill={{ metric: 'matches', key: 'abandoned' }} />
+        <DrillCard label="Forfeits" value={vs.forfeits14d} drill={{ metric: 'matches', key: 'forfeit' }} />
+        <DrillCard label="Avg duration" value={`${vs.avgDurationSec}s`} sub="bot games aren't match rows"
+          drill={{ metric: 'matches', key: 'completed' }} />
       </div>
 
       {/* Anti-cheat watchlist */}
@@ -150,10 +138,11 @@ export default function AdminOpsPage() {
           ) : (
             <div className="space-y-1">
               {data.webhooks.byDay.slice(0, 10).map((d) => (
-                <div key={d.day} className="flex justify-between text-sm">
+                <button type="button" key={d.day} onClick={() => drill({ metric: 'webhooks', day: d.day })}
+                  className="w-full flex justify-between text-sm hover:bg-gray-50 rounded px-1 -mx-1 py-0.5">
                   <span className="font-bold text-gray-500">{d.day}</span>
                   <span className="font-black text-gray-900">{d.appstore} App Store · {d.playstore} Play</span>
-                </div>
+                </button>
               ))}
             </div>
           )}

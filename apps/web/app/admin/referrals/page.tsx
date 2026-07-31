@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Gift, Users, Crown, Percent, CalendarPlus, Ban } from 'lucide-react';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
+import { useDrill } from '../components/drill-panel';
 
 interface ReferralRow {
   id: string;
@@ -36,6 +37,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function AdminReferralsPage() {
+  const drill = useDrill();
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [rows, setRows] = useState<ReferralRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,10 +79,10 @@ export default function AdminReferralsPage() {
   }
 
   const statCards = stats ? [
-    { label: 'Invites Created', value: stats.total, icon: Gift, color: 'text-purple-600 bg-purple-50' },
-    { label: 'Open Invites', value: stats.openPending, icon: Users, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Friends Joined', value: stats.redeemed, icon: Users, color: 'text-green-600 bg-green-50' },
-    { label: 'Subscribed', value: stats.converted, icon: Crown, color: 'text-amber-600 bg-amber-50' },
+    { label: 'Invites Created', value: stats.total, icon: Gift, color: 'text-purple-600 bg-purple-50', drill: { metric: 'referrals' } },
+    { label: 'Open Invites', value: stats.openPending, icon: Users, color: 'text-blue-600 bg-blue-50', drill: { metric: 'referrals', key: 'pending' } },
+    { label: 'Friends Joined', value: stats.redeemed, icon: Users, color: 'text-green-600 bg-green-50', drill: { metric: 'referrals', key: 'redeemed' } },
+    { label: 'Subscribed', value: stats.converted, icon: Crown, color: 'text-amber-600 bg-amber-50', drill: { metric: 'referrals', key: 'converted' } },
     { label: 'Join → Sub Rate', value: `${stats.conversionRate}%`, icon: Percent, color: 'text-pink-600 bg-pink-50' },
     { label: 'Pro Days Granted', value: stats.proDaysGranted, icon: CalendarPlus, color: 'text-indigo-600 bg-indigo-50' },
   ] : [];
@@ -98,14 +100,17 @@ export default function AdminReferralsPage() {
 
       {/* Stat cards — same grid as the dashboard */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {statCards.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
+        {statCards.map(({ label, value, icon: Icon, color, drill: dp }) => (
+          <button
+            type="button" key={label} disabled={!dp} onClick={() => dp && drill(dp)}
+            className={`text-left bg-white rounded-xl border border-gray-200 p-4 transition ${dp ? 'hover:border-purple-300 hover:shadow-sm' : 'cursor-default'}`}
+          >
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${color}`}>
               <Icon className="w-4 h-4" />
             </div>
             <div className="text-2xl font-black text-gray-900">{value}</div>
             <div className="text-xs font-bold text-gray-400">{label}</div>
-          </div>
+          </button>
         ))}
       </div>
 

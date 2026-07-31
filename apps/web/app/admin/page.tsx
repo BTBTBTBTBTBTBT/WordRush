@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Users, Gamepad2, Crown, Activity, ShieldBan, UserPlus } from 'lucide-react';
+import { useDrill } from './components/drill-panel';
 
 interface DashboardStats {
   totalUsers: number;
@@ -31,6 +32,7 @@ const MODE_LABELS: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  const drill = useDrill();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,11 +64,11 @@ export default function AdminDashboard() {
   }
 
   const statCards = [
-    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-600 bg-blue-50' },
-    { label: 'Active Today', value: stats.activeToday, icon: Activity, color: 'text-green-600 bg-green-50' },
-    { label: 'Pro Subscribers', value: stats.proSubscribers, icon: Crown, color: 'text-purple-600 bg-purple-50' },
-    { label: 'Games Today', value: stats.gamesToday, icon: Gamepad2, color: 'text-orange-600 bg-orange-50' },
-    { label: 'Banned Users', value: stats.bannedUsers, icon: ShieldBan, color: 'text-red-600 bg-red-50' },
+    { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-600 bg-blue-50', drill: { metric: 'users' } },
+    { label: 'Active Today', value: stats.activeToday, icon: Activity, color: 'text-green-600 bg-green-50', drill: { metric: 'dau' } },
+    { label: 'Pro Subscribers', value: stats.proSubscribers, icon: Crown, color: 'text-purple-600 bg-purple-50', drill: { metric: 'pro' } },
+    { label: 'Games Today', value: stats.gamesToday, icon: Gamepad2, color: 'text-orange-600 bg-orange-50', drill: { metric: 'plays', day: new Date().toISOString().slice(0, 10) } },
+    { label: 'Banned Users', value: stats.bannedUsers, icon: ShieldBan, color: 'text-red-600 bg-red-50', drill: { metric: 'banned' } },
   ];
 
   const sortedModes = Object.entries(stats.modePopularity).sort((a, b) => b[1] - a[1]);
@@ -78,8 +80,12 @@ export default function AdminDashboard() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {statCards.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
+        {statCards.map(({ label, value, icon: Icon, color, drill: dp }) => (
+          <button
+            type="button" key={label} onClick={() => drill(dp)}
+            className="text-left bg-white rounded-xl border border-gray-200 p-4 transition hover:border-purple-300 hover:shadow-sm"
+            title="Click for the rows behind this number"
+          >
             <div className="flex items-center gap-2 mb-1">
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}>
                 <Icon className="w-4 h-4" />
@@ -87,7 +93,7 @@ export default function AdminDashboard() {
               <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{label}</span>
             </div>
             <p className="text-2xl font-black text-gray-900">{value.toLocaleString()}</p>
-          </div>
+          </button>
         ))}
       </div>
 
