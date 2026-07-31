@@ -170,7 +170,7 @@ private fun guessLine(n: Int) = "$n ${if (n == 1) "guess" else "guesses"}"
 private fun CrownIcon() {
     Icon(
         painterResource(R.drawable.ic_crown), null,
-        tint = Color(0xFFF59E0B), modifier = Modifier.size(12.dp),
+        tint = Color(0xFFF59E0B), modifier = Modifier.size(10.dp), // iOS crown.fill @ 10
     )
 }
 

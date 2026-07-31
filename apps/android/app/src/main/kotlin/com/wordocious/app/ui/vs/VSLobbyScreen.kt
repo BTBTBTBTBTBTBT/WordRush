@@ -263,7 +263,7 @@ private fun PrivateMatchSection(onEnterInvite: (GameMode, String) -> Unit) {
                                 scope.launch {
                                     val res = InviteService.createInvite(m.name, null)
                                     creatingMode = null
-                                    if (res.code != null) onEnterInvite(m, res.code) else error = res.error ?: "Couldn't create an invite."
+                                    if (res.code != null) onEnterInvite(m, res.code) else error = res.error ?: "Couldn't create an invite. Try again."
                                 }
                             }.padding(vertical = 10.dp),
                         horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,

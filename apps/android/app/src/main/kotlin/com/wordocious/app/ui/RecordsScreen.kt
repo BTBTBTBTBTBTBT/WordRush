@@ -397,7 +397,7 @@ private fun YesterdayPodium(mode: String, playType: String, onOpenProfile: (Stri
             Modifier.fillMaxWidth().clickable { open = !open }.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(14.dp))
+            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_crown), null, tint = Color(0xFFD97706), modifier = Modifier.size(11.dp))
             Spacer(Modifier.size(5.dp))
             Text("YESTERDAY'S PODIUM", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, letterSpacing = 0.5.sp)
             Spacer(Modifier.weight(1f))
@@ -407,15 +407,19 @@ private fun YesterdayPodium(mode: String, playType: String, onOpenProfile: (Stri
             )
         }
         if (open) {
+            // iOS rules off the header and separates each podium row; Android drew
+            // the rows flush, so the three winners ran together as one block.
+            HorizontalDivider(color = WTheme.border)
             top3.forEachIndexed { i, e ->
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Icon(Icons.Filled.MilitaryTech, null, tint = medalColors[minOf(i, 2)], modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.MilitaryTech, null, tint = medalColors[minOf(i, 2)], modifier = Modifier.size(20.dp))
                     Text(e.username ?: "", modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(e.userId) }, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
                     Text(formatScore(e.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = accent)
                 }
+                if (i < top3.size - 1) HorizontalDivider(color = WTheme.border)
             }
         }
     }
@@ -576,9 +580,11 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
                         // Still loading — the same pulsing rows every other board uses.
                         board == null -> Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) { LeaderboardSkeleton() }
                         board.isEmpty() -> Column(Modifier.fillMaxWidth().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = WTheme.textMuted, modifier = Modifier.size(28.dp))
-                            Spacer(Modifier.height(6.dp))
-                            Text("No sweeps yet", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                            // iOS uses the trophy glyph at 28 with textMuted @ 50%,
+                            // and 12pt bold copy — not the broom at full strength.
+                            Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.height(8.dp))
+                            Text("No sweeps yet. Be the first!", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         }
                         else -> Column {
                             board.forEachIndexed { i, e ->
@@ -787,9 +793,9 @@ private fun YourRecordsTab() {
                         }
                     } else {
                         Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom), null, tint = WTheme.textMuted, modifier = Modifier.size(28.dp))
-                            Spacer(Modifier.height(6.dp))
-                            Text("No sweeps yet", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                            Icon(Icons.Filled.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.5f), modifier = Modifier.size(28.dp))
+                            Spacer(Modifier.height(8.dp))
+                            Text("No sweeps yet", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         }
                     }
                 } else {
