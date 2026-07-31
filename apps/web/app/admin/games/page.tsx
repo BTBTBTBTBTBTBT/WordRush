@@ -4,15 +4,16 @@ import { useEffect, useState } from 'react';
 import { Calendar, Trophy, Swords } from 'lucide-react';
 
 const MODE_LABELS: Record<string, string> = {
-  DUEL: 'Classic', QUORDLE: 'QuadWord', OCTORDLE: 'OctoWord',
+  DUEL: 'Classic', DUEL_6: 'Six', DUEL_7: 'Seven', QUORDLE: 'QuadWord', OCTORDLE: 'OctoWord',
   SEQUENCE: 'Succession', RESCUE: 'Deliverance', GAUNTLET: 'Gauntlet', PROPERNOUNDLE: 'ProperNoundle',
 };
 const MODES = Object.keys(MODE_LABELS);
+const modeLabel = (m: string) => MODE_LABELS[m] || m;
 
 export default function AdminGamesPage() {
   const today = new Date().toISOString().split('T')[0];
   const [day, setDay] = useState(today);
-  const [mode, setMode] = useState('DUEL');
+  const [mode, setMode] = useState('ALL');
   const [playType, setPlayType] = useState('solo');
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [seeds, setSeeds] = useState<any[]>([]);
@@ -24,7 +25,7 @@ export default function AdminGamesPage() {
     Promise.all([
       fetch(`/api/admin/games/leaderboard?day=${day}&mode=${mode}&play_type=${playType}`).then(r => r.json()),
       fetch(`/api/admin/games/seeds?day=${day}`).then(r => r.json()),
-      fetch('/api/admin/games/matches?limit=15').then(r => r.json()),
+      fetch(`/api/admin/games/matches?limit=15&mode=${mode}`).then(r => r.json()),
     ]).then(([lb, sd, mt]) => {
       setLeaderboard(lb.results || []);
       setSeeds(sd.seeds || []);
@@ -43,6 +44,7 @@ export default function AdminGamesPage() {
           className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium" />
         <select value={mode} onChange={e => setMode(e.target.value)}
           className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium">
+          <option value="ALL">All Games</option>
           {MODES.map(m => <option key={m} value={m}>{MODE_LABELS[m]}</option>)}
         </select>
         <select value={playType} onChange={e => setPlayType(e.target.value)}
@@ -56,7 +58,7 @@ export default function AdminGamesPage() {
         {/* Daily Leaderboard */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-            <Trophy className="w-4 h-4" /> Daily Leaderboard — {MODE_LABELS[mode]} ({playType})
+            <Trophy className="w-4 h-4" /> Daily Leaderboard — {mode === 'ALL' ? 'All Games' : modeLabel(mode)} ({playType})
           </h2>
           {loading ? (
             <div className="h-40 bg-gray-100 rounded animate-pulse" />
@@ -70,6 +72,9 @@ export default function AdminGamesPage() {
                   <a href={`/admin/users/${r.user_id}`} className="font-bold text-gray-900 hover:text-purple-600">
                     {(r.profiles as any)?.username || r.user_id.slice(0, 8)}
                   </a>
+                  {mode === 'ALL' && (
+                    <span className="text-[10px] font-extrabold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">{modeLabel(r.game_mode)}</span>
+                  )}
                   <span className="ml-auto text-gray-500">
                     {r.composite_score.toFixed(0)} pts · {r.guess_count} guesses · {r.time_seconds}s
                   </span>
@@ -105,7 +110,7 @@ export default function AdminGamesPage() {
       {/* Recent VS Matches */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-          <Swords className="w-4 h-4" /> Recent VS Matches
+          <Swords className="w-4 h-4" /> Recent VS Matches{mode !== 'ALL' ? ` — ${modeLabel(mode)}` : ''}
         </h2>
         {matches.length === 0 ? (
           <p className="text-sm text-gray-400">No matches yet.</p>
@@ -122,23 +127,30 @@ export default function AdminGamesPage() {
                 </tr>
               </thead>
               <tbody>
-                {matches.map((m: any) => (
+                {matches.map((m: any) => {
+                  const p1 = m.player1?.username || m.player1_id.slice(0, 8) + '…';
+                  const p2 = m.player2_id ? (m.player2?.username || m.player2_id.slice(0, 8) + '…') : null;
+                  const winner = m.winner_id
+                    ? (m.winner_id === m.player1_id ? p1 : m.winner_id === m.player2_id ? p2 : m.winner_id.slice(0, 8) + '…')
+                    : null;
+                  return (
                   <tr key={m.id} className="border-b border-gray-50">
-                    <td className="px-3 py-2 font-semibold text-gray-700">{MODE_LABELS[m.game_mode] || m.game_mode}</td>
+                    <td className="px-3 py-2 font-semibold text-gray-700">{modeLabel(m.game_mode)}</td>
                     <td className="px-3 py-2">
-                      <a href={`/admin/users/${m.player1_id}`} className="text-purple-600 hover:underline">{m.player1_id.slice(0, 8)}...</a>
+                      <a href={`/admin/users/${m.player1_id}`} className="text-purple-600 hover:underline">{p1}</a>
                     </td>
                     <td className="px-3 py-2">
                       {m.player2_id ? (
-                        <a href={`/admin/users/${m.player2_id}`} className="text-purple-600 hover:underline">{m.player2_id.slice(0, 8)}...</a>
+                        <a href={`/admin/users/${m.player2_id}`} className="text-purple-600 hover:underline">{p2}</a>
                       ) : '-'}
                     </td>
                     <td className="px-3 py-2 font-bold">
-                      {m.winner_id ? <span className="text-green-600">{m.winner_id.slice(0, 8)}...</span> : <span className="text-gray-400">Draw</span>}
+                      {winner ? <span className="text-green-600">{winner}</span> : <span className="text-gray-400">Draw</span>}
                     </td>
                     <td className="px-3 py-2 text-gray-400">{new Date(m.created_at).toLocaleString()}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

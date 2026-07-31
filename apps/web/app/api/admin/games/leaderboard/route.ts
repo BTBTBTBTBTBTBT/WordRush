@@ -14,14 +14,17 @@ export async function GET(request: NextRequest) {
   const mode = searchParams.get('mode') || 'DUEL';
   const playType = searchParams.get('play_type') || 'solo';
 
-  const { data, error } = await admin
+  let query = admin
     .from('daily_results')
     .select('*, profiles!inner(username, avatar_url, is_pro)')
     .eq('day', day)
-    .eq('game_mode', mode)
     .eq('play_type', playType)
     .order('composite_score', { ascending: false })
     .limit(50);
+  // 'ALL' = the whole day across modes (rows carry game_mode for the chip).
+  if (mode !== 'ALL') query = query.eq('game_mode', mode);
+
+  const { data, error } = await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ results: data || [], day, mode, playType });
