@@ -669,6 +669,10 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 // multi-board modes = ONE "x/n solved · u/m guesses" line (no
                 // trophy — iOS reserves the amber trophy for Gauntlet).
                 val statSp = if (mode == GameMode.GAUNTLET) 11.sp else 12.sp
+                // iOS sizes the header glyphs a step below the text: 10pt in the
+                // Gauntlet header, 11pt in the standard one. A flat 12dp made
+                // both read a size larger than iOS next to the same numbers.
+                val statIcon = if (mode == GameMode.GAUNTLET) 10.dp else 11.dp
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     val used = state.boards.maxOf { it.guesses.size }
                     if (mode == GameMode.PROPERNOUNDLE) {
@@ -691,7 +695,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     androidx.compose.material.icons.Icons.Filled.EmojiEvents, null,
-                                    tint = Color(0xFFD97706), modifier = Modifier.size(12.dp),
+                                    tint = Color(0xFFD97706), modifier = Modifier.size(statIcon),
                                 )
                                 Spacer(Modifier.width(3.dp))
                                 Text("$solved/${state.boards.size}", color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)
@@ -716,7 +720,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             androidx.compose.material.icons.Icons.Filled.Schedule, null,
-                            tint = Color(0xFF60A5FA), modifier = Modifier.size(12.dp),
+                            tint = Color(0xFF60A5FA), modifier = Modifier.size(statIcon),
                         )
                         Spacer(Modifier.width(3.dp))
                         Text(fmtClock(elapsed), color = WTheme.textMuted, fontSize = statSp, fontWeight = FontWeight.Bold)

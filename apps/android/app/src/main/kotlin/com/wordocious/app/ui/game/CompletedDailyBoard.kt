@@ -403,18 +403,37 @@ private fun GauntletCompletedDailyCard(g: GauntletProgress, elapsedSeconds: Int)
 /**
  * Gauntlet stage-by-stage review — 3-stat summary (Stages / Guesses / Time) +
  * per-stage won/lost rows with tap-to-expand final boards. Shared by the
- * Completed-Today daily card and the VS result screen (which reconstructs each
- * player's run from the seed + flat guess list).
+ * Completed-Today daily card, the VS result screen (which reconstructs each
+ * player's run from the seed + flat guess list) and the post-game results
+ * screen — exactly as iOS shares one `GauntletCompletedView` across all three.
+ *
+ * The two flags mirror iOS's parameters of the same name: the full results
+ * screen already shows boxed stat cards, so it hides the inline summary and
+ * shows the "STAGE BREAKDOWN" header instead.
  */
 @Composable
-internal fun GauntletStageBreakdown(g: GauntletProgress, totalMs: Int) {
+internal fun GauntletStageBreakdown(
+    g: GauntletProgress,
+    totalMs: Int,
+    showSummary: Boolean = true,
+    showStageHeader: Boolean = false,
+) {
     val cleared = g.stageResults.count { it.status == GameStatus.WON }
     val totalGuesses = g.stageResults.sumOf { it.guesses }
     var expandedStage by remember { mutableStateOf<Int?>(null) }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // 3-stat summary (Stages / Guesses / Time)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            StatsRow(listOf("$cleared/${g.totalStages}" to "Stages", "$totalGuesses" to "Guesses", fmtMs(totalMs) to "Time"))
+        if (showSummary) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                StatsRow(listOf("$cleared/${g.totalStages}" to "Stages", "$totalGuesses" to "Guesses", fmtMs(totalMs) to "Time"))
+            }
+        }
+        if (showStageHeader) {
+            Text(
+                "STAGE BREAKDOWN",
+                fontSize = 10.sp, fontWeight = FontWeight.Black,
+                color = WTheme.textMuted, letterSpacing = 0.8.sp,
+            )
         }
         // Per-stage rows (tap → inline expand: ANSWERS + final boards)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

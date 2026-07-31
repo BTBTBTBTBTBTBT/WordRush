@@ -76,7 +76,7 @@ fun StageTransitionOverlay(
         Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.8f)).clickableNoRipple(onComplete),
         contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(26.dp)) {
             Box(
                 Modifier.size(80.dp).clip(CircleShape)
                     .background(Color(0xFF8B5CF6).copy(alpha = 0.3f))
@@ -92,7 +92,8 @@ fun StageTransitionOverlay(
                 )
                 Text(completed.name, color = Color.White.copy(alpha = 0.6f), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
-            // Final stage: prompt the player to tap when ready (no auto-advance).
+            // Final stage: invite a tap, but the 4s timer above still fires — the
+            // win only records on advance, so this must never wait forever.
             if (next == null) {
                 Text(
                     "Tap to see your results",
@@ -107,9 +108,9 @@ fun StageTransitionOverlay(
             if (next != null) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFACC15), modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFACC15), modifier = Modifier.size(12.dp))
                         Text("NEXT UP", color = Color(0xFFFACC15), fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
-                        Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFACC15), modifier = Modifier.size(16.dp))
+                        Icon(Icons.Filled.Bolt, null, tint = Color(0xFFFACC15), modifier = Modifier.size(12.dp))
                     }
                     Text(
                         next.name,
@@ -143,152 +144,6 @@ fun StageTransitionOverlay(
     }
 }
 
-/**
- * Gauntlet stage list on the results screen — ports the web gauntlet-results
- * stage rows: cleared = green tint + ✓ + guesses, failed = red tint + ✗,
- * unreached = gray. Rows with a board snapshot tap through to the review.
- */
-@Composable
-fun GauntletStagesCard(g: GauntletProgress, won: Boolean, onReview: (Int) -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-            .background(WTheme.surface)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-            .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text("STAGE BREAKDOWN", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.8.sp)
-        g.stages.forEachIndexed { i, stage ->
-            val result = g.stageResults.firstOrNull { it.stageIndex == i }
-            val cleared = result?.status == GameStatus.WON
-            val failed = result?.status == GameStatus.LOST
-            val canReview = !result?.boardsSnapshot.isNullOrEmpty()
-            Row(
-                Modifier.fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        when {
-                            cleared -> Color(0xFF8B5CF6).copy(alpha = 0.1f)
-                            failed -> Color(0xFFEF4444).copy(alpha = 0.1f)
-                            else -> WTheme.surfaceAlt
-                        },
-                    )
-                    .then(if (canReview) Modifier.clickableNoRipple { onReview(i) } else Modifier)
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stage.name,
-                    fontSize = 12.sp, fontWeight = FontWeight.Black,
-                    color = WTheme.text, modifier = Modifier.weight(1f),
-                )
-                if (result != null) {
-                    Text(
-                        "${result.guesses} guess${if (result.guesses != 1) "es" else ""}",
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
-                    )
-                    Spacer(Modifier.size(8.dp))
-                }
-                Text(
-                    if (cleared) "✓" else if (failed) "✗" else "·",
-                    fontSize = 14.sp, fontWeight = FontWeight.Black,
-                    color = when {
-                        cleared -> Color(0xFF6D28D9)
-                        failed -> Color(0xFFDC2626)
-                        else -> WTheme.textMuted
-                    },
-                )
-            }
-        }
-    }
-}
-
-/**
- * Stage review modal — ports web StageReviewModal: stage header, the revealed
- * solutions as win/loss pills, and the stage's final boards rendered from the
- * reducer's boardsSnapshot (prefills + guesses + padded empty rows).
- */
-@Composable
-fun StageReviewModal(stage: GauntletStageConfig, result: GauntletStageResult, onClose: () -> Unit) {
-    val boards = result.boardsSnapshot ?: return
-    val won = result.status == GameStatus.WON
-    val cols = if (boards.size == 1) 1 else if (boards.size <= 4) 2 else 4
-
-    Dialog(onDismissRequest = onClose) {
-        Column(
-            Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.White)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(Icons.Filled.Visibility, null, tint = Color(0xFF9CA3AF), modifier = Modifier.size(14.dp))
-                Text(
-                    "STAGE ${stage.stageIndex + 1}",
-                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9CA3AF), letterSpacing = 1.sp,
-                )
-                Spacer(Modifier.weight(1f))
-                Icon(
-                    Icons.Filled.Close, "Close", tint = Color(0xFF9CA3AF),
-                    modifier = Modifier.size(18.dp).clickableNoRipple(onClose),
-                )
-            }
-            Text(
-                stage.name,
-                fontSize = 22.sp, fontWeight = FontWeight.Black,
-                color = if (won) Color(0xFF7C3AED) else Color(0xFFF87171),
-            )
-            Text(
-                "${if (won) "Cleared" else "Failed"} · ${result.guesses} guess${if (result.guesses != 1) "es" else ""} · ${fmtMs(result.timeMs)}",
-                fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6B7280),
-            )
-            // Solutions pills
-            Column(
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF9FAFB))
-                    .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    if (boards.size == 1) "ANSWER" else "ANSWERS",
-                    fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9CA3AF), letterSpacing = 1.sp,
-                )
-                boards.chunked(cols).forEach { rowBoards ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        rowBoards.forEach { b ->
-                            val boardWon = b.status == GameStatus.WON
-                            val boardFailed = !won && !boardWon
-                            Text(
-                                b.solution.uppercase(),
-                                fontSize = 11.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.Center,
-                                color = if (boardWon) Color(0xFF15803D) else if (boardFailed) Color(0xFFB91C1C) else Color(0xFF374151),
-                                modifier = Modifier.weight(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        if (boardWon) Color(0xFFF5F3FF)
-                                        else if (boardFailed) Color(0xFFFEE2E2)
-                                        else Color(0xFFE5E7EB),
-                                    )
-                                    .padding(vertical = 3.dp),
-                            )
-                        }
-                        repeat(cols - rowBoards.size) { Spacer(Modifier.weight(1f)) }
-                    }
-                }
-            }
-            // Final boards
-            boards.chunked(cols).forEach { rowBoards ->
-                Row(Modifier.fillMaxWidth().height(if (cols == 1) 280.dp else 170.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    rowBoards.forEach { b -> StageReviewBoard(b, won, Modifier.weight(1f).fillMaxHeight()) }
-                    repeat(cols - rowBoards.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-        }
-    }
-}
 
 /**
  * Inline stage review (no dialog) — the ANSWERS pills + final boards for a

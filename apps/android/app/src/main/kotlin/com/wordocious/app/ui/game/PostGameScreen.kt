@@ -308,7 +308,6 @@ private fun GauntletResultsScreen(
     }
     val cumTotal = max(1, g.stages.sumOf { it.boardCount })
     val isDaily = seed == com.wordocious.app.todayLocalSeed(GameMode.GAUNTLET.name)
-    var reviewIndex by remember { mutableStateOf<Int?>(null) }
 
     var appeared by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { appeared = true }
@@ -394,15 +393,18 @@ private fun GauntletResultsScreen(
             Box(Modifier.riseIn(appeared, 550)) { NextDailyRow(currentMode = GameMode.GAUNTLET, onOpenDaily = onOpenDaily) }
         }
 
+        // Same breakdown the Completed-Today card and the VS result screen use —
+        // iOS reuses one GauntletCompletedView here too. This screen previously
+        // had its own card whose rows put the ✓/✗ on the RIGHT with no badge, no
+        // stage time and no expand affordance, and opened a hardcoded-white
+        // Dialog (unreadable in dark) instead of expanding in place.
         Box(Modifier.riseIn(appeared, 600)) {
-            GauntletStagesCard(g, won = won, onReview = { reviewIndex = it })
-        }
-        reviewIndex?.let { idx ->
-            val res = g.stageResults.firstOrNull { it.stageIndex == idx }
-            val stage = g.stages.getOrNull(idx)
-            if (res != null && stage != null) {
-                StageReviewModal(stage = stage, result = res, onClose = { reviewIndex = null })
-            }
+            GauntletStageBreakdown(
+                g = g,
+                totalMs = totalTimeMs,
+                showSummary = false,      // the boxed stat cards above already say it
+                showStageHeader = true,
+            )
         }
     }
 }
