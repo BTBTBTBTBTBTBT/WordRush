@@ -492,9 +492,10 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
         vm.installReplayedState(replayed, row.player1Time)
     }
 
-    LaunchedEffect(isFinished) {
-        if (isFinished && !wasFinishedOnEntry && !vm.wasReplayed && !recorded) {
-            recorded = true
+    // The record pipeline, callable from BOTH triggers below. Reads the
+    // CURRENT state/vm when invoked, so a restored-finished game records the
+    // same numbers a live finish would.
+    val recordFinishedRun: suspend () -> Unit = {
             // Gauntlet scores the WHOLE run (web gauntlet-game parity): guesses
             // summed across stageResults (+ the failed stage's max on a loss —
             // state.boards only holds the FINAL stage), boards solved tallied
@@ -555,7 +556,26 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                     seed = seed, stages = g!!.stages, stageResults = g.stageResults,
                 )
             }
+    }
+
+    LaunchedEffect(isFinished) {
+        if (isFinished && !wasFinishedOnEntry && !vm.wasReplayed && !recorded) {
+            recorded = true
+            recordFinishedRun()
         }
+    }
+
+    // BACKFILL (Doug's lost OctoWord): a daily restored from local save in a
+    // FINISHED state whose result never reached the server — the app was
+    // killed between the finish and record(), so wasFinishedOnEntry blocks the
+    // live-record effect above and NO pending payload exists to drain. Without
+    // this, the result is silently lost forever: home shows the mode unplayed
+    // while the board says finished. Server row present → nothing owed.
+    LaunchedEffect(Unit) {
+        if (!wasFinishedOnEntry || vm.wasReplayed || recorded || !seed.startsWith("daily-")) return@LaunchedEffect
+        if (com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) != null) return@LaunchedEffect
+        recorded = true
+        recordFinishedRun()
     }
 
     if (showVictory) {
