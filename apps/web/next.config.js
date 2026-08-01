@@ -21,6 +21,9 @@ const nextConfig = {
       // The Day Pass verify endpoint reads the same certs at runtime — it must
       // be traced too, or its bundle ships without the .cer and 503s forever.
       '/api/appstore/verify-transaction': ['./certs/**'],
+      // The bible route reads .bible.md (copied in by scripts/copy-bible.mjs
+      // during `npm run build`) — same computed-path-at-runtime story as certs.
+      '/api/admin/bible': ['./.bible.md'],
     },
     // Required on Next 13 so instrumentation.ts runs (Sentry server/edge init).
     instrumentationHook: true,

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Crown, ShieldBan, ShieldCheck, Gamepad2, History } from 'lucide-react';
+import { modeLabel } from '@/lib/mode-labels';
 
 interface UserDetail {
   profile: any;
@@ -17,10 +18,8 @@ interface UserDetail {
   reports: { id: string; direction: 'filed' | 'against'; reason: string; context: string; created_at: string }[];
 }
 
-const MODE_LABELS: Record<string, string> = {
-  DUEL: 'Classic', QUORDLE: 'QuadWord', OCTORDLE: 'OctoWord',
-  SEQUENCE: 'Succession', RESCUE: 'Deliverance', GAUNTLET: 'Gauntlet', PROPERNOUNDLE: 'ProperNoundle',
-};
+// Mode names via the SHARED lib/mode-labels (this page's local copy was
+// missing DUEL_6/DUEL_7 — raw enum keys leaked into the stats table).
 
 export default function AdminUserDetailPage() {
   const params = useParams();
@@ -304,7 +303,7 @@ export default function AdminUserDetailPage() {
               <tbody>
                 {stats.map((s: any) => (
                   <tr key={s.id} className="border-b border-gray-50">
-                    <td className="px-3 py-2 font-semibold text-gray-700">{MODE_LABELS[s.game_mode] || s.game_mode}</td>
+                    <td className="px-3 py-2 font-semibold text-gray-700">{modeLabel(s.game_mode)}</td>
                     <td className="px-3 py-2 text-gray-500">{s.play_type}</td>
                     <td className="px-3 py-2 text-right text-green-600 font-bold">{s.wins}</td>
                     <td className="px-3 py-2 text-right text-red-500 font-bold">{s.losses}</td>
