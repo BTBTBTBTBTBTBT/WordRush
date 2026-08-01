@@ -249,6 +249,31 @@ enum GameResultsService {
     }
 
     @discardableResult
+    /// TRUE when the daily_results row for this seed's day + mode exists.
+    /// The reconciliation behind the restored-finished backfill (bible §200):
+    /// "finished on disk" must be verified against the server, not assumed
+    /// recorded. Network failure returns true (skip the backfill this launch —
+    /// the next open of the board retries; never churn writes on flaky radio).
+    static func dailyRowExists(seed: String, mode: GameMode) async -> Bool {
+        guard let userId = localUserId() else { return true }
+        // daily-YYYY-MM-DD-MODE → the day this puzzle belongs to.
+        let parts = seed.split(separator: "-")
+        guard seed.hasPrefix("daily-"), parts.count >= 5 else { return true }
+        let day = "\(parts[1])-\(parts[2])-\(parts[3])"
+        struct IdRow: Decodable { let id: String }
+        let rows: [IdRow]? = try? await AuthService.shared.client
+            .from("daily_results")
+            .select("id")
+            .eq("user_id", value: userId)
+            .eq("day", value: day)
+            .eq("game_mode", value: mode.rawValue)
+            .eq("play_type", value: "solo")
+            .limit(1)
+            .execute().value
+        guard let rows else { return true }
+        return !rows.isEmpty
+    }
+
     static func record(
         gameMode: GameMode,
         playType: String = "solo",

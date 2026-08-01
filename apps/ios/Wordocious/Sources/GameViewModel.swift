@@ -352,8 +352,26 @@ final class GameViewModel: ObservableObject {
         recomputeEvaluations()
         restoreHintUI()
         accumulatedMs = isVersus ? 0 : GamePersistence.shared.loadElapsed(seed: effectiveSeed, mode: mode)
-        // A game restored from disk that's already finished shouldn't re-post.
+        // A game restored from disk that's already finished shouldn't re-post —
+        // IF the server actually has it. The app dying between the finish and
+        // record() leaves a finished save with NO pending payload (register()
+        // lives inside record()), and assuming finished ⇒ posted lost the
+        // result forever (bible §200 — Doug's Android OctoWord; iOS had the
+        // identical hole). Daily seeds verify against the server and backfill
+        // when the row is absent; re-recording is safe (daily_results upserts
+        // best-score, the pending flags cover partial lands).
         resultRecorded = state.status != .playing
+        if resultRecorded, state.seed.hasPrefix("daily-") {
+            let restoredSeed = state.seed
+            Task { [weak self] in
+                guard let self else { return }
+                guard await !GameResultsService.dailyRowExists(seed: restoredSeed, mode: self.mode) else { return }
+                // Still the same game and still finished (paranoia guards).
+                guard self.state.seed == restoredSeed, self.state.status != .playing else { return }
+                self.resultRecorded = false
+                self.recordResultIfNeeded()
+            }
+        }
     }
 
     // MARK: - Input
