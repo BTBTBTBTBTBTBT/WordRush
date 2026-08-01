@@ -104,6 +104,10 @@ targets:
     platform: iOS
     sources:
       - path: WordociousWidget/Sources
+      # The app's asset catalog, so mode chips draw the SAME icons as the
+      # home menu (skull, shield, hands…). 652K total — cheap to duplicate,
+      # and it keeps the icons single-sourced instead of a copied catalog.
+      - path: Wordocious/Resources/Assets.xcassets
     info:
       path: WordociousWidget/Info.plist
       properties:
