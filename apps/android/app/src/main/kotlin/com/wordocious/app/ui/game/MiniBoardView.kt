@@ -110,7 +110,11 @@ fun MiniBoardView(
                             state = tile.state,
                             fontSize = fontSize,
                             cornerRadius = 4.dp, // web mini `rounded` = 4px
-                            square = isExpanded,  // fill (non-square) in the grid; square when zoomed
+                            // NEVER square here: aspectRatio(1f) overflows the
+                            // weight-sized row whenever cellW > rowH (OctoWord
+                            // zoom clipped every letter). The expanded card's
+                            // HEIGHT is sized for square cells instead.
+                            square = false,
                             mini = true,
                             modifier = Modifier.weight(1f),
                         )
@@ -162,7 +166,7 @@ fun MiniBoardView(
                             isInvalid = isInvalid && isCurrentRow && letter.isNotEmpty(),
                             fontSize = fontSize,
                             cornerRadius = 4.dp, // web mini `rounded` = 4px
-                            square = isExpanded,  // fill (non-square) in the grid; square when zoomed
+                            square = false,      // see prefill note — card height makes cells square
                             masked = masked,
                             mini = true,
                             modifier = Modifier.weight(1f),

@@ -119,7 +119,16 @@ fun MultiBoardLayout(
         // h = min(0.95·availH, w·2.2).
         if (expandedIndex != null) {
             val targetW = minOf(containerW * 0.9f, 384.dp)
-            val targetH = minOf(containerH * 0.95f, targetW * 2.2f)
+            // Height that makes cells SQUARE at this width (rows × cellW plus
+            // spacing/padding), capped by the web's limits. Tiles themselves
+            // fill their cell, so an over-tall board compresses gracefully
+            // instead of overlapping (the OctoWord-zoom clipped-letters bug).
+            val zoomBoard = boards[expandedIndex!!]
+            val zoomRows = (zoomBoard.prefilledGuesses?.size ?: 0) + zoomBoard.maxGuesses
+            val zoomCols = zoomBoard.solution.length
+            val cellW = (targetW - 12.dp - ((zoomCols - 1) * 2).dp) / zoomCols
+            val idealH = cellW * zoomRows + ((zoomRows - 1) * 2).dp + 12.dp
+            val targetH = minOf(containerH * 0.95f, targetW * 2.2f, idealH)
             var appeared by remember(expandedIndex) { mutableStateOf(false) }
             androidx.compose.runtime.LaunchedEffect(expandedIndex) { appeared = true }
             val zoomT by animateFloatAsState(
@@ -155,6 +164,11 @@ fun MultiBoardLayout(
                     board = boards[expandedIndex!!],
                     currentGuess = if (boards[expandedIndex!!].status == GameStatus.PLAYING) currentGuess else "",
                     isExpanded = true,
+                    // The grid passed these; the zoom silently dropped them, so
+                    // a rejected word flagged red on the overview but looked
+                    // perfectly normal in the zoomed board (Doug's report).
+                    isInvalid = isInvalid && boards[expandedIndex!!].status == GameStatus.PLAYING,
+                    shakeKey = shakeKey,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
