@@ -52,6 +52,6 @@ export async function GET(req: NextRequest) {
     .lt('processed_at', cutoff);
   if (pruneErr) console.error('store_webhook_events prune failed:', pruneErr.message);
 
-  await stampHeartbeat('expire-pro', true, `expired ${data?.length ?? 0}`);
+  await stampHeartbeat('expire-pro', true, `${data?.length ?? 0} Pro subs swept`);
   return NextResponse.json({ ok: true, expired: data?.length ?? 0, pruned: pruneErr ? 'error' : 'ok' });
 }
