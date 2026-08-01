@@ -23,6 +23,10 @@ struct PublicProfileView: View {
     @State private var showReportDialog = false
     @State private var showBlockConfirm = false
     @State private var moderationToast: String?
+    /// Profile-social redesign data (presence ring, persona chips, H2H, trophy
+    /// case, highlights, Lately). Loads separately from the core profile so
+    /// the page renders even if every social fetch fails.
+    @State private var social = ProfileSocialData()
     @ObservedObject private var chrome = ChromeVisibility.shared
 
     private let pickerModes: [HomeMode] = homeModes.filter { $0.mode != nil }
@@ -43,6 +47,9 @@ struct PublicProfileView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task { await ModerationService.loadBlockedIds() }
         .task(id: userId) { await loadAll() }
+        // Social sections load on their own task — non-blocking, and the page
+        // stays fully usable if any (or all) of these fetches fail.
+        .task(id: "social-\(userId)") { social = await ProfileSocialLoader.load(userId: userId) }
         .task(id: "\(tab)-\(selectedMode.rawValue)") {
             topWords = await PublicProfileService.topWords(userId: userId, mode: selectedMode, playType: tab)
         }
@@ -87,6 +94,7 @@ struct PublicProfileView: View {
         ScrollView {
             VStack(spacing: 16) {
                 header(p)
+                socialSections(p)
                 overallCards(p)
                 modeSection
                 if !topWords.isEmpty { topWordsCard }
@@ -151,20 +159,21 @@ struct PublicProfileView: View {
                     .background(Capsule().fill(Theme.surface))
                     .task { try? await Task.sleep(nanoseconds: 2_500_000_000); moderationToast = nil }
             }
-            AvatarView(url: p.avatarUrl, username: p.username, size: 96, accentHex: p.accentColor, emoji: p.avatarEmoji)
+            // Social redesign: avatar wrapped in the today-progress ring.
+            TodayRingAvatar(profile: p, completedToday: social.todayCount)
             if ProfileAccent.isCustom(p.accentColor) {
                 Text(p.username).font(Brand.title(30)).foregroundStyle(ProfileAccent.color(p.accentColor))
             } else {
                 Text(p.username).font(Brand.title(30))
                     .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
             }
-            ProfilePersonalizationRow(profile: p)
-            HStack(spacing: 6) {
-                Image(systemName: "star.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xD97706))
-                Text("Level \(p.level)").font(Brand.caption(12)).foregroundStyle(Color(hex: 0x92400E))
+            // Social redesign: presence line + level/archetype/percentile/opener
+            // chips (the level badge moved into the chip row).
+            if let seen = p.lastSeenAt {
+                PresenceLine(lastSeenAt: seen)
             }
-            .padding(.horizontal, 12).padding(.vertical, 5)
-            .background(Capsule().fill(Color(hex: 0xFEF9EC))).overlay(Capsule().stroke(Color(hex: 0xFDE68A), lineWidth: 1.5))
+            ProfilePersonalizationRow(profile: p)
+            ProfileIdentityChips(profile: p, persona: social.persona)
             VStack(spacing: 2) {
                 ZStack(alignment: .leading) {
                     Capsule().fill(Theme.border).frame(width: 160, height: 6)
@@ -211,6 +220,22 @@ struct PublicProfileView: View {
         case "website": return URL(string: handle.hasPrefix("http") ? handle : "https://\(handle)")
         default: return nil
         }
+    }
+
+    // MARK: Social sections (profile-social redesign — above the stat cards)
+
+    /// You-vs-Them, trophy case, highlights, and Lately. Every section guards
+    /// on its own data and simply doesn't render without it, so the existing
+    /// page below is untouched when the fetches fail or return nothing.
+    @ViewBuilder private func socialSections(_ p: Profile) -> some View {
+        if let h2h = social.h2h, !h2h.shared.isEmpty,
+           let viewerId = social.viewerId, viewerId != p.id {
+            YouVsThemCard(target: p, h2h: h2h)
+        }
+        TrophyCaseCard(profile: p, persona: social.persona, medals: social.medals)
+        HighlightsReel(profile: p, persona: social.persona, stats: stats,
+                       hasPerfectOcto: social.hasPerfectOcto, calendar: social.calendar)
+        LatelyCard(profile: p, medals: social.medals, persona: social.persona)
     }
 
     // MARK: Overall stat cards

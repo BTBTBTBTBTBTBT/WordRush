@@ -415,7 +415,13 @@ fun MainScreen() {
                 publicProfileId?.let { pid ->
                     androidx.activity.compose.BackHandler { publicProfileId = null }
                     Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
-                        PublicProfileScreen(userId = pid, onClose = { publicProfileId = null })
+                        PublicProfileScreen(
+                            userId = pid,
+                            onClose = { publicProfileId = null },
+                            // Profile-to-profile hop (nemesis row / podium rows):
+                            // same push-inside-the-tab pattern, new target id.
+                            onOpenProfile = { publicProfileId = it },
+                        )
                     }
                 }
 

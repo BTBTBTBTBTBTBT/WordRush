@@ -21,6 +21,8 @@ struct Profile: Codable, Identifiable, Equatable {
     var bestDailyLoginStreak: Int
     var streakShields: Int
     var lastPlayedAt: String?
+    /// Stamped server-side on activity — powers the profile presence line.
+    var lastSeenAt: String?
     var goldMedals: Int
     var silverMedals: Int
     var bronzeMedals: Int
@@ -55,6 +57,7 @@ struct Profile: Codable, Identifiable, Equatable {
         case bestDailyLoginStreak = "best_daily_login_streak"
         case streakShields = "streak_shields"
         case lastPlayedAt = "last_played_at"
+        case lastSeenAt = "last_seen_at"
         case goldMedals = "gold_medals"
         case silverMedals = "silver_medals"
         case bronzeMedals = "bronze_medals"
@@ -64,7 +67,7 @@ struct Profile: Codable, Identifiable, Equatable {
 
     /// Columns to request from the profiles table. (social_links is fetched
     /// separately/optionally so a missing column never breaks profile loading.)
-    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,gold_medals,silver_medals,bronze_medals,created_at,pro_prompt_shown,bio,featured_achievement,accent_color,favorite_mode,avatar_emoji"
+    static let selectColumns = "id,username,avatar_url,is_pro,pro_expires_at,is_banned,is_admin,has_onboarded,level,xp,total_wins,total_losses,current_streak,best_streak,daily_login_streak,best_daily_login_streak,streak_shields,last_played_at,last_seen_at,gold_medals,silver_medals,bronze_medals,created_at,pro_prompt_shown,bio,featured_achievement,accent_color,favorite_mode,avatar_emoji"
 
     /// The stored Pro window as a date. Purchase fulfillment has to compare
     /// against this before writing — pro_expires_at holds time from sources the

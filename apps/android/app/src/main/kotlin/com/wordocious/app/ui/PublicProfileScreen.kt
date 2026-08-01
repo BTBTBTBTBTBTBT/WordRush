@@ -90,6 +90,11 @@ data class PublicProfile(
     @SerialName("accent_color") val accentColor: String? = null,
     @SerialName("favorite_mode") val favoriteMode: String? = null,
     @SerialName("avatar_emoji") val avatarEmoji: String? = null,
+    // Profile-social layer: presence + trophy-case counters.
+    @SerialName("last_seen_at") val lastSeenAt: String? = null,
+    @SerialName("gold_medals") val goldMedals: Int = 0,
+    @SerialName("silver_medals") val silverMedals: Int = 0,
+    @SerialName("bronze_medals") val bronzeMedals: Int = 0,
 )
 
 private suspend fun fetchPublicProfile(id: String): PublicProfile? = runCatching {
@@ -112,7 +117,7 @@ private val SOCIAL_PLATFORMS = listOf(
 )
 
 @Composable
-fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
+fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (String) -> Unit = {}) {
     // iOS PublicProfileView keeps `loading` and `notFound` apart — a null result
     // after the fetch settles means the profile is gone, not still in flight.
     val load by produceState(initialValue = true to null as PublicProfile?, userId) {
@@ -163,6 +168,40 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
     LaunchedEffect(moderationToast) {
         if (moderationToast != null) { delay(2_500); moderationToast = null }
     }
+
+    // ── Profile-social layer loads — every one best-effort: a failed fetch
+    // renders nothing new and the classic profile below is untouched. ─────────
+    val persona by produceState(initialValue = null as ProfileService.Persona?, userId) {
+        value = runCatching { ProfileService.fetchPersona(userId) }.getOrNull()
+    }
+    val targetDailies by produceState(initialValue = emptyList<ProfileService.DailyRowLite>(), userId) {
+        value = runCatching { ProfileService.fetchSoloDailyRows(userId) }.getOrDefault(emptyList())
+    }
+    val viewerId = AuthService.userId
+    val viewerDailies by produceState(initialValue = emptyList<ProfileService.DailyRowLite>(), userId, viewerId) {
+        value = if (viewerId != null && viewerId != userId) {
+            runCatching { ProfileService.fetchSoloDailyRows(viewerId) }.getOrDefault(emptyList())
+        } else {
+            emptyList()
+        }
+    }
+    val medalHistory by produceState(initialValue = emptyList<ProfileService.UserMedal>(), userId) {
+        value = runCatching { ProfileService.fetchUserMedals(userId, limit = 200) }.getOrDefault(emptyList())
+    }
+    val h2h = remember(viewerDailies, targetDailies) {
+        if (viewerDailies.isNotEmpty() && targetDailies.isNotEmpty()) {
+            ProfileService.computeH2H(viewerDailies, targetDailies)
+        } else {
+            null
+        }
+    }
+    val targetName = profile?.username ?: "Player"
+    var showArchetype by remember { mutableStateOf(false) }
+    var showH2H by remember { mutableStateOf(false) }
+    var showMedals by remember { mutableStateOf(false) }
+    var showCalendar by remember { mutableStateOf(false) }
+    var boardSeed by remember { mutableStateOf<String?>(null) }
+    var podiumTarget by remember { mutableStateOf<Pair<String, String>?>(null) }   // (day, mode)
 
     Column(
         Modifier.fillMaxSize().appBackground()
@@ -266,22 +305,27 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }
             val customAccent = ProfileAccent.isCustom(p.accentColor)
-            Box(
-                // iOS AvatarView: no accent set = the wordmark gradient, never a flat grey.
-                Modifier.size(96.dp).clip(CircleShape).background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else WTheme.wordmarkGradient),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (avatarUrl != null) {
-                    coil.compose.AsyncImage(
-                        model = avatarUrl, contentDescription = "Avatar",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    )
-                } else {
-                    Text(
-                        p.avatarEmoji?.takeIf { it.isNotBlank() } ?: (p.username?.take(2) ?: "P").uppercase(),
-                        fontSize = 38.4f.sp, fontWeight = FontWeight.Black, color = Color.White,   // iOS: size * 0.4
-                    )
+            // Today-progress ring — the target's completed dailies today (mock:
+            // ring + "N/9 today" capsule around the avatar).
+            val todayCount = targetDailies.count { it.day == com.wordocious.app.todayLocalDate() && it.completed }
+            TodayRingAvatar(completed = todayCount) {
+                Box(
+                    // iOS AvatarView: no accent set = the wordmark gradient, never a flat grey.
+                    Modifier.size(96.dp).clip(CircleShape).background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else WTheme.wordmarkGradient),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (avatarUrl != null) {
+                        coil.compose.AsyncImage(
+                            model = avatarUrl, contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        )
+                    } else {
+                        Text(
+                            p.avatarEmoji?.takeIf { it.isNotBlank() } ?: (p.username?.take(2) ?: "P").uppercase(),
+                            fontSize = 38.4f.sp, fontWeight = FontWeight.Black, color = Color.White,   // iOS: size * 0.4
+                        )
+                    }
                 }
             }
             if (customAccent) {
@@ -298,20 +342,12 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                     ),
                 )
             }
+            // Presence line — pulsing dot + "Played N minutes ago" (mock .presence).
+            PresenceLine(p.lastSeenAt)
             ProfilePersonalizationRow(p.accentColor, p.bio, p.featuredAchievement, p.favoriteMode)
-            // Level badge (web: star + "Level N", gold bg/border)
-            Row(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(WTheme.highlightGold)
-                    .border(1.5.dp, WTheme.goldBorder, RoundedCornerShape(50))
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Icon(Icons.Filled.Star, null, tint = Color(0xFFD97706), modifier = Modifier.size(12.dp))
-                Text("Level ${p.level}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-            }
+            // Chips row: Level (relocated from the old standalone badge) +
+            // archetype + best percentile + signature opener (mock .idchips).
+            IdentityChipsRow(level = p.level, persona = persona, onArchetypeTap = { showArchetype = true })
             // XP bar to next level
             val intoLevel = p.xp % 1000
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -355,6 +391,61 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                 }
             }
         }
+
+        // ── Profile-social sections (approved mock): You-vs-Them → Trophy Case →
+        // Highlights → Lately. All render above the existing stat cards; each
+        // hides itself when its data didn't load. ───────────────────────────────
+        if (!isOwnProfile && h2h != null && h2h.shared.isNotEmpty()) {
+            val todayShared = h2h.shared.firstOrNull { it.day == com.wordocious.app.todayLocalDate() }
+            YouVsThemCard(
+                targetName = targetName,
+                h2h = h2h,
+                todayShared = todayShared,
+                onCardTap = { showH2H = true },
+                onTodayTap = { s -> boardSeed = com.wordocious.core.generateDailySeed(s.day, s.gameMode) },
+            )
+        }
+        TrophyCaseCard(
+            gold = p.goldMedals, silver = p.silverMedals, bronze = p.bronzeMedals,
+            flawless = persona?.flawless,
+            onTap = { showMedals = true },
+        )
+        val highlights = buildList {
+            persona?.longestWinStreak?.takeIf { it >= 2 }?.let { streak ->
+                add(ProfileHighlight("🏆", "$streak-win streak", "Career best", onTap = { showCalendar = true }))
+            }
+            stats.filter { it.playType == "solo" }
+                .mapNotNull { s -> s.fastestTime?.takeIf { it > 0 }?.let { t -> s.gameMode to t } }
+                .minByOrNull { it.second }
+                ?.let { (m, t) ->
+                    add(ProfileHighlight("⚡", formatShortTime(t), "Fastest ${modeTitleFromDb(m)} solve"))
+                }
+            val perfectOctos = targetDailies.filter { it.gameMode == "OCTORDLE" && (it.boardsSolved ?: 0) >= 8 }
+            if (perfectOctos.isNotEmpty()) {
+                val latest = perfectOctos.first()
+                add(
+                    ProfileHighlight(
+                        "💥", "8/8 boards",
+                        "Perfect ${modeTitleFromDb("OCTORDLE")}" + if (perfectOctos.size > 1) " ×${perfectOctos.size}" else "",
+                        onTap = { boardSeed = com.wordocious.core.generateDailySeed(latest.day, latest.gameMode) },
+                    ),
+                )
+            }
+            persona?.flawless?.takeIf { it.count > 0 }?.let { fl ->
+                add(ProfileHighlight("💎", "×${fl.count} Flawless", "All 9 dailies won in a day", onTap = { showCalendar = true }))
+            }
+        }
+        HighlightsCard(highlights)
+        LatelyCard(
+            items = buildLatelyItems(
+                medals = medalHistory,
+                loginStreak = p.dailyLoginStreak,
+                onMedals = { showMedals = true },
+                onStreak = { showCalendar = true },
+            ),
+            nemesis = persona?.nemesis,
+            onNemesisTap = { onOpenProfile(it) },
+        )
 
         // ── Overall stat cards (iOS: one 4-across row) ──────────────────────────
         val games = p.totalWins + p.totalLosses
@@ -554,6 +645,47 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
                 androidx.compose.material3.TextButton(onClick = { showBlockConfirm = false }) { Text("Cancel") }
             },
         )
+    }
+
+    // ── Profile-social dialogs/sheets ────────────────────────────────────────
+    if (showArchetype) {
+        ArchetypeDialog(
+            targetName = targetName,
+            targetArchetype = persona?.archetype ?: "CHALLENGER",
+            onDismiss = { showArchetype = false },
+        )
+    }
+    if (showH2H && h2h != null) {
+        H2HDetailDialog(targetName = targetName, h2h = h2h, onDismiss = { showH2H = false })
+    }
+    boardSeed?.let { seed ->
+        GuardedBoardDialog(targetId = userId, targetName = targetName, seed = seed, onDismiss = { boardSeed = null })
+    }
+    if (showMedals) {
+        MedalHistorySheet(
+            targetName = targetName,
+            medals = medalHistory,
+            onPodium = { day, mode -> podiumTarget = day to mode },
+            onDismiss = { showMedals = false },
+        )
+    }
+    podiumTarget?.let { (day, mode) ->
+        PodiumDialog(
+            day = day, gameMode = mode,
+            onOpenProfile = { id ->
+                podiumTarget = null
+                showMedals = false
+                onOpenProfile(id)
+            },
+            onDismiss = { podiumTarget = null },
+        )
+    }
+    if (showCalendar) {
+        // Distinct completed modes per day over the target's daily rows.
+        val counts = targetDailies.filter { it.completed }
+            .groupBy { it.day }
+            .mapValues { (_, rows) -> rows.map { it.gameMode }.distinct().size }
+        StreakCalendarDialog(targetName = targetName, dayCounts = counts, onDismiss = { showCalendar = false })
     }
 }
 

@@ -31,6 +31,23 @@ import { TopWordsCard } from '@/components/profile/top-words-card';
 import { useAuth } from '@/lib/auth-context';
 import { reportUser, blockUser, unblockUser, fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { WIN_FG } from '@/lib/tile-theme';
+import { modeLabel } from '@/lib/mode-labels';
+import {
+  fetchPersona,
+  fetchTodayRing,
+  presenceLabel,
+  type Persona,
+  type TodayRing,
+} from '@/lib/profile-social';
+import {
+  YouVsThemCard,
+  TrophyCaseCard,
+  HighlightsReel,
+  LatelyCard,
+  ArchetypeModal,
+  archetypeName,
+  ARCHETYPE_EMOJI,
+} from '@/components/profile/profile-social';
 import type { Database } from '@/lib/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -172,10 +189,24 @@ export default function PublicProfilePage() {
   const [showAllRecent, setShowAllRecent] = useState(false);
   const [topWords, setTopWords] = useState<Array<{ word: string; count: number; wins: number }>>([]);
 
+  // Profile-social layer — all non-blocking; the page renders without them
+  // and the new cards fill in as data arrives.
+  const [persona, setPersona] = useState<Persona | null>(null);
+  const [todayRing, setTodayRing] = useState<TodayRing | null>(null);
+  const [showArchetype, setShowArchetype] = useState(false);
+
   useEffect(() => {
     if (profileId) {
       fetchAll();
     }
+  }, [profileId]);
+
+  useEffect(() => {
+    if (!profileId) return;
+    let active = true;
+    fetchPersona(profileId).then((p) => { if (active) setPersona(p); });
+    fetchTodayRing(profileId).then((r) => { if (active) setTodayRing(r); });
+    return () => { active = false; };
   }, [profileId]);
 
   const fetchAll = async () => {
@@ -262,17 +293,56 @@ export default function PublicProfilePage() {
     ? ((profile.total_wins / (profile.total_wins + profile.total_losses)) * 100).toFixed(1)
     : '0.0';
 
+  // Profile-social derived bits
+  const presence = presenceLabel(profile.last_played_at);
+  const fastest = stats
+    .filter((s) => s.play_type === 'solo' && s.fastest_time > 0)
+    .reduce<{ mode: string; seconds: number } | null>(
+      (best, s) => (!best || s.fastest_time < best.seconds ? { mode: s.game_mode, seconds: s.fastest_time } : best),
+      null,
+    );
+  const isOwnProfile = Boolean(user && user.id === profileId);
+
   return (
     <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: 'var(--color-bg)' }}>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header Section */}
         <div className="flex flex-col items-center gap-4 animate-fade-in-up">
-          <AvatarUpload
-            size={112}
-            editable={false}
-            avatarUrl={profile.avatar_url}
-            username={profile.username}
-          />
+          {/* Avatar with today-progress ring + "N/9 today" pill */}
+          <div className="relative" style={{ width: 128, height: 128 }}>
+            {todayRing && (
+              <svg
+                className="absolute inset-0 w-full h-full"
+                viewBox="0 0 86 86"
+                style={{ transform: 'rotate(-90deg)' }}
+                aria-hidden="true"
+              >
+                <circle cx="43" cy="43" r="40.5" fill="none" strokeWidth={4} stroke="var(--color-border)" />
+                <circle
+                  cx="43" cy="43" r="40.5" fill="none" strokeWidth={4} strokeLinecap="round"
+                  stroke="#8B5CF6" strokeDasharray={254}
+                  strokeDashoffset={254 * (1 - todayRing.done / todayRing.total)}
+                  style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                />
+              </svg>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <AvatarUpload
+                size={112}
+                editable={false}
+                avatarUrl={profile.avatar_url}
+                username={profile.username}
+              />
+            </div>
+            {todayRing && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 -bottom-1 px-2 py-0.5 rounded-full text-[9.5px] font-black text-white whitespace-nowrap"
+                style={{ background: '#8B5CF6' }}
+              >
+                {todayRing.done}/{todayRing.total} today
+              </div>
+            )}
+          </div>
 
           <div className="text-center">
             {(profile as any).accent_color ? (
@@ -282,6 +352,53 @@ export default function PublicProfilePage() {
                 {profile.username}
               </h1>
             )}
+
+            {/* Presence line — "Played X minutes ago" with a live pulse dot */}
+            {presence && (
+              <div
+                className="mt-1 flex items-center justify-center gap-1.5 text-[11.5px] font-bold"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                {presence.live && (
+                  <span className="relative flex w-2 h-2" aria-hidden="true">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-40" style={{ background: '#22c55e' }} />
+                    <span className="relative inline-flex rounded-full w-2 h-2" style={{ background: '#22c55e' }} />
+                  </span>
+                )}
+                {presence.label}
+              </div>
+            )}
+
+            {/* Persona chips: archetype (tap → explainer), best percentile, signature opener */}
+            {persona && (
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+                <button
+                  onClick={() => setShowArchetype(true)}
+                  className="text-[10px] font-black tracking-wide px-2.5 py-1 rounded-full transition-transform active:scale-95"
+                  style={{ color: '#7c3aed', border: '1.5px solid #c4b5fd', background: 'var(--color-surface-hover)' }}
+                >
+                  {ARCHETYPE_EMOJI[persona.archetype]} {archetypeName(persona.archetype)}
+                  <span className="opacity-60"> ›</span>
+                </button>
+                {persona.bestPercentile && (
+                  <span
+                    className="text-[10px] font-black tracking-wide px-2.5 py-1 rounded-full uppercase"
+                    style={{ color: '#0d9488', border: '1.5px solid #5eead4', background: 'rgba(13,148,136,0.08)' }}
+                  >
+                    Top {persona.bestPercentile.topPct}% · {modeLabel(persona.bestPercentile.mode)}
+                  </span>
+                )}
+                {persona.opener && (
+                  <span
+                    className="text-[10px] font-black tracking-wide px-2.5 py-1 rounded-full uppercase"
+                    style={{ color: '#ec4899', border: '1.5px solid #f9a8d4', background: 'rgba(236,72,153,0.07)' }}
+                  >
+                    Opens with &ldquo;{persona.opener.word}&rdquo;
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Personalization: featured title, bio, favorite-mode chip */}
             {(() => {
               const accentHex = resolveAccent((profile as any).accent_color);
@@ -339,6 +456,23 @@ export default function PublicProfilePage() {
               Back
             </Button>
           </Link>
+        </div>
+
+        {/* Profile-social cards — You-vs-Them, Trophy Case, Highlights, Lately */}
+        <div className="max-w-xl mx-auto w-full space-y-3">
+          {user && !isOwnProfile && (
+            <YouVsThemCard viewerId={user.id} targetId={profileId} targetName={profile.username} />
+          )}
+          <TrophyCaseCard
+            targetId={profileId}
+            targetName={profile.username}
+            gold={profile.gold_medals ?? 0}
+            silver={profile.silver_medals ?? 0}
+            bronze={profile.bronze_medals ?? 0}
+            persona={persona}
+          />
+          <HighlightsReel targetId={profileId} persona={persona} fastest={fastest} />
+          <LatelyCard targetId={profileId} persona={persona} />
         </div>
 
         {/* Overall Stats Row */}
@@ -606,6 +740,16 @@ export default function PublicProfilePage() {
           )}
         </div>
       </div>
+
+      {persona && (
+        <ArchetypeModal
+          open={showArchetype}
+          onClose={() => setShowArchetype(false)}
+          targetName={profile.username}
+          targetArchetype={persona.archetype}
+          viewerId={user?.id ?? null}
+        />
+      )}
 
       <BottomNav />
     </div>

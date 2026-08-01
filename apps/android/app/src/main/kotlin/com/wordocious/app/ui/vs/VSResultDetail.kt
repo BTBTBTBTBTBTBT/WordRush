@@ -212,35 +212,45 @@ private fun tileBrush(state: TileState): Brush = when (state) {
 
 @Composable
 private fun LetterBoard(rows: List<EvaluatedRow>, wordGroups: List<Int>? = null) {
-    // Shrink tiles for long words so two boards still fit side-by-side (web: 24/21/18).
     val wordLen = rows.firstOrNull()?.letters?.size ?: 5
-    val tile = if (wordLen <= 5) 24.dp else if (wordLen == 6) 21.dp else 18.dp
     // ProperNoundle multi-word answers ("TRAE YOUNG") get a wider gap between
     // word groups — same grouping the solo ProperNoundleMiniBoard uses — so
     // the recap rows don't read as one unbroken letter run. Only applied when
     // the group lengths add up to the row length (defensive: mismatched
     // metadata falls back to the flat run rather than misaligned gaps).
     val groups = if (wordGroups != null && wordGroups.size > 1 && wordGroups.sum() == wordLen) wordGroups else listOf(wordLen)
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        rows.forEach { row ->
-            var idx = 0
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                groups.forEach { len ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        repeat(len) {
-                            val ci = idx++
-                            val state = row.states.getOrNull(ci) ?: TileState.ABSENT
-                            Box(
-                                Modifier.size(tile).clip(RoundedCornerShape(4.dp))
-                                    .background(tileBrush(state)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    row.letters.getOrNull(ci) ?: "",
-                                    fontSize = (tile.value * 0.5f).sp, fontWeight = FontWeight.Black,
-                                    // Hint-revealed letters read gray-on-ghost (solo TileView parity).
-                                    color = if (state == TileState.HINT_USED) Color(0xFFD1D5DB) else Color.White,
-                                )
+    // iOS boardCard geometry (VSResultDetail.swift): tiles are SIZED FROM THE
+    // COLUMN, not fixed — floor(min(fit-by-width)), proportional gap and
+    // corner radius. The old fixed 24/21/18dp ladder packed a 5-letter board
+    // into a 132dp strip inside a ~150dp column on a 360dp phone: tiles tight,
+    // gaps 3dp, letters at half a cramped tile — Doug's "crushed" screenshot.
+    androidx.compose.foundation.layout.BoxWithConstraints {
+        val groupGaps = (groups.size - 1) * 7
+        val fit = ((this.maxWidth - groupGaps.dp - (3 * (wordLen - 1)).dp) / wordLen)
+        val tile = if (fit > 32.dp) 32.dp else fit          // cap like iOS maxSide clamp
+        val gap = (tile * 0.13f).coerceAtLeast(3.dp)
+        val corner = (tile * 0.15f).coerceAtLeast(4.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(gap), horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            rows.forEach { row ->
+                var idx = 0
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    groups.forEach { len ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+                            repeat(len) {
+                                val ci = idx++
+                                val state = row.states.getOrNull(ci) ?: TileState.ABSENT
+                                Box(
+                                    Modifier.size(tile).clip(RoundedCornerShape(corner))
+                                        .background(tileBrush(state)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        row.letters.getOrNull(ci) ?: "",
+                                        fontSize = (tile.value * 0.5f).sp, fontWeight = FontWeight.Black,
+                                        // Hint-revealed letters read gray-on-ghost (solo TileView parity).
+                                        color = if (state == TileState.HINT_USED) Color(0xFFD1D5DB) else Color.White,
+                                    )
+                                }
                             }
                         }
                     }
