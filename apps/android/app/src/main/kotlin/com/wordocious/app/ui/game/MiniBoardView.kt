@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -85,14 +86,21 @@ fun MiniBoardView(
     val fontSize: Float? = null
     val wordLen = board.solution.length
 
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(2.dp, borderColor, RoundedCornerShape(8.dp))
-            .then(if (onClick != null) Modifier.clickableNoRippleBox(onClick) else Modifier)
-            .padding(4.dp),
-    ) {
+    // Outer box is NOT clipped so the ✓ badge can float above the card edge
+    // (iOS SolvedBoardFrame offsets it -30% of its height). The old structure
+    // put the badge INSIDE the clipped, padded card, where it sat directly on
+    // top of the first row's last tile — Doug's screenshot showed the check
+    // covering the letter D.
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(8.dp))
+                .background(bgColor)
+                .border(2.dp, borderColor, RoundedCornerShape(8.dp))
+                .then(if (onClick != null) Modifier.clickableNoRippleBox(onClick) else Modifier)
+                .padding(4.dp),
+        ) {
         // Grid of rows filling height equally (like web `grid-template-rows: repeat(N, 1fr)`)
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -176,17 +184,21 @@ fun MiniBoardView(
             }
         }
 
-        // NO lock-icon overlay. Web draws one; iOS does not (BoardView.swift:152
-        // dims to 0.6 and masks committed rows as bullets, nothing more), and a
-        // 32dp padlock stamped over a grid of bullets reads as clutter on a
-        // phone — the tester's word was "horrendous". Android follows iOS here.
+            // NO lock-icon overlay. Web draws one; iOS does not (BoardView.swift:152
+            // dims to 0.6 and masks committed rows as bullets, nothing more), and a
+            // 32dp padlock stamped over a grid of bullets reads as clutter on a
+            // phone — the tester's word was "horrendous". Android follows iOS here.
+        }
 
-        // Won: green ✓ badge top-right (web: absolute -top-1.5 -right-1.5)
+        // Won: ✓ badge on the card FRAME, not its content — flush to the right
+        // edge, floated up 30% of its height (iOS SolvedBoardFrame offset
+        // x:0, y:-badge*0.3) so it rides the border instead of a letter tile.
         if (isWon) {
             Box(
                 modifier = Modifier
-                    .size(18.dp)
                     .align(Alignment.TopEnd)
+                    .offset(y = (-5).dp)
+                    .size(18.dp)
                     .clip(RoundedCornerShape(9.dp))
                     .background(Color(0xFF8B5CF6)),
                 contentAlignment = Alignment.Center,

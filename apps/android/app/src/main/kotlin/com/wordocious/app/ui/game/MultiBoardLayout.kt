@@ -87,7 +87,8 @@ fun MultiBoardLayout(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(3.dp)
+                                // 4dp per cell = 8dp between boards (iOS boardGap 8).
+                                .padding(4.dp)
                                 .then(
                                     when {
                                         isInvisible -> Modifier.alpha(0f)

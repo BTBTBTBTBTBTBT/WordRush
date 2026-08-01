@@ -255,7 +255,7 @@ private fun HintPill(accent: Color, used: Boolean, label: String, onClick: () ->
  * pulsing halo on the active node (iOS StageGlow, 1.25s autoreversing).
  */
 @Composable
-fun GauntletStepper(current: Int, total: Int) {
+fun GauntletStepper(current: Int, total: Int, modifier: Modifier = Modifier) {
     val glow = Color(0xFFA855F7)
     val pulse = if (WTheme.reducedMotion) 0f else {
         val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "stageGlow")
@@ -269,14 +269,25 @@ fun GauntletStepper(current: Int, total: Int) {
             label = "stageGlowRadius",
         ).value
     }
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    // iOS uses fixed 16pt connectors, but that only *just* fits between the
+    // corner buttons on a ≥390pt iPhone — on a 360dp phone (most Samsungs)
+    // the 5th node slid underneath the "?" button (Doug's screenshot). The
+    // connectors shrink to whatever width keeps the whole stepper clear of
+    // the corner-button gutters (44dp button + paddings ≈ 104dp each side).
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        val gutter = 104.dp
+        val nodesW = (20 * total).dp + (4 * (total - 1)).dp // nodes + connector h-padding
+        val connW = if (total > 1) {
+            ((this.maxWidth - gutter * 2 - nodesW) / (total - 1)).coerceIn(6.dp, 16.dp)
+        } else 16.dp
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.align(Alignment.Center)) {
         for (i in 0 until total) {
             val done = i < current
             val active = i == current
             // iOS draws the connector BEFORE node i, colored by node i's state.
             if (i > 0) {
                 Box(
-                    Modifier.padding(horizontal = 2.dp).width(16.dp).height(2.dp)
+                    Modifier.padding(horizontal = 2.dp).width(connW).height(2.dp)
                         .background(
                             when {
                                 done -> Color(0xFF8B5CF6)
@@ -312,6 +323,7 @@ fun GauntletStepper(current: Int, total: Int) {
                 }
             }
         }
+    }
     }
 }
 
@@ -914,7 +926,13 @@ internal fun SoundToggleButton(accent: Color, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(44.dp)
-            .shadow(4.dp, circle, clip = false)
+            .shadow(
+                6.dp, circle, clip = false,
+                // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
+                // default opaque-black elevation shadow read as a hard grey ring.
+                ambientColor = Color.Black.copy(alpha = 0.35f),
+                spotColor = Color.Black.copy(alpha = 0.35f),
+            )
             .clip(circle)
             .background(WTheme.surface)
             .border(2.dp, accent, circle)
@@ -939,7 +957,13 @@ private fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modif
     Box(
         modifier = modifier
             .size(44.dp)
-            .shadow(4.dp, circle, clip = false)
+            .shadow(
+                6.dp, circle, clip = false,
+                // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
+                // default opaque-black elevation shadow read as a hard grey ring.
+                ambientColor = Color.Black.copy(alpha = 0.35f),
+                spotColor = Color.Black.copy(alpha = 0.35f),
+            )
             .clip(circle)
             .background(WTheme.surface)
             .border(2.dp, accent, circle)
@@ -962,14 +986,21 @@ private fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modif
     Box(
         modifier = modifier
             .size(44.dp)
-            .shadow(4.dp, circle, clip = false)
+            .shadow(
+                6.dp, circle, clip = false,
+                // iOS: black at 8% alpha, radius 12 — a soft diffuse lift. The
+                // default opaque-black elevation shadow read as a hard grey ring.
+                ambientColor = Color.Black.copy(alpha = 0.35f),
+                spotColor = Color.Black.copy(alpha = 0.35f),
+            )
             .clip(circle)
             .background(WTheme.surface)
             .border(2.dp, accent, circle)
             .clickableNoRipple(onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text("?", color = accent, fontSize = 22.sp, fontWeight = FontWeight.Black)
+        // iOS: questionmark at 20pt bold — 22sp Black read a step heavier.
+        Text("?", color = accent, fontSize = 20.sp, fontWeight = FontWeight.Bold)
     }
 }
 
