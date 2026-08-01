@@ -28,15 +28,23 @@ const LAPSED_AFTER_DAYS = 2;
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    await stampHeartbeat('daily-reminder', true);
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  webpush.setVapidDetails(
-    'mailto:bterchin@gmail.com',
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!,
-  );
+  // Web push is OPTIONAL: with no VAPID keys the web leg is skipped, the
+  // native (APNs/FCM) legs still run. setVapidDetails with empty keys THROWS,
+  // and it sat unguarded at the top of this function — so a missing env var
+  // silently killed EVERY reminder on every platform, daily, with only a
+  // Sentry error to show for it.
+  const webPushConfigured =
+    !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && !!process.env.VAPID_PRIVATE_KEY;
+  if (webPushConfigured) {
+    webpush.setVapidDetails(
+      'mailto:bterchin@gmail.com',
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+      process.env.VAPID_PRIVATE_KEY!,
+    );
+  }
 
   const sb = getAdminSupabase();
   const today = new Date().toISOString().slice(0, 10);
@@ -143,6 +151,7 @@ export async function GET(req: NextRequest) {
     await sb.from('device_tokens').delete().in('token', deadTokens);
   }
 
+  await stampHeartbeat('daily-reminder', true, `sent ${sent}, failed ${failed}${webPushConfigured ? '' : ', web push unconfigured'}`);
   return NextResponse.json({
     sent,
     failed,

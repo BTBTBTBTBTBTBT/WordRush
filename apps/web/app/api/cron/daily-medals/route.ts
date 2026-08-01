@@ -15,8 +15,7 @@ export async function GET(req: NextRequest) {
   // Verify cron secret (Vercel sends this automatically for cron jobs)
   const authHeader = req.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    await stampHeartbeat('daily-medals', true);
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const sb = getAdminSupabase();
@@ -99,6 +98,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  await stampHeartbeat('daily-medals', true, `medals ${medalsAssigned}, xp ${xpGranted}`);
   return NextResponse.json({
     success: true,
     day: yesterday,

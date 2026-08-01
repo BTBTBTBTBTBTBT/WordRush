@@ -75,7 +75,15 @@ class MainActivity : ComponentActivity() {
         // UMP consent -> Mobile Ads init -> preload the game-start interstitial.
         com.wordocious.app.data.AdsManager.start(this)
         tagLaunchAfterUpdate()
-        setContent {
+        // setContentView(ComposeView), NOT the androidx setContent extension:
+        // the extension does findViewById(android.R.id.content).getChildAt(0),
+        // and on some devices (Play pre-launch farm's OnePlus profile — 5
+        // FATAL startup NPEs in Sentry across builds 37-47) the content frame
+        // is null at that moment. Activity.setContentView INSTALLS the decor
+        // and content frame itself, so this path cannot hit that null;
+        // ComponentActivity.setContentView also wires the view-tree owners
+        // Compose needs. Behavior is otherwise identical.
+        setContentView(androidx.compose.ui.platform.ComposeView(this).apply { setContent {
             WordociousTheme {
                 // Tell the SYSTEM BARS which way the app's palette leans.
                 //
@@ -174,7 +182,7 @@ class MainActivity : ComponentActivity() {
                   }
                 }
             }
-        }
+        } })
     }
 
     /**
