@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
 
   let medalsAssigned = 0;
   let xpGranted = 0;
+  let alreadyAwarded = 0;
 
   for (const mode of GAME_MODES) {
     for (const pt of PLAY_TYPES) {
@@ -66,7 +67,15 @@ export async function GET(req: NextRequest) {
             composite_score: entry.composite_score,
           });
 
-        if (medalError) continue; // duplicate (already awarded) or transient — never re-grant
+        if (medalError) {
+          // Duplicate (already awarded) or transient — never re-grant. COUNTED,
+          // because Vercel crons are at-least-once: a second firing finds every
+          // medal already inserted and would otherwise stamp a bare "medals 0",
+          // which reads as "the cron did nothing" when the truth is "another run
+          // already did the work". 2026-08-01 cost a morning of investigation.
+          alreadyAwarded++;
+          continue;
+        }
 
         // Increment profile medal counter + grant XP bonus
         const medalCol = `${medalType}_medals`;
@@ -98,7 +107,12 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  await stampHeartbeat('daily-medals', true, `medals ${medalsAssigned}, xp ${xpGranted}`);
+  await stampHeartbeat(
+    'daily-medals',
+    true,
+    `medals ${medalsAssigned}, xp ${xpGranted}` +
+      (alreadyAwarded ? `, ${alreadyAwarded} already awarded` : ''),
+  );
   return NextResponse.json({
     success: true,
     day: yesterday,
