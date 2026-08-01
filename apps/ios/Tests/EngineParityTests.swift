@@ -207,10 +207,12 @@ final class EngineParityTests: XCTestCase {
         let dict = GameDictionary.shared
 
         for fixture in fixtures {
+            // Production pool (Reducer.swift): the solutions bank, not the
+            // allowed guess list — fixtures must certify what actually runs.
             let swiftWords = generatePrefillWords(
                 seed: fixture.seed,
                 solutions: fixture.solutions,
-                allowedWords: dict.getAllowedWords()
+                allowedWords: dict.solutionPool(forDateKey: nil)
             )
             XCTAssertEqual(swiftWords, fixture.prefillWords,
                            "Prefill words mismatch for seed \"\(fixture.seed)\"")

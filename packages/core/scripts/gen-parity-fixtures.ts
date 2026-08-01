@@ -22,7 +22,7 @@
 import fs from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { initDictionary, initDictionaryForLength } from '../src/dictionary';
+import { initDictionary, initDictionaryForLength, getSolutionPoolForDate } from '../src/dictionary';
 import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from '../src/seed';
 import { generatePrefillWords, generatePrefillGuesses } from '../src/prefill';
 
@@ -73,10 +73,18 @@ export function renderSeedFixtures() {
 }
 
 export function renderPrefillFixtures() {
-  const allowedUpper = allowed.map((w) => w.toUpperCase());
+  // The pool MUST match what the reducers actually pass in production: the
+  // curated solutions bank, NOT the allowed guess list. The fixtures were
+  // generated with `allowed` for a while — which meant they certified a
+  // configuration no platform runs, and the first-ever growth of the
+  // 5-letter allowed list (ANTSY et al.) broke them while real prefill
+  // boards were untouched. Solutions-bank prefill is also what makes
+  // dictionary growth gameplay-safe: pool changes only on a deliberate
+  // solutions curation, never on a guess-word addition.
+  const pool = getSolutionPoolForDate(null);
   return PREFILL_CASES.map(([seed, count]) => {
     const solutions = generateSolutionsFromSeed(seed, count);
-    const prefillWords = generatePrefillWords(seed, solutions, allowedUpper);
+    const prefillWords = generatePrefillWords(seed, solutions, pool);
     return {
       seed,
       solutions,

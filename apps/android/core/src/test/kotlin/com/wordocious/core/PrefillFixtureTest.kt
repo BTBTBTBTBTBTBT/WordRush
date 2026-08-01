@@ -27,7 +27,9 @@ class PrefillFixtureTest {
         val type = object : TypeToken<List<PrefillCase>>() {}.type
         val cases: List<PrefillCase> = Gson().fromJson(loadFixture("prefill-fixtures.json"), type)
         assertTrue("expected prefill fixtures to load", cases.isNotEmpty())
-        val allowed = GameDictionary.getAllowedWords()
+        // Production pool (Reducer.kt): the solutions bank, not the allowed
+        // guess list — fixtures must certify what actually runs.
+        val allowed = GameDictionary.solutionPool(null)
         for (c in cases) {
             assertEquals("prefillWords ${c.seed}", c.prefillWords, generatePrefillWords(c.seed, c.solutions, allowed))
             for (bp in c.boardPrefills) {
