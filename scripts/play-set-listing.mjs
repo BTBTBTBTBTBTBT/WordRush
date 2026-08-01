@@ -119,6 +119,17 @@ if (dryRun) {
   console.log('Dry run — edit NOT committed.');
   await call('DELETE', `/edits/${edit.id}`).catch(() => {});
 } else {
+  // KNOWN LIMIT: this commit 403s ("caller does not have permission") even
+  // though play-publisher DOES hold "Manage store presence" (verified in the
+  // console 2026-08-01) — because committing a listing edit automatically
+  // SENDS THE CHANGES FOR REVIEW, and this account is deliberately scoped to
+  // testing tracks only (see play-upload.mjs). changesNotSentForReview is
+  // rejected too ("Changes are sent for review automatically"). Granting the
+  // permission that would make this work is the same permission that lets the
+  // account publish to production — which is the guardrail we want to keep.
+  // So the text above is the source of truth; paste it into Play Console ->
+  // Store presence -> Main store listing (or run with --dry-run to validate
+  // lengths after an edit).
   await call('POST', `/edits/${edit.id}:commit`, undefined);
   console.log('Committed. en-US store listing is set.');
 }
