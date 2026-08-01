@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { isStreakAtRisk, useShield } from '@/lib/shield-service';
 import { StreakShieldModal } from '@/components/modals/streak-shield-modal';
@@ -8,11 +9,18 @@ import { supabase } from '@/lib/supabase-client';
 
 export function StreakShieldProvider({ children }: { children: React.ReactNode }) {
   const { user, profile, refreshProfile } = useAuth();
+  const pathname = usePathname();
   const [showModal, setShowModal] = useState(false);
   const [checked, setChecked] = useState(false);
 
+  // Admin/portal surfaces are work, not play — the founders checking a
+  // dashboard shouldn't be ambushed by a game modal there. Deliberately NOT
+  // marked `checked`: the nudge still fires normally on the next player-
+  // facing page they visit.
+  const onAdminSurface = pathname?.startsWith('/admin') || pathname?.startsWith('/portal');
+
   useEffect(() => {
-    if (!user || !profile || checked) return;
+    if (!user || !profile || checked || onAdminSurface) return;
 
     const streak = profile.daily_login_streak ?? 0;
     const lastPlayed = profile.last_played_at ?? null;
@@ -22,7 +30,7 @@ export function StreakShieldProvider({ children }: { children: React.ReactNode }
     }
 
     setChecked(true);
-  }, [user, profile, checked]);
+  }, [user, profile, checked, onAdminSurface]);
 
   const handleUseShield = async () => {
     if (!user) return;
@@ -47,7 +55,7 @@ export function StreakShieldProvider({ children }: { children: React.ReactNode }
       {children}
       {profile && (
         <StreakShieldModal
-          open={showModal}
+          open={showModal && !onAdminSurface}
           streak={profile.daily_login_streak ?? 0}
           shields={(profile as any).streak_shields ?? 0}
           onUseShield={handleUseShield}
