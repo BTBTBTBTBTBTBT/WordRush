@@ -62,6 +62,41 @@ object ProfileService {
     }.getOrElse { emptyList() }
 
     @Serializable
+    private data class MatchesEnvelope(val matches: List<RecentMatch> = emptyList())
+
+    /**
+     * Recent matches for ANOTHER player's public profile — fetched from the
+     * web API, not a direct `matches` query: that table's SELECT policy is
+     * participants-only (guess rows are private by design), so the client
+     * read in [fetchRecentMatches] returns zero rows for anyone but the
+     * session user and "Recent Matches" was permanently empty on other
+     * players' profiles. The endpoint reads server-side and returns only the
+     * sanitized columns this screen renders (no guess arrays).
+     */
+    suspend fun fetchPublicRecentMatches(userId: String): List<RecentMatch> =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val body = java.net.URL("https://wordocious.com/api/profile/$userId/matches").readText()
+                kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+                    .decodeFromString<MatchesEnvelope>(body).matches
+            }.getOrDefault(emptyList())
+        }
+
+    @Serializable
+    private data class TopWordsEnvelope(val topWords: List<MatchStatsService.TopWord> = emptyList())
+
+    /** Top words for another player — same web-endpoint story as above. */
+    suspend fun fetchPublicTopWords(userId: String, mode: String, playType: String): List<MatchStatsService.TopWord> =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val play = if (playType == "vs") "vs" else "solo"
+                val body = java.net.URL("https://wordocious.com/api/profile/$userId/top-words?mode=$mode&play=$play").readText()
+                kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+                    .decodeFromString<TopWordsEnvelope>(body).topWords
+            }.getOrDefault(emptyList())
+        }
+
+    @Serializable
     private data class NameRow(val id: String, val username: String? = null)
 
     /** Batch-resolve usernames (e.g. VS opponents in Recent Matches). */

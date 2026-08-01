@@ -23,6 +23,7 @@ struct PublicProfileView: View {
     @State private var showReportDialog = false
     @State private var showBlockConfirm = false
     @State private var moderationToast: String?
+    @ObservedObject private var chrome = ChromeVisibility.shared
 
     private let pickerModes: [HomeMode] = homeModes.filter { $0.mode != nil }
 
@@ -43,7 +44,7 @@ struct PublicProfileView: View {
         .task { await ModerationService.loadBlockedIds() }
         .task(id: userId) { await loadAll() }
         .task(id: "\(tab)-\(selectedMode.rawValue)") {
-            topWords = await PublicProfileService.topWords(userId: userId, mode: selectedMode)
+            topWords = await PublicProfileService.topWords(userId: userId, mode: selectedMode, playType: tab)
         }
     }
 
@@ -92,6 +93,11 @@ struct PublicProfileView: View {
                 recentMatches(p)
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
+            // This view is always PUSHED (leaderboard/records/profile rows),
+            // and the root-level banner+nav safeAreaInset doesn't extend to
+            // pushed destinations — without this the last rows sit under the
+            // nav and can never be scrolled into view.
+            .padding(.bottom, chrome.bottomInset)
         }
     }
 

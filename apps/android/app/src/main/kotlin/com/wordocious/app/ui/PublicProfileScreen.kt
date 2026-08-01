@@ -124,7 +124,9 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         value = ProfileService.fetchUserStats(userId)
     }
     val matches by produceState(initialValue = emptyList<ProfileService.RecentMatch>(), userId) {
-        value = ProfileService.fetchRecentMatches(userId, limit = 50)
+        // Web endpoint, not the RLS-scoped query — matches SELECT is
+        // participants-only, so the direct read is empty for anyone else.
+        value = ProfileService.fetchPublicRecentMatches(userId)
     }
     var playType by remember { mutableStateOf("solo") }
     var selectedMode by remember { mutableStateOf(GameMode.DUEL) }
@@ -134,7 +136,8 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit) {
         userId, selectedMode, playType,
     ) {
         // iOS refetches top words on every tab/mode change (task id "\(tab)-\(mode)").
-        value = com.wordocious.app.data.MatchStatsService.topWords(userId, selectedMode.name, 5, playType)
+        // Web endpoint for the same RLS reason as matches above.
+        value = ProfileService.fetchPublicTopWords(userId, selectedMode.name, playType)
     }
     // iOS loadAll(): default the picker to the player's first mode for this tab
     // so a stranger's profile doesn't open on an all-zero Duel card.

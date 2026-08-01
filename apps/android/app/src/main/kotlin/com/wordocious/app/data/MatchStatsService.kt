@@ -44,6 +44,9 @@ object MatchStatsService {
     data class DayActivity(val day: String, val played: Int, val won: Int)
     data class SolvePoint(val index: Int, val seconds: Int, val mode: String)
     data class HourBucket(val hour: Int, val played: Int, val won: Int)
+    // Serializable: also decoded from the /api/profile/[id]/top-words endpoint
+    // (ProfileService.fetchPublicTopWords).
+    @kotlinx.serialization.Serializable
     data class TopWord(val word: String, val count: Int, val wins: Int)
     data class ProInsights(
         val fastestTime: Int? = null,

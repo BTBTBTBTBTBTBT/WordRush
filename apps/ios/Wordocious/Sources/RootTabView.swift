@@ -70,6 +70,16 @@ struct RootTabView: View {
                     AdBannerContainer()
                     BottomNav(selection: tabSelection)
                 }
+                // Report the banner+nav height: this safeAreaInset only pads
+                // each tab's ROOT view — SwiftUI does not extend it to views
+                // pushed onto the tab's NavigationStack, so a pushed screen
+                // (PublicProfileView) scrolls its tail underneath the nav
+                // unless it pads by this measured height itself.
+                .background(GeometryReader { g in
+                    Color.clear
+                        .onAppear { chrome.bottomInset = g.size.height }
+                        .onChange(of: g.size.height) { chrome.bottomInset = $0 }
+                })
             }
         }
         // Post-game "Next Daily" handoff: launch the requested mode's daily via
@@ -118,6 +128,10 @@ final class ChromeVisibility: ObservableObject {
     static let shared = ChromeVisibility()
     private init() {}
     @Published private var activeIDs: Set<UUID> = []
+    /// Measured height of the banner+nav safeAreaInset. Views PUSHED onto a
+    /// tab's NavigationStack don't inherit that inset (root views do), so
+    /// they read this to pad their own scroll content clear of the nav.
+    @Published var bottomInset: CGFloat = 0
     var bottomNavHidden: Bool { !activeIDs.isEmpty }
     func enter(_ id: UUID) { activeIDs.insert(id) }
     func exit(_ id: UUID) { activeIDs.remove(id) }

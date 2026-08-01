@@ -68,37 +68,38 @@ enum PublicProfileService {
             .select(Profile.selectColumns).eq("id", value: id).limit(1).single().execute().value
     }
 
+    private struct MatchesEnvelope: Decodable { let matches: [RecentMatch] }
+
     /// Last 50 matches (solo or VS) involving this player, newest first.
+    ///
+    /// Fetched from the web API, NOT a direct `matches` query: that table's
+    /// SELECT policy is participants-only (guess rows are private by design),
+    /// so a client read of someone else's history returns zero rows — Recent
+    /// Matches showed "No matches played yet" on every profile but your own.
+    /// The endpoint reads server-side and returns only the sanitized columns
+    /// this screen renders (no guess arrays).
     static func recentMatches(id: String) async -> [RecentMatch] {
-        (try? await AuthService.shared.client.from("matches")
-            .select("id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at, forfeit")
-            .or("player1_id.eq.\(id),player2_id.eq.\(id)")
-            .order("created_at", ascending: false).limit(50)
-            .execute().value) ?? []
+        guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/matches") else { return [] }
+        guard let (data, resp) = try? await URLSession.shared.data(from: url),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let env = try? JSONDecoder().decode(MatchesEnvelope.self, from: data) else { return [] }
+        return env.matches
     }
 
-    private struct GuessesRow: Decodable { let player1_guesses: [String]?; let winner_id: String? }
+    private struct TopWordsEnvelope: Decodable {
+        struct Row: Decodable { let word: String; let count: Int; let wins: Int }
+        let topWords: [Row]
+    }
 
-    /// Top-5 most-guessed words for a given player + mode (ports fetchTopWords).
-    static func topWords(userId id: String, mode: GameMode, limit: Int = 5) async -> [MatchStatsService.TopWord] {
-        let rows: [GuessesRow] = (try? await AuthService.shared.client.from("matches")
-            .select("player1_guesses,winner_id")
-            .eq("player1_id", value: id).eq("game_mode", value: mode.rawValue)
-            .order("created_at", ascending: false).limit(1000).execute().value) ?? []
-        var counts = [String: (count: Int, wins: Int)]()
-        for r in rows {
-            guard let guesses = r.player1_guesses else { continue }
-            let won = r.winner_id == id
-            for w in guesses {
-                let key = w.uppercased()
-                guard MatchStatsService.isRealGuessWord(key) else { continue }
-                var e = counts[key] ?? (0, 0)
-                e.count += 1; if won { e.wins += 1 }
-                counts[key] = e
-            }
-        }
-        return counts.map { MatchStatsService.TopWord(word: $0.key, count: $0.value.count, wins: $0.value.wins) }
-            .sorted { $0.count > $1.count }.prefix(limit).map { $0 }
+    /// Top-5 most-guessed words for a given player + mode — same web endpoint
+    /// story as recentMatches (participants-only RLS blanked this for other
+    /// players); the server aggregates so raw guess rows never leave it.
+    static func topWords(userId id: String, mode: GameMode, playType: String = "solo", limit: Int = 5) async -> [MatchStatsService.TopWord] {
+        guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/top-words?mode=\(mode.rawValue)&play=\(playType == "vs" ? "vs" : "solo")") else { return [] }
+        guard let (data, resp) = try? await URLSession.shared.data(from: url),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let env = try? JSONDecoder().decode(TopWordsEnvelope.self, from: data) else { return [] }
+        return env.topWords.prefix(limit).map { MatchStatsService.TopWord(word: $0.word, count: $0.count, wins: $0.wins) }
     }
     private struct NameRow: Decodable { let id: String; let username: String? }
 

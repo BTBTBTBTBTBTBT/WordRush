@@ -28,7 +28,6 @@ import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { ACHIEVEMENTS } from '@/lib/achievement-service';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { TopWordsCard } from '@/components/profile/top-words-card';
-import { fetchTopWords } from '@/lib/stats-service';
 import { useAuth } from '@/lib/auth-context';
 import { reportUser, blockUser, unblockUser, fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
 import { WIN_FG } from '@/lib/tile-theme';
@@ -196,32 +195,38 @@ export default function PublicProfilePage() {
 
     setProfile(profileData);
 
+    // Matches come from the server endpoint, not a direct query: the matches
+    // SELECT policy is participants-only, so a client read of someone ELSE'S
+    // history returns zero rows (Recent Matches showed "No matches played yet"
+    // on every profile but your own).
     const [statsRes, matchesRes] = await Promise.all([
       supabase
         .from('user_stats')
         .select('*')
         .eq('user_id', profileId),
-      supabase
-        .from('matches')
-        .select('id, game_mode, player1_id, player2_id, winner_id, player1_score, player2_score, player1_time, player2_time, created_at')
-        .or(`player1_id.eq.${profileId},player2_id.eq.${profileId}`)
-        .order('created_at', { ascending: false })
-        .limit(50),
+      fetch(`/api/profile/${profileId}/matches`)
+        .then((r) => (r.ok ? r.json() : { matches: [] }))
+        .catch(() => ({ matches: [] })),
     ]);
 
     if (statsRes.data) setStats(statsRes.data);
-    if (matchesRes.data) setMatches(matchesRes.data);
+    setMatches(matchesRes.matches ?? []);
 
     setLoading(false);
   };
 
   useEffect(() => {
+    // Server endpoint for the same RLS reason as matches above — and it now
+    // honors the Solo/VS toggle (the old call was always solo-scoped).
     if (selectedMode && profileId) {
-      fetchTopWords(profileId, selectedMode, 5).then(setTopWords);
+      fetch(`/api/profile/${profileId}/top-words?mode=${selectedMode}&play=${activeTab}`)
+        .then((r) => (r.ok ? r.json() : { topWords: [] }))
+        .then((d) => setTopWords(d.topWords ?? []))
+        .catch(() => setTopWords([]));
     } else {
       setTopWords([]);
     }
-  }, [selectedMode, profileId]);
+  }, [selectedMode, profileId, activeTab]);
 
   const filteredStats = stats.filter((s) => s.play_type === activeTab);
   const selectedModeStat = selectedMode ? filteredStats.find((s) => s.game_mode === selectedMode) : null;
