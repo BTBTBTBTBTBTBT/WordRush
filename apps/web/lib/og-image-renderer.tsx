@@ -74,14 +74,15 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://wordocious.com/icon-512.png"
-              width={190}
-              height={190}
-              style={{ borderRadius: '42px' }}
+              width={170}
+              height={170}
+              style={{ borderRadius: '38px' }}
               alt=""
             />
             <div
               style={{
-                fontSize: '140px',
+                // 140px + the icon ran the final S into the 1200px edge.
+                fontSize: '118px',
                 fontWeight: 900,
                 background: 'linear-gradient(135deg, #a78bfa, #ec4899)',
                 backgroundClip: 'text',
