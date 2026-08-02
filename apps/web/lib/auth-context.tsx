@@ -214,6 +214,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // in a DIFFERENT browser won't see the flag — accepted gap.)
       if (wasGuest) patch.converted_from_guest = true;
       (supabase as any).from('profiles').update(patch).eq('id', userId).then(() => {}, () => {});
+
+      // First-touch attribution: the /go/<slug> redirect dropped a wr_src
+      // cookie; stamp it onto BRAND-NEW accounts only. Two guards make
+      // mis-tagging impossible: signup_source must still be null, and the
+      // account must be minutes old — an existing player who happens to click
+      // a marketing link can never be re-attributed.
+      const src = (() => {
+        try { return document.cookie.match(/(?:^|;\s*)wr_src=([a-z0-9-]{1,40})/)?.[1] ?? null; }
+        catch { return null; }
+      })();
+      if (src) {
+        (supabase as any).from('profiles')
+          .select('signup_source, created_at').eq('id', userId).single()
+          .then(({ data }: any) => {
+            if (!data || data.signup_source) return;
+            const ageMs = Date.now() - new Date(data.created_at).getTime();
+            if (ageMs < 15 * 60 * 1000) {
+              (supabase as any).from('profiles')
+                .update({ signup_source: src }).eq('id', userId).then(() => {}, () => {});
+            }
+          }, () => {});
+      }
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
