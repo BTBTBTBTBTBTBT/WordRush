@@ -971,6 +971,7 @@ private struct ProfileModePicker: View {
 /// yesterday toggle, player count).
 struct LeaderboardTab: View {
     @EnvironmentObject private var auth: AuthService
+    @ObservedObject private var chrome = ChromeVisibility.shared
     /// Owned by RootTabView so tab gestures can pop it to root.
     @Binding var path: [String]
     @State private var mode: GameMode = .duel
@@ -1118,6 +1119,12 @@ struct LeaderboardTab: View {
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
+            // Clear the banner+nav: every sibling tab hardcodes 72–80pt here,
+            // but this tab never got ANY — invisible until Yesterday's Winners
+            // made the page tall enough to cut off (founder screenshot). The
+            // measured inset also handles the taller free-tier banner+nav stack
+            // that the siblings' magic 72 quietly under-clears.
+            .padding(.bottom, max(72, chrome.bottomInset))
         }
         .task(id: "\(mode.rawValue)-\(reloadToken)") { await load() }
         .task(id: "sweep-\(isSweep)-\(reloadToken)") { if isSweep { await loadSweep() } }
