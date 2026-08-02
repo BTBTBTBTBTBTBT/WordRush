@@ -65,20 +65,34 @@ export async function renderWordociousOgImage(): Promise<ImageResponse> {
             justifyContent: 'center',
           }}
         >
-          {/* Logo — WORDOCIOUS in Nunito 900 with the brand gradient */}
-          <div
-            style={{
-              fontSize: '156px',
-              fontWeight: 900,
-              background: 'linear-gradient(135deg, #a78bfa, #ec4899)',
-              backgroundClip: 'text',
-              color: 'transparent',
-              letterSpacing: '-5px',
-              lineHeight: 1,
-              display: 'flex',
-            }}
-          >
-            WORDOCIOUS
+          {/* App icon + WORDOCIOUS wordmark — the icon is the brand mark
+              everywhere else (favicon, home screen, store); link previews
+              should lead with it too, not text alone. Satori fetches the
+              absolute URL at render time (self-hosted, so it can't 404
+              without the whole site being down). */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '44px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://wordocious.com/icon-512.png"
+              width={190}
+              height={190}
+              style={{ borderRadius: '42px' }}
+              alt=""
+            />
+            <div
+              style={{
+                fontSize: '140px',
+                fontWeight: 900,
+                background: 'linear-gradient(135deg, #a78bfa, #ec4899)',
+                backgroundClip: 'text',
+                color: 'transparent',
+                letterSpacing: '-5px',
+                lineHeight: 1,
+                display: 'flex',
+              }}
+            >
+              WORDOCIOUS
+            </div>
           </div>
 
           {/* Tagline */}
