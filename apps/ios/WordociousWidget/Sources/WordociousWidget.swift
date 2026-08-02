@@ -283,7 +283,7 @@ struct MediumView: View {
     private let cols = [GridItem](repeating: GridItem(.flexible(), spacing: 8), count: 5)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             switch tier {
             case .flawless: banner(title: "FLAWLESS VICTORY!", gradient: flawlessTitleGradient,
                                    icon: "trophy.fill", iconColor: Color(widgetHex: "#b45309"))
@@ -291,8 +291,8 @@ struct MediumView: View {
                                 icon: "sparkles", iconColor: Color(widgetHex: "#7c3aed"))
             case .none:
                 HStack {
-                    Text("WORDOCIOUS").font(.system(size: 13, weight: .black, design: .rounded))
-                        .tracking(1.5).foregroundStyle(brandGradient)
+                    Text("WORDOCIOUS").font(.system(size: 14, weight: .black, design: .rounded))
+                        .tracking(1.6).foregroundStyle(brandGradient)
                     Spacer()
                     Text("\(done)/\(snap.modes.count) today")
                         .font(.system(size: 12, weight: .heavy, design: .rounded)).foregroundStyle(.secondary)
@@ -306,10 +306,10 @@ struct MediumView: View {
                     // handles wordocious://daily/<key>). ProperNoundle's daily
                     // has no programmatic launch path, so its chip just opens
                     // the app (no Link).
-                    let cell = VStack(spacing: 3) {
-                        ModeCell(mode: m, size: 30)
-                        Text(m.title).font(.system(size: 8.5, weight: .bold, design: .rounded))
-                            .foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
+                    let cell = VStack(spacing: 2) {
+                        ModeCell(mode: m, size: 38)
+                        Text(m.title).font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.6)
                     }
                     if m.key != "PROPERNOUNDLE", let url = URL(string: "wordocious://daily/\(m.key)") {
                         Link(destination: url) { cell }
@@ -318,16 +318,16 @@ struct MediumView: View {
                     }
                 }
                 // 10th cell: call-to-action / celebration.
-                VStack(spacing: 3) {
+                VStack(spacing: 2) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8).fill(Color(widgetHex: "#a78bfa").opacity(0.12))
+                        RoundedRectangle(cornerRadius: 10).fill(Color(widgetHex: "#a78bfa").opacity(0.12))
                         Image(systemName: done >= snap.modes.count ? "party.popper.fill" : "play.fill")
-                            .font(.system(size: 13, weight: .black))
+                            .font(.system(size: 16, weight: .black))
                             .foregroundStyle(Color(widgetHex: "#7c3aed"))
                     }
-                    .frame(width: 30, height: 30)
+                    .frame(width: 38, height: 38)
                     Text(done >= snap.modes.count ? "Done!" : "Play")
-                        .font(.system(size: 8.5, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
+                        .font(.system(size: 9.5, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 0)
@@ -435,8 +435,22 @@ extension View {
         }()
         if #available(iOS 17.0, *) {
             // Lock-screen accessories tint themselves; a solid brand background
-            // would render as an opaque slab there.
-            containerBackground(for: .widget) { if accessory { Color.clear } else { bg } }
+            // would render as an opaque slab there. Home-screen widgets get the
+            // brand frame: a soft inner halo + a crisp violet→pink gradient
+            // stroke on the widget's own corner shape — drawn in the background
+            // (not an overlay) so it reaches the true edge past content margins.
+            containerBackground(for: .widget) {
+                if accessory { AnyView(Color.clear) } else { AnyView(ZStack {
+                    bg
+                    ContainerRelativeShape()
+                        .strokeBorder(Color(widgetHex: "#8B5CF6").opacity(0.10), lineWidth: 7)
+                    ContainerRelativeShape()
+                        .strokeBorder(
+                            LinearGradient(colors: [Color(widgetHex: "#a78bfa"), Color(widgetHex: "#ec4899")],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: 2.5)
+                }) }
+            }
         } else {
             if accessory { self } else { padding(12).background(bg) }
         }
