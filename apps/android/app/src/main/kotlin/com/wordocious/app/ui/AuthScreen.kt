@@ -367,7 +367,15 @@ private fun AuthField(
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         isError = isError,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        // Password fields MUST declare KeyboardType.Password — the visual
+        // transformation alone only draws dots. Without the keyboard type,
+        // Gboard treats the field as plain text, LEARNS the password into its
+        // personal dictionary, and suggests it back on the first letter
+        // (tester-reported). Forced here so no call site can forget, and kept
+        // while revealed — the eye toggle changes rendering, not the keyboard.
+        keyboardOptions = KeyboardOptions(
+            keyboardType = if (isPassword) KeyboardType.Password else keyboardType,
+        ),
         visualTransformation = if (isPassword && !revealed) PasswordVisualTransformation()
             else androidx.compose.ui.text.input.VisualTransformation.None,
         trailingIcon = if (isPassword && onToggleReveal != null) {
