@@ -511,7 +511,7 @@ object ShareImage {
         // Deterministic block geometry (same math as drawVsBoard) so the
         // head-to-head centers in the space under the header and the VS mark
         // can sit exactly between the two boards (iOS parity).
-        val maxSideB = if (multiBoard) 250f else 380f
+        val maxSideB = if (multiBoard) 260f else 380f   // iOS VSShareCardView maxSide
         val gapB = maxOf(3f, maxSideB * 0.012f)
         val padB = maxSideB * 0.04f
         val innerB = maxSideB - padB * 2

@@ -30,8 +30,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsScore
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PersonOff
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.TimerOff
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -399,7 +406,16 @@ private fun PhotoFinishStamp(clutch: Boolean) {
     Text(
         if (clutch) "CLUTCH!" else "PHOTO FINISH!",
         fontSize = 30.sp, fontWeight = FontWeight.Black,
-        style = TextStyle(brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF97316), Color(0xFFEC4899))), fontFamily = Nunito),
+        style = TextStyle(
+            brush = Brush.horizontalGradient(listOf(Color(0xFFFACC15), Color(0xFFF97316), Color(0xFFEC4899))),
+            fontFamily = Nunito,
+            // iOS drops a soft shadow under the stamp (black 22%, r8, y3).
+            shadow = androidx.compose.ui.graphics.Shadow(
+                color = Color.Black.copy(alpha = 0.22f),
+                offset = androidx.compose.ui.geometry.Offset(0f, 3f),
+                blurRadius = 8f,
+            ),
+        ),
         modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale; rotationZ = -6f; alpha = if (shown) 1f else 0f },
     )
 }
@@ -974,7 +990,7 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
     val whyLine = when {
         vm.result == null -> null
         isForfeit && isWin -> "$oppName left the match — you win by forfeit"
-        isForfeit && !isWin && !isDraw -> "Forfeit — $oppName takes the win"
+        isForfeit && !isWin && !isDraw -> "Match forfeited — $oppName wins"
         isDraw -> "Dead even — identical scores"
         // Server timeout resolution: neither solved, board progress decided it.
         isWin -> if (mySolved && !oppSolved) "You solved it — $oppName didn’t"
@@ -988,17 +1004,30 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         item { Spacer(Modifier.height(40.dp)) }
         item { Text(headline, fontSize = 56.sp, fontWeight = FontWeight.Black, style = TextStyle(brush = Brush.horizontalGradient(colors), fontFamily = Nunito)) }
-        // Why you won/lost, in plain English.
+        // Why you won/lost, in plain English (iOS header stack spacing: 8).
         whyLine?.let { line ->
             item {
-                Text(line, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textSecondary, modifier = Modifier.padding(top = 6.dp))
+                Text(line, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textSecondary, modifier = Modifier.padding(top = 8.dp))
+            }
+        }
+        // Updated all-time head-to-head (refetched ~1.2s after the match was
+        // recorded) — part of the headline block on iOS (12pt bold, textMuted).
+        if (vm.opponentUserId != null && !vm.isCpu) {
+            vm.headToHead?.let { h2h ->
+                item {
+                    Text(
+                        com.wordocious.app.data.HeadToHeadService.headToHeadLine(oppName, h2h),
+                        fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
         }
         // CPU practice: photo-finish flourish + streak / milestone / cosmetic /
-        // run-it-back session tally.
+        // run-it-back session tally (its own section — 20 below the headline on iOS).
         if (vm.isCpu) {
             item {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(top = 6.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 20.dp)) {
                     vm.photoFinish?.let { pf -> PhotoFinishStamp(pf == "clutch") }
                     vm.cpuMilestone?.let { m -> Text("🔥 $m-win CPU streak!", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color(0xFFF97316)) }
                         ?: run { if (vm.cpuStreak > 0) Text("CPU win streak: ${vm.cpuStreak}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted) }
@@ -1009,18 +1038,6 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                         Text("This session — You ${vm.cpuSessionWins} · CPU ${vm.cpuSessionLosses}", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
                     }
                     Text("Practice — not counted in ranked stats", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                }
-            }
-        }
-        // Updated all-time head-to-head (refetched ~1.2s after the match was recorded).
-        if (vm.opponentUserId != null && !vm.isCpu) {
-            vm.headToHead?.let { h2h ->
-                item {
-                    Text(
-                        com.wordocious.app.data.HeadToHeadService.headToHeadLine(oppName, h2h),
-                        fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textSecondary,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
                 }
             }
         }
@@ -1036,52 +1053,44 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                 )
             }
         }
-        // Free tier received a rematch offer — it was auto-declined in the VM
-        // (non-Pro can't accept, and the opponent must not hang on "Waiting…");
-        // surface the offer + Pro upsell instead of the accept/decline card.
-        if (vm.rematchProUpsell) {
-            item {
-                Column(
-                    Modifier.padding(top = 14.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp))
-                        .border(2.dp, Color(0xFFF59E0B), RoundedCornerShape(14.dp)).padding(14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("$oppName wants a rematch!", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-                    Text(
-                        "Rematches are a Pro feature — the offer was declined.",
-                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, textAlign = TextAlign.Center,
-                    )
-                    GradientPill("Go Pro", listOf(Color(0xFFF59E0B), Color(0xFFD97706)), Modifier.fillMaxWidth()) { onGoPro() }
-                }
-            }
-        }
         if (vm.rematch == RematchState.RECEIVED) {
             item {
-                Column(Modifier.padding(top = 14.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(2.dp, WTheme.primary, RoundedCornerShape(14.dp)).padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.padding(top = 20.dp).fillMaxWidth().clip(RoundedCornerShape(14.dp)).border(2.dp, WTheme.primary, RoundedCornerShape(14.dp)).padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Opponent wants a rematch!", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.text)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Pill("Decline") { vm.declineRematch() }
-                        GradientPill("Accept", gradient) { vm.acceptRematch() }
+                    // iOS: two half-width corner-12 buttons — Decline on surface,
+                    // Accept on the mode gradient.
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(
+                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
+                                .clickableNoRipple { vm.declineRematch() }.padding(vertical = 10.dp),
+                            Alignment.Center,
+                        ) { Text("Decline", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = WTheme.textSecondary) }
+                        Box(
+                            Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(Brush.horizontalGradient(gradient))
+                                .clickableNoRipple { vm.acceptRematch() }.padding(vertical = 10.dp),
+                            Alignment.Center,
+                        ) { Text("Accept", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White) }
                     }
                 }
             }
         }
-        item { Spacer(Modifier.height(16.dp)) }
-        // Actions — prominent Rematch on top, Home/Share below (web parity).
+        item { Spacer(Modifier.height(20.dp)) }
+        // Actions — prominent Rematch on top, Home/Share below (iOS/web parity:
+        // corner-12 buttons with leading icons).
         when (vm.rematch) {
-            RematchState.DECLINED -> item { Pill("No Rematch", Modifier.fillMaxWidth()) {} }
-            RematchState.OFFERED -> item { GradientPill("Waiting…", gradient, Modifier.fillMaxWidth()) {} }
+            RematchState.DECLINED -> item { ResultSurfaceButton("No Rematch", Icons.Filled.Close, WTheme.textMuted, 14.dp, Modifier.fillMaxWidth()) {} }
+            RematchState.OFFERED -> item { ResultGradientButton("Waiting…", Icons.Filled.HourglassEmpty, gradient, Modifier.fillMaxWidth(), contentAlpha = 0.8f) {} }
             RematchState.RECEIVED -> {}
             RematchState.IDLE -> item {
-                GradientPill("Rematch", gradient, Modifier.fillMaxWidth()) {
+                ResultGradientButton("Rematch", Icons.Filled.Refresh, gradient, Modifier.fillMaxWidth()) {
                     if (vm.isPro) vm.offerRematch() else showRematchUpsell = true
                 }
             }
         }
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Pill("Home", Modifier.weight(1f)) { onHome() }
-                Pill("Share", Modifier.weight(1f)) {
+                ResultSurfaceButton("Home", Icons.Filled.Home, WTheme.textSecondary, 13.dp, Modifier.weight(1f)) { onHome() }
+                ResultSurfaceButton("Share", Icons.Filled.Share, WTheme.textSecondary, 13.dp, Modifier.weight(1f)) {
                     val text = if (isWin) "I just beat $oppName in a Wordocious VS $modeLabel duel! ⚔️🏆"
                     else if (isDraw) "$oppName and I battled to a draw in VS $modeLabel on Wordocious! ⚔️"
                     else "Epic VS $modeLabel duel against $oppName on Wordocious! ⚔️"
@@ -1092,7 +1101,7 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                     com.wordocious.app.data.ShareEvents.log(
                         kind = if (r != null) "image" else "text",
                         gameMode = vm.mode.name.lowercase(),
-                        surface = "vs_post_game",
+                        surface = "vs_result",
                     )
                     if (r != null) {
                         val solutions = r.solutions ?: emptyList()
@@ -1124,7 +1133,7 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
                     b.guesses.map { GuessLogEntry(i, it) }
                 }
                 val oppLog = (vm.result?.opponentGuessLog ?: emptyList()).map { GuessLogEntry(it.boardIndex, it.guess) }
-                Box(Modifier.padding(top = 16.dp)) {
+                Box(Modifier.padding(top = 20.dp)) {
                     FinalBoards(
                         myName = myName, opponentName = oppName,
                         myGuessLog = myLog, opponentGuessLog = oppLog, solutions = solutions,
@@ -1150,11 +1159,66 @@ private fun ResultScreen(vm: VSMatchViewModel, gradient: List<Color>, onHome: ()
     if (showRematchUpsell) {
         VSLimitUpsellModal(onGoPro = onGoPro, onClose = { showRematchUpsell = false })
     }
+    // Free tier received a rematch offer — it was auto-declined in the VM
+    // (non-Pro can't accept, and the opponent must not hang on "Waiting…");
+    // iOS parity: surface the same Pro-limit modal instead of an inline card.
+    if (vm.rematchProUpsell) {
+        VSLimitUpsellModal(onGoPro = onGoPro, onClose = { vm.rematchProUpsell = false })
+    }
+}
+
+/** Corner-12 surface action button with a leading icon — iOS result-screen
+ *  Home/Share/No-Rematch style (surface fill, 1.5 border, bold 14). */
+@Composable
+private fun ResultSurfaceButton(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    verticalPad: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier.clip(RoundedCornerShape(12.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+            .clickableNoRipple(onClick).padding(vertical = verticalPad),
+        Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(icon, null, tint = color, modifier = Modifier.size(16.dp))
+            Text(text, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = color)
+        }
+    }
+}
+
+/** Corner-12 gradient action button with a leading icon — iOS result-screen
+ *  Rematch/Waiting style (mode gradient fill, black 14, white). */
+@Composable
+private fun ResultGradientButton(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    gradient: List<Color>,
+    modifier: Modifier = Modifier,
+    contentAlpha: Float = 1f,
+    onClick: () -> Unit,
+) {
+    val content = Color.White.copy(alpha = contentAlpha)
+    Box(
+        modifier.clip(RoundedCornerShape(12.dp)).background(Brush.horizontalGradient(gradient))
+            .clickableNoRipple(onClick).padding(vertical = 14.dp),
+        Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(icon, null, tint = content, modifier = Modifier.size(16.dp))
+            Text(text, fontSize = 14.sp, fontWeight = FontWeight.Black, color = content)
+        }
+    }
 }
 
 @Composable
 private fun OpponentLeft(onHome: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Icon(Icons.Filled.PersonOff, null, tint = WTheme.textMuted, modifier = Modifier.size(40.dp))
         Text("Opponent left the match", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         Text("Home", fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.primary, modifier = Modifier.clickableNoRipple(onHome))
     }
@@ -1169,9 +1233,13 @@ private fun MatchGone(message: String?, onHome: () -> Unit) {
         Modifier.padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Match ended", fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+        Icon(Icons.Filled.TimerOff, null, tint = WTheme.textMuted, modifier = Modifier.size(40.dp))
         Text(
-            message ?: "The match ended while you were away.",
+            "Match ended while you were away",
+            fontSize = 18.sp, fontWeight = FontWeight.Black, color = WTheme.text, textAlign = TextAlign.Center,
+        )
+        Text(
+            message ?: "The server couldn’t hold the match open that long.",
             fontSize = 13.sp, color = WTheme.textMuted, textAlign = TextAlign.Center,
         )
         Text("Home", fontSize = 15.sp, fontWeight = FontWeight.Black, color = WTheme.primary, modifier = Modifier.clickableNoRipple(onHome))

@@ -20,8 +20,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.alpha
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -118,16 +122,29 @@ fun logSolved(log: List<GuessLogEntry>, solutions: List<String>): Boolean =
         solutions.getOrNull(boardIndex)?.uppercase() == guess.uppercase()
     }
 
+/** iOS solve badge — filled check/x circle + label. The score card wraps it in
+ *  a tinted capsule; the FinalBoards sides show it bare (iOS `side()`). */
 @Composable
-private fun SolveBadge(solved: Boolean, fontSize: Int = 10) {
+private fun SolveBadge(solved: Boolean, fontSize: Int = 10, capsule: Boolean = true) {
     val color = if (solved) Color(0xFF16A34A) else Color(0xFFDC2626)
-    Text(
-        if (solved) "✓ Solved" else "✗ Not solved",
-        fontSize = fontSize.sp, fontWeight = FontWeight.ExtraBold, color = color,
-        modifier = Modifier.clip(RoundedCornerShape(50))
-            .background(color.copy(alpha = 0.10f))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = if (capsule) {
+            Modifier.clip(RoundedCornerShape(50))
+                .background(color.copy(alpha = 0.10f))
+                .padding(horizontal = 8.dp, vertical = 3.dp)
+        } else Modifier,
+    ) {
+        Icon(
+            if (solved) Icons.Filled.CheckCircle else Icons.Filled.Cancel,
+            null, tint = color, modifier = Modifier.size(fontSize.dp),
+        )
+        Text(
+            if (solved) "Solved" else "Not solved",
+            fontSize = fontSize.sp, fontWeight = FontWeight.ExtraBold, color = color,
+        )
+    }
 }
 
 data class ScoreCardPlayer(
@@ -148,7 +165,7 @@ data class ScoreCardPlayer(
 @Composable
 fun ScoreCard(me: ScoreCardPlayer, opponent: ScoreCardPlayer, isDraw: Boolean) {
     fun clock(ms: Double): String {
-        val s = (ms / 1000).toInt()
+        val s = kotlin.math.round(ms / 1000).toInt()   // iOS rounds, not truncates
         return "${s / 60}m ${s % 60}s"
     }
     Column(
@@ -156,7 +173,7 @@ fun ScoreCard(me: ScoreCardPlayer, opponent: ScoreCardPlayer, isDraw: Boolean) {
             .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Text("FINAL SCORE", fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, color = WTheme.textMuted)
+        Text("FINAL SCORE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp, color = WTheme.textMuted)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ScoreColumn(me, Color(0xFF7C3AED), isDraw, ::clock, Modifier.weight(1f))
             Text("VS", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.padding(top = 34.dp))
@@ -175,10 +192,9 @@ private fun ScoreColumn(p: ScoreCardPlayer, accent: Color, isDraw: Boolean, cloc
     val highlighted = p.isWinner || isDraw
     val timePenalty = max(0.0, p.score - p.guesses)
     Column(
-        // iOS does NOT fade the losing column — it signals the loser purely by
-        // dropping the score to textMuted. The extra 0.75 alpha here dimmed that
-        // player's guesses and clock too, which iOS keeps at full strength.
-        modifier,
+        // iOS fades the whole losing column to 0.75 on top of dropping the
+        // score to textMuted (VSScoreCard.column).
+        modifier.alpha(if (highlighted) 1f else 0.75f),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -461,7 +477,7 @@ fun FinalBoards(
 private fun GauntletRecapSection(label: String, words: List<String>, accent: Color, seed: String, timeMs: Int) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
+            label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
             color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         if (words.isEmpty()) {
@@ -498,17 +514,21 @@ private fun MultiBoardRecapSection(
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
+                label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
                 color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
+            // iOS: bare icon + "n/m boards" tally, no capsule (recapSection).
             val badgeColor = if (allWon) Color(0xFF16A34A) else if (won > 0) Color(0xFFD97706) else Color(0xFFDC2626)
-            Text(
-                "${if (allWon) "✓" else "✗"} $won/${boards.size} boards",
-                fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = badgeColor,
-                modifier = Modifier.clip(RoundedCornerShape(50))
-                    .background(badgeColor.copy(alpha = 0.10f))
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                Icon(
+                    if (allWon) Icons.Filled.CheckCircle else Icons.Filled.Cancel,
+                    null, tint = badgeColor, modifier = Modifier.size(9.dp),
+                )
+                Text(
+                    "$won/${boards.size} boards",
+                    fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = badgeColor,
+                )
+            }
         }
         if (words.isEmpty()) {
             Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 8.dp))
@@ -526,11 +546,11 @@ private fun FinalBoardsSide(
     val indices = boards.keys.sorted()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp,
+            label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.8.sp,
             color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
-        // At-a-glance outcome for this side's boards.
-        SolveBadge(solved, fontSize = 9)
+        // At-a-glance outcome for this side's boards (iOS: bare, no capsule).
+        SolveBadge(solved, fontSize = 9, capsule = false)
         if (indices.isEmpty()) {
             Text("No guesses", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 12.dp))
         } else {
@@ -560,7 +580,7 @@ fun ComparisonBars(myName: String, opponentName: String, metrics: List<Compariso
         metrics.forEach { m ->
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    m.label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Black,
+                    m.label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 0.8.sp, color = WTheme.textMuted,
                 )
                 val total = m.mine + m.theirs
