@@ -28,6 +28,11 @@ enum WidgetBridge {
         let day: String        // local yyyy-MM-dd the data belongs to
         let streak: Int
         let modes: [ModeEntry]
+        // Footer stats (widget v2). Optional so a widget reading an old app's
+        // snapshot — or vice versa — keeps decoding.
+        let points: Int?       // today's summed composite score (sum-of-rounds)
+        let seconds: Int?      // today's summed play time
+        let shields: Int?      // streak shields (for the at-risk state)
     }
 
     /// Called whenever today's completions change (record, refetch, sign-out).
@@ -56,7 +61,12 @@ enum WidgetBridge {
                              played: c != nil, won: c?.completed ?? false,
                              iconKind: kind, iconAsset: asset, iconText: text)
         }
-        let snap = Snapshot(day: LeaderboardService.todayLocal(), streak: streak, modes: modes)
+        // Same totals helper as the banner/celebration/share card, so the
+        // widget's time · points can never disagree with the home banner.
+        let totals = DailyTotals(byMode)
+        let snap = Snapshot(day: LeaderboardService.todayLocal(), streak: streak, modes: modes,
+                            points: Int(totals.totalScore), seconds: Int(totals.totalTimeSeconds),
+                            shields: AuthService.shared.headerShields)
         guard let defaults = UserDefaults(suiteName: appGroup),
               let data = try? JSONEncoder().encode(snap) else { return }
         defaults.set(data, forKey: snapshotKey)
