@@ -33,23 +33,41 @@ export async function GET(req: NextRequest) {
 
   for (const mode of GAME_MODES) {
     for (const pt of PLAY_TYPES) {
-      // Fetch top 3 for this mode/playType on yesterday
+      // Podium ranking (founder call, 2026-08-03): score first, then FASTER
+      // GAME breaks ties — "recorded earlier in the day" was the old breaker
+      // and it isn't a skill signal. If score AND time are both identical,
+      // the players SHARE the medal (competition ranking: two golds consume
+      // ranks 1+2, next player takes bronze). Fetch 6 so a shared podium can
+      // still fill three tiers; created_at stays only as a determinism
+      // fallback for the fetch order, never to split a medal.
       const { data: leaderboard } = await sb
         .from('daily_results')
-        .select('user_id, composite_score')
+        .select('user_id, composite_score, time_seconds')
         .eq('day', yesterday)
         .eq('game_mode', mode)
         .eq('play_type', pt)
         .gt('composite_score', 0)
         .order('composite_score', { ascending: false })
+        .order('time_seconds', { ascending: true })
         .order('created_at', { ascending: true })
-        .limit(3);
+        .limit(6);
 
       if (!leaderboard || leaderboard.length === 0) continue;
 
-      for (let i = 0; i < leaderboard.length; i++) {
-        const entry = leaderboard[i];
-        const medalType = MEDAL_TYPES[i];
+      // Competition ranks: position of the first row with the same
+      // (score, time) decides the tier for every row tied with it.
+      const podium = leaderboard
+        .map((entry, i) => {
+          const firstTied = leaderboard.findIndex(
+            (e) => e.composite_score === entry.composite_score
+              && e.time_seconds === entry.time_seconds,
+          );
+          return { entry, rank: firstTied };
+        })
+        .filter(({ rank }) => rank < MEDAL_TYPES.length);
+
+      for (const { entry, rank } of podium) {
+        const medalType = MEDAL_TYPES[rank];
 
         // INSERT (not upsert): if the medal row already exists — cron re-run,
         // manual retry, or a perfect medal sharing the key — skip the counter
