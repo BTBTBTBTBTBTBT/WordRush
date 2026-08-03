@@ -562,8 +562,9 @@ private fun ProperNoundleMiniBoard(guesses: List<String>, puzzle: com.wordocious
                             val i = starts[gi] + k
                             val letter = if (isPast && i < letters.size) letters[i] else ""
                             val state = if (isPast && i < tiles.size) tiles[i] else TileState.EMPTY
-                            // fontSize null -> derived: the tile floors at 10dp and an 8sp line box overflows it.
-                            TileView(letter = letter, state = state, cornerRadius = 3.dp, fontSize = null, square = true, modifier = Modifier.size(tileSize))
+                            // fontSize/corner/border derived from the measured tile
+                            // (floors at 10dp — an 8sp line box overflowed it).
+                            TileView(letter = letter, state = state, square = true, modifier = Modifier.size(tileSize))
                         }
                     }
                 }

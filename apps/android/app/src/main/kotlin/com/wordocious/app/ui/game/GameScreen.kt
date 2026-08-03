@@ -1055,8 +1055,10 @@ internal fun SingleBoard(
         val tileHValue = (boardH.value - gapTotal.value) / rows
         // Floor lowered from 14sp: iOS derives with NO floor (BoardView.swift:85),
         // and the ProperNoundle catalog runs to 29 letters, where the derived
-        // size is ~4sp and a 14sp glyph overflows its cell.
-        val tileFontSp = (tileHValue * 0.5f).coerceIn(4f, 28f)
+        // size is ~4sp and a 14sp glyph overflows its cell. This is a DP count —
+        // TileView converts it through density WITHOUT the user's fontScale (the
+        // tile the glyph must fit doesn't font-scale; iOS fixedFont parity).
+        val tileFontDp = (tileHValue * 0.5f).coerceIn(4f, 28f)
         val tileCorner = (tileHValue * 0.14f).dp
         val tileBorder = (tileHValue * 0.09f).coerceIn(1f, 2f).dp
 
@@ -1080,7 +1082,7 @@ internal fun SingleBoard(
                         state = tile?.state ?: TileState.EMPTY,
                         flipDelay = if (isLastSubmitted) col * 150 else null,
                         flipDuration = 500, // web tile-flip 0.5s (full board)
-                        fontSize = tileFontSp,
+                        fontSize = tileFontDp,
                         cornerRadius = tileCorner,
                         borderWidth = tileBorder,
                         modifier = Modifier.weight(1f),
@@ -1095,7 +1097,7 @@ internal fun SingleBoard(
                         letter = letter,
                         state = TileState.EMPTY,
                         isInvalid = isInvalid && letter.isNotEmpty(),
-                        fontSize = tileFontSp,
+                        fontSize = tileFontDp,
                         cornerRadius = tileCorner,
                         borderWidth = tileBorder,
                         modifier = Modifier.weight(1f),
@@ -1106,7 +1108,7 @@ internal fun SingleBoard(
             val emptyStart = board.guesses.size + if (board.status == GameStatus.PLAYING) 1 else 0
             for (rowIdx in emptyStart until board.maxGuesses) {
                 BoardRow(groups, wordLen, Modifier.weight(1f).fillMaxWidth()) {
-                    TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontSp, cornerRadius = tileCorner, borderWidth = tileBorder, modifier = Modifier.weight(1f))
+                    TileView(letter = "", state = TileState.EMPTY, fontSize = tileFontDp, cornerRadius = tileCorner, borderWidth = tileBorder, modifier = Modifier.weight(1f))
                 }
             }
         }

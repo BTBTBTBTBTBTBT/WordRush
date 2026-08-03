@@ -80,10 +80,11 @@ fun MiniBoardView(
     val totalRows = prefills.size + board.maxGuesses
     val lastSubmittedRow = if (board.guesses.isNotEmpty()) board.guesses.size - 1 else -1
 
-    // Font is derived per tile now (TileView: min(w,h) * 0.5, iOS parity).
-    // A fixed 10sp/18sp could not survive OctoWord's 13 rows in a mini card —
-    // the glyph was taller than the cell and every letter rendered clipped.
-    val fontSize: Float? = null
+    // Font, corner radius and border are derived per tile now (TileView measures
+    // itself: letter = min(w,h)*0.5, corner = 0.14×, stroke = 0.09× clamped
+    // 1–2dp — iOS parity). Fixed 10sp/18sp fonts, 4dp corners and 2dp strokes
+    // could not survive OctoWord's 13 rows in a mini card on a 360dp phone —
+    // the glyph was taller than the cell and the chrome ate the tile.
     val wordLen = board.solution.length
 
     // Outer box is NOT clipped so the ✓ badge can float above the card edge
@@ -116,8 +117,6 @@ fun MiniBoardView(
                         TileView(
                             letter = tile.letter,
                             state = tile.state,
-                            fontSize = fontSize,
-                            cornerRadius = 4.dp, // web mini `rounded` = 4px
                             // NEVER square here: aspectRatio(1f) overflows the
                             // weight-sized row whenever cellW > rowH (OctoWord
                             // zoom clipped every letter). The expanded card's
@@ -172,8 +171,6 @@ fun MiniBoardView(
                             state = state,
                             flipDelay = flipDelay,
                             isInvalid = isInvalid && isCurrentRow && letter.isNotEmpty(),
-                            fontSize = fontSize,
-                            cornerRadius = 4.dp, // web mini `rounded` = 4px
                             square = false,      // see prefill note — card height makes cells square
                             masked = masked,
                             mini = true,
@@ -203,7 +200,9 @@ fun MiniBoardView(
                     .background(Color(0xFF8B5CF6)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("✓", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                // lineHeight pinned: the inherited bodyLarge 24sp line box shoved
+                // the glyph below-center of an 18dp badge (same bug as the tiles).
+                Text("✓", color = Color.White, fontSize = 10.sp, lineHeight = 10.sp, fontWeight = FontWeight.Black)
             }
         }
     }

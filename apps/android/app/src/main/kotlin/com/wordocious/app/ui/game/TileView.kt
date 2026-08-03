@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,7 +26,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -55,15 +58,20 @@ fun TileView(
     flipDelay: Int? = null,   // ms; null = no animation
     flipDuration: Int = 300,  // web: tile-flip 500ms full board, tile-flip-mini 300ms
     isInvalid: Boolean = false,
-    cornerRadius: Dp = 4.dp,
-    /** iOS scales the stroke with the tile (0.09 × size, clamped 1–2pt). */
-    borderWidth: Dp = 2.dp,
+    /** null = derive from the tile like iOS (corner = 0.14 × min side). */
+    cornerRadius: Dp? = null,
+    /** null = derive like iOS (stroke = 0.09 × min side, clamped 1–2dp). A
+     *  FIXED 2dp border ate 40% of a 10dp OctoWord tile on a 360dp phone. */
+    borderWidth: Dp? = null,
     /**
-     * Explicit point size, or null to derive it from the tile the way iOS does
-     * (BoardView.swift:72-85 — `min(width, height) * 0.5`). A FIXED size is
-     * wrong whenever the tile can shrink: OctoWord squeezes 13 rows into a small
-     * card, the cell became shorter than a 10sp glyph, and every letter was
-     * clipped in half. Callers that own their geometry still pass a number.
+     * Explicit letter size as a DP COUNT, or null to derive it from the tile
+     * the way iOS does (BoardView.swift:72-85 — `min(width, height) * 0.5`).
+     * A FIXED size is wrong whenever the tile can shrink: OctoWord squeezes 13
+     * rows into a small card, the cell became shorter than a 10sp glyph, and
+     * every letter was clipped in half. Callers that own their geometry still
+     * pass a number — it is converted through density (NOT multiplied by the
+     * user's fontScale), because the tile box it must fit does not font-scale.
+     * iOS equally derives from the tile, not from Dynamic Type (fixedFont).
      */
     fontSize: Float? = null,
     // square=true forces a 1:1 tile (single-board). false = fill the cell
@@ -139,17 +147,26 @@ fun TileView(
                 rotationX = rotation.value
                 cameraDistance = 12f * density
             }
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(bgColor)
-            .then(if (showBorder) Modifier.border(borderWidth, borderColor, RoundedCornerShape(cornerRadius)) else Modifier)
             // TalkBack reads the letter plus its evaluation instead of a bare glyph.
             .then(if (letter.isNotBlank() && !masked) Modifier.semantics {
                 contentDescription = if (filled) "$letter, ${tileStateName(state)}" else letter
             } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        // Half the SHORTER side, matching iOS. Floored so a sliver of a tile
-        // still renders something legible rather than nothing.
+        // MEASURE the tile, then derive every piece of chrome from it — the iOS
+        // intent (BoardView.swift TileView: s = min(w,h); corner s*0.14, border
+        // clamp(s*0.09, 1, 2), letter s*0.5). Fixed dp constants ported from a
+        // full-size tile are exactly the "fixed-tile-ladder" bug class (Bible
+        // §201/§202): they fit a 58dp tile and devour a 10dp OctoWord tile.
+        val s = minOf(maxWidth, maxHeight)
+        val shape = RoundedCornerShape(cornerRadius ?: (s.value * 0.14f).dp)
+        val stroke = borderWidth ?: (s.value * 0.09f).coerceIn(1f, 2f).dp
+        // Letter = half the SHORTER side, matching iOS. Small floor so a sliver
+        // of a tile still renders something rather than nothing. The floor (and
+        // every font here) lives in DP: a floor in SP is re-multiplied by the
+        // user's fontScale and can exceed the tile outright — Samsung's default
+        // "Large" text setting was enough to overflow an OctoWord cell.
+        val fontDp = (fontSize ?: (s.value * 0.5f)).coerceAtLeast(4f)
         // Convert through density instead of reading .value and emitting it as
         // sp. Dp.value is a dp count; handing it to .sp re-multiplies it by the
         // user's fontScale inside a tile whose aspectRatio box did NOT scale, so
@@ -157,15 +174,41 @@ fun TileView(
         // the only platform to break here BECAUSE it is the only one that
         // honours font scale at all.
         val density = androidx.compose.ui.platform.LocalDensity.current
-        val derivedSp = with(density) { (minOf(maxWidth, maxHeight) * 0.5f).toSp().value }
-        val resolved = fontSize ?: derivedSp.coerceAtLeast(6f)
-        Text(
-            text = letter.uppercase(),
-            color = textColor,
-            fontSize = resolved.sp,
-            maxLines = 1,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center,
-        )
+        val fontSp = with(density) { fontDp.dp.toSp() }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape)
+                .background(bgColor)
+                .then(if (showBorder) Modifier.border(stroke, borderColor, shape) else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = letter.uppercase(),
+                color = textColor,
+                fontSize = fontSp,
+                maxLines = 1,
+                softWrap = false,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+                // The Text inherits Material3 bodyLarge, whose DEFAULT lineHeight
+                // is 24sp (and letterSpacing 0.5sp). A 6sp letter laid out on a
+                // 24sp line box inside a 10dp tile paints the glyph ~19dp down —
+                // entirely below the tile — leaving only its clipped top visible.
+                // That was the "microscopic letters sheared at the top edge" on
+                // every small multi-board tile. Pin the line box to the glyph
+                // (lineHeight = fontSize, font padding off, center + trim) so the
+                // letter is truly centered at ANY tile size — iOS Text parity.
+                letterSpacing = 0.sp,
+                lineHeight = fontSp,
+                style = LocalTextStyle.current.copy(
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    lineHeightStyle = LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Center,
+                        trim = LineHeightStyle.Trim.Both,
+                    ),
+                ),
+            )
+        }
     }
 }
