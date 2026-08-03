@@ -453,9 +453,12 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                         }
                         // WHEN YOU PLAY (time-of-day).
                         if (timeOfDay.any { it.played > 0 }) WhenYouPlayCard(timeOfDay)
-                        // Per-mode Pro Insights — self-gates.
-                        if (!isProActive || proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
-                            ProInsightsCard(proInsights, isProActive, onGoPro)
+                        // Per-mode Pro Insights — Pro-only. Free users see no card
+                        // here: the blurred Deep Insights section below is the
+                        // single Pro gate on the profile (the old locked teaser
+                        // was redundant with it).
+                        if (isProActive && proInsights != com.wordocious.app.data.MatchStatsService.ProInsights()) {
+                            ProInsightsCard(proInsights)
                         }
                         // Deep Insights (restat R4). Hidden on vs_cpu (restat B1).
                         if (tab != "vs_cpu") {
@@ -1681,9 +1684,10 @@ private fun TopWordsCard(words: List<com.wordocious.app.data.MatchStatsService.T
     }
 }
 
-// ── Pro Insights (per-mode, Pro-gated) ─────────────────────────────────────────────
+// ── Pro Insights (per-mode, Pro-only; the call site gates on isProActive — free
+// users see no card here, the blurred Deep Insights section is the one Pro gate) ──
 @Composable
-private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsights, isPro: Boolean, onGoPro: () -> Unit) {
+private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsights) {
     val gold = Color(0xFFD97706)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("PRO INSIGHTS")
@@ -1692,9 +1696,7 @@ private fun ProInsightsCard(s: com.wordocious.app.data.MatchStatsService.ProInsi
                 .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (!isPro) {
-                ProLockedTeaser("Deep Insights", onGoPro)
-            } else if (!s.hasData) {
+            if (!s.hasData) {
                 Text("No games yet — play to build your stats.", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, modifier = Modifier.padding(vertical = 24.dp))
             } else {
                 val cells = buildList {

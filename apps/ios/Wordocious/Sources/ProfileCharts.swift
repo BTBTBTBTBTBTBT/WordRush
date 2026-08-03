@@ -639,18 +639,16 @@ private struct ProInsightsCard: View {
     var playType: String = "solo"
     @ObservedObject private var auth = AuthService.shared
     @State private var s = MatchStatsService.ProInsights()
-    @State private var showPro = false
     private let gold = Color(hex: 0xD97706)
 
     var body: some View {
-        // Web parity: the insights section renders nothing when a Pro user has
-        // no data — only the free-user locked teaser always shows.
+        // Pro-only: free users see no card here — the blurred Deep Insights
+        // section below is the single Pro gate on the profile (the old locked
+        // teaser was redundant with it). Renders nothing when a Pro user has
+        // no data either.
         Group {
-            if !auth.isProActive || s.hasData {
+            if auth.isProActive && s.hasData {
                 LegacyChartCard(title: "PRO INSIGHTS") {
-            if !auth.isProActive {
-                locked
-            } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                     statCell("Fastest Win", s.fastestTime.map(fmt) ?? "—", "bolt.fill", gold)
                     statCell("Fewest Guesses", s.fewestGuesses.map { "\($0)" } ?? "—", "target", gold)
@@ -694,8 +692,9 @@ private struct ProInsightsCard: View {
                     }
                     .padding(.top, 2)
                 }
-            }
                 }
+            } else {
+                Color.clear.frame(height: 0)   // concrete child so .task fires when hidden
             }
         }
         .task(id: "\(mode.rawValue)-\(auth.isProActive)-\(playType)") {
@@ -706,31 +705,6 @@ private struct ProInsightsCard: View {
                 let fresh = await MatchStatsService.proInsights(mode: mode, playType: playType)
                 s = fresh
                 StatsMemo.shared.set(key, fresh)
-            }
-        }
-        .sheet(isPresented: $showPro) { ProView() }
-    }
-
-    /// Free-user locked teaser — frosted placeholder + lock + Upgrade button,
-    /// mirroring the web pro-insights-card lock overlay.
-    private var locked: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceHover).frame(height: 150)
-            VStack(spacing: 8) {
-                Image(systemName: "lock.fill").font(.system(size: 26)).foregroundStyle(Color(hex: 0xC4B5FD))
-                Text("Deep Insights").font(Brand.font(11, .bold)).foregroundStyle(Theme.textMuted)
-                Button { showPro = true } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "crown.fill").font(.system(size: 12))
-                        Text("Upgrade to Pro").font(Brand.font(12, .black))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16).padding(.vertical, 9)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(
-                        LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xD97706)], startPoint: .topLeading, endPoint: .bottomTrailing)))
-                    .shadow(color: Color(hex: 0x92400E), radius: 0, x: 0, y: 2)
-                }
-                .buttonStyle(.plain)
             }
         }
     }

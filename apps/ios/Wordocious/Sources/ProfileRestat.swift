@@ -129,9 +129,13 @@ struct OpenerLabCard: View {
                                             .foregroundStyle(Theme.textPrimary)
                                         Spacer()
                                         Text("\(o.count)×").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                                        // Width 56 + single line: "100% W" overflowed the
+                                        // old 48pt column and wrapped the W onto its own
+                                        // line (web w-14 + nowrap parity).
                                         Text("\(o.winRate)% W").font(Brand.font(12, .black))
                                             .foregroundStyle(o.winRate >= 50 ? Theme.primary : Color(hex: 0xDC2626))
-                                            .frame(width: 48, alignment: .trailing)
+                                            .lineLimit(1).minimumScaleFactor(0.7)
+                                            .frame(width: 56, alignment: .trailing)
                                     }
                                     .padding(8)
                                     .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))

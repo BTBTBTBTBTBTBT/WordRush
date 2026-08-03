@@ -1,7 +1,5 @@
 'use client';
 
-import { Lock, Crown } from 'lucide-react';
-import Link from 'next/link';
 import { PersonalBests } from './personal-bests';
 import { TimeOfDayHeatmap } from './time-of-day-heatmap';
 import { ConsistencyGauge } from './consistency-gauge';
@@ -70,31 +68,16 @@ export function ProInsightsCard({
 }: ProInsightsCardProps) {
   const hasData = personalBests || timeOfDay || consistency || improvement || headToHead || wordInsights;
 
+  // Pro-only: free users see no card here — the blurred Deep Insights section
+  // below it is the single Pro gate on the profile (the old locked teaser was
+  // redundant with it).
+  if (!isPro) return null;
+
   return (
     <div
       className="relative overflow-hidden"
       style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
     >
-      {/* Pro lock overlay */}
-      {!isPro && (
-        <div
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center"
-          style={{ background: 'rgba(248, 247, 255, 0.85)', backdropFilter: 'blur(4px)' }}
-        >
-          <Lock className="w-6 h-6 mb-2" style={{ color: '#c4b5fd' }} />
-          <p className="text-[10px] font-bold mb-2" style={{ color: 'var(--color-text-muted)' }}>Deep Insights</p>
-          <Link href="/pro">
-            <button
-              className="btn-3d flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-xs font-black"
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 2px 0 #92400e' }}
-            >
-              <Crown className="w-3.5 h-3.5" />
-              Upgrade to Pro
-            </button>
-          </Link>
-        </div>
-      )}
-
       <div className="p-4 space-y-4">
         <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: accentColor }}>
           Pro Insights

@@ -173,10 +173,14 @@ fun OpenerLabCard(playType: String = "solo") {
                         Text("${i + 1}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, modifier = Modifier.width(16.dp), textAlign = TextAlign.Center)
                         Text(o.word, fontSize = 14.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp, color = WTheme.text, modifier = Modifier.weight(1f))
                         Text("${o.count}×", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                        // Width 56 + single line: "100% W" overflowed the old 48dp
+                        // column and wrapped the W onto its own line (web w-14 +
+                        // nowrap parity).
                         Text(
                             "${o.winRate}% W", fontSize = 12.sp, fontWeight = FontWeight.Black,
                             color = if (o.winRate >= 50) Color(0xFF7C3AED) else Color(0xFFDC2626),
-                            modifier = Modifier.width(48.dp), textAlign = TextAlign.End,
+                            modifier = Modifier.width(56.dp), textAlign = TextAlign.End,
+                            maxLines = 1, softWrap = false,
                         )
                     }
                 }
