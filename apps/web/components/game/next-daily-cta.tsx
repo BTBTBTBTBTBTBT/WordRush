@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Trophy } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
 import { useDailyCompletions } from '@/lib/daily-completions-context';
 import { PROFILE_MODES } from '@/components/profile/mode-picker';
 
@@ -33,23 +34,28 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
     (m) => m.id !== currentMode && !todayDailies.has(m.id),
   );
 
-  if (!next) {
-    return (
-      <div
-        className="w-full max-w-[400px] mx-auto mt-3 px-3 py-2.5 flex items-center justify-center gap-2 text-xs font-black"
-        style={{
-          background: 'var(--color-highlight-gold)',
-          border: '1.5px solid var(--color-gold-border)',
-          borderRadius: '12px',
-          color: '#92400e',
-        }}
-      >
-        <Trophy className="w-3.5 h-3.5" />
-        All 9 dailies done — Sweep complete! 🏆
-      </div>
-    );
-  }
+  return (
+    <>
+      {next ? <NextDailyLink next={next} /> : (
+        <div
+          className="w-full max-w-[400px] mx-auto mt-3 px-3 py-2.5 flex items-center justify-center gap-2 text-xs font-black"
+          style={{
+            background: 'var(--color-highlight-gold)',
+            border: '1.5px solid var(--color-gold-border)',
+            borderRadius: '12px',
+            color: '#92400e',
+          }}
+        >
+          <Trophy className="w-3.5 h-3.5" />
+          All 9 dailies done — Sweep complete! 🏆
+        </div>
+      )}
+      <KeepPlayingUnlimited currentMode={currentMode} />
+    </>
+  );
+}
 
+function NextDailyLink({ next }: { next: { id: string; href: string } }) {
   const mode = PROFILE_MODES.find((m) => m.dbKey === next.id);
   if (!mode) return null;
   const color = mode.accentColor;
@@ -82,5 +88,57 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
       </span>
       <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color }} />
     </Link>
+  );
+}
+
+/**
+ * "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited game
+ * of the SAME mode the player just finished (tester-reported dead end: after
+ * the daily — especially a completed sweep — Pro players had no visible path
+ * to keep playing; the home Daily/Unlimited toggle went undiscovered).
+ * Reuses the home toggle's unlimited routing: the mode's route without
+ * `?daily=true` (see effectiveHref in app/page.tsx). A plain <a> rather than
+ * <Link>: the unlimited route shares this page's pathname, and a client-side
+ * query-only navigation would keep the finished daily game's mounted state
+ * (game components lazy-init their session on mount) — a full document load
+ * starts the fresh unlimited puzzle. Non-Pro and guests see nothing.
+ */
+function KeepPlayingUnlimited({ currentMode }: { currentMode: string }) {
+  const { isProActive } = useAuth();
+  const entry = DAILY_ORDER.find((m) => m.id === currentMode);
+  const mode = PROFILE_MODES.find((m) => m.dbKey === currentMode);
+  if (!isProActive || !entry || !mode) return null;
+
+  const href = entry.href.split('?')[0];   // unlimited = same route, no daily param
+  const color = mode.accentColor;
+  const Icon = mode.icon;
+
+  return (
+    <a
+      href={href}
+      className="w-full max-w-[400px] mx-auto mt-3 px-3 py-2.5 flex items-center justify-between transition-transform active:scale-[0.98]"
+      style={{
+        background: 'var(--color-surface)',
+        border: `1.5px solid ${color}55`,
+        borderRadius: '12px',
+      }}
+    >
+      <span className="flex items-center gap-2 min-w-0">
+        <span
+          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+          style={{ background: `${color}15` }}
+        >
+          {mode.romanNumeral ? (
+            <span className="text-[9px] font-black leading-none" style={{ color }}>{mode.romanNumeral}</span>
+          ) : Icon ? (
+            <Icon className="w-3.5 h-3.5" style={{ color }} />
+          ) : null}
+        </span>
+        <span className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
+          Keep playing: <span style={{ color }}>Unlimited {mode.shortTitle}</span>
+        </span>
+      </span>
+      <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color }} />
+    </a>
   );
 }

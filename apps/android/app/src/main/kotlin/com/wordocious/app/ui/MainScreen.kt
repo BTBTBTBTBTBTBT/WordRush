@@ -154,6 +154,18 @@ private fun resolvedUnlimitedSeed(mode: com.wordocious.core.GameMode): String {
 }
 
 /**
+ * Fresh unlimited seed for a mode — mirrors iOS RootTabView.mintUnlimitedSeed:
+ * always a NEW puzzle (the post-game "Keep playing" CTA promises one), recorded
+ * as the mode's current unlimited game so the Home card resumes it if the
+ * player bails mid-board.
+ */
+private fun freshUnlimitedSeed(mode: com.wordocious.core.GameMode): String {
+    val fresh = "unlimited-${mode.name}-${System.currentTimeMillis()}"
+    com.wordocious.app.data.SettingsPref.set("unlimited-current-${mode.name}", fresh)
+    return fresh
+}
+
+/**
  * Hidden-but-alive tab: kept in composition so its state survives a tab switch
  * (iOS `TabView` keeps every tab alive — RootTabView.swift:8-9), but drawn as
  * nothing, laid under the active tab, and blocked from receiving touches.
@@ -271,7 +283,10 @@ fun MainScreen() {
         // re-evaluated on every recomposition, so any recomposition after
         // local midnight (foreground return, profile refresh) minted the NEXT
         // day's seed and replaced the in-progress board with a fresh puzzle.
-        val seed = androidx.compose.runtime.remember(card) {
+        // activeSeed IS a key: Play Again / "Keep playing: Unlimited" swap in a
+        // fresh unlimited seed for the SAME card, which must re-latch (card
+        // alone left the old seed — and the old VM — in place).
+        val seed = androidx.compose.runtime.remember(card, activeSeed) {
             activeSeed ?: com.wordocious.app.todayLocalSeed(card.engineMode.name)
         }
         androidx.activity.compose.BackHandler { activeGame = null; activeSeed = null }
@@ -287,6 +302,12 @@ fun MainScreen() {
             // the leaderboard Play CTA (swap activeGame; null seed = today's
             // daily). remember(card) re-mints the seed for the new mode.
             onOpenDaily = { m -> modeCardFor(m)?.let { activeSeed = null; activeGame = it } },
+            // "Keep playing: Unlimited <Mode>" (Pro) from a daily result — the
+            // SAME mode with a fresh unlimited seed (same launch state the home
+            // grid's Unlimited cards set).
+            onOpenUnlimited = { m ->
+                modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it }
+            },
         )
         return
     }

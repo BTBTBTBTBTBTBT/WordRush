@@ -86,6 +86,7 @@ fun PostGameScreen(
     onBack: () -> Unit,
     onPlayAgain: (() -> Unit)? = null,
     onOpenDaily: ((GameMode) -> Unit)? = null,
+    onOpenUnlimited: ((GameMode) -> Unit)? = null,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val won = state.status == GameStatus.WON
@@ -170,6 +171,7 @@ fun PostGameScreen(
                     com.wordocious.app.data.AuthService.isProActive
                 ) onPlayAgain else null,
                 onOpenDaily = onOpenDaily,
+                onOpenUnlimited = onOpenUnlimited,
             )
             CornerHomeButton(accent, onBack)
         }
@@ -290,7 +292,7 @@ fun PostGameScreen(
             // seed for this mode; unlimited seeds are "unlimited-…" and VS has
             // its own screen). Keeps the 9-mode daily loop moving.
             if (onOpenDaily != null && seed == com.wordocious.app.todayLocalSeed(mode.name)) {
-                NextDailyRow(currentMode = mode, onOpenDaily = onOpenDaily)
+                NextDailyRow(currentMode = mode, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited)
             }
 
             // Single-board modes: word definition (with "No definition" fallback).
@@ -329,6 +331,7 @@ private fun GauntletResultsScreen(
     g: com.wordocious.core.GauntletProgress, won: Boolean, seed: String, elapsedSeconds: Int, hintsUsed: Int,
     onHome: () -> Unit, onShare: () -> Unit,
     onPlayAgain: (() -> Unit)?, onOpenDaily: ((GameMode) -> Unit)?,
+    onOpenUnlimited: ((GameMode) -> Unit)? = null,
 ) {
     val cleared = g.stageResults.count { it.status == GameStatus.WON }
     val totalGuesses = g.stageResults.sumOf { it.guesses }
@@ -421,7 +424,9 @@ private fun GauntletResultsScreen(
         }
 
         if (onOpenDaily != null && isDaily) {
-            Box(Modifier.riseIn(appeared, 550)) { NextDailyRow(currentMode = GameMode.GAUNTLET, onOpenDaily = onOpenDaily) }
+            Box(Modifier.riseIn(appeared, 550)) {
+                NextDailyRow(currentMode = GameMode.GAUNTLET, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited)
+            }
         }
 
         // Same breakdown the Completed-Today card and the VS result screen use —
@@ -700,7 +705,11 @@ private fun fmtSecs(s: Int): String = if (s <= 0) "0s" else if (s >= 60) "${s / 
  * All 9 done → static "Sweep complete!" line.
  */
 @Composable
-private fun NextDailyRow(currentMode: GameMode, onOpenDaily: (GameMode) -> Unit) {
+private fun NextDailyRow(
+    currentMode: GameMode,
+    onOpenDaily: (GameMode) -> Unit,
+    onOpenUnlimited: ((GameMode) -> Unit)? = null,
+) {
     // Dailies only record for signed-in accounts; guests get nothing — so a
     // guest's completions map is always empty and "next" would be a lie (iOS
     // PostGameViews wraps the whole CTA in the same check).
@@ -727,29 +736,58 @@ private fun NextDailyRow(currentMode: GameMode, onOpenDaily: (GameMode) -> Unit)
 
     // iOS renders a compact accent-tinted CAPSULE (two-tone label + arrow glyph),
     // not a full-width neutral card.
-    if (next != null) {
-        Row(
-            modifier = Modifier.clip(RoundedCornerShape(50))
-                .background(next.accent.copy(alpha = 0.08f))
-                .border(1.5.dp, next.accent.copy(alpha = 0.5f), RoundedCornerShape(50))
-                .then(
-                    if (next.engineMode != null) Modifier.clickableNoRipple { onOpenDaily(next.engineMode) }
-                    else Modifier
-                )
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Next Daily:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-            Text(next.title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = next.accent)
-            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = next.accent, modifier = Modifier.size(11.dp))
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (next != null) {
+            Row(
+                modifier = Modifier.clip(RoundedCornerShape(50))
+                    .background(next.accent.copy(alpha = 0.08f))
+                    .border(1.5.dp, next.accent.copy(alpha = 0.5f), RoundedCornerShape(50))
+                    .then(
+                        if (next.engineMode != null) Modifier.clickableNoRipple { onOpenDaily(next.engineMode) }
+                        else Modifier
+                    )
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Next Daily:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text(next.title, fontSize = 12.sp, fontWeight = FontWeight.Black, color = next.accent)
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = next.accent, modifier = Modifier.size(11.dp))
+            }
+        } else {
+            Text(
+                "All 9 dailies done — Sweep complete! 🏆",
+                fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
         }
-    } else {
-        Text(
-            "All 9 dailies done — Sweep complete! 🏆",
-            fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
-            modifier = Modifier.padding(vertical = 4.dp),
-        )
+
+        // "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited
+        // game of the SAME mode the player just finished (tester-reported dead
+        // end: after the daily — especially a completed sweep — Pro players had
+        // no visible path to keep playing; the home Daily/Unlimited toggle went
+        // undiscovered). Same capsule chrome, in the CURRENT mode's accent.
+        if (onOpenUnlimited != null && AuthService.isProActive) {
+            val accent = com.wordocious.app.ui.modeAccent(currentMode)
+            val shortTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.shortTitle
+                ?: com.wordocious.app.ui.modeCardFor(currentMode)?.title ?: currentMode.name
+            Row(
+                modifier = Modifier.clip(RoundedCornerShape(50))
+                    .background(accent.copy(alpha = 0.08f))
+                    .border(1.5.dp, accent.copy(alpha = 0.5f), RoundedCornerShape(50))
+                    .clickableNoRipple { onOpenUnlimited(currentMode) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Keep playing:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                Text("Unlimited $shortTitle", fontSize = 12.sp, fontWeight = FontWeight.Black, color = accent)
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = accent, modifier = Modifier.size(11.dp))
+            }
+        }
     }
 }
 

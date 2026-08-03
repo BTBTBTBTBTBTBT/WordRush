@@ -21,6 +21,18 @@ struct RootTabView: View {
     /// presented from the tab root so it works no matter which tab/screen
     /// presented the game that just finished.
     @State private var nextDaily: HomeMode?
+    /// Post-game "Keep playing: Unlimited <Mode>" handoff (Pro): a fresh
+    /// unlimited game of the mode the player just finished, presented from the
+    /// tab root exactly like the Next Daily cover.
+    @State private var unlimitedGame: UnlimitedLaunch?
+
+    /// An unlimited run minted by the playUnlimited handler — identified by
+    /// seed so Play Again (which swaps in a fresh seed) re-presents the cover.
+    struct UnlimitedLaunch: Identifiable {
+        let mode: HomeMode
+        let seed: String
+        var id: String { seed }
+    }
 
     enum Tab: Hashable { case home, leaderboard, profile, records }
     struct SafariURLItem: Identifiable { let id = UUID(); let url: URL }
@@ -32,6 +44,19 @@ struct RootTabView: View {
         // translucent) system bar mid-transition when a fullScreenCover game
         // dismisses — hide the UIKit bar globally so it can never render.
         UITabBar.appearance().isHidden = true
+    }
+
+    /// Fresh unlimited seed for a mode, minted the way HomeView does —
+    /// "unlimited-<MODE>-<epoch>", recorded under "unlimited-current-<MODE>"
+    /// for engine modes so the home grid resumes it if the player bails
+    /// mid-game (PN keys its own saves off the seed, no marker needed).
+    private func mintUnlimitedSeed(_ m: HomeMode) -> String {
+        guard let gm = m.mode else {
+            return "unlimited-PROPERNOUNDLE-\(Int(Date().timeIntervalSince1970))"
+        }
+        let fresh = "unlimited-\(gm.rawValue)-\(Int(Date().timeIntervalSince1970))"
+        UserDefaults.standard.set(fresh, forKey: "unlimited-current-\(gm.rawValue)")
+        return fresh
     }
 
     /// Tab selection with stack-reset side effects (web-like tab behavior).
@@ -96,6 +121,34 @@ struct RootTabView: View {
                     GameScreen(seed: DailySeed.today(mode: gm), mode: gm, title: m.title)
                 } else {
                     ProperNoundleView()   // ProperNoundle daily (dbKey set, no engine mode)
+                }
+            }
+        }
+        // Post-game "Keep playing: Unlimited <Mode>" (Pro): mint a fresh
+        // unlimited seed exactly like HomeView does (and remember it as the
+        // mode's current unlimited game so Home resumes it if abandoned), then
+        // present the same GameScreen/ProperNoundleView the home grid uses.
+        .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playUnlimited)) { note in
+            guard let key = note.object as? String,
+                  let m = homeModes.first(where: { $0.dbKey == key }) else { return }
+            unlimitedGame = UnlimitedLaunch(mode: m, seed: mintUnlimitedSeed(m))
+        }
+        .fullScreenCover(item: $unlimitedGame) { g in
+            NavigationStack {
+                if let gm = g.mode.mode {
+                    GameScreen(seed: g.seed, mode: gm, title: g.mode.title, onPlayAgain: {
+                        // Same as HomeView's Play Again: fresh seed, re-present.
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
+                    })
+                    // Item swaps don't rebuild the @StateObject — key on the
+                    // seed so Play Again gets a fresh board (HomeView parity).
+                    .id(g.seed)
+                } else {
+                    // ProperNoundle unlimited: explicit seed = non-daily run.
+                    ProperNoundleView(seed: g.seed, onPlayAgain: {
+                        unlimitedGame = UnlimitedLaunch(mode: g.mode, seed: mintUnlimitedSeed(g.mode))
+                    })
+                    .id(g.seed)
                 }
             }
         }

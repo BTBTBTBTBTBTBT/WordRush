@@ -261,6 +261,11 @@ struct NextDailyCTA: View {
     /// RootTabView observes and presents that mode's daily.
     static let playNextDaily = Notification.Name("wordocious.play-next-daily")
 
+    /// Posted (object = the mode's dbKey) when a Pro player taps "Keep playing:
+    /// Unlimited <Mode>"; RootTabView mints a fresh unlimited seed for that mode
+    /// (like HomeView does) and presents the game from the tab root.
+    static let playUnlimited = Notification.Name("wordocious.play-unlimited")
+
     /// The dbKey of the game THIS results screen belongs to. Excluded
     /// explicitly (web parity): its own recording can lag the render —
     /// Gauntlet's multi-write chain especially — so without this the CTA
@@ -286,33 +291,68 @@ struct NextDailyCTA: View {
         Group {
             // Dailies only record for signed-in accounts; guests get nothing.
             if AuthService.shared.profile != nil {
-                if let next = nextMode, let key = next.dbKey {
-                    Button {
-                        dismiss()
-                        // Let the dismiss animation finish before the root
-                        // presents the next cover (competing presentations drop).
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                            NotificationCenter.default.post(name: Self.playNextDaily, object: key)
+                VStack(spacing: 8) {
+                    if let next = nextMode, let key = next.dbKey {
+                        Button {
+                            dismiss()
+                            // Let the dismiss animation finish before the root
+                            // presents the next cover (competing presentations drop).
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                NotificationCenter.default.post(name: Self.playNextDaily, object: key)
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text("Next Daily:").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                                Text(next.title).font(Brand.font(12, .black)).foregroundStyle(next.accent)
+                                Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(next.accent)
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 8)
+                            .background(Capsule().fill(next.accent.opacity(0.08)))
+                            .overlay(Capsule().stroke(next.accent.opacity(0.5), lineWidth: 1.5))
                         }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text("Next Daily:").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                            Text(next.title).font(Brand.font(12, .black)).foregroundStyle(next.accent)
-                            Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(next.accent)
-                        }
-                        .padding(.horizontal, 14).padding(.vertical, 8)
-                        .background(Capsule().fill(next.accent.opacity(0.08)))
-                        .overlay(Capsule().stroke(next.accent.opacity(0.5), lineWidth: 1.5))
+                        .buttonStyle(.plain)
+                    } else if nextMode == nil {
+                        Text("All \(DailyCompletionsStore.totalDailyModes) dailies done — Sweep complete! 🏆")
+                            .font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x7C3AED))
+                            .padding(.vertical, 4)
                     }
-                    .buttonStyle(.plain)
-                } else if nextMode == nil {
-                    Text("All \(DailyCompletionsStore.totalDailyModes) dailies done — Sweep complete! 🏆")
-                        .font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x7C3AED))
-                        .padding(.vertical, 4)
+                    keepPlayingUnlimited
                 }
             }
         }
         .task { await completions.load() }
+    }
+
+    /// "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited
+    /// game of the SAME mode the player just finished (tester-reported dead
+    /// end: after the daily — especially a completed sweep — Pro players had
+    /// no visible path to keep playing; the home Daily/Unlimited toggle went
+    /// undiscovered). Styled like the Next Daily capsule but in the current
+    /// mode's accent. Non-Pro and guests see nothing.
+    @ViewBuilder private var keepPlayingUnlimited: some View {
+        if AuthService.shared.isProActive,
+           let key = currentMode,
+           let mode = homeModes.first(where: { $0.dbKey == key }) {
+            Button {
+                dismiss()
+                // Same choreography as playNextDaily: let this cover's dismiss
+                // finish before the root presents the unlimited game.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    NotificationCenter.default.post(name: Self.playUnlimited, object: key)
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text("Keep playing:").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    Text("Unlimited \(ModeGen.byDbKey(key)?.shortTitle ?? mode.title)")
+                        .font(Brand.font(12, .black)).foregroundStyle(mode.accent)
+                    Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(mode.accent)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(Capsule().fill(mode.accent.opacity(0.08)))
+                .overlay(Capsule().stroke(mode.accent.opacity(0.5), lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 
