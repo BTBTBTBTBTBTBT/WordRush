@@ -161,7 +161,28 @@ export const HOW_TO_PLAY: HTPSection[] = [
       { strong: 'Hint penalty', text: ' — in Six, Seven, and ProperNoundle, each revealed hint costs a flat penalty (60 points in ProperNoundle, 75 in Six and Seven) and fills a board row, which also costs one step of guess bonus. A winning score never drops below zero' },
     ],
     outro:
-      'For example, solving a Classic puzzle in 3 guesses at 37 seconds earns 1,000 (base) + 900 (guess bonus) + about 210 (speed) + 200 (completion) — roughly 2,310 points. Even a loss banks partial credit for progress: correct letters on a near-miss, boards solved in multi-board modes, or stages reached in the Gauntlet.',
+      'For example, solving a Classic puzzle in 3 guesses at 37 seconds earns 1,000 (base) + 900 (guess bonus) + about 210 (speed) + 200 (completion) — roughly 2,310 points.',
+  },
+  {
+    title: 'What About Losses?',
+    intro:
+      'Running out of guesses never zeroes you out — a loss still banks credit for how far you got. What it never earns are the win bonuses: no 1,000-point base, no guess bonus, no speed bonus. So any win, however scrappy, always outscores even the best loss.',
+    bullets: [
+      {
+        strong: 'Multi-board modes',
+        text: ' (QuadWord, OctoWord, Succession, Deliverance) — you keep (boards solved ÷ total boards) × 200 points. Fall one short in OctoWord with 7 of 8 boards solved and you still bank 175 points.',
+      },
+      {
+        strong: 'Gauntlet',
+        text: ' — a depth ladder pays more for every stage you fully clear, plus 6 points per board solved in the stage that stopped you — so a deeper run always outscores a shallower one.',
+      },
+      {
+        strong: 'Single-board modes',
+        text: ' (Classic, Six, Seven, ProperNoundle) — near-miss credit: 12 points for every letter your best guess placed in the correct spot (the purple tiles).',
+      },
+    ],
+    outro:
+      'One more fine point, for medal chasers: when two players land the exact same score, the faster time takes the medal — and if score and time are both identical, they share it.',
   },
   {
     title: 'XP, Levels & Achievements',
