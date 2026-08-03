@@ -90,6 +90,21 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- "Daily Puzzles" home-screen widget (the iOS WordociousDaily twin).
+             Data arrives via WidgetBridge (SharedPreferences snapshot) on
+             every completion change; timed look-flips via inexact alarms. -->
+        <receiver
+            android:name=".widget.DailyWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_daily_info" />
+        </receiver>
+
         <!-- Re-anchor the 18:00-local daily reminder when the timezone or
              clock changes (the pending one-shot's delay was computed in the
              old zone). TIMEZONE_CHANGED/TIME_SET need no permission. -->

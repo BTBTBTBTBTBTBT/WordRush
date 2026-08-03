@@ -24,11 +24,25 @@ object DeepLinkRouter {
     val showNewPassword = MutableStateFlow(false)
     /** Cross-device auth link (PKCE verifier on another client) — finish in the browser. */
     val browserFallback = MutableStateFlow<String?>(null)
+    /** A widget chip asked for this mode's daily (wordocious://daily/KEY —
+     *  iOS DeepLink.swift's daily route); MainScreen consumes and clears it. */
+    val dailyMode = MutableStateFlow<GameMode?>(null)
 
-    /** Returns true when the URI was ours (vs/join, auth/reset, auth/confirm). */
+    /** Returns true when the URI was ours (vs/join, auth/reset, auth/confirm,
+     *  or the widget's wordocious://daily/KEY). */
     fun handle(uri: Uri?): Boolean {
         uri ?: return false
         val host = uri.host?.lowercase() ?: return false
+
+        // Widget chips: wordocious://daily/DUEL etc. Explicit intents from our
+        // own PendingIntents, so no manifest intent-filter is involved.
+        if (uri.scheme == "wordocious" && host == "daily") {
+            val key = uri.pathSegments.firstOrNull() ?: return false
+            val mode = runCatching { GameMode.valueOf(key) }.getOrNull() ?: return false
+            dailyMode.value = mode
+            return true
+        }
+
         if (host != "wordocious.com" && host != "www.wordocious.com") return false
         val parts = uri.pathSegments
 

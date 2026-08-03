@@ -132,6 +132,11 @@ object AuthService {
         SettingsPref.set(CACHED_SHIELDS, p.streakShields)
         val until = if (!p.isPro) "" else (p.proExpiresAt ?: PRO_NO_EXPIRY)
         SettingsPref.set(CACHED_PRO_UNTIL, until)
+        // Home-screen widget: streak/shields ride the profile, which lands a
+        // beat after the completions fetch — re-snapshot so the widget's flame
+        // never shows the previous launch's number (iOS reads headerStreak at
+        // every update; this is the Android push equivalent).
+        runCatching { com.wordocious.app.widget.WidgetBridge.update(DailyCompletionsService.readCache()) }
     }
 
     /** Last known streak, or null when nothing has been cached (first launch). */

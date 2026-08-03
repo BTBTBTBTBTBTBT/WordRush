@@ -112,6 +112,8 @@ object DailyCompletionsService {
             val merged = map.toMutableMap()
             for ((k, v) in readCache()) if (k !in merged) merged[k] = v
             writeCache(merged)
+            // Home-screen widget snapshot (iOS WidgetBridge.update on refetch).
+            com.wordocious.app.widget.WidgetBridge.update(merged)
             // G6: fire-and-forget AFTER the completions map is ready (never
             // delays the return/publication) — warm the recorded-match row for
             // every daily already played today, so opening one on this device
@@ -147,6 +149,9 @@ object DailyCompletionsService {
         current[gameMode] = Completion(gameMode = gameMode, completed = completed, guessCount = guessCount, timeSeconds = timeSeconds, score = score)
         writeCache(current)
         _completionTick.value++
+        // Home-screen widget snapshot (iOS WidgetBridge.update on record) —
+        // the widget flips this chip the instant the puzzle finishes.
+        com.wordocious.app.widget.WidgetBridge.update(current)
     }
 
     fun readCache(): Map<String, Completion> {
@@ -163,6 +168,8 @@ object DailyCompletionsService {
         runCatching { prefs.edit().remove(CACHE_KEY).remove(CACHE_DAY_KEY).apply() }
         // Prefetched replay rows are per-user too — never leak across accounts.
         GameResultsService.clearPrefetchedDailyMatches()
+        // Home-screen widget snapshot (iOS WidgetBridge.update on sign-out).
+        com.wordocious.app.widget.WidgetBridge.update(emptyMap())
     }
 
     private fun writeCache(map: Map<String, Completion>) {

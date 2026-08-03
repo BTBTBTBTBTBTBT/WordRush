@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sweep: purple/pink wash #f5f3ff->#fce7f3, brand frame #a78bfa->#ec4899.
+     Layered like iOS containerBackground: full-bleed FRAME gradient (a shape
+     stroke can't be a gradient, so the frame is the bottom layer showing
+     through a 2.5dp inset), the theme background gradient, then a 7dp inner
+     halo stroke at 10% accent. Outer radius 24dp ~ launcher corner. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#A78BFA" android:endColor="#EC4899" android:angle="315" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#F5F3FF" android:endColor="#FCE7F3" android:angle="315" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#00000000" />
+            <stroke android:width="7dp" android:color="#1A8B5CF6" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+</layer-list>

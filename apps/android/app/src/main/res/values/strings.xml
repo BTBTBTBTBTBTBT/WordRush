@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Wordocious</string>
+    <!-- Home-screen widget (matches iOS configurationDisplayName/description). -->
+    <string name="widget_label">Daily Puzzles</string>
+    <string name="widget_description">Today\'s daily progress and your streak.</string>
 </resources>

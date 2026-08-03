@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mode-chip tile fill (iOS ModeCell RoundedRectangle, cornerRadius ~= 0.27 x
+     32dp). Drawn white; DailyWidgetProvider recolors it per state via
+     ImageView.setColorFilter (SRC_ATOP) + setImageAlpha — one drawable covers
+     all 9 accents instead of 9 near-identical shapes. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FFFFFF" />
+    <corners android:radius="9dp" />
+</shape>

@@ -209,6 +209,20 @@ fun MainScreen() {
             }
         }
     }
+    // Widget chip taps (wordocious://daily/KEY via DeepLinkRouter) open that
+    // mode's daily — same launch state as the home grid / leaderboard Play CTA
+    // (null seed = today's daily). One-shot: consume and clear.
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        com.wordocious.app.data.DeepLinkRouter.dailyMode.collect { m ->
+            if (m != null) {
+                com.wordocious.app.data.DeepLinkRouter.dailyMode.value = null
+                modeCardFor(m)?.let {
+                    vsLobby = false; vsActive = null; vsInvite = null
+                    activeSeed = null; activeGame = it
+                }
+            }
+        }
+    }
     // Password-recovery app link → native new-password dialog (session already
     // established by the code exchange in DeepLinkRouter).
     val showNewPassword by com.wordocious.app.data.DeepLinkRouter.showNewPassword.collectAsState()

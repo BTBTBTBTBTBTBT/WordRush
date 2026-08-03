@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fresh: mint wash #f2fbf6->#f0f5fe, frame #7ee0b8->#8fb8f7, mint halo.
+     Layered like iOS containerBackground: full-bleed FRAME gradient (a shape
+     stroke can't be a gradient, so the frame is the bottom layer showing
+     through a 2.5dp inset), the theme background gradient, then a 7dp inner
+     halo stroke at 10% accent. Outer radius 24dp ~ launcher corner. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#7EE0B8" android:endColor="#8FB8F7" android:angle="315" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <gradient android:startColor="#F2FBF6" android:endColor="#F0F5FE" android:angle="315" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#00000000" />
+            <stroke android:width="7dp" android:color="#1A10B981" />
+            <corners android:radius="22dp" />
+        </shape>
+    </item>
+</layer-list>
