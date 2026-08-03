@@ -135,7 +135,7 @@ function KeepPlayingUnlimited({ currentMode }: { currentMode: string }) {
           ) : null}
         </span>
         <span className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
-          Keep playing: <span style={{ color }}>Unlimited {mode.shortTitle}</span>
+          Keep playing: <span style={{ color }}>Unlimited {mode.title}</span>
         </span>
       </span>
       <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color }} />

@@ -772,7 +772,8 @@ private fun NextDailyRow(
         // undiscovered). Same capsule chrome, in the CURRENT mode's accent.
         if (onOpenUnlimited != null && AuthService.isProActive) {
             val accent = com.wordocious.app.ui.modeAccent(currentMode)
-            val shortTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.shortTitle
+            // Full mode name per founder ("Unlimited Succession", not "Succ.").
+            val fullTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.title
                 ?: com.wordocious.app.ui.modeCardFor(currentMode)?.title ?: currentMode.name
             Row(
                 modifier = Modifier.clip(RoundedCornerShape(50))
@@ -784,7 +785,7 @@ private fun NextDailyRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Keep playing:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
-                Text("Unlimited $shortTitle", fontSize = 12.sp, fontWeight = FontWeight.Black, color = accent)
+                Text("Unlimited $fullTitle", fontSize = 12.sp, fontWeight = FontWeight.Black, color = accent)
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = accent, modifier = Modifier.size(11.dp))
             }
         }

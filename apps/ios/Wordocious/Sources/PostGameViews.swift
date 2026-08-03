@@ -343,7 +343,9 @@ struct NextDailyCTA: View {
             } label: {
                 HStack(spacing: 6) {
                     Text("Keep playing:").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
-                    Text("Unlimited \(ModeGen.byDbKey(key)?.shortTitle ?? mode.title)")
+                    // Full mode name per founder — rides the NEXT build (1.7);
+                    // deliberately not swapped into the 1.6 review queue.
+                    Text("Unlimited \(ModeGen.byDbKey(key)?.title ?? mode.title)")
                         .font(Brand.font(12, .black)).foregroundStyle(mode.accent)
                     Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(mode.accent)
                 }
