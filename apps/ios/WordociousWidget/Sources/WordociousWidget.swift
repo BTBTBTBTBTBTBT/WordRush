@@ -334,15 +334,25 @@ private struct FooterStrip: View {
     }
 }
 
-// MARK: - Small: streak + big X/9 + dot strip
+// MARK: - Small: streak + big X/9 + countdown/points + dot strip
 
 struct SmallView: View {
     let snap: WSnapshot
     let theme: WidgetTheme
+    let date: Date
     private var done: Int { snap.modes.filter(\.played).count }
 
+    /// The one tap a small widget is allowed, spent well: straight into the
+    /// first unplayed daily. ProperNoundle has no programmatic daily launch
+    /// (same carve-out as the medium chips); swept/PN-only → plain app open.
+    private var nextPlayableURL: URL? {
+        guard let m = snap.modes.first(where: { !$0.played && $0.key != "PROPERNOUNDLE" })
+        else { return nil }
+        return URL(string: "wordocious://daily/\(m.key)")
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text("WORDOCIOUS").font(.system(size: 11, weight: .black, design: .rounded))
                     .tracking(1).foregroundStyle(brandGradient)
@@ -352,10 +362,17 @@ struct SmallView: View {
             }
             Spacer(minLength: 0)
             HStack(alignment: .lastTextBaseline, spacing: 2) {
-                Text("\(done)").font(.system(size: 40, weight: .black, design: .rounded))
+                Text("\(done)").font(.system(size: 38, weight: .black, design: .rounded))
                     .foregroundStyle(.primary)
-                Text("/\(snap.modes.count)").font(.system(size: 18, weight: .heavy, design: .rounded))
+                Text("/\(snap.modes.count)").font(.system(size: 17, weight: .heavy, design: .rounded))
                     .foregroundStyle(.secondary)
+                Spacer(minLength: 4)
+                if let pts = snap.points, pts > 0 {
+                    Text("\(groupedPoints(pts)) pts")
+                        .font(.system(size: 10, weight: .black, design: .rounded))
+                        .monospacedDigit().foregroundStyle(.secondary)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
             }
             switch theme {
             case .flawless:
@@ -375,6 +392,18 @@ struct SmallView: View {
                     .font(.system(size: 11, weight: .bold, design: .rounded)).foregroundStyle(.secondary)
                     .minimumScaleFactor(0.7).lineLimit(1)
             }
+            // Countdown to the next drop — same live system timer as the medium
+            // footer, same greedy-width cap (58pt fits "12:41:40").
+            HStack(spacing: 2) {
+                Image(systemName: "hourglass").font(.system(size: 8, weight: .bold))
+                Text(timerInterval: date...nextLocalMidnight(after: date), countsDown: true)
+                    .font(.system(size: 10.5, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: 58, alignment: .leading)
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(theme == .atRisk ? Color(widgetHex: "#d97706") : Color(widgetHex: "#7c3aed"))
             Spacer(minLength: 0)
             HStack(spacing: 4) {
                 ForEach(snap.modes, id: \.key) { m in
@@ -385,6 +414,7 @@ struct SmallView: View {
                 }
             }
         }
+        .widgetURL(nextPlayableURL)
     }
 
     private func statusLine(_ title: String, icon: String, iconColor: Color, gradient: LinearGradient) -> some View {
@@ -579,7 +609,7 @@ struct WidgetRootView: View {
         switch family {
         case .systemMedium: MediumView(snap: entry.snap, theme: theme, date: entry.date)
         case .accessoryRectangular: AccessoryRectangularView(snap: entry.snap, theme: theme)
-        default: SmallView(snap: entry.snap, theme: theme)
+        default: SmallView(snap: entry.snap, theme: theme, date: entry.date)
         }
     }
 }
