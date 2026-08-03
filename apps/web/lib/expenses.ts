@@ -1,6 +1,6 @@
 /**
  * The Wordocious infrastructure ledger — every service the product runs on,
- * its plan, and its cost. ONE source of truth, rendered at /admin/expenses.
+ * its plan, and its cost. ONE source of truth, rendered on /admin/revenue (Expenses section).
  *
  * Costs change rarely, and most billing APIs don't expose plan/price reads,
  * so this is deliberately a maintained file rather than a live query — but

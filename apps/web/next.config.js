@@ -6,7 +6,13 @@ const nextConfig = {
   // lives under /admin so middleware.ts's admin gate covers it — this doc
   // describes the whole stack and must never be public.
   async redirects() {
-    return [{ source: '/portal', destination: '/admin/portal', permanent: false }];
+    return [
+      { source: '/portal', destination: '/admin/portal', permanent: false },
+      // Admin consolidation 2026-08-02: Content merged into Messaging,
+      // Expenses into Revenue — keep old bookmarks working.
+      { source: '/admin/content', destination: '/admin/messaging', permanent: false },
+      { source: '/admin/expenses', destination: '/admin/revenue', permanent: false },
+    ];
   },
   eslint: {
     ignoreDuringBuilds: true,
