@@ -308,10 +308,16 @@ private struct FooterStrip: View {
             Spacer(minLength: 4)
             HStack(spacing: 2) {
                 Image(systemName: "hourglass").font(.system(size: 8.5, weight: .bold))
+                // WidgetKit's live timer text GREEDILY claims all flexible
+                // width (found on device: it shoved the hourglass to the bar's
+                // center and squeezed the stat text out entirely). Cap it to
+                // exactly what "12:41:40" needs; trailing-aligned as it shrinks
+                // through h:mm:ss → mm:ss overnight.
                 Text(timerInterval: date...nextLocalMidnight(after: date), countsDown: true)
                     .font(.system(size: 10.5, weight: .black, design: .rounded))
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 58, alignment: .trailing)
             }
             .foregroundStyle(countdownTint)
             .layoutPriority(1)
