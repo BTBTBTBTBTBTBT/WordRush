@@ -79,12 +79,12 @@ export const EXPENSES: ExpenseItem[] = [
   {
     service: 'Railway',
     purpose: 'VS socket server (auto-deploy from main)',
-    plan: 'Hobby (assumed)',
+    plan: 'Hobby',
     monthly: 5,
-    note: 'CONFIRM: not signed in to Railway in this browser (GitHub SSO). Hobby is $5/mo including $5 of usage; VS traffic beyond that bills as usage.',
-    verified: false,
+    note: 'Founder-confirmed $5/mo (2026-08-02). Includes $5 of usage; VS traffic beyond that bills as usage.',
+    verified: true,
     billingUrl: 'https://railway.com/workspace/billing',
-    account: 'GitHub SSO — confirm',
+    account: 'GitHub SSO',
   },
   {
     service: 'wordocious.com domain',
