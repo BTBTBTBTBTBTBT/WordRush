@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createSign } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { PRO_PLANS } from '@/lib/payment/types';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,16 +21,33 @@ export const dynamic = 'force-dynamic';
 //                 the founder runs scripts/revenue-oauth.mjs the cards say
 //                 "not connected" instead of showing fabricated zeros.
 //
-// Store PROCEEDS (Apple/Google payouts) are deliberately absent rather than
-// faked: Apple's sales reports and Play's financial data need separate
-// credentials (Play's publisher key excludes financial scopes by design).
-// Dashboard links fill that gap honestly.
+// Store DOLLARS come in two tiers of honesty:
+//
+//   ESTIMATED     store subscription counts (entitlement DB) × list price.
+//                 The DB records WHO has Pro but not which plan a store sub
+//                 is on (store_webhook_events keeps only event ids for
+//                 idempotency), so the estimate assumes monthly and also
+//                 reports the all-yearly floor. List prices ignore
+//                 proration, refunds, and regional pricing; Apple/Google
+//                 keep 15% (small-business tier, bible §194).
+//   LIVE API      Apple's salesReports SUBSCRIPTION report — real
+//                 Apple-side prices and active-sub counts — once the four
+//                 ASC_* env vars exist server-side. Until then that card
+//                 says "not connected". Play's financial data still needs
+//                 credentials the publisher key deliberately excludes.
+//
+// Real PAYOUT dollars (what actually lands in the bank) remain in the store
+// consoles; dashboard links fill that gap honestly.
 
 const PLAN_MONTHLY_CENTS: Record<string, number> = {
-  // MRR normalization: yearly contributes 1/12 per month.
-  pro_monthly: 699,
-  pro_yearly: Math.round(5999 / 12),
+  // MRR normalization: yearly contributes 1/12 per month. Derived from the
+  // canonical plan list so a price change propagates here automatically.
+  pro_monthly: Math.round(PRO_PLANS.monthly.price * 100),
+  pro_yearly: Math.round((PRO_PLANS.yearly.price * 100) / 12),
 };
+
+// Apple/Google commission on subscriptions — 15% small-business tier (§194).
+const STORE_CUT = 0.15;
 
 async function googleAccessToken(refreshOverride?: string): Promise<string | null> {
   const id = process.env.REVENUE_GOOGLE_CLIENT_ID;
@@ -119,6 +139,96 @@ async function fetchAdsense(token: string) {
   };
 }
 
+// ── Apple App Store Connect: real subscription revenue ──────────────────────
+// The salesReports SUBSCRIPTION report is a daily snapshot of every active
+// subscription with Apple's own price and proceeds figures. Auth is an ES256
+// JWT signed with an App Store Connect API key. All four env vars must be
+// present server-side (the .p8 lives only on the founder's machine, never in
+// the repo): ASC_KEY_ID, ASC_ISSUER_ID, ASC_PRIVATE_KEY (PEM, \n-escaped ok),
+// ASC_VENDOR_NUMBER (from App Store Connect → Payments and Financial Reports).
+
+function ascJwt(keyId: string, issuerId: string, privateKeyPem: string): string {
+  const b64url = (s: string | Buffer) => Buffer.from(s).toString('base64url');
+  const iat = Math.floor(Date.now() / 1000);
+  const header = b64url(JSON.stringify({ alg: 'ES256', kid: keyId, typ: 'JWT' }));
+  const payload = b64url(JSON.stringify({ iss: issuerId, iat, exp: iat + 20 * 60, aud: 'appstoreconnect-v1' }));
+  const signer = createSign('SHA256');
+  signer.update(`${header}.${payload}`);
+  const sig = signer.sign({ key: privateKeyPem.replace(/\\n/g, '\n'), dsaEncoding: 'ieee-p1363' });
+  return `${header}.${payload}.${b64url(sig)}`;
+}
+
+interface AppleReportRow { name: string; duration: string; price: number; proceeds: number; active: number }
+
+/** Parse the gzipped TSV subscription report into duration-normalized MRR. */
+function parseAppleSubscriptionReport(tsv: string) {
+  const lines = tsv.split('\n').filter((l) => l.trim());
+  if (lines.length < 2) return { rows: [] as AppleReportRow[], paidActive: 0, mrr: 0, proceedsMrr: 0 };
+  const headers = lines[0].split('\t').map((h) => h.trim());
+  const idx = (name: string) => headers.findIndex((h) => h === name);
+  const [iName, iDur, iPrice, iProceeds] = ['Subscription Name', 'Standard Subscription Duration', 'Customer Price', 'Developer Proceeds'].map(idx);
+  // Paid-active columns only — free trials and marketing opt-ins excluded.
+  const activeIdx = headers
+    .map((h, i) => (/^Active /.test(h) && !/Free Trial/.test(h) ? i : -1))
+    .filter((i) => i >= 0);
+  const rows: AppleReportRow[] = [];
+  for (const line of lines.slice(1)) {
+    const c = line.split('\t');
+    const active = activeIdx.reduce((a, i) => a + (Number(c[i]) || 0), 0);
+    if (!active) continue;
+    rows.push({
+      name: iName >= 0 ? c[iName] : 'unknown',
+      duration: iDur >= 0 ? c[iDur] : '',
+      price: iPrice >= 0 ? Number(c[iPrice]) || 0 : 0,
+      proceeds: iProceeds >= 0 ? Number(c[iProceeds]) || 0 : 0,
+      active,
+    });
+  }
+  // Normalize a yearly price to its per-month contribution so the total is MRR.
+  const perMonth = (r: AppleReportRow, v: number) => (/year/i.test(r.duration) ? v / 12 : v);
+  return {
+    rows,
+    paidActive: rows.reduce((a, r) => a + r.active, 0),
+    mrr: rows.reduce((a, r) => a + perMonth(r, r.price) * r.active, 0),
+    proceedsMrr: rows.reduce((a, r) => a + perMonth(r, r.proceeds) * r.active, 0),
+  };
+}
+
+async function fetchAppleSubscriptions() {
+  const keyId = process.env.ASC_KEY_ID;
+  const issuerId = process.env.ASC_ISSUER_ID;
+  const privateKey = process.env.ASC_PRIVATE_KEY;
+  const vendor = process.env.ASC_VENDOR_NUMBER;
+  if (!keyId || !issuerId || !privateKey || !vendor) return { connected: false as const };
+  try {
+    const jwt = ascJwt(keyId, issuerId, privateKey);
+    // Daily reports appear with ~1 day lag; walk back a few days to the most
+    // recent one that exists (404 = not published yet / no activity).
+    for (let daysAgo = 1; daysAgo <= 4; daysAgo++) {
+      const d = new Date(Date.now() - daysAgo * 86400000);
+      const reportDate = d.toISOString().slice(0, 10);
+      const qs = new URLSearchParams({
+        'filter[frequency]': 'DAILY',
+        'filter[reportDate]': reportDate,
+        'filter[reportSubType]': 'SUMMARY',
+        'filter[reportType]': 'SUBSCRIPTION',
+        'filter[vendorNumber]': vendor,
+        'filter[version]': '1_3',
+      });
+      const r = await fetch(`https://api.appstoreconnect.apple.com/v1/salesReports?${qs}`, {
+        headers: { Authorization: `Bearer ${jwt}`, Accept: 'application/a-gzip' },
+      });
+      if (r.status === 404) continue;
+      if (!r.ok) return { connected: true as const, error: `Apple salesReports: HTTP ${r.status}` };
+      const tsv = gunzipSync(Buffer.from(await r.arrayBuffer())).toString('utf8');
+      return { connected: true as const, reportDate, ...parseAppleSubscriptionReport(tsv) };
+    }
+    return { connected: true as const, error: 'No subscription report published in the last 4 days' };
+  } catch (e) {
+    return { connected: true as const, error: e instanceof Error ? e.message : 'Apple salesReports failed' };
+  }
+}
+
 export async function GET(request: NextRequest) {
   const auth = await verifyAdmin(request);
   if ('error' in auth) return auth.error;
@@ -141,6 +251,25 @@ export async function GET(request: NextRequest) {
     // reach users, so the store split is labeled "best known", not claimed.
     storeIos: active.filter((p) => !p.stripe_customer_id && p.app_platform === 'ios').length,
     storeAndroid: active.filter((p) => !p.stripe_customer_id && p.app_platform === 'android').length,
+  };
+
+  // ── Store revenue ESTIMATE: entitlement-DB counts × list price ────────────
+  // The DB doesn't record which plan a store sub is on, so dollars assume
+  // monthly ($6.99/mo); the all-yearly floor ($59.99/12 ≈ $5.00/mo per sub)
+  // bounds the estimate from below. Cents math, floated once at the end.
+  const est = (count: number) => ({
+    count,
+    mrr: (count * PLAN_MONTHLY_CENTS.pro_monthly) / 100,
+    mrrIfAllYearly: (count * PLAN_MONTHLY_CENTS.pro_yearly) / 100,
+  });
+  const storeEstimate = {
+    assumption: 'monthly' as const,
+    monthlyPrice: PRO_PLANS.monthly.price,
+    yearlyMonthlyEquivalent: PLAN_MONTHLY_CENTS.pro_yearly / 100,
+    storeCut: STORE_CUT,
+    ios: est(subs.storeIos),
+    android: est(subs.storeAndroid),
+    storeTotal: est(subs.store),
   };
 
   // ── Stripe: live ──────────────────────────────────────────────────────────
@@ -190,14 +319,27 @@ export async function GET(request: NextRequest) {
   const adsenseToken = process.env.REVENUE_GOOGLE_REFRESH_TOKEN_ADSENSE
     ? await googleAccessToken(process.env.REVENUE_GOOGLE_REFRESH_TOKEN_ADSENSE)
     : token;
-  const [admob, adsense] = await Promise.all([
+  const [admob, adsense, apple] = await Promise.all([
     token ? fetchAdmob(token) : Promise.resolve(null),
     adsenseToken ? fetchAdsense(adsenseToken) : Promise.resolve(null),
+    fetchAppleSubscriptions(),
   ]);
+
+  // All-rails MRR headline: Stripe's live number where we have it, plus the
+  // store estimate — flagged combined-is-estimate whenever the store side > 0.
+  const stripeMrr = typeof stripe.mrr === 'number' ? stripe.mrr : 0;
+  const combined = {
+    mrr: stripeMrr + storeEstimate.storeTotal.mrr,
+    stripeActual: typeof stripe.mrr === 'number',
+    estimated: storeEstimate.storeTotal.count > 0,
+  };
 
   return NextResponse.json({
     subs,
+    storeEstimate,
+    combined,
     stripe,
+    apple,
     admob: token ? admob : { connected: false },
     adsense: token ? adsense : { connected: false },
     adsConnected: !!token,

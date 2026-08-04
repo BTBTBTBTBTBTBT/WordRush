@@ -9,8 +9,29 @@ import { EXPENSES, expenseTotals } from '@/lib/expenses';
 // live API, subscription counts come from the entitlement DB (the cross-rail
 // truth), and the ad networks are live only after the one-time OAuth grant —
 // until then they say "not connected" instead of showing fabricated zeros.
+interface StoreRailEstimate { count: number; mrr: number; mrrIfAllYearly: number }
+
 interface RevenueData {
   subs: { activeTotal: number; stripe: number; store: number; storeIos: number; storeAndroid: number };
+  storeEstimate: {
+    assumption: 'monthly';
+    monthlyPrice: number;
+    yearlyMonthlyEquivalent: number;
+    storeCut: number;
+    ios: StoreRailEstimate;
+    android: StoreRailEstimate;
+    storeTotal: StoreRailEstimate;
+  };
+  combined: { mrr: number; stripeActual: boolean; estimated: boolean };
+  apple: {
+    connected: boolean;
+    error?: string;
+    reportDate?: string;
+    rows?: { name: string; duration: string; price: number; proceeds: number; active: number }[];
+    paidActive?: number;
+    mrr?: number;
+    proceedsMrr?: number;
+  };
   stripe: {
     configured: boolean;
     error?: string;
@@ -29,10 +50,11 @@ interface RevenueData {
 
 const usd = (n?: number) => (n == null ? '—' : `$${n.toFixed(2)}`);
 
-function SourceTag({ kind }: { kind: 'live' | 'db' | 'off' }) {
+function SourceTag({ kind }: { kind: 'live' | 'db' | 'est' | 'off' }) {
   const map = {
     live: ['LIVE API', 'text-green-700 bg-green-50'],
     db: ['FROM ENTITLEMENT DB', 'text-blue-700 bg-blue-50'],
+    est: ['ESTIMATED', 'text-amber-700 bg-amber-50'],
     off: ['NOT CONNECTED', 'text-gray-500 bg-gray-100'],
   } as const;
   const [label, cls] = map[kind];
@@ -84,6 +106,9 @@ export default function AdminRevenuePage() {
           store subscribers who haven&apos;t opened a stamped build yet appear only in &quot;store total&quot;.
         </p>
       </div>
+
+      {/* Subscription dollars across all rails: Stripe actual + store estimate */}
+      <EstimatedRevenueCard data={data} />
 
       {/* Stripe */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -171,22 +196,126 @@ export default function AdminRevenuePage() {
         </div>
       </div>
 
-      {/* Store proceeds: honestly absent */}
+      {/* Apple-reported subscription revenue (real, once ASC env exists) */}
+      <AppleSalesCard apple={data.apple} />
+
+      {/* Store payouts: still console-only */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-wide mb-1">
-          <DollarSign className="w-3.5 h-3.5" /> Store proceeds (Apple / Google payouts)
+          <DollarSign className="w-3.5 h-3.5" /> Store payouts (Apple / Google)
         </div>
         <p className="text-[11px] font-bold text-gray-400 leading-relaxed">
-          Deliberately not shown rather than approximated: Apple&apos;s sales reports and Play&apos;s financial
-          data need separate credentials (the Play publisher key excludes financial scopes by design).
-          Subscription COUNTS above are already cross-rail truth; payout dollars live in
+          Store subscription dollars are now ESTIMATED above (counts × list price), and Apple&apos;s own
+          figures appear once its report API is connected — but actual PAYOUT dollars (after refunds,
+          taxes, and exchange rates) still live only in
           <a href="https://appstoreconnect.apple.com/trends" target="_blank" rel="noreferrer" className="mx-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">App Store Connect <ExternalLink className="w-3 h-3" /></a>
           and
-          <a href="https://play.google.com/console" target="_blank" rel="noreferrer" className="mx-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">Play Console <ExternalLink className="w-3 h-3" /></a>.
+          <a href="https://play.google.com/console" target="_blank" rel="noreferrer" className="mx-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">Play Console <ExternalLink className="w-3 h-3" /></a>
+          (Play&apos;s financial data needs credentials the publisher key excludes by design).
         </p>
       </div>
 
       <ExpensesSection />
+    </div>
+  );
+}
+
+// Subscription dollars, all rails. Stripe's MRR is live; store rails are
+// count × list price — an ESTIMATE, because the entitlement DB records who
+// has Pro but not which plan a store sub is on. Assumes monthly; the
+// all-yearly floor bounds it below. Ignores proration, refunds, regional
+// pricing. Apple/Google keep 15% (small-business tier).
+function EstimatedRevenueCard({ data }: { data: RevenueData }) {
+  const e = data.storeEstimate;
+  const c = data.combined;
+  if (!e || !c) return null;
+  const net = (n: number) => n * (1 - e.storeCut);
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+          <DollarSign className="w-4 h-4" /> Subscription revenue — all rails
+        </h2>
+        <SourceTag kind="est" />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div>
+          <p className="text-2xl font-black text-gray-900">{usd(c.mrr)}</p>
+          <p className="text-xs font-bold text-gray-400">est. MRR, all rails</p>
+        </div>
+        <div>
+          <p className="text-2xl font-black text-gray-900">{c.stripeActual ? usd(data.stripe.mrr) : '—'}</p>
+          <p className="text-xs font-bold text-gray-400">web (Stripe, actual)</p>
+        </div>
+        <div>
+          <p className="text-2xl font-black text-gray-900">{usd(e.ios.mrr)}</p>
+          <p className="text-xs font-bold text-gray-400">App Store est. ({e.ios.count})</p>
+        </div>
+        <div>
+          <p className="text-2xl font-black text-gray-900">{usd(e.android.mrr)}</p>
+          <p className="text-xs font-bold text-gray-400">Play est. ({e.android.count})</p>
+        </div>
+      </div>
+      <p className="text-[11px] font-bold text-gray-300 mt-3 leading-relaxed">
+        Store dollars are count × list price ({usd(e.monthlyPrice)}/mo), NOT payment data: the entitlement
+        DB doesn&apos;t record which plan a store sub is on, so this assumes every store sub is monthly —
+        if all were yearly the store total would be {usd(e.storeTotal.mrrIfAllYearly)}/mo instead of{' '}
+        {usd(e.storeTotal.mrr)}/mo. Ignores proration, refunds, and regional pricing. After the stores&apos;{' '}
+        {Math.round(e.storeCut * 100)}% cut (small-business tier), the store estimate nets ≈{usd(net(e.storeTotal.mrr))}/mo.
+        Store total ({e.storeTotal.count}) can exceed the App Store + Play split while presence stamps fill in.
+      </p>
+    </div>
+  );
+}
+
+// Apple's own subscription numbers via the App Store Connect salesReports API —
+// real prices and active counts from a daily snapshot, or a NOT CONNECTED
+// state with the exact setup step (same honesty pattern as AdMob).
+function AppleSalesCard({ apple }: { apple: RevenueData['apple'] }) {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
+          <Smartphone className="w-4 h-4" /> App Store subscriptions (Apple-reported)
+        </h2>
+        <SourceTag kind={apple?.connected && !apple.error ? 'live' : 'off'} />
+      </div>
+      {!apple?.connected ? (
+        <p className="text-xs font-bold text-gray-400 leading-relaxed">
+          Apple&apos;s salesReports API can supply its own subscription prices and active counts, but the
+          credentials aren&apos;t on the server yet: set
+          <code className="mx-1 px-1 bg-gray-100 rounded">ASC_KEY_ID</code>
+          <code className="mr-1 px-1 bg-gray-100 rounded">ASC_ISSUER_ID</code>
+          <code className="mr-1 px-1 bg-gray-100 rounded">ASC_PRIVATE_KEY</code>
+          <code className="mr-1 px-1 bg-gray-100 rounded">ASC_VENDOR_NUMBER</code>
+          in Vercel (key contents from the local .p8; vendor number from App Store Connect →
+          Payments and Financial Reports). Until then:
+          <a href="https://appstoreconnect.apple.com/trends" target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-0.5 text-purple-500 hover:text-purple-700">App Store Connect <ExternalLink className="w-3 h-3" /></a>
+        </p>
+      ) : apple.error ? (
+        <p className="text-sm font-bold text-red-500">{apple.error}</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+            <div><p className="text-2xl font-black text-gray-900">{usd(apple.mrr)}</p><p className="text-xs font-bold text-gray-400">MRR at Apple prices</p></div>
+            <div><p className="text-2xl font-black text-gray-900">{usd(apple.proceedsMrr)}</p><p className="text-xs font-bold text-gray-400">proceeds MRR (after cut)</p></div>
+            <div><p className="text-2xl font-black text-gray-900">{apple.paidActive ?? 0}</p><p className="text-xs font-bold text-gray-400">paid active subs</p></div>
+          </div>
+          {!!apple.rows?.length && (
+            <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-4">
+              {apple.rows.map((r, i) => (
+                <span key={i} className="text-xs font-bold text-gray-500">
+                  {r.name} ({r.duration}): <span className="text-gray-900 font-black">{r.active} × {usd(r.price)}</span>
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="text-[11px] font-bold text-gray-300 mt-3">
+            Daily snapshot from Apple&apos;s salesReports SUBSCRIPTION report ({apple.reportDate}); yearly plans
+            counted at 1/12 per month. Free trials excluded.
+          </p>
+        </>
+      )}
     </div>
   );
 }
