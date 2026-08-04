@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -456,10 +456,25 @@ fun FinalBoards(
             .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            FinalBoardsSide(myName, mine, Color(0xFF7C3AED), mySolved, Modifier.weight(1f), pnGroups)
-            Box(Modifier.width(1.dp).fillMaxHeight().background(WTheme.border))
-            FinalBoardsSide(opponentName, theirs, Color(0xFFEC4899), oppSolved, Modifier.weight(1f), pnGroups)
+        // CRASH CLASS, DO NOT REINTRODUCE height(IntrinsicSize.*) HERE: LetterBoard
+        // sizes its tiles with BoxWithConstraints (a SubcomposeLayout), and asking a
+        // SubcomposeLayout for intrinsic measurements THROWS IllegalStateException at
+        // measure time. The old Row(height(IntrinsicSize.Min)) — which existed only so
+        // the 1dp divider could fillMaxHeight — crashed the app on EVERY single-board
+        // VS result since the measured-tile fix (build 53); it surfaced in build 61 as
+        // "app closed" the instant a Classic bot match ended, because the fresh-VM fix
+        // finally let those matches complete. The divider is now an overlay centered on
+        // the row (matchParentSize gets the row's real height without intrinsics); the
+        // 1dp Spacer keeps the column widths and 16-1-16 gap geometry identical.
+        Box(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                FinalBoardsSide(myName, mine, Color(0xFF7C3AED), mySolved, Modifier.weight(1f), pnGroups)
+                Spacer(Modifier.width(1.dp))
+                FinalBoardsSide(opponentName, theirs, Color(0xFFEC4899), oppSolved, Modifier.weight(1f), pnGroups)
+            }
+            Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.width(1.dp).fillMaxHeight().background(WTheme.border))
+            }
         }
         // Reveal the answer so a missed board isn't a mystery — with its real
         // spacing for ProperNoundle.
