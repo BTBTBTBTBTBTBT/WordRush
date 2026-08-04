@@ -8,6 +8,10 @@ struct HomeView: View {
     @State private var limitModal: HomeMode?     // free user tapped a completed daily
     @State private var solvedMode: HomeMode?      // "View Solved Puzzle"
     @State private var showProSheet = false
+    // Session-scoped by design: WordociousApp resets this to .daily on every
+    // cold start (and on a day-rollover foreground return) so reopening the
+    // app always lands on the Daily surface. UserDefaults is still used so the
+    // choice survives view churn within a session.
     @AppStorage("pref-play-mode") private var playMode: PlayMode = .daily
     @State private var vsDailyWon: Bool? = nil     // today's daily VS outcome (nil = not played) → card W/L badge
     @State private var pendingGame: ActiveGame?    // tap-time-resolved Unlimited game
@@ -216,6 +220,16 @@ struct HomeView: View {
             // from a daily push like ProperNoundle) so a just-finished game shows
             // its completed state immediately — no longer needs a tab round-trip.
             .onAppear { livePlayers.start(); reloadDaily() }
+            // Foreground return on a NEW local day (WordociousApp posts) → reset
+            // Home to the Daily surface like a cold start: toggle back to Daily
+            // and dismiss the solo game covers. The unlimited board's save (and
+            // its "unlimited-current-*" marker) survive, so toggling back to
+            // Unlimited still resumes it. Same-day resumes never fire this.
+            .onReceive(NotificationCenter.default.publisher(for: .dayRolledOver)) { _ in
+                playMode = .daily
+                pendingGame = nil
+                pnGame = nil
+            }
             // The moment a daily is recorded (even mid-game-over, before the user
             // taps Home) refresh the word card + VS state. The completion badges
             // already react via the shared DailyCompletionsStore.

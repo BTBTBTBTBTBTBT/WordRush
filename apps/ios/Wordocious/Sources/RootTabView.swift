@@ -152,6 +152,16 @@ struct RootTabView: View {
                 }
             }
         }
+        // Foreground return on a NEW local day (WordociousApp posts) → land on
+        // Home like a cold start: dismiss the root-level solo game covers and
+        // reset the tab. The unlimited board's save survives (resumable from
+        // the Unlimited grid); live VS covers are deliberately left alone.
+        .onReceive(NotificationCenter.default.publisher(for: .dayRolledOver)) { _ in
+            nextDaily = nil
+            unlimitedGame = nil
+            leaderboardPath = []
+            tab = .home
+        }
         // Universal-link VS invite → straight into the private match, exactly
         // like accepting a pending-invite banner (VSGameView handles the rest).
         .fullScreenCover(item: $deepLink.vsInvite) { inv in

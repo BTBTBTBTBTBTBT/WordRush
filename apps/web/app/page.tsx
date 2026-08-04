@@ -273,20 +273,52 @@ export default function HomePage() {
     } catch {}
   }, [user, todayDailies]);
 
-  // Restore the toggle preference on mount for Pro users. Freemium users
-  // never see the toggle and are forced back to 'daily' so the mode
-  // cards keep their existing daily-limit behavior.
+  // Restore the toggle on mount for Pro users — but only within the SAME
+  // browser session and local day (founder-approved UX: reopening the app
+  // always lands on Daily; the founder's sister reopened after a night of
+  // Unlimited, tapped Classic, and her result never hit the daily
+  // leaderboard). sessionStorage keeps the choice across in-session
+  // navigations (home → game → home remounts this page) but not across a
+  // fresh browser session; the day stamp resets a session that crosses local
+  // midnight. Freemium users never see the toggle and are forced to 'daily'.
   useEffect(() => {
     if (!isPro) { setPlayModeState('daily'); return; }
     try {
-      const saved = localStorage.getItem('wordocious-play-mode');
-      if (saved === 'unlimited') setPlayModeState('unlimited');
+      // One-time cleanup of the old cross-session preference key.
+      localStorage.removeItem('wordocious-play-mode');
+      const saved = sessionStorage.getItem('wordocious-play-mode');
+      if (!saved) return;
+      const { mode, day } = JSON.parse(saved) as { mode?: string; day?: string };
+      if (mode === 'unlimited' && day === getTodayLocal()) setPlayModeState('unlimited');
     } catch {}
+  }, [isPro]);
+
+  // Day rollover while the tab stayed open: returning to a home page left
+  // open overnight snaps the toggle back to Daily (same rule as a fresh
+  // open). Same-day returns change nothing.
+  useEffect(() => {
+    if (!isPro) return;
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const saved = sessionStorage.getItem('wordocious-play-mode');
+        if (!saved) return;
+        const { day } = JSON.parse(saved) as { day?: string };
+        if (day !== getTodayLocal()) {
+          sessionStorage.removeItem('wordocious-play-mode');
+          setPlayModeState('daily');
+        }
+      } catch {}
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [isPro]);
 
   const setPlayMode = (next: PlayMode) => {
     setPlayModeState(next);
-    try { localStorage.setItem('wordocious-play-mode', next); } catch {}
+    try {
+      sessionStorage.setItem('wordocious-play-mode', JSON.stringify({ mode: next, day: getTodayLocal() }));
+    } catch {}
   };
 
   // Lazy-load word lists to keep them out of the home page's critical JS bundle.

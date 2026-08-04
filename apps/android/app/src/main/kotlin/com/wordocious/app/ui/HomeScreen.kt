@@ -133,8 +133,11 @@ fun HomeScreen(
         com.wordocious.app.data.SettingsPref.set("pro-prompt-shown", true)
         com.wordocious.app.data.AuthService.markProPromptShown()
     }
-    // iOS @AppStorage("pref-play-mode"): the Pro Daily⇄Unlimited choice survives
-    // launches (and MainScreen disposing Home while a game/settings route shows).
+    // iOS @AppStorage("pref-play-mode") parity — session-scoped by design: the
+    // pref carries the Pro Daily⇄Unlimited choice across MainScreen disposing
+    // Home (game/settings routes), but App.onCreate resets it to "daily" on
+    // every cold start, so reopening the app always lands on the Daily surface
+    // (founder-approved UX).
     var playMode by remember {
         mutableStateOf(
             if (com.wordocious.app.data.SettingsPref.get("pref-play-mode", "daily") == "unlimited") {
@@ -143,6 +146,31 @@ fun HomeScreen(
                 PlayMode.DAILY
             }
         )
+    }
+    // Warm-resume day rollover: snap the toggle back to Daily (cold-start
+    // parity). MainScreen resets the PREF + nav; this resets the already-
+    // composed state here, which the pref write alone can't reach. Same-day
+    // resumes keep the user's choice.
+    var lastPlayModeDay by remember { mutableStateOf(com.wordocious.app.todayLocalDate()) }
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_RESUME -> {
+                    val today = com.wordocious.app.todayLocalDate()
+                    if (today != lastPlayModeDay) {
+                        lastPlayModeDay = today
+                        playMode = PlayMode.DAILY
+                        com.wordocious.app.data.SettingsPref.set("pref-play-mode", "daily")
+                    }
+                }
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> {
+                    lastPlayModeDay = com.wordocious.app.todayLocalDate()
+                }
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(obs) }
     }
     val unlimitedMode = isPro && playMode == PlayMode.UNLIMITED
     val signOutScope = androidx.compose.runtime.rememberCoroutineScope()

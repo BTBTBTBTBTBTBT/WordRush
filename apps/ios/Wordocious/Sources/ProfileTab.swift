@@ -1221,15 +1221,23 @@ struct LeaderboardTab: View {
                 CompletedDailyCard(mode: mode).id(mode)
                 if let r = userRank { rankBanner(r) }
 
-                Text("LEADERBOARD").font(Brand.font(10, .black)).tracking(0.8)
-                    .foregroundStyle(Theme.textMuted).frame(maxWidth: .infinity, alignment: .leading)
+                HStack(alignment: .firstTextBaseline) {
+                    Text("LEADERBOARD").font(Brand.font(10, .black)).tracking(0.8)
+                        .foregroundStyle(Theme.textMuted)
+                    Spacer()
+                    // Founder-approved clarity: this board ranks DAILY games
+                    // only — Unlimited runs never appear here (the founder's
+                    // sister played Unlimited and looked for her name).
+                    Text("Daily games only").font(Brand.font(9, .bold))
+                        .foregroundStyle(Theme.textMuted)
+                }
 
                 if loading {
                     LeaderboardSkeleton()   // web parity: animate-pulse rows, not a spinner
                 } else if entries.isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
-                        Text("No results yet. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        Text("No daily results yet. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 40)
                     .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))

@@ -197,6 +197,42 @@ fun MainScreen() {
     var vsActive by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, Boolean>?>(null) }
     // Public profile overlay (web /profile/[id]) — opened from leaderboard/records usernames.
     var publicProfileId by remember { mutableStateOf<String?>(null) }
+    // Warm-resume day rollover (founder-approved UX, iOS WordociousApp parity):
+    // if the LOCAL day changed while backgrounded, reset the landing surface
+    // exactly like a cold start — Home tab, Daily toggle (App.onCreate resets
+    // the pref on cold start; HomeScreen resets its own composed state), and no
+    // solo game auto-showing. The in-progress unlimited board is NOT deleted:
+    // its save + "unlimited-current-*" marker survive, so the Unlimited grid
+    // resumes it. Same-day resumes leave everything untouched (nobody gets
+    // yanked out of a game they backgrounded minutes ago). Live VS surfaces
+    // (vsActive / vsLobby / vsInvite) are deliberately left alone.
+    val mainLifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    var lastActiveDay by remember { mutableStateOf(com.wordocious.app.todayLocalDate()) }
+    androidx.compose.runtime.DisposableEffect(mainLifecycleOwner) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_RESUME -> {
+                    val today = com.wordocious.app.todayLocalDate()
+                    if (today != lastActiveDay) {
+                        lastActiveDay = today
+                        com.wordocious.app.data.SettingsPref.set("pref-play-mode", "daily")
+                        if (activeGame != null) { activeGame = null; activeSeed = null }
+                        publicProfileId = null
+                        selectedTab = 0
+                    }
+                }
+                // Track the day the app was last ACTIVE, so a session that
+                // stays foregrounded across midnight isn't reset on its next
+                // brief background/return.
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> {
+                    lastActiveDay = com.wordocious.app.todayLocalDate()
+                }
+                else -> {}
+            }
+        }
+        mainLifecycleOwner.lifecycle.addObserver(obs)
+        onDispose { mainLifecycleOwner.lifecycle.removeObserver(obs) }
+    }
     // Invite-accepted VS match (mode + invite code) from the pending-invites banner.
     var vsInvite by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, String>?>(null) }
     // App-link VS invites (wordocious.com/vs/join/* via DeepLinkRouter) feed the

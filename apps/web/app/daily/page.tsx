@@ -455,9 +455,15 @@ export default function DailyPage() {
           </div>
         )}
 
-        {/* Leaderboard */}
-        <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>
-          Leaderboard
+        {/* Leaderboard — the caption is founder-approved clarity: this board
+            ranks DAILY games only, so an Unlimited session never shows here. */}
+        <div className="flex items-baseline justify-between mb-2">
+          <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            Leaderboard
+          </div>
+          <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            Daily games only
+          </div>
         </div>
         <PullToRefresh onRefresh={loadLeaderboard} accentColor={color}>
         <div
@@ -484,7 +490,7 @@ export default function DailyPage() {
           ) : leaderboard.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
               <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-xs font-bold">No results yet. Be the first!</p>
+              <p className="text-xs font-bold">No daily results yet. Be the first!</p>
             </div>
           ) : (
             <div>

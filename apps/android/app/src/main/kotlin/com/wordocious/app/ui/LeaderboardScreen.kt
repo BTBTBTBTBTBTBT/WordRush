@@ -298,11 +298,30 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             // Leaderboard label
             item {
                 // iOS relabels the section when the cross-mode Sweep board is up.
-                Text(
-                    if (isSweep) "DAILY SWEEP" else "LEADERBOARD", fontSize = 10.sp, fontWeight = FontWeight.Black,
-                    color = WTheme.textMuted, letterSpacing = 0.8.sp,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+                if (isSweep) {
+                    Text(
+                        "DAILY SWEEP", fontSize = 10.sp, fontWeight = FontWeight.Black,
+                        color = WTheme.textMuted, letterSpacing = 0.8.sp,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                } else {
+                    // Founder-approved clarity (iOS parity): this board ranks
+                    // DAILY games only — Unlimited runs never appear here.
+                    Row(
+                        Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "LEADERBOARD", fontSize = 10.sp, fontWeight = FontWeight.Black,
+                            color = WTheme.textMuted, letterSpacing = 0.8.sp,
+                        )
+                        Text(
+                            "Daily games only", fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                            color = WTheme.textMuted,
+                        )
+                    }
+                }
             }
             // Leaderboard body
             if (loading) {
@@ -338,7 +357,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     ) {
                         Icon(Icons.Outlined.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.4f), modifier = Modifier.size(32.dp))
                         Spacer(Modifier.height(8.dp))
-                        Text("No results yet. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("No daily results yet. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             } else {

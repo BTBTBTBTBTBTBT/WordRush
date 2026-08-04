@@ -2,6 +2,14 @@ import SwiftUI
 import GoogleSignIn
 import Sentry
 
+/// Posted when the app returns to the foreground on a NEW local day: the
+/// landing surface resets to Home/Daily exactly like a cold start (founder-
+/// approved UX — reopening should never land in Unlimited). RootTabView and
+/// HomeView observe. Same-day resumes never post this.
+extension Notification.Name {
+    static let dayRolledOver = Notification.Name("wordocious.day-rolled-over")
+}
+
 @main
 struct WordociousApp: App {
     @StateObject private var auth = AuthService.shared
@@ -10,8 +18,19 @@ struct WordociousApp: App {
     // APNs token capture (PushRegistration.swift) — SwiftUI apps need a
     // UIApplicationDelegate for didRegisterForRemoteNotifications callbacks.
     @UIApplicationDelegateAdaptor(PushRegistrationDelegate.self) private var pushDelegate
+    /// Local day the app was last active — a foreground return on a different
+    /// day resets the landing surface to Home/Daily (see scenePhase below).
+    @State private var lastActiveDay = LeaderboardService.todayLocal()
 
     init() {
+        // Cold starts always land on the DAILY surface (founder-approved UX):
+        // the Pro Daily⇄Unlimited toggle choice is deliberately NOT restored
+        // across launches — the founder's sister reopened the app, tapped
+        // Classic, and unknowingly played Unlimited, so her daily-leaderboard
+        // entry never existed. An in-progress unlimited board is untouched
+        // (its save + "unlimited-current-*" marker remain), so toggling back
+        // to Unlimited still resumes it.
+        UserDefaults.standard.set(PlayMode.daily.rawValue, forKey: "pref-play-mode")
         // Crash reporting for TestFlight/App Store builds only — DEBUG builds
         // (simulator/dev) stay out of Sentry so local crashes don't pollute it.
         #if !DEBUG
@@ -52,12 +71,28 @@ struct WordociousApp: App {
                 // active players (mirrors the web SitePresenceProvider).
                 .onChange(of: scenePhase) { phase in
                     if phase == .active {
+                        // Warm resume across local midnight → reset the landing
+                        // surface to Home/Daily, same as a cold start. Same-day
+                        // resumes change nothing (nobody gets yanked out of a
+                        // game they backgrounded five minutes ago).
+                        let today = LeaderboardService.todayLocal()
+                        if today != lastActiveDay {
+                            lastActiveDay = today
+                            UserDefaults.standard.set(PlayMode.daily.rawValue, forKey: "pref-play-mode")
+                            NotificationCenter.default.post(name: .dayRolledOver, object: nil)
+                        }
                         PresenceService.shared.start()
                         // Recompute the daily reminder: if today's 9 dailies are
                         // done (or it's past 18:00) it rolls to tomorrow, so a
                         // finished day never gets tonight's nudge.
                         Task { await NotificationService.reschedule() }
-                    } else if phase == .background { PresenceService.shared.stop() }
+                    } else if phase == .background {
+                        // Record the day the app was last ACTIVE: a session that
+                        // stays foregrounded across midnight shouldn't reset on
+                        // its next brief background/return.
+                        lastActiveDay = LeaderboardService.todayLocal()
+                        PresenceService.shared.stop()
+                    }
                 }
                 // Every daily completion re-evaluates the reminder — completing
                 // the 9th daily flips tonight's reminder to tomorrow 18:00.
