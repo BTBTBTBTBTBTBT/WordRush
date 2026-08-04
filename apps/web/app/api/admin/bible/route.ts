@@ -42,6 +42,20 @@ export async function GET(request: NextRequest) {
   const text = readBible();
   if (!text) return NextResponse.json({ error: 'Bible not bundled in this deploy' }, { status: 404 });
 
+  // ?download=1 — the bible as a real .md file. Exists for Jasson's workflow:
+  // he feeds the bible to his own Claude, and his phone's share-sheet attach
+  // kept uploading zero-byte files; downloading via Safari → Files → attach
+  // from Files bypasses that path entirely.
+  if (request.nextUrl.searchParams.get('download') === '1') {
+    return new NextResponse(text, {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="WORDOCIOUS_BIBLE.md"',
+        'Cache-Control': 'private, no-store',
+      },
+    });
+  }
+
   if (request.nextUrl.searchParams.get('full') === '1') {
     return NextResponse.json({ full: text, chars: text.length });
   }
