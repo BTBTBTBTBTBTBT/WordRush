@@ -5,6 +5,12 @@ import { gunzipSync } from 'node:zlib';
 import { verifyAdmin } from '@/lib/admin-auth';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { PRO_PLANS } from '@/lib/payment/types';
+import {
+  REFERRAL_TRIAL_DAYS,
+  INSTANT_REWARD_DAYS,
+  INSTANT_REWARD_CAP,
+  CONVERSION_REWARD_DAYS,
+} from '@/lib/referral-service';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,7 +29,13 @@ export const dynamic = 'force-dynamic';
 //
 // Store DOLLARS come in two tiers of honesty:
 //
-//   ESTIMATED     store subscription counts (entitlement DB) × list price.
+//   ESTIMATED     store subscription counts (entitlement DB) × list price —
+//                 but only for store-side users classified as PAID. The
+//                 non-Stripe remainder of active Pro is NOT all store
+//                 subscribers: it includes admin-granted comps, referral
+//                 7-day trials, and inviter bonus days, all of which pay $0.
+//                 Counting them at list price fabricated MRR, so they are
+//                 classified out first (see the comped classifier in GET).
 //                 The DB records WHO has Pro but not which plan a store sub
 //                 is on (store_webhook_events keeps only event ids for
 //                 idempotency), so the estimate assumes monthly and also
@@ -243,20 +255,150 @@ export async function GET(request: NextRequest) {
   const active = (profiles ?? []).filter(
     (p) => p.is_pro && (!p.pro_expires_at || new Date(p.pro_expires_at).getTime() > now),
   );
+  const storeActive = active.filter((p) => !p.stripe_customer_id);
+
+  // ── Comped vs paid: classify every active non-Stripe Pro user ─────────────
+  // The non-Stripe remainder is NOT "store subscribers": Pro also arrives via
+  // admin gifts, referral 7-day trials, and inviter bonus days — all $0.
+  // There is no per-user store-payment record to lean on (store_webhook_events
+  // keeps only event ids; the webhooks write profiles directly), so the rule is:
+  // prefer POSITIVE payment evidence where the data has it, otherwise subtract
+  // the PROVABLY-comped set and say what's left is assumed, not known.
+  //
+  //   PAID (positive)  referrals.status='converted' on the user's own
+  //                    redemption — that stamp is written only by real
+  //                    fulfillment webhooks after a store subscription, and a
+  //                    non-Stripe converted invitee can only have paid a store.
+  //   COMPED (proven)  one of:
+  //                    * no expiry: every payment rail writes pro_expires_at,
+  //                      so is_pro with a NULL expiry is manually set, never paid;
+  //                    * admin grant: the latest grant_pro/revoke_pro audit row
+  //                      is a grant whose recorded new_expiry IS the current
+  //                      expiry — the gift fully explains the window (a later
+  //                      purchase would have moved it);
+  //                    * referral trial: redemption requires never-had-Pro, so
+  //                      the trial window is exactly redeemed_at + 7d — an
+  //                      expiry inside it is the trial and nothing else;
+  //                    * inviter bonus: additive grants mean expiry can never
+  //                      exceed (last reward event + total bonus days), so an
+  //                      expiry inside that envelope is explainable by rewards
+  //                      alone. (A store sub extends ≥30d past its purchase, so
+  //                      overlap is unlikely, not impossible — labeled as such.)
+  //   ASSUMED PAID     everything else: no evidence either way, kept in the
+  //                    estimate and counted honestly in the caption.
+  type CompReason = 'noExpiry' | 'adminGrant' | 'referralTrial' | 'referralInviter';
+  const compReason = new Map<string, CompReason>();
+  const paidEvidence = new Set<string>();
+  const TOL_MS = 5 * 60_000; // clock slop between a grant's stamp and its write
+  const DAY_MS = 86_400_000;
+
+  if (storeActive.length > 0) {
+    const storeIds = storeActive.map((p) => p.id);
+    const [auditRes, inviteeRes, inviterRes] = await Promise.all([
+      admin.from('admin_audit_log')
+        .select('target_user_id, action, details, created_at')
+        .in('action', ['grant_pro', 'revoke_pro'])
+        .in('target_user_id', storeIds)
+        .order('created_at', { ascending: false }),
+      admin.from('referrals')
+        .select('invitee_id, status, redeemed_at')
+        .in('invitee_id', storeIds)
+        .in('status', ['redeemed', 'converted']),
+      admin.from('referrals')
+        .select('inviter_id, status, redeemed_at, converted_at, converted_plan')
+        .in('inviter_id', storeIds)
+        .in('status', ['redeemed', 'converted']),
+    ]);
+
+    // Latest grant/revoke per user — rows arrive newest-first, first one wins.
+    // details.new_expiry exists only for grants since 2026-07-30 (fb98d7f);
+    // before that the route computed a flat now + days, so an old grant's
+    // expiry is reconstructable as created_at + days (the audit insert follows
+    // the profile write within the same request). Old grants ran on UTC Vercel
+    // lambdas, so setDate() was exact 24h multiples — the shared TOL_MS covers
+    // the request latency between the write and the audit stamp.
+    const latestAudit = new Map<string, { action: string; newExpiryMs: number }>();
+    for (const row of (auditRes.data ?? []) as { target_user_id: string | null; action: string; created_at: string; details: { new_expiry?: string | null; days?: number | null } | null }[]) {
+      if (!row.target_user_id || latestAudit.has(row.target_user_id)) continue;
+      const newExpiryMs = row.details?.new_expiry
+        ? new Date(row.details.new_expiry).getTime()
+        : row.action === 'grant_pro'
+          ? new Date(row.created_at).getTime() + (row.details?.days || 30) * DAY_MS
+          : NaN;
+      latestAudit.set(row.target_user_id, { action: row.action, newExpiryMs });
+    }
+    // One redemption per account (DB-enforced) → a plain map is safe.
+    const inviteeRef = new Map<string, { status: string; redeemed_at: string | null }>();
+    for (const r of (inviteeRes.data ?? []) as { invitee_id: string | null; status: string; redeemed_at: string | null }[]) {
+      if (r.invitee_id) inviteeRef.set(r.invitee_id, r);
+    }
+    const inviterRefs = new Map<string, { status: string; redeemed_at: string | null; converted_at: string | null; converted_plan: string | null }[]>();
+    for (const r of (inviterRes.data ?? []) as { inviter_id: string; status: string; redeemed_at: string | null; converted_at: string | null; converted_plan: string | null }[]) {
+      const list = inviterRefs.get(r.inviter_id) ?? [];
+      list.push(r);
+      inviterRefs.set(r.inviter_id, list);
+    }
+
+    for (const p of storeActive) {
+      // 1. Positive store payment: their own redeemed trial converted.
+      const inv = inviteeRef.get(p.id);
+      if (inv?.status === 'converted') {
+        paidEvidence.add(p.id);
+        continue;
+      }
+      // 2. No expiry: unreachable via any payment rail → manual comp.
+      if (!p.pro_expires_at) {
+        compReason.set(p.id, 'noExpiry');
+        continue;
+      }
+      const expiryMs = new Date(p.pro_expires_at).getTime();
+      // 3. Admin gift fully explains the current window.
+      const audit = latestAudit.get(p.id);
+      if (audit?.action === 'grant_pro' && Math.abs(audit.newExpiryMs - expiryMs) <= TOL_MS) {
+        compReason.set(p.id, 'adminGrant');
+        continue;
+      }
+      // 4. Still inside their 7-day referral trial.
+      if (inv?.status === 'redeemed' && inv.redeemed_at) {
+        const trialEndMs = new Date(inv.redeemed_at).getTime() + REFERRAL_TRIAL_DAYS * DAY_MS;
+        if (expiryMs <= trialEndMs + TOL_MS) {
+          compReason.set(p.id, 'referralTrial');
+          continue;
+        }
+      }
+      // 5. Inviter whose window fits inside the bonus-days envelope.
+      const refs = inviterRefs.get(p.id) ?? [];
+      if (refs.length > 0) {
+        const instantDays = INSTANT_REWARD_DAYS * Math.min(refs.length, INSTANT_REWARD_CAP);
+        const conversionDays = refs.reduce(
+          (a, r) => a + (r.status === 'converted' ? CONVERSION_REWARD_DAYS[r.converted_plan ?? ''] ?? 0 : 0), 0);
+        const lastEventMs = Math.max(
+          ...refs.map((r) => Math.max(Date.parse(r.converted_at ?? '') || 0, Date.parse(r.redeemed_at ?? '') || 0)));
+        if (lastEventMs > 0 && expiryMs <= lastEventMs + (instantDays + conversionDays) * DAY_MS + TOL_MS) {
+          compReason.set(p.id, 'referralInviter');
+        }
+      }
+    }
+  }
+
+  const paidStore = storeActive.filter((p) => !compReason.has(p.id));
+  const reasonCount = (r: CompReason) => [...compReason.values()].filter((v) => v === r).length;
+
   const subs = {
     activeTotal: active.length,
     stripe: active.filter((p) => p.stripe_customer_id).length,
-    store: active.filter((p) => !p.stripe_customer_id).length,
+    store: storeActive.length,
     // app_platform is the §199 presence stamp — fills in as stamped builds
     // reach users, so the store split is labeled "best known", not claimed.
-    storeIos: active.filter((p) => !p.stripe_customer_id && p.app_platform === 'ios').length,
-    storeAndroid: active.filter((p) => !p.stripe_customer_id && p.app_platform === 'android').length,
+    storeIos: storeActive.filter((p) => p.app_platform === 'ios').length,
+    storeAndroid: storeActive.filter((p) => p.app_platform === 'android').length,
   };
 
-  // ── Store revenue ESTIMATE: entitlement-DB counts × list price ────────────
-  // The DB doesn't record which plan a store sub is on, so dollars assume
-  // monthly ($6.99/mo); the all-yearly floor ($59.99/12 ≈ $5.00/mo per sub)
-  // bounds the estimate from below. Cents math, floated once at the end.
+  // ── Store revenue ESTIMATE: PAID-classified counts × list price ───────────
+  // Comped users contribute $0 by definition and are excluded before the
+  // multiply. The DB doesn't record which plan a store sub is on, so dollars
+  // assume monthly ($6.99/mo); the all-yearly floor ($59.99/12 ≈ $5.00/mo per
+  // sub) bounds the estimate from below. Cents math, floated once at the end.
   const est = (count: number) => ({
     count,
     mrr: (count * PLAN_MONTHLY_CENTS.pro_monthly) / 100,
@@ -267,9 +409,20 @@ export async function GET(request: NextRequest) {
     monthlyPrice: PRO_PLANS.monthly.price,
     yearlyMonthlyEquivalent: PLAN_MONTHLY_CENTS.pro_yearly / 100,
     storeCut: STORE_CUT,
-    ios: est(subs.storeIos),
-    android: est(subs.storeAndroid),
-    storeTotal: est(subs.store),
+    ios: est(paidStore.filter((p) => p.app_platform === 'ios').length),
+    android: est(paidStore.filter((p) => p.app_platform === 'android').length),
+    storeTotal: est(paidStore.length),
+    comped: {
+      count: compReason.size,
+      adminGrant: reasonCount('adminGrant'),
+      referralTrial: reasonCount('referralTrial'),
+      referralInviter: reasonCount('referralInviter'),
+      noExpiry: reasonCount('noExpiry'),
+      // Of the PAID side: how many have positive payment evidence vs are merely
+      // unproven-either-way. Surfaced so the caption can say it plainly.
+      paidEvidence: paidEvidence.size,
+      assumedPaid: paidStore.length - paidEvidence.size,
+    },
   };
 
   // ── Stripe: live ──────────────────────────────────────────────────────────
@@ -326,7 +479,8 @@ export async function GET(request: NextRequest) {
   ]);
 
   // All-rails MRR headline: Stripe's live number where we have it, plus the
-  // store estimate — flagged combined-is-estimate whenever the store side > 0.
+  // store estimate (paid-classified only — comped users contribute $0 here by
+  // construction) — flagged combined-is-estimate whenever the store side > 0.
   const stripeMrr = typeof stripe.mrr === 'number' ? stripe.mrr : 0;
   const combined = {
     mrr: stripeMrr + storeEstimate.storeTotal.mrr,

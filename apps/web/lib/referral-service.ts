@@ -21,12 +21,15 @@ import { getAdminSupabase } from './supabase-admin';
 const DAY_MS = 86_400_000;
 
 export const REFERRAL_TRIAL_DAYS = 7;
-const INSTANT_REWARD_DAYS = 3;
-const INSTANT_REWARD_CAP = 5;   // instant +3d only for the first 5 redemptions
+// Exported (with CONVERSION_REWARD_DAYS) for the admin revenue route's
+// comped-vs-paid classifier: it bounds how much Pro time referral rewards can
+// account for, and must never drift from what this service actually grants.
+export const INSTANT_REWARD_DAYS = 3;
+export const INSTANT_REWARD_CAP = 5;   // instant +3d only for the first 5 redemptions
 const MILESTONE_SHIELDS_AT = 3; // +4 shields when the 3rd friend redeems
 const MILESTONE_SHIELDS = 4;
 export const MAX_PENDING_INVITES = 3;
-const CONVERSION_REWARD_DAYS: Record<string, number> = {
+export const CONVERSION_REWARD_DAYS: Record<string, number> = {
   pro_monthly: 30,
   pro_yearly: 90, // 3 free months when the friend goes annual (founder call 2026-07-29)
 };

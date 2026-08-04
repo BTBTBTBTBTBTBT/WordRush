@@ -11,6 +11,20 @@ import { EXPENSES, expenseTotals } from '@/lib/expenses';
 // until then they say "not connected" instead of showing fabricated zeros.
 interface StoreRailEstimate { count: number; mrr: number; mrrIfAllYearly: number }
 
+// Active non-Stripe Pro split into comped ($0: admin gifts, referral trials,
+// inviter bonus days, no-expiry manual grants) vs paid — see the classifier
+// in api/admin/revenue. paidEvidence/assumedPaid split the PAID side by
+// whether a positive payment record exists.
+interface CompedBreakdown {
+  count: number;
+  adminGrant: number;
+  referralTrial: number;
+  referralInviter: number;
+  noExpiry: number;
+  paidEvidence: number;
+  assumedPaid: number;
+}
+
 interface RevenueData {
   subs: { activeTotal: number; stripe: number; store: number; storeIos: number; storeAndroid: number };
   storeEstimate: {
@@ -21,6 +35,7 @@ interface RevenueData {
     ios: StoreRailEstimate;
     android: StoreRailEstimate;
     storeTotal: StoreRailEstimate;
+    comped: CompedBreakdown;
   };
   combined: { mrr: number; stripeActual: boolean; estimated: boolean };
   apple: {
@@ -221,15 +236,25 @@ export default function AdminRevenuePage() {
 }
 
 // Subscription dollars, all rails. Stripe's MRR is live; store rails are
-// count × list price — an ESTIMATE, because the entitlement DB records who
-// has Pro but not which plan a store sub is on. Assumes monthly; the
-// all-yearly floor bounds it below. Ignores proration, refunds, regional
-// pricing. Apple/Google keep 15% (small-business tier).
+// paid-classified count × list price — an ESTIMATE, because the entitlement
+// DB records who has Pro but not which plan a store sub is on. COMPED Pro
+// (admin gifts, referral 7-day trials, inviter bonus days, no-expiry manual
+// grants) pays $0 and is classified out before the multiply — counting it at
+// list price was fabricating MRR. Assumes monthly; the all-yearly floor
+// bounds it below. Ignores proration, refunds, regional pricing.
+// Apple/Google keep 15% (small-business tier).
 function EstimatedRevenueCard({ data }: { data: RevenueData }) {
   const e = data.storeEstimate;
   const c = data.combined;
   if (!e || !c) return null;
   const net = (n: number) => n * (1 - e.storeCut);
+  const comp = e.comped ?? { count: 0, adminGrant: 0, referralTrial: 0, referralInviter: 0, noExpiry: 0, paidEvidence: 0, assumedPaid: e.storeTotal.count };
+  const compParts = [
+    comp.adminGrant > 0 && `${comp.adminGrant} admin-gifted`,
+    comp.referralTrial > 0 && `${comp.referralTrial} on a referral 7-day trial`,
+    comp.referralInviter > 0 && `${comp.referralInviter} on referral inviter bonus days`,
+    comp.noExpiry > 0 && `${comp.noExpiry} manual no-expiry`,
+  ].filter(Boolean).join(', ');
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center gap-2 mb-3">
@@ -238,7 +263,7 @@ function EstimatedRevenueCard({ data }: { data: RevenueData }) {
         </h2>
         <SourceTag kind="est" />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
         <div>
           <p className="text-2xl font-black text-gray-900">{usd(c.mrr)}</p>
           <p className="text-xs font-bold text-gray-400">est. MRR, all rails</p>
@@ -255,11 +280,22 @@ function EstimatedRevenueCard({ data }: { data: RevenueData }) {
           <p className="text-2xl font-black text-gray-900">{usd(e.android.mrr)}</p>
           <p className="text-xs font-bold text-gray-400">Play est. ({e.android.count})</p>
         </div>
+        <div>
+          <p className="text-2xl font-black text-gray-400">$0.00</p>
+          <p className="text-xs font-bold text-gray-400">comped ({comp.count})</p>
+        </div>
       </div>
       <p className="text-[11px] font-bold text-gray-300 mt-3 leading-relaxed">
-        Store dollars are count × list price ({usd(e.monthlyPrice)}/mo), NOT payment data: the entitlement
-        DB doesn&apos;t record which plan a store sub is on, so this assumes every store sub is monthly —
-        if all were yearly the store total would be {usd(e.storeTotal.mrrIfAllYearly)}/mo instead of{' '}
+        Store dollars are paid-classified count × list price ({usd(e.monthlyPrice)}/mo), NOT payment data.
+        Comped Pro pays $0 and is excluded from every dollar figure
+        {comp.count > 0 ? <> — {comp.count} of the {e.storeTotal.count + comp.count} store-side users: {compParts}</> : null}.
+        A user is comped when their current Pro window is fully explained by the latest admin gift
+        (audit-log expiry match), a redeemed referral&apos;s 7-day trial window, inviter bonus days, or an
+        expiry-less grant no payment rail can produce. Of the {e.storeTotal.count} counted as paying,{' '}
+        {comp.paidEvidence} have positive payment evidence (a webhook-stamped referral conversion); the
+        other {comp.assumedPaid} have no per-user store payment record either way (the webhook ledger
+        keeps only event ids) and are ASSUMED paying. Plan is also unrecorded, so this assumes monthly —
+        all-yearly would make the store total {usd(e.storeTotal.mrrIfAllYearly)}/mo instead of{' '}
         {usd(e.storeTotal.mrr)}/mo. Ignores proration, refunds, and regional pricing. After the stores&apos;{' '}
         {Math.round(e.storeCut * 100)}% cut (small-business tier), the store estimate nets ≈{usd(net(e.storeTotal.mrr))}/mo.
         Store total ({e.storeTotal.count}) can exceed the App Store + Play split while presence stamps fill in.
