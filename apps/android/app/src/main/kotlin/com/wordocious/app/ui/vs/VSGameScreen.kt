@@ -44,6 +44,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
@@ -64,6 +65,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wordocious.app.ui.InviteSheet
 import com.wordocious.app.ui.clickableNoRipple
@@ -109,7 +112,20 @@ private fun gauntletStageGradient(name: String): List<Color> = when (name) {
  */
 @Composable
 fun VSGameScreen(mode: GameMode, isDaily: Boolean = false, inviteCode: String? = null, onHome: () -> Unit, onGoPro: () -> Unit, onPlayUnlimited: () -> Unit = {}) {
-    val vm: VSMatchViewModel = viewModel(key = "vs-$mode-${inviteCode ?: "rand"}", factory = VSVMFactory(mode, isDaily, inviteCode))
+    // Fresh VM per screen entry (iOS parity: every VSGameView push creates a new
+    // @StateObject VM). The activity-scoped store kept the previous VM for the
+    // same mode forever — after daily VS, "Play Unlimited VS" → lobby → Classic
+    // reattached the stale daily VM (started=true, screen=ALREADY_PLAYED_DAILY),
+    // so an unlimited match could never start (and finished matches re-entered on
+    // their old RESULT screen). A screen-local store is disposed with the screen,
+    // which also runs onCleared (socket disconnect) for abandoned matches.
+    val vmOwner = remember { object : ViewModelStoreOwner { override val viewModelStore = ViewModelStore() } }
+    DisposableEffect(vmOwner) { onDispose { vmOwner.viewModelStore.clear() } }
+    val vm: VSMatchViewModel = viewModel(
+        viewModelStoreOwner = vmOwner,
+        key = "vs-$mode-$isDaily-${inviteCode ?: "rand"}",
+        factory = VSVMFactory(mode, isDaily, inviteCode),
+    )
     // Free users watch the game-start interstitial before matchmaking begins
     // (iOS VSGameView.onAppear / solo GameScreen parity). Shown once per screen.
     var adShown by rememberSaveable { mutableStateOf(false) }
