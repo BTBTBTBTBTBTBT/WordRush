@@ -101,7 +101,7 @@ fun ProfilePersonalizationRow(accentColor: String?, bioRaw: String?, featuredAch
                 Modifier.background(favCard.accent.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
-                ModeGlyph(favCard, tint = favCard.accent, glyphSize = 11.sp, iconSize = 14.dp)
+                ModeGlyph(favCard, tint = favCard.accent, box = 28.dp)
                 Text(favCard.title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = favCard.accent)
             }
         }

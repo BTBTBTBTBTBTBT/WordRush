@@ -657,7 +657,7 @@ private fun ModeCardView(
                     .background(card.accent.copy(alpha = 0.08f)),
                 contentAlignment = Alignment.Center,
             ) {
-                ModeGlyph(card, card.accent, glyphSize = 11.sp, iconSize = 16.dp)
+                ModeGlyph(card, card.accent, box = 32.dp)
             }
             Spacer(Modifier.height(8.dp))
             Text(card.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)

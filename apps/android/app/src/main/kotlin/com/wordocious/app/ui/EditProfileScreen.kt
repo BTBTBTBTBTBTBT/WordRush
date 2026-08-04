@@ -297,7 +297,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 }
                 if (bio.trim().isNotEmpty()) Text(bio.trim(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 if (favCard != null) Row(Modifier.background(favCard.accent.copy(alpha = 0.12f), RoundedCornerShape(50)).padding(horizontal = 9.dp, vertical = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    ModeGlyph(favCard, tint = favCard.accent, glyphSize = 11.sp, iconSize = 14.dp); Text(favCard.title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = favCard.accent)
+                    ModeGlyph(favCard, tint = favCard.accent, box = 28.dp); Text(favCard.title, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = favCard.accent)
                 }
             }
 
@@ -392,7 +392,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                                 .border(if (sel) 2.dp else 0.dp, if (sel) m.accent else Color.Transparent, RoundedCornerShape(10.dp))
                                 .clickableNoRipple { favoriteMode = m.engineMode?.name },
                             contentAlignment = Alignment.Center,
-                        ) { ModeGlyph(m, tint = m.accent, glyphSize = 14.sp, iconSize = 18.dp) }
+                        ) { ModeGlyph(m, tint = m.accent, box = 40.dp) }
                     }
                 }
             }

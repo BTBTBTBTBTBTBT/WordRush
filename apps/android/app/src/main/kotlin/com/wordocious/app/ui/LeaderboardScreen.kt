@@ -478,7 +478,7 @@ private fun ModeInfoCard(modeId: String, players: Int, played: Boolean, onPlay: 
                 Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.10f)),
                 contentAlignment = Alignment.Center,
             ) {
-                if (card != null) ModeGlyph(card, accent, 13.sp, 16.dp)
+                if (card != null) ModeGlyph(card, accent, box = 32.dp)
                 else Icon(Icons.Filled.EmojiEvents, null, tint = accent, modifier = Modifier.size(16.dp))
             }
             Column(Modifier.weight(1f)) {
@@ -583,7 +583,6 @@ private val LB_SHORT = mapOf(
     "RESCUE" to "Deliv", "DUEL_6" to "Six", "DUEL_7" to "Seven", "GAUNTLET" to "Gauntlet", "PROPERNOUNDLE" to "Proper",
     SWEEP_ID to "Sweep",
 )
-private val LB_GLYPH = mapOf("QUORDLE" to "IV", "OCTORDLE" to "VIII", "DUEL_6" to "6", "DUEL_7" to "7")
 
 /**
  * 5-over-4 stacked mode grid (all 9 modes visible, no horizontal scroll) — ports
@@ -621,27 +620,42 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
     val mode = pickerGameModeOrNull(id)
     val accent = if (isSweep) SWEEP_ACCENT else (mode?.let { modeAccent(it) } ?: WTheme.primary)
     val short = LB_SHORT[id] ?: id
-    Column(
-        modifier.clip(RoundedCornerShape(12.dp))
-            .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
-            .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
-            .clickableNoRipple(onClick).height(52.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+    // The cell is a FIXED 52dp tile: cap the effective fontScale at 1.3x so a
+    // huge system text size can't shear the label out of the box (iOS caps its
+    // dynamic type at 1.6x but also shrinks labels to fit; Compose has no
+    // autosize in this BOM, so 1.3x is the honest ceiling).
+    val d = androidx.compose.ui.platform.LocalDensity.current
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.ui.platform.LocalDensity provides
+            androidx.compose.ui.unit.Density(d.density, d.fontScale.coerceAtMost(1.3f)),
     ) {
-        Box(Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
-            // Web-faithful mode icon (WordleGrid/IV/VIII/TrendingUp/Shield/6/7/Skull/Crown);
-            // the sweep tile draws the broom line-art.
-            if (isSweep) {
-                Icon(
-                    androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom),
-                    null, tint = accent, modifier = Modifier.size(14.dp),
-                )
-            } else {
-                mode?.let { ModeGlyph(it, accent, glyphSize = 10.sp, iconSize = 14.dp) }
+        Column(
+            modifier.clip(RoundedCornerShape(12.dp))
+                .background(if (active) accent.copy(alpha = 0.08f) else WTheme.surface)
+                .border(1.5.dp, if (active) accent else WTheme.border, RoundedCornerShape(12.dp))
+                .clickableNoRipple(onClick).height(52.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically),
+        ) {
+            Box(Modifier.size(26.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
+                // Web-faithful mode icon (WordleGrid/IV/VIII/TrendingUp/Shield/6/7/Skull/Crown);
+                // the sweep tile draws the broom line-art.
+                if (isSweep) {
+                    Icon(
+                        androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_broom),
+                        null, tint = accent, modifier = Modifier.size(14.dp),
+                    )
+                } else {
+                    mode?.let { ModeGlyph(it, accent, box = 26.dp) }
+                }
             }
+            Text(
+                short, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold,
+                color = if (active) accent else WTheme.textMuted,
+                maxLines = 1, softWrap = false,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+            )
         }
-        Text(short, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1)
     }
 }
 

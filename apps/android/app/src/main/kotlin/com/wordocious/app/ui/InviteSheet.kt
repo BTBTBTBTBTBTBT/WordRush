@@ -150,7 +150,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                         Box(
                             Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(card.accent.copy(alpha = 0.10f)),
                             contentAlignment = Alignment.Center,
-                        ) { ModeGlyph(card, card.accent, 14.sp, 18.dp) }
+                        ) { ModeGlyph(card, card.accent, box = 28.dp) }
                         Spacer(Modifier.width(10.dp))
                         Text(card.title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.weight(1f))
                         Icon(
@@ -173,7 +173,7 @@ fun InviteSheet(onDismiss: () -> Unit) {
                                     Box(
                                         Modifier.size(26.dp).clip(RoundedCornerShape(7.dp)).background(m.accent.copy(alpha = 0.10f)),
                                         contentAlignment = Alignment.Center,
-                                    ) { ModeGlyph(m, m.accent, 13.sp, 16.dp) }
+                                    ) { ModeGlyph(m, m.accent, box = 26.dp) }
                                     Spacer(Modifier.width(10.dp))
                                     Text(m.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text, modifier = Modifier.weight(1f))
                                     if (selected) Icon(Icons.Filled.Check, null, tint = m.accent, modifier = Modifier.size(14.dp))

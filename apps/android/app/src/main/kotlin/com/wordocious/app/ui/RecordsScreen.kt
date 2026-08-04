@@ -376,7 +376,7 @@ private fun ModeIconBox(mode: String, accent: Color) {
                 tint = accent, modifier = Modifier.size(16.dp),
             )
         } else {
-            pickerGameModeOrNull(mode)?.let { ModeGlyph(it, accent, glyphSize = 12.sp, iconSize = 16.dp) }
+            pickerGameModeOrNull(mode)?.let { ModeGlyph(it, accent, box = 32.dp) }
         }
     }
 }

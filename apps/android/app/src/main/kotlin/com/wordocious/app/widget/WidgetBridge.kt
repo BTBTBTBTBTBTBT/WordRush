@@ -49,17 +49,17 @@ object WidgetBridge {
     private val json = Json { ignoreUnknownKeys = true }
 
     /** Home-menu icon spec per catalog id — the flattened ModeIconKind iOS
-     *  writes. six/seven are "hand" like iOS, but Android has no hand imageset,
-     *  so iconAsset stays null and the renderer takes ModeGlyph's textGlyph
-     *  fallback (exactly the path iOS takes for a missing asset). */
+     *  writes. six/seven are "hand" like iOS: the brand hand drawable
+     *  (ic_six_hand/ic_seven_hand) with the digit kept in iconText for the
+     *  renderer's overlay. */
     private fun iconSpec(id: String): Triple<String?, String?, String?> = when (id) {
         "practice" -> Triple("original", "wordle-grid", null)
         "quordle" -> Triple("roman", null, "IV")
         "octordle" -> Triple("roman", null, "VIII")
         "sequence" -> Triple("asset", "trending-up", null)
         "rescue" -> Triple("asset", "shield", null)
-        "six" -> Triple("hand", null, "6")
-        "seven" -> Triple("hand", null, "7")
+        "six" -> Triple("hand", "six-hand", "6")
+        "seven" -> Triple("hand", "seven-hand", "7")
         "gauntlet" -> Triple("asset", "skull", null)
         "propernoundle" -> Triple("asset", "crown", null)
         else -> Triple(null, null, null)

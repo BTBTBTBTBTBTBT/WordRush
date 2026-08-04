@@ -497,6 +497,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                     ModeIconBox(card, 28.dp)
                     Text(
                         card.title, fontSize = 10.sp, fontWeight = FontWeight.Black, maxLines = 1,
+                        softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         color = if (active) card.accent else WTheme.textMuted,
                     )
                 }
@@ -723,7 +724,7 @@ private fun ModeIconBox(card: ModeCard, box: androidx.compose.ui.unit.Dp) {
         Modifier.size(box).clip(RoundedCornerShape(box * 0.27f)).background(card.accent.copy(alpha = 0.08f)),
         contentAlignment = Alignment.Center,
     ) {
-        ModeGlyph(card, tint = card.accent, glyphSize = (box.value * 0.42f).sp, iconSize = box * 0.5f)
+        ModeGlyph(card, tint = card.accent, box = box)
     }
 }
 

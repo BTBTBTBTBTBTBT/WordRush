@@ -768,9 +768,9 @@ private fun DailyBadge(modeId: String, completion: DailyCompletionsService.Compl
             contentAlignment = Alignment.Center,
         ) {
             if (played) Text(if (won) "W" else "L", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White)
-            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, accent, glyphSize = 11.sp, iconSize = 14.dp) }
+            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, accent, box = 36.dp) }
         }
-        Text(modeLabel(modeId), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (played) WTheme.text else WTheme.textMuted, maxLines = 1)
+        Text(modeLabel(modeId), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (played) WTheme.text else WTheme.textMuted, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
     }
 }
 
@@ -790,7 +790,7 @@ private fun RecentMatchRow(m: ProfileService.RecentMatch, userId: String?, oppon
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.12f)), Alignment.Center) {
-            mode?.let { ModeGlyph(it, accent, glyphSize = 11.sp, iconSize = 16.dp) }
+            mode?.let { ModeGlyph(it, accent, box = 36.dp) }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -850,7 +850,7 @@ private fun ModeDetailHeader(modeId: String, activeTab: String) {
     val accent = mode?.let { modeAccent(it) } ?: WTheme.primary
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.08f)), Alignment.Center) {
-            mode?.let { ModeGlyph(it, accent, glyphSize = 11.sp, iconSize = 16.dp) }
+            mode?.let { ModeGlyph(it, accent, box = 32.dp) }
         }
         Spacer(Modifier.width(8.dp))
         Text(modeLabel(modeId), fontSize = 14.sp, fontWeight = FontWeight.Black, color = accent)
@@ -1504,9 +1504,9 @@ private fun ModeChip(label: String, modeId: String?, accent: Color, count: Int, 
     ) {
         Box(Modifier.size(24.dp).clip(RoundedCornerShape(6.dp)).background(if (active) accent.copy(alpha = 0.12f) else WTheme.surfaceAlt), Alignment.Center) {
             if (modeId == null) Icon(Icons.Filled.BarChart, null, tint = iconTint, modifier = Modifier.size(12.dp))
-            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, iconTint, glyphSize = 9.sp, iconSize = 12.dp) }
+            else runCatching { GameMode.valueOf(modeId) }.getOrNull()?.let { ModeGlyph(it, iconTint, box = 24.dp) }
         }
-        Text(label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1)
+        Text(label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = if (active) accent else WTheme.textMuted, maxLines = 1, softWrap = false, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         // Always reserve the count line (blank when 0) so chips are identical height
         // whether or not a mode has games played — matches web's even row.
         Text(if (count > 0) "$count" else " ", fontSize = 7.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, maxLines = 1)

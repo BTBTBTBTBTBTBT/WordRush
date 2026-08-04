@@ -179,7 +179,7 @@ fun SweepCelebration(
                                             .background(if (card != null) Color(r.accent).copy(alpha = 0.08f) else Color(r.accent)),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        if (card != null) ModeGlyph(card, tint = Color(r.accent), glyphSize = 12.sp, iconSize = 12.dp)
+                                        if (card != null) ModeGlyph(card, tint = Color(r.accent), box = 22.dp)
                                         else Text(r.glyph, fontSize = if (r.glyph.length >= 3) 9.sp else 12.sp, fontWeight = FontWeight.Black, color = Color.White)
                                     }
                                     // weight(1f) so the LABEL absorbs the squeeze, not the trailing mark: an

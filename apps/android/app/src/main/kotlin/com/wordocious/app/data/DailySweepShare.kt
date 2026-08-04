@@ -134,12 +134,34 @@ object DailySweepShare {
             val badgeRect = RectF(bx, by, bx + badge, by + badge)
             c.drawRoundRect(badgeRect, 16f, 16f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = r.accent })
             // Real game icon (lucide vector, drawn WHITE) for the icon modes
-            // (Classic/Succession/Deliverance/Gauntlet/Proper); the numeral modes
-            // (IV/VIII/6/7) keep their glyph — same as the home cards.
-            val lucide = com.wordocious.app.ui.MODE_CARDS.firstOrNull { it.engineMode?.name == r.dbKey }?.lucide
-            val iconRes = com.wordocious.app.ui.modeIconRes(lucide)
+            // (Classic/Succession/Deliverance/Gauntlet/Proper); Six/Seven draw
+            // the brand hand (WHITE) with the accent digit over the palm — iOS
+            // DailySweepShare shareGlyph parity; the numeral modes (IV/VIII)
+            // keep their glyph — same as the home cards.
+            val shareCard = com.wordocious.app.ui.MODE_CARDS.firstOrNull { it.engineMode?.name == r.dbKey }
+            val handRes = com.wordocious.app.ui.modeIconRes(shareCard?.hand)
+            val iconRes = com.wordocious.app.ui.modeIconRes(shareCard?.lucide)
+            val handDrawable = handRes?.let { androidx.core.content.ContextCompat.getDrawable(context, it) }
             val iconDrawable = iconRes?.let { androidx.core.content.ContextCompat.getDrawable(context, it) }
-            if (iconDrawable != null) {
+            if (handDrawable != null) {
+                // iOS: hand 44x46 in the 72pt badge (~0.61), digit 22pt (~0.3)
+                // offset 9pt (~0.125) down, digit in the row accent.
+                val inset = badge * 0.20f
+                // Keep the 24x26 vector's aspect (a VectorDrawable stretches to
+                // its bounds; iOS scaledToFit does not).
+                val handH = badge - 2 * inset
+                val handW = handH * (24f / 26f)
+                val handLeft = badgeRect.centerX() - handW / 2f
+                handDrawable.setTint(Color.WHITE)
+                handDrawable.setBounds(
+                    handLeft.toInt(), (badgeRect.top + inset).toInt(),
+                    (handLeft + handW).toInt(), (badgeRect.bottom - inset).toInt(),
+                )
+                handDrawable.draw(c)
+                p.typeface = black; p.isFakeBoldText = false
+                p.textSize = badge * 0.30f; p.color = r.accent
+                c.drawText(r.glyph, badgeRect.centerX(), badgeRect.centerY() + badge * 0.125f + p.textSize * 0.35f, p)
+            } else if (iconDrawable != null) {
                 val inset = badge * 0.28f
                 iconDrawable.setTint(Color.WHITE)
                 iconDrawable.setBounds(

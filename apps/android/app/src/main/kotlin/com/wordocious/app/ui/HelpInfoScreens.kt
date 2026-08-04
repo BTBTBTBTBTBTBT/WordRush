@@ -140,7 +140,7 @@ private fun GameModesHelp(modes: List<com.wordocious.app.data.ContentService.Hel
                     Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(card.accent.copy(alpha = 0.08f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    ModeGlyph(card, card.accent, glyphSize = 11.sp, iconSize = 16.dp)
+                    ModeGlyph(card, card.accent, box = 32.dp)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(card.title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = WTheme.text)

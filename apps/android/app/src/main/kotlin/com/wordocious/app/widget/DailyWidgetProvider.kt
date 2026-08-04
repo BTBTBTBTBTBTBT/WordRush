@@ -125,13 +125,18 @@ class DailyWidgetProvider : AppWidgetProvider() {
         )
 
         /** Snapshot iconAsset → bundled drawable (the SAME assets the home menu
-         *  uses). null → ModeGlyph textGlyph fallback, exactly like iOS. */
+         *  uses; keep in step with ui.modeIconRes). null → ModeGlyph textGlyph
+         *  fallback, exactly like iOS. */
         private fun assetRes(name: String?): Int? = when (name) {
             "wordle-grid" -> R.drawable.ic_wordle_grid
+            "swords" -> R.drawable.ic_swords
             "trending-up" -> R.drawable.ic_trending_up
             "shield" -> R.drawable.ic_shield
             "skull" -> R.drawable.ic_skull
             "crown" -> R.drawable.ic_crown
+            "broom" -> R.drawable.ic_broom
+            "six-hand" -> R.drawable.ic_six_hand
+            "seven-hand" -> R.drawable.ic_seven_hand
             else -> null
         }
 
@@ -235,21 +240,39 @@ class DailyWidgetProvider : AppWidgetProvider() {
                     views.setViewVisibility(CELL_DASH[i], View.VISIBLE)
                     views.setInt(CELL_DASH[i], "setColorFilter", withAlpha(accent, 0.55f))
                     val res = assetRes(m.iconAsset)
-                    if (res != null && (m.iconKind == "asset" || m.iconKind == "original" || m.iconKind == "hand")) {
+                    val density = context.resources.displayMetrics.density
+                    if (res != null && m.iconKind == "hand" && m.iconText != null) {
+                        // Brand hand + digit overlay (iOS ModeIconView `.hand`):
+                        // the icon ImageView and glyph TextView share the chip
+                        // FrameLayout, so both can show at once — accent hand
+                        // line-art with the accent digit centered over the palm,
+                        // nudged down via top padding (RemoteViews has no offset).
+                        views.setViewVisibility(CELL_ICON[i], View.VISIBLE)
+                        views.setImageViewResource(CELL_ICON[i], res)
+                        views.setInt(CELL_ICON[i], "setColorFilter", accent)
+                        views.setViewVisibility(CELL_GLYPH[i], View.VISIBLE)
+                        views.setTextViewText(CELL_GLYPH[i], m.iconText)
+                        views.setTextColor(CELL_GLYPH[i], accent)
+                        // DIP, not SP: the chip is a fixed 32dp square, so the
+                        // user's font scale must not grow the digit out of it.
+                        views.setTextViewTextSize(CELL_GLYPH[i], android.util.TypedValue.COMPLEX_UNIT_DIP, 9f)
+                        views.setViewPadding(CELL_GLYPH[i], 0, (7f * density).toInt(), 0, 0)
+                    } else if (res != null && (m.iconKind == "asset" || m.iconKind == "original" || m.iconKind == "hand")) {
                         views.setViewVisibility(CELL_GLYPH[i], View.GONE)
                         views.setViewVisibility(CELL_ICON[i], View.VISIBLE)
                         views.setImageViewResource(CELL_ICON[i], res)
                         views.setInt(CELL_ICON[i], "setColorFilter", accent)
                     } else {
                         // ModeGlyph.textGlyph: roman text / digit / glyph, accent,
-                        // smaller when longer than 2 chars (VIII).
+                        // smaller when longer than 2 chars (VIII). DIP on purpose —
+                        // fixed 32dp chip, font scale must not overflow it.
                         val t = m.iconText ?: m.glyph
                         views.setViewVisibility(CELL_ICON[i], View.GONE)
                         views.setViewVisibility(CELL_GLYPH[i], View.VISIBLE)
                         views.setTextViewText(CELL_GLYPH[i], t)
                         views.setTextColor(CELL_GLYPH[i], accent)
                         views.setTextViewTextSize(
-                            CELL_GLYPH[i], android.util.TypedValue.COMPLEX_UNIT_SP,
+                            CELL_GLYPH[i], android.util.TypedValue.COMPLEX_UNIT_DIP,
                             if (t.length > 2) 10f else 13f,
                         )
                     }
