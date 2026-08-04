@@ -509,7 +509,24 @@ object MatchStatsService {
     )
 
     @Serializable
-    private data class DayTimeRow(val day: String, @SerialName("time_seconds") val timeSeconds: Int = 0)
+    private data class DayTimeRow(
+        val day: String,
+        @SerialName("game_mode") val gameMode: String = "",
+        @SerialName("time_seconds") val timeSeconds: Int = 0,
+    )
+
+    /** The daily-recordable modes — keep in step with web lib/daily-modes.ts. */
+    private val DAILY_MODES = listOf(
+        "DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
+        "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7",
+    )
+
+    /**
+     * The era's full daily-mode count for a local day — 7 before 2026-05-21
+     * (when DUEL_6/DUEL_7 dailies shipped), 9 on/after. Mirrors web
+     * lib/daily-modes.ts requiredDailyModeCount; ISO strings compare safely.
+     */
+    private fun requiredDailyModeCount(day: String): Int = if (day < "2026-05-21") 7 else 9
 
     @Serializable
     private data class DayScoreRow(val day: String, @SerialName("composite_score") val compositeScore: Double = 0.0)
@@ -529,16 +546,28 @@ object MatchStatsService {
         val flawlessDays = bonuses.filter { it.flawlessAwarded }.map { it.day }.toSet()
         if (sweepDays.isEmpty()) return DailySweepStats()
 
+        // A day's summed time only counts toward best/avg when the day has the
+        // era's FULL count of timed (>0s) mode rows — otherwise a poisoned
+        // bonus row with one quick game masquerades as a record sweep time.
+        // Mirrors web stats-service.ts and the all-time sweep RPC guard.
         val rows = client.postgrest["daily_results"]
-            .select(Columns.raw("day,time_seconds")) {
-                filter { eq("user_id", userId); eq("play_type", "solo"); isIn("day", sweepDays) }
+            .select(Columns.raw("day,game_mode,time_seconds")) {
+                filter {
+                    eq("user_id", userId); eq("play_type", "solo")
+                    isIn("game_mode", DAILY_MODES); isIn("day", sweepDays)
+                }
             }
             .decodeList<DayTimeRow>()
         val perDayTime = HashMap<String, Int>()
-        rows.forEach { perDayTime[it.day] = (perDayTime[it.day] ?: 0) + it.timeSeconds }
+        val perDayTimedModes = HashMap<String, MutableSet<String>>()
+        rows.forEach {
+            perDayTime[it.day] = (perDayTime[it.day] ?: 0) + it.timeSeconds
+            if (it.timeSeconds > 0) perDayTimedModes.getOrPut(it.day) { mutableSetOf() }.add(it.gameMode)
+        }
+        fun fullyTimed(day: String) = (perDayTimedModes[day]?.size ?: 0) >= requiredDailyModeCount(day)
 
-        val sweepTimes = sweepDays.mapNotNull { perDayTime[it] }.filter { it > 0 }
-        val flawlessTimes = flawlessDays.mapNotNull { perDayTime[it] }.filter { it > 0 }
+        val sweepTimes = sweepDays.filter(::fullyTimed).mapNotNull { perDayTime[it] }.filter { it > 0 }
+        val flawlessTimes = flawlessDays.filter(::fullyTimed).mapNotNull { perDayTime[it] }.filter { it > 0 }
         fun avg(xs: List<Int>) = if (xs.isEmpty()) 0 else (xs.sum().toDouble() / xs.size).roundToInt()
         fun best(xs: List<Int>) = xs.minOrNull() ?: 0
 

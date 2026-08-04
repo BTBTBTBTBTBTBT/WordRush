@@ -461,10 +461,23 @@ enum MatchStatsService {
         return f.string(from: shifted)
     }
 
+    /// The daily-recordable modes — keep in step with web lib/daily-modes.ts.
+    private static let dailyModes = [
+        "DUEL", "QUORDLE", "OCTORDLE", "SEQUENCE", "RESCUE",
+        "GAUNTLET", "PROPERNOUNDLE", "DUEL_6", "DUEL_7",
+    ]
+
+    /// The era's full daily-mode count for a local day — 7 before 2026-05-21
+    /// (when DUEL_6/DUEL_7 dailies shipped), 9 on/after. Mirrors web
+    /// lib/daily-modes.ts requiredDailyModeCount; ISO strings compare safely.
+    private static func requiredDailyModeCount(_ day: String) -> Int {
+        day < "2026-05-21" ? 7 : 9
+    }
+
     static func dailySweepStats() async -> DailySweepStats {
         guard let uid = await userId() else { return DailySweepStats() }
         struct BonusRow: Decodable { let day: String; let sweep_awarded: Bool?; let flawless_awarded: Bool? }
-        struct TimeRow: Decodable { let day: String; let time_seconds: Double? }
+        struct TimeRow: Decodable { let day: String; let game_mode: String?; let time_seconds: Double? }
 
         let bonuses: [BonusRow] = (try? await AuthService.shared.client.from("daily_bonuses")
             .select("day, sweep_awarded, flawless_awarded")
@@ -476,17 +489,30 @@ enum MatchStatsService {
         let flawlessDays = Set(bonuses.filter { $0.flawless_awarded == true }.map { $0.day })
         guard !sweepDays.isEmpty else { return DailySweepStats() }
 
+        // A day's summed time only counts toward best/avg when the day has the
+        // era's FULL count of timed (>0s) mode rows — otherwise a poisoned
+        // bonus row with one quick game masquerades as a record sweep time.
+        // Mirrors web stats-service.ts and the all-time sweep RPC guard.
         let rows: [TimeRow] = (try? await AuthService.shared.client.from("daily_results")
-            .select("day, time_seconds")
+            .select("day, game_mode, time_seconds")
             .eq("user_id", value: uid)
             .eq("play_type", value: "solo")
+            .in("game_mode", values: dailyModes)
             .in("day", values: sweepDays)
             .execute().value) ?? []
         var perDayTime: [String: Double] = [:]
-        for r in rows { perDayTime[r.day, default: 0] += (r.time_seconds ?? 0) }
+        var perDayTimedModes: [String: Set<String>] = [:]
+        for r in rows {
+            let t = r.time_seconds ?? 0
+            perDayTime[r.day, default: 0] += t
+            if t > 0, let mode = r.game_mode { perDayTimedModes[r.day, default: []].insert(mode) }
+        }
+        func fullyTimed(_ day: String) -> Bool {
+            (perDayTimedModes[day]?.count ?? 0) >= requiredDailyModeCount(day)
+        }
 
-        let sweepTimes = sweepDays.compactMap { perDayTime[$0] }.filter { $0 > 0 }
-        let flawlessTimes = flawlessDays.compactMap { perDayTime[$0] }.filter { $0 > 0 }
+        let sweepTimes = sweepDays.filter(fullyTimed).compactMap { perDayTime[$0] }.filter { $0 > 0 }
+        let flawlessTimes = flawlessDays.filter(fullyTimed).compactMap { perDayTime[$0] }.filter { $0 > 0 }
         func avg(_ xs: [Double]) -> Int { xs.isEmpty ? 0 : Int((xs.reduce(0,+) / Double(xs.count)).rounded()) }
         func best(_ xs: [Double]) -> Int { xs.isEmpty ? 0 : Int(xs.min()!) }
 

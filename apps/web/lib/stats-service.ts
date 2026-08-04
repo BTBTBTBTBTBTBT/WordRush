@@ -13,6 +13,7 @@ import {
 } from './daily-service';
 import { checkAchievements } from './achievement-service';
 import { grantFreeShield } from './shield-service';
+import { DAILY_MODES, requiredDailyModeCount } from './daily-modes';
 
 export interface XpResult {
   xpGain: number;
@@ -1603,19 +1604,34 @@ export async function fetchDailySweepStats(userId: string): Promise<DailySweepSt
   const flawlessDays = new Set(bonuses.filter((b) => b.flawless_awarded).map((b) => b.day));
   if (sweepDays.length === 0) return empty;
 
-  // Per-day total solo time across that day's daily modes.
+  // Per-day total solo time across that day's daily modes. A day's sum only
+  // counts toward best/avg when the day has the era's FULL count of timed
+  // (>0s) mode rows — otherwise a poisoned bonus row with one 14s game would
+  // masquerade as a 14s "best sweep time". Mirrors the guard in the all-time
+  // sweep RPCs (manual-migrations/20260804000001_sweep_time_guard.sql).
   const { data: rows } = await (supabase as any)
     .from('daily_results')
-    .select('day, time_seconds')
+    .select('day, game_mode, time_seconds')
     .eq('user_id', userId)
     .eq('play_type', 'solo')
-    .in('day', sweepDays) as { data: Array<{ day: string; time_seconds: number }> | null };
+    .in('game_mode', DAILY_MODES)
+    .in('day', sweepDays) as { data: Array<{ day: string; game_mode: string; time_seconds: number }> | null };
 
   const perDayTime = new Map<string, number>();
-  for (const r of rows || []) perDayTime.set(r.day, (perDayTime.get(r.day) ?? 0) + (r.time_seconds ?? 0));
+  const perDayTimedModes = new Map<string, Set<string>>();
+  for (const r of rows || []) {
+    const t = r.time_seconds ?? 0;
+    perDayTime.set(r.day, (perDayTime.get(r.day) ?? 0) + t);
+    if (t > 0) {
+      let set = perDayTimedModes.get(r.day);
+      if (!set) { set = new Set(); perDayTimedModes.set(r.day, set); }
+      set.add(r.game_mode);
+    }
+  }
+  const fullyTimed = (d: string) => (perDayTimedModes.get(d)?.size ?? 0) >= requiredDailyModeCount(d);
 
-  const sweepTimes = sweepDays.map((d) => perDayTime.get(d) ?? 0).filter((t) => t > 0);
-  const flawlessTimes = [...flawlessDays].map((d) => perDayTime.get(d) ?? 0).filter((t) => t > 0);
+  const sweepTimes = sweepDays.filter(fullyTimed).map((d) => perDayTime.get(d) ?? 0).filter((t) => t > 0);
+  const flawlessTimes = [...flawlessDays].filter(fullyTimed).map((d) => perDayTime.get(d) ?? 0).filter((t) => t > 0);
   const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
   const min = (xs: number[]) => (xs.length ? Math.min(...xs) : 0);
 

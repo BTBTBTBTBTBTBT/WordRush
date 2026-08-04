@@ -698,7 +698,10 @@ struct YourRecordsView: View {
     @State private var isSweep = false
     @State private var loading = true
 
-    private let streakMilestones = [7, 30, 100]
+    // Streak shields are granted every 7 days (web /api/shields/grant-milestone
+    // MILESTONE_EVERY=7) — the "next shield" card counts toward the next
+    // multiple of 7, NOT the [7, 30, 100] streak MEDAL milestones.
+    private let shieldEvery = 7
     // Sweep tile accent — indigo, matching the Daily/All-Time sweep boards.
     private let sweepAccent = Color(hex: 0x4F46E5)
     private var accent: Color { homeModes.first { $0.dbKey == mode.rawValue }?.accent ?? Theme.primary }
@@ -724,28 +727,26 @@ struct YourRecordsView: View {
 
     @ViewBuilder private var milestoneCard: some View {
         let streak = auth.profile?.dailyLoginStreak ?? 0
-        let next = streakMilestones.first { $0 > streak }
-        if next != nil || !chases.isEmpty {
+        let next = (streak / shieldEvery + 1) * shieldEvery
+        if next > 0 || !chases.isEmpty {
             VStack(spacing: 0) {
                 LinearGradient(colors: [Color(hex: 0xA78BFA), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing).frame(height: 3)
                 VStack(alignment: .leading, spacing: 10) {
                     Text("NEXT UP").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
-                    if let next {
-                        VStack(spacing: 4) {
-                            HStack {
-                                Label("\(next)-day streak shield", systemImage: "flame.fill").font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary)
-                                    .labelStyle(.titleAndIcon)
-                                Spacer()
-                                Text("\(streak)/\(next)").font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted)
-                            }
-                            GeometryReader { g in
-                                ZStack(alignment: .leading) {
-                                    Capsule().fill(Theme.border)
-                                    Capsule().fill(LinearGradient(colors: [Color(hex: 0xF97316), Color(hex: 0xFBBF24)], startPoint: .leading, endPoint: .trailing))
-                                        .frame(width: g.size.width * min(1, Double(streak) / Double(next)))
-                                }
-                            }.frame(height: 8)
+                    VStack(spacing: 4) {
+                        HStack {
+                            Label("\(next)-day streak shield", systemImage: "flame.fill").font(Brand.font(11, .heavy)).foregroundStyle(Theme.textPrimary)
+                                .labelStyle(.titleAndIcon)
+                            Spacer()
+                            Text("\(streak)/\(next)").font(Brand.font(11, .heavy)).foregroundStyle(Theme.textMuted)
                         }
+                        GeometryReader { g in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Theme.border)
+                                Capsule().fill(LinearGradient(colors: [Color(hex: 0xF97316), Color(hex: 0xFBBF24)], startPoint: .leading, endPoint: .trailing))
+                                    .frame(width: g.size.width * min(1, Double(streak) / Double(next)))
+                            }
+                        }.frame(height: 8)
                     }
                     // Record Chase: top-3 beatable records, each with a
                     // progress bar toward the record (web records/page.tsx).

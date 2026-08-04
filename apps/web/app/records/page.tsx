@@ -760,7 +760,10 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
    ═══════════════════════════════════════════════════════ */
 type UserStatRow = { game_mode: string; play_type: string; wins: number; losses: number; total_games: number; best_score: number | null; fastest_time: number | null };
 
-const STREAK_MILESTONES = [7, 30, 100];
+// Streak shields are granted every 7 days (/api/shields/grant-milestone
+// MILESTONE_EVERY=7) — the "next shield" card counts toward the next multiple
+// of 7, NOT the [7, 30, 100] STREAK MEDAL milestones (lib/daily-service.ts).
+const SHIELD_EVERY = 7;
 
 function MyStatCell({ icon: Icon, value, label, color, dim }: { icon: typeof Trophy; value: string; label: string; color: string; dim?: boolean }) {
   return (
@@ -836,7 +839,7 @@ function YourRecordsView({ userId }: { userId?: string }) {
   if (loading) return <div className="animate-fade-in-up"><AllTimeSkeleton /></div>;
 
   const dailyStreak = profile?.daily_login_streak ?? 0;
-  const nextMilestone = STREAK_MILESTONES.find((m) => m > dailyStreak);
+  const nextShield = (Math.floor(dailyStreak / SHIELD_EVERY) + 1) * SHIELD_EVERY;
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
   const Icon = mode.icon;
@@ -849,22 +852,20 @@ function YourRecordsView({ userId }: { userId?: string }) {
   return (
     <div className="animate-fade-in-up space-y-5">
       {/* Milestone progress */}
-      {(nextMilestone || chases.length > 0) && (
+      {(nextShield > 0 || chases.length > 0) && (
         <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}>
           <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #a78bfa, #ec4899)' }} />
           <div className="px-4 pt-3 pb-4">
             <div className="text-[10px] font-black uppercase tracking-wider mb-2" style={{ color: 'var(--color-text-muted)' }}>Next Up</div>
-            {nextMilestone && (
-              <div className="mb-3">
-                <div className="flex items-center justify-between text-[11px] font-extrabold mb-1">
-                  <span className="flex items-center gap-1.5" style={{ color: 'var(--color-text)' }}><Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />{nextMilestone}-day streak shield</span>
-                  <span style={{ color: 'var(--color-text-muted)' }}>{dailyStreak}/{nextMilestone}</span>
-                </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, (dailyStreak / nextMilestone) * 100)}%`, background: 'linear-gradient(90deg, #f97316, #fbbf24)' }} />
-                </div>
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-[11px] font-extrabold mb-1">
+                <span className="flex items-center gap-1.5" style={{ color: 'var(--color-text)' }}><Flame className="w-3.5 h-3.5" style={{ color: '#f97316' }} />{nextShield}-day streak shield</span>
+                <span style={{ color: 'var(--color-text-muted)' }}>{dailyStreak}/{nextShield}</span>
               </div>
-            )}
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>
+                <div className="h-full rounded-full" style={{ width: `${Math.min(100, (dailyStreak / nextShield) * 100)}%`, background: 'linear-gradient(90deg, #f97316, #fbbf24)' }} />
+              </div>
+            </div>
             {chases.length > 0 && (
               <div className="space-y-2">
                 {chases.map((c) => (

@@ -622,7 +622,10 @@ private fun AllTimeTab(onOpenProfile: (String) -> Unit = {}) {
     }
 }
 
-private val STREAK_MILESTONES = listOf(7, 30, 100)
+// Streak shields are granted every 7 days (web /api/shields/grant-milestone
+// MILESTONE_EVERY=7) — the "next shield" card counts toward the next multiple
+// of 7, NOT the [7, 30, 100] streak MEDAL milestones.
+private const val SHIELD_EVERY = 7
 private fun recModeTitle(key: String) = MODE_OPTIONS.firstOrNull { it.first == key }?.second ?: key
 private fun fmtSecs(v: Int) = if (v < 60) "${v}s" else "${v / 60}m ${v % 60}s"
 
@@ -699,28 +702,26 @@ private fun YourRecordsTab() {
     // `:core` GameMode → neutral primary accent (indigo is reserved for the tile).
     val accent = pickerGameModeOrNull(selectedMode)?.let { modeAccent(it) } ?: WTheme.primary
     val streak = profile?.dailyLoginStreak ?: 0
-    val nextMilestone = STREAK_MILESTONES.firstOrNull { it > streak }
+    val nextShield = (streak / SHIELD_EVERY + 1) * SHIELD_EVERY
     val my = stats.find { it.gameMode == selectedMode && it.playType == "solo" }
 
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item { Spacer(Modifier.height(8.dp)) }
         // Milestone + Record Chase (top-3 beatable records with progress bars)
-        if (nextMilestone != null || chases.isNotEmpty()) item {
+        if (nextShield > 0 || chases.isNotEmpty()) item {
             CardShell(Brush.horizontalGradient(listOf(Color(0xFFA78BFA), Color(0xFFEC4899)))) {
                 Text("NEXT UP", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
-                if (nextMilestone != null) {
-                    Spacer(Modifier.height(8.dp))
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(14.dp))
-                        Spacer(Modifier.size(4.dp))
-                        Text("$nextMilestone-day streak shield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
-                        Spacer(Modifier.weight(1f))
-                        Text("$streak/$nextMilestone", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
-                        Box(Modifier.fillMaxWidth((streak.toFloat() / nextMilestone).coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(50)).background(Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24)))))
-                    }
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.LocalFireDepartment, null, tint = Color(0xFFF97316), modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.size(4.dp))
+                    Text("$nextShield-day streak shield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+                    Spacer(Modifier.weight(1f))
+                    Text("$streak/$nextShield", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                }
+                Spacer(Modifier.height(4.dp))
+                Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(WTheme.border)) {
+                    Box(Modifier.fillMaxWidth((streak.toFloat() / nextShield).coerceIn(0f, 1f)).height(8.dp).clip(RoundedCornerShape(50)).background(Brush.horizontalGradient(listOf(Color(0xFFF97316), Color(0xFFFBBF24)))))
                 }
                 chases.forEach { c ->
                     Spacer(Modifier.height(8.dp))

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { verifyUser } from '@/lib/api-auth';
+import { DAILY_MODES, requiredDailyModeCount } from '@/lib/daily-modes';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -18,21 +19,16 @@ export const runtime = 'nodejs';
  * The client sends only its access token; the day and every fact behind the
  * award are recomputed here from `daily_results`.
  *
- * NOTE ON THE MODE COUNT: the required number of dailies is read from the
- * requesting day's own results, not hard-coded to 9. The mode set has already
- * changed once — sweeps before 2026-05-21 were 7 modes, and a hard-coded 9
- * would have retroactively invalidated 16 real sweeps (verified against
- * production data before this was written). It will change again.
+ * NOTE ON THE MODE COUNT: the required number of dailies comes from the dated
+ * era table in lib/daily-modes.ts (7 before 2026-05-21, 9 on/after) — shared
+ * with the backfill route so live awards and reconstructions agree. It is NOT
+ * inferred from that day's recorded results: the old "what did anyone record
+ * today" probe let the first player of a local day sweep after ONE game
+ * (1 >= 1), and was additionally subject to PostgREST's 1000-row default cap.
  */
 
 const DAILY_SWEEP_XP = 200;
 const FLAWLESS_EXTRA_XP = 400;
-
-/** The daily-recordable modes. Keep in step with lib/daily-service.ts. */
-const DAILY_MODES = [
-  'DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE',
-  'GAUNTLET', 'PROPERNOUNDLE', 'DUEL_6', 'DUEL_7',
-];
 
 export async function POST(req: NextRequest) {
   try {
@@ -82,18 +78,11 @@ export async function POST(req: NextRequest) {
     const played = new Set((results ?? []).map((r: any) => r.game_mode));
     const won = new Set((results ?? []).filter((r: any) => r.completed).map((r: any) => r.game_mode));
 
-    // How many modes were on offer that day — derived from what the whole
-    // player base recorded, so the rule follows the game instead of a constant.
-    const { data: dayModes } = await admin
-      .from('daily_results')
-      .select('game_mode')
-      .eq('day', day)
-      .eq('play_type', 'solo')
-      .in('game_mode', DAILY_MODES);
-    const offered = new Set((dayModes ?? []).map((r: any) => r.game_mode));
-    const required = Math.max(offered.size, played.size);
+    // The full mode count for this day's era — a sweep means the player's OWN
+    // distinct daily modes reach it; flawless means all of them were won.
+    const required = requiredDailyModeCount(day);
 
-    if (played.size < required || required === 0) {
+    if (played.size < required) {
       return NextResponse.json({ awarded: false, reason: 'incomplete', played: played.size, required });
     }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { DAILY_MODES, requiredDailyModeCount } from '@/lib/daily-modes';
 
 // Vercel Pro raises the serverless function limit above Hobby's 10s cap. This
 // route batches over rows, so give it headroom to finish instead of timing out.
@@ -15,15 +16,15 @@ export const maxDuration = 300;
  * Daily-Sweeps card / points chart / sweep achievements don't count them.
  *
  * This scans every solo daily_results row, groups by (user, day), and for each
- * day where all 9 daily modes are present marks sweep_awarded; where all 9 were
- * WON marks flawless_awarded. It UPSERTS the flag rows only — it does NOT grant
+ * day where the era's FULL set of daily modes is present (7 before 2026-05-21,
+ * 9 on/after — lib/daily-modes.ts is the shared source of truth with the live
+ * award route) marks sweep_awarded; where all of them were WON marks
+ * flawless_awarded. It UPSERTS the flag rows only — it does NOT grant
  * retroactive XP (that's the live award helper's job), so re-running is safe and
  * never double-credits. Existing `true` flags are never downgraded.
  *
  * Auth: Bearer $CRON_SECRET. Optional body { userId } to scope to one user.
  */
-
-const DAILY_MODES = ['DUEL', 'QUORDLE', 'OCTORDLE', 'SEQUENCE', 'RESCUE', 'DUEL_6', 'DUEL_7', 'GAUNTLET', 'PROPERNOUNDLE'];
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
@@ -65,14 +66,16 @@ export async function POST(req: NextRequest) {
     if (r.completed) entry.wonModes.add(r.game_mode);
   }
 
-  // A day with all 9 modes present = sweep; all 9 won = flawless.
+  // A day with the era's full mode count present = sweep; all of them won =
+  // flawless. Distinct-mode COUNT (not identity) so 7-mode-era days qualify.
   const upserts: Array<{ user_id: string; day: string; sweep_awarded: boolean; flawless_awarded: boolean }> = [];
   let sweepCount = 0, flawlessCount = 0;
   for (const [key, { modes, wonModes }] of byUserDay) {
-    const swept = DAILY_MODES.every((m) => modes.has(m));
-    if (!swept) continue;
-    const flawless = DAILY_MODES.every((m) => wonModes.has(m));
     const [user_id, day] = key.split('|');
+    const required = requiredDailyModeCount(day);
+    const swept = modes.size >= required;
+    if (!swept) continue;
+    const flawless = wonModes.size >= required;
     upserts.push({ user_id, day, sweep_awarded: true, flawless_awarded: flawless });
     sweepCount += 1;
     if (flawless) flawlessCount += 1;
