@@ -513,7 +513,14 @@ struct VSGameView: View {
                 if !game.stageCleared {
                     // Six/Seven expose the same vowel + consonant hints as solo (the
                     // reveal is added as a board row → counts as a guess, the VS cost).
-                    if game.hasHints && !game.isFinished { vsHintButtons(game) }
+                    // Keep the bar's SLOT when the game finishes (fade, don't
+                    // remove) so the centered board never reflows/jumps at the
+                    // finish moment — same guard as solo GameScreen's hint bar.
+                    if game.hasHints {
+                        vsHintButtons(game)
+                            .opacity(game.isFinished ? 0 : 1)
+                            .allowsHitTesting(!game.isFinished)
+                    }
                     KeyboardView(vm: game).padding(.bottom, 6).layoutPriority(1)
                 }
             }

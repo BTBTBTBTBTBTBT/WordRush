@@ -242,9 +242,12 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
         </div>
       </div>
 
-      {/* Hint buttons — Six/Seven only, hidden once the board is finished. */}
-      {hasHints && currentBoard.status === GameStatus.PLAYING && (
-        <div className="shrink-0 flex justify-center gap-3 px-4 pb-1">
+      {/* Hint buttons — Six/Seven only, hidden once the board is finished.
+          Hidden with `invisible` (not unmounted) so the row keeps its slot:
+          unmounting it re-centered the flex-1 board for the frame between
+          finishing and the 'waiting' screen swap — a visible board jump. */}
+      {hasHints && (
+        <div className={`shrink-0 flex justify-center gap-3 px-4 pb-1 ${currentBoard.status === GameStatus.PLAYING ? '' : 'invisible pointer-events-none'}`}>
           <button
             onClick={handleVowelHint}
             disabled={hints.vowelUsed}

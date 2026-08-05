@@ -269,9 +269,11 @@ export function VsProperNoundle({
         />
       </div>
 
-      {/* Hint buttons — Clue / Vowel / Consonant, same as solo, hidden once done. */}
-      {gameStatus === 'playing' && (
-        <div className="shrink-0 flex justify-center gap-2 px-4 pb-1">
+      {/* Hint buttons — Clue / Vowel / Consonant, same as solo, hidden once done.
+          Hidden with `invisible` (not unmounted) so the row keeps its slot:
+          unmounting it re-centered the flex-1 board for the frame between
+          finishing and the 'waiting' screen swap — a visible board jump. */}
+      <div className={`shrink-0 flex justify-center gap-2 px-4 pb-1 ${gameStatus === 'playing' ? '' : 'invisible pointer-events-none'}`}>
           <button
             onClick={handleHintClue}
             disabled={hints.hintUsed || hints.loadingHint}
@@ -303,7 +305,6 @@ export function VsProperNoundle({
             {hints.consonantRevealed ? hints.consonantRevealed : 'Consonant'}
           </button>
         </div>
-      )}
 
       {/* Keyboard */}
       <div className="shrink-0 pb-2 px-2">

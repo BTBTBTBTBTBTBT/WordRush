@@ -106,7 +106,18 @@ struct GameScreen: View {
                         BoardLayout(vm: vm, availableWidth: geo.size.width, fitHeight: geo.size.height)
                     }
                     .padding(.vertical, 6)
-                    if vm.hasHints && vm.status == .playing { classicHintButtons }
+                    // Keep the hint bar's SLOT after the win/loss (the in-play
+                    // board stays on screen until the final row's flip ends):
+                    // removing it grew the greedy board area, so the centered
+                    // board visibly jumped down at the finish moment — right as
+                    // the "Solved!" toast appeared — then back up when the
+                    // finished layout arrived. Fade it instead: same look, no
+                    // reflow, the board never moves.
+                    if vm.hasHints {
+                        classicHintButtons
+                            .opacity(vm.status == .playing ? 1 : 0)
+                            .allowsHitTesting(vm.status == .playing)
+                    }
                     // Stage-cleared shows the full-screen StageTransition overlay
                     // (below); the keyboard just hides while it's up.
                     if !vm.stageCleared { KeyboardView(vm: vm).padding(.bottom, 6) }
