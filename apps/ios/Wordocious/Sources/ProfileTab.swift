@@ -398,6 +398,19 @@ struct ProfileTab: View {
                         .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
                 }
                 .buttonStyle(PressableStyle())
+                // PRIVATE PROFILES: the owner's always-on reminder that others
+                // see only the teaser card. Tap opens the edit surface (where
+                // the toggle lives).
+                if p.isPrivate == true {
+                    Button { showEditProfile = true } label: {
+                        Label("Private", systemImage: "lock.fill").font(Brand.font(11, .heavy)).foregroundStyle(Color(hex: 0x7C3AED))
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Capsule().fill(Color(hex: 0xF3F0FF)))
+                            .overlay(Capsule().stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityHint("Your profile is private — other players see a limited card. Tap to change.")
+                }
             }
             .padding(.top, 2)
             socialLinksRow()

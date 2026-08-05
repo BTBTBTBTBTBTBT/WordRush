@@ -27,9 +27,18 @@ struct PublicProfileView: View {
     /// case, highlights, Lately). Loads separately from the core profile so
     /// the page renders even if every social fetch fails.
     @State private var social = ProfileSocialData()
+    // PRIVATE PROFILES: `gated` = viewer gets only the teaser card (target is
+    // private and the viewer is neither the owner nor an admin — mirrors the
+    // server gate, plus the typed-403 backstop). `deepAllowed` flips true only
+    // after the gate opens, so no deep fetch ever fires for a gated profile
+    // (spec §6: don't fire-then-discard, don't read the open tables).
+    @State private var gated = false
+    @State private var deepAllowed = false
     @ObservedObject private var chrome = ChromeVisibility.shared
 
     private let pickerModes: [HomeMode] = homeModes.filter { $0.mode != nil }
+
+    private var isOwnProfile: Bool { AuthService.shared.profile?.id == userId }
 
     var body: some View {
         ZStack {
@@ -40,7 +49,7 @@ struct PublicProfileView: View {
             } else if notFound || profile == nil {
                 notFoundView
             } else if let p = profile {
-                content(p)
+                if gated { teaser(p) } else { content(p) }
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -48,27 +57,68 @@ struct PublicProfileView: View {
         .task { await ModerationService.loadBlockedIds() }
         .task(id: userId) { await loadAll() }
         // Social sections load on their own task — non-blocking, and the page
-        // stays fully usable if any (or all) of these fetches fail.
-        .task(id: "social-\(userId)") { social = await ProfileSocialLoader.load(userId: userId) }
-        .task(id: "\(tab)-\(selectedMode.rawValue)") {
+        // stays fully usable if any (or all) of these fetches fail. Keyed on
+        // deepAllowed so nothing fires until the privacy gate has opened.
+        .task(id: "social-\(userId)-\(deepAllowed)") {
+            guard deepAllowed else { return }
+            social = await ProfileSocialLoader.load(userId: userId)
+        }
+        .task(id: "\(tab)-\(selectedMode.rawValue)-\(deepAllowed)") {
+            guard deepAllowed else { return }
             topWords = await PublicProfileService.topWords(userId: userId, mode: selectedMode, playType: tab)
         }
+        // Moderation dialogs live on the container (not inside the header) so
+        // the private-profile teaser branch can open them too.
+        .confirmationDialog("Report this user?", isPresented: $showReportDialog, titleVisibility: .visible) {
+            Button("Inappropriate username", role: .destructive) { fileReport("Inappropriate username") }
+            Button("Inappropriate profile content", role: .destructive) { fileReport("Inappropriate profile content") }
+            Button("Cheating / fake scores", role: .destructive) { fileReport("Cheating / fake scores") }
+            Button("Other", role: .destructive) { fileReport("Other") }
+            Button("Cancel", role: .cancel) {}
+        } message: { Text("Reports are reviewed by the Wordocious team.") }
+        .confirmationDialog("Block this user?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
+            Button("Block", role: .destructive) {
+                Task { await ModerationService.block(userId: userId); moderationToast = "User blocked" }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { Text("You won't see this player on leaderboards or records.") }
     }
 
     private func loadAll() async {
         loading = true
-        async let prof = PublicProfileService.fetchProfile(id: userId)
-        async let st = PublicProfileService.stats(id: userId)
-        async let mt = PublicProfileService.recentMatches(id: userId)
-        let p = await prof
-        if p == nil { notFound = true; loading = false; return }
+        // PRIVATE PROFILES: let auth settle before deciding who the viewer is,
+        // so the owner deep-linking into their own profile never flashes their
+        // own teaser card (spec §6).
+        while AuthService.shared.isLoading {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+        }
+        guard let p = await PublicProfileService.fetchProfile(id: userId) else {
+            notFound = true; loading = false; return
+        }
         profile = p
+        let viewer = AuthService.shared.profile
+        // Client mirror of the server gate (open for public targets, the
+        // owner, and admins). The endpoints enforce it regardless — mirroring
+        // means no doomed requests and no direct reads of the still-open
+        // tables (user_stats / daily_results / medals) for a private target.
+        gated = (p.isPrivate == true) && viewer?.id != p.id && viewer?.isAdmin != true
+        if gated { loading = false; return }   // teaser renders from the profiles row alone
+        async let st = PublicProfileService.stats(id: userId)
+        async let mt = PublicProfileService.recentMatchesGated(id: userId)
         stats = await st
-        matches = await mt
+        switch await mt {
+        case .ok(let rows): matches = rows
+        case .privateProfile:
+            // The profiles row read said public but the server said private —
+            // the row was stale (the flag just flipped). The typed 403 wins.
+            gated = true; loading = false; return
+        case .failed: matches = []
+        }
         socials = await ProfileExtras.socialLinks(userId: userId)
         // Default the mode picker to the player's first mode for this tab.
         if let firstMode = stats.first(where: { $0.playType == tab })?.gameMode,
            let gm = GameMode(rawValue: firstMode) { selectedMode = gm }
+        deepAllowed = true
         loading = false
     }
 
@@ -86,6 +136,169 @@ struct PublicProfileView: View {
                 .font(Brand.body(13)).foregroundStyle(Theme.textMuted).multilineTextAlignment(.center)
             Button("Back") { dismiss() }.buttonStyle(.borderedProminent).tint(Theme.primary)
         }.padding(24)
+    }
+
+    // MARK: Shared header bits (full page + teaser)
+
+    /// App Review 1.2: users must be able to report/block each other wherever
+    /// strangers' content renders — including a private profile's teaser card.
+    private var moderationMenu: some View {
+        Menu {
+            Button(role: .destructive) { showReportDialog = true } label: {
+                Label("Report User", systemImage: "flag")
+            }
+            if ModerationService.isBlocked(userId) {
+                Button { Task { await ModerationService.unblock(userId: userId); moderationToast = "User unblocked" } } label: {
+                    Label("Unblock User", systemImage: "person.crop.circle.badge.checkmark")
+                }
+            } else {
+                Button(role: .destructive) { showBlockConfirm = true } label: {
+                    Label("Block User", systemImage: "person.crop.circle.badge.xmark")
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle").font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Theme.textMuted).padding(4)
+        }
+    }
+
+    private func moderationToastView(_ toast: String) -> some View {
+        Text(toast).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .background(Capsule().fill(Theme.surface))
+            .task { try? await Task.sleep(nanoseconds: 2_500_000_000); moderationToast = nil }
+    }
+
+    /// Accent-colored (or wordmark-gradient) username — same on both branches.
+    @ViewBuilder private func usernameText(_ p: Profile, size: CGFloat = 30) -> some View {
+        if ProfileAccent.isCustom(p.accentColor) {
+            Text(p.username).font(Brand.title(size)).foregroundStyle(ProfileAccent.color(p.accentColor))
+        } else {
+            Text(p.username).font(Brand.title(size))
+                .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
+        }
+    }
+
+    // MARK: Private-profile teaser (spec §3)
+
+    /// Same tier ladder as the own-profile page (Bronze <11 … Diamond 100+).
+    private func teaserTier(_ lvl: Int) -> (label: String, bg: Color, border: Color, color: Color) {
+        if lvl >= 100 { return ("Diamond", Color(hex: 0xEFF6FF), Color(hex: 0xBFDBFE), Color(hex: 0x1D4ED8)) }
+        if lvl >= 51 { return ("Platinum", Color(hex: 0xF5F3FF), Color(hex: 0xC4B5FD), Color(hex: 0x6D28D9)) }
+        if lvl >= 26 { return ("Gold", Color(hex: 0xFEF9EC), Color(hex: 0xFDE68A), Color(hex: 0x92400E)) }
+        if lvl >= 11 { return ("Silver", Color(hex: 0xF3F4F6), Color(hex: 0xD1D5DB), Color(hex: 0x374151)) }
+        return ("Bronze", Color(hex: 0xFEF2E8), Color(hex: 0xFED7AA), Color(hex: 0x9A3412))
+    }
+
+    private func teaserMemberSince(_ p: Profile) -> String? {
+        guard let c = p.createdAt, let d = parseTimestamp(c) else { return nil }
+        let f = DateFormatter(); f.dateFormat = "MMM yyyy"; f.locale = Locale(identifier: "en_US")
+        return f.string(from: d)
+    }
+
+    /// One clean card styled like the profile header — identity + headline
+    /// numbers, all from the world-readable profiles row. Nothing that reveals
+    /// words or strategy renders; the deep endpoints 403 anyway, this is the
+    /// face on that rule. Ports the web teaser (app/profile/[id]/page.tsx).
+    private func teaser(_ p: Profile) -> some View {
+        let tier = teaserTier(p.level)
+        let medals: [(String, Int)] = [("🥇", p.goldMedals), ("🥈", p.silverMedals), ("🥉", p.bronzeMedals)]
+        let stats: [(String, Int)] = [("Wins", p.totalWins),
+                                      ("Games", p.totalWins + p.totalLosses),
+                                      ("Daily Streak", p.dailyLoginStreak)]
+        return ScrollView {
+            VStack(spacing: 16) {
+                HStack {
+                    Button { dismiss() } label: {
+                        Label("Back", systemImage: "chevron.left").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
+                    }.buttonStyle(.plain)
+                    Spacer()
+                    // Report / Block still works on private profiles.
+                    if !isOwnProfile { moderationMenu }
+                }
+                if let toast = moderationToast { moderationToastView(toast) }
+
+                VStack(spacing: 0) {
+                    AvatarView(url: p.avatarUrl, username: p.username, size: 96,
+                               accentHex: p.accentColor, emoji: p.avatarEmoji)
+                    usernameText(p).padding(.top, 12)
+
+                    // Lock badge — the notation the founder asked for.
+                    HStack(spacing: 5) {
+                        Image(systemName: "lock.fill").font(.system(size: 10, weight: .bold))
+                        Text("This profile is private")
+                            .font(Brand.font(11, .black)).tracking(0.5).textCase(.uppercase)
+                    }
+                    .foregroundStyle(Theme.textMuted)
+                    .padding(.horizontal, 12).padding(.vertical, 5)
+                    .background(Capsule().fill(Theme.surfaceHover))
+                    .overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
+                    .padding(.top, 8)
+
+                    Text("\(p.username) keeps their words and strategies to themselves. You can still meet them on the daily leaderboards.")
+                        .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                        .multilineTextAlignment(.center).frame(maxWidth: 240)
+                        .padding(.top, 8)
+
+                    // Level + tier chip, member since — same chips as the header.
+                    HStack(spacing: 5) {
+                        Image(systemName: "star.fill").font(.system(size: 11))
+                        Text("Level \(p.level)").font(Brand.font(12, .heavy))
+                        Text("·").opacity(0.7)
+                        Text(tier.label).font(Brand.font(12, .heavy))
+                    }
+                    .foregroundStyle(tier.color)
+                    .padding(.horizontal, 12).padding(.vertical, 5)
+                    .background(Capsule().fill(tier.bg))
+                    .overlay(Capsule().stroke(tier.border, lineWidth: 1.5))
+                    .padding(.top, 16)
+
+                    if let since = teaserMemberSince(p) {
+                        Text("Member since \(since)")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            .padding(.top, 6)
+                    }
+
+                    // Medal counts
+                    HStack(spacing: 16) {
+                        ForEach(medals, id: \.0) { m in
+                            HStack(spacing: 4) {
+                                Text(m.0).font(.system(size: 17))
+                                Text("\(m.1)").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                            }
+                        }
+                    }
+                    .padding(.top, 16)
+
+                    // Headline numbers
+                    HStack(spacing: 12) {
+                        ForEach(stats, id: \.0) { s in
+                            VStack(spacing: 2) {
+                                Text("\(s.1)").font(Brand.font(17, .black)).foregroundStyle(Theme.textPrimary)
+                                Text(s.0.uppercased()).font(Brand.font(9, .bold)).tracking(0.6).foregroundStyle(Theme.textMuted)
+                            }.frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding(.top, 12)
+                    .overlay(Rectangle().fill(Theme.border).frame(height: 1), alignment: .top)
+                    .padding(.top, 12)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(24)
+                .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+
+                Button { dismiss() } label: {
+                    Label("Back", systemImage: "chevron.left")
+                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
+                        .padding(.horizontal, 18).padding(.vertical, 8)
+                        .background(Capsule().fill(Theme.surfaceHover))
+                        .overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
+                }.buttonStyle(.plain)
+            }
+            .padding(.horizontal, 12).padding(.top, 8)
+            .padding(.bottom, chrome.bottomInset)
+        }
     }
 
     // MARK: Content
@@ -120,52 +333,24 @@ struct PublicProfileView: View {
                     Label("Back", systemImage: "chevron.left").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
                 }.buttonStyle(.plain)
                 Spacer()
-                // App Review 1.2: users must be able to report/block each other
-                // wherever strangers' content (usernames/bios/avatars) renders.
-                Menu {
-                    Button(role: .destructive) { showReportDialog = true } label: {
-                        Label("Report User", systemImage: "flag")
-                    }
-                    if ModerationService.isBlocked(userId) {
-                        Button { Task { await ModerationService.unblock(userId: userId); moderationToast = "User unblocked" } } label: {
-                            Label("Unblock User", systemImage: "person.crop.circle.badge.checkmark")
-                        }
-                    } else {
-                        Button(role: .destructive) { showBlockConfirm = true } label: {
-                            Label("Block User", systemImage: "person.crop.circle.badge.xmark")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle").font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(Theme.textMuted).padding(4)
-                }
+                moderationMenu
             }
-            .confirmationDialog("Report this user?", isPresented: $showReportDialog, titleVisibility: .visible) {
-                Button("Inappropriate username", role: .destructive) { fileReport("Inappropriate username") }
-                Button("Inappropriate profile content", role: .destructive) { fileReport("Inappropriate profile content") }
-                Button("Cheating / fake scores", role: .destructive) { fileReport("Cheating / fake scores") }
-                Button("Other", role: .destructive) { fileReport("Other") }
-                Button("Cancel", role: .cancel) {}
-            } message: { Text("Reports are reviewed by the Wordocious team.") }
-            .confirmationDialog("Block this user?", isPresented: $showBlockConfirm, titleVisibility: .visible) {
-                Button("Block", role: .destructive) {
-                    Task { await ModerationService.block(userId: userId); moderationToast = "User blocked" }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: { Text("You won't see this player on leaderboards or records.") }
-            if let toast = moderationToast {
-                Text(toast).font(Brand.caption(12)).foregroundStyle(Theme.textMuted)
-                    .padding(.horizontal, 12).padding(.vertical, 5)
-                    .background(Capsule().fill(Theme.surface))
-                    .task { try? await Task.sleep(nanoseconds: 2_500_000_000); moderationToast = nil }
-            }
+            if let toast = moderationToast { moderationToastView(toast) }
             // Social redesign: avatar wrapped in the today-progress ring.
             TodayRingAvatar(profile: p, completedToday: social.todayCount)
-            if ProfileAccent.isCustom(p.accentColor) {
-                Text(p.username).font(Brand.title(30)).foregroundStyle(ProfileAccent.color(p.accentColor))
-            } else {
-                Text(p.username).font(Brand.title(30))
-                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0xFBBF24), Color(hex: 0xEC4899), Color(hex: 0xA78BFA)], startPoint: .leading, endPoint: .trailing))
+            usernameText(p)
+            // PRIVATE PROFILES: the owner (and admins) still see the full page
+            // — this muted pill is the reminder that everyone else doesn't.
+            if p.isPrivate == true {
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill").font(.system(size: 9, weight: .bold))
+                    Text(isOwnProfile ? "Your profile is private" : "Private profile")
+                        .font(Brand.font(10, .black)).tracking(0.4).textCase(.uppercase)
+                }
+                .foregroundStyle(Theme.textMuted)
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .background(Capsule().fill(Theme.surfaceHover))
+                .overlay(Capsule().stroke(Theme.border, lineWidth: 1.5))
             }
             // Social redesign: presence line + level/archetype/percentile/opener
             // chips (the level badge moved into the chip row).

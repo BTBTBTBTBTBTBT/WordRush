@@ -17,6 +17,7 @@ struct EditProfileView: View {
     @State private var favoriteMode: String?    // dbKey or nil
     @State private var featured: String?        // achievement key or nil
     @State private var avatarEmoji = ""
+    @State private var isPrivate = false
     @State private var unlocked: Set<String> = []
     @State private var error: String?
     @State private var saving = false
@@ -79,6 +80,7 @@ struct EditProfileView: View {
                     sectionCard("ACCENT COLOR") { accentRow }
                     sectionCard("FEATURED TITLE") { titlePicker }
                     sectionCard("FAVORITE MODE") { modeRow }
+                    sectionCard("PRIVACY") { privacyRow }
                     sectionCard("SOCIALS") { socialFields }
                 }
                 .padding(16)
@@ -92,6 +94,7 @@ struct EditProfileView: View {
             favoriteMode = auth.profile?.favoriteMode
             featured = auth.profile?.featuredAchievement
             avatarEmoji = auth.profile?.avatarEmoji ?? ""
+            isPrivate = auth.profile?.isPrivate ?? false
             await catalog.load()
             if let uid = auth.profile?.id {
                 socials = await ProfileExtras.socialLinks(userId: uid)
@@ -217,6 +220,36 @@ struct EditProfileView: View {
         }
     }
 
+    /// PRIVATE PROFILES toggle — ports the web ProfileEditModal Privacy
+    /// section: lock/globe icon + "Private profile" + ON/OFF pill, helper copy
+    /// below. Saves profiles.is_private with the rest of the form.
+    private var privacyRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button { isPrivate.toggle() } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: isPrivate ? "lock.fill" : "globe")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(isPrivate ? Color(hex: 0x7C3AED) : Theme.textMuted)
+                    Text("Private profile")
+                        .font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    Text(isPrivate ? "ON" : "OFF")
+                        .font(Brand.font(10, .black))
+                        .foregroundStyle(isPrivate ? Color(hex: 0x7C3AED) : Theme.textMuted)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Capsule().fill(isPrivate ? Color(hex: 0xF3F0FF) : Theme.surfaceHover))
+                }
+                .padding(.horizontal, 12).padding(.vertical, 10)
+                .background(RoundedRectangle(cornerRadius: 10).fill(Theme.background))
+                .overlay(RoundedRectangle(cornerRadius: 10)
+                    .stroke(isPrivate ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
+            Text("Hide your words, stats, and game history from other players. You'll still appear on leaderboards.")
+                .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+        }
+    }
+
     private var socialFields: some View {
         VStack(spacing: 8) {
             ForEach(platforms, id: \.key) { p in
@@ -271,7 +304,8 @@ struct EditProfileView: View {
         let favorite_mode: String?
         let featured_achievement: String?
         let avatar_emoji: String?
-        enum CodingKeys: String, CodingKey { case username, social_links, bio, accent_color, favorite_mode, featured_achievement, avatar_emoji }
+        let is_private: Bool
+        enum CodingKeys: String, CodingKey { case username, social_links, bio, accent_color, favorite_mode, featured_achievement, avatar_emoji, is_private }
         func encode(to encoder: Encoder) throws {
             var c = encoder.container(keyedBy: CodingKeys.self)
             if let username { try c.encode(username, forKey: .username) }
@@ -281,6 +315,7 @@ struct EditProfileView: View {
             try c.encode(favorite_mode, forKey: .favorite_mode)
             try c.encode(featured_achievement, forKey: .featured_achievement)
             try c.encode(avatar_emoji, forKey: .avatar_emoji)
+            try c.encode(is_private, forKey: .is_private)
         }
     }
     private struct AvatarUpdate: Encodable { let avatar_url: String? }
@@ -319,7 +354,8 @@ struct EditProfileView: View {
             accent_color: accent,
             favorite_mode: favoriteMode,
             featured_achievement: (featured.map { unlocked.contains($0) } ?? false) ? featured : nil,
-            avatar_emoji: emoji.isEmpty ? nil : emoji)
+            avatar_emoji: emoji.isEmpty ? nil : emoji,
+            is_private: isPrivate)
         saving = true; error = nil
         Task {
             do {

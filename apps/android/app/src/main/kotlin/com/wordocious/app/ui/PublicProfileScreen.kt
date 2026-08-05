@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
@@ -37,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -59,6 +61,7 @@ import com.wordocious.app.data.ProfileService
 import com.wordocious.app.data.SupabaseConfig
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.GameMode
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -95,6 +98,10 @@ data class PublicProfile(
     @SerialName("gold_medals") val goldMedals: Int = 0,
     @SerialName("silver_medals") val silverMedals: Int = 0,
     @SerialName("bronze_medals") val bronzeMedals: Int = 0,
+    // PRIVATE PROFILES: world-readable flag + created_at ("Member since") for
+    // the teaser card (docs/private-profiles-spec.md §3).
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("is_private") val isPrivate: Boolean = false,
 )
 
 private suspend fun fetchPublicProfile(id: String): PublicProfile? = runCatching {
@@ -123,26 +130,62 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
     val load by produceState(initialValue = true to null as PublicProfile?, userId) {
         value = false to fetchPublicProfile(userId)
     }
-    val loading = load.first
+    val profileLoading = load.first
     val profile = load.second
-    val stats by produceState(initialValue = emptyList<ProfileService.UserStat>(), userId) {
-        value = ProfileService.fetchUserStats(userId)
+
+    // ── PRIVATE PROFILES gate (docs/private-profiles-spec.md) ────────────────
+    // Everything below the world-readable profiles row is gated: private
+    // target + viewer is neither the owner nor an admin → teaser card only,
+    // and NO deep fetch fires (the endpoints would 403 anyway; the open
+    // tables — user_stats / daily_results / medals — must not be read either).
+    val viewerProfile by AuthService.profile.collectAsState()
+    val sessionUserId = remember {
+        runCatching { SupabaseConfig.client.auth.currentUserOrNull()?.id }.getOrNull()
     }
-    val matches by produceState(initialValue = emptyList<ProfileService.RecentMatch>(), userId) {
+    val isOwnProfile = userId == AuthService.userId || userId == sessionUserId
+    val viewerIsAdmin = viewerProfile?.isAdmin == true
+    // Latched when a deep endpoint answers with the typed 403 {private:true}
+    // (the profiles row read was stale) — the server's verdict wins.
+    var apiGated by remember(userId) { mutableStateOf(false) }
+    val gated = apiGated || (profile?.isPrivate == true && !isOwnProfile && !viewerIsAdmin)
+    // Hold the gate closed while a signed-in viewer's own profile row is still
+    // loading, so the owner never flashes their own teaser (spec §6).
+    val authSettled = sessionUserId == null || viewerProfile != null
+    val loading = profileLoading || (profile?.isPrivate == true && !authSettled)
+    // Deep fetches key on this: null until the profile row is here AND the
+    // gate is open — so a gated profile never fires them at all.
+    val deepUser = if (profile != null && !loading && !gated) userId else null
+
+    val stats by produceState(initialValue = emptyList<ProfileService.UserStat>(), deepUser) {
+        value = if (deepUser != null) ProfileService.fetchUserStats(deepUser) else emptyList()
+    }
+    val matches by produceState(initialValue = emptyList<ProfileService.RecentMatch>(), deepUser) {
         // Web endpoint, not the RLS-scoped query — matches SELECT is
         // participants-only, so the direct read is empty for anyone else.
-        value = ProfileService.fetchPublicRecentMatches(userId)
+        value = if (deepUser != null) {
+            when (val res = ProfileService.fetchPublicRecentMatches(deepUser)) {
+                is ProfileService.Gated.Ok -> res.value
+                is ProfileService.Gated.PrivateProfile -> { apiGated = true; emptyList() }
+                is ProfileService.Gated.Failed -> emptyList()
+            }
+        } else {
+            emptyList()
+        }
     }
     var playType by remember { mutableStateOf("solo") }
     var selectedMode by remember { mutableStateOf(GameMode.DUEL) }
     var showAllRecent by remember { mutableStateOf(false) }
     val topWords by produceState(
         initialValue = emptyList<com.wordocious.app.data.MatchStatsService.TopWord>(),
-        userId, selectedMode, playType,
+        deepUser, selectedMode, playType,
     ) {
         // iOS refetches top words on every tab/mode change (task id "\(tab)-\(mode)").
         // Web endpoint for the same RLS reason as matches above.
-        value = ProfileService.fetchPublicTopWords(userId, selectedMode.name, playType)
+        value = if (deepUser != null) {
+            ProfileService.fetchPublicTopWords(deepUser, selectedMode.name, playType)
+        } else {
+            emptyList()
+        }
     }
     // iOS loadAll(): default the picker to the player's first mode for this tab
     // so a stranger's profile doesn't open on an all-zero Duel card.
@@ -154,7 +197,6 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
 
     // Moderation (App Review 1.2): report + block from a stranger's profile —
     // ports the iOS PublicProfileView ellipsis menu. Own profile shows no menu.
-    val isOwnProfile = userId == AuthService.userId
     var menuOpen by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
     var showBlockConfirm by remember { mutableStateOf(false) }
@@ -170,23 +212,32 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
     }
 
     // ── Profile-social layer loads — every one best-effort: a failed fetch
-    // renders nothing new and the classic profile below is untouched. ─────────
-    val persona by produceState(initialValue = null as ProfileService.Persona?, userId) {
-        value = runCatching { ProfileService.fetchPersona(userId) }.getOrNull()
+    // renders nothing new and the classic profile below is untouched. All key
+    // on deepUser so nothing fires while the privacy gate is closed. ─────────
+    val persona by produceState(initialValue = null as ProfileService.Persona?, deepUser) {
+        value = if (deepUser != null) runCatching { ProfileService.fetchPersona(deepUser) }.getOrNull() else null
     }
-    val targetDailies by produceState(initialValue = emptyList<ProfileService.DailyRowLite>(), userId) {
-        value = runCatching { ProfileService.fetchSoloDailyRows(userId) }.getOrDefault(emptyList())
+    val targetDailies by produceState(initialValue = emptyList<ProfileService.DailyRowLite>(), deepUser) {
+        value = if (deepUser != null) {
+            runCatching { ProfileService.fetchSoloDailyRows(deepUser) }.getOrDefault(emptyList())
+        } else {
+            emptyList()
+        }
     }
     val viewerId = AuthService.userId
-    val viewerDailies by produceState(initialValue = emptyList<ProfileService.DailyRowLite>(), userId, viewerId) {
-        value = if (viewerId != null && viewerId != userId) {
+    val viewerDailies by produceState(initialValue = emptyList<ProfileService.DailyRowLite>(), deepUser, viewerId) {
+        value = if (deepUser != null && viewerId != null && viewerId != userId) {
             runCatching { ProfileService.fetchSoloDailyRows(viewerId) }.getOrDefault(emptyList())
         } else {
             emptyList()
         }
     }
-    val medalHistory by produceState(initialValue = emptyList<ProfileService.UserMedal>(), userId) {
-        value = runCatching { ProfileService.fetchUserMedals(userId, limit = 200) }.getOrDefault(emptyList())
+    val medalHistory by produceState(initialValue = emptyList<ProfileService.UserMedal>(), deepUser) {
+        value = if (deepUser != null) {
+            runCatching { ProfileService.fetchUserMedals(deepUser, limit = 200) }.getOrDefault(emptyList())
+        } else {
+            emptyList()
+        }
     }
     val h2h = remember(viewerDailies, targetDailies) {
         if (viewerDailies.isNotEmpty() && targetDailies.isNotEmpty()) {
@@ -301,6 +352,31 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             return@Column
         }
 
+        // ── PRIVATE PROFILE TEASER (spec §3) — one clean card from the
+        // world-readable profiles row; nothing that reveals words or strategy
+        // renders. Report/Block stays in the header row above; the deep
+        // fetches never fired (deepUser is null while gated). ────────────────
+        if (gated) {
+            PrivateProfileTeaser(p)
+            Row(
+                Modifier.fillMaxWidth().padding(top = 4.dp),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Row(
+                    Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
+                        .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
+                        .clickableNoRipple(onClose).padding(horizontal = 18.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp))
+                    Text("Back", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED))
+                }
+            }
+            Spacer(Modifier.height(20.dp))
+            return@Column
+        }
+
         // ── Header: avatar / gradient username / level badge / XP bar / socials ──
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             val avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }
@@ -341,6 +417,23 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                         ),
                     ),
                 )
+            }
+            // PRIVATE PROFILES: the owner (and admins) still see the full page
+            // — this muted pill is the reminder that everyone else doesn't.
+            if (p.isPrivate) {
+                Row(
+                    Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
+                        .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(Icons.Filled.Lock, null, tint = WTheme.textMuted, modifier = Modifier.size(11.dp))
+                    Text(
+                        (if (isOwnProfile) "Your profile is private" else "Private profile").uppercase(),
+                        fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.4.sp,
+                    )
+                }
             }
             // Presence line — pulsing dot + "Played N minutes ago" (mock .presence).
             PresenceLine(p.lastSeenAt)
@@ -687,6 +780,146 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             .groupBy { it.day }
             .mapValues { (_, rows) -> rows.map { it.gameMode }.distinct().size }
         StreakCalendarDialog(targetName = targetName, dayCounts = counts, onDismiss = { showCalendar = false })
+    }
+}
+
+// ── Private-profile teaser (docs/private-profiles-spec.md §3) ───────────────
+
+private data class TeaserTier(val label: String, val bg: Color, val border: Color, val color: Color)
+
+/** Same tier ladder as the own-profile page (Bronze <11 … Diamond 100+). */
+private fun teaserTier(level: Int): TeaserTier = when {
+    level >= 100 -> TeaserTier("Diamond", Color(0xFFEFF6FF), Color(0xFFBFDBFE), Color(0xFF1D4ED8))
+    level >= 51 -> TeaserTier("Platinum", Color(0xFFF5F3FF), Color(0xFFC4B5FD), Color(0xFF6D28D9))
+    level >= 26 -> TeaserTier("Gold", Color(0xFFFEF9EC), Color(0xFFFDE68A), Color(0xFF92400E))
+    level >= 11 -> TeaserTier("Silver", Color(0xFFF3F4F6), Color(0xFFD1D5DB), Color(0xFF374151))
+    else -> TeaserTier("Bronze", Color(0xFFFEF2E8), Color(0xFFFED7AA), Color(0xFF9A3412))
+}
+
+private val TEASER_MONTHS = arrayOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+/** "Mon YYYY" from an ISO created_at (ProfileScreen.memberSince parity). */
+private fun teaserMemberSince(createdAt: String?): String? {
+    val s = createdAt ?: return null
+    if (s.length < 7) return null
+    val y = s.substring(0, 4)
+    val m = s.substring(5, 7).toIntOrNull() ?: return null
+    return "${TEASER_MONTHS[(m - 1).coerceIn(0, 11)]} $y"
+}
+
+/**
+ * One clean card styled like the profile header — identity + headline numbers,
+ * all from the world-readable profiles row. Nothing that reveals words or
+ * strategy renders; the deep endpoints 403 anyway, this is the face on that
+ * rule. Matches the iOS teaser / web app/profile/[id]/page.tsx.
+ */
+@Composable
+private fun PrivateProfileTeaser(p: PublicProfile) {
+    val tier = teaserTier(p.level)
+    val customAccent = ProfileAccent.isCustom(p.accentColor)
+    val avatarUrl = p.avatarUrl?.takeIf { it.isNotBlank() }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(WTheme.surface)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)).padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier.size(96.dp).clip(CircleShape)
+                .background(if (customAccent) ProfileAccent.avatarBrush(p.accentColor) else WTheme.wordmarkGradient),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (avatarUrl != null) {
+                coil.compose.AsyncImage(
+                    model = avatarUrl, contentDescription = "Avatar",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                )
+            } else {
+                Text(
+                    p.avatarEmoji?.takeIf { it.isNotBlank() } ?: (p.username?.take(2) ?: "P").uppercase(),
+                    fontSize = 38.4f.sp, fontWeight = FontWeight.Black, color = Color.White,
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        if (customAccent) {
+            Text(p.username ?: "Player", fontSize = 30.sp, fontWeight = FontWeight.Black, color = ProfileAccent.color(p.accentColor))
+        } else {
+            Text(
+                p.username ?: "Player",
+                fontSize = 30.sp, fontWeight = FontWeight.Black,
+                style = TextStyle(
+                    fontFamily = com.wordocious.app.ui.theme.Nunito,
+                    brush = Brush.horizontalGradient(listOf(Color(0xFFFBBF24), Color(0xFFEC4899), Color(0xFFA78BFA))),
+                ),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        // Lock badge — the notation the founder asked for.
+        Row(
+            Modifier.clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(50))
+                .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Icon(Icons.Filled.Lock, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+            Text(
+                "This profile is private".uppercase(),
+                fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 0.5.sp,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "${p.username ?: "Player"} keeps their words and strategies to themselves. You can still meet them on the daily leaderboards.",
+            fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.width(240.dp),
+        )
+        Spacer(Modifier.height(16.dp))
+        // Level + tier chip, member since — same chips as the profile header.
+        Row(
+            Modifier.clip(RoundedCornerShape(50)).background(tier.bg)
+                .border(1.5.dp, tier.border, RoundedCornerShape(50))
+                .padding(horizontal = 12.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Icon(Icons.Filled.Star, null, tint = tier.color, modifier = Modifier.size(13.dp))
+            Text("Level ${p.level}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = tier.color)
+            Text("·", fontSize = 12.sp, color = tier.color.copy(alpha = 0.7f))
+            Text(tier.label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = tier.color)
+        }
+        teaserMemberSince(p.createdAt)?.let {
+            Spacer(Modifier.height(6.dp))
+            Text("Member since $it", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
+        Spacer(Modifier.height(16.dp))
+        // Medal counts
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            listOf("🥇" to p.goldMedals, "🥈" to p.silverMedals, "🥉" to p.bronzeMedals).forEach { (emoji, count) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(emoji, fontSize = 17.sp)
+                    Text("$count", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+        Spacer(Modifier.height(12.dp))
+        // Headline numbers
+        Row(Modifier.fillMaxWidth()) {
+            listOf(
+                "Wins" to p.totalWins,
+                "Games" to (p.totalWins + p.totalLosses),
+                "Daily Streak" to p.dailyLoginStreak,
+            ).forEach { (label, value) ->
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("$value", fontSize = 17.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                    Text(label.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted, letterSpacing = 0.6.sp, maxLines = 1)
+                }
+            }
+        }
     }
 }
 

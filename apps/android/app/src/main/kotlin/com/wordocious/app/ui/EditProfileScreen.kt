@@ -26,6 +26,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -98,6 +101,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
     var favoriteMode by remember { mutableStateOf<String?>(null) }
     var featured by remember { mutableStateOf<String?>(null) }
     var avatarEmoji by remember { mutableStateOf("") }
+    var isPrivate by remember { mutableStateOf(false) }
     var unlocked by remember { mutableStateOf<Set<String>>(emptySet()) }
     val catalog by androidx.compose.runtime.produceState(com.wordocious.app.data.AchievementCatalog.cached()) {
         value = com.wordocious.app.data.AchievementCatalog.load()
@@ -111,6 +115,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
         favoriteMode = profile?.favoriteMode
         featured = profile?.featuredAchievement
         avatarEmoji = profile?.avatarEmoji ?: ""
+        isPrivate = profile?.isPrivate ?: false
         val uid = profile?.id ?: return@LaunchedEffect
         unlocked = com.wordocious.app.data.AchievementService.fetchUnlocked(uid)
         runCatching {
@@ -253,6 +258,7 @@ fun EditProfileScreen(onDone: () -> Unit) {
                                 set("favorite_mode", favoriteMode)
                                 set("featured_achievement", titleVal)
                                 set("avatar_emoji", emojiVal)
+                                set("is_private", isPrivate)
                             }) { filter { eq("id", uid) } }
                         }
                         if (ok.isSuccess) { AuthService.refreshProfile(); onDone() }
@@ -401,6 +407,40 @@ fun EditProfileScreen(onDone: () -> Unit) {
                         ) { ModeGlyph(m, tint = m.accent, box = 40.dp) }
                     }
                 }
+            }
+
+            // Privacy — PRIVATE PROFILES toggle (web ProfileEditModal parity):
+            // lock/globe icon + "Private profile" + ON/OFF pill, helper below.
+            // Saves profiles.is_private with the rest of the form.
+            SectionCard("PRIVACY") {
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(WTheme.bg)
+                        .border(1.5.dp, if (isPrivate) Color(0xFFC4B5FD) else WTheme.border, RoundedCornerShape(10.dp))
+                        .clickableNoRipple { isPrivate = !isPrivate }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    androidx.compose.material3.Icon(
+                        if (isPrivate) Icons.Filled.Lock else Icons.Filled.Language,
+                        null,
+                        tint = if (isPrivate) Color(0xFF7C3AED) else WTheme.textMuted,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text("Private profile", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f))
+                    Text(
+                        if (isPrivate) "ON" else "OFF",
+                        fontSize = 10.sp, fontWeight = FontWeight.Black,
+                        color = if (isPrivate) Color(0xFF7C3AED) else WTheme.textMuted,
+                        modifier = Modifier.clip(RoundedCornerShape(50))
+                            .background(if (isPrivate) Color(0xFFF3F0FF) else WTheme.surfaceHover)
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                    )
+                }
+                Text(
+                    "Hide your words, stats, and game history from other players. You'll still appear on leaderboards.",
+                    fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                )
             }
 
             // Socials

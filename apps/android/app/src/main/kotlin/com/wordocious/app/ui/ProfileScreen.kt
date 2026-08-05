@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -61,6 +62,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -651,6 +654,23 @@ private fun ProfileHeader(profile: com.wordocious.app.data.Profile?, isProActive
             ) {
                 Icon(Icons.Filled.Share, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(12.dp))
                 Text("Share", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
+            }
+            // PRIVATE PROFILES: the owner's always-on reminder that others see
+            // only the teaser card. Tap opens the edit surface (where the
+            // toggle lives). Accessibility copy per the spec.
+            if (profile?.isPrivate == true) {
+                Row(
+                    modifier = Modifier.clip(RoundedCornerShape(50)).background(Color(0xFFF3F0FF))
+                        .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(50))
+                        .pressScale { onEditProfile() }.padding(horizontal = 12.dp, vertical = 6.dp)
+                        .semantics {
+                            contentDescription = "Your profile is private — other players see a limited card. Tap to change."
+                        },
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(Icons.Filled.Lock, null, tint = Color(0xFF7C3AED), modifier = Modifier.size(11.dp))
+                    Text("Private", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF7C3AED))
+                }
             }
         }
 

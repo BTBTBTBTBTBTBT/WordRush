@@ -25,9 +25,12 @@ extension PublicProfileService {
     }
 
     /// GET /api/profile/<id>/persona — nil on any failure (page still renders).
+    /// Bearer header per the private-profiles contract: the endpoint 403s for
+    /// a private target unless the caller proves they're the owner/an admin.
     static func persona(id: String) async -> Persona? {
         guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/persona") else { return nil }
-        guard let (data, resp) = try? await URLSession.shared.data(from: url),
+        let req = await authedRequest(url)
+        guard let (data, resp) = try? await URLSession.shared.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200 else { return nil }
         return try? JSONDecoder().decode(Persona.self, from: data)
     }

@@ -65,6 +65,51 @@ object ProfileService {
     @Serializable
     private data class MatchesEnvelope(val matches: List<RecentMatch> = emptyList())
 
+    // ── PRIVATE PROFILES gate plumbing ───────────────────────────────────────
+
+    /** The gate's typed 403 body: {"error":"This profile is private","private":true}. */
+    @Serializable
+    private data class PrivateGateBody(@SerialName("private") val isPrivateGate: Boolean? = null)
+
+    /** A deep-endpoint fetch that can be refused by the privacy gate. */
+    sealed interface Gated<out T> {
+        data class Ok<T>(val value: T) : Gated<T>
+        /** Typed 403 {private:true} — the caller must show the teaser card. */
+        data object PrivateProfile : Gated<Nothing>
+        data object Failed : Gated<Nothing>
+    }
+
+    private data class ApiResponse(val code: Int, val body: String?)
+
+    // GET one of the four /api/profile/[id] endpoints with the caller's
+    // Supabase access token when a session exists. The header is optional
+    // (anonymous viewers of public profiles still get data) but MUST be sent
+    // whenever signed in — without it the OWNER of a private profile is gated
+    // out of their own deep stats. Mirrors web profileApiHeaders() in
+    // lib/profile-social.ts.
+    private fun profileApiGet(url: String): ApiResponse {
+        val conn = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
+            SupabaseConfig.client.auth.currentSessionOrNull()?.accessToken?.let {
+                setRequestProperty("Authorization", "Bearer $it")
+            }
+            connectTimeout = 10_000
+            readTimeout = 10_000
+        }
+        val code = conn.responseCode
+        val body = runCatching {
+            (if (code in 200..299) conn.inputStream else conn.errorStream)
+                ?.bufferedReader()?.use { it.readText() }
+        }.getOrNull()
+        return ApiResponse(code, body)
+    }
+
+    /** True iff a response is the private-profile 403 (branch on `private`,
+     *  never string-match the error; the board route's 403 is {locked:true}). */
+    private fun isPrivateGate(resp: ApiResponse): Boolean =
+        resp.code == 403 && resp.body?.let {
+            runCatching { jsonLoose.decodeFromString<PrivateGateBody>(it).isPrivateGate == true }.getOrDefault(false)
+        } == true
+
     /**
      * Recent matches for ANOTHER player's public profile — fetched from the
      * web API, not a direct `matches` query: that table's SELECT policy is
@@ -73,27 +118,37 @@ object ProfileService {
      * session user and "Recent Matches" was permanently empty on other
      * players' profiles. The endpoint reads server-side and returns only the
      * sanitized columns this screen renders (no guess arrays).
+     * Returns [Gated.PrivateProfile] on the privacy gate's typed 403.
      */
-    suspend fun fetchPublicRecentMatches(userId: String): List<RecentMatch> =
+    suspend fun fetchPublicRecentMatches(userId: String): Gated<List<RecentMatch>> =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
-                val body = java.net.URL("https://wordocious.com/api/profile/$userId/matches").readText()
-                kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
-                    .decodeFromString<MatchesEnvelope>(body).matches
-            }.getOrDefault(emptyList())
+                val resp = profileApiGet("https://wordocious.com/api/profile/$userId/matches")
+                when {
+                    isPrivateGate(resp) -> Gated.PrivateProfile
+                    resp.code in 200..299 && resp.body != null ->
+                        Gated.Ok(jsonLoose.decodeFromString<MatchesEnvelope>(resp.body).matches)
+                    else -> Gated.Failed
+                }
+            }.getOrDefault(Gated.Failed)
         }
 
     @Serializable
     private data class TopWordsEnvelope(val topWords: List<MatchStatsService.TopWord> = emptyList())
 
-    /** Top words for another player — same web-endpoint story as above. */
+    /** Top words for another player — same web-endpoint story as above.
+     *  (The screen never calls this for a gated profile; a privacy 403 here
+     *  just renders as no top-words card.) */
     suspend fun fetchPublicTopWords(userId: String, mode: String, playType: String): List<MatchStatsService.TopWord> =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
                 val play = if (playType == "vs") "vs" else "solo"
-                val body = java.net.URL("https://wordocious.com/api/profile/$userId/top-words?mode=$mode&play=$play").readText()
-                kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
-                    .decodeFromString<TopWordsEnvelope>(body).topWords
+                val resp = profileApiGet("https://wordocious.com/api/profile/$userId/top-words?mode=$mode&play=$play")
+                if (resp.code in 200..299 && resp.body != null) {
+                    jsonLoose.decodeFromString<TopWordsEnvelope>(resp.body).topWords
+                } else {
+                    emptyList()
+                }
             }.getOrDefault(emptyList())
         }
 
@@ -148,12 +203,18 @@ object ProfileService {
         val flawless: PersonaFlawless? = null,
     )
 
-    /** Server-side persona aggregates (archetype/opener/streak/percentile/nemesis/flawless). */
+    /** Server-side persona aggregates (archetype/opener/streak/percentile/nemesis/flawless).
+     *  Bearer header per the private-profiles contract: the endpoint 403s for
+     *  a private target unless the caller proves they're the owner/an admin. */
     suspend fun fetchPersona(userId: String): Persona? =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
-                val body = java.net.URL("https://wordocious.com/api/profile/$userId/persona").readText()
-                jsonLoose.decodeFromString<Persona>(body)
+                val resp = profileApiGet("https://wordocious.com/api/profile/$userId/persona")
+                if (resp.code in 200..299 && resp.body != null) {
+                    jsonLoose.decodeFromString<Persona>(resp.body)
+                } else {
+                    null
+                }
             }.getOrNull()
         }
 

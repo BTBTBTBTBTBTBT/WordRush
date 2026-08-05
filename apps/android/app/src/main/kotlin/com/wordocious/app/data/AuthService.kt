@@ -51,6 +51,10 @@ data class Profile(
     @SerialName("accent_color") val accentColor: String? = null,
     @SerialName("favorite_mode") val favoriteMode: String? = null,
     @SerialName("avatar_emoji") val avatarEmoji: String? = null,
+    // PRIVATE PROFILES (migration 20260806000001): world-readable flag; when
+    // true, other players see only the teaser card and the four
+    // /api/profile/[id]/* endpoints 403 for them.
+    @SerialName("is_private") val isPrivate: Boolean = false,
 )
 
 /**

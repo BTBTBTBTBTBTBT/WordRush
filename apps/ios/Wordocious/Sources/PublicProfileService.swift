@@ -68,6 +68,45 @@ enum PublicProfileService {
             .select(Profile.selectColumns).eq("id", value: id).limit(1).single().execute().value
     }
 
+    // MARK: Private-profiles gate plumbing
+
+    /// PRIVATE PROFILES: the four /api/profile/[id]/* endpoints identify the
+    /// caller by `Authorization: Bearer <access token>` and 403 when the
+    /// target is private and the caller isn't the owner or an admin. The
+    /// header is optional (anonymous viewers of public profiles still get
+    /// data) but MUST be sent whenever a session exists — without it the
+    /// OWNER of a private profile is gated out of their own deep stats
+    /// (matches on the profile tab, top words, persona).
+    /// Mirrors web profileApiHeaders() in lib/profile-social.ts.
+    static func authedRequest(_ url: URL) async -> URLRequest {
+        var req = URLRequest(url: url)
+        if let token = try? await AuthService.shared.client.auth.session.accessToken {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        return req
+    }
+
+    /// The gate's typed 403 body: { "error": "This profile is private",
+    /// "private": true }. Branch on `private`, never string-match the error.
+    private struct PrivateGateBody: Decodable { let `private`: Bool? }
+
+    /// True iff a response is the private-profile 403 (not the board route's
+    /// {locked:true} 403 or any other failure).
+    static func isPrivateGate(_ resp: URLResponse?, _ data: Data?) -> Bool {
+        guard (resp as? HTTPURLResponse)?.statusCode == 403, let data,
+              let body = try? JSONDecoder().decode(PrivateGateBody.self, from: data)
+        else { return false }
+        return body.private == true
+    }
+
+    /// A deep-endpoint fetch that can be refused by the privacy gate.
+    enum Gated<T> {
+        case ok(T)
+        /// Typed 403 {private:true} — the caller must show the teaser card.
+        case privateProfile
+        case failed
+    }
+
     private struct MatchesEnvelope: Decodable { let matches: [RecentMatch] }
 
     /// Last 50 matches (solo or VS) involving this player, newest first.
@@ -78,12 +117,22 @@ enum PublicProfileService {
     /// Matches showed "No matches played yet" on every profile but your own.
     /// The endpoint reads server-side and returns only the sanitized columns
     /// this screen renders (no guess arrays).
+    static func recentMatchesGated(id: String) async -> Gated<[RecentMatch]> {
+        guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/matches") else { return .failed }
+        let req = await authedRequest(url)
+        guard let (data, resp) = try? await URLSession.shared.data(for: req) else { return .failed }
+        if isPrivateGate(resp, data) { return .privateProfile }
+        guard (resp as? HTTPURLResponse)?.statusCode == 200,
+              let env = try? JSONDecoder().decode(MatchesEnvelope.self, from: data) else { return .failed }
+        return .ok(env.matches)
+    }
+
+    /// Array-shaped convenience for callers that treat every failure as empty
+    /// (the own-profile tab — the bearer header means the owner of a private
+    /// profile still gets rows there).
     static func recentMatches(id: String) async -> [RecentMatch] {
-        guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/matches") else { return [] }
-        guard let (data, resp) = try? await URLSession.shared.data(from: url),
-              (resp as? HTTPURLResponse)?.statusCode == 200,
-              let env = try? JSONDecoder().decode(MatchesEnvelope.self, from: data) else { return [] }
-        return env.matches
+        if case .ok(let rows) = await recentMatchesGated(id: id) { return rows }
+        return []
     }
 
     private struct TopWordsEnvelope: Decodable {
@@ -96,7 +145,8 @@ enum PublicProfileService {
     /// players); the server aggregates so raw guess rows never leave it.
     static func topWords(userId id: String, mode: GameMode, playType: String = "solo", limit: Int = 5) async -> [MatchStatsService.TopWord] {
         guard let url = URL(string: "https://wordocious.com/api/profile/\(id)/top-words?mode=\(mode.rawValue)&play=\(playType == "vs" ? "vs" : "solo")") else { return [] }
-        guard let (data, resp) = try? await URLSession.shared.data(from: url),
+        let req = await authedRequest(url)
+        guard let (data, resp) = try? await URLSession.shared.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200,
               let env = try? JSONDecoder().decode(TopWordsEnvelope.self, from: data) else { return [] }
         return env.topWords.prefix(limit).map { MatchStatsService.TopWord(word: $0.word, count: $0.count, wins: $0.wins) }
