@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { gateProfilePrivacy, privateProfileResponse, privacyCacheHeader } from '@/lib/profile-privacy';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +20,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 //   bestPercentile   — best "top N%" standing across modes (user_stats)
 //   nemesis          — other player sharing the most (day, mode) dailies
 //   flawless         — target's flawless-day count + share of players with one
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const id = params.id;
   if (!UUID.test(id)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+
+  // Private profiles: archetype, opener, percentile, nemesis — all strategy
+  // reads. Withheld from everyone but the owner and admins (Bearer-authed).
+  const gate = await gateProfilePrivacy(req, id);
+  if (gate.status === 'private') return privateProfileResponse();
+
   const admin = getAdminSupabase();
 
   // ── matches-derived: opener + win streak (solo only, newest 1000) ────────
@@ -171,6 +178,6 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
   return NextResponse.json(
     { archetype, opener, longestWinStreak, bestPercentile, nemesis, flawless },
-    { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } },
+    { headers: { 'Cache-Control': privacyCacheHeader(gate, 'public, s-maxage=300, stale-while-revalidate=600') } },
   );
 }

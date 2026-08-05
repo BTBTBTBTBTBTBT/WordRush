@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
+import { gateProfilePrivacy, privateProfileResponse, privacyCacheHeader } from '@/lib/profile-privacy';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const mode = req.nextUrl.searchParams.get('mode') ?? '';
   if (!MODE.test(mode)) return NextResponse.json({ error: 'Invalid mode' }, { status: 400 });
   const play = req.nextUrl.searchParams.get('play') === 'vs' ? 'vs' : 'solo';
+
+  // Private profiles: top words ARE the player's strategy — the core thing
+  // the privacy toggle hides. Owner/admin (Bearer-authed) still get them.
+  const gate = await gateProfilePrivacy(req, id);
+  if (gate.status === 'private') return privateProfileResponse();
 
   const admin = getAdminSupabase();
   const { data, error } = await admin
@@ -52,6 +58,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   return NextResponse.json(
     { topWords },
-    { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' } },
+    { headers: { 'Cache-Control': privacyCacheHeader(gate, 'public, s-maxage=30, stale-while-revalidate=120') } },
   );
 }

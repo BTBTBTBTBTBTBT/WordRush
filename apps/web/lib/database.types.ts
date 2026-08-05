@@ -36,6 +36,7 @@ export interface Database {
           is_banned: boolean
           ban_reason: string | null
           has_onboarded: boolean
+          is_private: boolean
           created_at: string
           updated_at: string
         }
@@ -65,6 +66,7 @@ export interface Database {
           is_banned?: boolean
           ban_reason?: string | null
           has_onboarded?: boolean
+          is_private?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -94,6 +96,7 @@ export interface Database {
           is_banned?: boolean
           ban_reason?: string | null
           has_onboarded?: boolean
+          is_private?: boolean
           created_at?: string
           updated_at?: string
         }

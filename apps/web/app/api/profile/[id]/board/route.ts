@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-admin';
 import { verifyUser } from '@/lib/api-auth';
+import { gateProfilePrivacy, privateProfileResponse } from '@/lib/profile-privacy';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const user = await verifyUser(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Private profiles: a full board (guesses + solutions) is the deepest
+  // strategy read there is. The finished-the-daily guard below is necessary
+  // but not sufficient once the target opted out.
+  const gate = await gateProfilePrivacy(req, id);
+  if (gate.status === 'private') return privateProfileResponse();
 
   const admin = getAdminSupabase();
 

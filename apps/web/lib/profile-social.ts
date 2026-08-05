@@ -15,6 +15,23 @@ import { getTodayLocal, toLocalDayString } from './daily-service';
  * its existing content immediately and these cards fill in as data arrives.
  */
 
+// ── Auth header for the /api/profile/[id]/* endpoints ───────────────────────
+//
+// PRIVATE PROFILES: those routes now gate on the target's is_private and
+// identify the caller by Bearer token. The header is optional — anonymous
+// viewers of public profiles still get data — but without it the OWNER (and
+// admins) of a private profile would be gated out of their own deep stats.
+
+export async function profileApiHeaders(): Promise<Record<string, string>> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 // ── Persona (server endpoint) ───────────────────────────────────────────────
 
 export type Archetype = 'GRINDER' | 'SPEEDRUNNER' | 'SNIPER' | 'NIGHT_OWL' | 'CHALLENGER';
@@ -30,7 +47,7 @@ export interface Persona {
 
 export async function fetchPersona(id: string): Promise<Persona | null> {
   try {
-    const r = await fetch(`/api/profile/${id}/persona`);
+    const r = await fetch(`/api/profile/${id}/persona`, { headers: await profileApiHeaders() });
     if (!r.ok) return null;
     return (await r.json()) as Persona;
   } catch {

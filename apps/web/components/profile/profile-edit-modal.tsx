@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { validateUsername } from '@wordle-duel/core';
 import { supabase } from '@/lib/supabase-client';
 import { useAuth } from '@/lib/auth-context';
-import { X as XIcon, Check, Pencil, Star } from 'lucide-react';
+import { X as XIcon, Check, Pencil, Star, Lock, Globe } from 'lucide-react';
 import { AvatarUpload } from '@/components/profile/avatar-upload';
 import {
   PLATFORMS,
@@ -36,6 +36,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
   const [accent, setAccent] = useState<string | null>(null);
   const [favoriteMode, setFavoriteMode] = useState<string | null>(null);
   const [featured, setFeatured] = useState<string | null>(null);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [unlocked, setUnlocked] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -50,6 +51,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
       setAccent(p.accent_color ?? null);
       setFavoriteMode(p.favorite_mode ?? null);
       setFeatured(p.featured_achievement ?? null);
+      setIsPrivate(Boolean(p.is_private));
       setError('');
       setTimeout(() => inputRef.current?.focus(), 50);
       // Which achievements has the player unlocked? (only those are pickable as a title)
@@ -105,6 +107,7 @@ export function ProfileEditModal({ open, onClose }: Props) {
       accent_color: accent,
       favorite_mode: favoriteMode,
       featured_achievement: featured && unlocked.has(featured) ? featured : null,
+      is_private: isPrivate,
     };
     if (trimmed !== profile.username) payload.username = trimmed;
 
@@ -285,6 +288,41 @@ export function ProfileEditModal({ open, onClose }: Props) {
               );
             })}
           </div>
+
+          {/* Privacy */}
+          {label('Privacy')}
+          <button
+            onClick={() => setIsPrivate((v) => !v)}
+            disabled={saving}
+            className="w-full flex items-center gap-3 px-3 py-2.5 mb-1.5 transition-colors active:scale-[0.98] disabled:opacity-50"
+            style={{
+              background: 'var(--color-bg)',
+              border: `1.5px solid ${isPrivate ? '#c4b5fd' : 'var(--color-border)'}`,
+              borderRadius: '10px',
+            }}
+            aria-pressed={isPrivate}
+          >
+            {isPrivate ? (
+              <Lock className="w-4 h-4 shrink-0" style={{ color: '#7c3aed' }} />
+            ) : (
+              <Globe className="w-4 h-4 shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+            )}
+            <span className="flex-1 text-left text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+              Private profile
+            </span>
+            <span
+              className="text-[10px] font-black px-2 py-0.5 rounded-full"
+              style={{
+                background: isPrivate ? '#f3f0ff' : 'var(--color-surface-hover)',
+                color: isPrivate ? '#7c3aed' : 'var(--color-text-muted)',
+              }}
+            >
+              {isPrivate ? 'ON' : 'OFF'}
+            </span>
+          </button>
+          <p className="text-[10px] font-bold mb-4 leading-snug" style={{ color: 'var(--color-text-muted)' }}>
+            Hide your words, stats, and game history from other players. You&apos;ll still appear on leaderboards.
+          </p>
 
           {/* Socials */}
           {label('Socials')}

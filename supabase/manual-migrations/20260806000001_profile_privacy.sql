@@ -1,0 +1,60 @@
+-- ─────────────────────────────────────────────────────────────────────────────
+-- PRIVATE PROFILES — profiles.is_private
+--
+-- A player can mark their profile private in profile settings ("Edit Profile"
+-- on web; native ports follow docs/private-profiles-spec.md). When private,
+-- other players who open the profile see only a teaser card (avatar, username,
+-- level + tier, member since, medal counts, total wins, daily streak, and a
+-- "This profile is private" line). Everything that reveals WORDS or STRATEGY
+-- (top words, openers, recent games, boards, persona, head-to-head, medal
+-- history drilldowns, streak calendar) is withheld.
+--
+-- WHERE THE GATE LIVES
+--   The real enforcement is server-side in the public-profile API routes
+--   (apps/web/app/api/profile/[id]/{matches,top-words,persona,board}) — those
+--   are the only paths that release match/guess-derived data for OTHER
+--   players, because the matches SELECT policy is already participants-only.
+--   When the target is private and the caller is not the owner and not an
+--   admin (profiles.is_admin), those routes return
+--     403 { "error": "This profile is private", "private": true }.
+--
+-- COLUMN EXPOSURE
+--   profiles SELECT is `using (true)` for authenticated (leaderboards join
+--   profiles), so is_private itself is readable by any signed-in client.
+--   That is intentional: clients must be able to tell a profile is private to
+--   render the teaser card, and every teaser field (avatar, username, level,
+--   created_at, medal counters, total_wins, streaks) is already on the
+--   world-readable profiles row.
+--
+-- WRITE PATH
+--   The existing "Users can update own profile" policy covers the column
+--   (auth.uid() = id), and the protect_pro_columns trigger does NOT pin it —
+--   is_private is deliberately owner-editable from the client, like bio and
+--   accent_color.
+--
+-- LEADERBOARDS ARE UNAFFECTED (and the residual gap, documented)
+--   daily_results, user_stats, and medals SELECT policies are `using (true)`
+--   for authenticated — the daily/records leaderboards read other users' rows
+--   directly from the client (fetchDailyLeaderboard in lib/daily-service.ts
+--   selects daily_results joined to profiles). Playing a daily/VS is public
+--   competition, so those tables stay world-readable and a private player
+--   still appears on leaderboards.
+--   RESIDUAL GAP: a determined client can therefore still query a private
+--   user's daily_results / user_stats / medals rows by user_id with the anon
+--   key (scores, times, guess COUNTS, medal days — never guess words, which
+--   live in matches behind the participants-only policy). Gating those
+--   policies on is_private would blank private players out of every
+--   leaderboard, which the product spec forbids. If this gap ever needs
+--   closing, the follow-up is: move leaderboard reads behind a server route
+--   or a security-definer RPC, THEN tighten the three SELECT policies to
+--   `auth.uid() = user_id OR NOT (select is_private from profiles p where
+--   p.id = user_id)`. Documented here so it is a known trade, not a surprise.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+alter table public.profiles
+  add column if not exists is_private boolean not null default false;
+
+-- Verification:
+--   select column_name, data_type, column_default
+--   from information_schema.columns
+--   where table_name = 'profiles' and column_name = 'is_private';

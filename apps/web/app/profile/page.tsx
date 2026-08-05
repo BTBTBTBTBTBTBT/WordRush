@@ -19,6 +19,7 @@ import {
   Sparkles,
   TrendingUp,
   Bot,
+  Lock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { handleSupabaseError } from '@/lib/supabase-error-handler';
@@ -414,6 +415,19 @@ export default function ProfilePage() {
             >
               <Sparkles className="w-3.5 h-3.5" /> Share
             </button>
+            {/* PRIVATE PROFILES: the owner's always-on reminder that others
+                see only the teaser card. Tap opens the edit modal (where the
+                toggle lives). */}
+            {(profile as any).is_private && (
+              <button
+                onClick={() => setEditOpen(true)}
+                title="Your profile is private — other players see a limited card. Tap to change."
+                className="flex items-center gap-1 text-[11px] font-extrabold px-3 py-1.5 rounded-full"
+                style={{ background: '#f3f0ff', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
+              >
+                <Lock className="w-3 h-3" /> Private
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {!isProActive && (
