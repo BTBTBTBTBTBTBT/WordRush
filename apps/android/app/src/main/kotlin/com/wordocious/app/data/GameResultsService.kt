@@ -201,6 +201,140 @@ object GameResultsService {
         }.getOrNull()
     }
 
+    /** [fetchRecordedDailyMatch] that DISTINGUISHES "no row" (success(null))
+     *  from "couldn't check" (failure) — the launch sweep must not full-record
+     *  a game just because the dedupe probe failed, and it must work before the
+     *  profile fetch lands (session-fallback uid, like record()). */
+    private suspend fun fetchRecordedDailyMatchResult(seed: String): Result<RecordedDailyMatch?> {
+        val uid = AuthService.userId
+            ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
+            ?: return Result.failure(IllegalStateException("no session"))
+        return runCatching {
+            client.postgrest["matches"]
+                .select(Columns.raw("player1_guesses,player1_time,winner_id")) {
+                    filter { eq("player1_id", uid); eq("seed", seed) }
+                    order("created_at", Order.DESCENDING)
+                    limit(1)
+                }
+                .decodeList<RecordedDailyMatch>()
+                .firstOrNull()
+        }
+    }
+
+    // ── Run-cumulative scoring inputs (shared) ────────────────────────────────────
+    /** Inputs for record()/recordDailyResult computed from a terminal GameState —
+     *  ONE implementation shared by GameScreen's live finish, its finished-board
+     *  backfill and [backfillFinishedDailySaves], so the three can never
+     *  disagree. Gauntlet scores the WHOLE run (web gauntlet-game parity):
+     *  guesses summed across stageResults (+ the failed stage's max on a loss —
+     *  state.boards only holds the FINAL stage), boards solved tallied across
+     *  stages, denominator = every stage's boardCount (21). Single-board: best
+     *  green (correct-position) count across the player's OWN guesses —
+     *  hintEvaluations is keyed by ROW INDEX (Reducer.kt hintKey), so hint rows
+     *  are excluded by index, like web/iOS. */
+    data class RunScore(
+        val won: Boolean,
+        val guessCount: Int,
+        val boardsSolved: Int,
+        val totalBoards: Int,
+        val stagesCompleted: Int?,
+        val bestCorrectLetters: Int?,
+    )
+
+    fun computeRunScore(state: com.wordocious.core.GameState, mode: GameMode): RunScore {
+        val g = state.gauntlet
+        val won = state.status == com.wordocious.core.GameStatus.WON
+        val isGauntletRun = mode == GameMode.GAUNTLET && g != null
+        val runGuesses = if (isGauntletRun) {
+            g!!.stageResults.sumOf { it.guesses } +
+                (if (won) 0 else state.boards.maxOf { it.guesses.size })
+        } else state.boards.maxOf { it.guesses.size } // web parity: max across boards
+        val runSolved = if (isGauntletRun) g!!.stageResults.sumOf { r ->
+            if (r.status == com.wordocious.core.GameStatus.WON) (g.stages.getOrNull(r.stageIndex)?.boardCount ?: 0)
+            else (r.boardsSnapshot?.count { it.status == com.wordocious.core.GameStatus.WON } ?: 0)
+        } else state.boards.count { it.status == com.wordocious.core.GameStatus.WON }
+        val runTotal = if (isGauntletRun) (g!!.stages.sumOf { it.boardCount }.takeIf { it > 0 } ?: 21)
+            else state.boards.size
+        val stagesCompleted = if (isGauntletRun) g!!.stageResults.count { it.status == com.wordocious.core.GameStatus.WON } else null
+        val board0 = state.boards.firstOrNull()
+        val bestCorrectLetters = if (!isGauntletRun && runTotal == 1 && board0 != null) {
+            board0.guesses.foldIndexed(0) { i, best, gw ->
+                if (board0.hintEvaluations?.containsKey(i.toString()) == true) best
+                else maxOf(best, com.wordocious.core.evaluateGuess(board0.solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
+            }
+        } else null
+        return RunScore(won, runGuesses, runSolved, runTotal, stagesCompleted, bestCorrectLetters)
+    }
+
+    // ── Launch-time finished-save sweep ──────────────────────────────────────────
+    /**
+     * Safety net for finishes the record pipeline never SAW (run right after
+     * PendingRecords.drain() each launch). The pending-record queue only
+     * protects games whose record() at least started — register() is its first
+     * act. Doug's DUEL daily proved a finish can be dropped BEFORE that point
+     * (a crash on the finish frame, a stale positional rememberSaveable
+     * `recorded` flag, no resolvable user id): the terminal board sits in
+     * GamePersistence, but there is no queue entry, no server rows and no
+     * telemetry, and nothing ever re-reads that save unless the exact board
+     * screen is reopened. This sweep checks every mode's TODAY save on every
+     * launch:
+     *  - finished save + NO matches row → full record() (register → tracked
+     *    writes → daily row; from here the queue owns any further failure)
+     *  - finished save + matches row    → re-assert the daily_results row alone
+     *    (idempotent best-score upsert — covers a lost daily-row-only tail)
+     *  - dedupe probe failed            → skip this launch, retry on the next
+     * Solo daily seeds only. Seeds with a pending payload are drain()'s to
+     * replay, not ours.
+     */
+    suspend fun backfillFinishedDailySaves() {
+        for (mode in GameMode.values()) {
+            val seed = com.wordocious.app.todayLocalSeed(mode.name)
+            val state = GamePersistence.load(seed, mode) ?: continue
+            if (state.status == com.wordocious.core.GameStatus.PLAYING) continue
+            if (PendingRecords.read(mode.name, seed) != null) continue
+            val match = fetchRecordedDailyMatchResult(seed).getOrElse { continue }
+            val rs = computeRunScore(state, mode)
+            val elapsed = GamePersistence.loadElapsed(seed, mode) ?: 0
+            // Hints, from what the save carries: PN's clue/vowel/consonant flags
+            // (GamePersistence.HintState), classic modes' hint rows on the board
+            // (zero-candidate hints aren't persisted — same approximation the
+            // CompletedDailyBoard breakdown shows for a restored game).
+            val hints = if (mode == GameMode.PROPERNOUNDLE) {
+                GamePersistence.loadHints(seed, mode)?.let { h ->
+                    listOf(h.clue, h.vowelRevealed, h.consonantRevealed).count { it != null }
+                } ?: 0
+            } else state.boards.firstOrNull()?.hintEvaluations?.size ?: 0
+            if (match != null) {
+                DailyResultsService.recordDailyResult(
+                    mode = mode, completed = rs.won, guessCount = rs.guessCount,
+                    elapsedSeconds = elapsed, boardsSolved = rs.boardsSolved,
+                    totalBoards = rs.totalBoards, hintsUsed = hints, seed = seed,
+                    stagesCompleted = rs.stagesCompleted, bestCorrectLetters = rs.bestCorrectLetters,
+                )
+                continue
+            }
+            val g = state.gauntlet
+            val isGauntletRun = mode == GameMode.GAUNTLET && g != null
+            val guessList = when {
+                isGauntletRun -> state.boards.flatMap { it.guesses } // web: final-stage flatMap
+                mode == GameMode.SEQUENCE -> state.boards.flatMap { it.guesses } // web shape: per-board concatenation
+                else -> state.boards.maxByOrNull { it.guesses.size }?.guesses ?: emptyList()
+            }
+            record(
+                gameMode = mode, won = rs.won, guessCount = rs.guessCount,
+                timeSeconds = elapsed, boardsSolved = rs.boardsSolved,
+                totalBoards = rs.totalBoards, seed = seed,
+                solutions = if (isGauntletRun) (g!!.allSolutions.ifEmpty { state.boards.map { it.solution } })
+                    else state.boards.map { it.solution },
+                guesses = guessList, hintsUsed = hints, playType = "solo",
+                stagesCompleted = rs.stagesCompleted, bestCorrectLetters = rs.bestCorrectLetters,
+            )
+            if (isGauntletRun) {
+                recordGauntletStages(seed = seed, stages = g!!.stages, stageResults = g.stageResults)
+            }
+        }
+    }
+
     // ── user_stats aggregate ──────────────────────────────────────────────────────
     @Serializable
     private data class StatsRow(
@@ -469,6 +603,7 @@ object GameResultsService {
         val skipStats = pending?.statsDone == true
         val skipMatch = pending?.matchDone == true
         val skipXp = pending?.xpDone == true
+        val skipDaily = pending?.dailyDone == true
 
         // The first three writes touch DISJOINT tables and never read each
         // other's output — user_stats (read-modify-write user_stats),
@@ -514,7 +649,13 @@ object GameResultsService {
                 // medal (own idempotent medals row). The sweep/flawless check
                 // below READS today's daily_results, so it stays after the join.
                 val dailyJob = async {
-                    DailyResultsService.recordDailyResult(
+                    // Replay-safe like the other parts: recordDailyResult is an
+                    // idempotent best-score upsert, but skipping a landed part
+                    // saves the round trips. Returns whether the row is KNOWN
+                    // to be on the server — that flags the DAILY part done, so
+                    // a cut write stays queued (it used to be the one primary
+                    // write the retry queue could not see).
+                    if (skipDaily) true else DailyResultsService.recordDailyResult(
                         mode = gameMode, completed = won, guessCount = guessCount,
                         elapsedSeconds = timeSeconds, boardsSolved = boardsSolved,
                         totalBoards = totalBoards, hintsUsed = hintsUsed, seed = seed,
@@ -529,7 +670,10 @@ object GameResultsService {
                         totalBoards = totalBoards, completed = won,
                     )
                 }
-                dailyJob.await(); streakJob.await(); perfectJob.await()
+                val dailyOk = dailyJob.await(); streakJob.await(); perfectJob.await()
+                if (trackPending && dailyOk) {
+                    PendingRecords.markDone(gameMode.name, seed, PendingRecords.Part.DAILY)
+                }
             }
             val (sweep, flawless) = MedalService.awardDailyBonusesIfComplete(userId)
             if (sweep + flawless > 0) {

@@ -2,6 +2,7 @@ package com.wordocious.app.data
 
 import com.wordocious.app.todayLocalDate
 import com.wordocious.core.GameMode
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -155,7 +156,11 @@ object DailyResultsService {
         @SerialName("composite_score") val compositeScore: Double,
     )
 
-    /** Record a completed solo daily result. Skips if not authenticated. */
+    /** Record a completed solo daily result. Skips if not authenticated.
+     *  Returns true when the row is KNOWN to be on the server (inserted,
+     *  updated, or an existing row already outranks this run) — the signal
+     *  GameResultsService uses to flag the PendingRecords DAILY part done, so
+     *  a failed/cut write stays queued and replays next launch. */
     suspend fun recordDailyResult(
         mode: GameMode,
         completed: Boolean,
@@ -170,8 +175,14 @@ object DailyResultsService {
         seed: String? = null,
         stagesCompleted: Int? = null,
         bestCorrectLetters: Int? = null,
-    ) {
-        val userId = AuthService.userId ?: return
+    ): Boolean {
+        // Profile row first, LOCAL SESSION second (GameResultsService.record
+        // parity): a drain() replay can run before the launch profile fetch
+        // lands, and bailing here left the daily row unwritten on exactly the
+        // launches whose whole point was to re-fire it.
+        val userId = AuthService.userId
+            ?: runCatching { client.auth.currentUserOrNull()?.id }.getOrNull()
+            ?: return false
         val day = seed?.let { com.wordocious.core.getDailySeedDate(it) } ?: todayLocalDate()
         val gameModeStr = mode.name
         // The puzzle's day also picks the scoring formula (pre-cutover days keep
@@ -189,7 +200,7 @@ object DailyResultsService {
 
             if (existing != null) {
                 // Only update if new score is better (web behavior: best score wins)
-                if (score <= existing.compositeScore) { DailyCompletionsService.noteRecorded(); return }
+                if (score <= existing.compositeScore) { DailyCompletionsService.noteRecorded(); return true }
                 client.postgrest["daily_results"].update({
                     set("completed", completed)
                     set("guess_count", guessCount)
@@ -212,10 +223,20 @@ object DailyResultsService {
             // Row is on the server — let server-backed screens refetch now.
             DailyCompletionsService.noteRecorded()
             AuthService.refreshProfile()
+            return true
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // The caller's scope was cancelled mid-flight (post-game left while
+            // the write was airborne). This is NOT a handled failure: rethrow so
+            // the coroutine unwinds and the PendingRecords payload keeps its
+            // DAILY part outstanding for the next drain. Swallowing it here
+            // (CancellationException IS an Exception) is how Doug's DUEL row
+            // vanished with a "successful"-looking record flow around it.
+            throw e
         } catch (e: Exception) {
             // Network/auth failure — silent for the user (game result still
             // local), but reported to Sentry (web reportRejectedWrite parity).
             reportSwallowedWrite("recordDailyResult", gameModeStr, e)
+            return false
         }
     }
 

@@ -414,7 +414,13 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     // XP pipeline (#88): record matches/user_stats/profile progression EXACTLY
     // once on a live finish, and surface the earned XP in a top toast. Resumed
     // games (finished on entry) are skipped — their deltas were never owed here.
-    var recorded by rememberSaveable { mutableStateOf(false) }
+    // Keyed by SEED, not position: rememberSaveable's positional key let a
+    // restored Activity hand a PREVIOUS game's saved `recorded=true` to a NEW
+    // board composed at the same call site — the live-finish effect then
+    // silently skipped record() with no queue entry and no telemetry (the
+    // leading suspect for Doug's vanished DUEL daily: zero matches, zero
+    // daily_results, zero pending payload, local save finished).
+    var recorded by rememberSaveable(key = "recorded-$seed") { mutableStateOf(false) }
     var xpResult by remember { mutableStateOf<com.wordocious.app.data.GameResultsService.XpResult?>(null) }
 
     // Cross-device "view solved daily" fallback (iOS parity): the game starts
@@ -508,58 +514,28 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     // CURRENT state/vm when invoked, so a restored-finished game records the
     // same numbers a live finish would.
     val recordFinishedRun: suspend () -> Unit = {
-            // Gauntlet scores the WHOLE run (web gauntlet-game parity): guesses
-            // summed across stageResults (+ the failed stage's max on a loss —
-            // state.boards only holds the FINAL stage), boards solved tallied
-            // across stages, denominator = every stage's boardCount (21).
             val g = state.gauntlet
-            val won = state.status == GameStatus.WON
             val isGauntletRun = mode == GameMode.GAUNTLET && g != null
-            val runGuesses = if (isGauntletRun) {
-                g!!.stageResults.sumOf { it.guesses } +
-                    (if (won) 0 else state.boards.maxOf { it.guesses.size })
-            } else state.boards.maxOf { it.guesses.size } // web parity: max across boards
-            val runSolved = if (isGauntletRun) g!!.stageResults.sumOf { r ->
-                if (r.status == GameStatus.WON) (g.stages.getOrNull(r.stageIndex)?.boardCount ?: 0)
-                else (r.boardsSnapshot?.count { it.status == GameStatus.WON } ?: 0)
-            } else state.boards.count { it.status == GameStatus.WON }
-            val runTotal = if (isGauntletRun) (g!!.stages.sumOf { it.boardCount }.takeIf { it > 0 } ?: 21)
-                else state.boards.size
+            val rs = com.wordocious.app.data.GameResultsService.computeRunScore(state, mode)
             val runGuessList = when {
                 isGauntletRun -> state.boards.flatMap { it.guesses } // web: final-stage flatMap
                 mode == GameMode.SEQUENCE -> state.boards.flatMap { it.guesses } // web shape: per-board concatenation (its replayer feeds first-PLAYING board)
                 else -> state.boards.maxByOrNull { it.guesses.size }?.guesses ?: emptyList() // longest board = full shared history
             }
-            // Loss-progress score inputs (web parity). Gauntlet: fully-cleared
-            // stage count drives the stage-depth ladder. Single-board: best green
-            // (correct-position) count across the player's OWN guesses (hint rows
-            // excluded so revealed letters don't inflate it).
-            val stagesCompleted = if (isGauntletRun) g!!.stageResults.count { it.status == GameStatus.WON } else null
-            val board0 = state.boards.firstOrNull()
-            val bestCorrectLetters = if (!isGauntletRun && runTotal == 1 && board0 != null) {
-                // hintEvaluations is keyed by ROW INDEX (Reducer.kt hintKey), not by
-                // the guess word — the old containsKey(gw) check never matched, so
-                // hint rows (whose revealed letters evaluate CORRECT) inflated the
-                // near-miss credit. Key by index like web/iOS.
-                board0.guesses.foldIndexed(0) { i, best, gw ->
-                    if (board0.hintEvaluations?.containsKey(i.toString()) == true) best
-                    else maxOf(best, com.wordocious.core.evaluateGuess(board0.solution, gw).tiles.count { it.state == com.wordocious.core.TileState.CORRECT })
-                }
-            } else null
             xpResult = com.wordocious.app.data.GameResultsService.record(
                 gameMode = mode,
-                won = won,
-                guessCount = runGuesses,
+                won = rs.won,
+                guessCount = rs.guessCount,
                 timeSeconds = elapsed,
-                boardsSolved = runSolved,
-                totalBoards = runTotal,
+                boardsSolved = rs.boardsSolved,
+                totalBoards = rs.totalBoards,
                 seed = seed,
                 solutions = if (isGauntletRun) (g!!.allSolutions.ifEmpty { state.boards.map { it.solution } })
                     else state.boards.map { it.solution },
                 guesses = runGuessList,
                 hintsUsed = vm.hintsUsed,
-                stagesCompleted = stagesCompleted,
-                bestCorrectLetters = bestCorrectLetters,
+                stagesCompleted = rs.stagesCompleted,
+                bestCorrectLetters = rs.bestCorrectLetters,
             )
             // Persist the Gauntlet stage breakdown onto the just-inserted matches
             // row so the results screen renders cross-device (iOS/web parity).
@@ -573,7 +549,17 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     LaunchedEffect(isFinished) {
         if (isFinished && !wasFinishedOnEntry && !vm.wasReplayed && !recorded) {
             recorded = true
-            recordFinishedRun()
+            // NonCancellable: the record flow used to run on THIS composition's
+            // scope alone, so leaving the post-game (Home tap, "Next Daily",
+            // leaderboard hop) cancelled it mid-flight. A cancel landing after
+            // the three primary writes but during the daily_results upsert was
+            // swallowed as a plain Exception and never retried — Doug's DUEL:
+            // local save completed, stats/match/XP recorded, no leaderboard
+            // row. The writes are short and the retry queue still covers a
+            // process kill; navigation must not abort them.
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                recordFinishedRun()
+            }
         }
     }
 
@@ -582,12 +568,32 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
     // killed between the finish and record(), so wasFinishedOnEntry blocks the
     // live-record effect above and NO pending payload exists to drain. Without
     // this, the result is silently lost forever: home shows the mode unplayed
-    // while the board says finished. Server row present → nothing owed.
+    // while the board says finished.
     LaunchedEffect(Unit) {
         if (!wasFinishedOnEntry || vm.wasReplayed || recorded || !seed.startsWith("daily-")) return@LaunchedEffect
-        if (com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) != null) return@LaunchedEffect
+        if (com.wordocious.app.data.GameResultsService.fetchRecordedDailyMatch(seed) != null) {
+            // The matches row landed — but the daily_results row is written
+            // AFTER the three primary writes and can be lost on its own
+            // (Doug's DUEL daily). Re-assert it from the finished local board:
+            // recordDailyResult is an idempotent best-score upsert, a cheap
+            // no-op when the row is already there, the missing leaderboard row
+            // when it isn't.
+            recorded = true
+            val rs = com.wordocious.app.data.GameResultsService.computeRunScore(state, mode)
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                com.wordocious.app.data.DailyResultsService.recordDailyResult(
+                    mode = mode, completed = rs.won, guessCount = rs.guessCount,
+                    elapsedSeconds = elapsed, boardsSolved = rs.boardsSolved,
+                    totalBoards = rs.totalBoards, hintsUsed = vm.hintsUsed, seed = seed,
+                    stagesCompleted = rs.stagesCompleted, bestCorrectLetters = rs.bestCorrectLetters,
+                )
+            }
+            return@LaunchedEffect
+        }
         recorded = true
-        recordFinishedRun()
+        kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+            recordFinishedRun()
+        }
     }
 
     if (showVictory) {

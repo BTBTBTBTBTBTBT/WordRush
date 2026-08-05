@@ -73,9 +73,23 @@ object PendingRecords {
         val matchDone: Boolean = false,
         /** profiles progression landed (XP, level, win + daily-login streak). */
         val xpDone: Boolean = false,
+        /** daily_results row landed (daily seeds only — the leaderboard row).
+         *  This was the UNTRACKED fourth write: it runs AFTER the three parts
+         *  above are flagged, so a cut (leave the post-game mid-flight, kill,
+         *  offline blip) lost it while drain() saw "all done" and released the
+         *  payload — Doug's DUEL daily showed completed locally with no
+         *  leaderboard row and nothing left to retry. Old payloads decode as
+         *  false and simply replay the (idempotent, best-score-upsert) write. */
+        val dailyDone: Boolean = false,
     )
 
-    enum class Part { STATS, MATCH, XP }
+    enum class Part { STATS, MATCH, XP, DAILY }
+
+    /** Every tracked write landed. The DAILY part only applies to daily seeds —
+     *  an unlimited game writes no daily_results row and must not be held
+     *  hostage by a flag nothing will ever set. */
+    private fun Payload.allDone(): Boolean =
+        statsDone && matchDone && xpDone && (dailyDone || !seed.startsWith("daily-"))
 
     private fun key(gameModeName: String, seed: String) = "$gameModeName-$seed"
 
@@ -99,6 +113,7 @@ object PendingRecords {
             statsDone = existing.statsDone,
             matchDone = existing.matchDone,
             xpDone = existing.xpDone,
+            dailyDone = existing.dailyDone,
         )
         runCatching {
             p.edit().putString(key(payload.gameModeName, payload.seed), json.encodeToString(merged)).apply()
@@ -121,6 +136,7 @@ object PendingRecords {
             Part.STATS -> current.copy(statsDone = true)
             Part.MATCH -> current.copy(matchDone = true)
             Part.XP -> current.copy(xpDone = true)
+            Part.DAILY -> current.copy(dailyDone = true)
         }
         runCatching {
             p.edit().putString(key(gameModeName, seed), json.encodeToString(next)).apply()
@@ -130,7 +146,7 @@ object PendingRecords {
     /** Release the payload once every part has landed. No-op while any is outstanding. */
     fun settle(gameModeName: String, seed: String) {
         val current = read(gameModeName, seed) ?: return
-        if (current.statsDone && current.matchDone && current.xpDone) clear(gameModeName, seed)
+        if (current.allDone()) clear(gameModeName, seed)
     }
 
     /** Drop the payload outright. */
@@ -175,9 +191,12 @@ object PendingRecords {
                 if (!payload.userId.equals(userId, ignoreCase = true)) continue
                 val mode = runCatching { GameMode.valueOf(payload.gameModeName) }.getOrNull()
                 if (mode == null) { p.edit().remove(k).apply(); continue }
-                // Every part landed, only the release didn't (killed between the
-                // last write and settle()) — nothing to replay.
-                if (payload.statsDone && payload.matchDone && payload.xpDone) {
+                // Every part landed (incl. the daily row for daily seeds), only
+                // the release didn't (killed between the last write and
+                // settle()) — nothing to replay. The old three-part check here
+                // is what deleted Doug's payload with the daily_results row
+                // still unwritten.
+                if (payload.allDone()) {
                     p.edit().remove(k).apply(); continue
                 }
 
