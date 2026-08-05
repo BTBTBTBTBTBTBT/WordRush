@@ -1,36 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { buildCopy, MODE_ROUTE, type SP } from '@/lib/share-page-copy';
 
-// Per-result share landing page. The Share button (lib/share-utils.ts) uploads
-// the result PNG to the public `share-images` bucket and links here; this page
-// emits Open Graph / Twitter-card tags whose og:image IS that exact PNG, so
-// Facebook / X / LinkedIn / Reddit render the finished puzzle (they refuse
-// pre-attached image files and only scrape the shared URL's og:image).
+// Per-result share landing page. The Share button (lib/share-utils.ts, plus
+// the iOS/Android ShareService mirrors) uploads the result PNG to the public
+// `share-images` bucket and links here; this page emits Open Graph / Twitter-
+// card tags whose og:image IS that exact PNG, so Messages/RCS link bubbles and
+// Facebook / X / LinkedIn / Reddit render the finished puzzle (social scrapers
+// refuse pre-attached image files and only scrape the shared URL's og:image).
+//
+// Title/description building lives in lib/share-page-copy.ts (pure, tested).
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-
-const MODE_DISPLAY: Record<string, string> = {
-  Six: 'Classic Six',
-  Seven: 'Classic Seven',
-  ProperNoundle: 'ProperNoundle',
-  DailySweep: 'Daily Sweep',
-};
-
-// Map a share mode back to its play route so the CTA sends visitors to it.
-const MODE_ROUTE: Record<string, string> = {
-  Classic: '/practice',
-  QuadWord: '/quordle',
-  OctoWord: '/octordle',
-  Succession: '/sequence',
-  Deliverance: '/rescue',
-  Gauntlet: '/gauntlet',
-  ProperNoundle: '/propernoundle',
-  Six: '/six',
-  Seven: '/seven',
-  DailySweep: '/daily',
-};
-
-type SP = Record<string, string | string[] | undefined>;
 
 function str(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
@@ -40,55 +21,12 @@ function imageUrl(key: string[]): string {
   return `${SUPABASE_URL}/storage/v1/object/public/share-images/${key.join('/')}.png`;
 }
 
-function fmtTime(s: number): string {
-  const m = Math.floor(s / 60);
-  return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-}
-
-function buildCopy(sp: SP) {
-  const mode = str(sp.m) ?? 'Wordocious';
-  const modeDisp = MODE_DISPLAY[mode] ?? mode;
-
-  // All-dailies share card has its own copy shape (X/9 won · time · pts).
-  if (mode === 'DailySweep') {
-    const flawless = str(sp.sweep) === 'flawless';
-    const w = Number(str(sp.won)) || 0;
-    const tot = Number(str(sp.tot)) || 9;
-    const t = Number(str(sp.t)) || 0;
-    const pts = Number(str(sp.pts)) || 0;
-    const label = flawless ? 'Flawless Victory' : 'Daily Sweep';
-    const stats = `${w}/${tot} won · ${fmtTime(t)} · ${pts.toLocaleString()} pts`;
-    const title = `Wordocious ${label} — ${stats}`;
-    const description = flawless
-      ? `I won all ${tot} daily puzzles on Wordocious (${stats}). Can you go flawless?`
-      : `I completed all ${tot} daily puzzles on Wordocious (${stats}). Think you can sweep them?`;
-    return { mode, modeDisp: label, won: w >= tot, stats, title, description };
-  }
-
-  const won = str(sp.won) === '1';
-  const g = Number(str(sp.g)) || 0;
-  const mg = Number(str(sp.mg)) || 0;
-  const t = Number(str(sp.t)) || 0;
-  const guessDisp = won ? `${g}/${mg}` : `X/${mg}`;
-  const statsBits: string[] = [];
-  if (str(sp.bs) && str(sp.tb)) statsBits.push(`${str(sp.bs)}/${str(sp.tb)} boards`);
-  if (str(sp.sc) && str(sp.ts)) statsBits.push(`${str(sp.sc)}/${str(sp.ts)} stages`);
-  statsBits.push(guessDisp, fmtTime(t));
-  const stats = statsBits.join(' · ');
-
-  const title = `Wordocious ${modeDisp} — ${won ? 'Solved' : 'Played'} ${stats}`;
-  const description = won
-    ? `I solved ${modeDisp} on Wordocious (${stats}). Think you can beat it?`
-    : `I played ${modeDisp} on Wordocious. Think you can solve it?`;
-  return { mode, modeDisp, won, stats, title, description };
-}
-
 export async function generateMetadata(
   { params, searchParams }: { params: { key: string[] }; searchParams: SP },
 ): Promise<Metadata> {
   const key = params.key ?? [];
   const img = imageUrl(key);
-  const { title, description } = buildCopy(searchParams);
+  const { title, description } = buildCopy(searchParams, key);
   const w = Number(str(searchParams.w)) || 1080;
   const h = Number(str(searchParams.h)) || 1080;
 
@@ -103,7 +41,7 @@ export async function generateMetadata(
       url: `https://wordocious.com/s/${key.join('/')}`,
       siteName: 'Wordocious',
       type: 'website',
-      images: [{ url: img, width: w, height: h, alt: title }],
+      images: [{ url: img, width: w, height: h, alt: title, type: 'image/png' }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -119,8 +57,11 @@ export default function SharePage(
 ) {
   const key = params.key ?? [];
   const img = imageUrl(key);
-  const { mode, modeDisp, stats, title } = buildCopy(searchParams);
+  const { mode, modeDisp, stats, title } = buildCopy(searchParams, key);
   const playHref = MODE_ROUTE[mode] ?? '/';
+  // Profile cards and unknown modes aren't playable — send those to the hub.
+  const playable = mode in MODE_ROUTE && mode !== 'Profile';
+  const ctaLabel = playable ? `Play ${modeDisp}` : 'Play today’s puzzles';
 
   return (
     <main
@@ -142,7 +83,7 @@ export default function SharePage(
         WORDOCIOUS
       </h1>
       <p className="text-sm font-bold" style={{ color: 'var(--color-text-muted)', textAlign: 'center' }}>
-        {modeDisp} · {stats}
+        {stats ? `${modeDisp} · ${stats}` : modeDisp}
       </p>
 
       {/* The result image (same PNG used for the share card). */}
@@ -165,7 +106,7 @@ export default function SharePage(
           className="px-6 py-3 rounded-xl text-white font-black"
           style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
         >
-          Play {modeDisp}
+          {ctaLabel}
         </Link>
         <Link
           href="/"
