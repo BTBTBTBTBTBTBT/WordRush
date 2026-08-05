@@ -187,7 +187,7 @@ internal val PN_CATEGORY_LABELS = mapOf(
     "music" to "Music", "videogames" to "Video Games", "movies" to "Movies & TV", "sports" to "Sports",
     "history" to "History", "science" to "Science", "currentevents" to "Current Events",
 )
-private val PN_CATEGORY_COLORS = mapOf(
+internal val PN_CATEGORY_COLORS = mapOf(
     "music" to Color(0xFFEC4899), "videogames" to Color(0xFF8B5CF6), "movies" to Color(0xFFF59E0B),
     "sports" to Color(0xFF10B981), "history" to Color(0xFF6366F1), "science" to Color(0xFF06B6D4),
     "currentevents" to Color(0xFFEF4444),
@@ -195,7 +195,7 @@ private val PN_CATEGORY_COLORS = mapOf(
 
 /** Theme-category capsule under the ProperNoundle title (iOS header parity). */
 @Composable
-private fun PnCategoryPill(category: String) {
+internal fun PnCategoryPill(category: String) {
     Text(
         PN_CATEGORY_LABELS[category] ?: category,
         color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
@@ -625,6 +625,9 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
 
     // Show the stats / post-game screen
     if (isFinished) {
+        // ProperNoundle: the revealed (redacted) Clue stays in the finished
+        // header on iOS (ProperNoundleView.header shows vm.clue post-game too).
+        val pnFinishedClue by vm.clue.collectAsState()
         Box(modifier = Modifier.fillMaxSize()) {
             PostGameScreen(
                 state = state,
@@ -632,6 +635,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 seed = seed,
                 elapsedSeconds = elapsed,
                 hintsUsed = vm.hintsUsed,
+                pnRevealedClue = if (mode == GameMode.PROPERNOUNDLE) pnFinishedClue else null,
                 onBack = onBack,
                 onPlayAgain = onPlayAgain,
                 onOpenDaily = onOpenDaily,
@@ -982,7 +986,7 @@ private fun CornerHomeButton(accent: Color, onClick: () -> Unit, modifier: Modif
 
 /** Top-right "?" help button — mirrors CornerHomeButton's circle/stroke/shadow. */
 @Composable
-private fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun CornerHelpButton(accent: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val circle = androidx.compose.foundation.shape.CircleShape
     Box(
         modifier = modifier

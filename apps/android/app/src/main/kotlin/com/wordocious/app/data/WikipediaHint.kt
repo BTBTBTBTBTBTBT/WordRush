@@ -17,6 +17,15 @@ import java.net.URLEncoder
  */
 object WikipediaHint {
     private const val API = "https://en.wikipedia.org/api/rest_v1/page/summary"
+
+    /** Wikimedia's User-Agent policy refuses generic library UAs —
+     *  upload.wikimedia.org answers Coil/OkHttp's default "okhttp/x" (and an
+     *  empty UA) with 403, which is why the Android post-game photo frame
+     *  rendered empty while iOS (whose URLSession sends an app-identifying
+     *  CFNetwork UA) showed the picture. Sent on every Wikipedia/Wikimedia
+     *  request: the REST summary calls here and the Coil image load. */
+    const val USER_AGENT = "WordociousApp/1.0 (https://wordocious.com) Android"
+
     private val json = Json { ignoreUnknownKeys = true }
 
     private val abbreviations = listOf(
@@ -40,6 +49,7 @@ object WikipediaHint {
             val conn = (URL("$API/$title").openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
+                setRequestProperty("User-Agent", USER_AGENT)
                 connectTimeout = 5000; readTimeout = 5000
             }
             if (conn.responseCode !in 200..299) return@runCatching null
@@ -61,6 +71,7 @@ object WikipediaHint {
             val conn = (URL("$API/$title").openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
+                setRequestProperty("User-Agent", USER_AGENT)
                 connectTimeout = 5000; readTimeout = 5000
             }
             if (conn.responseCode !in 200..299) return@runCatching null
