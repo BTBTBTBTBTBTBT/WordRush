@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { validateUsername, normalizeUsername, USERNAME_BLOCKED_SUBSTRINGS, USERNAME_ALLOWED_CONTAINING } from './username';
+import {
+  validateUsername, normalizeUsername, containsBlockedTerm, pnGuessBlocked,
+  USERNAME_BLOCKED_SUBSTRINGS, USERNAME_ALLOWED_CONTAINING, USERNAME_BLOCKED_TOKENS,
+} from './username';
 
 const REPO = path.resolve(__dirname, '../../..');
 const read = (p: string) => fs.readFileSync(path.join(REPO, p), 'utf8');
@@ -65,7 +68,36 @@ describe('validateUsername — content', () => {
       'Cockburn',    // COCK
       'Penistone',   // a real town
       'Titan',       // TIT
+      'Dickens',     // DICK — now a tier-1 term; carrier allowlisted
+      'Hitchcock',   // COCK
+      'Peacock42',   // COCK with a suffix
+      'Swank',       // WANK
+      'TitanFall',   // TIT token would need a bare token, TITAN isn't one
+      'Bass Player', // ASS inside BASS, and BASS ≠ the ASS token
+      'MassEffect',  // ASS substring, tokens MASS + EFFECT
     ]) {
+      expect(validateUsername(n).ok, `${n} should be allowed`).toBe(true);
+    }
+  });
+
+  it('rejects the 2026-07-31 incident name and its family (tier-1 additions)', () => {
+    for (const n of [
+      'DamnDickCockBallsAss', // the actual rename that got through
+      'damndickcockballsass', // no camel boundaries — DICK/COCK still substring-match
+      'BigD1ck69',            // leet
+      'C-o-c-k_Lord',         // separators
+      'xXPenisXx',
+    ]) {
+      expect(validateUsername(n).ok, `${n} should be rejected`).toBe(false);
+    }
+  });
+
+  it('rejects tier-2 words as standalone tokens but not as substrings', () => {
+    for (const n of ['Ass_Master', 'Big Balls', 'DamnGoodPlayer', 'Tit.For.Tat', 'PissBoy']) {
+      expect(validateUsername(n).ok, `${n} should be rejected`).toBe(false);
+    }
+    // Same letters, no token boundary → allowed. The deliberate trade.
+    for (const n of ['Cassidy', 'Titanic', 'Sassy_Sue', 'Bassett', 'Assisi_Pilgrim']) {
       expect(validateUsername(n).ok, `${n} should be allowed`).toBe(true);
     }
   });
@@ -85,12 +117,39 @@ describe('normalizeUsername', () => {
   });
 });
 
+describe('ProperNoundle guess screening', () => {
+  it('blocks the 2026-07-31 incident guess', () => {
+    expect(pnGuessBlocked('penispenisp', 'taylorswift')).toBe(true);
+    expect(pnGuessBlocked('fuckfuckfuc', 'taylorswift')).toBe(true);
+  });
+
+  it('allows ordinary name guesses', () => {
+    for (const g of ['taylorswift', 'harrystyles', 'niagarafalls', 'masseffect', 'jurassicpark']) {
+      expect(pnGuessBlocked(g, 'taylorswift'), `${g} should be allowed`).toBe(false);
+    }
+  });
+
+  it('skips screening entirely when the ANSWER itself trips the scan', () => {
+    // "Ice Spice" contains SPIC — the correct answer must always be typeable,
+    // and near-guesses in that letter-space are legitimate.
+    expect(containsBlockedTerm('icespice')).toBe(true);
+    expect(pnGuessBlocked('icespice', 'icespice')).toBe(false);
+    expect(pnGuessBlocked('acespace', 'icespice')).toBe(false);
+  });
+
+  it('every current puzzle answer remains guessable', () => {
+    const puzzles = JSON.parse(read('apps/web/data/propernoundle-puzzles.json')) as { answer: string }[];
+    const blocked = puzzles.filter((p) => pnGuessBlocked(p.answer, p.answer));
+    expect(blocked.map((p) => p.answer)).toEqual([]);
+  });
+});
+
 describe('the DB mirror', () => {
   // The trigger is the enforcement; this module is only the friendly message.
   // If they drift, a name the app rejects still lands via a direct PostgREST
   // call — or worse, a name the app allows is rejected by the server with a
   // raw Postgres error.
-  const SQL = 'supabase/migrations/20260730000001_username_profanity.sql';
+  const SQL = 'supabase/manual-migrations/20260805000001_username_guard_db.sql';
 
   it('the migration lists every term this module blocks', () => {
     const sql = read(SQL);
@@ -101,6 +160,12 @@ describe('the DB mirror', () => {
   it('the migration lists every innocent word this module strips', () => {
     const sql = read(SQL);
     const missing = USERNAME_ALLOWED_CONTAINING.filter((t) => !sql.includes(`'${t}'`));
+    expect(missing, `missing from ${SQL}: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('the migration lists every tier-2 token this module blocks', () => {
+    const sql = read(SQL);
+    const missing = USERNAME_BLOCKED_TOKENS.filter((t) => !sql.includes(`'${t}'`));
     expect(missing, `missing from ${SQL}: ${missing.join(', ')}`).toEqual([]);
   });
 

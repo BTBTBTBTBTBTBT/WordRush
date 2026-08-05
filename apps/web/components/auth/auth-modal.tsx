@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/lib/auth-context';
 import { Sparkles, Mail, Lock, User } from 'lucide-react';
+import { validateUsername } from '@wordle-duel/core';
 
 interface AuthModalProps {
   open: boolean;
@@ -36,6 +37,14 @@ export function AuthModal({ open, onOpenChange }: AuthModalProps) {
     setLoading(true);
 
     if (mode === 'signup') {
+      // Shape + content pre-check (the DB trigger on profiles is the
+      // authority; this is the friendly message before the round trip).
+      const check = validateUsername(username.trim());
+      if (!check.ok) {
+        setError(check.error ?? 'That username is not available.');
+        setLoading(false);
+        return;
+      }
       const { error } = await signUp(email, password, username);
       if (error) {
         setError(error.message);

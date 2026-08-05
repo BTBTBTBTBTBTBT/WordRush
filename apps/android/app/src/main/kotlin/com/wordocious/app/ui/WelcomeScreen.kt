@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.SupabaseConfig
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.Profanity
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 
@@ -207,5 +208,8 @@ private fun validateUsername(name: String): String? {
     if (t.length < 3) return "At least 3 characters"
     if (t.length > 20) return "20 characters max"
     if (!t.matches(Regex("^[a-zA-Z0-9_]+$"))) return "Letters, numbers, and underscores only"
-    return null
+    // Content screen (core Profanity mirrors the DB word list) — the write
+    // below goes straight to PostgREST, so the DB trigger is the authority;
+    // this just gives instant feedback instead of "Something went wrong".
+    return Profanity.usernameError(t)
 }

@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.SupabaseConfig
 import com.wordocious.app.ui.theme.WTheme
+import com.wordocious.core.Profanity
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
@@ -228,7 +229,12 @@ fun EditProfileScreen(onDone: () -> Unit) {
                 modifier = Modifier.clickableNoRipple {
                     if (saving) return@clickableNoRipple
                     val t = username.trim()
-                    validate(t)?.let { error = it; return@clickableNoRipple }
+                    // Only screen a CHANGED name — mirrors the DB trigger,
+                    // which leaves existing rows alone so a name that predates
+                    // the policy doesn't block unrelated profile edits.
+                    if (t != profile?.username) {
+                        validate(t)?.let { error = it; return@clickableNoRipple }
+                    }
                     val uid = profile?.id ?: return@clickableNoRipple
                     val cleaned = SOCIAL_PLATFORMS.mapNotNull { (k, _, _) ->
                         val v = sanitize(k, socials[k] ?: ""); if (v.isNotEmpty()) k to v else null
@@ -442,12 +448,13 @@ private fun EditChip(label: String, selected: Boolean, accent: Color, onClick: (
 }
 
 private fun validate(name: String): String? {
-    // Web parity (profile-edit-modal.tsx): length-only, matching the DB
-    // constraint. The charset regex was native-only and locked out users whose
-    // web-set username contains a space/hyphen — they couldn't re-save.
-    val t = name.trim()
-    if (t.length !in 3..20) return "Username must be 3-20 characters"
-    return null
+    // Shape AND content (core Profanity mirrors the DB word list — this is the
+    // screen "DamnDickCockBallsAss" was typed into). The DB trigger
+    // enforce_username_policy_trg is the authority — the update below goes
+    // straight to PostgREST, so a check here is bypassable; it just gives
+    // instant feedback and avoids a raw error round trip. Charset/space rules
+    // match the trigger exactly, so a web-set name can always re-save.
+    return Profanity.usernameError(name)
 }
 
 /** Truncate to [max] Unicode code points — the bio DB CHECK is char_length and

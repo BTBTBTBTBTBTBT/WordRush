@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { isTypingTarget } from '@/lib/keyboard';
-import { GameMode } from '@wordle-duel/core';
+import { GameMode, pnGuessBlocked } from '@wordle-duel/core';
 import { Keyboard } from '@/components/game/keyboard';
 import { OpponentHUD } from './opponent-hud';
 import { categoryLabel, CATEGORY_COLORS, CATEGORY_EMOJI } from '@/components/propernoundle/categories';
@@ -147,6 +147,16 @@ export function VsProperNoundle({
 
       if (guesses.some((g) => normalizeString(g.word) === normalized)) {
         setMessage('Already guessed');
+        setTimeout(() => setMessage(''), 1500);
+        return;
+      }
+
+      // UGC screen: PN guesses aren't dictionary-validated and the final
+      // board is shown to the opponent (mini-board relay + result detail),
+      // so a guess containing a blocklisted term is rejected like an
+      // invalid word — BEFORE it's relayed to the server.
+      if (pnGuessBlocked(normalized, answerDisplay)) {
+        setMessage('Not allowed');
         setTimeout(() => setMessage(''), 1500);
         return;
       }

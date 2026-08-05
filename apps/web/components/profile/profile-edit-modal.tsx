@@ -81,11 +81,16 @@ export function ProfileEditModal({ open, onClose }: Props) {
     // Shape AND content. The DB trigger enforce_username_policy_trg is the
     // authority (a profile PATCH goes straight to PostgREST, so a check here
     // is bypassable); this just avoids a round trip and a raw Postgres error.
-    const check = validateUsername(trimmed);
-    if (!check.ok) {
-      setError(check.error ?? 'That username is not available.');
-      setSaving(false);
-      return;
+    // Only a CHANGED name is screened — mirrors the trigger, which leaves
+    // existing rows alone so a name that predates the policy doesn't block
+    // unrelated profile edits (bio, avatar, links).
+    if (trimmed !== profile.username) {
+      const check = validateUsername(trimmed);
+      if (!check.ok) {
+        setError(check.error ?? 'That username is not available.');
+        setSaving(false);
+        return;
+      }
     }
 
     const cleanedSocials: SocialLinks = {};

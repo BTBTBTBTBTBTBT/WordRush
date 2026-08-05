@@ -23,7 +23,7 @@ import { chooseShareVariant } from '@/components/share/share-variant-modal';
 import { useAuth } from '@/lib/auth-context';
 import { recordGameResult, recordSoloMatch, type XpResult } from '@/lib/stats-service';
 import { XpToast } from '@/components/effects/xp-toast';
-import { generateDailySeed } from '@wordle-duel/core';
+import { generateDailySeed, pnGuessBlocked } from '@wordle-duel/core';
 import { DailyRankBadge } from '@/components/game/daily-rank-badge';
 import { getTodayLocal } from '@/lib/daily-service';
 import { useActivePlayTimer } from '@/hooks/use-active-play-timer';
@@ -487,6 +487,17 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
         setShouldShake(true);
         playInvalid();
         setMessage('Already guessed');
+        setTimeout(() => { setShouldShake(false); setMessage(''); }, 1500);
+        return;
+      }
+
+      // UGC screen: PN guesses aren't dictionary-validated and become
+      // permanent board art (completed-day views, share images), so a guess
+      // containing a blocklisted term is rejected like an invalid word.
+      if (pnGuessBlocked(normalizedGuess, puzzle.answer)) {
+        setShouldShake(true);
+        playInvalid();
+        setMessage('Not allowed');
         setTimeout(() => { setShouldShake(false); setMessage(''); }, 1500);
         return;
       }

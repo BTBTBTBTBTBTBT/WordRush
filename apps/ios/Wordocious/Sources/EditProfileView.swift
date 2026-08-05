@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import WordociousCore
 
 /// Edit avatar + username + bio + personalization (accent / featured title /
 /// favorite mode) + social links — ports the web profile-edit-modal. Restyled to
@@ -285,9 +286,11 @@ struct EditProfileView: View {
     private struct AvatarUpdate: Encodable { let avatar_url: String? }
 
     private func validate(_ name: String) -> String? {
-        let t = name.trimmingCharacters(in: .whitespaces)
-        if t.count < 3 || t.count > 20 { return "Username must be 3-20 characters" }
-        return nil
+        // Shape AND content (core Profanity mirrors the DB word list). The DB
+        // trigger enforce_username_policy_trg is the authority — a profile
+        // PATCH goes straight to PostgREST, so a check here is bypassable;
+        // this just gives instant feedback and avoids a raw error round trip.
+        Profanity.usernameError(name)
     }
     private func sanitize(_ key: String, _ raw: String) -> String {
         let t = raw.trimmingCharacters(in: .whitespaces)
@@ -297,7 +300,10 @@ struct EditProfileView: View {
 
     private func save() {
         let t = username.trimmingCharacters(in: .whitespaces)
-        if let v = validate(t) { error = v; return }
+        // Only screen a CHANGED name — mirrors the DB trigger, which leaves
+        // existing rows alone so a name that predates the policy doesn't
+        // block unrelated profile edits (bio, avatar, links).
+        if t != auth.profile?.username, let v = validate(t) { error = v; return }
         guard let uid = auth.profile?.id else { return }
         var cleaned: [String: String] = [:]
         for p in platforms {

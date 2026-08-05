@@ -159,6 +159,12 @@ final class ProperNoundleVM: ObservableObject {
     func submit() {
         guard !isFinished, let p = puzzle else { return }
         guard input.count == answerLen else { flash("Not enough letters"); SoundManager.shared.playInvalid(); return }
+        // UGC screen: PN guesses aren't dictionary-validated and become
+        // permanent board art (completed cards, share images, VS relay), so a
+        // guess containing a blocklisted term is rejected like an invalid word.
+        guard !Profanity.pnGuessBlocked(guess: input, answer: p.answer) else {
+            flash("Not allowed"); SoundManager.shared.playInvalid(); return
+        }
         let word = input
         let tiles = ProperNoundle.evaluate(guess: word, answer: p.answer)
         guesses.append((word, tiles)); input = ""

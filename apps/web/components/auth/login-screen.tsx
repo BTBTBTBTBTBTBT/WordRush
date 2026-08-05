@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import { validateUsername } from '@wordle-duel/core';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -39,6 +40,14 @@ export function LoginScreen() {
       // there is no reveal toggle to catch it by eye.
       if (password !== confirmPassword) {
         setError('Passwords do not match');
+        setLoading(false);
+        return;
+      }
+      // Shape + content pre-check (the DB trigger on profiles is the
+      // authority; this is the friendly message before the round trip).
+      const check = validateUsername(username.trim());
+      if (!check.ok) {
+        setError(check.error ?? 'That username is not available.');
         setLoading(false);
         return;
       }

@@ -9,6 +9,7 @@ import com.wordocious.core.GameDictionary
 import com.wordocious.core.GameMode
 import com.wordocious.core.GameState
 import com.wordocious.core.GameStatus
+import com.wordocious.core.Profanity
 import com.wordocious.core.createInitialState
 import com.wordocious.core.gameReducer
 import com.wordocious.core.gauntletStages
@@ -284,6 +285,14 @@ class GameViewModel(
         if (mode != GameMode.PROPERNOUNDLE &&
             activeBoard.guesses.any { it.equals(guess, ignoreCase = true) }
         ) { reject("Already guessed"); return false }
+        // UGC screen (PN only): guesses aren't dictionary-validated and become
+        // permanent board art (completed cards, share images, VS relay), so a
+        // guess containing a blocklisted term is rejected like an invalid
+        // word. Other modes are dictionary-gated by the reducer and never
+        // reach the board with free text.
+        if (mode == GameMode.PROPERNOUNDLE &&
+            Profanity.pnGuessBlocked(guess, activeBoard.solution)
+        ) { reject("Not allowed"); return false }
         val before = _state.value
         // Capture which board this guess lands on BEFORE the reducer runs — for
         // SEQUENCE the active board advances once it's solved, so reading the

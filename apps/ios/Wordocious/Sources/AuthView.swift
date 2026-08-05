@@ -1,6 +1,7 @@
 import SwiftUI
 import AuthenticationServices
 import CryptoKit
+import WordociousCore
 
 /// Sign-in screen — adapts apps/web/components/auth/login-screen.tsx for iOS:
 /// WORDOCIOUS wordmark, "Welcome Back!"/"Join the Fun!", Continue with Apple /
@@ -254,8 +255,11 @@ struct AuthView: View {
         }
         let trimmedUsername = username.trimmingCharacters(in: .whitespacesAndNewlines)
         if mode == .signup {
-            guard (3...20).contains(trimmedUsername.count) else {
-                error = "Username must be 3-20 characters."; return
+            // Shape + content (core Profanity mirrors the DB word list). The
+            // profiles trigger is the authority; this is the friendly message
+            // before the round trip.
+            if let v = Profanity.usernameError(trimmedUsername) {
+                error = v; return
             }
             guard password == confirmPassword else {
                 error = "Passwords do not match"; return
