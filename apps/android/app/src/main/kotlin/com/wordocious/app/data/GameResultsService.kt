@@ -292,7 +292,12 @@ object GameResultsService {
             val state = GamePersistence.load(seed, mode) ?: continue
             if (state.status == com.wordocious.core.GameStatus.PLAYING) continue
             if (PendingRecords.read(mode.name, seed) != null) continue
-            val match = fetchRecordedDailyMatchResult(seed).getOrElse { continue }
+            // (Plain if/continue rather than getOrElse — a non-local continue in
+            // an inline lambda is experimental in Kotlin 2.0.x, PendingRecords
+            // precedent.)
+            val matchResult = fetchRecordedDailyMatchResult(seed)
+            if (matchResult.isFailure) continue
+            val match = matchResult.getOrNull()
             val rs = computeRunScore(state, mode)
             val elapsed = GamePersistence.loadElapsed(seed, mode) ?: 0
             // Hints, from what the save carries: PN's clue/vowel/consonant flags

@@ -66,6 +66,13 @@ class MainActivity : ComponentActivity() {
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
             kotlinx.coroutines.delay(3_000) // let auth restore the session first
             com.wordocious.app.data.PendingRecords.drain()
+            // Finished-save sweep AFTER the queue drain: records any LOCAL
+            // finished daily whose record flow never even started (crash on the
+            // finish frame / stale positional `recorded` flag / no session at
+            // finish) — those never reach the queue, so drain() can't see them.
+            // Doug's DUEL daily: finished local board, zero server rows, zero
+            // pending payload; only a look at GamePersistence itself finds it.
+            com.wordocious.app.data.GameResultsService.backfillFinishedDailySaves()
             // Block-list cache so leaderboards can filter immediately (iOS
             // WordociousApp parity). No-ops if the session isn't restored yet —
             // PublicProfileScreen retries on open.
