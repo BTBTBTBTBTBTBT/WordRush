@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Lock, Crown } from 'lucide-react';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabase-client';
 
 interface ProStatsProps {
@@ -81,37 +79,11 @@ export function ProStats({ userId, isPro }: ProStatsProps) {
     fetchStats();
   }, [userId, isPro]);
 
-  if (!isPro) {
-    return (
-      <>
-        <div className="section-header mb-2">PRO STATS</div>
-        <div
-          className="relative overflow-hidden"
-          style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
-        >
-          <div
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center"
-            style={{ background: 'rgba(248, 247, 255, 0.85)', backdropFilter: 'blur(4px)' }}
-          >
-            <Lock className="w-7 h-7 mb-2" style={{ color: '#c4b5fd' }} />
-            <p className="text-xs font-bold mb-3" style={{ color: 'var(--color-text-muted)' }}>Pro Feature</p>
-            <Link href="/pro">
-              <button
-                className="btn-3d flex items-center gap-1.5 px-4 py-2 rounded-lg text-white text-xs font-black"
-                style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 2px 0 #92400e' }}
-              >
-                <Crown className="w-3.5 h-3.5" />
-                Upgrade to Pro
-              </button>
-            </Link>
-          </div>
-          <div className="p-5">
-            <div className="h-40 rounded-xl" style={{ background: 'var(--color-surface-hover)' }} />
-          </div>
-        </div>
-      </>
-    );
-  }
+  // Pro-only: free users see no card here — the blurred Skill Radar section
+  // below it is the single Pro gate on the profile's global view (same
+  // single-gate pattern as the mode-detail Deep Insights teaser; the old
+  // locked card was redundant with it).
+  if (!isPro) return null;
 
   if (modeStats.length === 0) return null;
 
