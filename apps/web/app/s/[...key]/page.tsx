@@ -33,6 +33,14 @@ export async function generateMetadata(
   return {
     title,
     description,
+    // iOS Smart App Banner with a deep link: the root layout sets the plain
+    // app-id site-wide, but share pages pass their own URL as app-argument so
+    // "Open" routes into the installed app via universal links
+    // (wordocious.com paths are registered in the iOS app's entitlements).
+    itunes: {
+      appId: '6775966055',
+      appArgument: `https://wordocious.com/s/${key.join('/')}`,
+    },
     // Explicit images here override the root file-convention opengraph-image
     // for this route, so the shared card shows the puzzle, not the brand card.
     openGraph: {

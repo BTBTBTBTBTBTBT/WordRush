@@ -21,6 +21,7 @@ import { AdSenseLoader } from '@/components/ads/adsense-loader';
 import { ReferralRedeemer } from '@/components/referrals/referral-redeemer';
 import { ConfirmDialogHost } from '@/components/ui/confirm-dialog';
 import { AnnouncementsBanner } from '@/components/ui/announcements-banner';
+import { PlayStoreBanner } from '@/components/ui/play-store-banner';
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -47,6 +48,14 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: 'Wordocious',
+  },
+  // iOS Smart App Banner (Safari-only, site-wide): "Open in the Wordocious
+  // app / View in App Store". Emits <meta name="apple-itunes-app">. The share
+  // pages (app/s/[...key]/page.tsx) additionally set appArgument to their own
+  // URL so the banner deep-links via universal links; everywhere else the
+  // plain app-id is enough.
+  itunes: {
+    appId: '6775966055',
   },
   other: {
     // ShowLoud LLC AdSense account (organization payments profile 1182-9434-2368).
@@ -171,6 +180,9 @@ export default function RootLayout({
                     <ReferralRedeemer />
                     <ConfirmDialogHost />
                     <AnnouncementsBanner />
+                    {/* Android install banner — inert until
+                        NEXT_PUBLIC_PLAY_STORE_URL is set (Play launch day). */}
+                    <PlayStoreBanner />
                   </StreakShieldProvider>
                 </ThemeProvider>
               </AuthGate>
