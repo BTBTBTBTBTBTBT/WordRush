@@ -11,10 +11,12 @@ import WordociousCore
 ///
 /// Semantics (mirrors web exactly):
 /// - A payload is persisted (UserDefaults) BEFORE any network write, keyed by
-///   mode+seed. It has two independently-completing parts: the stats/XP/daily
-///   progression (`gameResult`, GameResultsService.record) and the matches
-///   history row (`soloMatch`, recordSoloMatch). Each marks itself done on
-///   success; the key is removed when all registered parts are done.
+///   mode+seed. It has independently-completing parts: the stats/XP
+///   progression (`gameResult`, GameResultsService.record), the matches
+///   history row (`soloMatch`, recordSoloMatch), and — for daily seeds — the
+///   daily_results leaderboard row (`dailyDone`, written inside record() but
+///   tracked separately because it can fail on its own). Each marks itself
+///   done on success; the key is removed when all registered parts are done.
 /// - drain() re-runs leftovers once per launch after auth is ready, driven by
 ///   the per-part done-flags. It also checks the server for a `matches` row for
 ///   that seed+mode, but that row settles ONLY the `soloMatch` part (it stops
@@ -58,9 +60,32 @@ enum PendingRecords {
         var gameResultDone: Bool?
         var soloMatch: SoloMatchArgs?
         var soloMatchDone: Bool?
+        /// daily_results row landed (daily seeds only — the leaderboard row).
+        /// This was the UNTRACKED third write: record() fires it AFTER the
+        /// progression lands and used `xp != nil` as the whole-part success
+        /// proxy, so a daily write cut on its own (nav-away blip, offline tail)
+        /// was released with the row still unwritten and nothing left to retry
+        /// (the Android incident's hole #3, ported). Old payloads decode as nil
+        /// (= outstanding) and simply replay the idempotent best-score upsert.
+        var dailyDone: Bool?
     }
 
-    enum Part { case gameResult, soloMatch }
+    enum Part { case gameResult, soloMatch, daily }
+
+    /// Every tracked write landed. The daily leg only applies to daily seeds
+    /// whose progression part is registered — an unlimited game writes no
+    /// daily_results row and must not be held hostage by a flag nothing sets.
+    private static func allDone(_ p: Payload) -> Bool {
+        (p.gameResult == nil || p.gameResultDone == true)
+            && (p.soloMatch == nil || p.soloMatchDone == true)
+            && (p.gameResult == nil || p.dailyDone == true || !p.seed.hasPrefix("daily-"))
+    }
+
+    /// Whether a payload exists for this game — the launch sweep skips seeds
+    /// the queue already owns (drain() replays those, not the sweep).
+    static func hasPayload(gameMode: String, seed: String) -> Bool {
+        read(key(gameMode, seed)) != nil
+    }
 
     private static func key(_ gameMode: String, _ seed: String) -> String {
         keyPrefix + gameMode + "-" + seed
@@ -98,10 +123,9 @@ enum PendingRecords {
         switch part {
         case .gameResult: p.gameResultDone = true
         case .soloMatch: p.soloMatchDone = true
+        case .daily: p.dailyDone = true
         }
-        let allDone = (p.gameResult == nil || p.gameResultDone == true)
-            && (p.soloMatch == nil || p.soloMatchDone == true)
-        if allDone { UserDefaults.standard.removeObject(forKey: k) } else { write(k, p) }
+        if allDone(p) { UserDefaults.standard.removeObject(forKey: k) } else { write(k, p) }
     }
 
     /// Guard against re-entrant registration while drain() itself re-runs the
@@ -165,9 +189,10 @@ enum PendingRecords {
                 continue // can't verify (offline?) — retry on a later drain
             }
 
-            // Everything registered has landed — nothing left to replay.
-            if (p.gameResult == nil || p.gameResultDone == true)
-                && (p.soloMatch == nil || p.soloMatchDone == true) {
+            // Everything registered has landed (incl. the daily row for daily
+            // seeds) — nothing left to replay. The old two-part check here is
+            // what released payloads with the daily_results row still unwritten.
+            if allDone(p) {
                 UserDefaults.standard.removeObject(forKey: k)
                 continue
             }
@@ -183,6 +208,18 @@ enum PendingRecords {
                     seed: p.seed, hintsUsed: g.hintsUsed,
                     stagesCompleted: g.stagesCompleted,
                     bestCorrectLetters: g.bestCorrectLetters)
+            } else if let g = p.gameResult, p.seed.hasPrefix("daily-"), p.dailyDone != true {
+                // Progression landed but the daily_results tail was cut — replay
+                // just the daily leg (idempotent best-score upsert). Re-running
+                // the whole record() here would double stats/XP/streaks.
+                if await DailyResultsService.record(
+                    gameMode: mode, completed: g.won, guessCount: g.guessCount,
+                    timeSeconds: g.timeSeconds, boardsSolved: g.boardsSolved,
+                    totalBoards: g.totalBoards, hintsUsed: g.hintsUsed, seed: p.seed,
+                    stagesCompleted: g.stagesCompleted,
+                    bestCorrectLetters: g.bestCorrectLetters) != nil {
+                    markDone(gameMode: p.gameMode, seed: p.seed, part: .daily)
+                }
             }
             if let s = p.soloMatch, p.soloMatchDone != true {
                 await GameResultsService.recordSoloMatch(

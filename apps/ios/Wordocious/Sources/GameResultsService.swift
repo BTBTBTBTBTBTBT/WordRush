@@ -8,6 +8,14 @@ import WordociousCore
 /// rethrow — but failed stat/result writes are no longer invisible (web
 /// reportRejectedWrite parity).
 func reportRejectedWrite(_ operation: String, gameMode: String, _ error: Error) {
+    // A cancelled task is NOT a rejected write: reporting it here dressed a
+    // mid-flight cancellation up as a handled server failure (the Android
+    // incident's swallowed-CancellationException hole, ported). The pending
+    // payload semantics already treat a cancel like any failure — the part
+    // stays outstanding and replays on the next drain — so the only fix needed
+    // is to keep the telemetry honest.
+    if error is CancellationError { return }
+    if let urlError = error as? URLError, urlError.code == .cancelled { return }
     #if !DEBUG
     SentrySDK.capture(error: error) { scope in
         scope.setTag(value: gameMode, key: "game_mode")
@@ -274,6 +282,207 @@ enum GameResultsService {
         return !rows.isEmpty
     }
 
+    /// Tri-state `matches`-row probe for the backfill paths: true/false is a
+    /// verified answer, nil means "couldn't check" (offline, signed out) — and
+    /// a backfill must NEVER full-record on nil, only skip and retry later.
+    /// A matches row proves the stats/XP/match leg of record() ran for this
+    /// seed; its absence proves the whole record flow never landed.
+    static func dailyMatchRowExists(seed: String, mode: GameMode) async -> Bool? {
+        guard let userId = localUserId() else { return nil }
+        struct IdRow: Decodable { let id: String }
+        do {
+            let rows: [IdRow] = try await AuthService.shared.client.from("matches")
+                .select("id")
+                .eq("player1_id", value: userId)
+                .eq("seed", value: seed)
+                .eq("game_mode", value: mode.rawValue)
+                .limit(1).execute().value
+            return !rows.isEmpty
+        } catch { return nil }
+    }
+
+    // MARK: - Run-cumulative scoring inputs (shared)
+
+    /// Inputs for record()/DailyResultsService.record computed from a terminal
+    /// GameState — ONE implementation shared by GameViewModel's live finish,
+    /// its restored-finished backfill and [backfillFinishedDailySaves], so the
+    /// three can never disagree (Android computeRunScore parity). Gauntlet
+    /// scores the WHOLE run: guesses summed across stageResults (+ the failed
+    /// stage's max on a loss — state.boards only holds the final stage), boards
+    /// solved tallied across stages, denominator = every stage's boardCount
+    /// (21). Single-board: best green count across the player's OWN guesses —
+    /// hintEvaluations is keyed by ROW INDEX, so hint rows are excluded by
+    /// index and revealed letters can't inflate the near-miss credit.
+    struct RunScore {
+        let won: Bool
+        let guessCount: Int
+        let boardsSolved: Int
+        let totalBoards: Int
+        let stagesCompleted: Int?
+        let bestCorrectLetters: Int?
+    }
+
+    static func computeRunScore(_ state: GameState, mode: GameMode) -> RunScore {
+        let won = state.status == .won
+        if mode == .gauntlet, let g = state.gauntlet {
+            let completedStageGuesses = g.stageResults.reduce(0) { $0 + $1.guesses }
+            let currentStageGuesses = won ? 0 : state.boards.reduce(0) { max($0, $1.guesses.count) }
+            let solved = g.stageResults.reduce(0) { sum, r in
+                if r.status == .won { return sum + (g.stages[safe: r.stageIndex]?.boardCount ?? 0) }
+                return sum + (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0)
+            }
+            let allBoards = g.stages.reduce(0) { $0 + $1.boardCount }
+            return RunScore(won: won, guessCount: completedStageGuesses + currentStageGuesses,
+                            boardsSolved: solved, totalBoards: allBoards > 0 ? allBoards : 21,
+                            stagesCompleted: g.stageResults.filter { $0.status == .won }.count,
+                            bestCorrectLetters: nil)
+        }
+        let guesses = state.boards.map { $0.guesses.count }.max() ?? 0
+        let solved = state.boards.filter { $0.status == .won }.count
+        var bestCorrect: Int?
+        if state.boards.count == 1, let b = state.boards.first {
+            bestCorrect = b.guesses.enumerated().reduce(0) { best, pair in
+                b.hintEvaluations?[String(pair.offset)] != nil
+                    ? best
+                    : max(best, evaluateGuess(solution: b.solution, guess: pair.element)
+                        .tiles.filter { $0.state == .correct }.count)
+            }
+        }
+        return RunScore(won: won, guessCount: guesses, boardsSolved: solved,
+                        totalBoards: state.boards.count, stagesCompleted: nil,
+                        bestCorrectLetters: bestCorrect)
+    }
+
+    /// Hints for a game reconstructed from disk: hint ROWS live on the board
+    /// (hintEvaluations), the zero-candidate "—" uses only in the persisted
+    /// hint-UI dict (GameViewModel.persistHintUI) — same approximation the
+    /// restored post-game breakdown shows.
+    private static func persistedHintsUsed(state: GameState, mode: GameMode, seed: String) -> Int {
+        let base = state.boards.first?.hintEvaluations?.count ?? 0
+        guard mode == .duel6 || mode == .duel7,
+              let d = UserDefaults.standard.dictionary(forKey: "wordocious-hints-\(mode.rawValue)-\(seed)") as? [String: String]
+        else { return base }
+        return base + (d["vowelRevealed"] == "—" ? 1 : 0) + (d["consonantRevealed"] == "—" ? 1 : 0)
+    }
+
+    // MARK: - Launch-time finished-save sweep
+
+    /// Safety net for finishes the record pipeline never SAW (run right after
+    /// PendingRecords.drain() each launch — Android backfillFinishedDailySaves
+    /// parity). The pending-record queue only protects games whose record call
+    /// at least started — register() is its first act. The Android incident
+    /// proved a finish can be dropped BEFORE that point (a crash on the finish
+    /// frame, a stale already-recorded flag): the terminal board sits in local
+    /// persistence, but there is no queue entry, no server rows and no
+    /// telemetry, and nothing re-reads that save unless the exact board screen
+    /// is reopened. This sweep checks every daily mode's TODAY save each launch:
+    ///  - finished save + daily row present   → nothing owed (common, 1 probe)
+    ///  - daily row missing + NO matches row  → full record (matches + stats/
+    ///    XP + daily; from here the queue owns any further failure)
+    ///  - daily row missing + matches row     → re-assert the daily row alone
+    ///    (idempotent best-score upsert — a full record() would double stats)
+    ///  - either probe failed                 → skip this launch, retry next
+    /// Solo daily seeds only. Seeds with a pending payload are drain()'s to
+    /// replay, not ours.
+    static func backfillFinishedDailySaves() async {
+        // The GamePersistence-backed daily modes (ProperNoundle persists via its
+        // own snapshot slot and is swept separately below).
+        let modes: [GameMode] = [.duel, .quordle, .octordle, .sequence, .rescue, .gauntlet, .duel6, .duel7]
+        for mode in modes {
+            let seed = DailySeed.today(mode: mode)
+            guard let state = GamePersistence.shared.load(seed: seed, mode: mode),
+                  state.status != .playing else { continue }
+            if PendingRecords.hasPayload(gameMode: mode.rawValue, seed: seed) { continue }
+            // Row already there (or the probe failed → next launch retries).
+            guard await !dailyRowExists(seed: seed, mode: mode) else { continue }
+            guard let matchExists = await dailyMatchRowExists(seed: seed, mode: mode) else { continue }
+            let rs = computeRunScore(state, mode: mode)
+            let hints = persistedHintsUsed(state: state, mode: mode, seed: seed)
+            let elapsed = max(0, Int(GamePersistence.shared.loadElapsed(seed: seed, mode: mode) / 1000))
+            if matchExists {
+                await DailyResultsService.record(
+                    gameMode: mode, completed: rs.won, guessCount: rs.guessCount,
+                    timeSeconds: elapsed, boardsSolved: rs.boardsSolved,
+                    totalBoards: rs.totalBoards, hintsUsed: hints, seed: seed,
+                    stagesCompleted: rs.stagesCompleted, bestCorrectLetters: rs.bestCorrectLetters)
+                continue
+            }
+            // Nothing landed — full record, mirroring GameViewModel's live
+            // finish (matches row, stats/XP/daily, gauntlet stage breakdown).
+            let guessWords = (mode == .sequence || mode == .gauntlet)
+                ? state.boards.flatMap(\.guesses)
+                : state.boards.max(by: { $0.guesses.count < $1.guesses.count })?.guesses ?? []
+            await recordSoloMatch(
+                gameMode: mode, won: rs.won, score: rs.guessCount, timeSeconds: elapsed,
+                seed: seed, solutions: state.boards.map(\.solution), guesses: guessWords,
+                hintsUsed: hints)
+            _ = await record(
+                gameMode: mode, won: rs.won, guessCount: rs.guessCount,
+                timeSeconds: elapsed, boardsSolved: rs.boardsSolved,
+                totalBoards: rs.totalBoards, seed: seed, hintsUsed: hints,
+                stagesCompleted: rs.stagesCompleted, bestCorrectLetters: rs.bestCorrectLetters)
+            if mode == .gauntlet, let g = state.gauntlet {
+                await recordGauntletStages(seed: seed,
+                                           payload: .init(stages: g.stages, stageResults: g.stageResults))
+            }
+        }
+        await backfillFinishedPNDailySave()
+    }
+
+    /// ProperNoundle's daily save lives in its own UserDefaults slot
+    /// ("pn-save-daily", ProperNoundleVM.Snapshot), not GamePersistence — and
+    /// its completed-restore path assumes finished ⇒ posted, so a crash on the
+    /// finish frame loses the PN daily with no queue entry. Same sweep contract
+    /// as above, reading the snapshot's persisted fields directly.
+    private static func backfillFinishedPNDailySave() async {
+        // Mirror of ProperNoundleVM.Snapshot (decode-only, extra fields ignored).
+        struct PNSnap: Decodable {
+            let puzzleId: String
+            let date: String
+            let guessWords: [String]
+            let guessTiles: [[NTile]]
+            let status: Int
+            let clue: String?
+            let revealedVowel: String?
+            let revealedConsonant: String?
+            let elapsed: Int
+        }
+        guard let data = UserDefaults.standard.data(forKey: "pn-save-daily"),
+              let snap = try? JSONDecoder().decode(PNSnap.self, from: data),
+              snap.status != 0,
+              snap.date == LeaderboardService.todayLocal(),
+              let puzzle = ProperNoundle.dailyPuzzle(),
+              snap.puzzleId == puzzle.id
+        else { return }
+        let mode = GameMode.propernoundle
+        let seed = DailySeed.today(mode: mode)
+        if PendingRecords.hasPayload(gameMode: mode.rawValue, seed: seed) { return }
+        guard await !dailyRowExists(seed: seed, mode: mode) else { return }
+        guard let matchExists = await dailyMatchRowExists(seed: seed, mode: mode) else { return }
+        // Same inputs ProperNoundleVM.finish() derives from its live state.
+        let won = snap.status == 1
+        let gc = snap.guessWords.count
+        let hints = [snap.clue, snap.revealedVowel, snap.revealedConsonant].compactMap { $0 }.count
+        let bestCorrect = snap.guessTiles.reduce(0) { best, tiles in
+            max(best, tiles.filter { $0 == .correct }.count)
+        }
+        if matchExists {
+            await DailyResultsService.record(
+                gameMode: mode, completed: won, guessCount: gc, timeSeconds: snap.elapsed,
+                boardsSolved: won ? 1 : 0, totalBoards: 1, hintsUsed: hints, seed: seed,
+                bestCorrectLetters: bestCorrect)
+            return
+        }
+        await recordSoloMatch(
+            gameMode: mode, won: won, score: gc, timeSeconds: snap.elapsed, seed: seed,
+            solutions: [ProperNoundle.normalize(puzzle.answer)], guesses: snap.guessWords,
+            hintsUsed: hints)
+        _ = await record(
+            gameMode: mode, won: won, guessCount: gc, timeSeconds: snap.elapsed,
+            boardsSolved: won ? 1 : 0, totalBoards: 1, seed: seed, hintsUsed: hints,
+            bestCorrectLetters: bestCorrect)
+    }
+
     static func record(
         gameMode: GameMode,
         playType: String = "solo",
@@ -336,12 +545,23 @@ enum GameResultsService {
             // game (vs_games+1, completed) without a win OR a loss.
             await DailyResultsService.recordVs(gameMode: gameMode, won: won, isDraw: isDraw)
         } else if isDailySeed(seed) {
-            await DailyResultsService.record(
+            // The daily row's landing is tracked as its OWN pending part: it is
+            // written after the progression, so `xp != nil` (the .gameResult
+            // proxy below) says nothing about it — a cut daily write used to be
+            // released with the leaderboard row still unwritten and nothing
+            // queued to retry it. Non-nil return = the row is KNOWN to be on
+            // the server (inserted, updated, or already outranking this run).
+            let dailyScore = await DailyResultsService.record(
                 gameMode: gameMode, completed: won, guessCount: guessCount,
                 timeSeconds: timeSeconds, boardsSolved: boardsSolved, totalBoards: totalBoards,
                 hintsUsed: hintsUsed, seed: seed,
                 stagesCompleted: stagesCompleted, bestCorrectLetters: bestCorrectLetters
             )
+            // nil ALSO means "mode has no daily scoring config" — no row is
+            // ever owed then, and the flag must not hold the payload hostage.
+            if trackPending, dailyScore != nil || DailyScoring.config[gameMode.rawValue] == nil {
+                PendingRecords.markDone(gameMode: mode, seed: seed, part: .daily)
+            }
             // Daily Sweep / Flawless bonus once all 9 dailies are in (web parity).
             // Kept SPLIT from dailyBonus so the toast shows distinct
             // "+200 sweep" / "+400 flawless" chips like web xp-toast.tsx.

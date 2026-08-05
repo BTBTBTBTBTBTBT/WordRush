@@ -368,6 +368,24 @@ final class GameViewModel: ObservableObject {
                 guard await !GameResultsService.dailyRowExists(seed: restoredSeed, mode: self.mode) else { return }
                 // Still the same game and still finished (paranoia guards).
                 guard self.state.seed == restoredSeed, self.state.status != .playing else { return }
+                // Partial-land check (Android board-backfill parity): a matches
+                // row proves the stats/XP/match leg ran and only the daily row
+                // was lost (the once-untracked write) — re-assert it ALONE via
+                // the idempotent best-score upsert; the full re-record below
+                // would double stats/XP and duplicate the match-history row.
+                // nil = couldn't verify → skip; the launch sweep or the next
+                // open of this board retries.
+                guard let matchExists = await GameResultsService.dailyMatchRowExists(
+                    seed: restoredSeed, mode: self.mode) else { return }
+                if matchExists {
+                    let rs = GameResultsService.computeRunScore(self.state, mode: self.mode)
+                    await DailyResultsService.record(
+                        gameMode: self.mode, completed: rs.won, guessCount: rs.guessCount,
+                        timeSeconds: self.elapsedSeconds, boardsSolved: rs.boardsSolved,
+                        totalBoards: rs.totalBoards, hintsUsed: self.hintsUsed, seed: restoredSeed,
+                        stagesCompleted: rs.stagesCompleted, bestCorrectLetters: rs.bestCorrectLetters)
+                    return
+                }
                 self.resultRecorded = false
                 self.recordResultIfNeeded()
             }
@@ -465,32 +483,14 @@ final class GameViewModel: ObservableObject {
         let completed = state.status == .won
         let modeRaw = mode
 
-        let guesses: Int
-        let solved: Int
-        let total: Int
-
-        if isGauntlet, let g = state.gauntlet {
-            // Mirror web gauntlet-game recording: sum across stageResults.
-            // On WON the final NEXT_STAGE already pushed the last stage, so the
-            // current boards would double-count → currentStageGuesses = 0.
-            // On LOST the failed stage is in stageResults (with snapshot).
-            let completedStageGuesses = g.stageResults.reduce(0) { $0 + $1.guesses }
-            let currentStageGuesses = completed ? 0 : state.boards.reduce(0) { max($0, $1.guesses.count) }
-            guesses = completedStageGuesses + currentStageGuesses
-            solved = g.stageResults.reduce(0) { sum, r in
-                if r.status == .won { return sum + (g.stages[safe: r.stageIndex]?.boardCount ?? 0) }
-                return sum + (r.boardsSnapshot?.filter { $0.status == .won }.count ?? 0)
-            }
-            // Web parity: the completion denominator is the WHOLE run's board
-            // count (all stages, 21), not just the stages reached — otherwise a
-            // stage-2 loss scores a higher completion ratio than on web.
-            let allBoards = g.stages.reduce(0) { $0 + $1.boardCount }
-            total = allBoards > 0 ? allBoards : 21
-        } else {
-            guesses = rowsUsed
-            solved = state.boards.filter { $0.status == .won }.count
-            total = boardCount
-        }
+        // Run-cumulative score inputs come from the ONE shared implementation
+        // (GameResultsService.computeRunScore — web gauntlet-game parity lives
+        // there), also used by the restored-finished backfill above and the
+        // launch-time finished-save sweep, so the record paths never disagree.
+        let rs = GameResultsService.computeRunScore(state, mode: mode)
+        let guesses = rs.guessCount
+        let solved = rs.boardsSolved
+        let total = rs.totalBoards
 
         let theSeed = state.seed
         // Match-history row (player2_id = null) so this game feeds the Profile
@@ -506,10 +506,10 @@ final class GameViewModel: ObservableObject {
             : state.boards.max(by: { $0.guesses.count < $1.guesses.count })?.guesses ?? []
         let solutionWords = state.boards.map(\.solution)
         let hintsCount = hintsUsed   // Six/Seven hint penalty (0 for non-hint modes)
-        // Loss-progress inputs (web parity) — see stagesCompletedForScore /
-        // bestCorrectLettersForScore. Both nil for the modes that ignore them.
-        let stagesCompletedCount = stagesCompletedForScore
-        let bestCorrect = bestCorrectLettersForScore
+        // Loss-progress inputs (web parity) — from the shared RunScore. Both
+        // nil for the modes that ignore them.
+        let stagesCompletedCount = rs.stagesCompleted
+        let bestCorrect = rs.bestCorrectLetters
         Task {
             // The matches insert touches a different table than record()'s
             // user_stats/profiles/daily_results writes, so run them CONCURRENTLY

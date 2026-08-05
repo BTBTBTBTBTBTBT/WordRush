@@ -61,6 +61,12 @@ struct WordociousApp: App {
                     // Re-fire any solo results whose record calls were cut off
                     // (killed mid-flight / offline finish) — idempotent, solo-only.
                     await PendingRecords.drain()
+                    // Finished-save sweep AFTER the queue drain: records any
+                    // LOCAL finished daily whose record flow never even started
+                    // (crash on the finish frame) — those never reach the
+                    // queue, so drain() can't see them; only a look at the
+                    // saves themselves finds them. Idempotent, probe-gated.
+                    await GameResultsService.backfillFinishedDailySaves()
                     // Block-list cache so leaderboards can filter immediately.
                     await ModerationService.loadBlockedIds()
                     // APNs token capture (send path comes later with the key).

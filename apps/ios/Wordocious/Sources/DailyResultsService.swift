@@ -185,8 +185,12 @@ enum DailyResultsService {
             }
         }
         let client = AuthService.shared.client
-        guard let session = try? await client.auth.session else { return nil }
-        let userId = session.user.id.uuidString
+        // Local (keychain) id, NOT the refreshing `client.auth.session` accessor
+        // — that one throws offline, and this write is now a tracked pending
+        // part whose replays (drain / launch sweep) fire on exactly the
+        // launches where the session may not have refreshed yet. The id only
+        // keys the row; the request itself still authenticates properly.
+        guard let userId = localUserId() else { return nil }
 
         do {
             let existing: [ExistingRow] = try await client.from("daily_results")
