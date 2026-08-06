@@ -41,13 +41,17 @@ enum class PlayMode { DAILY, UNLIMITED }
  */
 @Composable
 fun PlayModeToggle(value: PlayMode, onChange: (PlayMode) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
-            .border(1.5.dp, WTheme.border, RoundedCornerShape(50)).padding(2.dp),
-        horizontalArrangement = Arrangement.spacedBy(0.dp),
-    ) {
-        TogglePill("Daily", Icons.Filled.Star, value == PlayMode.DAILY, Modifier.weight(1f)) { onChange(PlayMode.DAILY) }
-        TogglePill("Unlimited", Icons.Filled.AllInclusive, value == PlayMode.UNLIMITED, Modifier.weight(1f)) { onChange(PlayMode.UNLIMITED) }
+    // Fixed pill chrome — capped fontScale (HomeScreen rule) so large system
+    // text can't balloon the segmented control.
+    CappedFontScale {
+        Row(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(50)).background(WTheme.surfaceHover)
+                .border(1.5.dp, WTheme.border, RoundedCornerShape(50)).padding(2.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
+        ) {
+            TogglePill("Daily", Icons.Filled.Star, value == PlayMode.DAILY, Modifier.weight(1f)) { onChange(PlayMode.DAILY) }
+            TogglePill("Unlimited", Icons.Filled.AllInclusive, value == PlayMode.UNLIMITED, Modifier.weight(1f)) { onChange(PlayMode.UNLIMITED) }
+        }
     }
 }
 
@@ -80,6 +84,8 @@ private fun TogglePill(label: String, icon: androidx.compose.ui.graphics.vector.
  *  Fixed HERO_HEIGHT == DailyHero so toggling never shifts the cards below. */
 @Composable
 fun UnlimitedHero() {
+    // Fixed 78dp chrome: capped fontScale so large system text can't overflow it.
+    CappedFontScale {
     Column(
         Modifier.fillMaxWidth().height(HERO_HEIGHT).clip(RoundedCornerShape(14.dp))
             .background(Brush.linearGradient(listOf(Color(0xFFFCE7F3), Color(0xFFEDE9FE))))
@@ -94,5 +100,6 @@ fun UnlimitedHero() {
             Icon(Icons.Filled.AllInclusive, null, tint = Color(0xFFEC4899), modifier = Modifier.size(20.dp))
         }
         Text("Infinite puzzles · All stats count", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED), modifier = Modifier.padding(top = 2.dp))
+    }
     }
 }

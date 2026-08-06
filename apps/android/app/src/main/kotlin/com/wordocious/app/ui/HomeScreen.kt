@@ -37,8 +37,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
@@ -62,9 +65,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.ui.theme.WTheme
 import com.wordocious.core.DictionaryLoader
@@ -217,6 +225,10 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // Proportional line boxes for the whole page (see homeTightTextStyle):
+            // a CompositionLocalProvider adds no layout node, so the Column's
+            // spacedBy(8.dp) still applies to each child individually.
+            ProvideTextStyle(homeTightTextStyle()) {
             // Pro-only Daily/Unlimited toggle; Unlimited swaps the daily hero.
             // Daily hero shows Daily Sweep! / Flawless Victory! once all 9 are done.
             // Admin-authored announcements (web/iOS AnnouncementsBanner parity).
@@ -317,6 +329,7 @@ fun HomeScreen(
             }
             FooterLinks(onNavigate)
             Spacer(Modifier.height(16.dp))
+            } // ProvideTextStyle(homeTightTextStyle())
         }
     }
         // Free-user daily-limit modal (web ModeLimitModal). "View Solved Puzzle"
@@ -473,6 +486,44 @@ private fun ProPromptBanner(modifier: Modifier = Modifier, onGoPro: () -> Unit, 
  *  so toggling Daily<->Unlimited never shifts the game-cards grid (web parity). */
 internal val HERO_HEIGHT = 78.dp
 
+/**
+ * Home text discipline (iOS density parity). Every Text here inherits Material3
+ * bodyLarge, whose DEFAULT lineHeight is a flat 24sp — so a 10sp caption rides
+ * a 24sp line box, and the user's fontScale multiplies that box AGAIN (Samsung
+ * "Large" text ≈ 31sp per line). iOS line boxes are font-proportional, which is
+ * why identical content scrolled ~2x taller here. Pin line boxes to 1.3x the
+ * resolved fontSize (em, so it scales WITH each Text, unlike the flat sp
+ * default) with font padding off — the TileView/ModeGlyph fix class, applied
+ * page-wide via ProvideTextStyle. Texts passing an explicit TextStyle (the
+ * brush-gradient hero titles) already have an unspecified → font-metric line
+ * height and are unaffected.
+ */
+@Composable
+internal fun homeTightTextStyle(): TextStyle = LocalTextStyle.current.copy(
+    lineHeight = 1.3.em,
+    platformStyle = PlatformTextStyle(includeFontPadding = false),
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both,
+    ),
+)
+
+/**
+ * Fixed-visual card chrome (heroes, mode cards, play-mode toggle, WOTD
+ * title/word rows): cap the effective fontScale at 1.3x — the LeaderboardScreen
+ * ModePickerRow rule — so huge system text can't balloon layout chrome or
+ * overflow the fixed 78dp hero. Genuinely reflowable copy (the WOTD definition)
+ * stays OUTSIDE the cap and scales freely with the user's setting.
+ */
+@Composable
+internal fun CappedFontScale(max: Float = 1.3f, content: @Composable () -> Unit) {
+    val d = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(d.density, d.fontScale.coerceAtMost(max)),
+        content = content,
+    )
+}
+
 @Composable
 private fun DailyHero(
     completions: Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>,
@@ -493,6 +544,8 @@ private fun DailyHero(
         else -> listOf(Color(0xFFEDE9FE), Color(0xFFDDD6FE))
     }
     val border = when { flawless -> Color(0xFFF59E0B); allDone -> Color(0xFFC4B5FD); else -> Color(0xFFA78BFA) }
+    // Fixed 78dp chrome: capped fontScale so large system text can't overflow it.
+    CappedFontScale {
     Column(
         modifier = Modifier.fillMaxWidth().height(HERO_HEIGHT)
             .clip(RoundedCornerShape(14.dp)).background(Brush.linearGradient(grad))
@@ -530,6 +583,7 @@ private fun DailyHero(
             Text("9 puzzles · Leaderboards & medals", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF6D28D9), modifier = Modifier.padding(top = 2.dp))
             Text("Resets in ${formatCountdown(secs)}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D28D9).copy(alpha = 0.9f), modifier = Modifier.padding(top = 2.dp))
         }
+    }
     }
 }
 
@@ -609,13 +663,17 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
             .clickableNoRipple(onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_book_open), null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
-            Spacer(Modifier.weight(1f))
-            Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
-            Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
+        // Card-chrome rows (label + word) are capped; the definition below is
+        // NOT — it reflows at the user's full text size, on proportional lines.
+        CappedFontScale {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(androidx.compose.ui.res.painterResource(com.wordocious.app.R.drawable.ic_book_open), null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("WORD OF THE DAY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted, letterSpacing = 1.sp)
+                Spacer(Modifier.weight(1f))
+                Text("Past words", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFC4B5FD))
+                Icon(Icons.Filled.ChevronRight, null, tint = Color(0xFFC4B5FD), modifier = Modifier.size(12.dp))
+            }
         }
         val w = wotd   // local capture: produceState delegate can't smart-cast
         if (w == null) {
@@ -626,28 +684,32 @@ private fun WordOfTheDayCard(onClick: () -> Unit = {}) {
             SkeletonBlock(height = 10.dp, cornerRadius = 5.dp)
             return@Column
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val display = w.word.first().uppercase() + w.word.drop(1).lowercase()
-            Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
-            // Pronunciation sits between the word and the part of speech
-            // (WordOfTheDayView.swift:107). It was fetched but never rendered.
-            w.definition?.takeIf { it.phonetic.isNotBlank() }?.let {
-                Text(
-                    it.phonetic, fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                    color = WTheme.textMuted,
-                )
-            }
-            w.definition?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
-                // Web parity (page.tsx): plain italic purple text, no background pill.
-                Text(
-                    it.partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color(0xFF7C3AED),
-                )
+        CappedFontScale {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val display = w.word.first().uppercase() + w.word.drop(1).lowercase()
+                Text(display, fontSize = 16.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+                // Pronunciation sits between the word and the part of speech
+                // (WordOfTheDayView.swift:107). It was fetched but never rendered.
+                w.definition?.takeIf { it.phonetic.isNotBlank() }?.let {
+                    Text(
+                        it.phonetic, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                        color = WTheme.textMuted,
+                    )
+                }
+                w.definition?.takeIf { it.partOfSpeech.isNotBlank() }?.let {
+                    // Web parity (page.tsx): plain italic purple text, no background pill.
+                    Text(
+                        it.partOfSpeech.lowercase(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = Color(0xFF7C3AED),
+                    )
+                }
             }
         }
-        // No maxLines: iOS lets the card grow to the full definition.
+        // No maxLines: iOS lets the card grow to the full definition. Explicit
+        // PROPORTIONAL lineHeight (not bodyLarge's flat 24sp): the definition
+        // reflows at the user's full text size, but on iOS-tight lines.
         w.definition?.takeIf { it.definition.isNotBlank() }?.let {
-            Text(it.definition, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), modifier = Modifier.padding(top = 2.dp))
+            Text(it.definition, fontSize = 11.sp, lineHeight = 1.3.em, fontWeight = FontWeight.Bold, color = Color(0xFF4B5563), modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
@@ -672,6 +734,10 @@ private fun ModeCardView(
     val cardBg = if (isDone) card.accent.copy(alpha = 0.06f) else WTheme.surface
     val cardBorder = if (isLocked) Color(0xFFD1D5DB) else if (isDone) card.accent.copy(alpha = 0.4f) else WTheme.border
 
+    // Card chrome (icon tile, name, one stat line — a fixed visual like the iOS
+    // grid): capped fontScale so large system text keeps the cards short enough
+    // that ~6 fit per screen, iOS parity.
+    CappedFontScale {
     Box(
         modifier = modifier
             .cardShadow(14.dp)
@@ -742,6 +808,7 @@ private fun ModeCardView(
                 )
             }
         }
+    }
     }
 }
 
