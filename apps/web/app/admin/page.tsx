@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, Gamepad2, Crown, Activity, ShieldBan, UserPlus, BookOpen, Copy, Check } from 'lucide-react';
+import { Users, Gamepad2, Crown, Activity, ShieldBan, UserPlus, BookOpen, Copy, Check, Download } from 'lucide-react';
 import { useDrill } from './components/drill-panel';
 import { modeLabel } from '@/lib/mode-labels';
 
@@ -68,6 +68,11 @@ function BibleCard() {
         <button onClick={copyFull} className="text-xs font-extrabold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 inline-flex items-center gap-1.5">
           {copied === 'full' ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />} Copy full bible
         </button>
+        {/* Jasson's workflow: a real .md file he can attach from Files — his
+            phone's share-sheet path uploads zero-byte files (bible §203 era). */}
+        <a href="/api/admin/bible?download=1" download className="text-xs font-extrabold px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 inline-flex items-center gap-1.5">
+          <Download className="w-3.5 h-3.5" /> Download .md
+        </a>
       </div>
       {open && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
