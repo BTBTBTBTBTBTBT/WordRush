@@ -39,6 +39,13 @@ struct HomeView: View {
         let byMode: [String: DailyCompletion]
     }
     @State private var sweepCeleb: SweepCeleb?
+    /// A celebration earned while a game cover was STILL up (the 9th daily
+    /// records mid-game-over, before the player taps Home). Presenting a second
+    /// fullScreenCover from this covered hierarchy collides with the game
+    /// cover's dismissal — the overlap that latches the root shell's layout
+    /// mid-transition — so the celebration waits for the all-clear instead.
+    @State private var pendingSweepCeleb: SweepCeleb?
+    @ObservedObject private var chrome = ChromeVisibility.shared
     @AppStorage("sweep-celebrated-day") private var sweepCelebratedDay = ""
 
     /// Show the celebration once per local day, ONLY at the moment a daily
@@ -58,7 +65,11 @@ struct HomeView: View {
         let token = "\(day):\(tier)"
         if sweepCelebratedDay == token || sweepCelebratedDay == "\(day):flawless" { return }
         sweepCelebratedDay = token
-        sweepCeleb = SweepCeleb(byMode: completions.byMode)
+        let celeb = SweepCeleb(byMode: completions.byMode)
+        // Immersive screen (the just-finished game) still presented? Stash the
+        // celebration; the chrome onChange below presents it cleanly once the
+        // game cover has fully dismissed.
+        if chrome.bottomNavHidden { pendingSweepCeleb = celeb } else { sweepCeleb = celeb }
         // A Flawless Victory is the app's peak moment — the only place we ask
         // for an App Store rating (self-throttled in RatingPrompt; Apple caps
         // the rest). Delayed so the celebration lands first.
@@ -247,6 +258,20 @@ struct HomeView: View {
                 playMode = .daily
                 pendingGame = nil
                 pnGame = nil
+                pendingSweepCeleb = nil   // an unshown sweep belongs to yesterday
+            }
+            // Deferred sweep celebration: present once the game cover that
+            // earned it has fully left the screen (its hidesBottomNav
+            // onDisappear fires at dismissal end), with a breath so the
+            // dismissal transition settles before the celebration cover goes up.
+            .onChange(of: chrome.bottomNavHidden) { hidden in
+                guard !hidden, let celeb = pendingSweepCeleb else { return }
+                pendingSweepCeleb = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                    // A chained "Keep playing" cover may have gone up in the
+                    // meantime — re-stash and wait for ITS dismissal instead.
+                    if chrome.bottomNavHidden { pendingSweepCeleb = celeb } else { sweepCeleb = celeb }
+                }
             }
             // The moment a daily is recorded (even mid-game-over, before the user
             // taps Home) refresh the word card + VS state. The completion badges

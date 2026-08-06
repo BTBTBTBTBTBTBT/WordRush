@@ -23,6 +23,13 @@ struct VSLobbyView: View {
     private struct VSCountsResponse: Codable { let waiting: [String: Int]?; let playing: [String: Int]? }
     @State private var counts: [String: VSCount] = [:]
 
+    /// RootTabView ignores the keyboard safe area for the whole tab shell (the
+    /// bottom nav must never ride a keyboard inset — real or latched by a
+    /// covered-hierarchy dismissal). This lobby hosts the ONE text field that
+    /// lives in tab content (join code), so it restores its own avoidance:
+    /// inset the scroll content by the keyboard's height while it's up.
+    @State private var kbInset: CGFloat = 0
+
     /// All VS-capable modes (matches the web VS mode list). Gauntlet runs through
     /// the shared board engine; ProperNoundle uses its own VS flow.
     private let modes: [GameMode] = [.duel, .duel6, .duel7, .quordle, .octordle, .sequence, .rescue, .gauntlet, .propernoundle]
@@ -40,6 +47,14 @@ struct VSLobbyView: View {
             // tab bar (the lobby is pushed inside the Home tab's nav stack).
             // Adds the ad banner height too when it's mounted (free accounts).
             .padding(.horizontal, 16).bottomChromeClearance(base: 100)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: kbInset) }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { note in
+            guard let f = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            withAnimation(.easeOut(duration: 0.25)) { kbInset = f.height }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.easeOut(duration: 0.25)) { kbInset = 0 }
         }
         .sheet(isPresented: $showAuth) { AuthView() }
         .background(LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea())
