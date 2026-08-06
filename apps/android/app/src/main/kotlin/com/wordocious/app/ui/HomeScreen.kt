@@ -178,17 +178,26 @@ fun HomeScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
 
     // One-time-per-day Daily Sweep / Flawless Victory celebration. Keyed on the
-    // local day; re-fires on sweep→flawless upgrade (web/iOS parity).
-    var showSweep by remember { mutableStateOf(false) }
+    // local day; re-fires on sweep→flawless upgrade (web/iOS parity). Holds a
+    // SNAPSHOT of the completions that earned it, so a concurrent refetch (e.g.
+    // the new day's empty set after a midnight rollover) can never blank the
+    // stats mid-celebration — the iOS widget-launch "0/9 WON · 0:00 · 0 pts"
+    // sweep-modal bug.
+    var sweepCeleb by remember {
+        mutableStateOf<Map<String, com.wordocious.app.data.DailyCompletionsService.Completion>?>(null)
+    }
     androidx.compose.runtime.LaunchedEffect(completions) {
         if (completions.size < com.wordocious.app.data.DailyCompletionsService.TOTAL_DAILY_MODES) return@LaunchedEffect
         val totals = com.wordocious.app.data.DailyCompletionsService.totals(completions)
+        // Hard guard (iOS parity): a "sweep" with zero recorded wins is by
+        // definition stale/degenerate data — never a real day of play.
+        if (totals.won == 0) return@LaunchedEffect
         val day = com.wordocious.app.todayLocalDate()
         val token = "$day:${if (totals.flawless) "flawless" else "sweep"}"
         val seen = com.wordocious.app.data.SettingsPref.get("sweep-celebrated-day", "")
         if (seen == token || seen == "$day:flawless") return@LaunchedEffect
         com.wordocious.app.data.SettingsPref.set("sweep-celebrated-day", token)
-        showSweep = true
+        sweepCeleb = completions
         // Rating ask rides the Flawless celebration only (peak-delight moment,
         // iOS parity): let the banner land for 3s first. 30-day self-throttle
         // + Play's own quota live inside maybeAsk.
@@ -333,12 +342,13 @@ fun HomeScreen(
                 onDismiss = dismissProPrompt,
             )
         }
-        // One-time Daily Sweep / Flawless Victory celebration overlay.
-        if (showSweep) {
+        // One-time Daily Sweep / Flawless Victory celebration overlay —
+        // rendered from the snapshot captured at fire time, never live state.
+        sweepCeleb?.let { celeb ->
             SweepCelebration(
-                byMode = completions,
-                onShare = { com.wordocious.app.data.DailySweepShare.share(context, completions) },
-                onClose = { showSweep = false },
+                byMode = celeb,
+                onShare = { com.wordocious.app.data.DailySweepShare.share(context, celeb) },
+                onClose = { sweepCeleb = null },
             )
         }
     }

@@ -29,20 +29,36 @@ struct HomeView: View {
     @State private var showShieldModal = false
     @State private var shieldChecked = false
 
-    /// One-time-per-day Daily Sweep / Flawless Victory celebration.
-    @State private var showSweepCeleb = false
+    /// One-time-per-day Daily Sweep / Flawless Victory celebration. Presented
+    /// from a SNAPSHOT of the completions that earned it, so a concurrent
+    /// reload (e.g. the new day replacing byMode with its empty set) can never
+    /// blank the stats mid-celebration — the widget-launch "0/9 WON · 0:00 ·
+    /// 0 pts" sweep modal.
+    private struct SweepCeleb: Identifiable {
+        let id = UUID()
+        let byMode: [String: DailyCompletion]
+    }
+    @State private var sweepCeleb: SweepCeleb?
     @AppStorage("sweep-celebrated-day") private var sweepCelebratedDay = ""
 
-    /// Show the celebration once per local day when all 9 dailies complete.
-    /// Re-fires if the player upgrades a Sweep → Flawless.
+    /// Show the celebration once per local day, ONLY at the moment a daily
+    /// completes in this session (the 9th finish → Sweep; a replayed win →
+    /// Flawless upgrade). Launch / deep-link / restore paths never celebrate:
+    /// they can briefly hold yesterday's set (warm resume across midnight
+    /// before the reload lands), and yesterday's 9/9 + today's once-per-day
+    /// token fired the false celebration.
     private func checkSweepCelebration() {
         guard auth.isAuthenticated, completions.allDone else { return }
         let day = LeaderboardService.todayLocal()
+        // Hard guards: the completed set must BELONG to today (the store day-
+        // stamps its data), and a "sweep" with zero recorded wins is by
+        // definition stale/degenerate data — never a real day of play.
+        guard completions.dataDay == day, completions.wonCount > 0 else { return }
         let tier = completions.flawless ? "flawless" : "sweep"
         let token = "\(day):\(tier)"
         if sweepCelebratedDay == token || sweepCelebratedDay == "\(day):flawless" { return }
         sweepCelebratedDay = token
-        showSweepCeleb = true
+        sweepCeleb = SweepCeleb(byMode: completions.byMode)
         // A Flawless Victory is the app's peak moment — the only place we ask
         // for an App Store rating (self-throttled in RatingPrompt; Apple caps
         // the rest). Delayed so the celebration lands first.
@@ -204,7 +220,8 @@ struct HomeView: View {
                 _ = await invites
                 vsDailyWon = await won
                 checkStreakAtRisk()
-                checkSweepCelebration()
+                // Deliberately NO checkSweepCelebration() here: launch/appear
+                // must never celebrate (see checkSweepCelebration's doc).
             }
             // Widget deep link (wordocious://daily/<MODE>): launch today's
             // daily exactly as tapping its home tile would. PN's daily is a
@@ -233,14 +250,25 @@ struct HomeView: View {
             // The moment a daily is recorded (even mid-game-over, before the user
             // taps Home) refresh the word card + VS state. The completion badges
             // already react via the shared DailyCompletionsStore.
-            .onDailyCompletion { reloadDaily(); Task { await completions.load() } }
-            .onChange(of: completions.byMode.count) { _ in checkSweepCelebration() }
-            .fullScreenCover(isPresented: $showSweepCeleb) {
+            .onDailyCompletion {
+                reloadDaily()
+                // The ONLY celebration trigger: a daily just finished in THIS
+                // session. Check immediately (the store's observer has already
+                // applied the finish) so the modal pops the instant the 9th
+                // completes, and re-check after the server-confirming load in
+                // case observer ordering ever changes.
+                checkSweepCelebration()
+                Task {
+                    await completions.load()
+                    checkSweepCelebration()
+                }
+            }
+            .fullScreenCover(item: $sweepCeleb) { celeb in
                 if #available(iOS 16.4, *) {
-                    SweepCelebrationView(byMode: completions.byMode) { showSweepCeleb = false }
+                    SweepCelebrationView(byMode: celeb.byMode) { sweepCeleb = nil }
                         .presentationBackground(.clear)
                 } else {
-                    SweepCelebrationView(byMode: completions.byMode) { showSweepCeleb = false }
+                    SweepCelebrationView(byMode: celeb.byMode) { sweepCeleb = nil }
                 }
             }
             .alert("Coming soon", isPresented: Binding(get: { comingSoon != nil }, set: { if !$0 { comingSoon = nil } })) {

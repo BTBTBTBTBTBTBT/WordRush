@@ -68,6 +68,15 @@ struct DailyTotals {
 final class DailyCompletionsStore: ObservableObject {
     @Published private(set) var byMode: [String: DailyCompletion] = [:]
 
+    /// The LOCAL day `byMode` belongs to. Surfaces that treat `allDone` as
+    /// "today is swept" (the celebration modal) MUST check this equals
+    /// `todayLocal()`: after a warm resume across midnight the in-memory set is
+    /// still yesterday's until a load() succeeds — and load()'s transient-
+    /// failure path deliberately keeps cached state, so without a day stamp
+    /// yesterday's 9/9 read as today's (the widget-launch "0/9 DAILY SWEEP"
+    /// modal: fired off the stale set, then rendered today's empty truth).
+    @Published private(set) var dataDay: String = LeaderboardService.todayLocal()
+
     /// The 9 daily modes (VS excluded — no daily row).
     /// nonisolated: an immutable Int constant, safely readable from the
     /// non-isolated `DailyTotals` struct and any context.
@@ -117,11 +126,21 @@ final class DailyCompletionsStore: ObservableObject {
             // without deferring into a Task (which would change ordering).
             MainActor.assumeIsolated {
                 guard let self, let c = note.object as? DailyCompletion else { return }
+                // A finish landing after LOCAL midnight with yesterday's set
+                // still in memory (session alive across the boundary) starts a
+                // fresh day — yesterday's entries must never count toward
+                // today's sweep.
+                let today = LeaderboardService.todayLocal()
+                if self.dataDay != today {
+                    self.byMode = [:]
+                    self.optimistic = [:]
+                    self.dataDay = today
+                }
                 // Best-result semantics: never downgrade a recorded win on replay.
                 if let existing = self.byMode[c.gameMode], existing.completed && !c.completed { return }
                 self.byMode[c.gameMode] = c
                 self.optimistic[c.gameMode] = c
-                self.optimisticDay = LeaderboardService.todayLocal()
+                self.optimisticDay = today
                 Self.writeCache(self.byMode)
                 WidgetBridge.update(completions: self.byMode)
             }
@@ -145,7 +164,7 @@ final class DailyCompletionsStore: ObservableObject {
         let client = AuthService.shared.client
         guard (try? await client.auth.session) != nil,
               let userId = try? await client.auth.session.user.id.uuidString else {
-            byMode = [:]; optimistic = [:]; Self.writeCache(nil); return
+            byMode = [:]; optimistic = [:]; dataDay = today; Self.writeCache(nil); return
         }
         do {
             let rows: [DailyCompletion] = try await client.from("daily_results")
@@ -165,10 +184,21 @@ final class DailyCompletionsStore: ObservableObject {
             var merged = Dictionary(rows.map { ($0.gameMode, $0) }, uniquingKeysWith: { a, _ in a })
             for (k, v) in optimistic where merged[k] == nil { merged[k] = v }
             byMode = merged
+            dataDay = today
             Self.writeCache(byMode)
             WidgetBridge.update(completions: byMode)
         } catch {
-            // Keep the cached state on a transient failure instead of blanking.
+            // Keep the cached state on a transient failure instead of blanking —
+            // but ONLY if it belongs to today. A failed fetch right after a warm
+            // resume across midnight (radio still waking) must not leave
+            // yesterday's set posing as today's: that stale 9/9 is what fired
+            // the widget-launch "0/9 DAILY SWEEP" celebration.
+            if dataDay != today {
+                byMode = [:]
+                optimistic = [:]
+                dataDay = today
+                WidgetBridge.update(completions: byMode)
+            }
         }
     }
 

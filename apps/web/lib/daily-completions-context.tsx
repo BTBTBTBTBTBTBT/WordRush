@@ -6,6 +6,15 @@ import { fetchTodayDailyCompletions, getTodayLocal, type DailyCompletion } from 
 
 interface DailyCompletionsContextValue {
   todayDailies: Map<string, DailyCompletion>;
+  /**
+   * The LOCAL day `todayDailies` belongs to (stamped at write time). Consumers
+   * that treat a full map as "today is swept" (the celebration modal) MUST
+   * check this equals getTodayLocal(): a tab kept alive across local midnight
+   * still holds yesterday's map until a refresh lands, and celebrating
+   * yesterday's 9/9 with today's once-per-day key is the iOS widget-launch
+   * "0/9 DAILY SWEEP" bug.
+   */
+  dailiesDay: string;
   /** Optimistically add/update a single mode completion without re-fetching */
   addCompletion: (gameMode: string, result: DailyCompletion) => void;
   /** Full refresh from DB */
@@ -14,6 +23,7 @@ interface DailyCompletionsContextValue {
 
 const DailyCompletionsContext = createContext<DailyCompletionsContextValue>({
   todayDailies: new Map(),
+  dailiesDay: '',
   addCompletion: () => {},
   refreshDailies: async () => {},
 });
@@ -48,6 +58,8 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
   const { user, loading } = useAuth();
   // Initialise from sessionStorage so the very first render already has data
   const [todayDailies, setTodayDailies] = useState<Map<string, DailyCompletion>>(() => readCache());
+  // readCache() is day-guarded, so whatever seeded the initial state is today's.
+  const [dailiesDay, setDailiesDay] = useState<string>(() => getTodayLocal());
   const fetchedRef = useRef<string | null>(null);
 
   // Keep sessionStorage in sync whenever state changes
@@ -57,6 +69,9 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
       writeCache(next);
       return next;
     });
+    // Every write path produces data for the CURRENT local day (fetches filter
+    // on it; optimistic completions just happened) — restamp the day.
+    setDailiesDay(getTodayLocal());
   }, []);
 
   const refreshDailies = useCallback(async () => {
@@ -91,6 +106,7 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
     const cached = readCache();
     if (cached.size > 0) {
       setTodayDailies(cached);
+      setDailiesDay(getTodayLocal());   // readCache() only returns today's data
       fetchedRef.current = user.id;
       // Background refresh to pick up any changes
       fetchTodayDailyCompletions(user.id).then((fresh) => {
@@ -124,9 +140,10 @@ export function DailyCompletionsProvider({ children }: { children: React.ReactNo
   // Stable context value to avoid unnecessary re-renders
   const value = useMemo(() => ({
     todayDailies,
+    dailiesDay,
     addCompletion,
     refreshDailies,
-  }), [todayDailies, addCompletion, refreshDailies]);
+  }), [todayDailies, dailiesDay, addCompletion, refreshDailies]);
 
   return (
     <DailyCompletionsContext.Provider value={value}>

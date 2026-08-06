@@ -245,8 +245,11 @@ export default function HomePage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const livePlayerCount = useLivePlayerCount();
   const [playMode, setPlayModeState] = useState<PlayMode>('daily');
-  const { todayDailies } = useDailyCompletions();
-  const [sweepCeleb, setSweepCeleb] = useState(false);
+  const { todayDailies, dailiesDay } = useDailyCompletions();
+  // The celebration renders from a SNAPSHOT captured at fire time, so a
+  // concurrent refresh (e.g. the new day's empty map) can never blank the
+  // stats mid-celebration (the iOS widget-launch "0/9 WON · 0:00" bug).
+  const [sweepCeleb, setSweepCeleb] = useState<Map<string, DailyCompletion> | null>(null);
   // Today's daily VS outcome (server-backed, iOS vsDailyWon parity) — the VS
   // Battle card greys with a W/L badge like every other completed daily.
   // null = not played today. Home remounts on every return from a game, so a
@@ -263,15 +266,20 @@ export default function HomePage() {
     const completed = todayDailies.size;
     if (completed < 9) return;
     const wins = Array.from(todayDailies.values()).filter((r) => r.won).length;
+    // Hard guards (iOS widget-launch "0/9 sweep" parity): the completed set
+    // must BELONG to today — a tab alive across local midnight briefly holds
+    // yesterday's map — and a "sweep" with zero recorded wins is by definition
+    // stale/degenerate data, never a real day of play.
+    if (dailiesDay !== getTodayLocal() || wins === 0) return;
     const tier = wins >= 9 ? 'flawless' : 'sweep';
     const key = `wordocious-sweep-celebrated-${getTodayLocal()}`;
     try {
       const seen = localStorage.getItem(key);
       if (seen === 'flawless' || seen === tier) return;
       localStorage.setItem(key, tier);
-      setSweepCeleb(true);
+      setSweepCeleb(new Map(todayDailies));
     } catch {}
-  }, [user, todayDailies]);
+  }, [user, todayDailies, dailiesDay]);
 
   // Restore the toggle on mount for Pro users — but only within the SAME
   // browser session and local day (founder-approved UX: reopening the app
@@ -703,7 +711,7 @@ export default function HomePage() {
       />
       <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
       {sweepCeleb && (
-        <SweepCelebration completions={todayDailies} onClose={() => setSweepCeleb(false)} />
+        <SweepCelebration completions={sweepCeleb} onClose={() => setSweepCeleb(null)} />
       )}
     </div>
   );
