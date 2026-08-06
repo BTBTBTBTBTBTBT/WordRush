@@ -25,6 +25,12 @@ struct RootTabView: View {
     /// unlimited game of the mode the player just finished, presented from the
     /// tab root exactly like the Next Daily cover.
     @State private var unlimitedGame: UnlimitedLaunch?
+    /// A root cover presentation that arrived while a game cover was STILL
+    /// dismissing (NextDailyCTA's 0.6s post-dismiss delay can lose to a
+    /// main-thread hitch — recording writes, confetti). Presenting while the
+    /// old cover's dismissal is in flight is the classic way the shell's
+    /// layout latches mid-transition, so the present waits for the all-clear.
+    @State private var pendingRootPresent: (() -> Void)?
 
     /// An unlimited run minted by the playUnlimited handler — identified by
     /// seed so Play Again (which swaps in a fresh seed) re-presents the cover.
@@ -57,6 +63,13 @@ struct RootTabView: View {
         let fresh = "unlimited-\(gm.rawValue)-\(Int(Date().timeIntervalSince1970))"
         UserDefaults.standard.set(fresh, forKey: "unlimited-current-\(gm.rawValue)")
         return fresh
+    }
+
+    /// Present a root cover only when no immersive screen (a dismissing game
+    /// cover) is still on screen — immediately if already clear, otherwise the
+    /// moment ChromeVisibility reports the all-clear (see onChange below).
+    private func presentAfterCoverClears(_ present: @escaping () -> Void) {
+        if chrome.bottomNavHidden { pendingRootPresent = present } else { present() }
     }
 
     /// Tab selection with stack-reset side effects (web-like tab behavior).
@@ -107,13 +120,25 @@ struct RootTabView: View {
                 })
             }
         }
+        // Pin the nav to the PHYSICAL bottom, never the keyboard safe area.
+        // Without this, a system keyboard raised OVER a game cover (the share
+        // sheet's Messages compose — the same lingering inset GameScreen
+        // already defends against with its own .ignoresSafeArea(.keyboard))
+        // can latch on this root hosting controller when the hide lands while
+        // the hierarchy is covered or mid-dismissal: the safeAreaInset then
+        // holds the nav at keyboard-top height — MID-SCREEN, on every tab,
+        // with scroll content flowing under it, until an app restart. Founder
+        // hit this repeatedly after finishing dailies. All in-app text entry
+        // lives in sheets/covers (own hosting, unaffected) except VSLobbyView's
+        // join-code field, which now restores its own keyboard inset locally.
+        .ignoresSafeArea(.keyboard)
         // Post-game "Next Daily" handoff: launch the requested mode's daily via
         // the same path the Leaderboard Play CTA uses (GameScreen with today's
         // seed; ProperNoundleView() for PN). The CTA dismisses its own game
         // first, then posts, so this cover presents cleanly from the root.
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playNextDaily)) { note in
             guard let key = note.object as? String else { return }
-            nextDaily = homeModes.first { $0.dbKey == key }
+            presentAfterCoverClears { nextDaily = homeModes.first { $0.dbKey == key } }
         }
         .fullScreenCover(item: $nextDaily) { m in
             NavigationStack {
@@ -131,7 +156,15 @@ struct RootTabView: View {
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playUnlimited)) { note in
             guard let key = note.object as? String,
                   let m = homeModes.first(where: { $0.dbKey == key }) else { return }
-            unlimitedGame = UnlimitedLaunch(mode: m, seed: mintUnlimitedSeed(m))
+            presentAfterCoverClears { unlimitedGame = UnlimitedLaunch(mode: m, seed: mintUnlimitedSeed(m)) }
+        }
+        // Flush a deferred root present the moment the exiting game cover has
+        // fully left (its .hidesBottomNav onDisappear fires at dismissal end),
+        // plus one beat so UIKit's presentation bookkeeping settles.
+        .onChange(of: chrome.bottomNavHidden) { hidden in
+            guard !hidden, let present = pendingRootPresent else { return }
+            pendingRootPresent = nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { present() }
         }
         .fullScreenCover(item: $unlimitedGame) { g in
             NavigationStack {
@@ -157,6 +190,7 @@ struct RootTabView: View {
         // reset the tab. The unlimited board's save survives (resumable from
         // the Unlimited grid); live VS covers are deliberately left alone.
         .onReceive(NotificationCenter.default.publisher(for: .dayRolledOver)) { _ in
+            pendingRootPresent = nil   // a queued next-daily belongs to yesterday
             nextDaily = nil
             unlimitedGame = nil
             leaderboardPath = []

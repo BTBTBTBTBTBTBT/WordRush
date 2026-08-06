@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 import { Home, Trophy, User, Crown } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -13,9 +14,30 @@ const NAV_ITEMS = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const ref = useRef<HTMLElement | null>(null);
+
+  // Publish the nav's rendered height as --bottom-nav-h on <html> so the
+  // fixed AdBanner (mounted globally in layout.tsx) can stack directly above
+  // the nav instead of covering it — both are fixed bottom-0 otherwise.
+  // ResizeObserver keeps it fresh across safe-area/orientation changes; the
+  // cleanup resets to 0 on routes that don't render a BottomNav.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const root = document.documentElement;
+    const publish = () => root.style.setProperty('--bottom-nav-h', `${el.offsetHeight}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.setProperty('--bottom-nav-h', '0px');
+    };
+  }, []);
 
   return (
     <nav
+      ref={ref}
       className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
       style={{
         backgroundColor: 'var(--color-bg)',

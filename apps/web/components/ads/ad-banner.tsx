@@ -37,27 +37,38 @@ export function AdBanner() {
   if (!show) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 40,
-        display: 'flex',
-        justifyContent: 'center',
-        background: 'var(--color-surface)',
-        borderTop: '1px solid var(--color-border)',
-      }}
-    >
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block', width: '100%', height: '60px' }}
-        data-ad-client={AD_CONFIG.adSenseClientId}
-        data-ad-slot={AD_CONFIG.bannerSlotId}
-        data-ad-format="horizontal"
-        data-full-width-responsive="true"
-      />
-    </div>
+    <>
+      {/* In-flow spacer: the fixed banner below covers the bottom 61px of the
+          viewport, and page-level pb-* clearances were tuned for the nav only
+          (Pro has no banner). This extends the document by the banner height
+          so the last rows of every scrollable page (e.g. Records' trophy
+          shelf) can still scroll clear of the ad. */}
+      <div aria-hidden style={{ height: '61px' }} />
+      <div
+        style={{
+          position: 'fixed',
+          // Stack directly ABOVE the BottomNav (which publishes its height as
+          // --bottom-nav-h) instead of bottom: 0 — both were fixed bottom-0
+          // z-40, so the banner covered the nav on free accounts.
+          bottom: 'var(--bottom-nav-h, 0px)',
+          left: 0,
+          right: 0,
+          zIndex: 40,
+          display: 'flex',
+          justifyContent: 'center',
+          background: 'var(--color-surface)',
+          borderTop: '1px solid var(--color-border)',
+        }}
+      >
+        <ins
+          className="adsbygoogle"
+          style={{ display: 'block', width: '100%', height: '60px' }}
+          data-ad-client={AD_CONFIG.adSenseClientId}
+          data-ad-slot={AD_CONFIG.bannerSlotId}
+          data-ad-format="horizontal"
+          data-full-width-responsive="true"
+        />
+      </div>
+    </>
   );
 }

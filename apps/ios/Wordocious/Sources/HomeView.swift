@@ -133,7 +133,8 @@ struct HomeView: View {
                         // Generous bottom clearance so the last items (Sign Out /
                         // footer) always sit above the custom bottom nav and stay
                         // tappable, regardless of safe-area-inset propagation.
-                        .padding(.bottom, 72)
+                        // Adds the ad banner height too when it's mounted (free).
+                        .bottomChromeClearance(base: 72)
                     }
                 }
 

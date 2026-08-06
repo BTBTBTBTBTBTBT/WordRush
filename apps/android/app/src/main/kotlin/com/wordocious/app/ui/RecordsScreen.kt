@@ -658,7 +658,20 @@ private fun YourRecordsTab() {
         sweepRankToday = LeaderboardService.getUserSweepRank(userId)
         sweepRankAllTime = LeaderboardService.getUserAllTimeSweepRank(userId)
         stats = s
-        recordsHeld = recs.filter { it.holderId == userId }
+        // One shelf row per (record type, mode): all_time_records keeps a
+        // separate row per play_type ('solo' and 'vs'), and listing both made
+        // e.g. "Six · Most Games Played" appear twice — the 54-game solo
+        // record next to a 1-game VS record. Prefer the solo row, same rule as
+        // the All-Time per-mode grid. Also drives the Global Records count, so
+        // held solo+vs pairs no longer double-count. (iOS/web parity.)
+        val heldByKey = LinkedHashMap<String, LeaderboardService.AllTimeRecord>()
+        for (r in recs) {
+            if (r.holderId != userId) continue
+            val key = "${r.recordType}|${r.gameMode ?: "global"}"
+            val existing = heldByKey[key]
+            if (existing == null || (existing.playType != "solo" && r.playType == "solo")) heldByKey[key] = r
+        }
+        recordsHeld = heldByKey.values.toList()
         // Record Chase: EVERY beatable all-time record with your gap, sorted by
         // how close you are (relative gap), top 3. Lower-is-better types only.
         // Ports the web loop in records/page.tsx exactly.

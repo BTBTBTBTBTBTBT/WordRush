@@ -805,7 +805,20 @@ function YourRecordsView({ userId }: { userId?: string }) {
       setSweep(sweepRes);
       setSweepRankToday(sweepRankTodayRes);
       setSweepRankAllTime(sweepRankAllTimeRes);
-      setRecordsHeld(recs.filter((r) => r.holder_id === userId));
+      // One shelf row per (record type, mode): all_time_records keeps a
+      // separate row per play_type ('solo' and 'vs'), and listing both made
+      // e.g. "Six · Most Games Played" appear twice — the 54-game solo record
+      // next to a 1-game VS record. Prefer the solo row, same rule as the
+      // All-Time per-mode grid. Also drives the Global Records count, so held
+      // solo+vs pairs no longer double-count.
+      const heldByKey = new Map<string, AllTimeRecord>();
+      for (const r of recs) {
+        if (r.holder_id !== userId) continue;
+        const key = `${r.record_type}|${r.game_mode ?? 'global'}`;
+        const existing = heldByKey.get(key);
+        if (!existing || (existing.play_type !== 'solo' && r.play_type === 'solo')) heldByKey.set(key, r);
+      }
+      setRecordsHeld([...heldByKey.values()]);
 
       // Record Chase: EVERY beatable all-time record with your gap, sorted by
       // how close you are (relative gap). Lower-is-better types only.

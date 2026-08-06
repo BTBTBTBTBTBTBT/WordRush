@@ -38,7 +38,8 @@ struct VSLobbyView: View {
             }
             // Generous bottom inset so the last create-match row clears the
             // tab bar (the lobby is pushed inside the Home tab's nav stack).
-            .padding(.horizontal, 16).padding(.bottom, 100)
+            // Adds the ad banner height too when it's mounted (free accounts).
+            .padding(.horizontal, 16).bottomChromeClearance(base: 100)
         }
         .sheet(isPresented: $showAuth) { AuthView() }
         .background(LinearGradient(colors: [Theme.background, Theme.backgroundGradientEnd], startPoint: .top, endPoint: .bottom).ignoresSafeArea())

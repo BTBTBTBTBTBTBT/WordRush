@@ -59,7 +59,11 @@ struct RecordsTab: View {
                     case .you:     YourRecordsView()
                     }
                 }
-                .padding(.horizontal, 12).padding(.bottom, 80)
+                .padding(.horizontal, 12)
+                // Nav clearance + the ad banner's height when it's mounted
+                // (free accounts) — without the banner share, "Your Trophy
+                // Shelf"'s last rows hid under the ad and couldn't scroll up.
+                .bottomChromeClearance(base: 80)
             }
         }
     }
@@ -944,7 +948,24 @@ struct YourRecordsView: View {
         sweepAllTimeRank = await aRank
         stats = rows
         sweep = sweepRes
-        recordsHeld = allRecs.filter { $0.holderId == uid }
+        // One shelf row per (record type, mode): all_time_records keeps a
+        // separate row per play_type ('solo' and 'vs'), and listing both made
+        // e.g. "Six · Most Games Played" appear twice — the 54-game solo record
+        // next to a 1-game VS record. Prefer the solo row, same rule as the
+        // All-Time per-mode grid (modeRecord). Also drives the GLOBAL RECORDS
+        // count, so held solo+vs pairs no longer double-count.
+        var heldByKey: [String: AllTimeRecord] = [:]
+        var heldOrder: [String] = []
+        for r in allRecs where r.holderId == uid {
+            let key = "\(r.recordType)|\(r.gameMode ?? "global")"
+            if let existing = heldByKey[key] {
+                if existing.playType != "solo" && r.playType == "solo" { heldByKey[key] = r }
+            } else {
+                heldByKey[key] = r
+                heldOrder.append(key)
+            }
+        }
+        recordsHeld = heldOrder.compactMap { heldByKey[$0] }
         // Record Chase: EVERY beatable all-time record with your gap, sorted by
         // how close you are (relative gap), top 3. Lower-is-better types only.
         // Mirrors the web YourRecordsView chase loop exactly.
