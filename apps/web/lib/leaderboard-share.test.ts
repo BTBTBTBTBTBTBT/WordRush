@@ -84,6 +84,7 @@ describe('buildDailyLeaderboardShareInput', () => {
     const input = buildDailyLeaderboardShareInput({
       variant: 'solo', mode: 'Classic', modeLabel: 'Classic', day: '2026-08-07',
       ranked: board(8), userId: 'stranger', userRank: null,
+      now: new Date('2026-08-07T11:15:00'),
     })!;
     expect(input.rows).toHaveLength(5);
     expect(input.rows[0].subline).toBe('4 guesses · 3:44 · Win');
@@ -91,7 +92,7 @@ describe('buildDailyLeaderboardShareInput', () => {
     expect(input.you).toBeUndefined();
     expect(input.delta).toBeUndefined();
     expect(input.modeChip).toBe('Classic');
-    expect(input.dateChip).toBe('Aug 7, 2026 · #123');
+    expect(input.dateChip).toBe('Aug 7, 2026 · #123 · as of 11:15 AM');
     expect(input.footer).toBe('Can you beat them? Play free at wordocious.com');
   });
 

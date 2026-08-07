@@ -92,9 +92,19 @@ function toRow(
   };
 }
 
+/** "11:15 AM" — local clock time for the snapshot stamp. */
+export function formatClockTime(d: Date): string {
+  let h = d.getHours();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${String(d.getMinutes()).padStart(2, '0')} ${ampm}`;
+}
+
 export interface DailyLeaderboardShareOpts {
   variant: 'solo' | 'vs';
   mode: ShareMode;
+  /** Snapshot moment for the "as of" stamp — injectable for tests; defaults to now. */
+  now?: Date;
   /** Chip label from the mode catalog's shareLabel ("Classic Six"). */
   modeLabel: string;
   /** Board day (YYYY-MM-DD, local). */
@@ -134,7 +144,10 @@ export function buildDailyLeaderboardShareInput(
     mode: opts.mode,
     variant: opts.variant,
     modeChip: opts.variant === 'vs' ? `${opts.modeLabel} VS` : opts.modeLabel,
-    dateChip: `${formatBoardDate(opts.day)}${puzzle ? ` · #${puzzle}` : ''}`,
+    // "as of h:mm" marks the card as a SNAPSHOT of a live board (founder,
+    // Aug 7) — today's standings keep moving, and the stamp keeps the brag
+    // honest forever. The settled Podium card says "· Final" instead.
+    dateChip: `${formatBoardDate(opts.day)}${puzzle ? ` · #${puzzle}` : ''} · as of ${formatClockTime(opts.now ?? new Date())}`,
     // Sharer below the top 5 → compress the top rows to name+score only.
     rows: top.map((r) => toRow(r, opts.userId, belowTop ? null : subline)),
     footer: opts.variant === 'vs'
