@@ -67,8 +67,10 @@ export default function SharePage(
   const img = imageUrl(key);
   const { mode, modeDisp, stats, title } = buildCopy(searchParams, key);
   const playHref = MODE_ROUTE[mode] ?? '/';
-  // Profile cards and unknown modes aren't playable — send those to the hub.
-  const playable = mode in MODE_ROUTE && mode !== 'Profile';
+  // Profile/leaderboard cards and unknown modes aren't playable — those get
+  // the generic CTA (their MODE_ROUTE still points somewhere sensible).
+  const NON_PLAYABLE = ['Profile', 'Leaderboard', 'VsLeaderboard', 'Podium'];
+  const playable = mode in MODE_ROUTE && !NON_PLAYABLE.includes(mode);
   const ctaLabel = playable ? `Play ${modeDisp}` : 'Play today’s puzzles';
 
   return (

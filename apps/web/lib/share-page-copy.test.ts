@@ -79,3 +79,55 @@ describe('buildCopy', () => {
     expect(c.description).toContain('wordocious.com');
   });
 });
+
+// LEADERBOARD SHARE kinds: storage keys read `<kind>-<Mode>-<date>` and the
+// query carries m=<kind> & lm=<Mode> (+ r/tp = the sharer's rank/total).
+describe('buildCopy — leaderboard cards', () => {
+  const LB_KEY = ['u', 'Leaderboard-Classic-2026-08-07'];
+
+  it('parses the leaderboard storage key (kind + board mode + date)', () => {
+    expect(parseShareKey(LB_KEY)).toEqual({ mode: 'Leaderboard-Classic', date: '2026-08-07' });
+  });
+
+  it('builds the daily-leaderboard card with the sharer ranked', () => {
+    const c = buildCopy({ m: 'Leaderboard', lm: 'Classic', r: '2', tp: '87' }, LB_KEY);
+    expect(c.title).toBe('Wordocious Daily Leaderboard — Classic Aug 7');
+    expect(c.description).toBe(
+      'I’m #2 on today’s Classic board. Can you beat me? Play today’s puzzles free at wordocious.com.',
+    );
+  });
+
+  it('invites instead of boasting when the sharer has no rank', () => {
+    const c = buildCopy({ m: 'Leaderboard', lm: 'Six' }, ['u', 'Leaderboard-Six-2026-08-07']);
+    expect(c.title).toBe('Wordocious Daily Leaderboard — Classic Six Aug 7');
+    expect(c.description).toContain('Can you crack the top 5?');
+    expect(c.description).not.toContain('#');
+  });
+
+  it('builds the VS battle leaderboard card', () => {
+    const c = buildCopy(
+      { m: 'VsLeaderboard', lm: 'Classic', r: '2', tp: '40' },
+      ['u', 'VsLeaderboard-Classic-2026-08-07'],
+    );
+    expect(c.title).toBe('Wordocious VS Battle Leaderboard — Classic Aug 7');
+    expect(c.description).toBe(
+      'I’m #2 on today’s Classic VS board. Think you can take me? Play today’s puzzles free at wordocious.com.',
+    );
+  });
+
+  it('builds the settled yesterday-podium card', () => {
+    const c = buildCopy({ m: 'Podium', lm: 'Classic' }, ['u', 'Podium-Classic-2026-08-06']);
+    expect(c.title).toBe('Wordocious Yesterday’s Podium — Classic Aug 6');
+    expect(c.description).toBe(
+      'Yesterday’s Classic podium is settled. Play today’s puzzles free at wordocious.com.',
+    );
+  });
+
+  it('recovers kind + board mode from the path when the query is stripped', () => {
+    const c = buildCopy({}, ['u', 'VsLeaderboard-Six-2026-08-07']);
+    expect(c.title).toBe('Wordocious VS Battle Leaderboard — Classic Six Aug 7');
+    expect(c.description).toContain('Think you can take them?');
+    // Never invent a rank the query didn't carry.
+    expect(c.description).not.toContain('I’m #');
+  });
+});

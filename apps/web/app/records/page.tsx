@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star } from 'lucide-react';
+import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore } from '@/lib/composite-scoring';
@@ -13,6 +13,7 @@ import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
+import { shareDailyLeaderboardCard, shareYesterdayPodiumCard } from '@/lib/leaderboard-share-flow';
 import { SectionHeader } from '@/components/profile/stat-kit';
 import {
   fetchAllTimeRecords,
@@ -247,6 +248,30 @@ function DailyRecordsView({ userId }: { userId?: string }) {
   const Icon = mode.icon;
   const isSweep = selectedMode === 'SWEEP';
 
+  // LEADERBOARD SHARE — this view owns the Solo/VS toggle, so its share button
+  // is where the VS Battle card variant comes from. Sweep has no card design.
+  const [sharingLb, setSharingLb] = useState(false);
+  const handleShareLeaderboard = async () => {
+    if (sharingLb || loading || isSweep) return;
+    setSharingLb(true);
+    try {
+      await shareDailyLeaderboardCard({
+        dbMode: selectedMode,
+        playType,
+        day: today,
+        yesterday: getYesterdayLocal(),
+        ranked: leaderboard
+          .map((entry, index) => ({ entry, rank: index + 1 }))
+          .filter(({ entry }) => !isBlocked(entry.user_id)),
+        userId,
+        userRank,
+        userEntry: userId ? leaderboard.find((e) => e.user_id === userId) ?? null : null,
+      });
+    } finally {
+      setSharingLb(false);
+    }
+  };
+
   // One Sweep row — records style (py-2.5); total score · total time ·
   // modes-won, with a GOLD "FLAWLESS" / VIOLET "SWEEP" pill.
   const renderSweepRow = (entry: SweepEntry, rank: number) => {
@@ -339,26 +364,39 @@ function DailyRecordsView({ userId }: { userId?: string }) {
               </div>
             </div>
 
-            {/* Solo/VS toggle (per-mode only — Sweep is solo-only, cross-mode) */}
+            {/* Share + Solo/VS toggle (per-mode only — Sweep is solo-only, cross-mode) */}
             {!isSweep && (
-            <div
-              className="flex rounded-lg overflow-hidden"
-              style={{ border: '1.5px solid var(--color-border)' }}
-            >
-              {(['solo', 'vs'] as const).map((t) => (
+            <div className="flex items-center gap-2">
+              {!loading && leaderboard.length > 0 && (
                 <button
-                  key={t}
-                  className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold transition-all"
-                  style={{
-                    background: playType === t ? `${color}15` : 'var(--color-surface)',
-                    color: playType === t ? color : 'var(--color-text-muted)',
-                  }}
-                  onClick={() => setPlayType(t)}
+                  onClick={handleShareLeaderboard}
+                  disabled={sharingLb}
+                  aria-label="Share leaderboard"
+                  className="p-1 active:scale-95 transition-transform"
+                  style={{ color: 'var(--color-text-muted)', opacity: sharingLb ? 0.4 : 1 }}
                 >
-                  {t === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
-                  {t === 'solo' ? 'Solo' : 'VS'}
+                  <Share2 className="w-3.5 h-3.5" />
                 </button>
-              ))}
+              )}
+              <div
+                className="flex rounded-lg overflow-hidden"
+                style={{ border: '1.5px solid var(--color-border)' }}
+              >
+                {(['solo', 'vs'] as const).map((t) => (
+                  <button
+                    key={t}
+                    className="flex items-center gap-1 px-3 py-1.5 text-[10px] font-extrabold transition-all"
+                    style={{
+                      background: playType === t ? `${color}15` : 'var(--color-surface)',
+                      color: playType === t ? color : 'var(--color-text-muted)',
+                    }}
+                    onClick={() => setPlayType(t)}
+                  >
+                    {t === 'solo' ? <User className="w-3 h-3" /> : <Swords className="w-3 h-3" />}
+                    {t === 'solo' ? 'Solo' : 'VS'}
+                  </button>
+                ))}
+              </div>
             </div>
             )}
           </div>
@@ -466,7 +504,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       </div>
 
       {/* Yesterday's podium */}
-      <YesterdayPodium mode={selectedMode} playType={playType} color={color} />
+      <YesterdayPodium mode={selectedMode} playType={playType} color={color} userId={userId} />
       </PullToRefresh>
     </div>
   );
@@ -475,9 +513,10 @@ function DailyRecordsView({ userId }: { userId?: string }) {
 /* ═══════════════════════════════════════════════════════
    YESTERDAY'S PODIUM (collapsible)
    ═══════════════════════════════════════════════════════ */
-function YesterdayPodium({ mode, playType, color }: { mode: string; playType: 'solo' | 'vs'; color: string }) {
+function YesterdayPodium({ mode, playType, color, userId }: { mode: string; playType: 'solo' | 'vs'; color: string; userId?: string }) {
   const [top3, setTop3] = useState<LeaderboardEntry[]>([]);
   const [open, setOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const yesterday = getYesterdayLocal();
 
   useEffect(() => {
@@ -489,21 +528,55 @@ function YesterdayPodium({ mode, playType, color }: { mode: string; playType: 's
   if (top3.length === 0) return null;
   const medalColor = ['#d97706', '#9ca3af', '#b45309'];
 
+  const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      await shareYesterdayPodiumCard({
+        dbMode: mode,
+        playType,
+        day: yesterday,
+        ranked: top3
+          .map((entry, index) => ({ entry, rank: index + 1 }))
+          .filter(({ entry }) => !isBlocked(entry.user_id)),
+        userId: userId ?? null,
+      });
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <div
       className="overflow-hidden mt-3"
       style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
     >
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-2.5"
-      >
-        <div className="flex items-center gap-1.5">
+      <div className="w-full flex items-center justify-between px-4 py-2.5">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex items-center gap-1.5 flex-1 min-w-0"
+        >
           <Crown className="w-3.5 h-3.5" style={{ color: '#d97706' }} />
           <span className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--color-text)' }}>Yesterday&apos;s Podium</span>
+        </button>
+        <div className="flex items-center gap-2">
+          {/* Settled-podium share — only once the podium is open. */}
+          {open && (
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              aria-label="Share yesterday's podium"
+              className="p-1 -my-1 active:scale-95 transition-transform"
+              style={{ color: 'var(--color-text-muted)', opacity: sharing ? 0.4 : 1 }}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button onClick={() => setOpen((o) => !o)} aria-label="Toggle yesterday's podium">
+            <ChevronDown className="w-4 h-4 transition-transform" style={{ color: 'var(--color-text-muted)', transform: open ? 'rotate(180deg)' : 'none' }} />
+          </button>
         </div>
-        <ChevronDown className="w-4 h-4 transition-transform" style={{ color: 'var(--color-text-muted)', transform: open ? 'rotate(180deg)' : 'none' }} />
-      </button>
+      </div>
       {open && (
         <div style={{ borderTop: '1px solid var(--color-border)' }}>
           {top3.filter((e) => !isBlocked(e.user_id)).map((e, i, arr) => (

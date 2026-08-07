@@ -1,4 +1,4 @@
-import { generateShareImage, type ShareImageInput, type ShareMode } from './share-image';
+import { generateShareImage, type ShareImageInput, type ShareLeaderboardInput, type ShareMode } from './share-image';
 import { openSharePreview } from '@/components/share/share-preview-modal';
 import { supabase } from './supabase-client';
 import { getTodayLocal } from './daily-service';
@@ -106,6 +106,13 @@ async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> 
  * falls back to the bare site URL — the directly-attached image still works
  * for Messages / WhatsApp / Mail regardless.
  */
+/** /s/ kind for a leaderboard card — also its storage-key prefix, so the
+ *  landing page can recover kind + board mode from the path alone when a
+ *  platform strips the query string (see share-page-copy.parseShareKey). */
+function leaderboardKind(input: ShareLeaderboardInput): 'Leaderboard' | 'VsLeaderboard' | 'Podium' {
+  return input.variant === 'vs' ? 'VsLeaderboard' : input.variant === 'podium' ? 'Podium' : 'Leaderboard';
+}
+
 async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promise<string | null> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -118,7 +125,11 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
     // days on distinct URLs so social scrapers never serve a stale image.
     // The all-dailies card is keyed by a synthetic mode so it never collides
     // with a single-mode share on the same day.
-    let keyMode = input.layout === 'daily-sweep' ? 'DailySweep' : input.layout === 'profile' ? 'Profile' : input.mode;
+    let keyMode: string;
+    if (input.layout === 'daily-sweep') keyMode = 'DailySweep';
+    else if (input.layout === 'profile') keyMode = 'Profile';
+    else if (input.layout === 'leaderboard') keyMode = `${leaderboardKind(input)}-${input.mode}`;
+    else keyMode = input.mode;
     // "Full results" variant gets its own object + URL so sharing both
     // variants on the same day never overwrites the other's OG image.
     const reveal = (input.layout === 'single' || input.layout === 'multi') && input.reveal;
@@ -150,6 +161,19 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
       params.set('w', '1080');
       params.set('h', '1080');
       params.set('v', `p${input.totalWins}-${input.currentStreak}-${input.achievementsUnlocked}`);
+      return `https://wordocious.com/s/${key}?${params.toString()}`;
+    }
+
+    if (input.layout === 'leaderboard') {
+      params.set('m', leaderboardKind(input));
+      params.set('lm', input.mode);
+      if (input.shareRank) params.set('r', String(input.shareRank));
+      if (input.sharePlayers) params.set('tp', String(input.sharePlayers));
+      params.set('w', '1080');
+      params.set('h', '1080');
+      // Unlike a puzzle result, a board changes all day — a minute-granular
+      // buster makes a later re-share re-scrape the fresh standings.
+      params.set('v', `lb${input.shareRank ?? 0}-${Math.floor(Date.now() / 60000)}`);
       return `https://wordocious.com/s/${key}?${params.toString()}`;
     }
 
@@ -195,6 +219,9 @@ async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promi
  */
 export async function shareResult(
   input: ShareImageInput,
+  /** share_events surface tag — post-game buttons keep the default; the daily
+   *  leaderboard buttons pass 'leaderboard'. */
+  surface: string = 'post_game',
 ): Promise<ShareResultOutcome> {
   let blob: Blob | null = null;
   try {
@@ -213,17 +240,17 @@ export async function shareResult(
 
   if (blob) {
     if (await tryWebShare(blob, caption, input.mode)) {
-      logShareEvent('image', input.mode, 'post_game');
+      logShareEvent('image', input.mode, surface);
       return { via: 'share' };
     }
     if (await tryClipboardImage(blob, caption)) {
-      logShareEvent('image', input.mode, 'post_game');
+      logShareEvent('image', input.mode, surface);
       return { via: 'clipboard' };
     }
     // Preview modal as a visible fallback before giving up.
     try {
       openSharePreview(blob, caption);
-      logShareEvent('image', input.mode, 'post_game');
+      logShareEvent('image', input.mode, surface);
       return { via: 'modal' };
     } catch {
       // fall through to text copy
@@ -233,7 +260,7 @@ export async function shareResult(
   // Image generation failed OR modal path errored — at minimum copy the caption
   // so the user still has something to paste.
   const copied = await copyShareToClipboard(caption);
-  if (copied) logShareEvent('text', input.mode, 'post_game');
+  if (copied) logShareEvent('text', input.mode, surface);
   return { via: copied ? 'text' : 'failed' };
 }
 

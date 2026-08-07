@@ -307,6 +307,7 @@ export interface LeaderboardEntry {
   total_boards: number;
   hints_used: number;
   vs_wins: number;
+  vs_losses: number;
   vs_games: number;
   completed: boolean;
 }
@@ -336,6 +337,7 @@ export async function fetchDailyLeaderboard(
       total_boards,
       hints_used,
       vs_wins,
+      vs_losses,
       vs_games,
       completed,
       profiles!inner(username, avatar_url, is_banned)
@@ -362,6 +364,7 @@ export async function fetchDailyLeaderboard(
     total_boards: row.total_boards,
     hints_used: row.hints_used ?? 0,
     vs_wins: row.vs_wins,
+    vs_losses: row.vs_losses ?? 0,
     vs_games: row.vs_games,
     completed: row.completed,
   }));

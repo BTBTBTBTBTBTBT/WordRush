@@ -145,12 +145,56 @@ export interface ShareProfileInput {
   date?: Date;
 }
 
+/** One row of the daily-leaderboard share card. All strings are preformatted
+ *  by the pure builder (lib/leaderboard-share.ts) so the renderer stays a dumb
+ *  layout pass and the formatting logic stays unit-testable. */
+export interface ShareLeaderboardRowInput {
+  rank: number;
+  name: string;
+  scoreDisplay: string;
+  /** Full-stats subline ("4 guesses · 3:44 · Win" / "3-1 today"). Omitted on
+   *  the compressed top-5 rows of the sharer-below-top-5 layout. */
+  subline?: string;
+  /** Sharer's own row — gets the gold "you" highlight + "· YOU" label. */
+  isYou?: boolean;
+}
+
+/** Daily-leaderboard share card (1080×1080): solo board, VS board, or
+ *  yesterday's settled podium. Spoiler-free by construction — no words or
+ *  boards, only names/scores/stats. */
+export interface ShareLeaderboardInput {
+  layout: 'leaderboard';
+  /** The board's game mode — drives the mode chip accent + share URL naming. */
+  mode: ShareMode;
+  variant: 'solo' | 'vs' | 'podium';
+  /** Mode chip text ("Classic Six", "Classic VS"). */
+  modeChip: string;
+  /** Date chip text ("Aug 7, 2026 · #123" / "Aug 6, 2026 · Final"). */
+  dateChip: string;
+  /** Top rows (≤5; podium ≤3), ordered by rank. */
+  rows: ShareLeaderboardRowInput[];
+  /** Sharer's row when ranked below the top rows (drawn after a "• • •" divider). */
+  you?: ShareLeaderboardRowInput;
+  /** "#12 of 87" under the out-of-top you-row. */
+  youRankLine?: string;
+  /** Rank-vs-yesterday pill on the sharer's row; absent = didn't play yesterday. */
+  delta?: { text: string; improved: boolean };
+  /** Footer hook line ("Can you beat them? Play free at wordocious.com"). */
+  footer: string;
+  /** Board day — drives the storage-key date. Defaults to today. */
+  date?: Date;
+  /** Sharer's rank/total, carried into the /s/ unfurl copy. */
+  shareRank?: number;
+  sharePlayers?: number;
+}
+
 export type ShareImageInput =
   | ShareSingleInput
   | ShareMultiInput
   | ShareGauntletInput
   | ShareDailySweepInput
-  | ShareProfileInput;
+  | ShareProfileInput
+  | ShareLeaderboardInput;
 
 /**
  * Short per-mode glyph drawn inside the accent badge on the all-dailies share
@@ -1059,13 +1103,358 @@ function drawDailySweepCard(
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Daily-leaderboard share card (solo / VS / yesterday's podium)
+// ──────────────────────────────────────────────────────────────────────────
+
+// Per-variant identity: lavender for the daily board + podium, mint/teal for
+// the VS battle board (VS Battle catalog accent = #0d9488).
+const VS_ACCENT = '#0d9488';
+const LB_THEME: Record<ShareLeaderboardInput['variant'], {
+  bg: string; label: string; panelBorder: string; footer: string;
+}> = {
+  solo:   { bg: '#f5f3ff', label: '#7c3aed', panelBorder: '#a78bfa55', footer: '#7c3aed' },
+  vs:     { bg: '#f0fdfa', label: VS_ACCENT, panelBorder: '#0d948855', footer: VS_ACCENT },
+  podium: { bg: '#f5f3ff', label: '#d97706', panelBorder: '#f59e0b55', footer: '#7c3aed' },
+};
+const LB_LABEL: Record<ShareLeaderboardInput['variant'], string> = {
+  solo: 'DAILY LEADERBOARD',
+  vs: 'VS BATTLE LEADERBOARD',
+  podium: 'YESTERDAY’S PODIUM',
+};
+
+// Rank iconography — same colors as the in-app RankIcon (crown gold, medal
+// silver, medal bronze).
+const RANK_ICON_COLORS = ['#d97706', '#9ca3af', '#b45309'];
+
+/** Stroke a lucide icon (24×24 viewBox, 2px stroke) centered at (cx, cy).
+ *  Paths copied verbatim from lucide-react@0.446 (crown/medal/swords) so the
+ *  card echoes the exact on-screen iconography. */
+function drawLucideStroke(
+  ctx: CanvasRenderingContext2D,
+  icon: 'crown' | 'medal' | 'swords',
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+): void {
+  ctx.save();
+  const s = size / 24;
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(s, s);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  const p = (d: string) => ctx.stroke(new Path2D(d));
+  const line = (x1: number, y1: number, x2: number, y2: number) => {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  };
+  const poly = (pts: number[][]) => {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+    ctx.stroke();
+  };
+  switch (icon) {
+    case 'crown':
+      p('M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z');
+      p('M5 21h14');
+      break;
+    case 'medal':
+      p('M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15');
+      p('M11 12 5.12 2.2');
+      p('m13 12 5.88-9.8');
+      p('M8 7h8');
+      ctx.beginPath(); ctx.arc(12, 17, 5, 0, Math.PI * 2); ctx.stroke();
+      p('M12 18v-2h-.5');
+      break;
+    case 'swords':
+      poly([[14.5, 17.5], [3, 6], [3, 3], [6, 3], [17.5, 14.5]]);
+      line(13, 19, 19, 13);
+      line(16, 16, 20, 20);
+      line(19, 21, 21, 19);
+      poly([[14.5, 6.5], [18, 3], [21, 3], [21, 6], [17.5, 9.5]]);
+      line(5, 14, 9, 18);
+      line(7, 17, 4, 20);
+      line(3, 19, 5, 21);
+      break;
+  }
+  ctx.restore();
+}
+
+/** Truncate text with an ellipsis to fit maxWidth at the current ctx.font. */
+function clampText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(t + '…').width > maxWidth) {
+    t = t.slice(0, -1);
+  }
+  return t + '…';
+}
+
+function drawLbRankGlyph(ctx: CanvasRenderingContext2D, rank: number, cx: number, cy: number): void {
+  if (rank === 1) drawLucideStroke(ctx, 'crown', cx, cy, 40, RANK_ICON_COLORS[0]);
+  else if (rank === 2) drawLucideStroke(ctx, 'medal', cx, cy, 40, RANK_ICON_COLORS[1]);
+  else if (rank === 3) drawLucideStroke(ctx, 'medal', cx, cy, 40, RANK_ICON_COLORS[2]);
+  else {
+    ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_MUTED;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(rank), cx, cy + 1);
+  }
+}
+
+/** One leaderboard row. Draws the gold "you" treatment, rank glyph, name
+ *  (+ "· YOU" and the rank-delta pill on the sharer's row), and the
+ *  right-aligned score with its optional stats subline. */
+function drawLbRow(
+  ctx: CanvasRenderingContext2D,
+  row: ShareLeaderboardRowInput,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  opts: {
+    rankLine?: string;
+    delta?: { text: string; improved: boolean };
+    separator?: boolean;
+  } = {},
+): void {
+  // Gold "you" highlight — the existing leaderboard row treatment.
+  if (row.isYou) {
+    drawRoundRect(ctx, x + 10, y + 5, w - 20, h - 10, 16);
+    ctx.fillStyle = '#fef3c7';
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  const midY = y + h / 2;
+  drawLbRankGlyph(ctx, row.rank, x + 56, midY);
+
+  // Right block: bold score, optional subline underneath.
+  const rightX = x + w - 30;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.font = '900 34px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = TEXT_DARK;
+  ctx.fillText(row.scoreDisplay, rightX, row.subline ? midY - 13 : midY);
+  let rightBlockW = ctx.measureText(row.scoreDisplay).width;
+  if (row.subline) {
+    ctx.font = '700 21px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_MUTED;
+    ctx.fillText(row.subline, rightX, midY + 16);
+    rightBlockW = Math.max(rightBlockW, ctx.measureText(row.subline).width);
+  }
+
+  // Left block: name (+ YOU label + delta pill), optional "#R of TOTAL" line.
+  const nameX = x + 96;
+  const nameMaxW = w - 96 - 30 - rightBlockW - 24;
+  const nameY = opts.rankLine ? midY - 14 : midY;
+  ctx.textAlign = 'left';
+  ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+  let reserved = 0;
+  if (row.isYou) {
+    ctx.font = '900 24px "Nunito", system-ui, -apple-system, sans-serif';
+    reserved += ctx.measureText(' · YOU').width;
+    ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+  }
+  const name = clampText(ctx, row.name, Math.max(60, nameMaxW - reserved));
+  ctx.fillStyle = TEXT_DARK;
+  ctx.fillText(name, nameX, nameY);
+  let cursorX = nameX + ctx.measureText(name).width;
+  if (row.isYou) {
+    ctx.font = '900 24px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#d97706';
+    ctx.fillText(' · YOU', cursorX, nameY + 1);
+    cursorX += ctx.measureText(' · YOU').width;
+  }
+
+  // Rank-delta pill ("▲3 vs yesterday" green / "▼2 vs yesterday" red) on the
+  // sharer's row — under the name when the "#R of TOTAL" line isn't there,
+  // sharing the second line with it otherwise.
+  if (row.isYou && (opts.delta || opts.rankLine)) {
+    const lineY = midY + 17;
+    let lx = nameX;
+    if (opts.rankLine) {
+      ctx.font = '800 21px "Nunito", system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#b45309';
+      ctx.fillText(opts.rankLine, lx, lineY);
+      lx += ctx.measureText(opts.rankLine).width + 12;
+    }
+    if (opts.delta) {
+      ctx.font = '800 18px "Nunito", system-ui, -apple-system, sans-serif';
+      const pillText = opts.delta.text;
+      const pillW = ctx.measureText(pillText).width + 20;
+      const pillH = 28;
+      // No rank line → pill rides the name line instead of a second line.
+      const pillY = opts.rankLine ? lineY - pillH / 2 : nameY - pillH / 2;
+      const pillX = opts.rankLine ? lx : cursorX + 12;
+      drawRoundRect(ctx, pillX, pillY, pillW, pillH, 14);
+      ctx.fillStyle = opts.delta.improved ? '#dcfce7' : '#fee2e2';
+      ctx.fill();
+      ctx.fillStyle = opts.delta.improved ? '#16a34a' : '#dc2626';
+      ctx.fillText(pillText, pillX + 10, pillY + pillH / 2 + 1);
+    }
+  }
+
+  if (opts.separator && !row.isYou) {
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x + 26, y + h);
+    ctx.lineTo(x + w - 26, y + h);
+    ctx.stroke();
+  }
+}
+
+function drawLeaderboardCard(
+  ctx: CanvasRenderingContext2D,
+  input: ShareLeaderboardInput,
+  width: number,
+  height: number,
+): void {
+  const theme = LB_THEME[input.variant];
+
+  // Variant-tinted card background (lavender / mint) over the default fill.
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, width, height);
+
+  // Wordmark — the established two-tone (violet→pink) treatment.
+  const wordmarkY = 96;
+  ctx.save();
+  ctx.font = '900 60px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const wm = ctx.createLinearGradient(width / 2 - 220, wordmarkY - 52, width / 2 + 220, wordmarkY + 8);
+  wm.addColorStop(0, WORDMARK_GRADIENT[0]);
+  wm.addColorStop(1, WORDMARK_GRADIENT[1]);
+  ctx.fillStyle = wm;
+  ctx.fillText('WORDOCIOUS', width / 2, wordmarkY);
+  ctx.restore();
+
+  // Letterspaced variant label. `letterSpacing` is a newer canvas property —
+  // set through a cast and degrade gracefully where unsupported.
+  const labelY = wordmarkY + 74;
+  ctx.save();
+  const anyCtx = ctx as unknown as { letterSpacing?: string };
+  try { anyCtx.letterSpacing = '10px'; } catch { /* older engines */ }
+  ctx.font = '900 36px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = theme.label;
+  ctx.fillText(LB_LABEL[input.variant], width / 2, labelY);
+  try { anyCtx.letterSpacing = '0px'; } catch { /* older engines */ }
+  ctx.restore();
+
+  // Chips: mode (accent bg; swords glyph on the VS variant) + date/puzzle.
+  const chipH = 56;
+  const chipY = labelY + 36;
+  const chipFont = '800 27px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = chipFont;
+  const swordsSize = input.variant === 'vs' ? 30 : 0;
+  const swordsGap = input.variant === 'vs' ? 10 : 0;
+  const modeTextW = ctx.measureText(input.modeChip).width;
+  const modeChipW = modeTextW + swordsSize + swordsGap + 48;
+  const dateTextW = ctx.measureText(input.dateChip).width;
+  const dateChipW = dateTextW + 44;
+  const chipGap = 16;
+  let chipX = (width - modeChipW - chipGap - dateChipW) / 2;
+
+  const modeAccent = input.variant === 'vs' ? VS_ACCENT : MODE_ACCENT[input.mode];
+  drawRoundRect(ctx, chipX, chipY, modeChipW, chipH, chipH / 2);
+  ctx.fillStyle = modeAccent;
+  ctx.fill();
+  let modeTextX = chipX + 24;
+  if (input.variant === 'vs') {
+    drawLucideStroke(ctx, 'swords', modeTextX + swordsSize / 2, chipY + chipH / 2, swordsSize, '#ffffff');
+    modeTextX += swordsSize + swordsGap;
+  }
+  ctx.font = chipFont;
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(input.modeChip, modeTextX, chipY + chipH / 2 + 1);
+
+  chipX += modeChipW + chipGap;
+  drawRoundRect(ctx, chipX, chipY, dateChipW, chipH, chipH / 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = '#e5e7eb';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.font = chipFont;
+  ctx.fillStyle = TEXT_MUTED;
+  ctx.fillText(input.dateChip, chipX + 22, chipY + chipH / 2 + 1);
+
+  // Rows panel.
+  const panelX = 64;
+  const panelW = width - panelX * 2;
+  const panelTop = chipY + chipH + 40;
+  const footerY = height - 52;
+  const panelBottom = footerY - 46;
+  drawRoundRect(ctx, panelX, panelTop, panelW, panelBottom - panelTop, 28);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = theme.panelBorder;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  const pad = 16;
+  const innerTop = panelTop + pad;
+  const innerH = panelBottom - panelTop - pad * 2;
+  const dividerH = input.you ? 46 : 0;
+  const nRows = input.rows.length + (input.you ? 1 : 0);
+  if (!nRows) return;
+  const rowH = Math.min(band(input), (innerH - dividerH) / nRows);
+  const usedH = rowH * nRows + dividerH;
+  let y = innerTop + (innerH - usedH) / 2;
+
+  input.rows.forEach((row, i) => {
+    drawLbRow(ctx, row, panelX, y, panelW, rowH, {
+      delta: row.isYou ? input.delta : undefined,
+      separator: i < input.rows.length - 1 || !!input.you,
+    });
+    y += rowH;
+  });
+
+  if (input.you) {
+    // "• • •" divider between the compressed top rows and the sharer's row.
+    ctx.font = '900 26px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = TEXT_MUTED;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('• • •', width / 2, y + dividerH / 2 + 1);
+    y += dividerH;
+    drawLbRow(ctx, input.you, panelX, y, panelW, rowH, {
+      rankLine: input.youRankLine,
+      delta: input.delta,
+    });
+  }
+
+  // Footer hook.
+  ctx.font = '800 29px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.fillStyle = theme.footer;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(input.footer, width / 2, footerY + 30);
+}
+
+/** Max row height — roomier for the 3-row podium than a 6-slot board. */
+function band(input: ShareLeaderboardInput): number {
+  return input.variant === 'podium' ? 170 : 130;
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Public entry point
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function generateShareImage(input: ShareImageInput): Promise<Blob | null> {
   if (typeof document === 'undefined') return null;
   const isVertical =
-    input.layout === 'daily-sweep' || input.mode === 'OctoWord' || input.mode === 'Gauntlet';
+    input.layout === 'daily-sweep' ||
+    (input.layout !== 'leaderboard' && (input.mode === 'OctoWord' || input.mode === 'Gauntlet'));
   const width = 1080;
   const height = isVertical ? 1350 : 1080;
 
@@ -1085,6 +1474,15 @@ export async function generateShareImage(input: ShareImageInput): Promise<Blob |
   if (input.layout === 'daily-sweep') {
     drawDailySweepCard(ctx, input, width, height);
     drawFooter(ctx, width, height);
+    return new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
+    });
+  }
+
+  // The daily-leaderboard card renders its own header + rows + footer hook
+  // (1080², all three variants).
+  if (input.layout === 'leaderboard') {
+    drawLeaderboardCard(ctx, input, width, height);
     return new Promise<Blob | null>((resolve) => {
       canvas.toBlob((blob) => resolve(blob), 'image/png', 0.95);
     });

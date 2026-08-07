@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play } from 'lucide-react';
+import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -30,6 +30,7 @@ import {
 } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
+import { shareDailyLeaderboardCard, shareYesterdayPodiumCard } from '@/lib/leaderboard-share-flow';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
 const getMode = (dbKey: string) => (dbKey === 'SWEEP' ? SWEEP_MODE : PROFILE_MODES.find((m) => m.dbKey === dbKey)!);
@@ -332,6 +333,58 @@ export default function DailyPage() {
 
   const isSweep = selectedMode === 'SWEEP';
 
+  // ── LEADERBOARD SHARE — today's board card + yesterday's podium card.
+  // Single-tap, spoiler-free by construction (names/scores/stats only), so no
+  // variant chooser. Sweep has no card design — its buttons stay hidden.
+  const [sharingLb, setSharingLb] = useState(false);
+  const [sharingPodium, setSharingPodium] = useState(false);
+
+  const handleShareLeaderboard = async () => {
+    if (sharingLb || loading || isSweep) return;
+    setSharingLb(true);
+    try {
+      // The sharer's row when the page already holds it — the top-50 list or
+      // the "your neighborhood" rank window; the flow fetches it otherwise.
+      const userEntry = user
+        ? leaderboard.find((e) => e.user_id === user.id)
+          ?? rankWindow?.entries.find((e) => e.user_id === user.id)
+          ?? null
+        : null;
+      await shareDailyLeaderboardCard({
+        dbMode: selectedMode,
+        playType: 'solo',
+        day: getTodayLocal(),
+        yesterday,
+        ranked: leaderboard
+          .map((entry, index) => ({ entry, rank: index + 1 }))
+          .filter(({ entry }) => !isBlocked(entry.user_id)),
+        userId: user?.id ?? null,
+        userRank,
+        userEntry,
+      });
+    } finally {
+      setSharingLb(false);
+    }
+  };
+
+  const handleSharePodium = async () => {
+    if (sharingPodium || isSweep) return;
+    setSharingPodium(true);
+    try {
+      await shareYesterdayPodiumCard({
+        dbMode: selectedMode,
+        playType: 'solo',
+        day: yesterday,
+        ranked: yesterdayLeaderboard
+          .map((entry, index) => ({ entry, rank: index + 1 }))
+          .filter(({ entry }) => !isBlocked(entry.user_id)),
+        userId: user?.id ?? null,
+      });
+    } finally {
+      setSharingPodium(false);
+    }
+  };
+
   const handlePlayDaily = () => {
     if (!user) {
       setAuthModalOpen(true);
@@ -457,12 +510,25 @@ export default function DailyPage() {
 
         {/* Leaderboard — the caption is founder-approved clarity: this board
             ranks DAILY games only, so an Unlimited session never shows here. */}
-        <div className="flex items-baseline justify-between mb-2">
+        <div className="flex items-center justify-between mb-2">
           <div className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
             Leaderboard
           </div>
-          <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            Daily games only
+          <div className="flex items-center gap-2">
+            <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              Daily games only
+            </div>
+            {!isSweep && !loading && leaderboard.length > 0 && (
+              <button
+                onClick={handleShareLeaderboard}
+                disabled={sharingLb}
+                aria-label="Share leaderboard"
+                className="p-1 -my-1 active:scale-95 transition-transform"
+                style={{ color: 'var(--color-text-muted)', opacity: sharingLb ? 0.4 : 1 }}
+              >
+                <Share2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
         <PullToRefresh onRefresh={loadLeaderboard} accentColor={color}>
@@ -523,14 +589,28 @@ export default function DailyPage() {
         </PullToRefresh>
 
         {/* Yesterday's Winners — per-mode top 3, or yesterday's top sweepers */}
-        <button
-          onClick={() => setShowYesterday(!showYesterday)}
-          className="w-full mt-4 flex items-center justify-center gap-1.5 text-xs font-extrabold py-2 transition-colors"
-          style={{ color: 'var(--color-text-muted)' }}
-        >
-          Yesterday's Winners
-          {showYesterday ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
+        <div className="w-full mt-4 flex items-center justify-center gap-1.5 py-2">
+          <button
+            onClick={() => setShowYesterday(!showYesterday)}
+            className="flex items-center gap-1.5 text-xs font-extrabold transition-colors"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            Yesterday's Winners
+            {showYesterday ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          {/* Settled-podium share — only once the dropdown is open with rows. */}
+          {showYesterday && !isSweep && yesterdayLeaderboard.length > 0 && (
+            <button
+              onClick={handleSharePodium}
+              disabled={sharingPodium}
+              aria-label="Share yesterday's podium"
+              className="p-1 -my-1 active:scale-95 transition-transform"
+              style={{ color: 'var(--color-text-muted)', opacity: sharingPodium ? 0.4 : 1 }}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
 
         {showYesterday && (
           <div

@@ -27,7 +27,17 @@ export const MODE_ROUTE: Record<string, string> = {
   Seven: '/seven',
   DailySweep: '/daily',
   Profile: '/',
+  // Leaderboard cards aren't playable results — the CTA sends visitors to the
+  // board they were shown (VS boards live on the Records daily tab).
+  Leaderboard: '/daily',
+  VsLeaderboard: '/records',
+  Podium: '/daily',
 };
+
+/** The three daily-leaderboard /s/ kinds (lib/share-utils leaderboardKind).
+ *  Storage keys read `<kind>-<Mode>-<yyyy-mm-dd>`; the query carries
+ *  m=<kind> & lm=<Mode> (+ r/tp for the sharer's rank). */
+const LB_KINDS = ['Leaderboard', 'VsLeaderboard', 'Podium'] as const;
 
 export type SP = Record<string, string | string[] | undefined>;
 
@@ -64,6 +74,12 @@ function fmtDate(iso: string): string | undefined {
   const mon = months[Number(m[2]) - 1];
   if (!mon) return undefined;
   return `${mon} ${Number(m[3])}, ${m[1]}`;
+}
+
+/** Year-less "Aug 7" — the leaderboard unfurl title style. */
+function fmtDayShort(iso: string): string | undefined {
+  const full = fmtDate(iso);
+  return full?.split(',')[0];
 }
 
 export interface ShareCopy {
@@ -107,6 +123,46 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
       : 'Wordocious Player Profile';
     const description = `Check out my Wordocious stats. ${PLAY_HOOK}`;
     return { mode, modeDisp, won: false, stats, title, description };
+  }
+
+  // Daily-leaderboard cards (today's board / VS board / yesterday's podium).
+  // Kind + board mode come from ?m=<kind>&lm=<Mode>, falling back to the
+  // storage-key path (`<kind>-<Mode>-<date>`) when the query is stripped.
+  const lb = (() => {
+    for (const k of LB_KINDS) {
+      if (mode === k) return { kind: k, lbMode: str(sp.lm) };
+      if (mode.startsWith(`${k}-`)) return { kind: k, lbMode: mode.slice(k.length + 1) };
+    }
+    return null;
+  })();
+  if (lb) {
+    const lbModeDisp = lb.lbMode ? (MODE_DISPLAY[lb.lbMode] ?? lb.lbMode) : '';
+    const shortDate = fromPath.date ? fmtDayShort(fromPath.date) : undefined;
+    const boardBits = [lbModeDisp, shortDate].filter(Boolean).join(' ');
+    const boardDisp = lbModeDisp || 'daily';
+
+    if (lb.kind === 'Podium') {
+      const title = boardBits
+        ? `Wordocious Yesterday’s Podium — ${boardBits}`
+        : 'Wordocious Yesterday’s Podium';
+      const description = `Yesterday’s ${boardDisp} podium is settled. ${PLAY_HOOK}`;
+      return { mode: lb.kind, modeDisp: 'Yesterday’s Podium', won: false, stats: boardBits, title, description };
+    }
+
+    const isVs = lb.kind === 'VsLeaderboard';
+    const boardName = isVs ? 'VS Battle Leaderboard' : 'Daily Leaderboard';
+    const title = boardBits ? `Wordocious ${boardName} — ${boardBits}` : `Wordocious ${boardName}`;
+    // r = the sharer's rank; absent when they hadn't played (or the query was
+    // stripped) — then the copy invites rather than boasts.
+    const rank = Number(str(sp.r)) || 0;
+    const description = rank > 0
+      ? (isVs
+          ? `I’m #${rank} on today’s ${boardDisp} VS board. Think you can take me? ${PLAY_HOOK}`
+          : `I’m #${rank} on today’s ${boardDisp} board. Can you beat me? ${PLAY_HOOK}`)
+      : (isVs
+          ? `Today’s ${boardDisp} VS board is live. Think you can take them? ${PLAY_HOOK}`
+          : `Today’s ${boardDisp} board is live. Can you crack the top 5? ${PLAY_HOOK}`);
+    return { mode: lb.kind, modeDisp: boardName, won: false, stats: boardBits, title, description };
   }
 
   // Query string stripped (some platforms truncate or drop it): fall back to
