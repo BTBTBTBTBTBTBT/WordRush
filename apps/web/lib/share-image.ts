@@ -1235,12 +1235,21 @@ function drawLbRow(
     separator?: boolean;
   } = {},
 ): void {
-  // Gold "you" highlight — the existing leaderboard row treatment.
+  // Gold "you" highlight — full-bleed across the panel with a soft amber
+  // glow instead of a hard border (founder polish note, Aug 7).
   if (row.isYou) {
-    drawRoundRect(ctx, x + 10, y + 5, w - 20, h - 10, 16);
+    ctx.save();
+    ctx.shadowColor = 'rgba(245, 158, 11, 0.5)';
+    ctx.shadowBlur = 26;
+    drawRoundRect(ctx, x + 2, y + 4, w - 4, h - 8, 16);
     ctx.fillStyle = '#fef3c7';
     ctx.fill();
-    ctx.strokeStyle = '#f59e0b';
+    ctx.restore();
+    drawRoundRect(ctx, x + 2, y + 4, w - 4, h - 8, 16);
+    const goldGlow = ctx.createLinearGradient(x, y, x, y + h);
+    goldGlow.addColorStop(0, 'rgba(252, 211, 77, 0.55)');
+    goldGlow.addColorStop(1, 'rgba(245, 158, 11, 0.25)');
+    ctx.strokeStyle = goldGlow;
     ctx.lineWidth = 2;
     ctx.stroke();
   }
