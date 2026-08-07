@@ -145,6 +145,9 @@ struct ProfileTab: View {
         ScrollView {
             VStack(spacing: 16) {
                 header(p)
+                // FRIENDS (§207): list, requests, add-by-username — web
+                // profile-page placement (above the referral panel).
+                FriendsPanelView()
                 // Referral program — web-parity "GIFT PRO TO FRIENDS" panel
                 // (same placement: between the header and Today's Dailies).
                 InvitePanelView()
@@ -1009,6 +1012,14 @@ struct LeaderboardTab: View {
     // its buttons stay hidden (web daily/page.tsx parity).
     @State private var sharingLb = false
     @State private var sharingPodium = false
+    // FRIENDS (§207): All|Friends toggle — dense friend ranks + ghost rows
+    // for friends who haven't played this mode today, with the canned-taunt
+    // sheet (fixed phrases only). friendsVersion re-keys the fetch tasks
+    // whenever the FriendsService cache changes.
+    @State private var friendsOnly = false
+    @State private var friendsVersion = 0
+    @State private var tauntTarget: FriendsService.FriendProfile?
+    @State private var tauntStatus: String?
     @State private var secondsLeft = secondsUntilLocalMidnight()
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     /// Today's completed dailies (seeded instantly from the on-device cache) so
@@ -1144,16 +1155,21 @@ struct LeaderboardTab: View {
             // that the siblings' magic 72 quietly under-clears.
             .padding(.bottom, max(72, chrome.bottomInset))
         }
-        .task(id: "\(mode.rawValue)-\(reloadToken)") { await load() }
+        .task(id: "\(mode.rawValue)-\(reloadToken)-\(friendsOnly)-\(friendsVersion)") { await load() }
         .task(id: "sweep-\(isSweep)-\(reloadToken)") { if isSweep { await loadSweep() } }
         // Yesterday's Winners keys on the MODE too (web/Android parity) — it
         // used to fetch only on toggle-open, so switching chips while the
         // dropdown was expanded kept showing the previous mode's podium until
         // you closed and reopened it.
-        .task(id: "yesterday-\(mode.rawValue)-\(isSweep)-\(showYesterday)") {
+        .task(id: "yesterday-\(mode.rawValue)-\(isSweep)-\(showYesterday)-\(friendsOnly)-\(friendsVersion)") {
             guard showYesterday else { return }
             await loadYesterday()
         }
+        .task { if auth.isAuthenticated { await FriendsService.load() } }
+        .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
+            friendsVersion = FriendsService.version
+        }
+        .sheet(item: $tauntTarget) { target in tauntSheet(target) }
         .task { await completions.load() }
         .onDailyCompletion { Task { await completions.load() } }
         .onDailyRecorded { reloadToken += 1 }
@@ -1243,6 +1259,24 @@ struct LeaderboardTab: View {
                     Text("LEADERBOARD").font(Brand.font(10, .black)).tracking(0.8)
                         .foregroundStyle(Theme.textMuted)
                     Spacer()
+                    // FRIENDS toggle (§207) — the Solo/VS segmented shell, compact.
+                    if auth.isAuthenticated {
+                        let accent = ModeStyle.accent(mode)
+                        HStack(spacing: 0) {
+                            ForEach([false, true], id: \.self) { f in
+                                Button { friendsOnly = f } label: {
+                                    Text(f ? "Friends" : "All")
+                                        .font(Brand.font(9, .heavy))
+                                        .foregroundStyle(friendsOnly == f ? accent : Theme.textMuted)
+                                        .padding(.horizontal, 8).padding(.vertical, 3)
+                                        .background(friendsOnly == f ? accent.opacity(0.08) : Theme.surface)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
+                    }
                     // Founder-approved clarity: this board ranks DAILY games
                     // only — Unlimited runs never appear here (the founder's
                     // sister played Unlimited and looked for her name).
@@ -1256,7 +1290,8 @@ struct LeaderboardTab: View {
                                 await LeaderboardShareFlow.shareDaily(
                                     mode: mode, playType: "solo",
                                     entries: entries, rankWindow: rankWindow,
-                                    userId: auth.profile?.id, userRank: userRank)
+                                    userId: auth.profile?.id, userRank: userRank,
+                                    friends: friendsOnly)
                                 sharingLb = false
                             }
                         } label: {
@@ -1273,13 +1308,28 @@ struct LeaderboardTab: View {
                 if loading {
                     LeaderboardSkeleton()   // web parity: animate-pulse rows, not a spinner
                 } else if entries.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
-                        Text("No daily results yet. Be the first!").font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                    if friendsOnly && !ghostFriends.isEmpty {
+                        // Nobody's played yet — the friends list still renders
+                        // as ghost rows so the board feels alive (and tauntable).
+                        VStack(spacing: 0) {
+                            ForEach(Array(ghostFriends.enumerated()), id: \.element.id) { idx, f in
+                                ghostRow(f)
+                                if idx < ghostFriends.count - 1 { Divider().overlay(Theme.border) }
+                            }
+                        }
+                        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
+                    } else {
+                        VStack(spacing: 8) {
+                            Image(systemName: "trophy").font(.system(size: 32)).foregroundStyle(Theme.textMuted.opacity(0.4))
+                            Text(friendsOnly ? "No friends yet — add them from any profile" : "No daily results yet. Be the first!")
+                                .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 40)
+                        .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                     }
-                    .frame(maxWidth: .infinity).padding(.vertical, 40)
-                    .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
@@ -1296,6 +1346,14 @@ struct LeaderboardTab: View {
                             ForEach(Array(win.entries.enumerated()), id: \.element.id) { idx, entry in
                                 row(rank: win.startRank + idx, entry: entry)
                                 if idx < win.entries.count - 1 { Divider().overlay(Theme.border) }
+                            }
+                        }
+                        // FRIENDS ghost rows — friends who haven't played this
+                        // mode today, muted, with the taunt bell (§207).
+                        if friendsOnly {
+                            ForEach(ghostFriends) { f in
+                                Divider().overlay(Theme.border)
+                                ghostRow(f)
                             }
                         }
                     }
@@ -1317,7 +1375,8 @@ struct LeaderboardTab: View {
                             sharingPodium = true
                             LeaderboardShareFlow.sharePodium(
                                 mode: mode, playType: "solo",
-                                top3: yesterday, userId: auth.profile?.id)
+                                top3: yesterday, userId: auth.profile?.id,
+                                friends: friendsOnly)
                             sharingPodium = false
                         } label: {
                             Image(systemName: "square.and.arrow.up")
@@ -1371,8 +1430,13 @@ struct LeaderboardTab: View {
             (Text("You're ranked ").font(Brand.body(12)).foregroundColor(Theme.textMuted)
              + Text("#\(r.rank)").font(Brand.title(18)).foregroundColor(Color(hex: 0xD97706)))
             // Transient "+N/−N" movement pill since you last looked (web parity).
-            RankDeltaBadge(mode: mode.rawValue, playType: "solo", pageKey: "daily", currentRank: r.rank)
-            Text(" of \(r.total)").font(Brand.body(12)).foregroundColor(Theme.textMuted)
+            // Friends mode keeps its own memory — a friend-rank must never
+            // compare against a stored global rank.
+            RankDeltaBadge(mode: mode.rawValue, playType: "solo",
+                           pageKey: friendsOnly && !isSweep ? "daily-friends" : "daily",
+                           currentRank: r.rank)
+            Text(friendsOnly && !isSweep ? " of \(r.total) friends" : " of \(r.total)")
+                .font(Brand.body(12)).foregroundColor(Theme.textMuted)
         }
             .frame(maxWidth: .infinity).padding(.vertical, 12)
             .background(RoundedRectangle(cornerRadius: 16).fill(
@@ -1412,9 +1476,101 @@ struct LeaderboardTab: View {
                         .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
                 }
             }
+            // Friends board: one-tap canned taunt on any friend's row (§207).
+            if friendsOnly && !isMe {
+                Button {
+                    tauntTarget = .init(id: entry.userId, username: entry.username,
+                                        avatar_url: entry.profiles.avatarUrl, level: 0,
+                                        since: nil, requestedAt: nil)
+                } label: {
+                    Image(systemName: "bell")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.textMuted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Taunt \(entry.username)")
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)
+    }
+
+    /// FRIENDS ghost row — a friend who hasn't played this mode today, in the
+    /// standard row shell at muted opacity. The taunt bell is the point.
+    private var ghostFriends: [FriendsService.FriendProfile] {
+        _ = friendsVersion // re-derive when the friends cache changes
+        return FriendsService.friends.filter { f in
+            !entries.contains { $0.userId == f.id } && !ModerationService.isBlocked(f.id)
+        }
+    }
+
+    private func ghostRow(_ f: FriendsService.FriendProfile) -> some View {
+        HStack(spacing: 12) {
+            Text("–").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted).frame(width: 22)
+            NavigationLink(value: f.id) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(f.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                    Text("Hasn't played yet").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                }
+            }.buttonStyle(.plain)
+            Spacer()
+            Button { tauntTarget = f } label: {
+                Image(systemName: "bell")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Theme.textMuted)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Nudge \(f.username)")
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .opacity(0.55)
+    }
+
+    /// Canned-taunt picker (§207): fixed phrases, one per friend per day.
+    private func tauntSheet(_ target: FriendsService.FriendProfile) -> some View {
+        VStack(spacing: 0) {
+            Text("TAUNT \(target.username.uppercased())")
+                .font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16).padding(.vertical, 14)
+            Divider().overlay(Theme.border)
+            if let status = tauntStatus {
+                Text(status).font(Brand.font(14, .heavy)).foregroundStyle(Theme.textPrimary)
+                    .frame(maxWidth: .infinity).padding(.vertical, 32)
+            } else {
+                ForEach(FriendTaunts.all) { taunt in
+                    Button {
+                        Task {
+                            let outcome = await FriendsService.taunt(
+                                friendId: target.id, tauntId: taunt.id,
+                                day: LeaderboardService.todayLocal())
+                            switch outcome {
+                            case .sent: tauntStatus = "Sent 😈"
+                            case .alreadySent: tauntStatus = "Already taunted them today"
+                            case .failed: tauntStatus = "Could not send"
+                            }
+                            try? await Task.sleep(nanoseconds: 1_400_000_000)
+                            tauntTarget = nil
+                            tauntStatus = nil
+                        }
+                    } label: {
+                        Text(taunt.text).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16).padding(.vertical, 13)
+                    }
+                    .buttonStyle(.plain)
+                    Divider().overlay(Theme.border)
+                }
+                Button { tauntTarget = nil } label: {
+                    Text("Cancel").font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
+                        .frame(maxWidth: .infinity).padding(.vertical, 13)
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer(minLength: 0)
+        }
+        .background(Theme.surface)
+        .presentationDetents([.medium])
     }
 
     private func detail(_ e: LeaderboardEntry) -> String {
@@ -1456,6 +1612,7 @@ struct LeaderboardTab: View {
         // a cache hit paints the last-known rows instantly (no skeleton) while
         // the fresh fetch below swaps in silently. Skeleton = true first load only.
         let cacheKey = LeaderboardCache.key(mode: mode, userId: auth.profile?.id)
+            + (friendsOnly ? ":friends" : "")
         if let cached = LeaderboardCache.shared[cacheKey] {
             entries = cached.entries
             playerCount = cached.playerCount
@@ -1467,6 +1624,26 @@ struct LeaderboardTab: View {
             userRank = nil
             rankWindow = nil
             entries = []
+        }
+
+        // FRIENDS board (§207): one fetch restricted to friends∪me holds the
+        // whole board — rank is the dense index, no rank query or window.
+        if friendsOnly, let uid = auth.profile?.id {
+            let ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
+            let fetchedOpt = try? await LeaderboardService.fetch(gameMode: mode, userIds: ids)
+            guard !Task.isCancelled else { return }
+            guard let fetched = fetchedOpt else { loading = false; return }
+            entries = fetched
+            playerCount = fetched.count
+            loading = false
+            let rank: (rank: Int, total: Int)? = fetched
+                .firstIndex { $0.userId == uid }
+                .map { (rank: $0 + 1, total: fetched.count) }
+            userRank = rank
+            rankWindow = nil
+            LeaderboardCache.shared[cacheKey] = .init(
+                entries: fetched, playerCount: fetched.count, userRank: rank, rankWindow: nil)
+            return
         }
 
         async let e = try? LeaderboardService.fetch(gameMode: mode)
@@ -1511,7 +1688,13 @@ struct LeaderboardTab: View {
             yesterdaySweep = rows
             return
         }
-        let rows = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 3)) ?? []
+        // Friends toggle carries into Yesterday's Winners: podium among friends.
+        var ids: [String]? = nil
+        if friendsOnly, let uid = auth.profile?.id {
+            ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
+        }
+        let rows = (try? await LeaderboardService.fetch(
+            gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 3, userIds: ids)) ?? []
         // .task(id:) cancels this on a mode switch — don't let the previous
         // mode's slow response overwrite the new mode's podium.
         guard !Task.isCancelled else { return }

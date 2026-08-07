@@ -55,6 +55,9 @@ struct PublicProfileView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .navigationBar)
         .task { await ModerationService.loadBlockedIds() }
+        .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
+            friendsVersion = FriendsService.version
+        }
         .task(id: userId) { await loadAll() }
         // Social sections load on their own task — non-blocking, and the page
         // stays fully usable if any (or all) of these fetches fail. Keyed on
@@ -101,7 +104,11 @@ struct PublicProfileView: View {
         // owner, and admins). The endpoints enforce it regardless — mirroring
         // means no doomed requests and no direct reads of the still-open
         // tables (user_stats / daily_results / medals) for a private target.
+        // FRIENDS (§207): accepted friends see the full profile — "private"
+        // means "friends only". The server gate opens for friends too.
+        if viewer != nil { await FriendsService.load() }
         gated = (p.isPrivate == true) && viewer?.id != p.id && viewer?.isAdmin != true
+            && !FriendsService.isFriend(p.id)
         if gated { loading = false; return }   // teaser renders from the profiles row alone
         async let st = PublicProfileService.stats(id: userId)
         async let mt = PublicProfileService.recentMatchesGated(id: userId)
@@ -139,6 +146,71 @@ struct PublicProfileView: View {
     }
 
     // MARK: Shared header bits (full page + teaser)
+
+    // FRIENDS (§207): the Add Friend pill beside the moderation kebab.
+    // States: Add Friend → Requested (tap = cancel) · Accept · Friends ✓
+    // (two taps = unfriend — inline confirm, no system dialogs). Friending is
+    // also the door into a private profile, so it renders on the teaser too.
+    @State private var friendsVersion = 0
+    @State private var confirmUnfriend = false
+
+    @ViewBuilder private var addFriendButton: some View {
+        let _ = friendsVersion
+        if AuthService.shared.profile != nil && !isOwnProfile {
+            let friend = FriendsService.isFriend(userId)
+            let requested = FriendsService.hasRequested(userId)
+            let incoming = FriendsService.hasIncomingFrom(userId)
+            Button {
+                Task {
+                    if friend {
+                        if confirmUnfriend {
+                            await FriendsService.remove(friendId: userId)
+                            confirmUnfriend = false
+                            // Re-gate: unfriending a private profile closes it.
+                            await loadAll()
+                        } else {
+                            confirmUnfriend = true
+                            try? await Task.sleep(nanoseconds: 3_000_000_000)
+                            confirmUnfriend = false
+                        }
+                    } else if incoming {
+                        await FriendsService.accept(requesterId: userId)
+                        await loadAll()   // may open a private profile
+                    } else if requested {
+                        await FriendsService.decline(requesterId: userId)
+                    } else {
+                        _ = await FriendsService.request(addresseeId: userId)
+                        if FriendsService.isFriend(userId) { await loadAll() }  // mutual auto-accept
+                    }
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    if friend {
+                        Image(systemName: "person.fill.checkmark").font(.system(size: 11, weight: .semibold))
+                        Text(confirmUnfriend ? "Remove friend?" : "Friends")
+                    } else if incoming {
+                        Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .semibold))
+                        Text("Accept request")
+                    } else if requested {
+                        Text("Requested")
+                    } else {
+                        Image(systemName: "person.badge.plus").font(.system(size: 11, weight: .semibold))
+                        Text("Add Friend")
+                    }
+                }
+                .font(Brand.font(12, .heavy))
+                .foregroundStyle(friend
+                    ? (confirmUnfriend ? Theme.lossText : Color(hex: 0x16A34A))
+                    : (requested ? Theme.textMuted : .white))
+                .padding(.horizontal, 12).padding(.vertical, 6)
+                .background(Capsule().fill(friend
+                    ? (confirmUnfriend ? Theme.lossBG : Theme.surfaceAlt)
+                    : (requested ? Theme.surfaceAlt : Theme.primary)))
+                .overlay(Capsule().stroke(friend || requested ? Theme.border : Theme.primary, lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
+        }
+    }
 
     /// App Review 1.2: users must be able to report/block each other wherever
     /// strangers' content renders — including a private profile's teaser card.
@@ -214,7 +286,10 @@ struct PublicProfileView: View {
                     }.buttonStyle(.plain)
                     Spacer()
                     // Report / Block still works on private profiles.
-                    if !isOwnProfile { moderationMenu }
+                    if !isOwnProfile {
+                        addFriendButton
+                        moderationMenu
+                    }
                 }
                 if let toast = moderationToast { moderationToastView(toast) }
 
@@ -333,6 +408,7 @@ struct PublicProfileView: View {
                     Label("Back", systemImage: "chevron.left").font(Brand.font(13, .heavy)).foregroundStyle(Theme.primary)
                 }.buttonStyle(.plain)
                 Spacer()
+                if !isOwnProfile { addFriendButton }
                 moderationMenu
             }
             if let toast = moderationToast { moderationToastView(toast) }

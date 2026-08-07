@@ -109,8 +109,11 @@ enum LeaderboardService {
     }
 
     static func fetch(gameMode: GameMode, day: String? = nil, playType: String = "solo",
-                      limit: Int = 50, offset: Int = 0) async throws -> [LeaderboardEntry] {
-        let rows: [LeaderboardEntry] = try await AuthService.shared.client
+                      limit: Int = 50, offset: Int = 0,
+                      userIds: [String]? = nil) async throws -> [LeaderboardEntry] {
+        // FRIENDS (§207): `userIds` restricts the board to friends∪me; the
+        // caller then dense-ranks 1..N (no holes — it's your list).
+        var query = AuthService.shared.client
             .from("daily_results")
             .select("""
                 user_id, composite_score, guess_count, time_seconds, boards_solved,
@@ -120,6 +123,10 @@ enum LeaderboardService {
             .eq("day", value: day ?? todayLocal())
             .eq("game_mode", value: gameMode.rawValue)
             .eq("play_type", value: playType)
+        if let userIds, !userIds.isEmpty {
+            query = query.in("user_id", values: userIds)
+        }
+        let rows: [LeaderboardEntry] = try await query
             .order("composite_score", ascending: false)
             .order("created_at", ascending: true)
             .range(from: offset, to: offset + limit - 1)

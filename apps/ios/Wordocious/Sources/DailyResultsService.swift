@@ -232,6 +232,9 @@ enum DailyResultsService {
                                                  day: day, guessCount: guessCount,
                                                  boardsSolved: boardsSolved, totalBoards: totalBoards,
                                                  completed: completed)
+            // FRIENDS (§207) overtake push — fire-and-forget; the server
+            // re-reads the trusted score and notifies friends we just passed.
+            FriendsService.beatCheck(day: day, gameMode: gameMode.rawValue)
             return composite
         } catch {
             // Best-effort stays (nil = not recorded), but capture the failure —

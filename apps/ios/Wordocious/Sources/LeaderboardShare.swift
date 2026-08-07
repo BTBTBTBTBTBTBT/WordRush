@@ -33,6 +33,9 @@ struct LbShareDelta {
 
 enum LbShareVariant: String {
     case solo, vs, podium
+    // FRIENDS (§207): friends-only board + settled friends podium — same
+    // geometry, indigo identity, dense friend ranks in rows/you/shareRank.
+    case friends, friendsPodium
 
     /// /s/ kind — also the storage-key prefix (web leaderboardKind()).
     var kind: String {
@@ -40,6 +43,8 @@ enum LbShareVariant: String {
         case .solo: return "Leaderboard"
         case .vs: return "VsLeaderboard"
         case .podium: return "Podium"
+        case .friends: return "FriendsBoard"
+        case .friendsPodium: return "FriendsPodium"
         }
     }
 }
@@ -190,9 +195,11 @@ enum LeaderboardShareBuilder {
             dateChip: dateChip,
             // Sharer below the top 5 → compress top rows to name+score only.
             rows: top.map { row($0, userId: userId, subline: belowTop ? nil : subline) },
-            footer: variant == .vs
-                ? "Think you can take them? wordocious.com"
-                : "Can you beat them? Play free at wordocious.com",
+            footer: variant == .friends
+                ? "Add your friends — play free at wordocious.com"
+                : variant == .vs
+                    ? "Think you can take them? wordocious.com"
+                    : "Can you beat them? Play free at wordocious.com",
             day: day)
         input.delta = delta
         input.shareRank = userRank?.rank
@@ -211,7 +218,8 @@ enum LeaderboardShareBuilder {
     /// PODIUM" identity, "MMM D, YYYY · Final" chip, top-3 full-stats rows.
     /// Nil when yesterday had no finishers.
     static func buildPodiumInput(
-        playType: LbShareVariant, shareMode: String, modeLabel: String,
+        playType: LbShareVariant, friends: Bool = false,
+        shareMode: String, modeLabel: String,
         gameModeRaw: String, modeAccent: Color,
         day: String, ranked: [RankedEntry], userId: String?
     ) -> LbShareInput? {
@@ -219,7 +227,8 @@ enum LeaderboardShareBuilder {
         guard !top.isEmpty else { return nil }
         let subline: (LeaderboardEntry) -> String = playType == .vs ? vsSubline : soloSubline
         return LbShareInput(
-            variant: .podium, shareMode: shareMode, gameModeRaw: gameModeRaw,
+            variant: friends ? .friendsPodium : .podium,
+            shareMode: shareMode, gameModeRaw: gameModeRaw,
             modeAccent: modeAccent,
             modeChip: playType == .vs ? "\(modeLabel) VS" : modeLabel,
             dateChip: "\(formatBoardDate(day)) · Final",
@@ -252,6 +261,13 @@ struct LeaderboardShareCardView: View {
         case .podium:
             return LbTheme(bg: Color(hex: 0xF5F3FF), label: Color(hex: 0xD97706),
                            panelBorder: Color(hex: 0xF59E0B, alpha: 1.0 / 3), footer: Color(hex: 0x7C3AED))
+        // Friends (§207): indigo — the leaderboard tab's own accent family.
+        case .friends:
+            return LbTheme(bg: Color(hex: 0xEEF2FF), label: Color(hex: 0x4F46E5),
+                           panelBorder: Color(hex: 0x6366F1, alpha: 1.0 / 3), footer: Color(hex: 0x4F46E5))
+        case .friendsPodium:
+            return LbTheme(bg: Color(hex: 0xEEF2FF), label: Color(hex: 0xD97706),
+                           panelBorder: Color(hex: 0xF59E0B, alpha: 1.0 / 3), footer: Color(hex: 0x4F46E5))
         }
     }
     private var labelText: String {
@@ -259,6 +275,8 @@ struct LeaderboardShareCardView: View {
         case .solo: return "DAILY LEADERBOARD"
         case .vs: return "VS BATTLE LEADERBOARD"
         case .podium: return "YESTERDAY’S PODIUM"
+        case .friends: return "FRIENDS LEADERBOARD"
+        case .friendsPodium: return "FRIENDS PODIUM"
         }
     }
 
@@ -526,7 +544,7 @@ struct LeaderboardShareCardView: View {
         let nRows = CGFloat(input.rows.count + (input.you != nil ? 1 : 0))
         guard nRows > 0 else { return }
         // Max row height — roomier for the 3-row podium than a 6-slot board.
-        let band: CGFloat = input.variant == .podium ? 170 : 130
+        let band: CGFloat = (input.variant == .podium || input.variant == .friendsPodium) ? 170 : 130
         let rowH = min(band, (areaBottom - areaTop - pad * 2 - dividerH) / nRows)
         let contentH = rowH * nRows + dividerH + pad * 2
         let panelTop = areaTop + (areaBottom - areaTop - contentH) / 2
@@ -640,9 +658,12 @@ enum LeaderboardShareFlow {
                            entries: [LeaderboardEntry],
                            rankWindow: (startRank: Int, entries: [LeaderboardEntry])?,
                            userId: String?,
-                           userRank: (rank: Int, total: Int)?) async {
+                           userRank: (rank: Int, total: Int)?,
+                           friends: Bool = false) async {
         guard let meta = ModeGen.byDbKey(mode.rawValue), !entries.isEmpty else { return }
-        let variant: LbShareVariant = playType == "vs" ? .vs : .solo
+        // FRIENDS (§207): friends identity + dense friend ranks; the page's
+        // `entries` already IS the whole friends board.
+        let variant: LbShareVariant = friends ? .friends : (playType == "vs" ? .vs : .solo)
         let ranked = entries.enumerated().map {
             LeaderboardShareBuilder.RankedEntry(rank: $0.offset + 1, entry: $0.element)
         }
@@ -656,7 +677,8 @@ enum LeaderboardShareFlow {
         var userEntry = userId.flatMap { uid in
             entries.first { $0.userId == uid } ?? rankWindow?.entries.first { $0.userId == uid }
         }
-        if let uid = userId, let rank = userRank, !inTop5, userEntry == nil {
+        if let uid = userId, let rank = userRank, !inTop5, userEntry == nil, !friends {
+            // Global board only — a friends board is entirely in `entries`.
             let offset = max(0, rank.rank - 6)
             let windowRows = (try? await LeaderboardService.fetch(
                 gameMode: mode, playType: playType, limit: 11, offset: offset)) ?? []
@@ -665,11 +687,21 @@ enum LeaderboardShareFlow {
 
         // Yesterday's final rank for the delta pill — only meaningful when the
         // sharer is on today's board at all; nil = didn't play yesterday.
+        // Friends mode compares friend-rank to friend-rank (dense index into
+        // yesterday's friends-filtered board).
         var yesterdayRank: Int? = nil
         if let uid = userId, userRank != nil {
-            yesterdayRank = await LeaderboardService.userRank(
-                gameMode: mode, userId: uid, playType: playType,
-                day: LeaderboardService.yesterdayLocal())?.rank
+            if friends {
+                let ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
+                let yRows = (try? await LeaderboardService.fetch(
+                    gameMode: mode, day: LeaderboardService.yesterdayLocal(),
+                    playType: playType, userIds: ids)) ?? []
+                yesterdayRank = yRows.firstIndex { $0.userId == uid }.map { $0 + 1 }
+            } else {
+                yesterdayRank = await LeaderboardService.userRank(
+                    gameMode: mode, userId: uid, playType: playType,
+                    day: LeaderboardService.yesterdayLocal())?.rank
+            }
         }
 
         guard let input = LeaderboardShareBuilder.buildDailyInput(
@@ -686,14 +718,16 @@ enum LeaderboardShareFlow {
     /// Share yesterday's settled podium (top 3, "· Final" chip).
     @MainActor
     static func sharePodium(mode: GameMode, playType: String,
-                            top3: [LeaderboardEntry], userId: String?) {
+                            top3: [LeaderboardEntry], userId: String?,
+                            friends: Bool = false) {
         guard let meta = ModeGen.byDbKey(mode.rawValue) else { return }
         let variant: LbShareVariant = playType == "vs" ? .vs : .solo
         let ranked = top3.enumerated().map {
             LeaderboardShareBuilder.RankedEntry(rank: $0.offset + 1, entry: $0.element)
         }
         guard let input = LeaderboardShareBuilder.buildPodiumInput(
-            playType: variant, shareMode: meta.title, modeLabel: meta.shareLabel,
+            playType: variant, friends: friends,
+            shareMode: meta.title, modeLabel: meta.shareLabel,
             gameModeRaw: mode.rawValue,
             // Web parity: the podium chip keeps the catalog accent even for a
             // VS podium — teal + swords belong to the live VS variant only.
