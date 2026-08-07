@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { buildCopy, MODE_ROUTE, type SP } from '@/lib/share-page-copy';
+import { buildCopy, MODE_ROUTE, parseLeaderboardShare, type SP } from '@/lib/share-page-copy';
+import LiveBoardSection from '@/components/share/live-board-section';
 
 // Per-result share landing page. The Share button (lib/share-utils.ts, plus
 // the iOS/Android ShareService mirrors) uploads the result PNG to the public
@@ -72,6 +73,10 @@ export default function SharePage(
   const NON_PLAYABLE = ['Profile', 'Leaderboard', 'VsLeaderboard', 'Podium'];
   const playable = mode in MODE_ROUTE && !NON_PLAYABLE.includes(mode);
   const ctaLabel = playable ? `Play ${modeDisp}` : 'Play today’s puzzles';
+  // Leaderboard-kind shares are snapshots of a LIVE board — the client-side
+  // section below the image shows the current top 5 while the board is still
+  // the recipient's today (or a one-line "final" note flowing into the CTA).
+  const lbInfo = parseLeaderboardShare(searchParams, key);
 
   return (
     <main
@@ -109,6 +114,10 @@ export default function SharePage(
           boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
         }}
       />
+
+      {lbInfo && (
+        <LiveBoardSection kind={lbInfo.kind} lbMode={lbInfo.lbMode} date={lbInfo.date} />
+      )}
 
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
         <Link

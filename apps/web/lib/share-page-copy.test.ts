@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildCopy, parseShareKey } from './share-page-copy';
+import {
+  boardDayStatus,
+  buildCopy,
+  parseLeaderboardShare,
+  parseShareKey,
+} from './share-page-copy';
 
 // Unfurl copy for the /s/[...key] share landing page. These strings become
 // og:title / og:description, so the assertions pin two invariants:
@@ -129,5 +134,51 @@ describe('buildCopy — leaderboard cards', () => {
     expect(c.description).toContain('Think you can take them?');
     // Never invent a rank the query didn't carry.
     expect(c.description).not.toContain('I’m #');
+  });
+});
+
+// LAYER 2 — the live section under a leaderboard share. parseLeaderboardShare
+// tells the page WHICH board was shared; boardDayStatus decides (against the
+// RECIPIENT'S local today) whether to fetch the current board or call it final.
+describe('parseLeaderboardShare', () => {
+  it('recovers kind + board mode + day from the query', () => {
+    expect(parseLeaderboardShare(
+      { m: 'Leaderboard', lm: 'Classic' },
+      ['u', 'Leaderboard-Classic-2026-08-07'],
+    )).toEqual({ kind: 'Leaderboard', lbMode: 'Classic', date: '2026-08-07' });
+  });
+
+  it('recovers kind + board mode from the path when the query is stripped', () => {
+    expect(parseLeaderboardShare({}, ['u', 'VsLeaderboard-Six-2026-08-07']))
+      .toEqual({ kind: 'VsLeaderboard', lbMode: 'Six', date: '2026-08-07' });
+    expect(parseLeaderboardShare({}, ['u', 'Podium-Classic-2026-08-06']))
+      .toEqual({ kind: 'Podium', lbMode: 'Classic', date: '2026-08-06' });
+  });
+
+  it('returns null for every non-leaderboard share', () => {
+    expect(parseLeaderboardShare({ m: 'Six' }, KEY)).toBeNull();
+    expect(parseLeaderboardShare({}, KEY)).toBeNull();
+    expect(parseLeaderboardShare({}, ['garbage'])).toBeNull();
+    expect(parseLeaderboardShare({ m: 'Profile' }, ['u', 'Profile-2026-08-05'])).toBeNull();
+  });
+});
+
+describe('boardDayStatus', () => {
+  it('is live only while the board day is the recipient’s today', () => {
+    expect(boardDayStatus('Leaderboard', '2026-08-07', '2026-08-07')).toBe('live');
+    expect(boardDayStatus('VsLeaderboard', '2026-08-07', '2026-08-07')).toBe('live');
+  });
+
+  it('is final once the day has passed', () => {
+    expect(boardDayStatus('Leaderboard', '2026-08-06', '2026-08-07')).toBe('final');
+    expect(boardDayStatus('VsLeaderboard', '2026-08-06', '2026-08-07')).toBe('final');
+  });
+
+  it('treats the Podium kind as final even on its own day', () => {
+    expect(boardDayStatus('Podium', '2026-08-07', '2026-08-07')).toBe('final');
+  });
+
+  it('degrades a missing day to final (never fetches on a bad key)', () => {
+    expect(boardDayStatus('Leaderboard', undefined, '2026-08-07')).toBe('final');
   });
 });

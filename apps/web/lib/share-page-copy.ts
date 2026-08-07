@@ -39,6 +39,8 @@ export const MODE_ROUTE: Record<string, string> = {
  *  m=<kind> & lm=<Mode> (+ r/tp for the sharer's rank). */
 const LB_KINDS = ['Leaderboard', 'VsLeaderboard', 'Podium'] as const;
 
+export type LeaderboardShareKind = (typeof LB_KINDS)[number];
+
 export type SP = Record<string, string | string[] | undefined>;
 
 function str(v: string | string[] | undefined): string | undefined {
@@ -80,6 +82,46 @@ function fmtDate(iso: string): string | undefined {
 function fmtDayShort(iso: string): string | undefined {
   const full = fmtDate(iso);
   return full?.split(',')[0];
+}
+
+export interface LeaderboardShareInfo {
+  kind: LeaderboardShareKind;
+  /** The board's ShareMode ('Classic', 'Six', …) — modes.generated title. */
+  lbMode?: string;
+  /** The board's day (yyyy-mm-dd) recovered from the storage-key path. */
+  date?: string;
+}
+
+/**
+ * Recognize a leaderboard-kind share URL and recover kind + board mode + day.
+ * Kind/mode come from ?m=<kind>&lm=<Mode>, falling back to the storage-key
+ * path (`<kind>-<Mode>-<yyyy-mm-dd>`) when a platform strips the query; the
+ * day only ever lives in the path. Null for every non-leaderboard share.
+ */
+export function parseLeaderboardShare(sp: SP, key: string[]): LeaderboardShareInfo | null {
+  const fromPath = parseShareKey(key);
+  const mode = str(sp.m) ?? fromPath.mode ?? '';
+  for (const k of LB_KINDS) {
+    if (mode === k) return { kind: k, lbMode: str(sp.lm), date: fromPath.date };
+    if (mode.startsWith(`${k}-`)) return { kind: k, lbMode: mode.slice(k.length + 1), date: fromPath.date };
+  }
+  return null;
+}
+
+/**
+ * Is the shared board still the LIVE board for the recipient, or settled?
+ * 'live' only when the key's day matches the recipient's LOCAL today (so this
+ * must be called client-side with getTodayLocal()); the Podium kind snapshots
+ * yesterday's settled board, so it is final by definition. A missing/bad date
+ * degrades to 'final' — the final branch fetches nothing, so it's always safe.
+ */
+export function boardDayStatus(
+  kind: LeaderboardShareKind,
+  date: string | undefined,
+  todayLocal: string,
+): 'live' | 'final' {
+  if (kind === 'Podium') return 'final';
+  return date === todayLocal ? 'live' : 'final';
 }
 
 export interface ShareCopy {
@@ -128,13 +170,7 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
   // Daily-leaderboard cards (today's board / VS board / yesterday's podium).
   // Kind + board mode come from ?m=<kind>&lm=<Mode>, falling back to the
   // storage-key path (`<kind>-<Mode>-<date>`) when the query is stripped.
-  const lb = (() => {
-    for (const k of LB_KINDS) {
-      if (mode === k) return { kind: k, lbMode: str(sp.lm) };
-      if (mode.startsWith(`${k}-`)) return { kind: k, lbMode: mode.slice(k.length + 1) };
-    }
-    return null;
-  })();
+  const lb = parseLeaderboardShare(sp, key);
   if (lb) {
     const lbModeDisp = lb.lbMode ? (MODE_DISPLAY[lb.lbMode] ?? lb.lbMode) : '';
     const shortDate = fromPath.date ? fmtDayShort(fromPath.date) : undefined;
