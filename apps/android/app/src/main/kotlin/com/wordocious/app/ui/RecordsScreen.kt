@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material.icons.filled.TrendingUp
@@ -61,6 +62,7 @@ import com.wordocious.app.data.LeaderboardService
 import com.wordocious.app.ui.theme.WTheme
 import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 
 /**
  * Records screen — ported from web /records/page.tsx.
@@ -246,6 +248,11 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
     // GUARDED valueOf: SWEEP has no `:core` GameMode → the indigo sweep accent.
     val accent = if (isSweep) SWEEP_ACCENT else runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(selectedMode)) }.getOrDefault(WTheme.primary)
 
+    // LEADERBOARD SHARE — today's board card (Solo or VS per the toggle).
+    val shareContext = androidx.compose.ui.platform.LocalContext.current
+    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
+    var sharingLb by remember { mutableStateOf(false) }
+
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ModePickerRow(selectedMode) { selectedMode = it }
         Spacer(Modifier.height(8.dp))
@@ -272,8 +279,32 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                // Solo|VS is meaningless for the composite Sweep board — hide it there.
-                if (!isSweep) SoloVsToggle(playType) { playType = it }
+                // Share + Solo|VS toggle (both meaningless for the composite
+                // Sweep board — hidden there). This view owns the Solo/VS
+                // toggle, so its share button is where the VS Battle card
+                // variant comes from (web records page parity).
+                if (!isSweep) {
+                    if (!loading && entries.isNotEmpty()) {
+                        Icon(
+                            Icons.Filled.Share, "Share leaderboard",
+                            tint = WTheme.textMuted.copy(alpha = if (sharingLb) 0.4f else 1f),
+                            modifier = Modifier.size(14.dp).clickableNoRipple {
+                                if (!sharingLb) {
+                                    sharingLb = true
+                                    shareScope.launch {
+                                        try {
+                                            com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
+                                                shareContext, selectedMode, playType,
+                                                entries, rankWindow, userId, userRank,
+                                            )
+                                        } finally { sharingLb = false }
+                                    }
+                                }
+                            },
+                        )
+                    }
+                    SoloVsToggle(playType) { playType = it }
+                }
             }
 
             // Player count + your rank/percentile (web/iOS parity — was missing on Android).
@@ -360,7 +391,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
         // Yesterday's podium sits below the board card and shows even when today's
         // board is still empty (iOS DailyRecordsView).
         if (!isSweep) {
-            Column(Modifier.padding(horizontal = 12.dp)) { YesterdayPodium(selectedMode, playType, onOpenProfile) }
+            Column(Modifier.padding(horizontal = 12.dp)) { YesterdayPodium(selectedMode, playType, userId, onOpenProfile) }
         }
         Spacer(Modifier.height(24.dp))
     }
@@ -383,7 +414,7 @@ private fun ModeIconBox(mode: String, accent: Color) {
 
 /** Yesterday's top-3 for the mode (collapsible). */
 @Composable
-private fun YesterdayPodium(mode: String, playType: String, onOpenProfile: (String) -> Unit) {
+private fun YesterdayPodium(mode: String, playType: String, userId: String?, onOpenProfile: (String) -> Unit) {
     var top3 by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var open by remember { mutableStateOf(false) }
     val accent = runCatching { modeAccent(com.wordocious.core.GameMode.valueOf(mode)) }.getOrDefault(WTheme.primary)
@@ -391,6 +422,10 @@ private fun YesterdayPodium(mode: String, playType: String, onOpenProfile: (Stri
     // iOS rotates the chevron 180° with an animation instead of swapping ▲/▼.
     val chevronRotation by animateFloatAsState(if (open) 180f else 0f, label = "podiumChevron")
     LaunchedEffect(mode, playType) { top3 = LeaderboardService.fetchYesterdayWinners(mode, playType) }
+    // Settled-podium share (web records YesterdayPodium parity).
+    val shareContext = androidx.compose.ui.platform.LocalContext.current
+    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
+    var sharing by remember { mutableStateOf(false) }
     if (top3.isEmpty()) return
     Column(
         Modifier.fillMaxWidth().padding(top = 8.dp).clip(RoundedCornerShape(16.dp))
@@ -404,6 +439,26 @@ private fun YesterdayPodium(mode: String, playType: String, onOpenProfile: (Stri
             Spacer(Modifier.size(5.dp))
             Text("YESTERDAY'S PODIUM", fontSize = 11.sp, fontWeight = FontWeight.Black, color = WTheme.text, letterSpacing = 0.5.sp)
             Spacer(Modifier.weight(1f))
+            // Share — only once the podium is open (web parity).
+            if (open) {
+                Icon(
+                    Icons.Filled.Share, "Share yesterday's podium",
+                    tint = WTheme.textMuted.copy(alpha = if (sharing) 0.4f else 1f),
+                    modifier = Modifier.size(14.dp).clickableNoRipple {
+                        if (!sharing) {
+                            sharing = true
+                            shareScope.launch {
+                                try {
+                                    com.wordocious.app.data.LeaderboardShare.shareYesterdayPodiumCard(
+                                        shareContext, mode, playType, top3, userId,
+                                    )
+                                } finally { sharing = false }
+                            }
+                        }
+                    },
+                )
+                Spacer(Modifier.size(8.dp))
+            }
             Icon(
                 Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted,
                 modifier = Modifier.size(12.dp).rotate(chevronRotation),

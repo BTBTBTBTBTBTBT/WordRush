@@ -79,6 +79,9 @@ object LeaderboardService {
         @SerialName("total_boards") val totalBoards: Int = 1,
         @SerialName("hints_used") val hintsUsed: Int = 0,
         @SerialName("vs_wins") val vsWins: Int = 0,
+        // Losses excluding draws (newer column) — the LEADERBOARD SHARE card's
+        // "W-L today" subline prefers it; null rows fall back to games-wins.
+        @SerialName("vs_losses") val vsLosses: Int? = null,
         @SerialName("vs_games") val vsGames: Int = 0,
         val completed: Boolean = false,
     ) {
@@ -196,7 +199,7 @@ object LeaderboardService {
 
     private const val COLS =
         "user_id,profiles!inner(username,avatar_url),composite_score,guess_count," +
-        "time_seconds,boards_solved,total_boards,hints_used,vs_wins,vs_games,completed"
+        "time_seconds,boards_solved,total_boards,hints_used,vs_wins,vs_losses,vs_games,completed"
 
     /** Today's daily leaderboard for a mode (mirrors getDailyLeaderboard). */
     suspend fun fetchDailyLeaderboard(

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.EmojiEvents
 import androidx.compose.material3.CircularProgressIndicator
@@ -55,6 +56,7 @@ import com.wordocious.app.data.AuthService
 import com.wordocious.app.data.LeaderboardService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import com.wordocious.app.ui.theme.WTheme
 
 internal val MODE_OPTIONS = listOf(
@@ -247,6 +249,14 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
 
     val modeLabel = MODE_OPTIONS.firstOrNull { it.first == selectedMode }?.second ?: selectedMode
 
+    // LEADERBOARD SHARE — today's board card + yesterday's podium card (web
+    // /daily parity). Single-tap, spoiler-free by construction, so no variant
+    // chooser. Sweep has no card design — its buttons stay hidden.
+    val shareContext = androidx.compose.ui.platform.LocalContext.current
+    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
+    var sharingLb by remember { mutableStateOf(false) }
+    var sharingPodium by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         // iOS keeps the title, countdown and mode grid INSIDE the scroll
         // container (ProfileTab `content`), so scrolling the board reclaims
@@ -316,10 +326,35 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             "LEADERBOARD", fontSize = 10.sp, fontWeight = FontWeight.Black,
                             color = WTheme.textMuted, letterSpacing = 0.8.sp,
                         )
-                        Text(
-                            "Daily games only", fontSize = 9.sp, fontWeight = FontWeight.Bold,
-                            color = WTheme.textMuted,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                "Daily games only", fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                                color = WTheme.textMuted,
+                            )
+                            // Today's-board share (web: Share icon beside the caption).
+                            if (!loading && entries.isNotEmpty()) {
+                                Icon(
+                                    Icons.Filled.Share, "Share leaderboard",
+                                    tint = WTheme.textMuted.copy(alpha = if (sharingLb) 0.4f else 1f),
+                                    modifier = Modifier.size(14.dp).clickableNoRipple {
+                                        if (!sharingLb) {
+                                            sharingLb = true
+                                            shareScope.launch {
+                                                try {
+                                                    com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
+                                                        shareContext, selectedMode, "solo",
+                                                        entries, rankWindow, userId, userRank,
+                                                    )
+                                                } finally { sharingLb = false }
+                                            }
+                                        }
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -403,15 +438,41 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             item {
                 Spacer(Modifier.height(16.dp))
                 Row(
-                    Modifier.fillMaxWidth().clickableNoRipple { showYesterday = !showYesterday }.padding(vertical = 8.dp),
+                    Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Yesterday's Winners", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        if (showYesterday) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                        null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp),
-                    )
+                    Row(
+                        Modifier.clickableNoRipple { showYesterday = !showYesterday },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("Yesterday's Winners", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted)
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            if (showYesterday) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                            null, tint = WTheme.textMuted, modifier = Modifier.size(16.dp),
+                        )
+                    }
+                    // Settled-podium share — only once the dropdown is open with
+                    // rows (web parity). Sweep has no card design.
+                    if (showYesterday && !isSweep && yesterday.isNotEmpty()) {
+                        Spacer(Modifier.width(6.dp))
+                        Icon(
+                            Icons.Filled.Share, "Share yesterday's podium",
+                            tint = WTheme.textMuted.copy(alpha = if (sharingPodium) 0.4f else 1f),
+                            modifier = Modifier.size(14.dp).clickableNoRipple {
+                                if (!sharingPodium) {
+                                    sharingPodium = true
+                                    shareScope.launch {
+                                        try {
+                                            com.wordocious.app.data.LeaderboardShare.shareYesterdayPodiumCard(
+                                                shareContext, selectedMode, "solo", yesterday, userId,
+                                            )
+                                        } finally { sharingPodium = false }
+                                    }
+                                }
+                            },
+                        )
+                    }
                 }
                 if (showYesterday) {
                     Column(
