@@ -96,7 +96,7 @@ export async function shareDailyLeaderboardCard(
     yesterdayRank,
   });
   if (!input) return null;
-  return shareResult(input, SHARE_SURFACE);
+  return shareResult(input, SHARE_SURFACE, { linkOnly: true });
 }
 
 export interface ShareYesterdayPodiumOpts {
@@ -123,5 +123,5 @@ export async function shareYesterdayPodiumCard(
     userId: opts.userId,
   });
   if (!input) return null;
-  return shareResult(input, SHARE_SURFACE);
+  return shareResult(input, SHARE_SURFACE, { linkOnly: true });
 }

@@ -222,6 +222,12 @@ export async function shareResult(
   /** share_events surface tag — post-game buttons keep the default; the daily
    *  leaderboard buttons pass 'leaderboard'. */
   surface: string = 'post_game',
+  /** Share the hosted URL alone (no image attachment). For cards whose /s/
+   *  unfurl IS the card (leaderboard), image+link would render TWICE in the
+   *  Messages compose sheet — the link preview already carries the pixels,
+   *  and it's tappable. Falls back to the image chain if there's no URL or
+   *  the link share fails for any reason other than the user cancelling. */
+  opts: { linkOnly?: boolean } = {},
 ): Promise<ShareResultOutcome> {
   let blob: Blob | null = null;
   try {
@@ -233,9 +239,22 @@ export async function shareResult(
   // Prefer a per-result URL (puzzle PNG uploaded behind it); fall back to the
   // bare site URL if the upload can't happen.
   let caption = buildShareCaption();
+  let hostedUrl: string | null = null;
   if (blob) {
-    const url = await uploadAndBuildShareUrl(blob, input);
-    if (url) caption = url;
+    hostedUrl = await uploadAndBuildShareUrl(blob, input);
+    if (hostedUrl) caption = hostedUrl;
+  }
+
+  if (opts.linkOnly && hostedUrl && typeof navigator !== 'undefined' && navigator.share) {
+    try {
+      await navigator.share({ url: hostedUrl });
+      logShareEvent('other', input.mode, surface);
+      return { via: 'share' };
+    } catch (e) {
+      // User cancelled the sheet — done, don't cascade into image fallbacks.
+      if ((e as Error)?.name === 'AbortError') return { via: 'failed' };
+      // Anything else (no share support, permission) → image chain below.
+    }
   }
 
   if (blob) {
