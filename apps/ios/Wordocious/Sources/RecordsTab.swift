@@ -332,9 +332,34 @@ struct DailyRecordsView: View {
     @State private var sweepEntries: [SweepEntry] = []
     @State private var sweepRank: (rank: Int, total: Int)?
     @State private var sweepLoading = false
+    // LEADERBOARD SHARE — this view owns the Solo/VS toggle, so its share
+    // button is where the VS Battle card variant comes from. Sweep has no
+    // card design (web records/page.tsx parity).
+    @State private var sharingLb = false
     private let sweepAccent = Color(hex: 0x4F46E5)
 
     private var accent: Color { homeModes.first { $0.dbKey == mode.rawValue }?.accent ?? Theme.primary }
+
+    private var shareButton: some View {
+        Button {
+            guard !sharingLb else { return }
+            sharingLb = true
+            Task {
+                await LeaderboardShareFlow.shareDaily(
+                    mode: mode, playType: playType,
+                    entries: entries, rankWindow: rankWindow,
+                    userId: auth.profile?.id, userRank: userRank)
+                sharingLb = false
+            }
+        } label: {
+            Image(systemName: "square.and.arrow.up")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Theme.textMuted)
+        }
+        .buttonStyle(.plain)
+        .opacity(sharingLb ? 0.4 : 1)
+        .accessibilityLabel("Share leaderboard")
+    }
 
     /// Custom inline Solo|VS toggle matching the web (icon + accent active state),
     /// replacing the iOS segmented control.
@@ -379,6 +404,7 @@ struct DailyRecordsView: View {
                         Text("Today").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     }
                     Spacer()
+                    if !loading && !entries.isEmpty { shareButton }
                     soloVsToggle
                 }
                 .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 8)
@@ -637,25 +663,50 @@ struct YesterdayPodiumCard: View {
     let mode: GameMode
     let playType: String
     let accent: Color
+    @EnvironmentObject private var auth: AuthService
     @State private var top3: [LeaderboardEntry] = []
     @State private var open = false
+    @State private var sharing = false
     private let medalColors = [Color(hex: 0xD97706), Color(hex: 0x9CA3AF), Color(hex: 0xB45309)]
 
     var body: some View {
         Group {
             if !top3.isEmpty {
                 VStack(spacing: 0) {
-                    Button { withAnimation { open.toggle() } } label: {
-                        HStack {
+                    // Header split into sibling buttons (web parity) so the
+                    // share icon is independently tappable next to the toggle.
+                    HStack {
+                        Button { withAnimation { open.toggle() } } label: {
                             HStack(spacing: 5) {
                                 Image(systemName: "crown.fill").font(.system(size: 11)).foregroundStyle(Color(hex: 0xD97706))
                                 Text("YESTERDAY'S PODIUM").font(Brand.font(11, .black)).tracking(0.5).foregroundStyle(Theme.textPrimary)
                             }
-                            Spacer()
-                            Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted).rotationEffect(.degrees(open ? 180 : 0))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }.buttonStyle(.plain)
+                        // Settled-podium share — only once the podium is open.
+                        if open {
+                            Button {
+                                guard !sharing else { return }
+                                sharing = true
+                                LeaderboardShareFlow.sharePodium(
+                                    mode: mode, playType: playType,
+                                    top3: top3, userId: auth.profile?.id)
+                                sharing = false
+                            } label: {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Theme.textMuted)
+                            }
+                            .buttonStyle(.plain)
+                            .opacity(sharing ? 0.4 : 1)
+                            .accessibilityLabel("Share yesterday's podium")
+                            .padding(.trailing, 6)
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
-                    }.buttonStyle(.plain)
+                        Button { withAnimation { open.toggle() } } label: {
+                            Image(systemName: "chevron.down").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.textMuted).rotationEffect(.degrees(open ? 180 : 0))
+                        }.buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 10)
                     if open {
                         Divider().overlay(Theme.border)
                         ForEach(Array(top3.enumerated()), id: \.element.id) { i, e in

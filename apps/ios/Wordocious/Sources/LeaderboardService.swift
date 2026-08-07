@@ -11,6 +11,11 @@ struct LeaderboardEntry: Identifiable, Decodable {
     let boardsSolved: Int
     let totalBoards: Int
     let hintsUsed: Int?
+    // VS-board stats (nil on older cached rows / non-VS queries) — feed the
+    // "3-1 today" subline on the VS leaderboard share card.
+    let vsWins: Int?
+    let vsLosses: Int?
+    let vsGames: Int?
     let completed: Bool
     let profiles: ProfileRef
 
@@ -28,6 +33,9 @@ struct LeaderboardEntry: Identifiable, Decodable {
         case boardsSolved = "boards_solved"
         case totalBoards = "total_boards"
         case hintsUsed = "hints_used"
+        case vsWins = "vs_wins"
+        case vsLosses = "vs_losses"
+        case vsGames = "vs_games"
         case completed
         case profiles
     }
@@ -106,7 +114,7 @@ enum LeaderboardService {
             .from("daily_results")
             .select("""
                 user_id, composite_score, guess_count, time_seconds, boards_solved,
-                total_boards, hints_used, vs_wins, vs_games, completed,
+                total_boards, hints_used, vs_wins, vs_losses, vs_games, completed,
                 profiles!inner(username, avatar_url)
                 """)
             .eq("day", value: day ?? todayLocal())
@@ -139,14 +147,17 @@ enum LeaderboardService {
 
     private struct ScoreOnly: Decodable { let composite_score: Double }
 
-    /// Current user's rank for today's daily (mirrors getUserDailyRank).
-    /// When `topEntries` — the already-fetched leaderboard page (and the limit
-    /// it was fetched with) — is provided and the user appears in it, rank
-    /// comes from their index: zero or one extra queries instead of three.
+    /// Current user's rank for a day's daily (mirrors getUserDailyRank) —
+    /// defaults to today; the leaderboard share card passes yesterday for the
+    /// "▲N vs yesterday" delta pill. When `topEntries` — the already-fetched
+    /// leaderboard page (and the limit it was fetched with) — is provided and
+    /// the user appears in it, rank comes from their index: zero or one extra
+    /// queries instead of three.
     static func userRank(gameMode: GameMode, userId: String, playType: String = "solo",
+                         day dayIn: String? = nil,
                          topEntries: [LeaderboardEntry]? = nil, topLimit: Int = 50) async -> (rank: Int, total: Int)? {
         let client = AuthService.shared.client
-        let day = todayLocal()
+        let day = dayIn ?? todayLocal()
         @Sendable func totalCount() async throws -> Int {
             try await client.from("daily_results")
                 .select("user_id", head: true, count: .exact)

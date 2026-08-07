@@ -1004,6 +1004,11 @@ struct LeaderboardTab: View {
     @State private var loading = false
     @State private var showYesterday = false
     @State private var showAuth = false
+    // LEADERBOARD SHARE — single-tap, spoiler-free by construction (names/
+    // scores/stats only), so no variant chooser. Sweep has no card design —
+    // its buttons stay hidden (web daily/page.tsx parity).
+    @State private var sharingLb = false
+    @State private var sharingPodium = false
     @State private var secondsLeft = secondsUntilLocalMidnight()
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     /// Today's completed dailies (seeded instantly from the on-device cache) so
@@ -1234,7 +1239,7 @@ struct LeaderboardTab: View {
                 CompletedDailyCard(mode: mode).id(mode)
                 if let r = userRank { rankBanner(r) }
 
-                HStack(alignment: .firstTextBaseline) {
+                HStack(alignment: .center) {
                     Text("LEADERBOARD").font(Brand.font(10, .black)).tracking(0.8)
                         .foregroundStyle(Theme.textMuted)
                     Spacer()
@@ -1243,6 +1248,26 @@ struct LeaderboardTab: View {
                     // sister played Unlimited and looked for her name).
                     Text("Daily games only").font(Brand.font(9, .bold))
                         .foregroundStyle(Theme.textMuted)
+                    if !loading && !entries.isEmpty {
+                        Button {
+                            guard !sharingLb else { return }
+                            sharingLb = true
+                            Task {
+                                await LeaderboardShareFlow.shareDaily(
+                                    mode: mode, playType: "solo",
+                                    entries: entries, rankWindow: rankWindow,
+                                    userId: auth.profile?.id, userRank: userRank)
+                                sharingLb = false
+                            }
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Theme.textMuted)
+                        }
+                        .buttonStyle(.plain)
+                        .opacity(sharingLb ? 0.4 : 1)
+                        .accessibilityLabel("Share leaderboard")
+                    }
                 }
 
                 if loading {
@@ -1278,11 +1303,31 @@ struct LeaderboardTab: View {
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                 }
 
-                Button { showYesterday.toggle() } label: {
-                    HStack(spacing: 6) {
-                        Text("Yesterday's Winners").font(Brand.font(12, .heavy))
-                        Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
-                    }.foregroundStyle(Theme.textMuted)
+                HStack(spacing: 8) {
+                    Button { showYesterday.toggle() } label: {
+                        HStack(spacing: 6) {
+                            Text("Yesterday's Winners").font(Brand.font(12, .heavy))
+                            Image(systemName: showYesterday ? "chevron.up" : "chevron.down").font(.system(size: 11))
+                        }.foregroundStyle(Theme.textMuted)
+                    }
+                    // Settled-podium share — only once the dropdown is open with rows.
+                    if showYesterday && !yesterday.isEmpty {
+                        Button {
+                            guard !sharingPodium else { return }
+                            sharingPodium = true
+                            LeaderboardShareFlow.sharePodium(
+                                mode: mode, playType: "solo",
+                                top3: yesterday, userId: auth.profile?.id)
+                            sharingPodium = false
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Theme.textMuted)
+                        }
+                        .buttonStyle(.plain)
+                        .opacity(sharingPodium ? 0.4 : 1)
+                        .accessibilityLabel("Share yesterday's podium")
+                    }
                 }
                 if showYesterday {
                     if yesterday.isEmpty {
