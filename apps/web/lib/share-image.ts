@@ -1233,20 +1233,45 @@ function drawLbRow(
     rankLine?: string;
     delta?: { text: string; improved: boolean };
     separator?: boolean;
+    /** You-row sits at the panel's first/last slot — bleed the highlight to
+     *  the panel edge and match its corner radius there. */
+    edgeTop?: boolean;
+    edgeBottom?: boolean;
+    /** Panel inner padding to consume when bleeding (default 16). */
+    bleed?: number;
   } = {},
 ): void {
   // Gold "you" highlight — full-bleed across the panel with a soft amber
   // glow instead of a hard border (founder polish note, Aug 7).
   if (row.isYou) {
+    const bleed = opts.bleed ?? 16;
+    const hy = opts.edgeTop ? y - bleed + 2 : y + 4;
+    const hb = opts.edgeBottom ? y + h + bleed - 2 : y + h - 4;
+    const rTop = opts.edgeTop ? 26 : 16;
+    const rBot = opts.edgeBottom ? 26 : 16;
+    const goldPath = () => {
+      const gx = x + 2, gw = w - 4, gb = hb;
+      ctx.beginPath();
+      ctx.moveTo(gx + rTop, hy);
+      ctx.lineTo(gx + gw - rTop, hy);
+      ctx.arcTo(gx + gw, hy, gx + gw, hy + rTop, rTop);
+      ctx.lineTo(gx + gw, gb - rBot);
+      ctx.arcTo(gx + gw, gb, gx + gw - rBot, gb, rBot);
+      ctx.lineTo(gx + rBot, gb);
+      ctx.arcTo(gx, gb, gx, gb - rBot, rBot);
+      ctx.lineTo(gx, hy + rTop);
+      ctx.arcTo(gx, hy, gx + rTop, hy, rTop);
+      ctx.closePath();
+    };
     ctx.save();
     ctx.shadowColor = 'rgba(245, 158, 11, 0.5)';
     ctx.shadowBlur = 26;
-    drawRoundRect(ctx, x + 2, y + 4, w - 4, h - 8, 16);
+    goldPath();
     ctx.fillStyle = '#fef3c7';
     ctx.fill();
     ctx.restore();
-    drawRoundRect(ctx, x + 2, y + 4, w - 4, h - 8, 16);
-    const goldGlow = ctx.createLinearGradient(x, y, x, y + h);
+    goldPath();
+    const goldGlow = ctx.createLinearGradient(x, hy, x, hb);
     goldGlow.addColorStop(0, 'rgba(252, 211, 77, 0.55)');
     goldGlow.addColorStop(1, 'rgba(245, 158, 11, 0.25)');
     ctx.strokeStyle = goldGlow;
@@ -1439,6 +1464,9 @@ function drawLeaderboardCard(
     drawLbRow(ctx, row, panelX, y, panelW, rowH, {
       delta: row.isYou ? input.delta : undefined,
       separator: i < input.rows.length - 1 || !!input.you,
+      edgeTop: i === 0,
+      edgeBottom: i === input.rows.length - 1 && !input.you,
+      bleed: pad,
     });
     y += rowH;
   });
@@ -1454,6 +1482,8 @@ function drawLeaderboardCard(
     drawLbRow(ctx, input.you, panelX, y, panelW, rowH, {
       rankLine: input.youRankLine,
       delta: input.delta,
+      edgeBottom: true,
+      bleed: pad,
     });
   }
 
