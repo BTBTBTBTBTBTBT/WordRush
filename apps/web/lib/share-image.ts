@@ -5,6 +5,21 @@ import { getTodayLocal } from './daily-service';
 import { TILE_HEX, WIN_FG, WIN_BG, BOARD_WIN_TINT } from './tile-theme';
 import { MODES } from './modes.generated';
 
+
+// next/font registers Nunito under a HASHED family applied to <body>; the
+// literal "Nunito" never exists in document.fonts, so canvas silently drew
+// every share card in the system fallback (founder caught the sharper
+// letterforms on the leaderboard card, Aug 7). Resolve the real stack from
+// the body's computed style at render time.
+let SHARE_FONT_STACK = '"Nunito", system-ui, -apple-system, sans-serif';
+function resolveShareFontStack(): void {
+  if (typeof document === 'undefined' || !document.body) return;
+  try {
+    const fam = getComputedStyle(document.body).fontFamily;
+    if (fam && fam.length > 0) SHARE_FONT_STACK = fam;
+  } catch { /* keep fallback */ }
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────────────────────────────────
@@ -347,7 +362,7 @@ function drawTile(
   // evaluated rows.
   if (letter && state !== 'EMPTY') {
     ctx.save();
-    ctx.font = `900 ${Math.max(10, Math.floor(size * 0.55))}px "Nunito", system-ui, -apple-system, sans-serif`;
+    ctx.font = `900 ${Math.max(10, Math.floor(size * 0.55))}px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -479,7 +494,7 @@ function drawBoardCard(
   if (reveal?.answerCaption) {
     const captionY = boardCenterY + totalH / 2 + cardPad + borderWidth + ANSWER_CAPTION_H / 2 + 2;
     ctx.save();
-    ctx.font = `900 ${Math.min(30, Math.max(16, Math.floor(tile * 0.6)))}px "Nunito", system-ui, -apple-system, sans-serif`;
+    ctx.font = `900 ${Math.min(30, Math.max(16, Math.floor(tile * 0.6)))}px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = LOSS_FG;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -497,7 +512,7 @@ function drawWinLossPill(
   const label = won ? 'Win' : 'Loss';
   const bg = won ? WIN_BG : LOSS_BG;
   const fg = won ? WIN_FG : LOSS_FG;
-  ctx.font = '700 22px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `700 22px ${SHARE_FONT_STACK}`;
   const labelW = ctx.measureText(label).width;
   const padX = 16;
   const padY = 8;
@@ -520,7 +535,7 @@ function drawCategoryPill(
   label: string,
   color: string,
 ): { width: number; height: number } {
-  ctx.font = '700 18px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `700 18px ${SHARE_FONT_STACK}`;
   const w = ctx.measureText(label).width + 24;
   const h = 30;
   drawRoundRect(ctx, x, y, w, h, 14);
@@ -555,7 +570,7 @@ function drawHeader(
   // Wordmark
   ctx.save();
   const wordmarkY = 72;
-  ctx.font = '900 56px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 56px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const gradient = ctx.createLinearGradient(width / 2 - 200, wordmarkY - 48, width / 2 + 200, wordmarkY + 8);
@@ -567,7 +582,7 @@ function drawHeader(
 
   // Mode name in mode accent color
   const modeY = wordmarkY + 60;
-  ctx.font = '900 38px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 38px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = MODE_ACCENT[input.mode];
@@ -595,7 +610,7 @@ function drawHeader(
     statsText = `${guessDisplay} · ${timeStr} · ${dateStr}`;
   }
 
-  ctx.font = '700 24px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `700 24px ${SHARE_FONT_STACK}`;
   ctx.fillStyle = TEXT_MUTED;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
@@ -611,13 +626,13 @@ function drawHeader(
 
   const winPill = { width: 0, height: 38 };
   // Measure win/loss pill without drawing
-  ctx.font = '700 22px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `700 22px ${SHARE_FONT_STACK}`;
   const pillLabel = input.won ? 'Win' : 'Loss';
   const pillLabelW = ctx.measureText(pillLabel).width;
   winPill.width = pillLabelW + 32;
 
   if (input.layout === 'single' && input.category) {
-    ctx.font = '700 18px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `700 18px ${SHARE_FONT_STACK}`;
     categoryPillW = ctx.measureText(input.category).width + 24;
   }
 
@@ -630,7 +645,7 @@ function drawHeader(
   const blockStartX = width / 2 - blockWidth / 2;
 
   // stats text
-  ctx.font = '700 24px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `700 24px ${SHARE_FONT_STACK}`;
   ctx.fillStyle = TEXT_MUTED;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
@@ -649,7 +664,7 @@ function drawHeader(
 }
 
 function drawFooter(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-  ctx.font = '700 22px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `700 22px ${SHARE_FONT_STACK}`;
   ctx.fillStyle = FOOT_COLOR;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
@@ -802,25 +817,25 @@ function drawGauntlet(
     ctx.stroke();
 
     // Stage index
-    ctx.font = '900 32px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 32px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = won ? WIN_FG : LOSS_FG;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${i + 1}`, horizontalPad + 32, chipY + chipH / 2);
 
     // Stage name
-    ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 30px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_DARK;
     ctx.fillText(stage.name, horizontalPad + 80, chipY + chipH / 2 - 12);
 
     // Stage stats
-    ctx.font = '700 20px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `700 20px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_MUTED;
     const statsLine = `${stage.boardsSolved}/${stage.totalBoards} boards · ${stage.guesses} guesses`;
     ctx.fillText(statsLine, horizontalPad + 80, chipY + chipH / 2 + 16);
 
     // Pass/fail mark at right
-    ctx.font = '900 56px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 56px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = won ? WIN_FG : LOSS_FG;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
@@ -937,7 +952,7 @@ function drawProfileCard(
 
   // Wordmark
   ctx.save();
-  ctx.font = '900 52px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 52px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const wm = ctx.createLinearGradient(cx - 200, 50, cx + 200, 100);
@@ -948,14 +963,14 @@ function drawProfileCard(
   ctx.restore();
 
   // Username (accent)
-  ctx.font = '900 76px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 76px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = accent;
   ctx.fillText(input.username, cx, 220);
 
   // Level · tier
-  ctx.font = '700 30px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `700 30px ${SHARE_FONT_STACK}`;
   ctx.fillStyle = TEXT_MUTED;
   ctx.fillText(`Level ${input.level} · ${input.tier}`, cx, 270);
 
@@ -986,10 +1001,10 @@ function drawProfileCard(
     ctx.stroke();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.font = '900 56px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 56px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = '#1A1A2E';
     ctx.fillText(t.v, x + 28, y + 82);
-    ctx.font = '700 24px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `700 24px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_MUTED;
     ctx.fillText(t.l, x + 28, y + 118);
   });
@@ -1006,7 +1021,7 @@ function drawDailySweepCard(
   // Wordmark
   const wordmarkY = 72;
   ctx.save();
-  ctx.font = '900 56px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 56px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const wm = ctx.createLinearGradient(width / 2 - 200, wordmarkY - 48, width / 2 + 200, wordmarkY + 8);
@@ -1018,7 +1033,7 @@ function drawDailySweepCard(
 
   // Title
   const titleY = wordmarkY + 70;
-  ctx.font = '900 52px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 52px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const tg = ctx.createLinearGradient(width / 2 - 260, titleY - 44, width / 2 + 260, titleY + 8);
@@ -1031,7 +1046,7 @@ function drawDailySweepCard(
   const date = input.date ?? new Date(getTodayLocal() + 'T00:00:00');
   const statsText = `${input.won}/${input.total} won · ${formatTime(input.totalTimeSeconds)} · ${input.totalScore.toLocaleString()} pts · ${formatShortDate(date)}`;
   const metaY = titleY + 50;
-  ctx.font = '700 26px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `700 26px ${SHARE_FONT_STACK}`;
   ctx.fillStyle = TEXT_MUTED;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -1073,7 +1088,7 @@ function drawDailySweepCard(
     // the glyph — same treatment as the home cards + the native share cards.
     if (!drawSweepBadgeIcon(ctx, g.mode, badgeX + badge / 2, badgeY + badge / 2, badge * 0.56)) {
       ctx.fillStyle = '#ffffff';
-      ctx.font = `900 ${MODE_SHARE_GLYPH[g.mode].length >= 3 ? 24 : 30}px "Nunito", system-ui, -apple-system, sans-serif`;
+      ctx.font = `900 ${MODE_SHARE_GLYPH[g.mode].length >= 3 ? 24 : 30}px ${SHARE_FONT_STACK}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(MODE_SHARE_GLYPH[g.mode], badgeX + badge / 2, badgeY + badge / 2 + 1);
@@ -1081,20 +1096,20 @@ function drawDailySweepCard(
 
     const textX = badgeX + badge + 22;
     // Mode name
-    ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 30px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_DARK;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(g.modeLabel, textX, rowY + rowH / 2 - 13);
 
     // Per-game stats
-    ctx.font = '700 21px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `700 21px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_MUTED;
     const guessDisp = g.won ? `${g.guesses}g` : 'X';
     ctx.fillText(`${guessDisp} · ${formatTime(g.timeSeconds)} · ${g.score.toLocaleString()} pts`, textX, rowY + rowH / 2 + 15);
 
     // Pass/fail mark at right
-    ctx.font = '900 48px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 48px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = g.won ? WIN_FG : LOSS_FG;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
@@ -1196,7 +1211,7 @@ function drawLbRankGlyph(ctx: CanvasRenderingContext2D, rank: number, cx: number
   else if (rank === 2) drawLucideStroke(ctx, 'medal', cx, cy, 40, RANK_ICON_COLORS[1]);
   else if (rank === 3) drawLucideStroke(ctx, 'medal', cx, cy, 40, RANK_ICON_COLORS[2]);
   else {
-    ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 30px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_MUTED;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1237,12 +1252,12 @@ function drawLbRow(
   const rightX = x + w - 30;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  ctx.font = '900 34px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 34px ${SHARE_FONT_STACK}`;
   ctx.fillStyle = TEXT_DARK;
   ctx.fillText(row.scoreDisplay, rightX, row.subline ? midY - 13 : midY);
   let rightBlockW = ctx.measureText(row.scoreDisplay).width;
   if (row.subline) {
-    ctx.font = '700 21px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `700 21px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_MUTED;
     ctx.fillText(row.subline, rightX, midY + 16);
     rightBlockW = Math.max(rightBlockW, ctx.measureText(row.subline).width);
@@ -1253,19 +1268,19 @@ function drawLbRow(
   const nameMaxW = w - 96 - 30 - rightBlockW - 24;
   const nameY = opts.rankLine ? midY - 14 : midY;
   ctx.textAlign = 'left';
-  ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 30px ${SHARE_FONT_STACK}`;
   let reserved = 0;
   if (row.isYou) {
-    ctx.font = '900 24px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 24px ${SHARE_FONT_STACK}`;
     reserved += ctx.measureText(' · YOU').width;
-    ctx.font = '900 30px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 30px ${SHARE_FONT_STACK}`;
   }
   const name = clampText(ctx, row.name, Math.max(60, nameMaxW - reserved));
   ctx.fillStyle = TEXT_DARK;
   ctx.fillText(name, nameX, nameY);
   let cursorX = nameX + ctx.measureText(name).width;
   if (row.isYou) {
-    ctx.font = '900 24px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 24px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = '#d97706';
     ctx.fillText(' · YOU', cursorX, nameY + 1);
     cursorX += ctx.measureText(' · YOU').width;
@@ -1278,13 +1293,13 @@ function drawLbRow(
     const lineY = midY + 17;
     let lx = nameX;
     if (opts.rankLine) {
-      ctx.font = '800 21px "Nunito", system-ui, -apple-system, sans-serif';
+      ctx.font = `800 21px ${SHARE_FONT_STACK}`;
       ctx.fillStyle = '#b45309';
       ctx.fillText(opts.rankLine, lx, lineY);
       lx += ctx.measureText(opts.rankLine).width + 12;
     }
     if (opts.delta) {
-      ctx.font = '800 18px "Nunito", system-ui, -apple-system, sans-serif';
+      ctx.font = `800 18px ${SHARE_FONT_STACK}`;
       const pillText = opts.delta.text;
       const pillW = ctx.measureText(pillText).width + 20;
       const pillH = 28;
@@ -1324,7 +1339,7 @@ function drawLeaderboardCard(
   // Wordmark — the established two-tone (violet→pink) treatment.
   const wordmarkY = 96;
   ctx.save();
-  ctx.font = '900 60px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 60px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   const wm = ctx.createLinearGradient(width / 2 - 220, wordmarkY - 52, width / 2 + 220, wordmarkY + 8);
@@ -1340,7 +1355,7 @@ function drawLeaderboardCard(
   ctx.save();
   const anyCtx = ctx as unknown as { letterSpacing?: string };
   try { anyCtx.letterSpacing = '10px'; } catch { /* older engines */ }
-  ctx.font = '900 36px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `900 36px ${SHARE_FONT_STACK}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = theme.label;
@@ -1351,7 +1366,7 @@ function drawLeaderboardCard(
   // Chips: mode (accent bg; swords glyph on the VS variant) + date/puzzle.
   const chipH = 56;
   const chipY = labelY + 36;
-  const chipFont = '800 27px "Nunito", system-ui, -apple-system, sans-serif';
+  const chipFont = `800 27px ${SHARE_FONT_STACK}`;
   ctx.font = chipFont;
   const swordsSize = input.variant === 'vs' ? 30 : 0;
   const swordsGap = input.variant === 'vs' ? 10 : 0;
@@ -1421,7 +1436,7 @@ function drawLeaderboardCard(
 
   if (input.you) {
     // "• • •" divider between the compressed top rows and the sharer's row.
-    ctx.font = '900 26px "Nunito", system-ui, -apple-system, sans-serif';
+    ctx.font = `900 26px ${SHARE_FONT_STACK}`;
     ctx.fillStyle = TEXT_MUTED;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1434,7 +1449,7 @@ function drawLeaderboardCard(
   }
 
   // Footer hook.
-  ctx.font = '800 29px "Nunito", system-ui, -apple-system, sans-serif';
+  ctx.font = `800 29px ${SHARE_FONT_STACK}`;
   ctx.fillStyle = theme.footer;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
@@ -1451,6 +1466,8 @@ function band(input: ShareLeaderboardInput): number {
 // ──────────────────────────────────────────────────────────────────────────
 
 export async function generateShareImage(input: ShareImageInput): Promise<Blob | null> {
+  resolveShareFontStack();
+  try { await (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready; } catch { /* draw anyway */ }
   if (typeof document === 'undefined') return null;
   const isVertical =
     input.layout === 'daily-sweep' ||
