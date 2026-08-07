@@ -1388,28 +1388,28 @@ function drawLeaderboardCard(
   ctx.fillStyle = TEXT_MUTED;
   ctx.fillText(input.dateChip, chipX + 22, chipY + chipH / 2 + 1);
 
-  // Rows panel.
+  // Rows panel — sized to its content, then centered in the space between
+  // the chips and the footer, so short boards (3-4 rows) don't strand dead
+  // padding above the first and below the last row (founder note, Aug 7).
   const panelX = 64;
   const panelW = width - panelX * 2;
-  const panelTop = chipY + chipH + 40;
+  const areaTop = chipY + chipH + 40;
   const footerY = height - 52;
-  const panelBottom = footerY - 46;
-  drawRoundRect(ctx, panelX, panelTop, panelW, panelBottom - panelTop, 28);
+  const areaBottom = footerY - 46;
+  const pad = 16;
+  const dividerH = input.you ? 46 : 0;
+  const nRows = input.rows.length + (input.you ? 1 : 0);
+  if (!nRows) return;
+  const rowH = Math.min(band(input), (areaBottom - areaTop - pad * 2 - dividerH) / nRows);
+  const contentH = rowH * nRows + dividerH + pad * 2;
+  const panelTop = areaTop + (areaBottom - areaTop - contentH) / 2;
+  drawRoundRect(ctx, panelX, panelTop, panelW, contentH, 28);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
   ctx.strokeStyle = theme.panelBorder;
   ctx.lineWidth = 3;
   ctx.stroke();
-
-  const pad = 16;
-  const innerTop = panelTop + pad;
-  const innerH = panelBottom - panelTop - pad * 2;
-  const dividerH = input.you ? 46 : 0;
-  const nRows = input.rows.length + (input.you ? 1 : 0);
-  if (!nRows) return;
-  const rowH = Math.min(band(input), (innerH - dividerH) / nRows);
-  const usedH = rowH * nRows + dividerH;
-  let y = innerTop + (innerH - usedH) / 2;
+  let y = panelTop + pad;
 
   input.rows.forEach((row, i) => {
     drawLbRow(ctx, row, panelX, y, panelW, rowH, {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play, Share2 } from 'lucide-react';
+import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play, Share } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -526,7 +526,7 @@ export default function DailyPage() {
                 className="p-1 -my-1 active:scale-95 transition-transform"
                 style={{ color: 'var(--color-text-muted)', opacity: sharingLb ? 0.4 : 1 }}
               >
-                <Share2 className="w-3.5 h-3.5" />
+                <Share className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -607,7 +607,7 @@ export default function DailyPage() {
               className="p-1 -my-1 active:scale-95 transition-transform"
               style={{ color: 'var(--color-text-muted)', opacity: sharingPodium ? 0.4 : 1 }}
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share className="w-3.5 h-3.5" />
             </button>
           )}
         </div>

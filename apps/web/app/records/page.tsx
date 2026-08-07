@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star, Share2 } from 'lucide-react';
+import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star, Share } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { formatScore } from '@/lib/composite-scoring';
@@ -375,7 +375,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                   className="p-1 active:scale-95 transition-transform"
                   style={{ color: 'var(--color-text-muted)', opacity: sharingLb ? 0.4 : 1 }}
                 >
-                  <Share2 className="w-3.5 h-3.5" />
+                  <Share className="w-3.5 h-3.5" />
                 </button>
               )}
               <div
@@ -569,7 +569,7 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
               className="p-1 -my-1 active:scale-95 transition-transform"
               style={{ color: 'var(--color-text-muted)', opacity: sharing ? 0.4 : 1 }}
             >
-              <Share2 className="w-3.5 h-3.5" />
+              <Share className="w-3.5 h-3.5" />
             </button>
           )}
           <button onClick={() => setOpen((o) => !o)} aria-label="Toggle yesterday's podium">
