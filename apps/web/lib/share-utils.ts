@@ -109,8 +109,16 @@ async function tryClipboardImage(blob: Blob, caption: string): Promise<boolean> 
 /** /s/ kind for a leaderboard card — also its storage-key prefix, so the
  *  landing page can recover kind + board mode from the path alone when a
  *  platform strips the query string (see share-page-copy.parseShareKey). */
-function leaderboardKind(input: ShareLeaderboardInput): 'Leaderboard' | 'VsLeaderboard' | 'Podium' {
-  return input.variant === 'vs' ? 'VsLeaderboard' : input.variant === 'podium' ? 'Podium' : 'Leaderboard';
+function leaderboardKind(
+  input: ShareLeaderboardInput,
+): 'Leaderboard' | 'VsLeaderboard' | 'Podium' | 'FriendsBoard' | 'FriendsPodium' {
+  switch (input.variant) {
+    case 'vs': return 'VsLeaderboard';
+    case 'podium': return 'Podium';
+    case 'friends': return 'FriendsBoard';
+    case 'friendsPodium': return 'FriendsPodium';
+    default: return 'Leaderboard';
+  }
 }
 
 async function uploadAndBuildShareUrl(blob: Blob, input: ShareImageInput): Promise<string | null> {

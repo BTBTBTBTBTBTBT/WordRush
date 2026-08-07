@@ -32,12 +32,15 @@ export const MODE_ROUTE: Record<string, string> = {
   Leaderboard: '/daily',
   VsLeaderboard: '/records',
   Podium: '/daily',
+  // FRIENDS (§207): friends-only board + podium snapshots.
+  FriendsBoard: '/daily',
+  FriendsPodium: '/daily',
 };
 
 /** The three daily-leaderboard /s/ kinds (lib/share-utils leaderboardKind).
  *  Storage keys read `<kind>-<Mode>-<yyyy-mm-dd>`; the query carries
  *  m=<kind> & lm=<Mode> (+ r/tp for the sharer's rank). */
-const LB_KINDS = ['Leaderboard', 'VsLeaderboard', 'Podium'] as const;
+const LB_KINDS = ['FriendsBoard', 'FriendsPodium', 'Leaderboard', 'VsLeaderboard', 'Podium'] as const;
 
 export type LeaderboardShareKind = (typeof LB_KINDS)[number];
 
@@ -120,7 +123,7 @@ export function boardDayStatus(
   date: string | undefined,
   todayLocal: string,
 ): 'live' | 'final' {
-  if (kind === 'Podium') return 'final';
+  if (kind === 'Podium' || kind === 'FriendsPodium') return 'final';
   return date === todayLocal ? 'live' : 'final';
 }
 
@@ -177,12 +180,31 @@ export function buildCopy(sp: SP, key: string[] = []): ShareCopy {
     const boardBits = [lbModeDisp, shortDate].filter(Boolean).join(' ');
     const boardDisp = lbModeDisp || 'daily';
 
-    if (lb.kind === 'Podium') {
+    if (lb.kind === 'Podium' || lb.kind === 'FriendsPodium') {
+      const friendsPodium = lb.kind === 'FriendsPodium';
+      const podiumName = friendsPodium ? 'Friends Podium' : 'Yesterday’s Podium';
       const title = boardBits
-        ? `Wordocious Yesterday’s Podium — ${boardBits}`
-        : 'Wordocious Yesterday’s Podium';
-      const description = `Yesterday’s ${boardDisp} podium is settled. ${PLAY_HOOK}`;
-      return { mode: lb.kind, modeDisp: 'Yesterday’s Podium', won: false, stats: boardBits, title, description };
+        ? `Wordocious ${podiumName} — ${boardBits}`
+        : `Wordocious ${podiumName}`;
+      const description = friendsPodium
+        ? `Yesterday’s ${boardDisp} podium among friends is settled. ${PLAY_HOOK}`
+        : `Yesterday’s ${boardDisp} podium is settled. ${PLAY_HOOK}`;
+      return { mode: lb.kind, modeDisp: podiumName, won: false, stats: boardBits, title, description };
+    }
+
+    // Friends board: the brag is friend-rank of friend-count (r/tp carry the
+    // FRIENDS numbers on this kind — dense #1..N, bible §207).
+    if (lb.kind === 'FriendsBoard') {
+      const title = boardBits
+        ? `Wordocious Friends Leaderboard — ${boardBits}`
+        : 'Wordocious Friends Leaderboard';
+      const rank = Number(str(sp.r)) || 0;
+      const tp = Number(str(sp.tp)) || 0;
+      const standing = rank > 0 && tp > 0 ? `#${rank} of ${tp}` : rank > 0 ? `#${rank}` : '';
+      const description = standing
+        ? `I’m ${standing} among my friends on today’s ${boardDisp} board. Can you beat me? ${PLAY_HOOK}`
+        : `Today’s ${boardDisp} board among friends is live. ${PLAY_HOOK}`;
+      return { mode: lb.kind, modeDisp: 'Friends Leaderboard', won: false, stats: boardBits, title, description };
     }
 
     const isVs = lb.kind === 'VsLeaderboard';

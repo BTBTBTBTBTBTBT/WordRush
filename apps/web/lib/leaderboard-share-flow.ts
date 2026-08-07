@@ -43,6 +43,13 @@ export interface ShareDailyLeaderboardOpts {
   userRank?: { rank: number; totalPlayers: number } | null;
   /** The sharer's row if the page already holds it (top-50 list / rank window). */
   userEntry?: LeaderboardEntry | null;
+  /**
+   * FRIENDS (§207): when set, this is a friends-board share — ranks in
+   * `ranked`/`userRank` are dense friend ranks, the card wears the friends
+   * identity, and both extra lookups run against the friends-filtered board
+   * (the global offset-window would index the wrong list).
+   */
+  friendIds?: string[];
 }
 
 /** Share today's board (solo or VS variant per the page's toggle). Returns
@@ -53,32 +60,49 @@ export async function shareDailyLeaderboardCard(
   const meta = modeMeta(opts.dbMode);
   if (!meta || opts.ranked.length === 0) return null;
 
+  const friends = !!opts.friendIds?.length;
   const inTop5 = !!opts.userId && opts.ranked.slice(0, 5).some((r) => r.entry.user_id === opts.userId);
 
   // Sharer ranks below the top 5 and the page doesn't hold their row → read a
   // small window around their offset in the same ranked ordering the board
   // uses (ties break by created_at, so the exact offset can land on a tied
   // neighbor — the window absorbs that). Not found → the card simply omits
-  // the you-row.
+  // the you-row. Friends boards skip this: the whole board is in `ranked`
+  // (it's your friends list), so a missing row means "didn't play".
   let userEntry = opts.userEntry ?? null;
   if (opts.userId && opts.userRank && !inTop5 && !userEntry) {
-    try {
-      const offset = Math.max(0, opts.userRank.rank - 6);
-      const windowRows = await fetchDailyLeaderboard(opts.dbMode, opts.playType, opts.day, 11, offset);
-      userEntry = windowRows.find((r) => r.user_id === opts.userId) ?? null;
-    } catch {
-      userEntry = null;
+    if (friends) {
+      userEntry = opts.ranked.find((r) => r.entry.user_id === opts.userId)?.entry ?? null;
+    } else {
+      try {
+        const offset = Math.max(0, opts.userRank.rank - 6);
+        const windowRows = await fetchDailyLeaderboard(opts.dbMode, opts.playType, opts.day, 11, offset);
+        userEntry = windowRows.find((r) => r.user_id === opts.userId) ?? null;
+      } catch {
+        userEntry = null;
+      }
     }
   }
 
   // Yesterday's final rank for the delta pill — only meaningful when the
   // sharer is on today's board at all. Omitted (null) when they didn't play
-  // yesterday, exactly per spec.
+  // yesterday, exactly per spec. Friends mode compares friend-rank to
+  // friend-rank: yesterday's board is refetched with the same id filter and
+  // dense-ranked, so ▲/▼ means movement among your friends.
   let yesterdayRank: number | null = null;
   if (opts.userId && opts.userRank) {
     try {
-      const y = await getUserDailyRank(opts.userId, opts.dbMode, opts.playType, opts.yesterday);
-      yesterdayRank = y?.rank ?? null;
+      if (friends) {
+        const yRows = await fetchDailyLeaderboard(
+          opts.dbMode, opts.playType, opts.yesterday, 50, 0,
+          [...new Set([...opts.friendIds!, opts.userId])],
+        );
+        const idx = yRows.findIndex((r) => r.user_id === opts.userId);
+        yesterdayRank = idx >= 0 ? idx + 1 : null;
+      } else {
+        const y = await getUserDailyRank(opts.userId, opts.dbMode, opts.playType, opts.yesterday);
+        yesterdayRank = y?.rank ?? null;
+      }
     } catch {
       yesterdayRank = null;
     }
@@ -86,6 +110,7 @@ export async function shareDailyLeaderboardCard(
 
   const input = buildDailyLeaderboardShareInput({
     variant: opts.playType === 'vs' ? 'vs' : 'solo',
+    friends,
     mode: meta.mode,
     modeLabel: meta.label,
     day: opts.day,
@@ -106,6 +131,8 @@ export interface ShareYesterdayPodiumOpts {
   day: string;
   ranked: RankedEntry[];
   userId?: string | null;
+  /** FRIENDS (§207): podium among friends — friends identity + copy. */
+  friends?: boolean;
 }
 
 /** Share yesterday's settled podium (top 3, "· Final" chip). */
@@ -116,6 +143,7 @@ export async function shareYesterdayPodiumCard(
   if (!meta) return null;
   const input = buildYesterdayPodiumShareInput({
     playType: opts.playType,
+    friends: opts.friends,
     mode: meta.mode,
     modeLabel: meta.label,
     day: opts.day,

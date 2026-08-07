@@ -136,6 +136,22 @@ describe('buildDailyLeaderboardShareInput', () => {
     expect(input.rows[0].subline).toBe('3-1 today');
     expect(input.footer).toBe('Think you can take them? wordocious.com');
   });
+
+  it('renders the FRIENDS identity (§207): friends variant, dense friend ranks, invite footer', () => {
+    const ranked: RankedEntry[] = [
+      { rank: 1, entry: entry({ user_id: 'f1', username: 'doug', composite_score: 2100 }) },
+      { rank: 2, entry: entry({ user_id: 'me', username: 'brian', composite_score: 2000 }) },
+    ];
+    const input = buildDailyLeaderboardShareInput({
+      variant: 'solo', friends: true, mode: 'Classic', modeLabel: 'Classic', day: '2026-08-08',
+      ranked, userId: 'me', userRank: { rank: 2, totalPlayers: 2 },
+    })!;
+    expect(input.variant).toBe('friends');
+    expect(input.modeChip).toBe('Classic'); // sublines/chip still solo-flavored
+    expect(input.shareRank).toBe(2);
+    expect(input.sharePlayers).toBe(2); // r/tp = friend rank of friend count
+    expect(input.footer).toBe('Add your friends — play free at wordocious.com');
+  });
 });
 
 describe('buildYesterdayPodiumShareInput', () => {
@@ -150,6 +166,15 @@ describe('buildYesterdayPodiumShareInput', () => {
     expect(input.rows[2].isYou).toBe(true);
     expect(input.dateChip).toBe('Aug 6, 2026 · Final');
     expect(input.footer).toBe('Today’s board is open — wordocious.com');
+  });
+
+  it('renders the friendsPodium variant when the toggle is on (§207)', () => {
+    const input = buildYesterdayPodiumShareInput({
+      playType: 'solo', friends: true, mode: 'Classic', modeLabel: 'Classic', day: '2026-08-06',
+      ranked: board(3), userId: 'u3',
+    })!;
+    expect(input.variant).toBe('friendsPodium');
+    expect(input.dateChip).toBe('Aug 6, 2026 · Final');
   });
 
   it('returns null when yesterday had no finishers', () => {

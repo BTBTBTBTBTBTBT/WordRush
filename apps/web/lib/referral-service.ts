@@ -118,6 +118,39 @@ export async function redeemReferral(userId: string, code: string): Promise<
     console.error('[referrals] inviter reward failed (friend trial unaffected):', e);
   }
 
+  // FRIENDS (§207) auto-friend: your recruiter is your first rival. Best
+  // effort — an accepted friendship lands unless the pair is blocked or a
+  // row already exists (the pair-unique index makes this idempotent).
+  try {
+    const blocked = await sb.from('blocks')
+      .select('blocker_id')
+      .or(`and(blocker_id.eq.${ref.inviter_id},blocked_id.eq.${userId}),and(blocker_id.eq.${userId},blocked_id.eq.${ref.inviter_id})`)
+      .limit(1);
+    if (!(blocked.data?.length)) {
+      const { error: fErr } = await sb.from('friendships').insert({
+        requester_id: ref.inviter_id,
+        addressee_id: userId,
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+      });
+      if (!fErr) {
+        const { data: invitee } = await sb.from('profiles')
+          .select('username').eq('id', userId).maybeSingle();
+        const { broadcastPush } = await import('./push/broadcast');
+        void broadcastPush(
+          {
+            title: 'Your invite worked 🎉',
+            body: `${invitee?.username ?? 'Your friend'} joined Wordocious — you're now friends`,
+            url: `/profile/${userId}`,
+          },
+          new Set([ref.inviter_id]),
+        ).catch(() => {});
+      }
+    }
+  } catch {
+    // duplicate pair or transient failure — the referral itself succeeded
+  }
+
   return { ok: true, inviterId: ref.inviter_id };
 }
 

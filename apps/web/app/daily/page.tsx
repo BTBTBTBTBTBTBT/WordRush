@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play, Share } from 'lucide-react';
+import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, Play, Share, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -30,6 +30,15 @@ import {
 } from '@/lib/daily-service';
 import { hasPlayedModeToday } from '@/lib/play-limit-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
+import {
+  loadFriends,
+  getFriendIds,
+  getFriends,
+  onFriendsChange,
+  sendTaunt,
+  type FriendProfile,
+} from '@/lib/friends-service';
+import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { shareDailyLeaderboardCard, shareYesterdayPodiumCard } from '@/lib/leaderboard-share-flow';
 import { CompletedDailyBoard } from '@/components/game/completed-daily-board';
 
@@ -133,6 +142,35 @@ export default function DailyPage() {
   useEffect(() => {
     if (user) fetchBlockedIds(user.id).then(() => setBlockedLoaded(true));
   }, [user]);
+
+  // FRIENDS (§207): the All|Friends toggle. Friends boards are the same
+  // query restricted to friends∪me, dense-ranked #1..N — plus grayed "ghost"
+  // rows for friends who haven't played this mode today (taunt bell lives
+  // there). friendsVersion bumps when the session cache changes so ghost
+  // rows and the toggle react without a page reload.
+  const [friendsOnly, setFriendsOnly] = useState(false);
+  const [friendsVersion, setFriendsVersion] = useState(0);
+  useEffect(() => {
+    if (!user) {
+      setFriendsOnly(false);
+      return;
+    }
+    loadFriends().then(() => setFriendsVersion((v) => v + 1));
+    return onFriendsChange(() => setFriendsVersion((v) => v + 1));
+  }, [user]);
+
+  // Canned-taunt picker (fixed phrases only — §207's no-free-text rule).
+  const [tauntTarget, setTauntTarget] = useState<FriendProfile | null>(null);
+  const [tauntStatus, setTauntStatus] = useState<string | null>(null);
+  const fireTaunt = async (tauntId: string) => {
+    if (!tauntTarget) return;
+    const r = await sendTaunt(tauntTarget.id, tauntId);
+    setTauntStatus(r.sent ? 'Sent 😈' : r.alreadySent ? 'Already taunted them today' : 'Could not send');
+    setTimeout(() => {
+      setTauntTarget(null);
+      setTauntStatus(null);
+    }, 1400);
+  };
   const yesterday = useMemo(() => getYesterdayLocal(), []);
   // Drops late responses from a previous mode so a slow fetch can't overwrite
   // the rows of the mode the user has since switched to.
@@ -180,7 +218,8 @@ export default function DailyPage() {
       return;
     }
 
-    const cacheKey = `${selectedMode}:${day}:${user?.id ?? 'anon'}`;
+    const friends = friendsOnly && !!user;
+    const cacheKey = `${selectedMode}:${day}:${user?.id ?? 'anon'}${friends ? ':friends' : ''}`;
     const cached = lbCache.get(cacheKey);
     if (cached) {
       setLeaderboard(cached.lb);
@@ -193,6 +232,24 @@ export default function DailyPage() {
       setUserRank(null);
       setRankWindow(null);
       setLeaderboard([]);
+    }
+
+    // Friends board: same query restricted to friends∪me. The whole board
+    // fits in one fetch (it's your friends list), so rank is just the dense
+    // index — no rank query, no neighborhood window.
+    if (friends) {
+      const ids = [...new Set([...getFriendIds(), user!.id])];
+      const lb = await fetchDailyLeaderboard(selectedMode, 'solo', day, 50, 0, ids);
+      if (seq !== loadSeq.current) return;
+      setLeaderboard(lb);
+      setPlayerCount(lb.length);
+      setLoading(false);
+      const idx = lb.findIndex((e) => e.user_id === user!.id);
+      const rank = idx >= 0 ? { rank: idx + 1, totalPlayers: lb.length } : null;
+      setUserRank(rank);
+      setRankWindow(null);
+      lbCache.set(cacheKey, { lb, count: lb.length, rank, win: null });
+      return;
     }
 
     const [lb, count] = await Promise.all([
@@ -218,7 +275,7 @@ export default function DailyPage() {
       if (seq === loadSeq.current) setRankWindow(win);
     }
     lbCache.set(cacheKey, { lb, count, rank, win });
-  }, [selectedMode, user]);
+  }, [selectedMode, user, friendsOnly, friendsVersion]);
 
   useEffect(() => {
     loadLeaderboard();
@@ -229,9 +286,11 @@ export default function DailyPage() {
     if (selectedMode === 'SWEEP') {
       fetchDailySweepLeaderboard(yesterday, 3).then(setYesterdaySweep);
     } else {
-      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 3).then(setYesterdayLeaderboard);
+      // Friends toggle carries into Yesterday's Winners: podium among friends.
+      const ids = friendsOnly && user ? [...new Set([...getFriendIds(), user.id])] : undefined;
+      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 3, 0, ids).then(setYesterdayLeaderboard);
     }
-  }, [showYesterday, selectedMode, yesterday]);
+  }, [showYesterday, selectedMode, yesterday, friendsOnly, friendsVersion, user]);
 
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
@@ -285,9 +344,55 @@ export default function DailyPage() {
             </span>
           </div>
         </div>
+        {/* Friends board: one-tap canned taunt on any friend's row (§207). */}
+        {friendsOnly && user && !isCurrentUser && (
+          <button
+            onClick={() =>
+              setTauntTarget({ id: entry.user_id, username: entry.username, avatar_url: entry.avatar_url, level: 0 })
+            }
+            aria-label={`Taunt ${entry.username}`}
+            className="p-1 -mr-1 active:scale-95 transition-transform"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            <Bell className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     );
   };
+
+  // FRIENDS ghost row — a friend who hasn't played this mode today, in the
+  // standard row shell at muted opacity. The taunt bell is the whole point:
+  // peer pressure as a game mechanic.
+  const renderGhostRow = (f: FriendProfile) => (
+    <div
+      key={`ghost-${f.id}`}
+      className="flex items-center gap-3 px-4 py-3"
+      style={{ borderBottom: '1px solid var(--color-border)', opacity: 0.55 }}
+    >
+      <span className="text-xs font-black w-5 text-center" style={{ color: 'var(--color-text-muted)' }}>–</span>
+      <div className="flex-1 min-w-0">
+        <Link
+          href={`/profile/${f.id}`}
+          className="text-xs font-extrabold truncate block hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--color-text)' }}
+        >
+          {f.username}
+        </Link>
+        <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+          Hasn&apos;t played yet
+        </div>
+      </div>
+      <button
+        onClick={() => setTauntTarget(f)}
+        aria-label={`Nudge ${f.username}`}
+        className="p-1 -mr-1 active:scale-95 transition-transform"
+        style={{ color: 'var(--color-text-muted)' }}
+      >
+        <Bell className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
 
   // One row of the Sweep board — same shell + RankIcon as renderLbRow, but the
   // three stats are total score · total time · modes-won, and the Win/Loss pill
@@ -333,6 +438,15 @@ export default function DailyPage() {
 
   const isSweep = selectedMode === 'SWEEP';
 
+  // Friends who haven't played this mode today — the ghost rows.
+  const ghostFriends = useMemo(() => {
+    if (!friendsOnly || !user || isSweep) return [];
+    void friendsVersion; // re-derive when the friends cache changes
+    return getFriends().filter(
+      (f) => !leaderboard.some((e) => e.user_id === f.id) && !isBlocked(f.id),
+    );
+  }, [friendsOnly, user, isSweep, leaderboard, friendsVersion]);
+
   // ── LEADERBOARD SHARE — today's board card + yesterday's podium card.
   // Single-tap, spoiler-free by construction (names/scores/stats only), so no
   // variant chooser. Sweep has no card design — its buttons stay hidden.
@@ -361,6 +475,7 @@ export default function DailyPage() {
         userId: user?.id ?? null,
         userRank,
         userEntry,
+        friendIds: friendsOnly && user ? [...getFriendIds()] : undefined,
       });
     } finally {
       setSharingLb(false);
@@ -379,6 +494,7 @@ export default function DailyPage() {
           .map((entry, index) => ({ entry, rank: index + 1 }))
           .filter(({ entry }) => !isBlocked(entry.user_id)),
         userId: user?.id ?? null,
+        friends: friendsOnly && !!user,
       });
     } finally {
       setSharingPodium(false);
@@ -503,8 +619,15 @@ export default function DailyPage() {
           >
             <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>You're ranked </span>
             <span className="font-black text-lg" style={{ color: '#d97706' }}>#{userRank.rank}</span>
-            <RankDeltaBadge mode={selectedMode} playType="solo" pageKey="daily" currentRank={userRank.rank} />
-            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}> of {userRank.totalPlayers}</span>
+            <RankDeltaBadge
+              mode={selectedMode}
+              playType="solo"
+              pageKey={friendsOnly ? 'daily-friends' : 'daily'}
+              currentRank={userRank.rank}
+            />
+            <span className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+              {' '}of {userRank.totalPlayers}{friendsOnly && !isSweep ? ' friends' : ''}
+            </span>
           </div>
         )}
 
@@ -515,6 +638,27 @@ export default function DailyPage() {
             Leaderboard
           </div>
           <div className="flex items-center gap-2">
+            {/* FRIENDS toggle — the records-page segmented control, compact. */}
+            {!isSweep && user && (
+              <div
+                className="flex rounded-lg overflow-hidden"
+                style={{ border: '1.5px solid var(--color-border)' }}
+              >
+                {([false, true] as const).map((f) => (
+                  <button
+                    key={String(f)}
+                    onClick={() => setFriendsOnly(f)}
+                    className="px-2 py-0.5 text-[10px] font-extrabold transition-all"
+                    style={{
+                      background: friendsOnly === f ? `${color}15` : 'var(--color-surface)',
+                      color: friendsOnly === f ? color : 'var(--color-text-muted)',
+                    }}
+                  >
+                    {f ? 'Friends' : 'All'}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
               Daily games only
             </div>
@@ -554,18 +698,32 @@ export default function DailyPage() {
               <div>{sweepLeaderboard.map((entry) => renderSweepRow(entry, entry.rank))}</div>
             )
           ) : leaderboard.length === 0 ? (
-            <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
-              <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-xs font-bold">No daily results yet. Be the first!</p>
-            </div>
+            friendsOnly && ghostFriends.length > 0 ? (
+              // Nobody's played yet, but the friends list still renders as
+              // ghost rows — the board should feel alive (and tauntable).
+              <div>{ghostFriends.map(renderGhostRow)}</div>
+            ) : (
+              <div className="p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
+                <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p className="text-xs font-bold">
+                  {friendsOnly
+                    ? 'No friends yet — add them from any profile'
+                    : 'No daily results yet. Be the first!'}
+                </p>
+              </div>
+            )
           ) : (
             <div>
               {/* Blocked users are hidden client-side; ranks keep their
-                  original positions (holes where blocked rows were). */}
+                  original positions (holes where blocked rows were). The
+                  friends board is dense by construction — its fetch is
+                  already restricted to friends∪me. */}
               {leaderboard
                 .map((entry, index) => ({ entry, rank: index + 1 }))
                 .filter(({ entry }) => !isBlocked(entry.user_id))
                 .map(({ entry, rank }) => renderLbRow(entry, rank))}
+              {/* Friends who haven't played this mode today. */}
+              {friendsOnly && ghostFriends.map(renderGhostRow)}
               {/* "Your neighborhood" — the rows around the user's rank when they
                   placed past the top 50 (e.g. #425 sees ~421–429, own row
                   highlighted). Same ordering as the list, so ranks agree. */}
@@ -681,6 +839,56 @@ export default function DailyPage() {
           </div>
         )}
       </div>
+
+      {/* Canned-taunt picker (§207): fixed phrases, one per friend per day. */}
+      {tauntTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => { setTauntTarget(null); setTauntStatus(null); }}
+        >
+          <div
+            className="w-full max-w-sm overflow-hidden"
+            style={{
+              background: 'var(--color-surface)',
+              border: '1.5px solid var(--color-border)',
+              borderRadius: '16px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <p className="text-xs font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Taunt {tauntTarget.username}
+              </p>
+            </div>
+            {tauntStatus ? (
+              <div className="p-6 text-center text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+                {tauntStatus}
+              </div>
+            ) : (
+              <div>
+                {FRIEND_TAUNTS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => fireTaunt(t.id)}
+                    className="w-full text-left px-4 py-3 text-xs font-extrabold transition-colors hover:opacity-80"
+                    style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
+                  >
+                    {t.text}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setTauntTarget(null)}
+                  className="w-full px-4 py-3 text-xs font-extrabold"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <BottomNav />
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />

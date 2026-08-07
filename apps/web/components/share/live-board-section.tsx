@@ -137,17 +137,34 @@ export default function LiveBoardSection({ kind, lbMode, date }: LiveBoardSectio
   // leaderboard query wants the DB key ('DUEL', 'DUEL_6', …).
   const dbMode = MODES.find((m) => m.title === lbMode)?.dbKey ?? null;
   const playType = kind === 'VsLeaderboard' ? 'vs' : 'solo';
+  // FRIENDS (§207): the recipient has different friends than the sharer, so a
+  // "here's now" refetch of the GLOBAL board would contradict the card. No
+  // live section — a friends-flavored invite line renders instead.
+  const friendsKind = kind === 'FriendsBoard' || kind === 'FriendsPodium';
 
   useEffect(() => {
-    if (status !== 'live' || !dbMode || !date) return;
+    if (friendsKind || status !== 'live' || !dbMode || !date) return;
     let active = true;
     fetchDailyLeaderboard(dbMode, playType, date, TOP_N)
       .then((r) => { if (active) setRows(r); })
       .catch(() => { if (active) setFailed(true); });
     return () => { active = false; };
-  }, [status, dbMode, playType, date]);
+  }, [friendsKind, status, dbMode, playType, date]);
 
   if (!status) return null;
+
+  if (friendsKind) {
+    return (
+      <section style={{ width: 'min(92vw, 480px)', textAlign: 'center' }}>
+        <p className="text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+          {kind === 'FriendsPodium' ? 'Their friends podium is settled' : 'A private race between friends'}
+        </p>
+        <p className="text-xs font-bold mt-1" style={{ color: 'var(--color-text-muted)' }}>
+          Add your friends on Wordocious and start your own
+        </p>
+      </section>
+    );
+  }
 
   if (status === 'final') {
     return (

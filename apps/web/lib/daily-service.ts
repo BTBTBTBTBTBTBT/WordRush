@@ -199,6 +199,13 @@ export async function recordDailyResult(
     // Check for streak and perfect game medals (fire-and-forget)
     checkAndAwardStreakMedals(userId, targetDay).catch(() => {});
     checkAndAwardPerfectMedal(userId, gameMode, targetDay, guessCount, boardsSolved, totalBoards, completed).catch(() => {});
+
+    // FRIENDS (§207) overtake push — the server re-reads the trusted score
+    // and notifies friends this result just passed. Dynamic import avoids a
+    // module cycle (friends-service imports getTodayLocal from here).
+    import('./friends-service')
+      .then((m) => m.beatCheck(targetDay, gameMode, playType))
+      .catch(() => {});
   } catch (err) {
     console.error('recordDailyResult failed:', err);
     handleSupabaseError(err, 'recordDailyResult');
@@ -323,10 +330,13 @@ export async function fetchDailyLeaderboard(
   /** Row offset into the ranked ordering (0-based) — used by the rank-window
    *  fetch to read the rows AROUND a deep rank without paging everything. */
   offset: number = 0,
+  /** FRIENDS (§207): restrict to these user ids (friends ∪ self). The board
+   *  is then dense-ranked 1..N by the caller — no holes, it's your list. */
+  userIds?: string[],
 ): Promise<LeaderboardEntry[]> {
   const targetDay = day || getTodayLocal();
 
-  const { data } = await (supabase as any)
+  let query = (supabase as any)
     .from('daily_results')
     .select(`
       user_id,
@@ -344,7 +354,9 @@ export async function fetchDailyLeaderboard(
     `)
     .eq('day', targetDay)
     .eq('game_mode', gameMode)
-    .eq('play_type', playType)
+    .eq('play_type', playType);
+  if (userIds && userIds.length > 0) query = query.in('user_id', userIds);
+  const { data } = await query
     .order('composite_score', { ascending: false })
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);

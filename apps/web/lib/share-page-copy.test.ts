@@ -128,6 +128,25 @@ describe('buildCopy — leaderboard cards', () => {
     );
   });
 
+  it('builds the FRIENDS board card (§207): #rank of friend-count brag', () => {
+    const c = buildCopy(
+      { m: 'FriendsBoard', lm: 'Classic', r: '2', tp: '7' },
+      ['u', 'FriendsBoard-Classic-2026-08-08'],
+    );
+    expect(c.title).toBe('Wordocious Friends Leaderboard — Classic Aug 8');
+    expect(c.description).toBe(
+      'I’m #2 of 7 among my friends on today’s Classic board. Can you beat me? Play today’s puzzles free at wordocious.com.',
+    );
+  });
+
+  it('builds the FRIENDS podium card, recovered from the path alone', () => {
+    const c = buildCopy({}, ['u', 'FriendsPodium-Classic-2026-08-07']);
+    expect(c.title).toBe('Wordocious Friends Podium — Classic Aug 7');
+    expect(c.description).toBe(
+      'Yesterday’s Classic podium among friends is settled. Play today’s puzzles free at wordocious.com.',
+    );
+  });
+
   it('recovers kind + board mode from the path when the query is stripped', () => {
     const c = buildCopy({}, ['u', 'VsLeaderboard-Six-2026-08-07']);
     expect(c.title).toBe('Wordocious VS Battle Leaderboard — Classic Six Aug 7');

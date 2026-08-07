@@ -15,6 +15,9 @@ const state = {
   profiles: new Map<string, { is_private?: boolean; is_admin?: boolean }>(),
   user: null as { id: string } | null,
   matches: [] as Array<Record<string, unknown>>,
+  // FRIENDS (§207): when true, the caller↔target pair has an accepted
+  // friendship row — the gate opens ("private" means "friends only").
+  friendsPair: false,
 };
 
 vi.mock('@/lib/api-auth', () => ({
@@ -39,7 +42,12 @@ function makeQuery(table: string) {
     is: () => q,
     filter: () => q,
     maybeSingle: async () => ({
-      data: table === 'profiles' ? state.profiles.get(filters.id as string) ?? null : null,
+      data:
+        table === 'profiles'
+          ? state.profiles.get(filters.id as string) ?? null
+          : table === 'friendships'
+            ? (state.friendsPair ? { status: 'accepted' } : null)
+            : null,
       error: null,
     }),
     then: (resolve: any, reject: any) =>
@@ -60,6 +68,7 @@ beforeEach(() => {
   state.profiles.clear();
   state.user = null;
   state.matches = [{ id: 'm1', game_mode: 'DUEL' }];
+  state.friendsPair = false;
 });
 
 describe('gateProfilePrivacy', () => {
@@ -94,6 +103,14 @@ describe('gateProfilePrivacy', () => {
     state.profiles.set(TARGET, { is_private: true });
     state.profiles.set(VIEWER, { is_admin: true });
     state.user = { id: VIEWER };
+    expect(await gateProfilePrivacy(req(), TARGET)).toEqual({ status: 'open', cache: 'private' });
+  });
+
+  it('opens for an accepted friend, with private cache (§207: private = friends only)', async () => {
+    state.profiles.set(TARGET, { is_private: true });
+    state.profiles.set(VIEWER, { is_admin: false });
+    state.user = { id: VIEWER };
+    state.friendsPair = true;
     expect(await gateProfilePrivacy(req(), TARGET)).toEqual({ status: 'open', cache: 'private' });
   });
 });

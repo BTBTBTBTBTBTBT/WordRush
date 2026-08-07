@@ -12,8 +12,10 @@ import { verifyUser } from './api-auth';
  * board route already uses — the header is OPTIONAL (anonymous viewers of a
  * public profile still get data), it only matters when the target is private.
  *
- * The gate opens for: public targets, the owner, and admins (is_admin).
- * Everyone else gets `privateProfileResponse()`:
+ * The gate opens for: public targets, the owner, admins (is_admin), and —
+ * since FRIENDS v1 (§207) — accepted friends of the target, which is what
+ * makes "private" mean "friends only". Everyone else gets
+ * `privateProfileResponse()`:
  *   403 { "error": "This profile is private", "private": true }
  * The client renders the teaser card from the world-readable profiles row —
  * this response carries no profile data on purpose.
@@ -50,6 +52,17 @@ export async function gateProfilePrivacy(
       .eq('id', caller.id)
       .maybeSingle();
     if (me?.is_admin) return { status: 'open', cache: 'private' };
+    // Accepted friends see the full profile — data released to a specific
+    // caller, so success responses must not land in a shared cache.
+    const { data: friendRow } = await admin
+      .from('friendships')
+      .select('status')
+      .eq('status', 'accepted')
+      .or(
+        `and(requester_id.eq.${caller.id},addressee_id.eq.${targetId}),and(requester_id.eq.${targetId},addressee_id.eq.${caller.id})`,
+      )
+      .maybeSingle();
+    if (friendRow) return { status: 'open', cache: 'private' };
   }
 
   return { status: 'private' };

@@ -13,6 +13,7 @@ import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import { supabase } from '@/lib/supabase-client';
 import { fetchDailySweepStats, type DailySweepStats } from '@/lib/stats-service';
 import { fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
+import { loadFriends, getFriendIds, onFriendsChange } from '@/lib/friends-service';
 import { shareDailyLeaderboardCard, shareYesterdayPodiumCard } from '@/lib/leaderboard-share-flow';
 import { SectionHeader } from '@/components/profile/stat-kit';
 import {
@@ -176,6 +177,18 @@ function AllTimeSkeleton() {
 function DailyRecordsView({ userId }: { userId?: string }) {
   const [selectedMode, setSelectedMode] = useState('DUEL');
   const [playType, setPlayType] = useState<'solo' | 'vs'>('solo');
+  // FRIENDS (§207): All|Friends filter — dense friend ranks, same query
+  // restricted to friends∪me. Ghost rows live on /daily (the primary board).
+  const [friendsOnly, setFriendsOnly] = useState(false);
+  const [friendsVersion, setFriendsVersion] = useState(0);
+  useEffect(() => {
+    if (!userId) {
+      setFriendsOnly(false);
+      return;
+    }
+    loadFriends().then(() => setFriendsVersion((v) => v + 1));
+    return onFriendsChange(() => setFriendsVersion((v) => v + 1));
+  }, [userId]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
   const [playerCount, setPlayerCount] = useState(0);
@@ -207,7 +220,8 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       return;
     }
 
-    const cacheKey = `${selectedMode}:${playType}:${today}:${userId ?? 'anon'}`;
+    const friends = friendsOnly && !!userId;
+    const cacheKey = `${selectedMode}:${playType}:${today}:${userId ?? 'anon'}${friends ? ':friends' : ''}`;
     const cached = recordsLbCache.get(cacheKey);
     if (cached) {
       setLeaderboard(cached.lb);
@@ -218,6 +232,21 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       setLoading(true);
       setUserRank(null);
       setLeaderboard([]);
+    }
+
+    // Friends board: one fetch holds the whole board, dense-ranked below.
+    if (friends) {
+      const ids = [...new Set([...getFriendIds(), userId!])];
+      const lb = await fetchDailyLeaderboard(selectedMode, playType, today, 50, 0, ids);
+      if (seq !== loadSeq.current) return;
+      setLeaderboard(lb);
+      setPlayerCount(lb.length);
+      setLoading(false);
+      const idx = lb.findIndex((e) => e.user_id === userId);
+      const rank = idx >= 0 ? { rank: idx + 1, totalPlayers: lb.length } : null;
+      setUserRank(rank);
+      recordsLbCache.set(cacheKey, { lb, count: lb.length, rank });
+      return;
     }
 
     const [lb, count] = await Promise.all([
@@ -237,7 +266,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
       if (seq === loadSeq.current) setUserRank(rank);
     }
     recordsLbCache.set(cacheKey, { lb, count, rank });
-  }, [selectedMode, playType, userId, today]);
+  }, [selectedMode, playType, userId, today, friendsOnly, friendsVersion]);
 
   useEffect(() => {
     loadData();
@@ -266,6 +295,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
         userId,
         userRank,
         userEntry: userId ? leaderboard.find((e) => e.user_id === userId) ?? null : null,
+        friendIds: friendsOnly && userId ? [...getFriendIds()] : undefined,
       });
     } finally {
       setSharingLb(false);
@@ -377,6 +407,27 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                 >
                   <Share className="w-3.5 h-3.5" />
                 </button>
+              )}
+              {/* FRIENDS toggle (§207) — same segmented shell as Solo/VS. */}
+              {userId && (
+                <div
+                  className="flex rounded-lg overflow-hidden"
+                  style={{ border: '1.5px solid var(--color-border)' }}
+                >
+                  {([false, true] as const).map((f) => (
+                    <button
+                      key={String(f)}
+                      className="px-3 py-1.5 text-[10px] font-extrabold transition-all"
+                      style={{
+                        background: friendsOnly === f ? `${color}15` : 'var(--color-surface)',
+                        color: friendsOnly === f ? color : 'var(--color-text-muted)',
+                      }}
+                      onClick={() => setFriendsOnly(f)}
+                    >
+                      {f ? 'Friends' : 'All'}
+                    </button>
+                  ))}
+                </div>
               )}
               <div
                 className="flex rounded-lg overflow-hidden"

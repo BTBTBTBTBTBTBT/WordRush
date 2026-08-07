@@ -181,7 +181,10 @@ export interface ShareLeaderboardInput {
   layout: 'leaderboard';
   /** The board's game mode — drives the mode chip accent + share URL naming. */
   mode: ShareMode;
-  variant: 'solo' | 'vs' | 'podium';
+  /** FRIENDS (§207): 'friends' = today's friends-only board, 'friendsPodium'
+   *  = yesterday's settled podium among friends — same geometry, indigo
+   *  identity, dense friend ranks in rows/you/shareRank. */
+  variant: 'solo' | 'vs' | 'podium' | 'friends' | 'friendsPodium';
   /** Mode chip text ("Classic Six", "Classic VS"). */
   modeChip: string;
   /** Date chip text ("Aug 7, 2026 · #123" / "Aug 6, 2026 · Final"). */
@@ -1130,11 +1133,16 @@ const LB_THEME: Record<ShareLeaderboardInput['variant'], {
   solo:   { bg: '#f5f3ff', label: '#7c3aed', panelBorder: '#a78bfa55', footer: '#7c3aed' },
   vs:     { bg: '#f0fdfa', label: VS_ACCENT, panelBorder: '#0d948855', footer: VS_ACCENT },
   podium: { bg: '#f5f3ff', label: '#d97706', panelBorder: '#f59e0b55', footer: '#7c3aed' },
+  // Friends (§207): indigo — the leaderboard tab's own accent family.
+  friends:       { bg: '#eef2ff', label: '#4f46e5', panelBorder: '#6366f155', footer: '#4f46e5' },
+  friendsPodium: { bg: '#eef2ff', label: '#d97706', panelBorder: '#f59e0b55', footer: '#4f46e5' },
 };
 const LB_LABEL: Record<ShareLeaderboardInput['variant'], string> = {
   solo: 'DAILY LEADERBOARD',
   vs: 'VS BATTLE LEADERBOARD',
   podium: 'YESTERDAY’S PODIUM',
+  friends: 'FRIENDS LEADERBOARD',
+  friendsPodium: 'FRIENDS PODIUM',
 };
 
 // Rank iconography — same colors as the in-app RankIcon (crown gold, medal
@@ -1497,7 +1505,7 @@ function drawLeaderboardCard(
 
 /** Max row height — roomier for the 3-row podium than a 6-slot board. */
 function band(input: ShareLeaderboardInput): number {
-  return input.variant === 'podium' ? 170 : 130;
+  return input.variant === 'podium' || input.variant === 'friendsPodium' ? 170 : 130;
 }
 
 // ──────────────────────────────────────────────────────────────────────────

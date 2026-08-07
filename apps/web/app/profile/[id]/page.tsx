@@ -31,6 +31,18 @@ import { resolveAccent } from '@/lib/profile-personalization';
 import { TopWordsCard } from '@/components/profile/top-words-card';
 import { useAuth } from '@/lib/auth-context';
 import { reportUser, blockUser, unblockUser, fetchBlockedIds, isBlocked } from '@/lib/moderation-service';
+import { UserPlus, UserCheck } from 'lucide-react';
+import {
+  loadFriends,
+  isFriend,
+  hasRequested,
+  hasIncomingFrom,
+  requestFriend,
+  acceptFriend,
+  declineFriend,
+  removeFriend,
+  onFriendsChange,
+} from '@/lib/friends-service';
 import { WIN_FG } from '@/lib/tile-theme';
 import { modeLabel } from '@/lib/mode-labels';
 import {
@@ -80,6 +92,90 @@ const REPORT_REASONS = [
   'Cheating or fake scores',
   'Other',
 ];
+
+/** FRIENDS (§207) — the Add Friend pill next to the moderation kebab.
+ *  States: Add Friend → Requested (tap = cancel) · Accept request ·
+ *  Friends ✓ (tap twice = unfriend, confirm inline — no browser dialogs). */
+function AddFriendButton({ profileId }: { profileId: string }) {
+  const [, force] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+
+  useEffect(() => {
+    loadFriends().then(() => force((v) => v + 1));
+    return onFriendsChange(() => force((v) => v + 1));
+  }, []);
+  useEffect(() => {
+    if (!confirmRemove) return;
+    const t = setTimeout(() => setConfirmRemove(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirmRemove]);
+
+  const friend = isFriend(profileId);
+  const requested = hasRequested(profileId);
+  const incoming = hasIncomingFrom(profileId);
+
+  const act = async (fn: () => Promise<unknown>) => {
+    if (busy) return;
+    setBusy(true);
+    try { await fn(); } finally { setBusy(false); }
+  };
+
+  const base = 'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold active:scale-95 transition-transform';
+
+  if (friend) {
+    return (
+      <button
+        onClick={() => (confirmRemove ? act(async () => { await removeFriend(profileId); setConfirmRemove(false); }) : setConfirmRemove(true))}
+        className={base}
+        style={{
+          background: confirmRemove ? 'var(--color-loss-bg)' : 'var(--color-surface-hover)',
+          border: '1.5px solid var(--color-border)',
+          color: confirmRemove ? 'var(--color-loss-text)' : '#16a34a',
+          opacity: busy ? 0.5 : 1,
+        }}
+      >
+        <UserCheck className="w-3.5 h-3.5" /> {confirmRemove ? 'Remove friend?' : 'Friends'}
+      </button>
+    );
+  }
+  if (incoming) {
+    return (
+      <button
+        onClick={() => act(() => acceptFriend(profileId))}
+        className={base}
+        style={{ background: '#7c3aed', color: '#ffffff', border: '1.5px solid #7c3aed', opacity: busy ? 0.5 : 1 }}
+      >
+        <UserPlus className="w-3.5 h-3.5" /> Accept request
+      </button>
+    );
+  }
+  if (requested) {
+    return (
+      <button
+        onClick={() => act(() => declineFriend(profileId))}
+        className={base}
+        style={{
+          background: 'var(--color-surface-hover)',
+          border: '1.5px solid var(--color-border)',
+          color: 'var(--color-text-muted)',
+          opacity: busy ? 0.5 : 1,
+        }}
+      >
+        Requested
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={() => act(() => requestFriend({ addresseeId: profileId }))}
+      className={base}
+      style={{ background: '#7c3aed', color: '#ffffff', border: '1.5px solid #7c3aed', opacity: busy ? 0.5 : 1 }}
+    >
+      <UserPlus className="w-3.5 h-3.5" /> Add Friend
+    </button>
+  );
+}
 
 /** ⋯ report/block menu (App Review 1.2 parity) — only rendered when a
  *  signed-in user is viewing SOMEONE ELSE's profile. */
@@ -213,7 +309,17 @@ export default function PublicProfilePage() {
   const isPrivate = Boolean((profile as any)?.is_private);
   const isOwnProfile = Boolean(user && user.id === profileId);
   const viewerIsAdmin = Boolean((viewerProfile as any)?.is_admin);
-  const gated = isPrivate && !isOwnProfile && !viewerIsAdmin;
+  // FRIENDS (§207): accepted friends see the full profile — "private" means
+  // "friends only". The bump forces gated to re-derive once the session
+  // friends cache loads (isFriend is a sync read of that cache).
+  const [, setFriendsVer] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    loadFriends().then(() => setFriendsVer((v) => v + 1));
+    return onFriendsChange(() => setFriendsVer((v) => v + 1));
+  }, [user]);
+  const viewerIsFriend = Boolean(user && !isOwnProfile && isFriend(profileId));
+  const gated = isPrivate && !isOwnProfile && !viewerIsAdmin && !viewerIsFriend;
 
   useEffect(() => {
     if (!profileId) return;
@@ -395,9 +501,11 @@ export default function PublicProfilePage() {
             </div>
           </div>
 
-          {/* Report / Block still works on private profiles */}
+          {/* Add Friend + Report / Block still work on private profiles —
+              friending is the door into a private profile (§207). */}
           {user && user.id !== profileId && (
-            <div className="flex justify-center">
+            <div className="flex justify-center items-center gap-2">
+              <AddFriendButton profileId={profileId} />
               <ModerationMenu viewerId={user.id} profileId={profileId} />
             </div>
           )}
@@ -585,9 +693,12 @@ export default function PublicProfilePage() {
             </div>
           </div>
 
-          {/* Report / Block (only when signed in and viewing someone else) */}
+          {/* Add Friend + Report / Block (signed in, viewing someone else) */}
           {user && user.id !== profileId && (
-            <ModerationMenu viewerId={user.id} profileId={profileId} />
+            <div className="flex justify-center items-center gap-2">
+              <AddFriendButton profileId={profileId} />
+              <ModerationMenu viewerId={user.id} profileId={profileId} />
+            </div>
           )}
 
           <SocialLinksDisplay links={(profile as any).social_links as SocialLinks | null} />

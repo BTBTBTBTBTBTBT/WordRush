@@ -42,9 +42,16 @@ export async function reportUser(
 }
 
 /** Block a user. Optimistic: the cache updates immediately; a duplicate-PK
- *  failure means "already blocked" and still counts as success. */
+ *  failure means "already blocked" and still counts as success. Blocking
+ *  also severs any friendship in the same motion (§207) — you should never
+ *  be "friends" with someone you've blocked. */
 export async function blockUser(blockerId: string, blockedId: string): Promise<boolean> {
   blockedIds.add(blockedId.toLowerCase());
+  // Fire-and-forget: the dynamic import avoids a load-order cycle and the
+  // friendship removal must never make the block itself fail.
+  void import('./friends-service')
+    .then((m) => m.removeFriend(blockedId))
+    .catch(() => {});
   try {
     await (supabase as any).from('blocks').insert({
       blocker_id: blockerId,

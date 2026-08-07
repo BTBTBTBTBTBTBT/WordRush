@@ -102,6 +102,9 @@ export function formatClockTime(d: Date): string {
 
 export interface DailyLeaderboardShareOpts {
   variant: 'solo' | 'vs';
+  /** FRIENDS (§207): render the friends-board identity (indigo "FRIENDS
+   *  LEADERBOARD", dense friend ranks). Sublines still follow `variant`. */
+  friends?: boolean;
   mode: ShareMode;
   /** Snapshot moment for the "as of" stamp — injectable for tests; defaults to now. */
   now?: Date;
@@ -142,7 +145,7 @@ export function buildDailyLeaderboardShareInput(
   const input: ShareLeaderboardInput = {
     layout: 'leaderboard',
     mode: opts.mode,
-    variant: opts.variant,
+    variant: opts.friends ? 'friends' : opts.variant,
     modeChip: opts.variant === 'vs' ? `${opts.modeLabel} VS` : opts.modeLabel,
     // "as of h:mm" marks the card as a SNAPSHOT of a live board (founder,
     // Aug 7) — today's standings keep moving, and the stamp keeps the brag
@@ -150,9 +153,11 @@ export function buildDailyLeaderboardShareInput(
     dateChip: `${formatBoardDate(opts.day)}${puzzle ? ` · #${puzzle}` : ''} · as of ${formatClockTime(opts.now ?? new Date())}`,
     // Sharer below the top 5 → compress the top rows to name+score only.
     rows: top.map((r) => toRow(r, opts.userId, belowTop ? null : subline)),
-    footer: opts.variant === 'vs'
-      ? 'Think you can take them? wordocious.com'
-      : 'Can you beat them? Play free at wordocious.com',
+    footer: opts.friends
+      ? 'Add your friends — play free at wordocious.com'
+      : opts.variant === 'vs'
+        ? 'Think you can take them? wordocious.com'
+        : 'Can you beat them? Play free at wordocious.com',
     date: new Date(opts.day + 'T00:00:00'),
     delta,
     shareRank: opts.userRank?.rank,
@@ -176,6 +181,8 @@ export function buildDailyLeaderboardShareInput(
 export interface YesterdayPodiumShareOpts {
   /** Which board the podium settles — drives the row sublines + swords chip. */
   playType: 'solo' | 'vs';
+  /** FRIENDS (§207): the podium among friends — "FRIENDS PODIUM" identity. */
+  friends?: boolean;
   mode: ShareMode;
   modeLabel: string;
   /** Yesterday's day string — the card is keyed and dated to it. */
@@ -198,7 +205,7 @@ export function buildYesterdayPodiumShareInput(
   return {
     layout: 'leaderboard',
     mode: opts.mode,
-    variant: 'podium',
+    variant: opts.friends ? 'friendsPodium' : 'podium',
     modeChip: opts.playType === 'vs' ? `${opts.modeLabel} VS` : opts.modeLabel,
     dateChip: `${formatBoardDate(opts.day)} · Final`,
     rows: top.map((r) => toRow(r, opts.userId, subline)),
