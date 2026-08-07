@@ -65,6 +65,8 @@ object ModerationService {
         runCatching {
             client.postgrest["blocks"].insert(BlockInsert(blockerId = uid, blockedId = userId))
         }
+        // FRIENDS (§207): blocking severs the friendship (web blockUser parity).
+        runCatching { FriendsService.remove(userId) }
         return true
     }
 

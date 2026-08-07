@@ -219,6 +219,9 @@ object LeaderboardService {
         /** Row offset into the ranked ordering (0-based) — used by the
          *  rank-window fetch to read the rows AROUND a deep rank. */
         offset: Int = 0,
+        /** FRIENDS (§207): restrict to these user ids (friends ∪ self). The
+         *  board is then dense-ranked 1..N by the caller — no holes. */
+        userIds: List<String>? = null,
     ): List<LeaderboardEntry>? = runCatching {
         client.postgrest["daily_results"]
             .select(Columns.raw(COLS)) {
@@ -226,6 +229,7 @@ object LeaderboardService {
                     eq("game_mode", gameMode)
                     eq("play_type", playType)
                     eq("day", day)
+                    if (!userIds.isNullOrEmpty()) isIn("user_id", userIds)
                 }
                 order("composite_score", Order.DESCENDING)
                 order("created_at", Order.ASCENDING)   // stable tiebreak (earlier finisher first)

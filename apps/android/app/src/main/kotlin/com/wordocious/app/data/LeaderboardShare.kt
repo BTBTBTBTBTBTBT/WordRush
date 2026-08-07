@@ -53,7 +53,9 @@ object LeaderboardShare {
 
     // ── Variant identity (web LB_THEME / LB_LABEL) ─────────────────────────────
 
-    enum class Variant { SOLO, VS, PODIUM }
+    // FRIENDS (§207): friends-only board + settled friends podium — same
+    // geometry, indigo identity, dense friend ranks in rows/you/shareRank.
+    enum class Variant { SOLO, VS, PODIUM, FRIENDS, FRIENDS_PODIUM }
 
     private data class Theme(val bg: Int, val label: Int, val panelBorder: Int, val footer: Int)
 
@@ -62,12 +64,17 @@ object LeaderboardShare {
         Variant.SOLO -> Theme(0xFFF5F3FF.toInt(), 0xFF7C3AED.toInt(), 0x55A78BFA, 0xFF7C3AED.toInt())
         Variant.VS -> Theme(0xFFF0FDFA.toInt(), VS_ACCENT, 0x550D9488, VS_ACCENT)
         Variant.PODIUM -> Theme(0xFFF5F3FF.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF7C3AED.toInt())
+        // Friends: indigo — the leaderboard tab's own accent family.
+        Variant.FRIENDS -> Theme(0xFFEEF2FF.toInt(), 0xFF4F46E5.toInt(), 0x556366F1, 0xFF4F46E5.toInt())
+        Variant.FRIENDS_PODIUM -> Theme(0xFFEEF2FF.toInt(), 0xFFD97706.toInt(), 0x55F59E0B, 0xFF4F46E5.toInt())
     }
 
     private fun label(v: Variant): String = when (v) {
         Variant.SOLO -> "DAILY LEADERBOARD"
         Variant.VS -> "VS BATTLE LEADERBOARD"
         Variant.PODIUM -> "YESTERDAY’S PODIUM"
+        Variant.FRIENDS -> "FRIENDS LEADERBOARD"
+        Variant.FRIENDS_PODIUM -> "FRIENDS PODIUM"
     }
 
     // ── Card input (web ShareLeaderboardInput) ─────────────────────────────────
@@ -191,6 +198,7 @@ object LeaderboardShare {
      */
     fun buildDailyInput(
         variant: Variant,
+        friends: Boolean = false,
         meta: com.wordocious.app.GenMode,
         day: String,
         entries: List<LeaderboardService.LeaderboardEntry>,
@@ -203,6 +211,8 @@ object LeaderboardShare {
         val top = entries.take(5)
         if (top.isEmpty()) return null
 
+        // FRIENDS keeps solo/vs sublines; only the identity changes.
+        val cardVariant = if (friends) Variant.FRIENDS else variant
         val subline: (LeaderboardService.LeaderboardEntry) -> String =
             if (variant == Variant.VS) ::vsSubline else ::soloSubline
         val youInTop = userId != null && top.any { it.userId == userId }
@@ -211,7 +221,7 @@ object LeaderboardShare {
 
         val puzzle = puzzleNumberForDay(day)
         return CardInput(
-            variant = variant,
+            variant = cardVariant,
             shareMode = meta.title,
             gameModeLower = (meta.dbKey ?: meta.title).lowercase(),
             accent = meta.accentInt,
@@ -224,8 +234,11 @@ object LeaderboardShare {
             you = if (belowTop) toRow(userRank!!.rank, userEntry!!, userId, subline) else null,
             youRankLine = if (belowTop) "#${userRank!!.rank} of ${userRank!!.totalPlayers}" else null,
             delta = delta,
-            footer = if (variant == Variant.VS) "Think you can take them? wordocious.com"
-                     else "Can you beat them? Play free at wordocious.com",
+            footer = when (cardVariant) {
+                Variant.FRIENDS -> "Add your friends — play free at wordocious.com"
+                Variant.VS -> "Think you can take them? wordocious.com"
+                else -> "Can you beat them? Play free at wordocious.com"
+            },
             day = day,
             shareRank = userRank?.rank,
             sharePlayers = userRank?.totalPlayers,
@@ -240,6 +253,7 @@ object LeaderboardShare {
      */
     fun buildPodiumInput(
         playType: String,
+        friends: Boolean = false,
         meta: com.wordocious.app.GenMode,
         day: String,
         entries: List<LeaderboardService.LeaderboardEntry>,
@@ -250,7 +264,7 @@ object LeaderboardShare {
         val subline: (LeaderboardService.LeaderboardEntry) -> String =
             if (playType == "vs") ::vsSubline else ::soloSubline
         return CardInput(
-            variant = Variant.PODIUM,
+            variant = if (friends) Variant.FRIENDS_PODIUM else Variant.PODIUM,
             shareMode = meta.title,
             gameModeLower = (meta.dbKey ?: meta.title).lowercase(),
             accent = meta.accentInt,
@@ -497,7 +511,7 @@ object LeaderboardShare {
         val nRows = input.rows.size + (if (input.you != null) 1 else 0)
         if (nRows > 0) {
             // Max row height — roomier for the 3-row podium than a 6-slot board.
-            val band = if (input.variant == Variant.PODIUM) 170f else 130f
+            val band = if (input.variant == Variant.PODIUM || input.variant == Variant.FRIENDS_PODIUM) 170f else 130f
             val rowH = min(band, (areaBottom - areaTop - pad * 2 - dividerH) / nRows)
             val contentH = rowH * nRows + dividerH + pad * 2
             val panelTop = areaTop + (areaBottom - areaTop - contentH) / 2
@@ -547,6 +561,8 @@ object LeaderboardShare {
         Variant.VS -> "VsLeaderboard"
         Variant.PODIUM -> "Podium"
         Variant.SOLO -> "Leaderboard"
+        Variant.FRIENDS -> "FriendsBoard"
+        Variant.FRIENDS_PODIUM -> "FriendsPodium"
     }
 
     /**
@@ -635,6 +651,7 @@ object LeaderboardShare {
         rankWindow: LeaderboardService.RankWindow?,
         userId: String?,
         userRank: LeaderboardService.RankInfo?,
+        friends: Boolean = false,
     ) {
         val meta = ModeGen.byDbKey(dbMode) ?: return
         if (entries.isEmpty()) return
@@ -651,7 +668,8 @@ object LeaderboardShare {
             entries.firstOrNull { it.userId == userId }
                 ?: rankWindow?.entries?.firstOrNull { it.userId == userId }
         } else null
-        if (userId != null && userRank != null && !inTop5 && userEntry == null) {
+        if (userId != null && userRank != null && !inTop5 && userEntry == null && !friends) {
+            // Global board only — a friends board is entirely in `entries`.
             val offset = max(0, userRank.rank - 6)
             userEntry = LeaderboardService.fetchDailyLeaderboardOrNull(
                 dbMode, playType, day, limit = 11, offset = offset,
@@ -661,10 +679,19 @@ object LeaderboardShare {
         // Yesterday's final rank for the delta pill — only meaningful when the
         // sharer is on today's board at all. Null = didn't play yesterday.
         val yesterdayRank = if (userId != null && userRank != null) {
-            LeaderboardService.getUserDailyRank(userId, dbMode, playType, day = yesterdayLocalDate())?.rank
+            if (friends) {
+                // Friend-rank vs friend-rank: dense index into yesterday's
+                // friends-filtered board (§207).
+                val ids = (FriendsService.friendIds + userId.lowercase()).toList()
+                LeaderboardService.fetchDailyLeaderboardOrNull(
+                    dbMode, playType, yesterdayLocalDate(), userIds = ids,
+                )?.indexOfFirst { it.userId == userId }?.takeIf { it >= 0 }?.plus(1)
+            } else {
+                LeaderboardService.getUserDailyRank(userId, dbMode, playType, day = yesterdayLocalDate())?.rank
+            }
         } else null
 
-        val input = buildDailyInput(variant, meta, day, entries, userId, userRank, userEntry, yesterdayRank) ?: return
+        val input = buildDailyInput(variant, friends, meta, day, entries, userId, userRank, userEntry, yesterdayRank) ?: return
         renderAndShare(context, input)
     }
 
@@ -675,9 +702,10 @@ object LeaderboardShare {
         playType: String,
         entries: List<LeaderboardService.LeaderboardEntry>,
         userId: String?,
+        friends: Boolean = false,
     ) {
         val meta = ModeGen.byDbKey(dbMode) ?: return
-        val input = buildPodiumInput(playType, meta, yesterdayLocalDate(), entries, userId) ?: return
+        val input = buildPodiumInput(playType, friends, meta, yesterdayLocalDate(), entries, userId) ?: return
         renderAndShare(context, input)
     }
 }

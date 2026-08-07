@@ -115,7 +115,7 @@ private data class ProfileChartsMemo(
 )
 
 @Composable
-fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {}) {
+fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPlayDaily: (GameMode) -> Unit = {}, onOpenProfile: (String) -> Unit = {}) {
     val profile by AuthService.profile.collectAsState()
     val scope = rememberCoroutineScope()
     var stats by remember { mutableStateOf<List<ProfileService.UserStat>>(emptyList()) }
@@ -330,6 +330,9 @@ fun ProfileScreen(onGoPro: () -> Unit = {}, onEditProfile: () -> Unit = {}, onPl
                 }
             })
         }
+
+        // ── FRIENDS (§207) — list + requests + add-by-username (web/iOS parity) ──
+        item { FriendsPanel(onOpenProfile = onOpenProfile) }
 
         // ── Referral program (web/iOS "GIFT PRO TO FRIENDS" parity) ──
         item { InvitePanel() }

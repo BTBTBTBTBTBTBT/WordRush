@@ -474,6 +474,8 @@ fun MainScreen() {
                                 // Today's Dailies badge → open that mode's daily game (completed
                                 // puzzle if played, fresh if not) — web parity.
                                 onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
+                                // Friends card rows → push the friend's profile in-tab.
+                                onOpenProfile = { publicProfileId = it },
                             )
                             3 -> RecordsScreen(onOpenProfile = { publicProfileId = it })
                         }

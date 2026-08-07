@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.FriendsService
 import com.wordocious.app.data.ModerationService
 import com.wordocious.app.data.ProfileService
 import com.wordocious.app.data.SupabaseConfig
@@ -147,7 +149,21 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
     // Latched when a deep endpoint answers with the typed 403 {private:true}
     // (the profiles row read was stale) — the server's verdict wins.
     var apiGated by remember(userId) { mutableStateOf(false) }
-    val gated = apiGated || (profile?.isPrivate == true && !isOwnProfile && !viewerIsAdmin)
+    // FRIENDS (§207): "private" means "friends only" — an accepted friend sees
+    // the full profile (the server gate opens the same way). friendsVersion is
+    // the snapshot read that recomposes the gate when the cache changes.
+    var friendsVersion by remember { mutableStateOf(FriendsService.version) }
+    DisposableEffect(Unit) {
+        val remove = FriendsService.addListener { friendsVersion = FriendsService.version }
+        onDispose { remove() }
+    }
+    LaunchedEffect(sessionUserId) { if (sessionUserId != null) FriendsService.load() }
+    val viewerIsFriend = friendsVersion >= 0 && FriendsService.isFriend(userId)
+    // A fresh friendship reopens a server-latched gate (iOS re-runs loadAll).
+    LaunchedEffect(viewerIsFriend) { if (viewerIsFriend) apiGated = false }
+    val gated = apiGated || (
+        profile?.isPrivate == true && !isOwnProfile && !viewerIsAdmin && !viewerIsFriend
+    )
     // Hold the gate closed while a signed-in viewer's own profile row is still
     // loading, so the owner never flashes their own teaser (spec §6).
     val authSettled = sessionUserId == null || viewerProfile != null
@@ -210,6 +226,10 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
     LaunchedEffect(moderationToast) {
         if (moderationToast != null) { delay(2_500); moderationToast = null }
     }
+
+    // FRIENDS (§207): Add Friend button state (iOS addFriendButton parity).
+    var confirmUnfriend by remember(userId) { mutableStateOf(false) }
+    LaunchedEffect(confirmUnfriend) { if (confirmUnfriend) { delay(3_000); confirmUnfriend = false } }
 
     // ── Profile-social layer loads — every one best-effort: a failed fetch
     // renders nothing new and the classic profile below is untouched. All key
@@ -278,6 +298,59 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
             // App Review 1.2: users must be able to report/block each other
             // wherever strangers' content (usernames/bios/avatars) renders.
             if (!isOwnProfile) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                // FRIENDS (§207): Add Friend pill beside the moderation kebab —
+                // iOS addFriendButton states: Add Friend → Requested (tap =
+                // cancel) · Accept request · Friends ✓ (tap → confirm unfriend).
+                if (sessionUserId != null && !blocked) {
+                    val pill = RoundedCornerShape(50)
+                    when {
+                        viewerIsFriend && confirmUnfriend -> Text(
+                            "Remove friend?", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            modifier = Modifier.clip(pill).background(Color(0xFFDC2626))
+                                .clickableNoRipple {
+                                    confirmUnfriend = false
+                                    moderationScope.launch { FriendsService.remove(userId) }
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                        viewerIsFriend -> Text(
+                            "Friends ✓", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                            color = Color(0xFF16A34A),
+                            modifier = Modifier.clip(pill)
+                                .background(Color(0xFF16A34A).copy(alpha = 0.10f))
+                                .border(1.5.dp, Color(0xFF16A34A).copy(alpha = 0.35f), pill)
+                                .clickableNoRipple { confirmUnfriend = true }
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                        FriendsService.hasIncomingFrom(userId) -> Text(
+                            "Accept request", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            modifier = Modifier.clip(pill).background(Color(0xFF16A34A))
+                                .clickableNoRipple { moderationScope.launch { FriendsService.accept(userId) } }
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                        FriendsService.hasRequested(userId) -> Text(
+                            "Requested", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                            color = WTheme.textMuted,
+                            modifier = Modifier.clip(pill).background(WTheme.surfaceHover)
+                                .border(1.5.dp, WTheme.border, pill)
+                                .clickableNoRipple { moderationScope.launch { FriendsService.decline(userId) } }
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                        else -> Text(
+                            "Add Friend", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            modifier = Modifier.clip(pill).background(Color(0xFF7C3AED))
+                                .clickableNoRipple { moderationScope.launch { FriendsService.request(addresseeId = userId) } }
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                        )
+                    }
+                }
                 Box {
                     Icon(
                         Icons.Filled.MoreVert, "More options", tint = WTheme.textMuted,
@@ -307,6 +380,7 @@ fun PublicProfileScreen(userId: String, onClose: () -> Unit, onOpenProfile: (Str
                             )
                         }
                     }
+                }
                 }
             }
         }

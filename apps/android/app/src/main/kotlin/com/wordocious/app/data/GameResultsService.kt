@@ -679,6 +679,13 @@ object GameResultsService {
                 if (trackPending && dailyOk) {
                     PendingRecords.markDone(gameMode.name, seed, PendingRecords.Part.DAILY)
                 }
+                // FRIENDS (§207) overtake push — fire-and-forget; the server
+                // re-reads the trusted score and notifies friends we passed.
+                if (dailyOk) {
+                    val friendsDay = seed?.let { com.wordocious.core.getDailySeedDate(it) }
+                        ?: com.wordocious.app.todayLocalDate()
+                    runCatching { FriendsService.beatCheck(friendsDay, gameMode.name) }
+                }
             }
             val (sweep, flawless) = MedalService.awardDailyBonusesIfComplete(userId)
             if (sweep + flawless > 0) {

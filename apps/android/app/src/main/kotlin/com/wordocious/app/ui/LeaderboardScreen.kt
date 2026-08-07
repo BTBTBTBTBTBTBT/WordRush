@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MilitaryTech
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Share
@@ -44,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -53,7 +55,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wordocious.app.data.AuthService
+import com.wordocious.app.data.FriendTaunts
+import com.wordocious.app.data.FriendsService
 import com.wordocious.app.data.LeaderboardService
+import com.wordocious.app.data.ModerationService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -162,7 +167,21 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     ) {
         value = com.wordocious.app.data.DailyCompletionsService.fetchTodayCompletions()
     }
-    LaunchedEffect(selectedMode, tick) {
+    // FRIENDS (§207): All|Friends toggle — dense friend ranks + ghost rows
+    // for friends who haven't played this mode today, with the canned-taunt
+    // dialog (fixed phrases only). friendsVersion re-keys the fetches when
+    // the FriendsService cache changes. Declared before the board fetch that
+    // keys on them.
+    var friendsOnly by remember { mutableStateOf(false) }
+    var friendsVersion by remember { mutableStateOf(FriendsService.version) }
+    var tauntTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
+    var tauntStatus by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(userId) { if (userId != null) FriendsService.load() }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val remove = FriendsService.addListener { friendsVersion = FriendsService.version }
+        onDispose { remove() }
+    }
+    LaunchedEffect(selectedMode, tick, friendsOnly, friendsVersion) {
         val mode = selectedMode
         val day = com.wordocious.app.todayLocalDate()
         // Daily Sweep board takes its own RPC path (no play-type / rank-window
@@ -195,7 +214,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         }
         // Stale-while-revalidate: a mode-chip tap or screen re-entry paints the
         // last-known rows instantly; the skeleton only shows on a true first load.
-        val key = LeaderboardService.cacheKey(mode, day, userId)
+        val friends = friendsOnly && userId != null
+        val key = LeaderboardService.cacheKey(mode, day, userId) + if (friends) ":friends" else ""
         val cached = LeaderboardService.cachedBoard(key)
         if (cached != null) {
             entries = cached.entries
@@ -208,6 +228,23 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             entries = emptyList()
             userRank = null
             rankWindow = null
+        }
+        // FRIENDS board (§207): one fetch restricted to friends∪me holds the
+        // whole board — rank is the dense index, no rank query or window.
+        if (friends) {
+            val ids = (FriendsService.friendIds + userId!!.lowercase()).toList()
+            val lbF = LeaderboardService.fetchDailyLeaderboardOrNull(mode, day = day, userIds = ids)
+            ensureActive()
+            if (lbF == null) { loading = false; return@LaunchedEffect }
+            entries = lbF
+            playerCount = lbF.size
+            loading = false
+            val idx = lbF.indexOfFirst { it.userId == userId }
+            val rank = if (idx >= 0) LeaderboardService.RankInfo(idx + 1, lbF.size) else null
+            userRank = rank
+            rankWindow = null
+            LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lbF, lbF.size, rank, null))
+            return@LaunchedEffect
         }
         // Rows + "{n} players today" (ALL play types, exact server count) in
         // parallel — paint the rows the moment they land; the rank banner fills
@@ -240,8 +277,17 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
         rankWindow = win
         LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lb, count, rank, win))
     }
-    LaunchedEffect(selectedMode, showYesterday) {
-        yesterday = if (showYesterday && selectedMode != SWEEP_ID) LeaderboardService.fetchYesterdayWinners(selectedMode) else emptyList()
+    LaunchedEffect(selectedMode, showYesterday, friendsOnly, friendsVersion) {
+        // Friends toggle carries into Yesterday's Winners: podium among friends.
+        yesterday = if (showYesterday && selectedMode != SWEEP_ID) {
+            val ids = if (friendsOnly && userId != null)
+                (FriendsService.friendIds + userId.lowercase()).toList() else null
+            if (ids != null) {
+                LeaderboardService.fetchDailyLeaderboardOrNull(
+                    selectedMode, day = com.wordocious.app.yesterdayLocalDate(), limit = 3, userIds = ids,
+                ) ?: emptyList()
+            } else LeaderboardService.fetchYesterdayWinners(selectedMode)
+        } else emptyList()
         yesterdaySweep = if (showYesterday && selectedMode == SWEEP_ID) {
             LeaderboardService.fetchDailySweepOrNull(day = com.wordocious.app.yesterdayLocalDate(), limit = 3) ?: emptyList()
         } else emptyList()
@@ -256,6 +302,66 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     val shareScope = androidx.compose.runtime.rememberCoroutineScope()
     var sharingLb by remember { mutableStateOf(false) }
     var sharingPodium by remember { mutableStateOf(false) }
+
+    val ghostFriends = remember(friendsOnly, friendsVersion, entries, isSweep) {
+        if (friendsOnly && userId != null && !isSweep) {
+            FriendsService.friends.filter { f ->
+                entries.none { it.userId == f.id } && !ModerationService.isBlocked(f.id)
+            }
+        } else emptyList()
+    }
+    // Canned-taunt picker (§207): fixed phrases, one per friend per day.
+    tauntTarget?.let { target ->
+        androidx.compose.ui.window.Dialog(onDismissRequest = { tauntTarget = null; tauntStatus = null }) {
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                    .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+            ) {
+                Text(
+                    "TAUNT ${target.username.uppercase()}",
+                    fontSize = 10.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted,
+                    letterSpacing = 0.8.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                )
+                Divider()
+                val status = tauntStatus
+                if (status != null) {
+                    Text(
+                        status, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                    )
+                } else {
+                    FriendTaunts.ALL.forEach { taunt ->
+                        Text(
+                            taunt.text, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
+                            modifier = Modifier.fillMaxWidth().clickableNoRipple {
+                                shareScope.launch {
+                                    val outcome = FriendsService.taunt(
+                                        target.id, taunt.id, com.wordocious.app.todayLocalDate())
+                                    tauntStatus = when (outcome) {
+                                        FriendsService.TauntOutcome.SENT -> "Sent 😈"
+                                        FriendsService.TauntOutcome.ALREADY_SENT -> "Already taunted them today"
+                                        FriendsService.TauntOutcome.FAILED -> "Could not send"
+                                    }
+                                    kotlinx.coroutines.delay(1400)
+                                    tauntTarget = null
+                                    tauntStatus = null
+                                }
+                            }.padding(horizontal = 16.dp, vertical = 13.dp),
+                        )
+                        Divider()
+                    }
+                    Text(
+                        "Cancel", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.textMuted,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().clickableNoRipple { tauntTarget = null }
+                            .padding(vertical = 13.dp),
+                    )
+                }
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().background(WTheme.bg)) {
         // iOS keeps the title, countdown and mode grid INSIDE the scroll
@@ -301,7 +407,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             // this is the user's daily-sweep rank.
             (if (isSweep) sweepRank else userRank)?.let { rank ->
                 item {
-                    UserRankCard(rank = rank.rank, total = rank.totalPlayers, mode = selectedMode)
+                    UserRankCard(rank = rank.rank, total = rank.totalPlayers, mode = selectedMode, friends = friendsOnly && !isSweep)
                     Spacer(Modifier.height(12.dp))
                 }
             }
@@ -330,6 +436,27 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
+                            // FRIENDS toggle (§207) — segmented shell, compact.
+                            if (userId != null) {
+                                val accent = Color(0xFF7C3AED)
+                                Row(
+                                    Modifier.clip(RoundedCornerShape(8.dp))
+                                        .border(1.5.dp, WTheme.border, RoundedCornerShape(8.dp)),
+                                ) {
+                                    listOf(false, true).forEach { f ->
+                                        val sel = friendsOnly == f
+                                        Text(
+                                            if (f) "Friends" else "All",
+                                            fontSize = 9.sp, fontWeight = FontWeight.Black,
+                                            color = if (sel) accent else WTheme.textMuted,
+                                            modifier = Modifier
+                                                .background(if (sel) accent.copy(alpha = 0.08f) else WTheme.surface)
+                                                .clickableNoRipple { friendsOnly = f }
+                                                .padding(horizontal = 8.dp, vertical = 3.dp),
+                                        )
+                                    }
+                                }
+                            }
                             Text(
                                 "Daily games only", fontSize = 9.sp, fontWeight = FontWeight.Bold,
                                 color = WTheme.textMuted,
@@ -347,6 +474,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                                     com.wordocious.app.data.LeaderboardShare.shareDailyLeaderboardCard(
                                                         shareContext, selectedMode, "solo",
                                                         entries, rankWindow, userId, userRank,
+                                                        friends = friendsOnly,
                                                     )
                                                 } finally { sharingLb = false }
                                             }
@@ -384,15 +512,32 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 }
             } else if (entries.isEmpty()) {
                 item {
-                    Column(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
-                            .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
-                            .padding(vertical = 40.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(Icons.Outlined.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.4f), modifier = Modifier.size(32.dp))
-                        Spacer(Modifier.height(8.dp))
-                        Text("No daily results yet. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    if (friendsOnly && ghostFriends.isNotEmpty()) {
+                        // Nobody's played yet — the friends list still renders
+                        // as ghost rows so the board feels alive (and tauntable).
+                        Column(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                                .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+                        ) {
+                            ghostFriends.forEachIndexed { index, f ->
+                                GhostFriendRow(f, onOpenProfile) { tauntTarget = f }
+                                if (index < ghostFriends.size - 1) Divider()
+                            }
+                        }
+                    } else {
+                        Column(
+                            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                                .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp))
+                                .padding(vertical = 40.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Icon(Icons.Outlined.EmojiEvents, null, tint = WTheme.textMuted.copy(alpha = 0.4f), modifier = Modifier.size(32.dp))
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                if (friendsOnly) "No friends yet — add them from any profile" else "No daily results yet. Be the first!",
+                                color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
             } else {
@@ -407,6 +552,15 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 rank = index + 1, entry = entry, mode = selectedMode,
                                 isCurrentUser = entry.userId == userId,
                                 onOpenProfile = onOpenProfile,
+                                // Friends board: one-tap canned taunt (§207).
+                                onTaunt = if (friendsOnly && entry.userId != userId) {
+                                    {
+                                        tauntTarget = FriendsService.FriendProfile(
+                                            id = entry.userId, username = entry.username ?: "Player",
+                                            avatarUrl = entry.avatarUrl,
+                                        )
+                                    }
+                                } else null,
                             )
                             if (index < entries.size - 1) Divider()
                         }
@@ -428,6 +582,14 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     onOpenProfile = onOpenProfile,
                                 )
                                 if (index < win.entries.size - 1) Divider()
+                            }
+                        }
+                        // FRIENDS ghost rows — friends who haven't played this
+                        // mode today, muted, with the taunt bell (§207).
+                        if (friendsOnly) {
+                            ghostFriends.forEach { f ->
+                                Divider()
+                                GhostFriendRow(f, onOpenProfile) { tauntTarget = f }
                             }
                         }
                     }
@@ -466,6 +628,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                         try {
                                             com.wordocious.app.data.LeaderboardShare.shareYesterdayPodiumCard(
                                                 shareContext, selectedMode, "solo", yesterday, userId,
+                                                friends = friendsOnly,
                                             )
                                         } finally { sharingPodium = false }
                                     }
@@ -740,7 +903,7 @@ private fun ModeCell(id: String, active: Boolean, modifier: Modifier = Modifier,
 }
 
 @Composable
-private fun UserRankCard(rank: Int, total: Int, mode: String) {
+private fun UserRankCard(rank: Int, total: Int, mode: String, friends: Boolean = false) {
     Box(
         modifier = Modifier.fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
@@ -754,8 +917,10 @@ private fun UserRankCard(rank: Int, total: Int, mode: String) {
             // Gold on BOTH boards — iOS uses one rankBanner for per-mode + sweep.
             Text("#$rank", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color(0xFFD97706))
             // Transient "+N/−N" movement pill since you last looked (web parity).
-            RankDeltaBadge(mode = mode, playType = "solo", pageKey = "daily", currentRank = rank)
-            Text(" of $total", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+            // Friends mode keeps its own memory — a friend-rank must never
+            // compare against a stored global rank (§207).
+            RankDeltaBadge(mode = mode, playType = "solo", pageKey = if (friends) "daily-friends" else "daily", currentRank = rank)
+            Text(if (friends) " of $total friends" else " of $total", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
         }
     }
 }
@@ -880,7 +1045,7 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
 }
 
 @Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true) {
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null) {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
@@ -915,6 +1080,41 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
                 }
             }
         }
+        // Friends board: one-tap canned taunt on any friend's row (§207).
+        if (onTaunt != null) {
+            Icon(
+                Icons.Outlined.Notifications, "Taunt ${entry.username ?: "friend"}",
+                tint = WTheme.textMuted,
+                modifier = Modifier.size(14.dp).clickableNoRipple(onTaunt),
+            )
+        }
+    }
+}
+
+/** FRIENDS ghost row (§207) — a friend who hasn't played this mode today, in
+ *  the standard row shell at muted opacity. The taunt bell is the point. */
+@Composable
+internal fun GhostFriendRow(
+    friend: FriendsService.FriendProfile,
+    onOpenProfile: (String) -> Unit = {},
+    onTaunt: () -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().alpha(0.55f).padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text("–", fontSize = 12.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted,
+            modifier = Modifier.width(20.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(friend.id) }) {
+            Text(friend.username, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
+            Text("Hasn't played yet", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+        }
+        Icon(
+            Icons.Outlined.Notifications, "Nudge ${friend.username}",
+            tint = WTheme.textMuted,
+            modifier = Modifier.size(14.dp).clickableNoRipple(onTaunt),
+        )
     }
 }
 
