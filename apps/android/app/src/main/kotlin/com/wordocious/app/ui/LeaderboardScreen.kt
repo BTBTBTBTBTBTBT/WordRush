@@ -51,6 +51,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -994,12 +996,18 @@ internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrent
     ) {
         RankIcon(rank)
         Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+            // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
+            // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
-                entry.username ?: "Player",
+                androidx.compose.ui.text.buildAnnotatedString {
+                    append(entry.username ?: "Player")
+                    if (isCurrentUser) {
+                        withStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))) { append(" (you)") }
+                    }
+                },
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-            if (isCurrentUser) Text(" (you)", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD97706))
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -1026,12 +1034,18 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
     ) {
         RankIcon(rank)
         Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+            // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
+            // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
-                entry.username ?: "Player",
+                androidx.compose.ui.text.buildAnnotatedString {
+                    append(entry.username ?: "Player")
+                    if (isCurrentUser) {
+                        withStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))) { append(" (you)") }
+                    }
+                },
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-            if (isCurrentUser) Text(" (you)", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD97706))
         }
         Column(horizontalAlignment = Alignment.End) {
             Text("${entry.sweepCount} sweep${if (entry.sweepCount == 1) "" else "s"}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
@@ -1059,12 +1073,18 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         RankIcon(rank)
         // Username (+ " (you)" gold suffix) — taps open the public profile (web parity).
         Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+            // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
+            // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
-                entry.username ?: "Player",
+                androidx.compose.ui.text.buildAnnotatedString {
+                    append(entry.username ?: "Player")
+                    if (isCurrentUser) {
+                        withStyle(androidx.compose.ui.text.SpanStyle(color = Color(0xFFD97706))) { append(" (you)") }
+                    }
+                },
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-            if (isCurrentUser) Text(" (you)", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD97706))
         }
         // Right column: score over detail line
         Column(horizontalAlignment = Alignment.End) {

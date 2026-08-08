@@ -292,6 +292,16 @@ fun MainScreen() {
         val fresh = com.wordocious.app.data.ShieldService.freshStreakAtRisk(p.id) ?: return@LaunchedEffect
         if (fresh.second) showShieldModal = true
     }
+    // The check above can latch the modal while a game covers the screen —
+    // the player finishes the daily, returns, and is told the streak they
+    // just extended is at risk (iOS had the same race). Any completion
+    // recorded today wins over the latch.
+    val shieldCompletionTick by com.wordocious.app.data.DailyCompletionsService.completionTick.collectAsState()
+    androidx.compose.runtime.LaunchedEffect(shieldCompletionTick, showShieldModal) {
+        if (showShieldModal && com.wordocious.app.data.DailyCompletionsService.readCache().isNotEmpty()) {
+            showShieldModal = false
+        }
+    }
 
     vsInvite?.let { (inviteMode, code) ->
         androidx.activity.compose.BackHandler { vsInvite = null }

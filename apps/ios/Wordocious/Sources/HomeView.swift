@@ -165,7 +165,11 @@ struct HomeView: View {
                         .padding(.horizontal, 16).padding(.bottom, 12)
                 }
 
-                if showShieldModal, let p = auth.profile {
+                // completedCount == 0: the launch check can latch the modal
+                // while a game covers Home — the player finishes the daily,
+                // returns, and is told the streak they just extended is at
+                // risk. Any completion recorded today wins over the latch.
+                if showShieldModal, completions.completedCount == 0, let p = auth.profile {
                     StreakShieldModal(
                         streak: p.dailyLoginStreak, shields: p.streakShields,
                         // The modal shows its "Streak saved" beat then calls
