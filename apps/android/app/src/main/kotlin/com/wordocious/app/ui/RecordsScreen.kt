@@ -350,8 +350,10 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                         Text("No sweeps yet today. Be the first!", color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 } else {
+                    // TIE-AWARE score display (daily-board parity).
+                    val sweepScoreLabels = tieAwareScoreLabels(sweepEntries.map { it.totalScore })
                     sweepEntries.forEachIndexed { i, entry ->
-                        SweepRow(rank = i + 1, entry = entry, isCurrentUser = entry.userId == userId, onOpenProfile = onOpenProfile)
+                        SweepRow(rank = i + 1, entry = entry, isCurrentUser = entry.userId == userId, onOpenProfile = onOpenProfile, scoreLabel = sweepScoreLabels[entry.totalScore])
                         if (i < sweepEntries.size - 1) HorizontalDivider(color = WTheme.border)
                     }
                 }
@@ -366,8 +368,13 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                 // iOS's Records row is the same guesses/time + Win/Loss line for
                 // Solo and VS (dailyRow has no playType branch) — keep the solo
                 // detail rather than LeaderboardRow's W/G tally.
+                // TIE-AWARE score display (daily-board parity) — the rank window
+                // is part of the same board, so it joins the collision set.
+                val lbScoreLabels = tieAwareScoreLabels(
+                    entries.map { it.compositeScore } + (rankWindow?.entries?.map { it.compositeScore } ?: emptyList()),
+                )
                 entries.forEachIndexed { i, entry ->
-                    LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = false)
+                    LeaderboardRow(rank = i + 1, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = false, scoreLabel = lbScoreLabels[entry.compositeScore])
                     if (i < entries.size - 1) HorizontalDivider(color = WTheme.border)
                 }
                 // "Your neighborhood" — rows around the user's rank when they
@@ -382,7 +389,7 @@ private fun DailyRecordsTab(onOpenProfile: (String) -> Unit = {}) {
                     )
                     HorizontalDivider(color = WTheme.border)
                     win.entries.forEachIndexed { i, entry ->
-                        LeaderboardRow(rank = win.startRank + i, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = false)
+                        LeaderboardRow(rank = win.startRank + i, entry = entry, mode = selectedMode, isCurrentUser = entry.userId == userId, showHints = false, scoreLabel = lbScoreLabels[entry.compositeScore])
                         if (i < win.entries.size - 1) HorizontalDivider(color = WTheme.border)
                     }
                 }
@@ -468,6 +475,7 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
             // iOS rules off the header and separates each podium row; Android drew
             // the rows flush, so the three winners ran together as one block.
             HorizontalDivider(color = WTheme.border)
+            val podiumScoreLabels = tieAwareScoreLabels(top3.map { it.compositeScore })
             top3.forEachIndexed { i, e ->
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
@@ -475,7 +483,7 @@ private fun YesterdayPodium(mode: String, playType: String, userId: String?, onO
                 ) {
                     Icon(Icons.Filled.MilitaryTech, null, tint = medalColors[minOf(i, 2)], modifier = Modifier.size(20.dp))
                     Text(e.username ?: "", modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(e.userId) }, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, maxLines = 1)
-                    Text(formatScore(e.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = accent)
+                    Text(podiumScoreLabels[e.compositeScore] ?: formatScore(e.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = accent)
                 }
                 if (i < top3.size - 1) HorizontalDivider(color = WTheme.border)
             }

@@ -11,7 +11,7 @@ import type {
   ShareLeaderboardRowInput,
   ShareMode,
 } from './share-image';
-import { formatScore } from './composite-scoring';
+import { formatScore, tieAwareScoreLabels } from './composite-scoring';
 
 /** A leaderboard entry with its display rank. Ranks come from the page (index
  *  + 1 with holes where blocked rows were) so the card can never disagree with
@@ -82,11 +82,12 @@ function toRow(
   r: RankedEntry,
   userId: string | null | undefined,
   subline: ((e: LeaderboardEntry) => string) | null,
+  scoreLabels?: Map<number, string>,
 ): ShareLeaderboardRowInput {
   return {
     rank: r.rank,
     name: r.entry.username,
-    scoreDisplay: formatScore(r.entry.composite_score),
+    scoreDisplay: scoreLabels?.get(r.entry.composite_score) ?? formatScore(r.entry.composite_score),
     subline: subline ? subline(r.entry) : undefined,
     isYou: !!userId && r.entry.user_id === userId,
   };
@@ -142,6 +143,13 @@ export function buildDailyLeaderboardShareInput(
   const delta = opts.userRank ? buildRankDelta(opts.yesterdayRank, opts.userRank.rank) : undefined;
 
   const puzzle = puzzleNumberForDay(opts.day);
+  // TIE-AWARE scores (board-page parity): rows sharing a whole number on THIS
+  // card render the decimals that rank them — the sharer's below-fold row is
+  // part of the same card, so it joins the collision set.
+  const cardLabels = tieAwareScoreLabels([
+    ...top.map((r) => r.entry.composite_score),
+    ...(belowTop ? [opts.userEntry!.composite_score] : []),
+  ]);
   const input: ShareLeaderboardInput = {
     layout: 'leaderboard',
     mode: opts.mode,
@@ -152,7 +160,7 @@ export function buildDailyLeaderboardShareInput(
     // honest forever. The settled Podium card says "· Final" instead.
     dateChip: `${formatBoardDate(opts.day)}${puzzle ? ` · #${puzzle}` : ''} · as of ${formatClockTime(opts.now ?? new Date())}`,
     // Sharer below the top 5 → compress the top rows to name+score only.
-    rows: top.map((r) => toRow(r, opts.userId, belowTop ? null : subline)),
+    rows: top.map((r) => toRow(r, opts.userId, belowTop ? null : subline, cardLabels)),
     footer: opts.friends
       ? 'Add your friends — play free at wordocious.com'
       : opts.variant === 'vs'
@@ -168,7 +176,7 @@ export function buildDailyLeaderboardShareInput(
     input.you = {
       rank: opts.userRank!.rank,
       name: opts.userEntry!.username,
-      scoreDisplay: formatScore(opts.userEntry!.composite_score),
+      scoreDisplay: cardLabels.get(opts.userEntry!.composite_score) ?? formatScore(opts.userEntry!.composite_score),
       subline: subline(opts.userEntry!),
       isYou: true,
     };
@@ -202,13 +210,14 @@ export function buildYesterdayPodiumShareInput(
   const top = opts.ranked.slice(0, 3);
   if (top.length === 0) return null;
   const subline = opts.playType === 'vs' ? vsSubline : soloSubline;
+  const cardLabels = tieAwareScoreLabels(top.map((r) => r.entry.composite_score));
   return {
     layout: 'leaderboard',
     mode: opts.mode,
     variant: opts.friends ? 'friendsPodium' : 'podium',
     modeChip: opts.playType === 'vs' ? `${opts.modeLabel} VS` : opts.modeLabel,
     dateChip: `${formatBoardDate(opts.day)} · Final`,
-    rows: top.map((r) => toRow(r, opts.userId, subline)),
+    rows: top.map((r) => toRow(r, opts.userId, subline, cardLabels)),
     footer: 'Today’s board is open — wordocious.com',
     date: new Date(opts.day + 'T00:00:00'),
   };

@@ -1003,6 +1003,16 @@ struct LeaderboardTab: View {
     @State private var userRank: (rank: Int, total: Int)?
     // "Your neighborhood" rows when the user placed past the top-50 list.
     @State private var rankWindow: (startRank: Int, entries: [LeaderboardEntry])?
+
+    // TIE-AWARE score display (web parity): rows sharing a whole number on the
+    // same board render the decimals that rank them; everything else stays
+    // integer. One map per board, keyed by the raw stored score.
+    private var lbScoreLabels: [Double: String] {
+        tieAwareScoreLabels(entries.map(\.compositeScore) + (rankWindow?.entries.map(\.compositeScore) ?? []))
+    }
+    private var sweepScoreLabels: [Double: String] { tieAwareScoreLabels(sweepEntries.map(\.totalScore)) }
+    private var yLbScoreLabels: [Double: String] { tieAwareScoreLabels(yesterday.map(\.compositeScore)) }
+    private var ySweepScoreLabels: [Double: String] { tieAwareScoreLabels(yesterdaySweep.map(\.totalScore)) }
     @State private var playerCount = 0
     @State private var loading = false
     @State private var showYesterday = false
@@ -1242,7 +1252,7 @@ struct LeaderboardTab: View {
             .minimumScaleFactor(0.7)
             Spacer()
             sweepPill(isFlawless: entry.isFlawless)
-            Text(formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
+            Text(ySweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -1419,7 +1429,7 @@ struct LeaderboardTab: View {
                 .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
                 .padding(.horizontal, 5).padding(.vertical, 1)
                 .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
-            Text(formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
+            Text(yLbScoreLabels[entry.compositeScore] ?? formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textMuted)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -1467,7 +1477,7 @@ struct LeaderboardTab: View {
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text(lbScoreLabels[entry.compositeScore] ?? formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 5) {
                     Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
@@ -1595,7 +1605,7 @@ struct LeaderboardTab: View {
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text(sweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 5) {
                     Text("\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9")
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)

@@ -155,10 +155,11 @@ enum LeaderboardShareBuilder {
     }
 
     private static func row(_ r: RankedEntry, userId: String?,
-                            subline: ((LeaderboardEntry) -> String)?) -> LbShareRow {
+                            subline: ((LeaderboardEntry) -> String)?,
+                            scoreLabels: [Double: String] = [:]) -> LbShareRow {
         LbShareRow(rank: r.rank,
                    name: r.entry.username,
-                   scoreDisplay: formatScore(r.entry.compositeScore),
+                   scoreDisplay: scoreLabels[r.entry.compositeScore] ?? formatScore(r.entry.compositeScore),
                    subline: subline.map { $0(r.entry) },
                    isYou: userId != nil && r.entry.userId == userId)
     }
@@ -184,6 +185,11 @@ enum LeaderboardShareBuilder {
         let delta = userRank.flatMap { rankDelta(yesterdayRank: yesterdayRank, todayRank: $0.rank) }
 
         let puzzle = puzzleNumber(forDay: day)
+        // TIE-AWARE scores (board parity): rows sharing a whole number on THIS
+        // card render the decimals that rank them — the sharer's below-fold
+        // row joins the collision set.
+        let cardLabels = tieAwareScoreLabels(
+            top.map(\.entry.compositeScore) + (belowTop ? [userEntry!.compositeScore] : []))
         // "as of h:mm" marks the card as a SNAPSHOT of a live board — today's
         // standings keep moving. The settled Podium card says "· Final" instead.
         let dateChip = "\(formatBoardDate(day))\(puzzle.map { " · #\($0)" } ?? "") · as of \(clockTime(now))"
@@ -194,7 +200,7 @@ enum LeaderboardShareBuilder {
             modeChip: variant == .vs ? "\(modeLabel) VS" : modeLabel,
             dateChip: dateChip,
             // Sharer below the top 5 → compress top rows to name+score only.
-            rows: top.map { row($0, userId: userId, subline: belowTop ? nil : subline) },
+            rows: top.map { row($0, userId: userId, subline: belowTop ? nil : subline, scoreLabels: cardLabels) },
             footer: variant == .friends
                 ? "Add your friends — play free at wordocious.com"
                 : variant == .vs
@@ -207,7 +213,7 @@ enum LeaderboardShareBuilder {
 
         if belowTop, let r = userRank, let e = userEntry {
             input.you = LbShareRow(rank: r.rank, name: e.username,
-                                   scoreDisplay: formatScore(e.compositeScore),
+                                   scoreDisplay: cardLabels[e.compositeScore] ?? formatScore(e.compositeScore),
                                    subline: subline(e), isYou: true)
             input.youRankLine = "#\(r.rank) of \(r.total)"
         }
@@ -226,13 +232,14 @@ enum LeaderboardShareBuilder {
         let top = Array(ranked.prefix(3))
         guard !top.isEmpty else { return nil }
         let subline: (LeaderboardEntry) -> String = playType == .vs ? vsSubline : soloSubline
+        let cardLabels = tieAwareScoreLabels(top.map(\.entry.compositeScore))
         return LbShareInput(
             variant: friends ? .friendsPodium : .podium,
             shareMode: shareMode, gameModeRaw: gameModeRaw,
             modeAccent: modeAccent,
             modeChip: playType == .vs ? "\(modeLabel) VS" : modeLabel,
             dateChip: "\(formatBoardDate(day)) · Final",
-            rows: top.map { row($0, userId: userId, subline: subline) },
+            rows: top.map { row($0, userId: userId, subline: subline, scoreLabels: cardLabels) },
             footer: "Today’s board is open — wordocious.com",
             day: day)
     }

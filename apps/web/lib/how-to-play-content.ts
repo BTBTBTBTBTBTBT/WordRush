@@ -159,6 +159,7 @@ export const HOW_TO_PLAY: HTPSection[] = [
       { strong: 'Speed bonus', text: ' — scaled by how far under your mode’s time cap you finish. It is always worth less than a single saved guess, so a faster solve never outranks a more efficient one' },
       { strong: 'Completion bonus (up to 200 points)', text: ' — scaled by how many boards you solved, so multi-board modes reward partial progress' },
       { strong: 'Hint penalty', text: ' — in Six, Seven, and ProperNoundle, each revealed hint costs a flat penalty (60 points in ProperNoundle, 75 in Six and Seven) and fills a board row, which also costs one step of guess bonus. A winning score never drops below zero' },
+      { strong: 'Photo finishes', text: ' — the speed bonus counts fractions of a point per second, so every second matters even when it does not show. Leaderboards display whole numbers; if two players land on the same whole number, the decimals appear on exactly those rows (say 2,328.8 vs 2,328.0) so you can see who edged it out. Identical decimals mean a true tie' },
     ],
     outro:
       'For example, solving a Classic puzzle in 3 guesses at 37 seconds earns 1,000 (base) + 900 (guess bonus) + about 210 (speed) + 200 (completion) — roughly 2,310 points.',

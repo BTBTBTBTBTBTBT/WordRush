@@ -178,3 +178,32 @@ fun ModeGlyph(mode: GameMode, tint: Color, box: Dp) {
  */
 fun formatScore(score: Double): String =
     java.text.NumberFormat.getIntegerInstance(java.util.Locale.US).format(score.toLong())
+
+/**
+ * TIE-AWARE score labels for a board of rows shown together — mirrors web
+ * composite-scoring.ts `tieAwareScoreLabels` 1:1. Scores are fractional
+ * (speed carries the decimals) but display truncates, so a 1-second gap can
+ * read as a tie (2,328.8 vs 2,328.0 both showed "2,328" — 2026-08-08). Rows
+ * sharing a whole number render the minimal decimals (1, then 2) that
+ * separate the group; identical stored scores are a TRUE tie and keep the
+ * integer, as does every non-colliding row.
+ */
+fun tieAwareScoreLabels(scores: List<Double>): Map<Double, String> {
+    val out = LinkedHashMap<Double, String>()
+    val byTrunc = LinkedHashMap<Long, MutableList<Double>>()  // trunc -> DISTINCT raw values
+    for (s in scores) {
+        if (out.containsKey(s)) continue
+        out[s] = formatScore(s)
+        byTrunc.getOrPut(s.toLong()) { mutableListOf() }.add(s)
+    }
+    for (vals in byTrunc.values) {
+        if (vals.size < 2) continue
+        val oneDecimal = vals.map { Math.round(it * 10) }.toSet()
+        val digits = if (oneDecimal.size == vals.size) 1 else 2
+        val fmt = java.text.NumberFormat.getNumberInstance(java.util.Locale.US).apply {
+            minimumFractionDigits = digits; maximumFractionDigits = digits
+        }
+        for (v in vals) out[v] = fmt.format(v)
+    }
+    return out
+}

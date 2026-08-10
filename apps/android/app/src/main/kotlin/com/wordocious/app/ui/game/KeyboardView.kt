@@ -41,7 +41,7 @@ private val ROWS = listOf("QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM")
 
 /**
  * On-screen keyboard — audit-then-match of the web `keyboard.tsx`.
- * - 3 QWERTY rows; ⌫ left of bottom row, ↵ right
+ * - 3 QWERTY rows; ↵ left of bottom row, ⌫ right (the phone-keyboard position)
  * - Keys are responsive: each letter key gets equal width (weight 1f),
  *   wide keys get weight 1.5f — exactly like the web's flex-equal layout.
  * - Key height is 48dp (matches the web's h-14 ≈ 56px / ~42dp native).
@@ -71,10 +71,12 @@ fun KeyboardView(
                 horizontalArrangement = Arrangement.spacedBy(5.dp), // spec key spacing 5
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (rowIdx == 2) WideKey("BACK") {
+                // ENTER left, ⌫ RIGHT — where every phone text keyboard puts
+                // backspace (founder call, 2026-08-10; web/iOS mirror this).
+                if (rowIdx == 2) WideKey("ENTER") {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     com.wordocious.app.data.SoundManager.playKeyTap()
-                    onDelete()
+                    onEnter()
                 }
                 row.forEach { ch ->
                     val tap = {
@@ -89,10 +91,10 @@ fun KeyboardView(
                         LetterKey(ch.toString(), WTheme.keyColor(state), state, tap)
                     }
                 }
-                if (rowIdx == 2) WideKey("ENTER") {
+                if (rowIdx == 2) WideKey("BACK") {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     com.wordocious.app.data.SoundManager.playKeyTap()
-                    onEnter()
+                    onDelete()
                 }
             }
         }

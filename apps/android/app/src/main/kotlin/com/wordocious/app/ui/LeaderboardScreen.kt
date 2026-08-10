@@ -305,6 +305,15 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     var sharingLb by remember { mutableStateOf(false) }
     var sharingPodium by remember { mutableStateOf(false) }
 
+    // TIE-AWARE score display (web parity): rows sharing a whole number on the
+    // same board render the decimals that rank them (2,328.8 over 2,328.0
+    // instead of a phantom tie). One map per board, keyed by the raw score.
+    val lbScoreLabels = remember(entries, rankWindow) {
+        tieAwareScoreLabels(entries.map { it.compositeScore } + (rankWindow?.entries?.map { it.compositeScore } ?: emptyList()))
+    }
+    val sweepScoreLabels = remember(sweepEntries) { tieAwareScoreLabels(sweepEntries.map { it.totalScore }) }
+    val yLbScoreLabels = remember(yesterday) { tieAwareScoreLabels(yesterday.map { it.compositeScore }) }
+    val ySweepScoreLabels = remember(yesterdaySweep) { tieAwareScoreLabels(yesterdaySweep.map { it.totalScore }) }
     val ghostFriends = remember(friendsOnly, friendsVersion, entries, isSweep) {
         if (friendsOnly && userId != null && !isSweep) {
             FriendsService.friends.filter { f ->
@@ -506,6 +515,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     rank = index + 1, entry = entry,
                                     isCurrentUser = entry.userId == userId,
                                     onOpenProfile = onOpenProfile,
+                                    scoreLabel = sweepScoreLabels[entry.totalScore],
                                 )
                                 if (index < sweepEntries.size - 1) Divider()
                             }
@@ -563,6 +573,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                         )
                                     }
                                 } else null,
+                                scoreLabel = lbScoreLabels[entry.compositeScore],
                             )
                             if (index < entries.size - 1) Divider()
                         }
@@ -582,6 +593,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                     rank = win.startRank + index, entry = entry, mode = selectedMode,
                                     isCurrentUser = entry.userId == userId,
                                     onOpenProfile = onOpenProfile,
+                                    scoreLabel = lbScoreLabels[entry.compositeScore],
                                 )
                                 if (index < win.entries.size - 1) Divider()
                             }
@@ -653,7 +665,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 )
                             } else {
                                 yesterdaySweep.forEachIndexed { i, e ->
-                                    YesterdaySweepRow(entry = e)
+                                    YesterdaySweepRow(entry = e, scoreLabel = ySweepScoreLabels[e.totalScore])
                                     if (i < yesterdaySweep.size - 1) Divider()
                                 }
                             }
@@ -665,7 +677,7 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             )
                         } else {
                             yesterday.forEachIndexed { i, e ->
-                                YesterdayRow(rank = i + 1, entry = e)
+                                YesterdayRow(rank = i + 1, entry = e, scoreLabel = yLbScoreLabels[e.compositeScore])
                                 if (i < yesterday.size - 1) Divider()
                             }
                         }
@@ -983,7 +995,7 @@ private fun EmptyBoardCard(message: String) {
 /** One Daily Sweep row — total score over "total time · X/9" + FLAWLESS/SWEEP
  *  pill. Reuses [RankIcon] + the LeaderboardRow shell (score/time formatters). */
 @Composable
-internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}) {
+internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, scoreLabel: String? = null) {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
@@ -1010,7 +1022,7 @@ internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrent
             )
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("${fmtTime(entry.totalTime)} · ${entry.modesWon}/9", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 SweepPill(entry.isFlawless)
@@ -1059,7 +1071,7 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
 }
 
 @Composable
-internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null) {
+internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, mode: String, isCurrentUser: Boolean, onOpenProfile: (String) -> Unit = {}, playType: String = "solo", showHints: Boolean = true, onTaunt: (() -> Unit)? = null, scoreLabel: String? = null) {
     val bg = when {
         isCurrentUser -> WTheme.highlightGold
         rank <= 3 -> WTheme.surfaceAlt
@@ -1088,7 +1100,7 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         }
         // Right column: score over detail line
         Column(horizontalAlignment = Alignment.End) {
-            Text(formatScore(entry.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
+            Text(scoreLabel ?: formatScore(entry.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (playType == "vs") {
                     // VS records show the head-to-head W/L tally instead of the
@@ -1139,7 +1151,7 @@ internal fun GhostFriendRow(
 }
 
 @Composable
-private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry) {
+private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry, scoreLabel: String? = null) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1147,14 +1159,14 @@ private fun YesterdayRow(rank: Int, entry: LeaderboardService.LeaderboardEntry) 
         RankIcon(rank)
         Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f), maxLines = 1)
         WinLossPill(entry.completed, abbrev = true)
-        Text(formatScore(entry.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+        Text(scoreLabel ?: formatScore(entry.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
 }
 
 /** Compact sweep-yesterday row — RankIcon, name, FLAWLESS/SWEEP pill, total
  *  score (muted). Mirrors YesterdayRow's shape; rank comes from the RPC. */
 @Composable
-private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry) {
+private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry, scoreLabel: String? = null) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1162,7 +1174,7 @@ private fun YesterdaySweepRow(entry: LeaderboardService.SweepEntry) {
         RankIcon(entry.rank.toInt())
         Text(entry.username ?: "Player", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text, modifier = Modifier.weight(1f), maxLines = 1)
         SweepPill(entry.isFlawless)
-        Text(formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
+        Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.textMuted)
     }
 }
 

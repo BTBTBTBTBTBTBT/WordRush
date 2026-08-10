@@ -17,16 +17,17 @@ struct KeyboardView: View {
         VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {
-                    // Match web's bottom row ['BACK', Z…M, 'ENTER']: Delete on the
-                    // LEFT, Enter on the RIGHT.
+                    // Match web's bottom row ['ENTER', Z…M, 'BACK']: Enter on the
+                    // LEFT, Delete on the RIGHT — where every phone text keyboard
+                    // puts backspace (founder call, 2026-08-10).
                     if r == 2 {
-                        actionKey("⌫") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+                        actionKey("ENTER") { vm.submit(); Haptics.tap(); SoundManager.shared.playKeyTap() }
                     }
                     ForEach(rows[r], id: \.self) { letter in
                         if vm.useQuadrantKeyboard { quadrantKey(letter) } else { letterKey(letter) }
                     }
                     if r == 2 {
-                        actionKey("ENTER") { vm.submit(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+                        actionKey("⌫") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
                     }
                 }
             }

@@ -214,6 +214,47 @@ export function formatScore(score: number): string {
   return Math.trunc(score).toLocaleString('en-US');
 }
 
+/**
+ * TIE-AWARE score labels for a board of rows shown together. Scores are
+ * fractional (speed carries the decimals) but display as whole numbers — so
+ * when two players land on the same whole number, a 1-second gap reads as a
+ * tie even though the faster player is ranked higher (the family incident of
+ * 2026-08-08: 2,328.8 vs 2,328.0 both read "2,328"). For exactly those rows,
+ * render the decimals: the minimal precision (1, then 2) that separates the
+ * group. Rows sharing the IDENTICAL stored score are a true tie and keep the
+ * clean integer, as does every non-colliding row — a board only grows
+ * decimals at the moment they're doing the deciding.
+ *
+ * Returns a map keyed by the raw stored score; callers fall back to
+ * formatScore() for values not in the map. Mirrored 1:1 by the native ports
+ * (iOS Format.tieAwareScoreLabels, Android Format.tieAwareScoreLabels).
+ */
+export function tieAwareScoreLabels(scores: number[]): Map<number, string> {
+  const out = new Map<number, string>();
+  const byTrunc = new Map<number, number[]>(); // trunc → DISTINCT raw values
+  for (const s of scores) {
+    if (out.has(s)) continue;
+    out.set(s, formatScore(s));
+    const t = Math.trunc(s);
+    const group = byTrunc.get(t);
+    if (group) group.push(s); else byTrunc.set(t, [s]);
+  }
+  for (const vals of byTrunc.values()) {
+    if (vals.length < 2) continue;
+    // 1 decimal when it separates every distinct value, else 2 (the stored
+    // precision — OCTORDLE's 0.08/s steps need it; Classic's 0.8/s doesn't).
+    const oneDecimal = new Set(vals.map((v) => Math.round(v * 10)));
+    const decimals = oneDecimal.size === vals.length ? 1 : 2;
+    for (const v of vals) {
+      out.set(v, v.toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }));
+    }
+  }
+  return out;
+}
+
 export function calculateCompositeScore(
   gameMode: string,
   completed: boolean,

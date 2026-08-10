@@ -332,6 +332,10 @@ struct DailyRecordsView: View {
     @State private var sweepEntries: [SweepEntry] = []
     @State private var sweepRank: (rank: Int, total: Int)?
     @State private var sweepLoading = false
+    // TIE-AWARE score display (web parity): rows sharing a whole number on the
+    // same board render the decimals that rank them.
+    private var lbScoreLabels: [Double: String] { tieAwareScoreLabels(entries.map(\.compositeScore)) }
+    private var sweepScoreLabels: [Double: String] { tieAwareScoreLabels(sweepEntries.map(\.totalScore)) }
     // LEADERBOARD SHARE — this view owns the Solo/VS toggle, so its share
     // button is where the VS Battle card variant comes from. Sweep has no
     // card design (web records/page.tsx parity).
@@ -534,7 +538,7 @@ struct DailyRecordsView: View {
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
-                Text(formatScore(e.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text(sweepScoreLabels[e.totalScore] ?? formatScore(e.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 5) {
                     Text("\(formatShortTime(e.totalTime)) · \(e.modesWon)/9")
                         .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
@@ -597,7 +601,7 @@ struct DailyRecordsView: View {
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
-                Text(formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text(lbScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 5) {
                     Text(line).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     Text(e.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
@@ -667,6 +671,7 @@ struct YesterdayPodiumCard: View {
     @State private var top3: [LeaderboardEntry] = []
     @State private var open = false
     @State private var sharing = false
+    private var podiumScoreLabels: [Double: String] { tieAwareScoreLabels(top3.map(\.compositeScore)) }
     private let medalColors = [Color(hex: 0xD97706), Color(hex: 0x9CA3AF), Color(hex: 0xB45309)]
 
     var body: some View {
@@ -714,7 +719,7 @@ struct YesterdayPodiumCard: View {
                                 Image(systemName: "medal.fill").foregroundStyle(medalColors[min(i, 2)]).frame(width: 20)
                                 NavigationLink(value: e.userId) { Text(e.username).font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1).minimumScaleFactor(0.7) }.buttonStyle(.plain)
                                 Spacer()
-                                Text(formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(accent)
+                                Text(podiumScoreLabels[e.compositeScore] ?? formatScore(e.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(accent)
                             }
                             .padding(.horizontal, 14).padding(.vertical, 8)
                             if i < top3.count - 1 { Divider().overlay(Theme.border) }

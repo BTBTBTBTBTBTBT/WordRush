@@ -177,10 +177,11 @@ object LeaderboardShare {
         e: LeaderboardService.LeaderboardEntry,
         userId: String?,
         subline: ((LeaderboardService.LeaderboardEntry) -> String)?,
+        scoreLabels: Map<Double, String> = emptyMap(),
     ): RowInput = RowInput(
         rank = rank,
         name = e.username ?: "Player",
-        scoreDisplay = formatScoreDisplay(e.compositeScore),
+        scoreDisplay = scoreLabels[e.compositeScore] ?: formatScoreDisplay(e.compositeScore),
         subline = subline?.invoke(e),
         isYou = userId != null && e.userId == userId,
     )
@@ -220,6 +221,12 @@ object LeaderboardShare {
         val delta = userRank?.let { buildRankDelta(yesterdayRank, it.rank) }
 
         val puzzle = puzzleNumberForDay(day)
+        // TIE-AWARE scores (board parity): rows sharing a whole number on THIS
+        // card render the decimals that rank them — the sharer's below-fold
+        // row joins the collision set.
+        val cardLabels = com.wordocious.app.ui.tieAwareScoreLabels(
+            top.map { it.compositeScore } + if (belowTop) listOf(userEntry!!.compositeScore) else emptyList(),
+        )
         return CardInput(
             variant = cardVariant,
             shareMode = meta.title,
@@ -230,8 +237,8 @@ object LeaderboardShare {
             // today's standings keep moving. The settled Podium says "· Final".
             dateChip = "${formatBoardDate(day)}${if (puzzle != null) " · #$puzzle" else ""} · as of ${formatClockTime(now)}",
             // Sharer below the top 5 → compress the top rows to name+score only.
-            rows = top.mapIndexed { i, e -> toRow(i + 1, e, userId, if (belowTop) null else subline) },
-            you = if (belowTop) toRow(userRank!!.rank, userEntry!!, userId, subline) else null,
+            rows = top.mapIndexed { i, e -> toRow(i + 1, e, userId, if (belowTop) null else subline, cardLabels) },
+            you = if (belowTop) toRow(userRank!!.rank, userEntry!!, userId, subline, cardLabels) else null,
             youRankLine = if (belowTop) "#${userRank!!.rank} of ${userRank!!.totalPlayers}" else null,
             delta = delta,
             footer = when (cardVariant) {
@@ -263,6 +270,7 @@ object LeaderboardShare {
         if (top.isEmpty()) return null
         val subline: (LeaderboardService.LeaderboardEntry) -> String =
             if (playType == "vs") ::vsSubline else ::soloSubline
+        val cardLabels = com.wordocious.app.ui.tieAwareScoreLabels(top.map { it.compositeScore })
         return CardInput(
             variant = if (friends) Variant.FRIENDS_PODIUM else Variant.PODIUM,
             shareMode = meta.title,
@@ -270,7 +278,7 @@ object LeaderboardShare {
             accent = meta.accentInt,
             modeChip = if (playType == "vs") "${meta.shareLabel} VS" else meta.shareLabel,
             dateChip = "${formatBoardDate(day)} · Final",
-            rows = top.mapIndexed { i, e -> toRow(i + 1, e, userId, subline) },
+            rows = top.mapIndexed { i, e -> toRow(i + 1, e, userId, subline, cardLabels) },
             footer = "Today’s board is open — wordocious.com",
             day = day,
         )

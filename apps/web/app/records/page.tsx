@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Trophy, Clock, Target, Flame, Crown, Zap, Medal, Users, User, Swords, Sparkles, TrendingUp, ChevronDown, Star, Share } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { formatScore } from '@/lib/composite-scoring';
+import { formatScore, tieAwareScoreLabels } from '@/lib/composite-scoring';
 import { AppHeader } from '@/components/ui/app-header';
 import { BottomNav } from '@/components/ui/bottom-nav';
 import { ModePicker, PROFILE_MODES, SWEEP_MODE } from '@/components/profile/mode-picker';
@@ -302,6 +302,11 @@ function DailyRecordsView({ userId }: { userId?: string }) {
     }
   };
 
+  // TIE-AWARE score display: rows sharing a whole number render the decimals
+  // that rank them (daily-page parity) — everything else stays integer.
+  const lbScoreLabels = tieAwareScoreLabels(leaderboard.map((e) => e.composite_score));
+  const sweepScoreLabels = tieAwareScoreLabels(sweepLeaderboard.map((e) => e.total_score));
+
   // One Sweep row — records style (py-2.5); total score · total time ·
   // modes-won, with a GOLD "FLAWLESS" / VIOLET "SWEEP" pill.
   const renderSweepRow = (entry: SweepEntry, rank: number) => {
@@ -328,7 +333,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
           </Link>
         </div>
         <div className="text-right">
-          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.total_score)}</div>
+          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</div>
           <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             <span>{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
             <span
@@ -524,7 +529,7 @@ function DailyRecordsView({ userId }: { userId?: string }) {
                     </Link>
                   </div>
                   <div className="text-right">
-                    <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.composite_score)}</div>
+                    <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}</div>
                     <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                       {playType === 'solo' ? (
                         <>
@@ -577,6 +582,7 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
   }, [mode, playType, yesterday]);
 
   if (top3.length === 0) return null;
+  const podiumScoreLabels = tieAwareScoreLabels(top3.map((e) => e.composite_score));
   const medalColor = ['#d97706', '#9ca3af', '#b45309'];
 
   const handleShare = async () => {
@@ -634,7 +640,7 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
             <div key={e.user_id} className="flex items-center gap-3 px-4 py-2" style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
               <Medal className="w-4 h-4 shrink-0" style={{ color: medalColor[i] }} />
               <Link href={`/profile/${e.user_id}`} className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80" style={{ color: 'var(--color-text)' }}>{e.username}</Link>
-              <span className="font-black text-xs" style={{ color }}>{formatScore(e.composite_score)}</span>
+              <span className="font-black text-xs" style={{ color }}>{podiumScoreLabels.get(e.composite_score) ?? formatScore(e.composite_score)}</span>
             </div>
           ))}
         </div>

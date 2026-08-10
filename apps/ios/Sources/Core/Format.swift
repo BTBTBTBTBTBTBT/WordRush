@@ -35,6 +35,45 @@ public func formatScore(_ score: Double) -> String {
     scoreFormatter.string(from: NSNumber(value: score.rounded(.towardZero))) ?? String(Int(score))
 }
 
+private func decimalScoreFormatter(_ digits: Int) -> NumberFormatter {
+    let f = NumberFormatter()
+    f.numberStyle = .decimal
+    f.usesGroupingSeparator = true
+    f.groupingSeparator = ","
+    f.groupingSize = 3
+    f.decimalSeparator = "."
+    f.minimumFractionDigits = digits
+    f.maximumFractionDigits = digits
+    return f
+}
+private let oneDecimalFormatter = decimalScoreFormatter(1)
+private let twoDecimalFormatter = decimalScoreFormatter(2)
+
+/// TIE-AWARE score labels for a board of rows shown together — mirrors web
+/// composite-scoring.ts `tieAwareScoreLabels` 1:1. Scores are fractional
+/// (speed carries the decimals) but display truncates, so a 1-second gap can
+/// read as a tie (2,328.8 vs 2,328.0 both showed "2,328" — 2026-08-08).
+/// Rows sharing a whole number render the minimal decimals (1, then 2) that
+/// separate the group; identical stored scores are a TRUE tie and keep the
+/// integer, as does every non-colliding row.
+public func tieAwareScoreLabels(_ scores: [Double]) -> [Double: String] {
+    var out: [Double: String] = [:]
+    var byTrunc: [Int: [Double]] = [:]  // trunc → DISTINCT raw values
+    for s in scores where out[s] == nil {
+        out[s] = formatScore(s)
+        byTrunc[Int(s.rounded(.towardZero)), default: []].append(s)
+    }
+    for vals in byTrunc.values where vals.count >= 2 {
+        let oneDecimal = Set(vals.map { ($0 * 10).rounded() })
+        let digits = oneDecimal.count == vals.count ? 1 : 2
+        let formatter = digits == 1 ? oneDecimalFormatter : twoDecimalFormatter
+        for v in vals {
+            out[v] = formatter.string(from: NSNumber(value: v)) ?? out[v]
+        }
+    }
+    return out
+}
+
 /// Compact time for leaderboard/records/summary rows: "0s", "45s", "2m",
 /// "2m 5s". Zero is a real value ("0s"), never a dash.
 public func formatShortTime(_ seconds: Int) -> String {

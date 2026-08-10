@@ -8,7 +8,9 @@ import { Delete } from 'lucide-react';
 const ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
   ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['BACK', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'ENTER']
+  // ENTER left, backspace RIGHT — where every phone text keyboard puts it
+  // (founder call, 2026-08-10; iOS/Android KeyboardViews mirror this).
+  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
 ];
 
 type LetterState = 'correct' | 'present' | 'absent';

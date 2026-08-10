@@ -5,7 +5,7 @@ import { Clock, Medal, Crown, Users, Calendar, ChevronDown, ChevronUp, Trophy, P
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { formatScore } from '@/lib/composite-scoring';
+import { formatScore, tieAwareScoreLabels } from '@/lib/composite-scoring';
 import { formatShortTime as formatTime } from '@/lib/format';
 import { AuthModal } from '@/components/auth/auth-modal';
 import { AppHeader } from '@/components/ui/app-header';
@@ -298,6 +298,18 @@ export default function DailyPage() {
   const modeHref = `/${mode.id}`;
   const playLimitKey = mode.id;
 
+  // TIE-AWARE score display: stored scores are fractional (speed carries the
+  // decimals) but rows show whole numbers — so when two rows on the same board
+  // land on one whole number, exactly those rows render the decimals that rank
+  // them (2,328.8 over 2,328.0 instead of a phantom tie). One map per board.
+  const lbScoreLabels = tieAwareScoreLabels([
+    ...leaderboard.map((e) => e.composite_score),
+    ...(rankWindow?.entries.map((e) => e.composite_score) ?? []),
+  ]);
+  const sweepScoreLabels = tieAwareScoreLabels(sweepLeaderboard.map((e) => e.total_score));
+  const yLbScoreLabels = tieAwareScoreLabels(yesterdayLeaderboard.map((e) => e.composite_score));
+  const ySweepScoreLabels = tieAwareScoreLabels(yesterdaySweep.map((e) => e.total_score));
+
   // One row of the leaderboard — shared by the top-50 list and the
   // "your neighborhood" rank window so they can never drift apart visually.
   const renderLbRow = (entry: LeaderboardEntry, rank: number) => {
@@ -323,7 +335,7 @@ export default function DailyPage() {
           </Link>
         </div>
         <div className="text-right">
-          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.composite_score)}</div>
+          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}</div>
           <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             <span>
               {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
@@ -421,7 +433,7 @@ export default function DailyPage() {
           </Link>
         </div>
         <div className="text-right">
-          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{formatScore(entry.total_score)}</div>
+          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</div>
           <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             <span>{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
             <span
@@ -803,7 +815,7 @@ export default function DailyPage() {
                       >
                         {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
                       </span>
-                      <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{formatScore(entry.total_score)}</span>
+                      <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{ySweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</span>
                     </div>
                   ))}
                 </div>
@@ -831,7 +843,7 @@ export default function DailyPage() {
                     >
                       {entry.completed ? 'W' : 'L'}
                     </span>
-                    <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{formatScore(entry.composite_score)}</span>
+                    <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{yLbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}</span>
                   </div>
                 ))}
               </div>
