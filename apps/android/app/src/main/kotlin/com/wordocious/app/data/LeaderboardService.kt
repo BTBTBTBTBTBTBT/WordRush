@@ -268,7 +268,7 @@ object LeaderboardService {
     }
 
     /** Yesterday's top finishers (for the "Yesterday's Winners" card). */
-    suspend fun fetchYesterdayWinners(gameMode: String, playType: String = "solo", limit: Int = 3): List<LeaderboardEntry> =
+    suspend fun fetchYesterdayWinners(gameMode: String, playType: String = "solo", limit: Int = 5): List<LeaderboardEntry> =
         fetchDailyLeaderboard(gameMode, playType, day = yesterdayLocalDate(), limit = limit)
 
     @Serializable

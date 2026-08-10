@@ -286,12 +286,12 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                 (FriendsService.friendIds + userId.lowercase()).toList() else null
             if (ids != null) {
                 LeaderboardService.fetchDailyLeaderboardOrNull(
-                    selectedMode, day = com.wordocious.app.yesterdayLocalDate(), limit = 3, userIds = ids,
+                    selectedMode, day = com.wordocious.app.yesterdayLocalDate(), limit = 5, userIds = ids,
                 ) ?: emptyList()
             } else LeaderboardService.fetchYesterdayWinners(selectedMode)
         } else emptyList()
         yesterdaySweep = if (showYesterday && selectedMode == SWEEP_ID) {
-            LeaderboardService.fetchDailySweepOrNull(day = com.wordocious.app.yesterdayLocalDate(), limit = 3) ?: emptyList()
+            LeaderboardService.fetchDailySweepOrNull(day = com.wordocious.app.yesterdayLocalDate(), limit = 5) ?: emptyList()
         } else emptyList()
     }
 

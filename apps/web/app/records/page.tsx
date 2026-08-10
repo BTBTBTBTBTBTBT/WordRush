@@ -577,7 +577,7 @@ function YesterdayPodium({ mode, playType, color, userId }: { mode: string; play
 
   useEffect(() => {
     let active = true;
-    fetchDailyLeaderboard(mode, playType, yesterday, 3).then((r) => { if (active) setTop3(r); });
+    fetchDailyLeaderboard(mode, playType, yesterday, 5).then((r) => { if (active) setTop3(r); });
     return () => { active = false; };
   }, [mode, playType, yesterday]);
 

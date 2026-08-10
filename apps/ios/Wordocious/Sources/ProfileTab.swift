@@ -1383,11 +1383,13 @@ struct LeaderboardTab: View {
                         Button {
                             guard !sharingPodium else { return }
                             sharingPodium = true
-                            LeaderboardShareFlow.sharePodium(
-                                mode: mode, playType: "solo",
-                                top3: yesterday, userId: auth.profile?.id,
-                                friends: friendsOnly)
-                            sharingPodium = false
+                            Task {
+                                await LeaderboardShareFlow.sharePodium(
+                                    mode: mode, playType: "solo",
+                                    top3: yesterday, userId: auth.profile?.id,
+                                    friends: friendsOnly)
+                                sharingPodium = false
+                            }
                         } label: {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 13, weight: .semibold))
@@ -1693,7 +1695,7 @@ struct LeaderboardTab: View {
     private func loadYesterday() async {
         if isSweep {
             let rows = (try? await SweepLeaderboardService.fetchDailySweep(
-                day: LeaderboardService.yesterdayLocal(), limit: 3)) ?? []
+                day: LeaderboardService.yesterdayLocal(), limit: 5)) ?? []
             guard !Task.isCancelled else { return }
             yesterdaySweep = rows
             return
@@ -1704,7 +1706,7 @@ struct LeaderboardTab: View {
             ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
         }
         let rows = (try? await LeaderboardService.fetch(
-            gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 3, userIds: ids)) ?? []
+            gameMode: mode, day: LeaderboardService.yesterdayLocal(), limit: 5, userIds: ids)) ?? []
         // .task(id:) cancels this on a mode switch — don't let the previous
         // mode's slow response overwrite the new mode's podium.
         guard !Task.isCancelled else { return }

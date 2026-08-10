@@ -1503,9 +1503,11 @@ function drawLeaderboardCard(
   ctx.fillText(input.footer, width / 2, footerY + 30);
 }
 
-/** Max row height — roomier for the 3-row podium than a 6-slot board. */
-function band(input: ShareLeaderboardInput): number {
-  return input.variant === 'podium' || input.variant === 'friendsPodium' ? 170 : 130;
+/** Max row height. The podium used a roomier 170 when it held 3 rows; it now
+ *  carries the same top 5 (+ you-row) as the daily card, so every board shares
+ *  the 130 band. */
+function band(_input: ShareLeaderboardInput): number {
+  return 130;
 }
 
 // ──────────────────────────────────────────────────────────────────────────

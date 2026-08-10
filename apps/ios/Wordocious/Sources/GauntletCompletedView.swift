@@ -38,7 +38,14 @@ struct GauntletCompletedView: View {
                 .frame(maxWidth: .infinity)
             }
             if showStageHeader {
-                Text("STAGE BREAKDOWN").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                // "SEE RESULTS" hint: the expandable rows weren't discoverable
+                // (Doug feedback, Aug 10).
+                HStack {
+                    Text("STAGE BREAKDOWN").font(Brand.font(10, .black)).tracking(0.8).foregroundStyle(Theme.textMuted)
+                    Spacer()
+                    Text("TAP A STAGE TO SEE RESULTS").font(Brand.font(9, .black)).tracking(0.6)
+                        .foregroundStyle(Color(hex: 0x7C3AED))
+                }
             }
             // One row per stage; tap to expand its boards.
             VStack(spacing: 4) {
@@ -82,8 +89,10 @@ struct GauntletCompletedView: View {
                     Text("\(result.guesses)g · \(fmtTime(result.timeMs))")
                         .font(Brand.font(9, .bold)).foregroundStyle(Theme.textMuted)
                     if hasBoards {
+                        // Win-purple / loss-red so the expander reads as a
+                        // door, not decoration (Doug feedback, Aug 10).
                         Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(Theme.textMuted)
+                            .foregroundStyle(won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626))
                             .rotationEffect(.degrees(isExpanded ? 180 : 0))
                     }
                 }

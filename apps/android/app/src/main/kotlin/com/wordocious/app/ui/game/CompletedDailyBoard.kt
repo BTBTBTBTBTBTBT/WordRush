@@ -429,11 +429,21 @@ internal fun GauntletStageBreakdown(
             }
         }
         if (showStageHeader) {
-            Text(
-                "STAGE BREAKDOWN",
-                fontSize = 10.sp, fontWeight = FontWeight.Black,
-                color = WTheme.textMuted, letterSpacing = 0.8.sp,
-            )
+            // "SEE RESULTS" hint: the expandable rows weren't discoverable
+            // (Doug feedback, Aug 10).
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "STAGE BREAKDOWN",
+                    fontSize = 10.sp, fontWeight = FontWeight.Black,
+                    color = WTheme.textMuted, letterSpacing = 0.8.sp,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "TAP A STAGE TO SEE RESULTS",
+                    fontSize = 9.sp, fontWeight = FontWeight.Black,
+                    color = Color(0xFF7C3AED), letterSpacing = 0.6.sp,
+                )
+            }
         }
         // Per-stage rows (tap → inline expand: ANSWERS + final boards)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -459,7 +469,13 @@ internal fun GauntletStageBreakdown(
                         Text("${r.guesses}g · ${fmtMs(r.timeMs)}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                         if (hasBoards) {
                             Spacer(Modifier.width(6.dp))
-                            Icon(Icons.Filled.KeyboardArrowDown, null, tint = WTheme.textMuted, modifier = Modifier.size(12.dp).rotate(if (isExpanded) 180f else 0f))
+                            // Win-purple / loss-red so the expander reads as a
+                            // door, not decoration (Doug feedback, Aug 10).
+                            Icon(
+                                Icons.Filled.KeyboardArrowDown, null,
+                                tint = if (sWon) Color(0xFF7C3AED) else Color(0xFFDC2626),
+                                modifier = Modifier.size(12.dp).rotate(if (isExpanded) 180f else 0f),
+                            )
                         }
                     }
                     AnimatedVisibility(visible = isExpanded && hasBoards) {

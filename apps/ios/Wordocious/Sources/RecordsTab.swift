@@ -693,10 +693,12 @@ struct YesterdayPodiumCard: View {
                             Button {
                                 guard !sharing else { return }
                                 sharing = true
-                                LeaderboardShareFlow.sharePodium(
-                                    mode: mode, playType: playType,
-                                    top3: top3, userId: auth.profile?.id)
-                                sharing = false
+                                Task {
+                                    await LeaderboardShareFlow.sharePodium(
+                                        mode: mode, playType: playType,
+                                        top3: top3, userId: auth.profile?.id)
+                                    sharing = false
+                                }
                             } label: {
                                 Image(systemName: "square.and.arrow.up")
                                     .font(.system(size: 13, weight: .semibold))
@@ -732,7 +734,7 @@ struct YesterdayPodiumCard: View {
             }
         }
         .task(id: "\(mode.rawValue)-\(playType)") {
-            top3 = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), playType: playType, limit: 3)) ?? []
+            top3 = (try? await LeaderboardService.fetch(gameMode: mode, day: LeaderboardService.yesterdayLocal(), playType: playType, limit: 5)) ?? []
         }
     }
 }

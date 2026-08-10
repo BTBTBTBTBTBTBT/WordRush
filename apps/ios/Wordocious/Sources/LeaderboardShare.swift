@@ -227,21 +227,36 @@ enum LeaderboardShareBuilder {
         playType: LbShareVariant, friends: Bool = false,
         shareMode: String, modeLabel: String,
         gameModeRaw: String, modeAccent: Color,
-        day: String, ranked: [RankedEntry], userId: String?
+        day: String, ranked: [RankedEntry], userId: String?,
+        userRank: (rank: Int, total: Int)? = nil,
+        userEntry: LeaderboardEntry? = nil
     ) -> LbShareInput? {
-        let top = Array(ranked.prefix(3))
+        // Top 5 + sharer's final rank — daily-card parity (founder, Aug 10).
+        let top = Array(ranked.prefix(5))
         guard !top.isEmpty else { return nil }
         let subline: (LeaderboardEntry) -> String = playType == .vs ? vsSubline : soloSubline
-        let cardLabels = tieAwareScoreLabels(top.map(\.entry.compositeScore))
-        return LbShareInput(
+        let youInTop = userId != nil && top.contains { $0.entry.userId == userId }
+        let belowTop = !youInTop && userId != nil && userRank != nil && userEntry != nil
+        let cardLabels = tieAwareScoreLabels(
+            top.map(\.entry.compositeScore) + (belowTop ? [userEntry!.compositeScore] : []))
+        var input = LbShareInput(
             variant: friends ? .friendsPodium : .podium,
             shareMode: shareMode, gameModeRaw: gameModeRaw,
             modeAccent: modeAccent,
             modeChip: playType == .vs ? "\(modeLabel) VS" : modeLabel,
             dateChip: "\(formatBoardDate(day)) · Final",
-            rows: top.map { row($0, userId: userId, subline: subline, scoreLabels: cardLabels) },
+            rows: top.map { row($0, userId: userId, subline: belowTop ? nil : subline, scoreLabels: cardLabels) },
             footer: "Today’s board is open — wordocious.com",
             day: day)
+        input.shareRank = userRank?.rank
+        input.sharePlayers = userRank?.total
+        if belowTop, let r = userRank, let e = userEntry {
+            input.you = LbShareRow(rank: r.rank, name: e.username,
+                                   scoreDisplay: cardLabels[e.compositeScore] ?? formatScore(e.compositeScore),
+                                   subline: subline(e), isYou: true)
+            input.youRankLine = "#\(r.rank) of \(r.total)"
+        }
+        return input
     }
 }
 
@@ -331,7 +346,11 @@ struct LeaderboardShareCardView: View {
     }
 
     private func tintedImage(_ ctx: GraphicsContext, asset: String, color: Color) -> GraphicsContext.ResolvedImage? {
+        // .alwaysTemplate FIRST: withTintColor only recolors template images —
+        // on the raw asset it silently kept the original black artwork, which
+        // is why every shared card's crown rendered black (founder, Aug 10).
         guard let ui = UIImage(named: asset)?
+            .withRenderingMode(.alwaysTemplate)
             .withTintColor(UIColor(color), renderingMode: .alwaysOriginal) else { return nil }
         return ctx.resolve(Image(uiImage: ui))
     }
@@ -551,7 +570,8 @@ struct LeaderboardShareCardView: View {
         let nRows = CGFloat(input.rows.count + (input.you != nil ? 1 : 0))
         guard nRows > 0 else { return }
         // Max row height — roomier for the 3-row podium than a 6-slot board.
-        let band: CGFloat = (input.variant == .podium || input.variant == .friendsPodium) ? 170 : 130
+        // Podium carries the same top 5 (+ you-row) as the daily card now.
+        let band: CGFloat = 130
         let rowH = min(band, (areaBottom - areaTop - pad * 2 - dividerH) / nRows)
         let contentH = rowH * nRows + dividerH + pad * 2
         let panelTop = areaTop + (areaBottom - areaTop - contentH) / 2
@@ -722,15 +742,40 @@ enum LeaderboardShareFlow {
         ShareService.shareLeaderboard(input)
     }
 
-    /// Share yesterday's settled podium (top 3, "· Final" chip).
+    /// Share yesterday's settled podium (top 5 + sharer's final rank,
+    /// "· Final" chip — daily-card parity, founder ask 2026-08-10).
     @MainActor
     static func sharePodium(mode: GameMode, playType: String,
                             top3: [LeaderboardEntry], userId: String?,
-                            friends: Bool = false) {
+                            friends: Bool = false) async {
         guard let meta = ModeGen.byDbKey(mode.rawValue) else { return }
         let variant: LbShareVariant = playType == "vs" ? .vs : .solo
+        let day = LeaderboardService.yesterdayLocal()
         let ranked = top3.enumerated().map {
             LeaderboardShareBuilder.RankedEntry(rank: $0.offset + 1, entry: $0.element)
+        }
+        // Sharer's FINAL rank yesterday + their own row for the below-top-5
+        // treatment. Friends mode dense-ranks the friends-filtered board.
+        var userRank: (rank: Int, total: Int)? = nil
+        var userEntry: LeaderboardEntry? = userId.flatMap { uid in top3.first { $0.userId == uid } }
+        if let uid = userId {
+            if friends {
+                let ids = Array(Set(FriendsService.friendIds).union([uid.lowercased()]))
+                if let board = try? await LeaderboardService.fetch(
+                    gameMode: mode, day: day, playType: playType, userIds: ids),
+                   let idx = board.firstIndex(where: { $0.userId == uid }) {
+                    userRank = (rank: idx + 1, total: board.count)
+                    if userEntry == nil { userEntry = board[idx] }
+                }
+            } else {
+                userRank = await LeaderboardService.userRank(
+                    gameMode: mode, userId: uid, playType: playType, day: day,
+                    topEntries: top3, topLimit: 5)
+                if userRank != nil, userEntry == nil {
+                    userEntry = (try? await LeaderboardService.fetch(
+                        gameMode: mode, day: day, playType: playType, limit: 1, userIds: [uid]))?.first
+                }
+            }
         }
         guard let input = LeaderboardShareBuilder.buildPodiumInput(
             playType: variant, friends: friends,
@@ -739,8 +784,9 @@ enum LeaderboardShareFlow {
             // Web parity: the podium chip keeps the catalog accent even for a
             // VS podium — teal + swords belong to the live VS variant only.
             modeAccent: meta.accent,
-            day: LeaderboardService.yesterdayLocal(),
-            ranked: ranked, userId: userId) else { return }
+            day: day,
+            ranked: ranked, userId: userId,
+            userRank: userRank, userEntry: userEntry) else { return }
         ShareService.shareLeaderboard(input)
     }
 }

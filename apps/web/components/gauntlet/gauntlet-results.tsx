@@ -202,7 +202,10 @@ export function GauntletResults({
           className="bg-gray-100 backdrop-blur-sm rounded-2xl p-4 border border-gray-200 space-y-2 animate-fade-in-up"
           style={{ animationDelay: '0.8s' }}
         >
-          <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-3">Stage Breakdown</h3>
+          <div className="flex items-baseline justify-between mb-3">
+            <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider">Stage Breakdown</h3>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-violet-500">Tap a stage to see results</span>
+          </div>
           {stages.map((stage, i) => {
             const result = stageResults.find(r => r.stageIndex === i);
             const isCompleted = result?.status === GameStatus.WON;

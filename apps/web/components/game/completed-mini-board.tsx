@@ -269,7 +269,9 @@ export function GauntletStageBreakdown({
                     <span
                       className="text-[8px] transition-transform"
                       style={{
-                        color: 'var(--color-text-muted)',
+                        // Win-purple / loss-red so the expander reads as a
+                        // door, not decoration (Doug feedback, Aug 10).
+                        color: stageWon ? '#7c3aed' : '#dc2626',
                         transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                       }}
                     >

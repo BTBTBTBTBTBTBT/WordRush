@@ -9,6 +9,7 @@
 // navigator.share/fallbacks) via shareResult.
 
 import { shareResult, type ShareResultOutcome } from './share-utils';
+import { getFriendIds } from './friends-service';
 import {
   fetchDailyLeaderboard,
   getUserDailyRank,
@@ -135,12 +136,40 @@ export interface ShareYesterdayPodiumOpts {
   friends?: boolean;
 }
 
-/** Share yesterday's settled podium (top 3, "· Final" chip). */
+/** Share yesterday's settled podium (top 5 + sharer's final rank, "· Final"
+ *  chip — daily-card parity, founder ask 2026-08-10). */
 export async function shareYesterdayPodiumCard(
   opts: ShareYesterdayPodiumOpts,
 ): Promise<ShareResultOutcome | null> {
   const meta = modeMeta(opts.dbMode);
   if (!meta) return null;
+  // Sharer's FINAL rank yesterday + their own row for the below-top-5
+  // treatment. Friends mode dense-ranks the friends-filtered board.
+  let userRank: { rank: number; totalPlayers: number } | null = null;
+  let userEntry = opts.userId
+    ? opts.ranked.find((r) => r.entry.user_id === opts.userId)?.entry ?? null
+    : null;
+  if (opts.userId) {
+    try {
+      if (opts.friends) {
+        const ids = [...new Set([...getFriendIds(), opts.userId])];
+        const board = await fetchDailyLeaderboard(opts.dbMode, opts.playType, opts.day, 50, 0, ids);
+        const idx = board.findIndex((e) => e.user_id === opts.userId);
+        if (idx >= 0) {
+          userRank = { rank: idx + 1, totalPlayers: board.length };
+          userEntry = userEntry ?? board[idx];
+        }
+      } else {
+        userRank = await getUserDailyRank(opts.userId, opts.dbMode, opts.playType, opts.day);
+        if (userRank && !userEntry) {
+          const own = await fetchDailyLeaderboard(opts.dbMode, opts.playType, opts.day, 1, 0, [opts.userId]);
+          userEntry = own[0] ?? null;
+        }
+      }
+    } catch {
+      // Rank chrome is optional — the podium itself still shares.
+    }
+  }
   const input = buildYesterdayPodiumShareInput({
     playType: opts.playType,
     friends: opts.friends,
@@ -149,6 +178,8 @@ export async function shareYesterdayPodiumCard(
     day: opts.day,
     ranked: opts.ranked,
     userId: opts.userId,
+    userRank,
+    userEntry,
   });
   if (!input) return null;
   return shareResult(input, SHARE_SURFACE, { linkOnly: true });

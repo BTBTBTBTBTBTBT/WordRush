@@ -284,11 +284,11 @@ export default function DailyPage() {
   useEffect(() => {
     if (!showYesterday) return;
     if (selectedMode === 'SWEEP') {
-      fetchDailySweepLeaderboard(yesterday, 3).then(setYesterdaySweep);
+      fetchDailySweepLeaderboard(yesterday, 5).then(setYesterdaySweep);
     } else {
       // Friends toggle carries into Yesterday's Winners: podium among friends.
       const ids = friendsOnly && user ? [...new Set([...getFriendIds(), user.id])] : undefined;
-      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 3, 0, ids).then(setYesterdayLeaderboard);
+      fetchDailyLeaderboard(selectedMode, 'solo', yesterday, 5, 0, ids).then(setYesterdayLeaderboard);
     }
   }, [showYesterday, selectedMode, yesterday, friendsOnly, friendsVersion, user]);
 

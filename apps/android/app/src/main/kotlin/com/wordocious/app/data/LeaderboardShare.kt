@@ -265,12 +265,19 @@ object LeaderboardShare {
         day: String,
         entries: List<LeaderboardService.LeaderboardEntry>,
         userId: String?,
+        // Top 5 + sharer's final rank — daily-card parity (founder, Aug 10).
+        userRank: LeaderboardService.RankInfo? = null,
+        userEntry: LeaderboardService.LeaderboardEntry? = null,
     ): CardInput? {
-        val top = entries.take(3)
+        val top = entries.take(5)
         if (top.isEmpty()) return null
         val subline: (LeaderboardService.LeaderboardEntry) -> String =
             if (playType == "vs") ::vsSubline else ::soloSubline
-        val cardLabels = com.wordocious.app.ui.tieAwareScoreLabels(top.map { it.compositeScore })
+        val youInTop = userId != null && top.any { it.userId == userId }
+        val belowTop = !youInTop && userId != null && userRank != null && userEntry != null
+        val cardLabels = com.wordocious.app.ui.tieAwareScoreLabels(
+            top.map { it.compositeScore } + if (belowTop) listOf(userEntry!!.compositeScore) else emptyList(),
+        )
         return CardInput(
             variant = if (friends) Variant.FRIENDS_PODIUM else Variant.PODIUM,
             shareMode = meta.title,
@@ -278,9 +285,13 @@ object LeaderboardShare {
             accent = meta.accentInt,
             modeChip = if (playType == "vs") "${meta.shareLabel} VS" else meta.shareLabel,
             dateChip = "${formatBoardDate(day)} · Final",
-            rows = top.mapIndexed { i, e -> toRow(i + 1, e, userId, subline, cardLabels) },
+            rows = top.mapIndexed { i, e -> toRow(i + 1, e, userId, if (belowTop) null else subline, cardLabels) },
+            you = if (belowTop) toRow(userRank!!.rank, userEntry!!, userId, subline, cardLabels) else null,
+            youRankLine = if (belowTop) "#${userRank!!.rank} of ${userRank!!.totalPlayers}" else null,
             footer = "Today’s board is open — wordocious.com",
             day = day,
+            shareRank = userRank?.rank,
+            sharePlayers = userRank?.totalPlayers,
         )
     }
 
@@ -519,7 +530,8 @@ object LeaderboardShare {
         val nRows = input.rows.size + (if (input.you != null) 1 else 0)
         if (nRows > 0) {
             // Max row height — roomier for the 3-row podium than a 6-slot board.
-            val band = if (input.variant == Variant.PODIUM || input.variant == Variant.FRIENDS_PODIUM) 170f else 130f
+            // Podium carries the same top 5 (+ you-row) as the daily card now.
+            val band = 130f
             val rowH = min(band, (areaBottom - areaTop - pad * 2 - dividerH) / nRows)
             val contentH = rowH * nRows + dividerH + pad * 2
             val panelTop = areaTop + (areaBottom - areaTop - contentH) / 2
@@ -703,7 +715,8 @@ object LeaderboardShare {
         renderAndShare(context, input)
     }
 
-    /** Share yesterday's settled podium (top 3, "· Final" chip). */
+    /** Share yesterday's settled podium (top 5 + sharer's final rank,
+     *  "· Final" chip — daily-card parity, founder ask 2026-08-10). */
     suspend fun shareYesterdayPodiumCard(
         context: Context,
         dbMode: String,
@@ -713,7 +726,30 @@ object LeaderboardShare {
         friends: Boolean = false,
     ) {
         val meta = ModeGen.byDbKey(dbMode) ?: return
-        val input = buildPodiumInput(playType, friends, meta, yesterdayLocalDate(), entries, userId) ?: return
+        val day = yesterdayLocalDate()
+        // Sharer's FINAL rank yesterday + their own row for the below-top-5
+        // treatment. Friends mode dense-ranks the friends-filtered board.
+        var userRank: LeaderboardService.RankInfo? = null
+        var userEntry = userId?.let { uid -> entries.firstOrNull { it.userId == uid } }
+        if (userId != null) {
+            if (friends) {
+                val ids = (FriendsService.friendIds + userId.lowercase()).toList()
+                val board = LeaderboardService.fetchDailyLeaderboardOrNull(dbMode, playType, day, userIds = ids)
+                val idx = board?.indexOfFirst { it.userId == userId } ?: -1
+                if (board != null && idx >= 0) {
+                    userRank = LeaderboardService.RankInfo(idx + 1, board.size)
+                    if (userEntry == null) userEntry = board[idx]
+                }
+            } else {
+                userRank = LeaderboardService.getUserDailyRank(userId, dbMode, playType, day, entries, 5)
+                if (userRank != null && userEntry == null) {
+                    userEntry = LeaderboardService.fetchDailyLeaderboardOrNull(
+                        dbMode, playType, day, limit = 1, userIds = listOf(userId),
+                    )?.firstOrNull()
+                }
+            }
+        }
+        val input = buildPodiumInput(playType, friends, meta, day, entries, userId, userRank, userEntry) ?: return
         renderAndShare(context, input)
     }
 }

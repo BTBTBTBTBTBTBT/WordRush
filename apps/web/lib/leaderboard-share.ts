@@ -197,28 +197,53 @@ export interface YesterdayPodiumShareOpts {
   day: string;
   ranked: RankedEntry[];
   userId?: string | null;
+  /** Sharer's FINAL rank yesterday ("#13 of N" line) — daily-card parity. */
+  userRank?: { rank: number; totalPlayers: number } | null;
+  /** Sharer's own yesterday row, for the below-top-5 highlighted row. */
+  userEntry?: LeaderboardEntry | null;
 }
 
 /**
  * The settled variant for the Yesterday's Winners dropdown: "YESTERDAY'S
- * PODIUM" identity, "MMM D, YYYY · Final" date chip, top-3 rows with full
- * stats. Returns null when yesterday had no finishers.
+ * PODIUM" identity, "MMM D, YYYY · Final" date chip, top-5 rows with full
+ * stats (daily-card parity, founder ask 2026-08-10). A sharer who finished
+ * below the top 5 gets their highlighted row after a "• • •" divider with
+ * "#R of TOTAL" — exactly like the daily leaderboard card. Returns null when
+ * yesterday had no finishers.
  */
 export function buildYesterdayPodiumShareInput(
   opts: YesterdayPodiumShareOpts,
 ): ShareLeaderboardInput | null {
-  const top = opts.ranked.slice(0, 3);
+  const top = opts.ranked.slice(0, 5);
   if (top.length === 0) return null;
   const subline = opts.playType === 'vs' ? vsSubline : soloSubline;
-  const cardLabels = tieAwareScoreLabels(top.map((r) => r.entry.composite_score));
-  return {
+  const youInTop = !!opts.userId && top.some((r) => r.entry.user_id === opts.userId);
+  const belowTop = !youInTop && !!opts.userId && !!opts.userRank && !!opts.userEntry;
+  const cardLabels = tieAwareScoreLabels([
+    ...top.map((r) => r.entry.composite_score),
+    ...(belowTop ? [opts.userEntry!.composite_score] : []),
+  ]);
+  const input: ShareLeaderboardInput = {
     layout: 'leaderboard',
     mode: opts.mode,
     variant: opts.friends ? 'friendsPodium' : 'podium',
     modeChip: opts.playType === 'vs' ? `${opts.modeLabel} VS` : opts.modeLabel,
     dateChip: `${formatBoardDate(opts.day)} · Final`,
-    rows: top.map((r) => toRow(r, opts.userId, subline, cardLabels)),
+    rows: top.map((r) => toRow(r, opts.userId, belowTop ? null : subline, cardLabels)),
     footer: 'Today’s board is open — wordocious.com',
     date: new Date(opts.day + 'T00:00:00'),
+    shareRank: opts.userRank?.rank,
+    sharePlayers: opts.userRank?.totalPlayers,
   };
+  if (belowTop) {
+    input.you = {
+      rank: opts.userRank!.rank,
+      name: opts.userEntry!.username,
+      scoreDisplay: cardLabels.get(opts.userEntry!.composite_score) ?? formatScore(opts.userEntry!.composite_score),
+      subline: subline(opts.userEntry!),
+      isYou: true,
+    };
+    input.youRankLine = `#${opts.userRank!.rank} of ${opts.userRank!.totalPlayers}`;
+  }
+  return input;
 }
