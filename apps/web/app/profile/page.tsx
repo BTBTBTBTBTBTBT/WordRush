@@ -50,7 +50,7 @@ import { ModePicker, PROFILE_MODES } from '@/components/profile/mode-picker';
 import { resolveAccent } from '@/lib/profile-personalization';
 import { shareResult } from '@/lib/share-utils';
 import { InvitePanel } from '@/components/referrals/invite-panel';
-import { FriendsPanel } from '@/components/friends/friends-panel';
+import { FriendsRowLink } from '@/components/friends/friends-panel';
 import { ModeDetailPanel } from '@/components/profile/mode-detail-panel';
 import type { Database } from '@/lib/database.types';
 
@@ -462,7 +462,8 @@ export default function ProfilePage() {
 
         {/* ── Friends (§207): list, requests, add-by-username ── */}
         <div className="mb-4">
-          <FriendsPanel />
+          {/* Tier 3 (Aug 11): the full card lives at /friends now. */}
+          <FriendsRowLink />
         </div>
 
         {/* ── Gift Pro to Friends (referral program) ── */}

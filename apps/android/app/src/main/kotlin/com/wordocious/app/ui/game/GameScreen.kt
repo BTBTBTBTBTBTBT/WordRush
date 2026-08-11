@@ -120,8 +120,9 @@ fun HintPills(
     onVowel: () -> Unit, onConsonant: () -> Unit,
 ) {
     Row(
-        // iOS classicHintButtons: HStack(spacing: 12) inset 16pt, 4pt bottom.
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 4.dp),
+        // iOS classicHintButtons: HStack(spacing: 12) inset 16pt. 16dp bottom
+        // keeps the pills clear of the Q-row (fat-finger, Aug 11).
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         HintPill(

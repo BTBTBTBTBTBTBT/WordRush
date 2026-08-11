@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -86,6 +87,17 @@ private val TABS = listOf(
 @Composable
 private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     val haptics = LocalHapticFeedback.current
+    // Red dot on Profile while friend requests wait (§207 Tier 1 — web/iOS
+    // badge parity). Listener keeps it live as requests arrive or resolve.
+    var friendsVersion by remember { mutableIntStateOf(com.wordocious.app.data.FriendsService.version) }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val remove = com.wordocious.app.data.FriendsService.addListener {
+            friendsVersion = com.wordocious.app.data.FriendsService.version
+        }
+        onDispose { remove() }
+    }
+    androidx.compose.runtime.LaunchedEffect(Unit) { com.wordocious.app.data.FriendsService.load() }
+    val pendingRequests = remember(friendsVersion) { com.wordocious.app.data.FriendsService.incoming.size }
     Column(
         Modifier.fillMaxWidth().background(WTheme.bg),
     ) {
@@ -108,15 +120,24 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(3.dp),
                 ) {
-                    if (tab.drawable != null) {
-                        // Same outline→filled swap the Material tabs get.
-                        val res = if (active) (tab.drawableFilled ?: tab.drawable) else tab.drawable
-                        Icon(painterResource(res), tab.label, tint = tint, modifier = Modifier.size(20.dp))
-                    } else {
-                        Icon(
-                            (if (active) tab.icon else tab.outlineIcon)!!,
-                            tab.label, tint = tint, modifier = Modifier.size(20.dp),
-                        )
+                    Box {
+                        if (tab.drawable != null) {
+                            // Same outline→filled swap the Material tabs get.
+                            val res = if (active) (tab.drawableFilled ?: tab.drawable) else tab.drawable
+                            Icon(painterResource(res), tab.label, tint = tint, modifier = Modifier.size(20.dp))
+                        } else {
+                            Icon(
+                                (if (active) tab.icon else tab.outlineIcon)!!,
+                                tab.label, tint = tint, modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        // Pending friend requests → dot on the Profile icon.
+                        if (tab.label == "Profile" && pendingRequests > 0) {
+                            Box(
+                                Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-3).dp)
+                                    .size(8.dp).clip(CircleShape).background(Color(0xFFEF4444)),
+                            )
+                        }
                     }
                     Text(tab.label, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = tint, maxLines = 1)
                     // 4dp active dot — transparent when inactive so labels stay aligned.
@@ -197,6 +218,9 @@ fun MainScreen() {
     var vsActive by remember { mutableStateOf<Pair<com.wordocious.core.GameMode, Boolean>?>(null) }
     // Public profile overlay (web /profile/[id]) — opened from leaderboard/records usernames.
     var publicProfileId by remember { mutableStateOf<String?>(null) }
+    // Dedicated Friends screen overlay (§207 Tier 3) — opened from the profile
+    // row link and the empty Friends leaderboard CTA.
+    var showFriends by remember { mutableStateOf(false) }
     // Warm-resume day rollover (founder-approved UX, iOS WordociousApp parity):
     // if the LOCAL day changed while backgrounded, reset the landing surface
     // exactly like a cold start — Home tab, Daily toggle (App.onCreate resets
@@ -218,6 +242,7 @@ fun MainScreen() {
                         com.wordocious.app.data.SettingsPref.set("pref-play-mode", "daily")
                         if (activeGame != null) { activeGame = null; activeSeed = null }
                         publicProfileId = null
+                        showFriends = false
                         selectedTab = 0
                     }
                 }
@@ -428,7 +453,7 @@ fun MainScreen() {
                 AdBannerContainer()
                 // Switching tabs pops the public-profile push, mirroring iOS's
                 // per-tab path reset (RootTabView.swift:38-47).
-                BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; selectedTab = it })
+                BottomNav(selected = selectedTab, onSelect = { publicProfileId = null; showFriends = false; selectedTab = it })
             }
         },
     ) { innerPadding ->
@@ -477,6 +502,8 @@ fun MainScreen() {
                             1 -> LeaderboardScreen(
                                 onOpenProfile = { publicProfileId = it },
                                 onPlay = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
+                                // Empty Friends board CTA → the Friends screen (§207 Tier 2).
+                                onOpenFriends = { showFriends = true },
                             )
                             2 -> ProfileScreen(
                                 onGoPro = { infoRoute = "pro" },
@@ -486,9 +513,23 @@ fun MainScreen() {
                                 onPlayDaily = { mode -> modeCardFor(mode)?.let { activeGame = it; activeSeed = null } },
                                 // Friends card rows → push the friend's profile in-tab.
                                 onOpenProfile = { publicProfileId = it },
+                                // Compact FRIENDS row → the dedicated screen (§207 Tier 3).
+                                onOpenFriends = { showFriends = true },
                             )
                             3 -> RecordsScreen(onOpenProfile = { publicProfileId = it })
                         }
+                    }
+                }
+
+                // Friends screen — same push-inside-the-tab pattern as the
+                // public profile below; profile taps from it layer on top.
+                if (showFriends) {
+                    androidx.activity.compose.BackHandler { showFriends = false }
+                    Box(Modifier.fillMaxSize().zIndex(2f).background(WTheme.bg)) {
+                        FriendsScreen(
+                            onClose = { showFriends = false },
+                            onOpenProfile = { publicProfileId = it },
+                        )
                     }
                 }
 

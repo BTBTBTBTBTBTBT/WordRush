@@ -247,7 +247,7 @@ export function VsClassic({ seed, mode, onBoardSolved, onCompleted, onGuessSubmi
           unmounting it re-centered the flex-1 board for the frame between
           finishing and the 'waiting' screen swap — a visible board jump. */}
       {hasHints && (
-        <div className={`shrink-0 flex justify-center gap-3 px-4 pb-1 ${currentBoard.status === GameStatus.PLAYING ? '' : 'invisible pointer-events-none'}`}>
+        <div className={`shrink-0 flex justify-center gap-3 px-4 pb-4 ${currentBoard.status === GameStatus.PLAYING ? '' : 'invisible pointer-events-none'}`}>
           <button
             onClick={handleVowelHint}
             disabled={hints.vowelUsed}

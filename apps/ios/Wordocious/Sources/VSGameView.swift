@@ -540,7 +540,9 @@ struct VSGameView: View {
             vsHintPill(label: game.consonantUsed ? (game.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(game.consonantRevealed ?? "")") : "💡 Consonant",
                        used: game.consonantUsed) { Haptics.success(); game.revealConsonant() }
         }
-        .padding(.horizontal, 16).padding(.bottom, 4)
+        // 16pt bottom (was 4): keeps the pills clear of the Q-row so reaching
+        // for the keyboard can't fat-finger a hint (founder request, Aug 11).
+        .padding(.horizontal, 16).padding(.bottom, 16)
     }
 
     private func vsHintPill(label: String, used: Bool, action: @escaping () -> Void) -> some View {

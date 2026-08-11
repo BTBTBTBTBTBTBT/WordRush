@@ -312,7 +312,7 @@ export default function DailyPage() {
 
   // One row of the leaderboard — shared by the top-50 list and the
   // "your neighborhood" rank window so they can never drift apart visually.
-  const renderLbRow = (entry: LeaderboardEntry, rank: number) => {
+  const renderLbRow = (entry: LeaderboardEntry, rank: number, scoreLabels = lbScoreLabels) => {
     const isCurrentUser = user && entry.user_id === user.id;
     return (
       <div
@@ -335,7 +335,7 @@ export default function DailyPage() {
           </Link>
         </div>
         <div className="text-right">
-          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{lbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}</div>
+          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{scoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}</div>
           <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
             <span>
               {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
@@ -722,6 +722,15 @@ export default function DailyPage() {
                     ? 'No friends yet — add them from any profile'
                     : 'No daily results yet. Be the first!'}
                 </p>
+                {friendsOnly && (
+                  <Link
+                    href="/friends"
+                    className="inline-block mt-3 px-4 py-2 rounded-xl text-xs font-black text-white btn-3d"
+                    style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', boxShadow: '0 4px 0 #4c1d95' }}
+                  >
+                    Add friends
+                  </Link>
+                )}
               </div>
             )
           ) : (
@@ -826,26 +835,10 @@ export default function DailyPage() {
               </div>
             ) : (
               <div>
-                {yesterdayLeaderboard.filter((e) => !isBlocked(e.user_id)).map((entry, index) => (
-                  <div
-                    key={entry.user_id}
-                    className="flex items-center gap-3 px-4 py-3"
-                    style={{ borderBottom: '1px solid var(--color-border)' }}
-                  >
-                    <RankIcon rank={index + 1} />
-                    <span className="text-xs font-extrabold flex-1 truncate" style={{ color: 'var(--color-text)' }}>{entry.username}</span>
-                    <span
-                      className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
-                      style={{
-                        background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
-                        color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
-                      }}
-                    >
-                      {entry.completed ? 'W' : 'L'}
-                    </span>
-                    <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{yLbScoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}</span>
-                  </div>
-                ))}
+                {/* Full daily rows (founder ask, Aug 11): clickable profiles,
+                    guesses + time detail, W/L pill — same renderer as today. */}
+                {yesterdayLeaderboard.filter((e) => !isBlocked(e.user_id)).map((entry, index) =>
+                  renderLbRow(entry, index + 1, yLbScoreLabels))}
               </div>
             )}
           </div>

@@ -30,6 +30,10 @@ export async function GET(req: NextRequest) {
   const friends: Array<Prof & { since: string | null }> = [];
   const incoming: Array<Prof & { requestedAt: string }> = [];
   const outgoing: string[] = [];
+  // Tier 1 (Aug 11): outgoing WITH profile chrome so the client can render a
+  // "Sent — waiting" section. `outgoing` stays a string[] because the 1.9 /
+  // Android-71 clients decode it as one — additive field, never a reshape.
+  const outgoingProfiles: Array<Prof & { requestedAt: string }> = [];
 
   for (const row of (data ?? []) as any[]) {
     const other: Prof = row.requester_id === me ? row.addressee : row.requester;
@@ -40,14 +44,16 @@ export async function GET(req: NextRequest) {
       incoming.push({ ...other, requestedAt: row.created_at });
     } else {
       outgoing.push(row.addressee_id);
+      outgoingProfiles.push({ ...other, requestedAt: row.created_at });
     }
   }
 
   friends.sort((a, b) => a.username.localeCompare(b.username));
   incoming.sort((a, b) => (a.requestedAt < b.requestedAt ? 1 : -1));
+  outgoingProfiles.sort((a, b) => (a.requestedAt < b.requestedAt ? 1 : -1));
 
   return NextResponse.json(
-    { friends, incoming, outgoing },
+    { friends, incoming, outgoing, outgoingProfiles },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

@@ -446,7 +446,7 @@ export function PracticeGame({ mode, onBack, initialSeed, isDaily }: PracticeGam
 
       {/* Hint buttons — Six/Seven only, hidden when game is complete */}
       {hasHints && !gameComplete && (
-        <div className="shrink-0 flex justify-center gap-3 px-4 pb-1">
+        <div className="shrink-0 flex justify-center gap-3 px-4 pb-4">
           <button
             onClick={handleVowelHint}
             disabled={hints.vowelUsed}

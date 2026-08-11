@@ -251,12 +251,15 @@ extension View {
 /// Custom bottom navigation — 1:1 with the web BottomNav.
 private struct BottomNav: View {
     @Binding var selection: RootTabView.Tab
+    // Pending friend-request badge on Profile (Tier 1, Aug 11): pushes were
+    // the only signal before — a missed push meant a request nobody saw.
+    @State private var pendingRequests = 0
 
     var body: some View {
         HStack(spacing: 0) {
             item(.home, "house", "Home")
             item(.leaderboard, "trophy", "Leaderboard")
-            item(.profile, "person", "Profile")
+            item(.profile, "person", "Profile", badge: pendingRequests)
             item(.records, "crown", "Records")
         }
         .padding(.top, 8)
@@ -264,9 +267,13 @@ private struct BottomNav: View {
         // Background fills into the home-indicator safe area; icons stay above.
         .background(Theme.background, ignoresSafeAreaEdges: .bottom)
         .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1.5) }
+        .task { await FriendsService.load(); pendingRequests = FriendsService.incoming.count }
+        .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
+            pendingRequests = FriendsService.incoming.count
+        }
     }
 
-    private func item(_ t: RootTabView.Tab, _ icon: String, _ label: String) -> some View {
+    private func item(_ t: RootTabView.Tab, _ icon: String, _ label: String, badge: Int = 0) -> some View {
         let active = selection == t
         let color = active ? Theme.primary : Theme.textMuted
         return Button {
@@ -276,6 +283,12 @@ private struct BottomNav: View {
             VStack(spacing: 3) {
                 Image(systemName: active ? "\(icon).fill" : icon)
                     .font(.system(size: 20)).foregroundStyle(color)
+                    .overlay(alignment: .topTrailing) {
+                        if badge > 0 {
+                            Circle().fill(Color(hex: 0xDC2626)).frame(width: 8, height: 8)
+                                .offset(x: 5, y: -3)
+                        }
+                    }
                 Text(label).font(Brand.font(10, .heavy)).foregroundStyle(color).lineLimit(1)
                 .minimumScaleFactor(0.7)
                 // 4px active dot (clear when inactive so all items align).

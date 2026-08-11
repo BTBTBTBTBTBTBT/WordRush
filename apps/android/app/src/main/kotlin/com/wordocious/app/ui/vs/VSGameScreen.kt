@@ -667,7 +667,7 @@ private fun MatchScreen(vm: VSMatchViewModel, label: String, gradient: List<Colo
                 vowelUsed = vUsed, vowelRevealed = vRev, consonantUsed = cUsed, consonantRevealed = cRev,
                 onVowel = { game.revealVowel() }, onConsonant = { game.revealConsonant() },
             )
-            Spacer(Modifier.height(6.dp))
+            // No extra spacer: HintPills carries the 16dp fat-finger gap (Aug 11).
         }
         KeyboardView(
             letterStates = letterStates,

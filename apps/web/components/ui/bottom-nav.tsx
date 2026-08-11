@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Home, Trophy, User, Crown } from 'lucide-react';
+import { useAuth } from '@/lib/auth-context';
+import { loadFriends, getIncoming, onFriendsChange } from '@/lib/friends-service';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
@@ -15,6 +17,15 @@ const NAV_ITEMS = [
 export function BottomNav() {
   const pathname = usePathname();
   const ref = useRef<HTMLElement | null>(null);
+  // Pending friend-request badge on Profile (Tier 1, Aug 11): pushes were the
+  // only signal before — a missed push meant a request nobody ever saw.
+  const { user } = useAuth();
+  const [pendingRequests, setPendingRequests] = useState(0);
+  useEffect(() => {
+    if (!user) { setPendingRequests(0); return; }
+    loadFriends().then(() => setPendingRequests(getIncoming().length));
+    return onFriendsChange(() => setPendingRequests(getIncoming().length));
+  }, [user]);
 
   // Publish the nav's rendered height as --bottom-nav-h on <html> so the
   // fixed AdBanner (mounted globally in layout.tsx) can stack directly above
@@ -57,12 +68,21 @@ export function BottomNav() {
             aria-current={isActive ? 'page' : undefined}
             aria-label={item.label}
           >
-            <Icon
-              className="w-5 h-5 transition-colors"
-              style={{ color: isActive ? '#7c3aed' : 'var(--color-text-muted)' }}
-              fill={isActive ? '#7c3aed' : 'none'}
-              aria-hidden="true"
-            />
+            <span className="relative">
+              <Icon
+                className="w-5 h-5 transition-colors"
+                style={{ color: isActive ? '#7c3aed' : 'var(--color-text-muted)' }}
+                fill={isActive ? '#7c3aed' : 'none'}
+                aria-hidden="true"
+              />
+              {item.href === '/profile' && pendingRequests > 0 && (
+                <span
+                  className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full"
+                  style={{ backgroundColor: '#dc2626' }}
+                  aria-label={`${pendingRequests} pending friend requests`}
+                />
+              )}
+            </span>
             <span
               className="text-[10px] font-extrabold transition-colors"
               style={{ color: isActive ? '#7c3aed' : 'var(--color-text-muted)' }}

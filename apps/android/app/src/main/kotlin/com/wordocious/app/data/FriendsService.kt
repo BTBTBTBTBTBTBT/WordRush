@@ -41,6 +41,9 @@ object FriendsService {
         val friends: List<FriendProfile> = emptyList(),
         val incoming: List<FriendProfile> = emptyList(),
         val outgoing: List<String> = emptyList(),
+        // Additive (Aug 11): profile chrome for sent-pending requests. Old
+        // clients ignore it; `outgoing` stays string[] for their decoders.
+        val outgoingProfiles: List<FriendProfile> = emptyList(),
     )
 
     /** Accepted friend ids (lowercased) — the leaderboard filter set. */
@@ -48,6 +51,8 @@ object FriendsService {
     var friends: List<FriendProfile> = emptyList(); private set
     var incoming: List<FriendProfile> = emptyList(); private set
     var outgoing: Set<String> = emptySet(); private set
+    /** Sent-pending requests with profile chrome — the "Sent — waiting" rows. */
+    var outgoingProfiles: List<FriendProfile> = emptyList(); private set
     var loaded = false; private set
 
     /** Bumped on every cache change — Compose observes via snapshot polling
@@ -80,6 +85,7 @@ object FriendsService {
         incoming = payload.incoming
         friendIds = payload.friends.map { it.id.lowercase() }.toSet()
         outgoing = payload.outgoing.map { it.lowercase() }.toSet()
+        outgoingProfiles = payload.outgoingProfiles
         loaded = true
         notifyChanged()
     }
@@ -116,6 +122,7 @@ object FriendsService {
         } else {
             outgoing = outgoing + friendId.lowercase()
             notifyChanged()
+            load(force = true)   // pull the sent row's profile chrome
             RequestOutcome.Pending
         }
     }
@@ -131,6 +138,7 @@ object FriendsService {
     suspend fun decline(requesterId: String): Boolean {
         incoming = incoming.filterNot { it.id == requesterId }
         outgoing = outgoing - requesterId.lowercase()
+        outgoingProfiles = outgoingProfiles.filterNot { it.id.equals(requesterId, ignoreCase = true) }
         notifyChanged()
         return api("POST", "/api/friends/decline", """{"requesterId":"$requesterId"}""")?.first == 200
     }
@@ -139,6 +147,7 @@ object FriendsService {
         friendIds = friendIds - friendId.lowercase()
         friends = friends.filterNot { it.id == friendId }
         outgoing = outgoing - friendId.lowercase()
+        outgoingProfiles = outgoingProfiles.filterNot { it.id.equals(friendId, ignoreCase = true) }
         notifyChanged()
         return api("POST", "/api/friends/remove", """{"friendId":"$friendId"}""")?.first == 200
     }

@@ -16,6 +16,7 @@ struct FriendsPanelView: View {
         let _ = version
         let friends = FriendsService.friends
         let incoming = FriendsService.incoming
+        let outgoing = FriendsService.outgoingProfiles
 
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
@@ -59,10 +60,42 @@ struct FriendsPanelView: View {
                 }
             }
 
+            // Sent requests — the loop's missing feedback (Tier 1, Aug 11).
+            if !outgoing.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("SENT — WAITING").font(Brand.font(9, .black)).tracking(0.8)
+                        .foregroundStyle(Theme.textMuted)
+                    ForEach(outgoing) { r in
+                        HStack(spacing: 10) {
+                            AvatarView(url: r.avatar_url, username: r.username, size: 30)
+                            NavigationLink(value: r.id) {
+                                Text(r.username).font(Brand.font(12, .heavy))
+                                    .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                            }.buttonStyle(.plain)
+                            Spacer()
+                            Button { Task { await FriendsService.decline(requesterId: r.id) } } label: {
+                                Text("Cancel").font(Brand.font(10, .bold))
+                                    .foregroundStyle(Theme.textMuted)
+                                    .padding(.horizontal, 8).padding(.vertical, 5)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(Theme.surfaceAlt))
+                                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.border, lineWidth: 1.5))
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+
             // Friends list — rows into their profiles (H2H lives there).
             if friends.isEmpty {
-                Text("Add friends to unlock the Friends leaderboard — your own private race on every daily board.")
+                if incoming.isEmpty && outgoing.isEmpty {
+                    // Teaching empty state: explain the whole loop (Tier 1, Aug 11).
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("1. Add friends below by username, or with the Add Friend button on any player's profile.")
+                        Text("2. Requests you send and receive land right here.")
+                        Text("3. Once a friend accepts, flip the leaderboard to FRIENDS for your own private race.")
+                    }
                     .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
+                }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(friends) { f in
@@ -71,6 +104,12 @@ struct FriendsPanelView: View {
                                 AvatarView(url: f.avatar_url, username: f.username, size: 30)
                                 Text(f.username).font(Brand.font(12, .heavy))
                                     .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                if isNewFriend(f) {
+                                    Text("NEW").font(Brand.font(8, .black))
+                                        .foregroundStyle(Color(hex: 0x7C3AED))
+                                        .padding(.horizontal, 4).padding(.vertical, 2)
+                                        .background(RoundedRectangle(cornerRadius: 4).fill(Color(hex: 0x7C3AED).opacity(0.13)))
+                                }
                                 Spacer()
                                 Text("Lvl \(f.level)").font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                             }
@@ -117,6 +156,16 @@ struct FriendsPanelView: View {
         }
     }
 
+    /// Accepted within the last 24h — wears the NEW chip (Tier 2, Aug 11).
+    private func isNewFriend(_ f: FriendsService.FriendProfile) -> Bool {
+        guard let since = f.since else { return false }
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = iso.date(from: since) ?? ISO8601DateFormatter().date(from: since)
+        guard let date else { return false }
+        return Date().timeIntervalSince(date) < 24 * 60 * 60
+    }
+
     private func add() {
         let name = username.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty, !sending else { return }
@@ -132,6 +181,60 @@ struct FriendsPanelView: View {
             sending = false
             try? await Task.sleep(nanoseconds: 2_500_000_000)
             note = nil
+        }
+    }
+}
+
+
+/// FRIENDS (Tier 3, Aug 11) — the dedicated friends screen: the panel with a
+/// whole screen to breathe. Pushed from the profile's compact row, and
+/// presented as a sheet from the empty Friends board CTA.
+struct FriendsScreenView: View {
+    var body: some View {
+        ScrollView {
+            FriendsPanelView().padding(16)
+        }
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle("Friends")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Compact "FRIENDS (N) →" row for the profile page — the door to
+/// FriendsScreenView, wearing the pending-request badge.
+struct FriendsRowLink: View {
+    @State private var version = 0
+    var body: some View {
+        let _ = version
+        let count = FriendsService.friends.count
+        let pending = FriendsService.incoming.count
+        NavigationLink { FriendsScreenView() } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "person.2.fill").font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(Color(hex: 0x7C3AED))
+                Text("FRIENDS")
+                    .font(Brand.font(16, .black)).tracking(0.3)
+                    .foregroundStyle(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0xEC4899)], startPoint: .leading, endPoint: .trailing))
+                if count > 0 {
+                    Text("\(count)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
+                }
+                if pending > 0 {
+                    Text("\(pending)").font(Brand.font(10, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Capsule().fill(Color(hex: 0xDC2626)))
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .black))
+                    .foregroundStyle(Color(hex: 0x7C3AED))
+            }
+            .padding(16)
+            .background(RoundedRectangle(cornerRadius: 20).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color(hex: 0xC4B5FD), lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+        .task { await FriendsService.load() }
+        .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
+            version = FriendsService.version
         }
     }
 }

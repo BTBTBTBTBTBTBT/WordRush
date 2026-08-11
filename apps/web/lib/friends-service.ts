@@ -23,6 +23,8 @@ let friendIds = new Set<string>();
 let friendsList: FriendProfile[] = [];
 let incomingList: FriendProfile[] = [];
 let outgoingIds = new Set<string>();
+// Tier 1 (Aug 11): outgoing WITH profile chrome for the "Sent" section.
+let outgoingList: FriendProfile[] = [];
 let loaded = false;
 const listeners = new Set<() => void>();
 
@@ -50,6 +52,7 @@ export async function loadFriends(force = false): Promise<void> {
     incomingList = json.incoming ?? [];
     friendIds = new Set(friendsList.map((f) => f.id.toLowerCase()));
     outgoingIds = new Set((json.outgoing ?? []).map((s: string) => s.toLowerCase()));
+    outgoingList = json.outgoingProfiles ?? [];
     loaded = true;
     notify();
   } catch {
@@ -64,6 +67,7 @@ export const hasIncomingFrom = (userId: string): boolean =>
   incomingList.some((r) => r.id.toLowerCase() === userId.toLowerCase());
 export const getFriends = (): FriendProfile[] => friendsList;
 export const getIncoming = (): FriendProfile[] => incomingList;
+export const getOutgoing = (): FriendProfile[] => outgoingList;
 export const getFriendIds = (): Set<string> => friendIds;
 
 async function post(path: string, body: Record<string, unknown>): Promise<Response | null> {
@@ -97,6 +101,7 @@ export async function requestFriend(
     void loadFriends(true); // pull the profile chrome for the new friend
   } else {
     outgoingIds.add(friendId.toLowerCase());
+    void loadFriends(true); // pull profile chrome for the new Sent row
   }
   notify();
   return { status: json.status, friendId };
@@ -117,6 +122,7 @@ export async function acceptFriend(requesterId: string): Promise<boolean> {
 export async function declineFriend(requesterId: string): Promise<boolean> {
   incomingList = incomingList.filter((r) => r.id !== requesterId);
   outgoingIds.delete(requesterId.toLowerCase());
+  outgoingList = outgoingList.filter((r) => r.id !== requesterId);
   notify();
   const res = await post('/api/friends/decline', { requesterId });
   return !!res?.ok;
@@ -127,6 +133,7 @@ export async function removeFriend(friendId: string): Promise<boolean> {
   friendIds.delete(friendId.toLowerCase());
   friendsList = friendsList.filter((f) => f.id !== friendId);
   outgoingIds.delete(friendId.toLowerCase());
+  outgoingList = outgoingList.filter((r) => r.id !== friendId);
   notify();
   const res = await post('/api/friends/remove', { friendId });
   return !!res?.ok;

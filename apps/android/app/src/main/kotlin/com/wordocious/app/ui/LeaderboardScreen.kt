@@ -100,7 +100,7 @@ internal fun pickerGameModeOrNull(id: String): com.wordocious.core.GameMode? =
  * - Top 50 entries with rank badges (🥇🥈🥉 for top 3), username, score, guesses/time
  */
 @Composable
-fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordocious.core.GameMode) -> Unit = {}) {
+fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordocious.core.GameMode) -> Unit = {}, onOpenFriends: () -> Unit = {}) {
     val isAuthenticated by AuthService.isAuthenticated.collectAsState()
 
     // Signed-out gate (iOS ProfileTab `signedOut`): guests get a trophy
@@ -549,6 +549,20 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 if (friendsOnly) "No friends yet — add them from any profile" else "No daily results yet. Be the first!",
                                 color = WTheme.textMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold,
                             )
+                            // Empty Friends board → recruit (§207 Tier 2, web parity).
+                            if (friendsOnly) {
+                                Spacer(Modifier.height(12.dp))
+                                Button3D(
+                                    onClick = onOpenFriends,
+                                    face = Brush.linearGradient(listOf(Color(0xFF7C3AED), Color(0xFF6D28D9))),
+                                    shadow = Color(0xFF4C1D95),
+                                ) {
+                                    Text(
+                                        "Add friends", color = Color.White,
+                                        fontWeight = FontWeight.Black, fontSize = 13.sp, fontFamily = Nunito,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -676,8 +690,15 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             )
                         } else {
+                            // Full daily rows (founder ask, Aug 11): profile
+                            // taps, guesses + time detail, W/L pill.
                             yesterday.forEachIndexed { i, e ->
-                                YesterdayRow(rank = i + 1, entry = e, scoreLabel = yLbScoreLabels[e.compositeScore])
+                                LeaderboardRow(
+                                    rank = i + 1, entry = e, mode = selectedMode,
+                                    isCurrentUser = e.userId == userId,
+                                    onOpenProfile = onOpenProfile,
+                                    scoreLabel = yLbScoreLabels[e.compositeScore],
+                                )
                                 if (i < yesterday.size - 1) Divider()
                             }
                         }

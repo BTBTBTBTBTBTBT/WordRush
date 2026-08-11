@@ -23,6 +23,8 @@ enum FriendsService {
         let friends: [FriendProfile]
         let incoming: [FriendProfile]
         let outgoing: [String]
+        // Tier 1 (Aug 11): outgoing WITH profile chrome — additive server field.
+        var outgoingProfiles: [FriendProfile] = []
     }
 
     /// Accepted friend ids (lowercased) — the leaderboard filter set.
@@ -30,6 +32,7 @@ enum FriendsService {
     private(set) static var friends: [FriendProfile] = []
     private(set) static var incoming: [FriendProfile] = []
     private(set) static var outgoing: Set<String> = []
+    private(set) static var outgoingProfiles: [FriendProfile] = []
     private(set) static var loaded = false
 
     /// Bumped on every cache change; views observe `friendsChanged` to re-derive.
@@ -61,6 +64,7 @@ enum FriendsService {
         incoming = payload.incoming
         friendIds = Set(payload.friends.map { $0.id.lowercased() })
         outgoing = Set(payload.outgoing.map { $0.lowercased() })
+        outgoingProfiles = payload.outgoingProfiles
         loaded = true
         notify()
     }
@@ -99,6 +103,7 @@ enum FriendsService {
             return .accepted
         }
         outgoing.insert(friendId.lowercased())
+        Task { await load(force: true) } // pull profile chrome for the Sent row
         notify()
         return .pending
     }
@@ -121,6 +126,7 @@ enum FriendsService {
     static func decline(requesterId: String) async -> Bool {
         incoming.removeAll { $0.id == requesterId }
         outgoing.remove(requesterId.lowercased())
+        outgoingProfiles.removeAll { $0.id.caseInsensitiveCompare(requesterId) == .orderedSame }
         notify()
         let r = await post("decline", body: ["requesterId": requesterId])
         return r?.0 == 200
@@ -131,6 +137,7 @@ enum FriendsService {
         friendIds.remove(friendId.lowercased())
         friends.removeAll { $0.id == friendId }
         outgoing.remove(friendId.lowercased())
+        outgoingProfiles.removeAll { $0.id.caseInsensitiveCompare(friendId) == .orderedSame }
         notify()
         let r = await post("remove", body: ["friendId": friendId])
         return r?.0 == 200

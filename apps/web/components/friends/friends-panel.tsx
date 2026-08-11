@@ -12,12 +12,20 @@ import {
   loadFriends,
   getFriends,
   getIncoming,
+  getOutgoing,
   acceptFriend,
   declineFriend,
   requestFriend,
   onFriendsChange,
   type FriendProfile,
 } from '@/lib/friends-service';
+
+/** Accepted within the last 24h — wears the NEW chip (Tier 2, Aug 11). */
+function isNewFriend(f: FriendProfile): boolean {
+  if (!f.since) return false;
+  const t = Date.parse(f.since);
+  return Number.isFinite(t) && Date.now() - t < 24 * 60 * 60 * 1000;
+}
 
 function Avatar({ f }: { f: FriendProfile }) {
   return f.avatar_url ? (
@@ -56,6 +64,7 @@ export function FriendsPanel() {
 
   const friends = getFriends();
   const incoming = getIncoming();
+  const outgoing = getOutgoing();
 
   const handleAdd = async () => {
     const name = username.trim();
@@ -131,6 +140,36 @@ export function FriendsPanel() {
         </div>
       )}
 
+      {/* Sent requests — the loop's missing feedback (Tier 1, Aug 11):
+          sending a request now visibly puts something here, with a cancel. */}
+      {outgoing.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            Sent — waiting
+          </p>
+          {outgoing.map((r) => (
+            <div key={r.id} className="flex items-center gap-2.5">
+              <Avatar f={r} />
+              <Link
+                href={`/profile/${r.id}`}
+                className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80 transition-opacity"
+                style={{ color: 'var(--color-text)' }}
+              >
+                {r.username}
+              </Link>
+              <button
+                onClick={() => declineFriend(r.id)}
+                aria-label={`Cancel request to ${r.username}`}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg"
+                style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+              >
+                Cancel
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Friends list — avatar rows into their profiles (H2H lives there). */}
       {friends.length > 0 ? (
         <div className="space-y-2">
@@ -139,6 +178,14 @@ export function FriendsPanel() {
               <Avatar f={f} />
               <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>
                 {f.username}
+                {isNewFriend(f) && (
+                  <span
+                    className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
+                    style={{ background: '#7c3aed22', color: '#7c3aed' }}
+                  >
+                    NEW
+                  </span>
+                )}
               </span>
               <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                 Lvl {f.level}
@@ -147,10 +194,13 @@ export function FriendsPanel() {
           ))}
         </div>
       ) : (
-        <p className="text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
-          Add friends to unlock the <span style={{ color: '#7c3aed' }}>Friends leaderboard</span> —
-          your own private race on every daily board.
-        </p>
+        incoming.length === 0 && outgoing.length === 0 && (
+          <div className="space-y-1.5 text-xs font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <p>1. Add friends below by username, or from the <span style={{ color: '#7c3aed' }}>Add Friend</span> button on any player&apos;s profile.</p>
+            <p>2. Requests you send and receive land right here.</p>
+            <p>3. Once a friend accepts, flip the leaderboard to <span style={{ color: '#7c3aed' }}>FRIENDS</span> for your own private race.</p>
+          </div>
+        )
       )}
 
       {/* Add by username — exact match, same lookup as VS invites. */}
@@ -181,5 +231,51 @@ export function FriendsPanel() {
         <p className="text-xs font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{note}</p>
       )}
     </div>
+  );
+}
+
+
+/**
+ * Compact "Friends (N) →" row for the profile page (Tier 3, Aug 11) — the
+ * full card moved to /friends; this is the door, with the request badge.
+ */
+export function FriendsRowLink() {
+  const { user } = useAuth();
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    loadFriends().then(() => force((v) => v + 1));
+    return onFriendsChange(() => force((v) => v + 1));
+  }, [user]);
+  if (!user) return null;
+  const count = getFriends().length;
+  const pending = getIncoming().length;
+  return (
+    <Link
+      href="/friends"
+      className="flex items-center gap-2.5 p-4 hover:opacity-90 transition-opacity"
+      style={{ background: 'var(--color-surface)', border: '1.5px solid #c4b5fd', borderRadius: '20px' }}
+    >
+      <Users className="w-5 h-5" style={{ color: '#7c3aed' }} />
+      <span
+        className="text-base font-black tracking-tight text-transparent bg-clip-text"
+        style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
+      >
+        FRIENDS
+      </span>
+      {count > 0 && (
+        <span className="text-xs font-black" style={{ color: 'var(--color-text-muted)' }}>{count}</span>
+      )}
+      {pending > 0 && (
+        <span
+          className="text-[10px] font-black px-1.5 py-0.5 rounded-full"
+          style={{ background: '#dc2626', color: '#fff' }}
+          aria-label={`${pending} pending friend requests`}
+        >
+          {pending}
+        </span>
+      )}
+      <span className="ml-auto text-sm font-black" style={{ color: '#7c3aed' }}>→</span>
+    </Link>
   );
 }

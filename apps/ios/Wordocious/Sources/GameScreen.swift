@@ -423,7 +423,8 @@ struct GameScreen: View {
                 label: vm.consonantUsed ? (vm.consonantRevealed == "—" ? "No consonants left" : "Consonant: \(vm.consonantRevealed ?? "")") : "💡 Consonant",
                 used: vm.consonantUsed) { Haptics.success(); vm.revealConsonant() }
         }
-        .padding(.horizontal, 16).padding(.bottom, 4)
+        // 16pt bottom: keep the pills clear of the Q-row (fat-finger, Aug 11).
+        .padding(.horizontal, 16).padding(.bottom, 16)
     }
 
     private func hintPill(label: String, used: Bool, action: @escaping () -> Void) -> some View {

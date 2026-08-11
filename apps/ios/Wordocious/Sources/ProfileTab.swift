@@ -147,7 +147,8 @@ struct ProfileTab: View {
                 header(p)
                 // FRIENDS (§207): list, requests, add-by-username — web
                 // profile-page placement (above the referral panel).
-                FriendsPanelView()
+                // Tier 3 (Aug 11): full card lives on FriendsScreenView now.
+                FriendsRowLink()
                 // Referral program — web-parity "GIFT PRO TO FRIENDS" panel
                 // (same placement: between the header and Today's Dailies).
                 InvitePanelView()
@@ -1027,6 +1028,8 @@ struct LeaderboardTab: View {
     // sheet (fixed phrases only). friendsVersion re-keys the fetch tasks
     // whenever the FriendsService cache changes.
     @State private var friendsOnly = false
+    /// Tier 2 (Aug 11): "Add friends" CTA on the empty Friends board.
+    @State private var showFriendsSheet = false
     @State private var friendsVersion = 0
     @State private var tauntTarget: FriendsService.FriendProfile?
     @State private var tauntStatus: String?
@@ -1070,6 +1073,7 @@ struct LeaderboardTab: View {
             .fullScreenCover(isPresented: $showPNDaily) {
                 NavigationStack { ProperNoundleView() }
             }
+            .sheet(isPresented: $showFriendsSheet) { NavigationStack { FriendsScreenView() } }
         }
     }
 
@@ -1335,6 +1339,18 @@ struct LeaderboardTab: View {
                             Text(friendsOnly ? "No friends yet — add them from any profile" : "No daily results yet. Be the first!")
                                 .font(Brand.font(12, .bold)).foregroundStyle(Theme.textMuted)
                                 .multilineTextAlignment(.center)
+                            // Tier 2 (Aug 11): the empty Friends board is the
+                            // best recruiting surface in the app — use it.
+                            if friendsOnly {
+                                Button { showFriendsSheet = true } label: {
+                                    Text("Add friends").font(Brand.font(12, .black)).foregroundStyle(.white)
+                                        .padding(.horizontal, 16).padding(.vertical, 9)
+                                        .background(RoundedRectangle(cornerRadius: 12)
+                                            .fill(LinearGradient(colors: [Color(hex: 0x7C3AED), Color(hex: 0x6D28D9)], startPoint: .topLeading, endPoint: .bottomTrailing)))
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 4)
+                            }
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 40)
                         .background(RoundedRectangle(cornerRadius: 16).fill(Theme.surface))
@@ -1409,8 +1425,10 @@ struct LeaderboardTab: View {
                             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.border, lineWidth: 1.5))
                     } else {
                         VStack(spacing: 0) {
+                            // Full daily rows (founder ask, Aug 11): profile
+                            // links, guesses + time detail, W/L pill.
                             ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
-                                yesterdayRow(rank: idx + 1, entry: entry)
+                                row(rank: idx + 1, entry: entry, scoreLabels: yLbScoreLabels)
                                 if idx < yesterday.count - 1 { Divider().overlay(Theme.border) }
                             }
                         }
@@ -1466,7 +1484,7 @@ struct LeaderboardTab: View {
         }
     }
 
-    private func row(rank: Int, entry: LeaderboardEntry) -> some View {
+    private func row(rank: Int, entry: LeaderboardEntry, scoreLabels: [Double: String]? = nil) -> some View {
         let isMe = entry.userId == auth.profile?.id
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
@@ -1479,7 +1497,7 @@ struct LeaderboardTab: View {
             }.buttonStyle(.plain)
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(lbScoreLabels[entry.compositeScore] ?? formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
+                Text((scoreLabels ?? lbScoreLabels)[entry.compositeScore] ?? formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
                 HStack(spacing: 5) {
                     Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
                     Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
