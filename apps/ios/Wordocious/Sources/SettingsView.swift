@@ -26,7 +26,7 @@ struct SettingsView: View {
     // and apply app-wide (tile palette / animation gating).
 
     private let themes: [(value: String, label: String, desc: String)] = [
-        ("default", "Default", "Classic Wordle colors"),
+        ("default", "Default", "Classic green & gold tiles"),
         ("dark", "Dark", "Easy on the eyes"),
         ("ocean", "Ocean", "Blue and teal tones"),
         ("forest", "Forest", "Green and earth tones"),

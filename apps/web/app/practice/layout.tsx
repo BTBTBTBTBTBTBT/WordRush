@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Classic — Wordocious',
-  description: 'Guess the 5-letter word in 6 tries. The original Wordle formula, daily and unlimited.',
+  description: 'Guess the 5-letter word in 6 tries. The classic daily word game, daily and unlimited.',
   openGraph: {
     title: 'Classic — Wordocious',
-    description: 'Guess the 5-letter word in 6 tries. The original Wordle formula, daily and unlimited.',
+    description: 'Guess the 5-letter word in 6 tries. The classic daily word game, daily and unlimited.',
   },
 };
 

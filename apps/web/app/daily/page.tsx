@@ -295,7 +295,10 @@ export default function DailyPage() {
   const mode = getMode(selectedMode);
   const color = mode.accentColor;
   const Icon = mode.icon;
-  const modeHref = `/${mode.id}`;
+  // URL slugs that differ from internal mode ids (mark scrub 2026-08-11):
+  // routes wear the display-name slug; ids stay put (they key play limits,
+  // saves, and the shared catalog).
+  const modeHref = `/${({ quordle: 'quadword', octordle: 'octoword' } as Record<string, string>)[mode.id] ?? mode.id}`;
   const playLimitKey = mode.id;
 
   // TIE-AWARE score display: stored scores are fractional (speed carries the

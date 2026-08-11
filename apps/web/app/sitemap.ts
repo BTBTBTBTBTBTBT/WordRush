@@ -13,8 +13,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/practice',               // Per-mode public landings (rules/scoring/strategy)
     '/six',
     '/seven',
-    '/quordle',
-    '/octordle',
+    '/quadword',
+    '/octoword',
     '/sequence',
     '/rescue',
     '/gauntlet',

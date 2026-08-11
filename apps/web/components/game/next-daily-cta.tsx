@@ -10,8 +10,8 @@ import { PROFILE_MODES } from '@/components/profile/mode-picker';
 // and the home grid order. First unplayed mode in this order is "next".
 const DAILY_ORDER: Array<{ id: string; href: string }> = [
   { id: 'DUEL',          href: '/practice?daily=true' },
-  { id: 'QUORDLE',       href: '/quordle?daily=true' },
-  { id: 'OCTORDLE',      href: '/octordle?daily=true' },
+  { id: 'QUORDLE',       href: '/quadword?daily=true' },
+  { id: 'OCTORDLE',      href: '/octoword?daily=true' },
   { id: 'SEQUENCE',      href: '/sequence?daily=true' },
   { id: 'RESCUE',        href: '/rescue?daily=true' },
   { id: 'DUEL_6',        href: '/six?daily=true' },

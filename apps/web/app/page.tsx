@@ -216,8 +216,8 @@ function formatShortTime(seconds: number): string {
 const MODE_CHROME: Record<string, { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> | null; href: string; vsHref: string }> = {
   practice: { icon: WordleGridIcon, href: '/practice?daily=true', vsHref: '/practice/vs' },
   vs: { icon: Swords, href: '/practice/vs?daily=true', vsHref: '/practice/vs?daily=true' },   // daily toggle → shared daily VS
-  quordle: { icon: null, href: '/quordle?daily=true', vsHref: '/quordle/vs' },
-  octordle: { icon: null, href: '/octordle?daily=true', vsHref: '/octordle/vs' },
+  quordle: { icon: null, href: '/quadword?daily=true', vsHref: '/quadword/vs' },
+  octordle: { icon: null, href: '/octoword?daily=true', vsHref: '/octoword/vs' },
   sequence: { icon: TrendingUp, href: '/sequence?daily=true', vsHref: '/sequence/vs' },
   rescue: { icon: Shield, href: '/rescue?daily=true', vsHref: '/rescue/vs' },
   six: { icon: SixIcon, href: '/six?daily=true', vsHref: '/six/vs' },

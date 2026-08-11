@@ -93,7 +93,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   };
 
   const themes: { value: Theme; label: string; description: string }[] = [
-    { value: 'default', label: 'Default', description: 'Classic Wordle colors' },
+    { value: 'default', label: 'Default', description: 'Classic green & gold tiles' },
     { value: 'dark', label: 'Dark', description: 'Easy on the eyes' },
     { value: 'ocean', label: 'Ocean', description: 'Blue and teal tones' },
     { value: 'forest', label: 'Forest', description: 'Green and earth tones' },

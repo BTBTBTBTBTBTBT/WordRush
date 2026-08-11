@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { ensureDictionaryInitialized } from '@/lib/init-dictionary';
 import { useSearchParams } from 'next/navigation';
-import { QuordleGame } from '@/components/quordle/quordle-game';
+import { OctordleGame } from '@/components/octordle/octordle-game';
 import { AdGate } from '@/components/ads/ad-gate';
 import { UnlimitedGate } from '@/components/game/unlimited-gate';
 import { generateDailySeed } from '@wordle-duel/core';
 import { getTodayLocal } from '@/lib/daily-service';
 
-export default function QuordlePage() {
+export default function OctordlePage() {
   const [ready, setReady] = useState(false);
   const searchParams = useSearchParams();
   const isDaily = searchParams.get('daily') === 'true';
@@ -25,7 +25,7 @@ export default function QuordlePage() {
     </div>
   );
 
-  const seed = isDaily ? generateDailySeed(getTodayLocal(), 'QUORDLE') : undefined;
+  const seed = isDaily ? generateDailySeed(getTodayLocal(), 'OCTORDLE') : undefined;
 
-  return <AdGate><UnlimitedGate isDaily={isDaily} modeSlug="quordle"><QuordleGame initialSeed={seed} isDaily={isDaily} /></UnlimitedGate></AdGate>;
+  return <AdGate><UnlimitedGate isDaily={isDaily} modeSlug="octoword"><OctordleGame initialSeed={seed} isDaily={isDaily} /></UnlimitedGate></AdGate>;
 }

@@ -12,6 +12,13 @@ const nextConfig = {
       // Expenses into Revenue — keep old bookmarks working.
       { source: '/admin/content', destination: '/admin/messaging', permanent: false },
       { source: '/admin/expenses', destination: '/admin/revenue', permanent: false },
+      // Mark scrub 2026-08-11 (§210): our routes must never wear a competitor
+      // mark. Old paths 301 so shipped deep links, bookmarks, and indexed
+      // URLs keep working while the canonical URL becomes the clean slug.
+      { source: '/quordle', destination: '/quadword', permanent: true },
+      { source: '/quordle/vs', destination: '/quadword/vs', permanent: true },
+      { source: '/octordle', destination: '/octoword', permanent: true },
+      { source: '/octordle/vs', destination: '/octoword/vs', permanent: true },
     ];
   },
   eslint: {

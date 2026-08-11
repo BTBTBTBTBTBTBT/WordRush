@@ -171,8 +171,8 @@ export async function markInviteCancelled(inviteId: string): Promise<void> {
  */
 export function vsHrefForMode(gameMode: string): string {
   switch (gameMode) {
-    case 'QUORDLE':       return '/quordle/vs';
-    case 'OCTORDLE':      return '/octordle/vs';
+    case 'QUORDLE':       return '/quadword/vs';
+    case 'OCTORDLE':      return '/octoword/vs';
     case 'SEQUENCE':      return '/sequence/vs';
     case 'RESCUE':        return '/rescue/vs';
     case 'GAUNTLET':      return '/gauntlet/vs';

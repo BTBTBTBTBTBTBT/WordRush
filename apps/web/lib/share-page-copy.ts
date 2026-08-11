@@ -17,8 +17,8 @@ export const MODE_DISPLAY: Record<string, string> = {
 // Map a share mode back to its play route so the CTA sends visitors to it.
 export const MODE_ROUTE: Record<string, string> = {
   Classic: '/practice',
-  QuadWord: '/quordle',
-  OctoWord: '/octordle',
+  QuadWord: '/quadword',
+  OctoWord: '/octoword',
   Succession: '/sequence',
   Deliverance: '/rescue',
   Gauntlet: '/gauntlet',
