@@ -285,7 +285,7 @@ private struct BottomNav: View {
                     .font(.system(size: 20)).foregroundStyle(color)
                     .overlay(alignment: .topTrailing) {
                         if badge > 0 {
-                            Circle().fill(Color(hex: 0xDC2626)).frame(width: 8, height: 8)
+                            Circle().fill(Color(hex: 0x7C3AED)).frame(width: 8, height: 8)   // win purple (founder, Aug 11)
                                 .offset(x: 5, y: -3)
                         }
                     }

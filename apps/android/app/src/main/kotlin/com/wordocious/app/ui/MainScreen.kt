@@ -135,7 +135,7 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
                         if (tab.label == "Profile" && pendingRequests > 0) {
                             Box(
                                 Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-3).dp)
-                                    .size(8.dp).clip(CircleShape).background(Color(0xFFEF4444)),
+                                    .size(8.dp).clip(CircleShape).background(Color(0xFF7C3AED)),   // win purple (founder, Aug 11)
                             )
                         }
                     }

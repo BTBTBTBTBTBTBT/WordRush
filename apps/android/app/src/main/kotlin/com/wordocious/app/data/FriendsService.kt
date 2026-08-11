@@ -31,10 +31,15 @@ object FriendsService {
         val id: String,
         val username: String,
         @SerialName("avatar_url") val avatarUrl: String? = null,
+        // Additive (Aug 11): emoji avatar beats the initial fallback.
+        @SerialName("avatar_emoji") val avatarEmoji: String? = null,
         val level: Int = 0,
         val since: String? = null,
         val requestedAt: String? = null,
     )
+
+    @Serializable
+    private data class SearchPayload(val users: List<FriendProfile> = emptyList())
 
     @Serializable
     private data class FriendsPayload(
@@ -88,6 +93,18 @@ object FriendsService {
         outgoingProfiles = payload.outgoingProfiles
         loaded = true
         notifyChanged()
+    }
+
+    /** Username typeahead for the Add-friend field (Aug 11) — prefix-first
+     *  matches so invites go to the right Carlie, not a blind exact-match. */
+    suspend fun search(query: String): List<FriendProfile> {
+        val q = query.trim()
+        if (q.length < 2) return emptyList()
+        val encoded = java.net.URLEncoder.encode(q, "UTF-8")
+        val resp = api("GET", "/api/friends/search?q=$encoded") ?: return emptyList()
+        if (resp.first != 200) return emptyList()
+        return runCatching { json.decodeFromString<SearchPayload>(resp.second).users }
+            .getOrElse { emptyList() }
     }
 
     sealed class RequestOutcome {

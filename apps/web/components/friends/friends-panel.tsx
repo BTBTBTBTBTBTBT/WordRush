@@ -17,6 +17,9 @@ import {
   declineFriend,
   requestFriend,
   onFriendsChange,
+  searchUsers,
+  isFriend,
+  hasRequested,
   type FriendProfile,
 } from '@/lib/friends-service';
 
@@ -28,15 +31,18 @@ function isNewFriend(f: FriendProfile): boolean {
 }
 
 function Avatar({ f }: { f: FriendProfile }) {
-  return f.avatar_url ? (
+  if (f.avatar_url) {
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={f.avatar_url} alt={f.username} className="w-8 h-8 rounded-full object-cover" />
-  ) : (
+    return <img src={f.avatar_url} alt={f.username} className="w-8 h-8 rounded-full object-cover" />;
+  }
+  // Chosen emoji beats the initial (Aug 11 — profile-avatar parity).
+  const emoji = f.avatar_emoji?.trim();
+  return (
     <div
       className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black"
       style={{ background: '#7c3aed22', color: '#7c3aed' }}
     >
-      {f.username.charAt(0).toUpperCase()}
+      {emoji || f.username.charAt(0).toUpperCase()}
     </div>
   );
 }
@@ -47,6 +53,9 @@ export function FriendsPanel() {
   const [username, setUsername] = useState('');
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  // Typeahead (Aug 11): type 2+ letters → matching users, so invites go to
+  // the right Carlie instead of a blind exact-match fire.
+  const [suggestions, setSuggestions] = useState<FriendProfile[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -59,6 +68,17 @@ export function FriendsPanel() {
     const t = setTimeout(() => setNote(null), 2500);
     return () => clearTimeout(t);
   }, [note]);
+
+  useEffect(() => {
+    const q = username.trim().replace(/^@/, '');
+    if (q.length < 2) { setSuggestions([]); return; }
+    let stale = false;
+    const t = setTimeout(async () => {
+      const users = await searchUsers(q);
+      if (!stale) setSuggestions(users.filter((u) => !isFriend(u.id) && !hasRequested(u.id)));
+    }, 250);
+    return () => { stale = true; clearTimeout(t); };
+  }, [username]);
 
   if (!user) return null;
 
@@ -227,6 +247,42 @@ export function FriendsPanel() {
           <UserPlus className="w-3.5 h-3.5" /> Add
         </button>
       </div>
+      {/* Typeahead results — tap sends to that exact account (by id). */}
+      {suggestions.length > 0 && (
+        <div className="space-y-1">
+          {suggestions.map((u) => (
+            <button
+              key={u.id}
+              onClick={async () => {
+                if (sending) return;
+                setSending(true);
+                setSuggestions([]);
+                try {
+                  const r = await requestFriend({ addresseeId: u.id });
+                  if ('error' in r) setNote(r.error);
+                  else {
+                    setNote(r.status === 'accepted' ? 'You’re now friends! 🎉' : `Request sent to ${u.username} 🤝`);
+                    setUsername('');
+                  }
+                } finally {
+                  setSending(false);
+                }
+              }}
+              className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-xl text-left hover:opacity-80 transition-opacity"
+              style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
+            >
+              <Avatar f={u} />
+              <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>
+                {u.username}
+              </span>
+              <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                Lvl {u.level}
+              </span>
+              <UserPlus className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+            </button>
+          ))}
+        </div>
+      )}
       {note && (
         <p className="text-xs font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{note}</p>
       )}

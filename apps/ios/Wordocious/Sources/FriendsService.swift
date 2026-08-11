@@ -14,6 +14,7 @@ enum FriendsService {
         let id: String
         let username: String
         let avatar_url: String?
+        var avatar_emoji: String?   // additive (Aug 11): emoji avatar beats the initial
         let level: Int
         var since: String?
         var requestedAt: String?
@@ -67,6 +68,23 @@ enum FriendsService {
         outgoingProfiles = payload.outgoingProfiles
         loaded = true
         notify()
+    }
+
+    /// Username typeahead for the Add-friend field (Aug 11) — prefix-first
+    /// matches so invites go to the right Carlie, not a blind exact-match.
+    static func search(_ query: String) async -> [FriendProfile] {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard q.count >= 2,
+              let encoded = q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "https://wordocious.com/api/friends/search?q=\(encoded)")
+        else { return [] }
+        struct SearchPayload: Decodable { let users: [FriendProfile] }
+        let req = await PublicProfileService.authedRequest(url)
+        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let payload = try? JSONDecoder().decode(SearchPayload.self, from: data)
+        else { return [] }
+        return payload.users
     }
 
     // MARK: mutations (POST /api/friends/…)

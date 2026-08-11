@@ -78,7 +78,7 @@ export function BottomNav() {
               {item.href === '/profile' && pendingRequests > 0 && (
                 <span
                   className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full"
-                  style={{ backgroundColor: '#dc2626' }}
+                  style={{ backgroundColor: '#7c3aed' /* win purple (founder, Aug 11) */ }}
                   aria-label={`${pendingRequests} pending friend requests`}
                 />
               )}

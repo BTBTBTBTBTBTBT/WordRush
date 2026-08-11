@@ -11,6 +11,10 @@ struct FriendsPanelView: View {
     @State private var sending = false
     @State private var note: String?
     @FocusState private var fieldFocused: Bool
+    // Typeahead (Aug 11): 2+ letters → matching users, so invites go to the
+    // right Carlie instead of a blind exact-match fire.
+    @State private var suggestions: [FriendsService.FriendProfile] = []
+    @State private var searchTask: Task<Void, Never>?
 
     var body: some View {
         let _ = version
@@ -38,7 +42,7 @@ struct FriendsPanelView: View {
                         .foregroundStyle(Theme.textMuted)
                     ForEach(incoming) { r in
                         HStack(spacing: 10) {
-                            AvatarView(url: r.avatar_url, username: r.username, size: 30)
+                            AvatarView(url: r.avatar_url, username: r.username, size: 30, emoji: r.avatar_emoji)
                             NavigationLink(value: r.id) {
                                 Text(r.username).font(Brand.font(12, .heavy))
                                     .foregroundStyle(Theme.textPrimary).lineLimit(1)
@@ -67,7 +71,7 @@ struct FriendsPanelView: View {
                         .foregroundStyle(Theme.textMuted)
                     ForEach(outgoing) { r in
                         HStack(spacing: 10) {
-                            AvatarView(url: r.avatar_url, username: r.username, size: 30)
+                            AvatarView(url: r.avatar_url, username: r.username, size: 30, emoji: r.avatar_emoji)
                             NavigationLink(value: r.id) {
                                 Text(r.username).font(Brand.font(12, .heavy))
                                     .foregroundStyle(Theme.textPrimary).lineLimit(1)
@@ -101,7 +105,7 @@ struct FriendsPanelView: View {
                     ForEach(friends) { f in
                         NavigationLink(value: f.id) {
                             HStack(spacing: 10) {
-                                AvatarView(url: f.avatar_url, username: f.username, size: 30)
+                                AvatarView(url: f.avatar_url, username: f.username, size: 30, emoji: f.avatar_emoji)
                                 Text(f.username).font(Brand.font(12, .heavy))
                                     .foregroundStyle(Theme.textPrimary).lineLimit(1)
                                 if isNewFriend(f) {
@@ -143,6 +147,43 @@ struct FriendsPanelView: View {
                 .disabled(sending || username.trimmingCharacters(in: .whitespaces).isEmpty)
                 .opacity(sending || username.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1)
             }
+            // Typeahead results — tap sends to that exact account (by id).
+            if !suggestions.isEmpty {
+                VStack(spacing: 6) {
+                    ForEach(suggestions) { u in
+                        Button {
+                            guard !sending else { return }
+                            sending = true
+                            suggestions = []
+                            Task {
+                                let outcome = await FriendsService.request(addresseeId: u.id)
+                                switch outcome {
+                                case .accepted: note = "You're now friends! 🎉"; username = ""
+                                case .pending: note = "Request sent to \(u.username) 🤝"; username = ""
+                                case .failed(let msg): note = msg
+                                }
+                                sending = false
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                AvatarView(url: u.avatar_url, username: u.username, size: 30, emoji: u.avatar_emoji)
+                                Text(u.username).font(Brand.font(12, .heavy))
+                                    .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                                Spacer()
+                                Text("Lvl \(u.level)").font(Brand.font(10, .bold))
+                                    .foregroundStyle(Theme.textMuted)
+                                Image(systemName: "person.badge.plus")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(Color(hex: 0x7C3AED))
+                            }
+                            .padding(.horizontal, 10).padding(.vertical, 7)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceAlt))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.border, lineWidth: 1.5))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
             if let note {
                 Text(note).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textMuted)
             }
@@ -153,6 +194,20 @@ struct FriendsPanelView: View {
         .task { await FriendsService.load() }
         .onReceive(NotificationCenter.default.publisher(for: FriendsService.changed)) { _ in
             version = FriendsService.version
+        }
+        .onChange(of: username) { q in
+            searchTask?.cancel()
+            let query = q.trimmingCharacters(in: .whitespaces)
+            guard query.count >= 2 else { suggestions = []; return }
+            searchTask = Task {
+                try? await Task.sleep(nanoseconds: 250_000_000)   // debounce
+                guard !Task.isCancelled else { return }
+                let users = await FriendsService.search(query)
+                guard !Task.isCancelled else { return }
+                suggestions = users.filter {
+                    !FriendsService.isFriend($0.id) && !FriendsService.hasRequested($0.id)
+                }
+            }
         }
     }
 

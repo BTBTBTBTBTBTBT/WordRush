@@ -71,8 +71,19 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
     var username by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     var note by remember { mutableStateOf<String?>(null) }
+    // Typeahead (Aug 11): 2+ letters → matching users, so invites go to the
+    // right Carlie instead of a blind exact-match fire.
+    var suggestions by remember { mutableStateOf<List<FriendsService.FriendProfile>>(emptyList()) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(note) { if (note != null) { delay(2_500); note = null } }
+    LaunchedEffect(username) {
+        val q = username.trim().trimStart('@')
+        if (q.length < 2) { suggestions = emptyList(); return@LaunchedEffect }
+        delay(250)   // debounce; recomposition cancels stale searches
+        suggestions = FriendsService.search(q).filter {
+            !FriendsService.isFriend(it.id) && !FriendsService.hasRequested(it.id)
+        }
+    }
 
     // The version read keeps this card recomposing on cache changes.
     val friends = remember(version) { FriendsService.friends }
@@ -275,6 +286,45 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                 )
             }
         }
+        // Typeahead results — tap sends to that exact account (by id).
+        if (suggestions.isNotEmpty()) {
+            suggestions.forEach { u ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(WTheme.surfaceHover)
+                        .border(1.5.dp, WTheme.border, RoundedCornerShape(12.dp))
+                        .clickableNoRipple {
+                            if (sending) return@clickableNoRipple
+                            sending = true
+                            suggestions = emptyList()
+                            scope.launch {
+                                when (val r = FriendsService.request(addresseeId = u.id)) {
+                                    is FriendsService.RequestOutcome.Accepted -> { note = "You're now friends! 🎉"; username = "" }
+                                    is FriendsService.RequestOutcome.Pending -> { note = "Request sent to ${u.username} 🤝"; username = "" }
+                                    is FriendsService.RequestOutcome.Failed -> note = r.message
+                                }
+                                sending = false
+                            }
+                        }
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                ) {
+                    FriendAvatar(u)
+                    Text(
+                        u.username, fontSize = 12.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                        color = WTheme.text, maxLines = 1, modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        "Lvl ${u.level}", fontSize = 10.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = WTheme.textMuted,
+                    )
+                }
+            }
+        }
         note?.let {
             Text(it, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = WTheme.textMuted)
         }
@@ -393,8 +443,11 @@ private fun FriendAvatar(f: FriendsService.FriendProfile) {
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
             )
         } else {
+            // Chosen emoji beats the initial (Aug 11 — profile-avatar parity).
+            val emoji = f.avatarEmoji?.trim().orEmpty()
             Text(
-                f.username.take(1).uppercase(), fontSize = 12.sp,
+                if (emoji.isNotEmpty()) emoji else f.username.take(1).uppercase(),
+                fontSize = 12.sp,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Black, color = Color(0xFF7C3AED),
             )
         }

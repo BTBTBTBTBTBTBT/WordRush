@@ -14,6 +14,7 @@ export interface FriendProfile {
   id: string;
   username: string;
   avatar_url: string | null;
+  avatar_emoji?: string | null;
   level: number;
   since?: string | null;
   requestedAt?: string;
@@ -69,6 +70,25 @@ export const getFriends = (): FriendProfile[] => friendsList;
 export const getIncoming = (): FriendProfile[] => incomingList;
 export const getOutgoing = (): FriendProfile[] => outgoingList;
 export const getFriendIds = (): Set<string> => friendIds;
+
+/**
+ * Username typeahead for the Add-friend field (Aug 11) — prefix-first
+ * matches from /api/friends/search so invites go to the right person.
+ */
+export async function searchUsers(q: string): Promise<FriendProfile[]> {
+  const query = q.trim();
+  if (query.length < 2) return [];
+  try {
+    const res = await fetch(`/api/friends/search?q=${encodeURIComponent(query)}`, {
+      headers: await profileApiHeaders(),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.users ?? [];
+  } catch {
+    return [];
+  }
+}
 
 async function post(path: string, body: Record<string, unknown>): Promise<Response | null> {
   try {

@@ -20,13 +20,15 @@ export async function GET(req: NextRequest) {
     .from('friendships')
     .select(
       `requester_id, addressee_id, status, created_at, accepted_at,
-       requester:profiles!friendships_requester_id_fkey(id, username, avatar_url, level),
-       addressee:profiles!friendships_addressee_id_fkey(id, username, avatar_url, level)`,
+       requester:profiles!friendships_requester_id_fkey(id, username, avatar_url, avatar_emoji, level),
+       addressee:profiles!friendships_addressee_id_fkey(id, username, avatar_url, avatar_emoji, level)`,
     )
     .or(`requester_id.eq.${me},addressee_id.eq.${me}`);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  type Prof = { id: string; username: string; avatar_url: string | null; level: number };
+  // avatar_emoji is ADDITIVE (Aug 11): shipped decoders ignore it; new
+  // clients render the chosen emoji instead of falling back to initials.
+  type Prof = { id: string; username: string; avatar_url: string | null; avatar_emoji: string | null; level: number };
   const friends: Array<Prof & { since: string | null }> = [];
   const incoming: Array<Prof & { requestedAt: string }> = [];
   const outgoing: string[] = [];
