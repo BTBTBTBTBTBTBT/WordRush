@@ -307,6 +307,7 @@ export interface LeaderboardEntry {
   user_id: string;
   username: string;
   avatar_url: string | null;
+  avatar_emoji?: string | null;
   composite_score: number;
   guess_count: number;
   time_seconds: number;
@@ -350,7 +351,7 @@ export async function fetchDailyLeaderboard(
       vs_losses,
       vs_games,
       completed,
-      profiles!inner(username, avatar_url, is_banned)
+      profiles!inner(username, avatar_url, avatar_emoji, is_banned)
     `)
     .eq('day', targetDay)
     .eq('game_mode', gameMode)
@@ -369,6 +370,7 @@ export async function fetchDailyLeaderboard(
     user_id: row.user_id,
     username: row.profiles?.username || 'Unknown',
     avatar_url: row.profiles?.avatar_url || null,
+    avatar_emoji: row.profiles?.avatar_emoji || null,
     composite_score: row.composite_score,
     guess_count: row.guess_count,
     time_seconds: row.time_seconds,
@@ -852,7 +854,7 @@ export async function fetchAllTimeRecords(): Promise<AllTimeRecord[]> {
     .from('all_time_records')
     .select(`
       *,
-      profiles!inner(username, avatar_url, is_banned)
+      profiles!inner(username, avatar_url, avatar_emoji, is_banned)
     `)
     .order('record_type');
 

@@ -715,6 +715,31 @@ private fun Divider() {
     Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
 }
 
+/** §212: photo → emoji → initial, left of every username (web lbAvatar twin). */
+@Composable
+private fun LbAvatar(avatarUrl: String?, avatarEmoji: String?, username: String) {
+    val url = avatarUrl?.takeIf { it.isNotBlank() }
+    Box(
+        Modifier.size(24.dp).clip(CircleShape)
+            .background(if (url == null) Color(0xFF7C3AED).copy(alpha = 0.13f) else Color.Transparent),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (url != null) {
+            coil.compose.AsyncImage(
+                model = url, contentDescription = null,
+                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            )
+        } else {
+            val emoji = avatarEmoji?.trim().orEmpty()
+            Text(
+                if (emoji.isNotEmpty()) emoji else username.take(1).uppercase(),
+                fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
+            )
+        }
+    }
+}
+
 /** Rank icon — Crown (#1 gold), Medal (#2 muted / #3 bronze), else "N". Web parity. */
 @Composable
 private fun RankIcon(rank: Int) {
@@ -1028,6 +1053,8 @@ internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrent
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         RankIcon(rank)
+        // §212: faces on the sweep boards too (RPCs have no emoji column).
+        LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
         Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
             // siblings, a squeezed row wrapped " (you)" one character per line.
@@ -1066,6 +1093,8 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         RankIcon(rank)
+        // §212: faces on the sweep boards too (RPCs have no emoji column).
+        LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
         Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
             // siblings, a squeezed row wrapped " (you)" one character per line.
@@ -1104,6 +1133,9 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         RankIcon(rank)
+        // §212: photo → emoji → initial, left of every username — the boards
+        // wear faces, not just names (web lbAvatar parity).
+        LbAvatar(entry.profiles?.avatarUrl, entry.profiles?.avatarEmoji, entry.username ?: "Player")
         // Username (+ " (you)" gold suffix) — taps open the public profile (web parity).
         Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two

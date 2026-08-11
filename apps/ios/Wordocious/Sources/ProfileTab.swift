@@ -1488,6 +1488,10 @@ struct LeaderboardTab: View {
         let isMe = entry.userId == auth.profile?.id
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
+            // §212: photo → emoji → initial, left of every username — the
+            // boards wear faces, not just names (web lbAvatar parity).
+            AvatarView(url: entry.profiles.avatarUrl, username: entry.username,
+                       size: 24, emoji: entry.profiles.avatarEmoji)
             // Only the username links to the public profile — matches the web,
             // where the leaderboard wraps just the name in <Link href=/profile/[id]>.
             NavigationLink(value: entry.userId) {
@@ -1618,6 +1622,9 @@ struct LeaderboardTab: View {
         let isMe = entry.userId == auth.profile?.id
         return HStack(spacing: 12) {
             rankIcon(rank).frame(width: 22)
+            // §212: faces on the sweep board too (RPC has no emoji column —
+            // photo → initial here).
+            AvatarView(url: entry.avatarUrl, username: entry.username, size: 24)
             NavigationLink(value: entry.userId) {
                 (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
                     .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)

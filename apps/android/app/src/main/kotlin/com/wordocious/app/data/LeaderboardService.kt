@@ -65,6 +65,8 @@ object LeaderboardService {
     data class ProfileRef(
         val username: String? = null,
         @SerialName("avatar_url") val avatarUrl: String? = null,
+        // §212: emoji avatar beats the initial on leaderboard rows.
+        @SerialName("avatar_emoji") val avatarEmoji: String? = null,
     )
 
     @Serializable
@@ -198,7 +200,7 @@ object LeaderboardService {
     }.getOrElseNotCancelled { null }
 
     private const val COLS =
-        "user_id,profiles!inner(username,avatar_url),composite_score,guess_count," +
+        "user_id,profiles!inner(username,avatar_url,avatar_emoji),composite_score,guess_count," +
         "time_seconds,boards_solved,total_boards,hints_used,vs_wins,vs_losses,vs_games,completed"
 
     /** Today's daily leaderboard for a mode (mirrors getDailyLeaderboard). */

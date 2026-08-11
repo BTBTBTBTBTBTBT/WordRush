@@ -36,7 +36,20 @@ object FriendsService {
         val level: Int = 0,
         val since: String? = null,
         val requestedAt: String? = null,
+        // Engagement digest (§212, additive): row status + weekly race + rivalry.
+        val streak: Int? = null,
+        val playedToday: Int? = null,
+        val weekPoints: Int? = null,
+        val h2hW: Int? = null,
+        val h2hL: Int? = null,
+        val remindedAt: String? = null,
     )
+
+    @Serializable
+    data class MeDigest(val playedToday: Int = 0, val weekPoints: Int = 0)
+
+    /** The caller's own digest for the weekly podium (§212). */
+    var meDigest: MeDigest? = null; private set
 
     @Serializable
     private data class SearchPayload(val users: List<FriendProfile> = emptyList())
@@ -49,7 +62,17 @@ object FriendsService {
         // Additive (Aug 11): profile chrome for sent-pending requests. Old
         // clients ignore it; `outgoing` stays string[] for their decoders.
         val outgoingProfiles: List<FriendProfile> = emptyList(),
+        // §212: the caller's own digest for the weekly podium — additive.
+        val me: MeDigest? = null,
     )
+
+    /** Local YYYY-MM-DD — the same day boundary every daily surface uses. */
+    fun localDay(): String = java.time.LocalDate.now().toString()
+
+    /** Monday of the current local week — the weekly race window (§212). */
+    fun localWeekStart(): String = java.time.LocalDate.now()
+        .with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+        .toString()
 
     /** Accepted friend ids (lowercased) — the leaderboard filter set. */
     var friendIds: Set<String> = emptySet(); private set
@@ -83,7 +106,7 @@ object FriendsService {
     /** Load once per launch (force to refresh). No-throw. */
     suspend fun load(force: Boolean = false) {
         if (loaded && !force) return
-        val resp = api("GET", "/api/friends") ?: return
+        val resp = api("GET", "/api/friends?day=${localDay()}&weekStart=${localWeekStart()}") ?: return
         val payload = runCatching { json.decodeFromString<FriendsPayload>(resp.second) }.getOrNull() ?: return
         if (resp.first != 200) return
         friends = payload.friends
@@ -91,8 +114,27 @@ object FriendsService {
         friendIds = payload.friends.map { it.id.lowercase() }.toSet()
         outgoing = payload.outgoing.map { it.lowercase() }.toSet()
         outgoingProfiles = payload.outgoingProfiles
+        meDigest = payload.me
         loaded = true
         notifyChanged()
+    }
+
+    enum class RemindOutcome { REMINDED, ALREADY, FAILED }
+
+    /** Nudge a pending invite (§212) — 24h rate limit lives server-side. */
+    suspend fun remind(addresseeId: String): RemindOutcome {
+        val resp = api("POST", "/api/friends/remind", """{"addresseeId":"$addresseeId"}""")
+            ?: return RemindOutcome.FAILED
+        if (resp.first == 429) return RemindOutcome.ALREADY
+        if (resp.first != 200) return RemindOutcome.FAILED
+        val stamp = runCatching {
+            (Json.parseToJsonElement(resp.second) as? JsonObject)?.get("remindedAt")?.jsonPrimitive?.content
+        }.getOrNull() ?: java.time.OffsetDateTime.now().toString()
+        outgoingProfiles = outgoingProfiles.map {
+            if (it.id.equals(addresseeId, ignoreCase = true)) it.copy(remindedAt = stamp) else it
+        }
+        notifyChanged()
+        return RemindOutcome.REMINDED
     }
 
     /** Username typeahead for the Add-friend field (Aug 11) — prefix-first
@@ -213,6 +255,7 @@ object FriendsService {
 object FriendTaunts {
     data class Taunt(val id: String, val text: String)
     val ALL = listOf(
+        Taunt("hi", "👋 Hey! Glad we're friends — game on."),
         Taunt("sweep", "🧹 Swept it. Your move."),
         Taunt("silver", "🥈 Silver looks good on you"),
         Taunt("slowpoke", "🐢 Still waiting on you today…"),

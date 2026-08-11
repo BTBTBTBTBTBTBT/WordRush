@@ -22,7 +22,10 @@ struct LeaderboardEntry: Identifiable, Decodable {
     struct ProfileRef: Decodable {
         let username: String
         let avatarUrl: String?
-        enum CodingKeys: String, CodingKey { case username; case avatarUrl = "avatar_url" }
+        var avatarEmoji: String?   // §212: emoji avatar beats the initial on rows
+        enum CodingKeys: String, CodingKey {
+            case username; case avatarUrl = "avatar_url"; case avatarEmoji = "avatar_emoji"
+        }
     }
 
     enum CodingKeys: String, CodingKey {
@@ -118,7 +121,7 @@ enum LeaderboardService {
             .select("""
                 user_id, composite_score, guess_count, time_seconds, boards_solved,
                 total_boards, hints_used, vs_wins, vs_losses, vs_games, completed,
-                profiles!inner(username, avatar_url)
+                profiles!inner(username, avatar_url, avatar_emoji)
                 """)
             .eq("day", value: day ?? todayLocal())
             .eq("game_mode", value: gameMode.rawValue)

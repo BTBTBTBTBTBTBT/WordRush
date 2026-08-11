@@ -18,6 +18,7 @@ export interface FriendTaunt {
 }
 
 export const FRIEND_TAUNTS: FriendTaunt[] = [
+  { id: 'hi', text: '👋 Hey! Glad we’re friends — game on.' },
   { id: 'sweep', text: '🧹 Swept it. Your move.' },
   { id: 'silver', text: '🥈 Silver looks good on you' },
   { id: 'slowpoke', text: '🐢 Still waiting on you today…' },

@@ -18,7 +18,17 @@ enum FriendsService {
         let level: Int
         var since: String?
         var requestedAt: String?
+        // Engagement digest (§212, additive): row status + weekly race + rivalry.
+        var streak: Int?
+        var playedToday: Int?
+        var weekPoints: Int?
+        var h2hW: Int?
+        var h2hL: Int?
+        var remindedAt: String?
     }
+
+    struct MeDigest: Decodable, Equatable { let playedToday: Int; let weekPoints: Int }
+    static var meDigest: MeDigest?
 
     private struct FriendsPayload: Decodable {
         let friends: [FriendProfile]
@@ -26,6 +36,8 @@ enum FriendsService {
         let outgoing: [String]
         // Tier 1 (Aug 11): outgoing WITH profile chrome — additive server field.
         var outgoingProfiles: [FriendProfile] = []
+        // §212: the caller's own digest for the weekly podium — additive.
+        var me: MeDigest? = nil
     }
 
     /// Accepted friend ids (lowercased) — the leaderboard filter set.
@@ -53,9 +65,22 @@ enum FriendsService {
 
     /// Load once per launch (force to refresh). No-throw; on failure the
     /// cache stays unloaded so a later call retries.
+    /// Local YYYY-MM-DD — the same day boundary every daily surface uses.
+    static func localDay(_ date: Date = Date()) -> String {
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = .current
+        return f.string(from: date)
+    }
+
+    /// Monday of the current local week — the weekly race window (§212).
+    static func localWeekStart() -> String {
+        var cal = Calendar(identifier: .iso8601); cal.timeZone = .current
+        let start = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) ?? Date()
+        return localDay(start)
+    }
+
     static func load(force: Bool = false) async {
         if loaded && !force { return }
-        guard let url = URL(string: "https://wordocious.com/api/friends") else { return }
+        guard let url = URL(string: "https://wordocious.com/api/friends?day=\(localDay())&weekStart=\(localWeekStart())") else { return }
         let req = await PublicProfileService.authedRequest(url)
         guard let (data, resp) = try? await URLSession.shared.data(for: req),
               (resp as? HTTPURLResponse)?.statusCode == 200,
@@ -66,8 +91,26 @@ enum FriendsService {
         friendIds = Set(payload.friends.map { $0.id.lowercased() })
         outgoing = Set(payload.outgoing.map { $0.lowercased() })
         outgoingProfiles = payload.outgoingProfiles
+        meDigest = payload.me
         loaded = true
         notify()
+    }
+
+    enum RemindOutcome { case reminded, already, failed }
+
+    /// Nudge a pending invite (§212) — 24h rate limit lives server-side.
+    static func remind(addresseeId: String) async -> RemindOutcome {
+        guard let (status, data) = await post("remind", body: ["addresseeId": addresseeId]) else { return .failed }
+        if status == 429 { return .already }
+        guard status == 200 else { return .failed }
+        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        let stamp = (json?["remindedAt"] as? String) ?? ISO8601DateFormatter().string(from: Date())
+        outgoingProfiles = outgoingProfiles.map { p in
+            guard p.id.caseInsensitiveCompare(addresseeId) == .orderedSame else { return p }
+            var q = p; q.remindedAt = stamp; return q
+        }
+        notify()
+        return .reminded
     }
 
     /// Username typeahead for the Add-friend field (Aug 11) — prefix-first
@@ -186,6 +229,7 @@ enum FriendsService {
 enum FriendTaunts {
     struct Taunt: Identifiable { let id: String; let text: String }
     static let all: [Taunt] = [
+        .init(id: "hi", text: "👋 Hey! Glad we're friends — game on."),
         .init(id: "sweep", text: "🧹 Swept it. Your move."),
         .init(id: "silver", text: "🥈 Silver looks good on you"),
         .init(id: "slowpoke", text: "🐢 Still waiting on you today…"),

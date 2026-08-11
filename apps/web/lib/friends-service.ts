@@ -18,6 +18,25 @@ export interface FriendProfile {
   level: number;
   since?: string | null;
   requestedAt?: string;
+  // Engagement digest (§212, additive): row status + weekly race + rivalry.
+  streak?: number;
+  playedToday?: number;
+  weekPoints?: number;
+  h2hW?: number;
+  h2hL?: number;
+  remindedAt?: string | null;
+}
+
+/** Local YYYY-MM-DD — the same day boundary every daily surface uses. */
+function localDay(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Monday of the current local week — the weekly race window. */
+function localWeekStart(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return localDay(d);
 }
 
 let friendIds = new Set<string>();
@@ -46,7 +65,10 @@ export function onFriendsChange(l: () => void): () => void {
 export async function loadFriends(force = false): Promise<void> {
   if (loaded && !force) return;
   try {
-    const res = await fetch('/api/friends', { headers: await profileApiHeaders() });
+    const res = await fetch(
+      `/api/friends?day=${localDay()}&weekStart=${localWeekStart()}`,
+      { headers: await profileApiHeaders() },
+    );
     if (!res.ok) return;
     const json = await res.json();
     friendsList = json.friends ?? [];
@@ -54,11 +76,27 @@ export async function loadFriends(force = false): Promise<void> {
     friendIds = new Set(friendsList.map((f) => f.id.toLowerCase()));
     outgoingIds = new Set((json.outgoing ?? []).map((s: string) => s.toLowerCase()));
     outgoingList = json.outgoingProfiles ?? [];
+    meDigest = json.me ?? null;
     loaded = true;
     notify();
   } catch {
     // retry next call
   }
+}
+
+/** The caller's own digest (playedToday/weekPoints) for the weekly podium. */
+let meDigest: { playedToday: number; weekPoints: number } | null = null;
+export const getMeDigest = (): { playedToday: number; weekPoints: number } | null => meDigest;
+
+/** Nudge a pending invite (§212) — 24h rate limit lives server-side. */
+export async function remindFriend(addresseeId: string): Promise<{ remindedAt?: string; error?: string }> {
+  const res = await post('/api/friends/remind', { addresseeId });
+  if (!res) return { error: 'Network error' };
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: json.error ?? 'Could not remind' };
+  outgoingList = outgoingList.map((r) => (r.id === addresseeId ? { ...r, remindedAt: json.remindedAt } : r));
+  notify();
+  return { remindedAt: json.remindedAt };
 }
 
 export const friendsLoaded = (): boolean => loaded;

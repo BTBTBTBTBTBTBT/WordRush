@@ -8,6 +8,7 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { FriendsPanel } from '@/components/friends/friends-panel';
+import { InvitePanel } from '@/components/referrals/invite-panel';
 import { useAuth } from '@/lib/auth-context';
 
 export default function FriendsPage() {
@@ -28,7 +29,12 @@ export default function FriendsPage() {
           Sign in to add friends and race them on every daily board.
         </p>
       ) : (
-        <FriendsPanel />
+        <>
+          <FriendsPanel />
+          {/* §212: recruiting and friending are the same motion — the
+              gift-Pro panel lives here too. */}
+          <InvitePanel />
+        </>
       )}
     </main>
   );

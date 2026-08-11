@@ -313,6 +313,21 @@ export default function DailyPage() {
   const yLbScoreLabels = tieAwareScoreLabels(yesterdayLeaderboard.map((e) => e.composite_score));
   const ySweepScoreLabels = tieAwareScoreLabels(yesterdaySweep.map((e) => e.total_score));
 
+  // §212: photo → emoji → initial, left of every username — the boards
+  // wear faces, not just names.
+  const lbAvatar = (avatarUrl: string | null, avatarEmoji: string | null | undefined, username: string) =>
+    avatarUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+    ) : (
+      <div
+        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+        style={{ background: '#7c3aed22', color: '#7c3aed' }}
+      >
+        {avatarEmoji?.trim() || username.charAt(0).toUpperCase()}
+      </div>
+    );
+
   // One row of the leaderboard — shared by the top-50 list and the
   // "your neighborhood" rank window so they can never drift apart visually.
   const renderLbRow = (entry: LeaderboardEntry, rank: number, scoreLabels = lbScoreLabels) => {
@@ -327,6 +342,7 @@ export default function DailyPage() {
         }}
       >
         <RankIcon rank={rank} />
+        {lbAvatar(entry.avatar_url, entry.avatar_emoji, entry.username)}
         <div className="flex-1 min-w-0">
           <Link
             href={`/profile/${entry.user_id}`}
@@ -425,6 +441,7 @@ export default function DailyPage() {
         }}
       >
         <RankIcon rank={rank} />
+        {lbAvatar(entry.avatar_url, null, entry.username)}
         <div className="flex-1 min-w-0">
           <Link
             href={`/profile/${entry.user_id}`}

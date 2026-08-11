@@ -6,7 +6,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Users, UserPlus, Check, X } from 'lucide-react';
+import { Users, UserPlus, Check, X, Bell } from 'lucide-react';
+import { FRIEND_TAUNTS } from '@/lib/friends-taunts';
 import { useAuth } from '@/lib/auth-context';
 import {
   loadFriends,
@@ -20,6 +21,9 @@ import {
   searchUsers,
   isFriend,
   hasRequested,
+  getMeDigest,
+  remindFriend,
+  sendTaunt,
   type FriendProfile,
 } from '@/lib/friends-service';
 
@@ -29,6 +33,20 @@ function isNewFriend(f: FriendProfile): boolean {
   const t = Date.parse(f.since);
   return Number.isFinite(t) && Date.now() - t < 24 * 60 * 60 * 1000;
 }
+
+/** "2d" / "5h" / "now" — how long a sent invite has been waiting (§212). */
+function agoShort(iso?: string): string {
+  if (!iso) return '';
+  const ms = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ms) || ms < 0) return '';
+  const h = Math.floor(ms / 3_600_000);
+  if (h < 1) return 'now';
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
+const withinDay = (iso?: string | null): boolean =>
+  !!iso && Date.now() - Date.parse(iso) < 24 * 60 * 60 * 1000;
 
 function Avatar({ f }: { f: FriendProfile }) {
   if (f.avatar_url) {
@@ -48,7 +66,7 @@ function Avatar({ f }: { f: FriendProfile }) {
 }
 
 export function FriendsPanel() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [, force] = useState(0);
   const [username, setUsername] = useState('');
   const [sending, setSending] = useState(false);
@@ -56,6 +74,9 @@ export function FriendsPanel() {
   // Typeahead (Aug 11): type 2+ letters → matching users, so invites go to
   // the right Carlie instead of a blind exact-match fire.
   const [suggestions, setSuggestions] = useState<FriendProfile[]>([]);
+  // §212: one-tap taunts from friend rows (same picker as the leaderboard).
+  const [tauntTarget, setTauntTarget] = useState<FriendProfile | null>(null);
+  const [tauntStatus, setTauntStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -85,6 +106,38 @@ export function FriendsPanel() {
   const friends = getFriends();
   const incoming = getIncoming();
   const outgoing = getOutgoing();
+
+  // Weekly race podium (§212): me + friends by this week's daily points.
+  const meDigest = getMeDigest();
+  const podium = (() => {
+    if (friends.length === 0) return [];
+    const entries = friends.map((f) => ({
+      id: f.id, username: f.username, avatar_url: f.avatar_url,
+      avatar_emoji: f.avatar_emoji ?? null, level: f.level,
+      pts: f.weekPoints ?? 0, me: false,
+    }));
+    if (profile) {
+      entries.push({
+        id: profile.id, username: 'You', avatar_url: profile.avatar_url ?? null,
+        avatar_emoji: (profile as { avatar_emoji?: string | null }).avatar_emoji ?? null,
+        level: profile.level ?? 0, pts: meDigest?.weekPoints ?? 0, me: true,
+      });
+    }
+    entries.sort((a, b) => b.pts - a.pts);
+    return entries.slice(0, 3).filter((e) => e.pts > 0 || entries.some((x) => x.pts > 0));
+  })();
+
+  const fireTaunt = async (tauntId: string) => {
+    if (!tauntTarget) return;
+    const r = await sendTaunt(tauntTarget.id, tauntId);
+    setTauntStatus(r.sent ? 'Sent 😈' : r.alreadySent ? 'Already taunted them today' : 'Could not send');
+    setTimeout(() => { setTauntTarget(null); setTauntStatus(null); }, 1400);
+  };
+
+  const sayHi = async (f: FriendProfile) => {
+    const r = await sendTaunt(f.id, 'hi');
+    setNote(r.sent ? `👋 sent to ${f.username}!` : r.alreadySent ? 'Already said hi today' : 'Could not send');
+  };
 
   const handleAdd = async () => {
     const name = username.trim();
@@ -122,6 +175,29 @@ export function FriendsPanel() {
           </span>
         )}
       </div>
+
+      {/* Weekly race podium (§212) — who owns the week among your circle. */}
+      {podium.length > 0 && (
+        <div className="flex items-end justify-center gap-5 py-2">
+          {[1, 0, 2].filter((i) => i < podium.length).map((i) => {
+            const e = podium[i];
+            const medal = ['🥇', '🥈', '🥉'][i];
+            return (
+              <div key={e.id} className={`flex flex-col items-center gap-0.5 ${i === 0 ? '-mt-2' : ''}`}>
+                <span className={i === 0 ? 'text-lg' : 'text-sm'}>{medal}</span>
+                <Avatar f={e as unknown as FriendProfile} />
+                <span className="text-[10px] font-black truncate max-w-[72px]"
+                  style={{ color: e.me ? '#7c3aed' : 'var(--color-text)' }}>
+                  {e.username}
+                </span>
+                <span className="text-[9px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+                  {e.pts.toLocaleString()} pts
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Incoming requests first — they're the actionable part. */}
       {incoming.length > 0 && (
@@ -175,8 +251,24 @@ export function FriendsPanel() {
                 className="flex-1 min-w-0 text-xs font-extrabold truncate hover:opacity-80 transition-opacity"
                 style={{ color: 'var(--color-text)' }}
               >
-                {r.username}
+                {r.username}{' '}
+                <span className="font-bold text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                  · {agoShort(r.requestedAt)}
+                </span>
               </Link>
+              {/* §212: the invite usually died unseen — re-push, 1/24h. */}
+              <button
+                onClick={async () => {
+                  const res = await remindFriend(r.id);
+                  setNote('error' in res && res.error ? res.error : `Reminder sent to ${r.username} 🔔`);
+                }}
+                disabled={withinDay(r.remindedAt)}
+                aria-label={`Remind ${r.username}`}
+                className="text-[10px] font-bold px-2 py-1 rounded-lg disabled:opacity-50"
+                style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
+              >
+                {withinDay(r.remindedAt) ? 'Reminded' : 'Remind'}
+              </button>
               <button
                 onClick={() => declineFriend(r.id)}
                 aria-label={`Cancel request to ${r.username}`}
@@ -190,28 +282,65 @@ export function FriendsPanel() {
         </div>
       )}
 
-      {/* Friends list — avatar rows into their profiles (H2H lives there). */}
+      {/* Friends list (§212) — live rows: today's progress, streak, H2H
+          record, say-hi on NEW friendships, taunt bell for slackers. */}
       {friends.length > 0 ? (
-        <div className="space-y-2">
-          {friends.map((f) => (
-            <Link key={f.id} href={`/profile/${f.id}`} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-              <Avatar f={f} />
-              <span className="flex-1 min-w-0 text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>
-                {f.username}
-                {isNewFriend(f) && (
-                  <span
-                    className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
-                    style={{ background: '#7c3aed22', color: '#7c3aed' }}
-                  >
-                    NEW
+        <div className="space-y-2.5">
+          {friends.map((f) => {
+            const played = f.playedToday ?? undefined;
+            const record = (f.h2hW ?? 0) + (f.h2hL ?? 0) > 0
+              ? ((f.h2hW ?? 0) >= (f.h2hL ?? 0) ? `${f.h2hW}–${f.h2hL} you` : `${f.h2hL}–${f.h2hW} them`)
+              : null;
+            return (
+              <div key={f.id} className="flex items-center gap-2.5">
+                <Link href={`/profile/${f.id}`} className="flex items-center gap-2.5 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                  <Avatar f={f} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-xs font-extrabold truncate" style={{ color: 'var(--color-text)' }}>
+                      {f.username}
+                      {isNewFriend(f) && (
+                        <span
+                          className="ml-1.5 text-[8px] font-black px-1 py-0.5 rounded align-middle"
+                          style={{ background: '#7c3aed22', color: '#7c3aed' }}
+                        >
+                          NEW
+                        </span>
+                      )}
+                    </span>
+                    {played !== undefined && (
+                      <span className="block text-[10px] font-bold truncate" style={{ color: 'var(--color-text-muted)' }}>
+                        {played > 0 ? `${played}/9 today${f.streak ? ` · 🔥${f.streak}` : ''}` : "hasn't played today"}
+                        {record ? ` · ${record}` : ''}
+                      </span>
+                    )}
                   </span>
+                </Link>
+                {isNewFriend(f) && (
+                  <button
+                    onClick={() => sayHi(f)}
+                    aria-label={`Say hi to ${f.username}`}
+                    className="text-[10px] font-bold px-2 py-1 rounded-lg"
+                    style={{ background: '#7c3aed18', border: '1.5px solid #c4b5fd', color: '#7c3aed' }}
+                  >
+                    👋 Say hi
+                  </button>
                 )}
-              </span>
-              <span className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-                Lvl {f.level}
-              </span>
-            </Link>
-          ))}
+                {played === 0 && !isNewFriend(f) && (
+                  <button
+                    onClick={() => setTauntTarget(f)}
+                    aria-label={`Taunt ${f.username}`}
+                    className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+                    style={{ background: 'var(--color-surface-hover)', border: '1.5px solid var(--color-border)' }}
+                  >
+                    <Bell className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                  </button>
+                )}
+                <span className="text-[10px] font-bold shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+                  Lvl {f.level}
+                </span>
+              </div>
+            );
+          })}
         </div>
       ) : (
         incoming.length === 0 && outgoing.length === 0 && (
@@ -285,6 +414,52 @@ export function FriendsPanel() {
       )}
       {note && (
         <p className="text-xs font-extrabold" style={{ color: 'var(--color-text-muted)' }}>{note}</p>
+      )}
+
+      {/* Taunt picker — same modal as the friends leaderboard (§207). */}
+      {tauntTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => { setTauntTarget(null); setTauntStatus(null); }}
+        >
+          <div
+            className="w-full max-w-sm overflow-hidden"
+            style={{ background: 'var(--color-surface)', border: '1.5px solid var(--color-border)', borderRadius: '16px' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
+              <p className="text-xs font-black uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+                Taunt {tauntTarget.username}
+              </p>
+            </div>
+            {tauntStatus ? (
+              <div className="p-6 text-center text-sm font-extrabold" style={{ color: 'var(--color-text)' }}>
+                {tauntStatus}
+              </div>
+            ) : (
+              <div>
+                {FRIEND_TAUNTS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => fireTaunt(t.id)}
+                    className="w-full text-left px-4 py-3 text-xs font-extrabold transition-colors hover:opacity-80"
+                    style={{ color: 'var(--color-text)', borderBottom: '1px solid var(--color-border)' }}
+                  >
+                    {t.text}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setTauntTarget(null)}
+                  className="w-full px-4 py-3 text-xs font-extrabold"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -23,6 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.ui.draw.alpha
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -74,6 +76,9 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
     // Typeahead (Aug 11): 2+ letters → matching users, so invites go to the
     // right Carlie instead of a blind exact-match fire.
     var suggestions by remember { mutableStateOf<List<FriendsService.FriendProfile>>(emptyList()) }
+    // §212: one-tap taunts from friend rows (leaderboard dialog twin).
+    var tauntTarget by remember { mutableStateOf<FriendsService.FriendProfile?>(null) }
+    var tauntStatus by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(note) { if (note != null) { delay(2_500); note = null } }
     LaunchedEffect(username) {
@@ -161,6 +166,50 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
             }
         }
 
+        // Weekly race podium (§212) — who owns the week among your circle.
+        val podium = remember(version) {
+            val friendEntries = FriendsService.friends.map {
+                PodiumEntry(it.id, it.username, it.avatarUrl, it.avatarEmoji, it.weekPoints ?: 0, isMe = false)
+            }
+            val p = com.wordocious.app.data.AuthService.profile.value
+            val all = if (p != null && friendEntries.isNotEmpty()) {
+                friendEntries + PodiumEntry(
+                    p.id, "You", p.avatarUrl, p.avatarEmoji,
+                    FriendsService.meDigest?.weekPoints ?: 0, isMe = true,
+                )
+            } else friendEntries
+            if (all.none { it.pts > 0 }) emptyList()
+            else all.sortedByDescending { it.pts }.take(3)
+        }
+        if (podium.isNotEmpty()) {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(22.dp, Alignment.CenterHorizontally),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            ) {
+                listOf(1, 0, 2).filter { it < podium.size }.forEach { i ->
+                    val e = podium[i]
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp),
+                    ) {
+                        Text(listOf("🥇", "🥈", "🥉")[i], fontSize = if (i == 0) 20.sp else 14.sp)
+                        PodiumAvatar(e)
+                        Text(
+                            e.username, fontSize = 10.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                            color = if (e.isMe) Color(0xFF7C3AED) else WTheme.text, maxLines = 1,
+                        )
+                        Text(
+                            "${e.pts} pts", fontSize = 9.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = WTheme.textMuted,
+                        )
+                    }
+                }
+            }
+        }
+
         // Sent requests — the loop's missing feedback (Tier 1, Aug 11):
         // sending a request now visibly puts something here, with a cancel.
         if (outgoing.isNotEmpty()) {
@@ -173,11 +222,42 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     FriendAvatar(r)
                     Text(
-                        r.username, fontSize = 12.sp,
+                        buildAnnotatedString {
+                            append(r.username)
+                            withStyle(SpanStyle(color = WTheme.textMuted, fontSize = 10.sp)) {
+                                append("  · ${agoShort(r.requestedAt)}")
+                            }
+                        },
+                        fontSize = 12.sp,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
                         color = WTheme.text, maxLines = 1,
                         modifier = Modifier.weight(1f).clickableNoRipple { onOpenProfile(r.id) },
                     )
+                    // §212: the invite usually died unseen — re-push, 1/24h.
+                    val reminded = withinDay(r.remindedAt)
+                    Box(
+                        Modifier.clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF7C3AED).copy(alpha = 0.09f))
+                            .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(10.dp))
+                            .clickableNoRipple {
+                                if (reminded) return@clickableNoRipple
+                                scope.launch {
+                                    note = when (FriendsService.remind(r.id)) {
+                                        FriendsService.RemindOutcome.REMINDED -> "Reminder sent to ${r.username} 🔔"
+                                        FriendsService.RemindOutcome.ALREADY -> "Already reminded today"
+                                        FriendsService.RemindOutcome.FAILED -> "Could not remind"
+                                    }
+                                }
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .alpha(if (reminded) 0.55f else 1f),
+                    ) {
+                        Text(
+                            if (reminded) "Reminded" else "Remind", fontSize = 10.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = Color(0xFF7C3AED), fontFamily = Nunito,
+                        )
+                    }
                     Box(
                         Modifier.clip(RoundedCornerShape(10.dp)).background(WTheme.surfaceHover)
                             .border(1.5.dp, WTheme.border, RoundedCornerShape(10.dp))
@@ -203,29 +283,77 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
                     modifier = Modifier.clickableNoRipple { onOpenProfile(f.id) },
                 ) {
                     FriendAvatar(f)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(1.dp),
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text(
-                            f.username, fontSize = 12.sp,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                            color = WTheme.text, maxLines = 1,
-                            modifier = Modifier.weight(1f, fill = false),
-                        )
-                        if (isNewFriend(f)) {
-                            Box(
-                                Modifier.clip(RoundedCornerShape(4.dp))
-                                    .background(Color(0xFF7C3AED).copy(alpha = 0.13f))
-                                    .padding(horizontal = 4.dp, vertical = 1.dp),
-                            ) {
-                                Text(
-                                    "NEW", fontSize = 8.sp,
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-                                    color = Color(0xFF7C3AED), fontFamily = Nunito,
-                                )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            Text(
+                                f.username, fontSize = 12.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                                color = WTheme.text, maxLines = 1,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                            if (isNewFriend(f)) {
+                                Box(
+                                    Modifier.clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF7C3AED).copy(alpha = 0.13f))
+                                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                                ) {
+                                    Text(
+                                        "NEW", fontSize = 8.sp,
+                                        fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                                        color = Color(0xFF7C3AED), fontFamily = Nunito,
+                                    )
+                                }
                             }
+                        }
+                        // §212: today's progress, streak, rivalry — the live row.
+                        f.playedToday?.let { played ->
+                            Text(
+                                statusLine(f, played), fontSize = 10.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                color = WTheme.textMuted, maxLines = 1, fontFamily = Nunito,
+                            )
+                        }
+                    }
+                    if (isNewFriend(f)) {
+                        Box(
+                            Modifier.clip(RoundedCornerShape(10.dp))
+                                .background(Color(0xFF7C3AED).copy(alpha = 0.09f))
+                                .border(1.5.dp, Color(0xFFC4B5FD), RoundedCornerShape(10.dp))
+                                .clickableNoRipple {
+                                    scope.launch {
+                                        note = when (FriendsService.taunt(f.id, "hi", com.wordocious.app.todayLocalDate())) {
+                                            FriendsService.TauntOutcome.SENT -> "👋 sent to ${f.username}!"
+                                            FriendsService.TauntOutcome.ALREADY_SENT -> "Already said hi today"
+                                            FriendsService.TauntOutcome.FAILED -> "Could not send"
+                                        }
+                                    }
+                                }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Text(
+                                "👋 Say hi", fontSize = 10.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                color = Color(0xFF7C3AED), fontFamily = Nunito,
+                            )
+                        }
+                    } else if (f.playedToday == 0) {
+                        // Slacker bell — one-tap taunt (§207 picker).
+                        Box(
+                            Modifier.size(26.dp).clip(CircleShape).background(WTheme.surfaceHover)
+                                .border(1.5.dp, WTheme.border, CircleShape)
+                                .clickableNoRipple { tauntTarget = f },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Outlined.Notifications, "Taunt ${f.username}",
+                                tint = Color(0xFF7C3AED), modifier = Modifier.size(14.dp),
+                            )
                         }
                     }
                     Text(
@@ -329,6 +457,135 @@ fun FriendsPanel(onOpenProfile: (String) -> Unit = {}) {
             Text(it, fontSize = 12.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = WTheme.textMuted)
         }
     }
+
+    // Taunt picker — the leaderboard dialog's twin (§207 fixed phrases).
+    tauntTarget?.let { target ->
+        androidx.compose.ui.window.Dialog(onDismissRequest = { tauntTarget = null; tauntStatus = null }) {
+            Column(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+                    .background(WTheme.surface).border(1.5.dp, WTheme.border, RoundedCornerShape(16.dp)),
+            ) {
+                Text(
+                    "TAUNT ${target.username.uppercase()}",
+                    fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                    color = WTheme.textMuted, letterSpacing = 0.8.sp,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                )
+                PanelDivider()
+                val status = tauntStatus
+                if (status != null) {
+                    Text(
+                        status, fontSize = 14.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = WTheme.text,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                    )
+                } else {
+                    com.wordocious.app.data.FriendTaunts.ALL.forEach { taunt ->
+                        Text(
+                            taunt.text, fontSize = 13.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = WTheme.text,
+                            modifier = Modifier.fillMaxWidth().clickableNoRipple {
+                                scope.launch {
+                                    val outcome = FriendsService.taunt(
+                                        target.id, taunt.id, com.wordocious.app.todayLocalDate())
+                                    tauntStatus = when (outcome) {
+                                        FriendsService.TauntOutcome.SENT -> "Sent 😈"
+                                        FriendsService.TauntOutcome.ALREADY_SENT -> "Already taunted them today"
+                                        FriendsService.TauntOutcome.FAILED -> "Could not send"
+                                    }
+                                    delay(1400)
+                                    tauntTarget = null
+                                    tauntStatus = null
+                                }
+                            }.padding(horizontal = 16.dp, vertical = 13.dp),
+                        )
+                        PanelDivider()
+                    }
+                    Text(
+                        "Cancel", fontSize = 12.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, color = WTheme.textMuted,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth().clickableNoRipple { tauntTarget = null }
+                            .padding(vertical = 13.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** "5/9 today · 🔥12 · 7–4 you" — the row's engagement digest (§212). */
+private fun statusLine(f: FriendsService.FriendProfile, played: Int): String {
+    val parts = mutableListOf<String>()
+    if (played > 0) {
+        var lead = "$played/9 today"
+        f.streak?.takeIf { it > 0 }?.let { lead += " · 🔥$it" }
+        parts.add(lead)
+    } else {
+        parts.add("hasn't played today")
+    }
+    val w = f.h2hW ?: 0; val l = f.h2hL ?: 0
+    if (w + l > 0) parts.add(if (w >= l) "$w–$l you" else "$l–$w them")
+    return parts.joinToString(" · ")
+}
+
+/** "2d" / "5h" / "now" — how long a sent invite has been waiting (§212). */
+private fun agoShort(iso: String?): String {
+    val t = parseIsoMs(iso) ?: return ""
+    val h = ((System.currentTimeMillis() - t) / 3_600_000L).toInt()
+    return when {
+        h < 1 -> "now"
+        h < 24 -> "${h}h"
+        else -> "${h / 24}d"
+    }
+}
+
+private fun withinDay(iso: String?): Boolean {
+    val t = parseIsoMs(iso) ?: return false
+    return System.currentTimeMillis() - t < 24 * 60 * 60 * 1000L
+}
+
+private fun parseIsoMs(iso: String?): Long? {
+    if (iso == null) return null
+    return runCatching { java.time.OffsetDateTime.parse(iso).toInstant().toEpochMilli() }
+        .recoverCatching { java.time.Instant.parse(iso).toEpochMilli() }
+        .getOrNull()
+}
+
+@Composable
+private fun PanelDivider() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(WTheme.border))
+}
+
+internal data class PodiumEntry(
+    val id: String, val username: String, val avatarUrl: String?,
+    val avatarEmoji: String?, val pts: Int, val isMe: Boolean,
+)
+
+@Composable
+private fun PodiumAvatar(e: PodiumEntry) {
+    val url = e.avatarUrl?.takeIf { it.isNotBlank() }
+    Box(
+        Modifier.size(34.dp).clip(CircleShape)
+            .background(if (url == null) Color(0xFF7C3AED).copy(alpha = 0.13f) else Color.Transparent),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (url != null) {
+            coil.compose.AsyncImage(
+                model = url, contentDescription = e.username,
+                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            )
+        } else {
+            val emoji = e.avatarEmoji?.trim().orEmpty()
+            Text(
+                if (emoji.isNotEmpty()) emoji else e.username.take(1).uppercase(),
+                fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                color = Color(0xFF7C3AED),
+            )
+        }
+    }
 }
 
 // FRIENDS row (§207 Tier 3, Aug 11) — the compact card on the OWN profile
@@ -415,6 +672,9 @@ fun FriendsScreen(onClose: () -> Unit, onOpenProfile: (String) -> Unit = {}) {
             )
         }
         FriendsPanel(onOpenProfile = onOpenProfile)
+        // §212: recruiting and friending are the same motion — the gift-Pro
+        // panel lives here too.
+        InvitePanel()
         Spacer(Modifier.height(24.dp))
     }
 }
