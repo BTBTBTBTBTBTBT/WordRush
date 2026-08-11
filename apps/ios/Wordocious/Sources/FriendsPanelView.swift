@@ -219,8 +219,11 @@ struct FriendsRowLink: View {
                     Text("\(count)").font(Brand.font(12, .black)).foregroundStyle(Theme.textMuted)
                 }
                 if pending > 0 {
-                    Text("\(pending)").font(Brand.font(10, .black)).foregroundStyle(.white)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
+                    // Spelled out (web/Android parity) — a bare number here
+                    // could read as the friend count sitting beside it.
+                    Text(pending == 1 ? "1 request" : "\(pending) requests")
+                        .font(Brand.font(10, .black)).foregroundStyle(.white)
+                        .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(Capsule().fill(Color(hex: 0xDC2626)))
                 }
                 Spacer()
