@@ -666,15 +666,17 @@ export function ProperNoundleGame({ isDaily = false }: ProperNoundleGameProps = 
   const categoryColor = puzzle.themeCategory ? CATEGORY_COLORS[puzzle.themeCategory] || '#7c3aed' : '#7c3aed';
   const categoryLabel = puzzle.themeCategory ? CATEGORY_LABELS[puzzle.themeCategory] || puzzle.themeCategory : '';
 
+  // Whole image, no crop (founder, Aug 11): the 64px object-cover square
+  // beheaded portrait engravings — natural aspect, capped at 160px.
   const resultImage = wikiImageUrl ? (
-    <div className="relative w-16 h-16 rounded-xl overflow-hidden border-2 shadow-md shrink-0"
+    <div className="relative rounded-xl overflow-hidden border-2 shadow-md shrink-0"
       style={{ borderColor: gameStatus === 'won' ? '#bbf7d0' : '#fecaca' }}>
       <Image
         src={wikiImageUrl}
         alt={puzzle.display}
-        width={64}
-        height={64}
-        className={`w-full h-full object-cover transition-opacity duration-300 ${wikiImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+        width={160}
+        height={160}
+        className={`max-w-[160px] max-h-[160px] w-auto h-auto object-contain transition-opacity duration-300 ${wikiImageLoaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setWikiImageLoaded(true)}
       />
       {!wikiImageLoaded && <div className="absolute inset-0 bg-gray-100 animate-pulse" />}

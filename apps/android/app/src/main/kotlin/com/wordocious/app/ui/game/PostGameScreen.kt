@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -301,8 +302,13 @@ fun PostGameScreen(
                             .setHeader("User-Agent", com.wordocious.app.data.WikipediaHint.USER_AGENT)
                             .build(),
                         contentDescription = null,
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                        modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp))
+                        // Whole image, no crop (founder, Aug 11): Crop in a
+                        // 64dp square beheaded portrait engravings — fit the
+                        // intrinsic aspect within a 160dp cap.
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                        modifier = Modifier
+                            .sizeIn(maxWidth = 160.dp, maxHeight = 160.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .border(2.dp, if (won) Color(0xFF7C3AED) else Color(0xFFDC2626), RoundedCornerShape(12.dp)),
                     )
                 }

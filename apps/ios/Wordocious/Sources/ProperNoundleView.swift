@@ -447,11 +447,14 @@ struct ProperNoundleView: View {
     private var result: some View {
         let secs = vm.finalTimeSeconds ?? vm.elapsed
         return VStack(spacing: 10) {
-            // Wikipedia photo of the answer (web parity — result thumbnail).
+            // Wikipedia photo of the answer (web parity). Whole image, no crop
+            // (founder, Aug 11): .fill in a 64pt square beheaded portrait
+            // engravings — fit within 160pt so the full picture shows.
             if let urlStr = vm.wikiImageURL, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { img in img.resizable().aspectRatio(contentMode: .fill) }
-                    placeholder: { Color(hex: 0xE5E7EB) }
-                    .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 12))
+                AsyncImage(url: url) { img in img.resizable().scaledToFit() }
+                    placeholder: { Color(hex: 0xE5E7EB).frame(width: 96, height: 96) }
+                    .frame(maxWidth: 160, maxHeight: 160)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(vm.status == .won ? Color(hex: 0x7C3AED) : Color(hex: 0xDC2626), lineWidth: 2))
             }
             // Web parity: win → name in green + "Solved in N guesses · time" subtitle;
