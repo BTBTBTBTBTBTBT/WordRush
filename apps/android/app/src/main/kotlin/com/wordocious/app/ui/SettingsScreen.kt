@@ -61,6 +61,13 @@ private val THEMES = listOf(
     Triple("forest", "Forest", "Green and earth tones"),
 )
 
+// Keyboard layouts (§213) — three arrangements of the same keys.
+private val KEYBOARD_LAYOUTS = listOf(
+    Triple("standard", "Standard", "Enter left, delete right"),
+    Triple("flipped", "Flipped", "Delete left, enter right"),
+    Triple("michael", "Michael Keyboard", "4 rows like your phone — delete and enter on both sides"),
+)
+
 @Composable
 fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
     val scope = rememberCoroutineScope()
@@ -129,6 +136,30 @@ fun SettingsScreen(onDone: () -> Unit, onOpenInfo: (String) -> Unit = {}) {
                                 .background(if (active) WTheme.surfaceHover else WTheme.bg)
                                 .border(1.5.dp, if (active) Color(0xFFC4B5FD) else WTheme.border, RoundedCornerShape(12.dp))
                                 .clickableNoRipple { ThemePref.set(key); theme = key }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(label, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text)
+                                Text(desc, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                            }
+                            if (active) Icon(Icons.Filled.CheckCircle, null, tint = WTheme.primary, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+
+            // KEYBOARD (§213) — layout radio cards, THEME-card twins.
+            Section("KEYBOARD") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    KEYBOARD_LAYOUTS.forEach { (key, label, desc) ->
+                        val active = com.wordocious.app.ui.game.KeyboardLayoutPref.value == key
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (active) WTheme.surfaceHover else WTheme.bg)
+                                .border(1.5.dp, if (active) Color(0xFFC4B5FD) else WTheme.border, RoundedCornerShape(12.dp))
+                                .clickableNoRipple { com.wordocious.app.ui.game.KeyboardLayoutPref.value = key }
                                 .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {

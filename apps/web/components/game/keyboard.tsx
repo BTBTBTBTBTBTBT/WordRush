@@ -1,17 +1,34 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
 import { playKeyTap } from '@/lib/sounds';
+import { getKeyboardLayout, onKeyboardLayoutChange, type KeyboardLayout } from '@/lib/keyboard-layout';
 import { Delete } from 'lucide-react';
 
-const ROWS = [
-  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  // ENTER left, backspace RIGHT — where every phone text keyboard puts it
-  // (founder call, 2026-08-10; iOS/Android KeyboardViews mirror this).
-  ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK']
-];
+// Three arrangements of the same keys (§213) — see lib/keyboard-layout.ts.
+// SPACE is decorative: it presses (haptic + sound) but sends nothing.
+const LAYOUT_ROWS: Record<KeyboardLayout, string[][]> = {
+  standard: [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    // ENTER left, backspace RIGHT — where every phone text keyboard puts it
+    // (founder call, 2026-08-10; iOS/Android KeyboardViews mirror this).
+    ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK'],
+  ],
+  flipped: [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['BACK', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'ENTER'],
+  ],
+  michael: [
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['BACK', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'BACK'],
+    ['ENTER', 'SPACE', 'ENTER'],
+  ],
+};
 
 type LetterState = 'correct' | 'present' | 'absent';
 
@@ -32,10 +49,12 @@ function QuadrantKey({
   letter,
   boardStates,
   onClick,
+  compact = false,
 }: {
   letter: string;
   boardStates: Record<string, LetterState>[];
   onClick: () => void;
+  compact?: boolean;
 }) {
   const count = boardStates.length;
   const cols = count <= 4 ? 2 : 4;
@@ -49,7 +68,8 @@ function QuadrantKey({
     <button
       onClick={() => { haptic('light'); playKeyTap(); onClick(); }}
       className={cn(
-        'relative h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg overflow-hidden',
+        'relative w-10 sm:w-12 rounded-md font-black text-base sm:text-lg overflow-hidden',
+        compact ? 'h-10 sm:h-12' : 'h-12 sm:h-14',
         'transition-all duration-150 select-none',
         allAbsent
           ? 'text-white'
@@ -96,24 +116,48 @@ function QuadrantKey({
 
 export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedOutLetters }: KeyboardProps) {
   const useQuadrants = boardLetterStates && boardLetterStates.length > 1;
+  const [layout, setLayout] = useState<KeyboardLayout>('standard');
+  useEffect(() => {
+    setLayout(getKeyboardLayout());
+    return onKeyboardLayoutChange(() => setLayout(getKeyboardLayout()));
+  }, []);
+  const rows = LAYOUT_ROWS[layout];
+  // Michael Keyboard is a row taller — shorter keys keep total height close
+  // to the 3-row layouts so tight boards (OctoWord, Gauntlet) don't squeeze.
+  const keyH = layout === 'michael' ? 'h-10 sm:h-12' : 'h-12 sm:h-14';
 
   return (
     <div className="flex flex-col gap-1.5 max-w-xl mx-auto" role="group" aria-label="Game keyboard">
-      {ROWS.map((row, i) => (
+      {rows.map((row, i) => (
         <div key={i} className="flex gap-1 justify-center">
-          {row.map((key) => {
+          {row.map((key, ki) => {
             const isSpecial = key === 'ENTER' || key === 'BACK';
             const isBlackedOut = blackedOutLetters?.has(key);
+
+            if (key === 'SPACE') {
+              // Decorative space bar (§213): reacts like a key, does nothing.
+              return (
+                <button
+                  key={`space-${ki}`}
+                  onClick={() => { haptic('light'); playKeyTap(); }}
+                  aria-label="Space (decorative)"
+                  className={cn(keyH, 'flex-1 max-w-[240px] rounded-md font-bold text-xs transition-all duration-150 select-none active:scale-95')}
+                  style={{ backgroundColor: '#e8e5f0', border: '1.5px solid var(--color-border)', color: '#8a86a0' }}
+                >
+                  space
+                </button>
+              );
+            }
 
             if (isSpecial) {
               return (
                 <button
-                  key={key}
+                  key={`${key}-${ki}`}
                   onClick={() => { if (isBlackedOut) return; if (key === 'ENTER') haptic('medium'); else if (key !== 'BACK') haptic('light'); playKeyTap(); onKey(key); }}
                   disabled={isBlackedOut}
                   aria-label={key === 'BACK' ? 'Backspace' : 'Submit guess'}
                   className={cn(
-                    'h-12 sm:h-14 px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
+                    keyH, 'px-3 sm:px-4 rounded-md font-black text-base sm:text-lg',
                     'transition-all duration-150 select-none',
                     isBlackedOut && 'opacity-40 cursor-not-allowed'
                   )}
@@ -138,7 +182,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   key={key}
                   disabled
                   aria-label={`${key}, unavailable`}
-                  className="h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg opacity-40 cursor-not-allowed animate-pulse select-none"
+                  className={cn(keyH, 'w-10 sm:w-12 rounded-md font-black text-base sm:text-lg opacity-40 cursor-not-allowed animate-pulse select-none')}
                   style={{
                     backgroundColor: 'rgba(220,38,38,0.15)',
                     border: '1.5px solid rgba(220,38,38,0.2)',
@@ -156,6 +200,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                   key={key}
                   letter={key}
                   boardStates={boardLetterStates}
+                  compact={layout === 'michael'}
                   onClick={() => { haptic('light'); playKeyTap(); onKey(key); }}
                 />
               );
@@ -168,7 +213,7 @@ export function Keyboard({ onKey, letterStates = {}, boardLetterStates, blackedO
                 onClick={() => { haptic('light'); playKeyTap(); onKey(key); }}
                 aria-label={state ? `${key}, ${state}` : key}
                 className={cn(
-                  'h-12 sm:h-14 w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
+                  keyH, 'w-10 sm:w-12 rounded-md font-black text-base sm:text-lg',
                   'transition-all duration-150 select-none',
                   state === 'correct' && 'key-correct text-white',
                   state === 'present' && 'key-present text-white',

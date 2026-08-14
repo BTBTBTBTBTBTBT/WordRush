@@ -40,6 +40,24 @@ import com.wordocious.core.TileState
 private val ROWS = listOf("QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM")
 
 /**
+ * Keyboard layout preference (§213): standard | flipped | michael — three
+ * arrangements of the same keys, picked in Settings. Snapshot-backed so a
+ * change in Settings recomposes any live keyboard instantly.
+ */
+object KeyboardLayoutPref {
+    const val KEY = "pref-keyboard-layout"
+    private val state = androidx.compose.runtime.mutableStateOf(
+        com.wordocious.app.data.SettingsPref.get(KEY, "standard"),
+    )
+    var value: String
+        get() = state.value
+        set(v) {
+            state.value = v
+            com.wordocious.app.data.SettingsPref.set(KEY, v)
+        }
+}
+
+/**
  * On-screen keyboard — audit-then-match of the web `keyboard.tsx`.
  * - 3 QWERTY rows; ↵ left of bottom row, ⌫ right (the phone-keyboard position)
  * - Keys are responsive: each letter key gets equal width (weight 1f),
@@ -60,6 +78,20 @@ fun KeyboardView(
     // iOS parity (KeyboardView.swift): playKeyTap on EVERY key, and the SAME
     // light `Haptics.tap()` on letters, ⌫ and ENTER alike.
     val haptics = LocalHapticFeedback.current
+    val layout = KeyboardLayoutPref.value
+    // Michael Keyboard is a row taller — shorter keys keep total height close
+    // to the 3-row layouts so tight boards (OctoWord) don't squeeze.
+    val keyH = if (layout == "michael") 44.dp else 52.dp
+    val enterTap = {
+        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        com.wordocious.app.data.SoundManager.playKeyTap()
+        onEnter()
+    }
+    val deleteTap = {
+        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        com.wordocious.app.data.SoundManager.playKeyTap()
+        onDelete()
+    }
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         verticalArrangement = Arrangement.spacedBy(7.dp), // spec row spacing 7
@@ -71,12 +103,15 @@ fun KeyboardView(
                 horizontalArrangement = Arrangement.spacedBy(5.dp), // spec key spacing 5
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // ENTER left, ⌫ RIGHT — where every phone text keyboard puts
-                // backspace (founder call, 2026-08-10; web/iOS mirror this).
-                if (rowIdx == 2) WideKey("ENTER") {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    com.wordocious.app.data.SoundManager.playKeyTap()
-                    onEnter()
+                // standard: ENTER left / ⌫ right (every phone puts backspace
+                // bottom-right — founder call, 2026-08-10). flipped: the
+                // original mirror. michael: ⌫ at BOTH ends of the Z row, with
+                // ENTER ×2 + a decorative space bar on a 4th row (§213).
+                if (rowIdx == 2) {
+                    when (layout) {
+                        "flipped", "michael" -> WideKey("BACK", keyH, deleteTap)
+                        else -> WideKey("ENTER", keyH, enterTap)
+                    }
                 }
                 row.forEach { ch ->
                     val tap = {
@@ -85,19 +120,52 @@ fun KeyboardView(
                         onKey(ch)
                     }
                     if (perBoardStates != null) {
-                        QuadrantKey(ch.toString(), perBoardStates, tap)
+                        QuadrantKey(ch.toString(), perBoardStates, keyH, tap)
                     } else {
                         val state = letterStates[ch.toString()] ?: TileState.EMPTY
-                        LetterKey(ch.toString(), WTheme.keyColor(state), state, tap)
+                        LetterKey(ch.toString(), WTheme.keyColor(state), state, keyH, tap)
                     }
                 }
-                if (rowIdx == 2) WideKey("BACK") {
-                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    com.wordocious.app.data.SoundManager.playKeyTap()
-                    onDelete()
+                if (rowIdx == 2) {
+                    when (layout) {
+                        "flipped" -> WideKey("ENTER", keyH, enterTap)
+                        else -> WideKey("BACK", keyH, deleteTap)
+                    }
                 }
             }
         }
+        if (layout == "michael") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                WideKey("ENTER", keyH, enterTap)
+                SpaceKey(keyH) {
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    com.wordocious.app.data.SoundManager.playKeyTap()
+                }
+                WideKey("ENTER", keyH, enterTap)
+            }
+        }
+    }
+}
+
+/** Decorative space bar (§213): reacts like a key, does nothing. */
+@Composable
+private fun RowScope.SpaceKey(h: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .weight(4f)
+            .height(h)
+            .clip(RoundedCornerShape(6.dp))
+            .background(WTheme.keyDefault)
+            .border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))
+            .semantics { role = Role.Button; contentDescription = "Space (decorative)" }
+            .clickableNoRipple(onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("space", color = Color(0xFF8A86A0), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
     }
 }
 
@@ -111,6 +179,7 @@ fun KeyboardView(
 private fun RowScope.QuadrantKey(
     letter: String,
     perBoardStates: List<Map<String, TileState>>,
+    h: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit,
 ) {
     val n = perBoardStates.size
@@ -123,7 +192,7 @@ private fun RowScope.QuadrantKey(
     Box(
         modifier = Modifier
             .weight(1f)
-            .height(52.dp)
+            .height(h)
             .clip(RoundedCornerShape(6.dp))
             .background(if (allAbsent) Color(0xFF9CA3AF) else WTheme.keyDefault)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))
@@ -176,13 +245,13 @@ private fun quadColor(state: TileState): Color = when (state) {
 // (KeyboardView.swift:46-51) is a flat fill with NO stroke — only the wide
 // action keys and the quadrant keys are stroked.
 @Composable
-private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onClick: () -> Unit) {
+private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, h: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
     val unstated = bg == WTheme.keyDefault
     val stateName = tileStateName(state)
     Box(
         modifier = Modifier
             .weight(1f)
-            .height(52.dp)
+            .height(h)
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
             .semantics {
@@ -205,11 +274,11 @@ private fun RowScope.LetterKey(label: String, bg: Color, state: TileState, onCli
 
 // Action keys — web: BACK = lucide Delete (backspace) icon, ENTER = text, font-black.
 @Composable
-private fun RowScope.WideKey(label: String, onClick: () -> Unit) {
+private fun RowScope.WideKey(label: String, h: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .weight(1.7f)
-            .height(52.dp)
+            .height(h)
             .clip(RoundedCornerShape(6.dp))
             .background(WTheme.keyDefault)
             .border(1.5.dp, WTheme.border, RoundedCornerShape(6.dp))

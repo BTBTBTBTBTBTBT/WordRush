@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useTheme, Theme } from '@/lib/theme-context';
 import { isSoundEnabled, setSoundEnabled } from '@/lib/sounds';
+import { getKeyboardLayout, setKeyboardLayout, type KeyboardLayout } from '@/lib/keyboard-layout';
 import { useAuth } from '@/lib/auth-context';
 import { confirmDialog } from '@/components/ui/confirm-dialog';
 
@@ -17,6 +18,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme, colorblindMode, setColorblindMode, reducedMotion, setReducedMotion } = useTheme();
   const { user, session, signOut } = useAuth();
   const [soundOn, setSoundOn] = useState(() => isSoundEnabled());
+  const [kbLayout, setKbLayout] = useState<KeyboardLayout>(() => getKeyboardLayout());
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -92,6 +94,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     }
   };
 
+  const keyboardLayouts: { value: KeyboardLayout; label: string; description: string }[] = [
+    { value: 'standard', label: 'Standard', description: 'Enter left, delete right' },
+    { value: 'flipped', label: 'Flipped', description: 'Delete left, enter right' },
+    { value: 'michael', label: 'Michael Keyboard', description: '4 rows like your phone — delete and enter on both sides' },
+  ];
+
   const themes: { value: Theme; label: string; description: string }[] = [
     { value: 'default', label: 'Default', description: 'Classic green & gold tiles' },
     { value: 'dark', label: 'Dark', description: 'Easy on the eyes' },
@@ -128,6 +136,26 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 >
                   <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{t.label}</div>
                   <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{t.description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="section-header">KEYBOARD</div>
+            <div className="space-y-1.5">
+              {keyboardLayouts.map((k) => (
+                <button
+                  key={k.value}
+                  className="w-full text-left p-3 rounded-xl transition-all"
+                  onClick={() => { setKbLayout(k.value); setKeyboardLayout(k.value); }}
+                  style={{
+                    background: kbLayout === k.value ? 'var(--color-surface-hover)' : 'var(--color-bg)',
+                    border: kbLayout === k.value ? '1.5px solid #c4b5fd' : '1.5px solid var(--color-border)',
+                  }}
+                >
+                  <div className="font-extrabold text-xs" style={{ color: 'var(--color-text)' }}>{k.label}</div>
+                  <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>{k.description}</div>
                 </button>
               ))}
             </div>

@@ -6,6 +6,9 @@ import UIKit
 
 struct KeyboardView: View {
     @ObservedObject var vm: GameViewModel
+    // Keyboard layout (§213): standard | flipped | michael — three
+    // arrangements of the same keys, picked in Settings. Pure rendering.
+    @AppStorage("pref-keyboard-layout") private var layout = "standard"
 
     private let rows: [[String]] = [
         "QWERTYUIOP".map { String($0) },
@@ -13,26 +16,67 @@ struct KeyboardView: View {
         "ZXCVBNM".map { String($0) },
     ]
 
+    /// Michael Keyboard is a row taller — shorter keys keep total height
+    /// close to the 3-row layouts so tight boards (OctoWord) don't squeeze.
+    private var keyHeight: CGFloat { layout == "michael" ? 44 : 52 }
+
     var body: some View {
         VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {
-                    // Match web's bottom row ['ENTER', Z…M, 'BACK']: Enter on the
-                    // LEFT, Delete on the RIGHT — where every phone text keyboard
-                    // puts backspace (founder call, 2026-08-10).
+                    // standard: ENTER left / ⌫ right (every phone puts backspace
+                    // bottom-right — founder call, 2026-08-10). flipped: the
+                    // original mirror. michael: ⌫ at BOTH ends of the Z row,
+                    // with ENTER ×2 + a decorative space bar on a 4th row.
                     if r == 2 {
-                        actionKey("ENTER") { vm.submit(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+                        switch layout {
+                        case "flipped": deleteKey()
+                        case "michael": deleteKey()
+                        default: enterKey()
+                        }
                     }
                     ForEach(rows[r], id: \.self) { letter in
                         if vm.useQuadrantKeyboard { quadrantKey(letter) } else { letterKey(letter) }
                     }
                     if r == 2 {
-                        actionKey("⌫") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+                        switch layout {
+                        case "flipped": enterKey()
+                        default: deleteKey()
+                        }
                     }
+                }
+            }
+            if layout == "michael" {
+                HStack(spacing: 5) {
+                    enterKey()
+                    spaceKey()
+                    enterKey()
                 }
             }
         }
         .padding(.horizontal, 4)
+    }
+
+    private func enterKey() -> some View {
+        actionKey("ENTER") { vm.submit(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+    }
+
+    private func deleteKey() -> some View {
+        actionKey("⌫") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+    }
+
+    /// Decorative space bar (§213): reacts like a key, does nothing.
+    private func spaceKey() -> some View {
+        Button { Haptics.tap(); SoundManager.shared.playKeyTap() } label: {
+            Text("space")
+                .font(Brand.font(12, .semibold))
+                .foregroundStyle(Color(hex: 0x8A86A0))
+                .frame(maxWidth: .infinity)
+                .frame(height: keyHeight)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Space (decorative)")
     }
 
     private func letterKey(_ letter: String) -> some View {
@@ -51,7 +95,7 @@ struct KeyboardView: View {
                 .font(Brand.font(18, .bold))
                 .foregroundStyle(fg)
                 .frame(maxWidth: .infinity)
-                .frame(height: 52)
+                .frame(height: keyHeight)
                 .background(RoundedRectangle(cornerRadius: 6).fill(bg))
         }
         .buttonStyle(.plain)
@@ -93,7 +137,7 @@ struct KeyboardView: View {
                 Text(letter).font(Brand.font(18, .bold)).foregroundStyle(fg)
                     .shadow(color: hasAny ? .black.opacity(0.35) : .clear, radius: 1, x: 0, y: 1)
             }
-            .frame(maxWidth: .infinity).frame(height: 52)
+            .frame(maxWidth: .infinity).frame(height: keyHeight)
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.border, lineWidth: 1.5))
         }
@@ -138,7 +182,7 @@ struct KeyboardView: View {
                 }
             }
             .foregroundStyle(Theme.keyInk) // fixed key surface -> fixed ink (see above)
-            .frame(width: 54, height: 52)
+            .frame(width: 54, height: keyHeight)
             .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }
         .buttonStyle(.plain)

@@ -615,18 +615,58 @@ struct NoundleBoard: View {
 /// QWERTY keyboard for ProperNoundle (per-key colour from guesses).
 struct NoundleKeyboard: View {
     @ObservedObject var vm: ProperNoundleVM
+    // §213: honors the same layout pref as KeyboardView — this bespoke copy
+    // had also missed the §208 swap (delete was still bottom-LEFT here).
+    @AppStorage("pref-keyboard-layout") private var layout = "standard"
     private let rows: [[String]] = ["QWERTYUIOP".map { String($0) }, "ASDFGHJKL".map { String($0) }, "ZXCVBNM".map { String($0) }]
+
+    private var keyHeight: CGFloat { layout == "michael" ? 44 : 52 }
 
     var body: some View {
         VStack(spacing: 7) {
             ForEach(0..<rows.count, id: \.self) { r in
                 HStack(spacing: 5) {
-                    if r == 2 { iconAction("delete.left") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() } }
+                    if r == 2 {
+                        switch layout {
+                        case "flipped", "michael": deleteKey()
+                        default: enterKey()
+                        }
+                    }
                     ForEach(rows[r], id: \.self) { key in letterKey(key) }
-                    if r == 2 { action("ENTER") { vm.submit(); Haptics.tap(); SoundManager.shared.playKeyTap() } }
+                    if r == 2 {
+                        switch layout {
+                        case "flipped": enterKey()
+                        default: deleteKey()
+                        }
+                    }
+                }
+            }
+            if layout == "michael" {
+                HStack(spacing: 5) {
+                    enterKey()
+                    spaceKey()
+                    enterKey()
                 }
             }
         }.padding(.horizontal, 4)
+    }
+
+    private func enterKey() -> some View {
+        action("ENTER") { vm.submit(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+    }
+
+    private func deleteKey() -> some View {
+        iconAction("delete.left") { vm.delete(); Haptics.tap(); SoundManager.shared.playKeyTap() }
+    }
+
+    private func spaceKey() -> some View {
+        Button { Haptics.tap(); SoundManager.shared.playKeyTap() } label: {
+            Text("space").font(Brand.font(12, .semibold)).foregroundStyle(Color(hex: 0x8A86A0))
+                .frame(maxWidth: .infinity).frame(height: keyHeight)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Space (decorative)")
     }
 
     private func letterKey(_ l: String) -> some View {
@@ -644,7 +684,7 @@ struct NoundleKeyboard: View {
             // keyInk: this is a SECOND copy of the keyboard and the themed-ink
             // fix in KeyboardView never reached it — 1.08:1 on the fixed key in Dark.
             Text(l).font(Brand.font(18, .bold)).foregroundStyle(st == nil ? Theme.keyInk : .white)
-                .frame(maxWidth: .infinity).frame(height: 52)
+                .frame(maxWidth: .infinity).frame(height: keyHeight)
                 .background(RoundedRectangle(cornerRadius: 6).fill(bg))
         }.buttonStyle(.plain)
     }
@@ -652,14 +692,14 @@ struct NoundleKeyboard: View {
     private func action(_ label: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) {
             Text(label).font(Brand.font(14, .bold)).foregroundStyle(Theme.keyInk)
-                .frame(width: 54, height: 52).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+                .frame(width: 54, height: keyHeight).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }.buttonStyle(.plain)
     }
 
     private func iconAction(_ systemName: String, _ act: @escaping () -> Void) -> some View {
         Button(action: act) {
             Image(systemName: systemName).font(.system(size: 20, weight: .bold)).foregroundStyle(Theme.keyInk)
-                .frame(width: 54, height: 52).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
+                .frame(width: 54, height: keyHeight).background(RoundedRectangle(cornerRadius: 6).fill(Theme.keyDefault))
         }.buttonStyle(.plain)
     }
 }

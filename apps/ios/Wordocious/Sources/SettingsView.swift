@@ -15,6 +15,9 @@ struct SettingsView: View {
     private var theme: String { themeManager.theme }
     // Sound reads UserDefaults directly in SoundManager; @AppStorage writes it.
     @AppStorage("pref-sound") private var soundOn = true
+    // Keyboard layout (§213): standard | flipped | michael. Pure rendering —
+    // KeyboardView reads this to arrange the same keys three ways.
+    @AppStorage("pref-keyboard-layout") private var keyboardLayout = "standard"
     @AppStorage("pref-daily-reminder") private var dailyReminder = false
     @State private var reminderDenied = false
     @State private var showDeleteConfirm = false
@@ -41,6 +44,11 @@ struct SettingsView: View {
                         section("THEME") {
                             VStack(spacing: 8) {
                                 ForEach(themes, id: \.value) { t in themeRow(t) }
+                            }
+                        }
+                        section("KEYBOARD") {
+                            VStack(spacing: 8) {
+                                ForEach(keyboardLayouts, id: \.value) { k in keyboardRow(k) }
                             }
                         }
                         section("SOUND & FEEDBACK") {
@@ -205,6 +213,29 @@ struct SettingsView: View {
             Text(title).font(Brand.font(11, .heavy)).tracking(1.1).foregroundStyle(Theme.textMuted)
             content()
         }
+    }
+
+    private let keyboardLayouts: [(value: String, label: String, desc: String)] = [
+        ("standard", "Standard", "Enter left, delete right"),
+        ("flipped", "Flipped", "Delete left, enter right"),
+        ("michael", "Michael Keyboard", "4 rows like your phone — delete and enter on both sides"),
+    ]
+
+    private func keyboardRow(_ k: (value: String, label: String, desc: String)) -> some View {
+        let active = keyboardLayout == k.value
+        return Button { keyboardLayout = k.value } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(k.label).font(Brand.font(12, .heavy)).foregroundStyle(Theme.textPrimary)
+                    Text(k.desc).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                }
+                Spacer()
+                if active { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.primary) }
+            }
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 12).fill(active ? Theme.surfaceHover : Theme.background))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Color(hex: 0xC4B5FD) : Theme.border, lineWidth: 1.5))
+        }.buttonStyle(.plain)
     }
 
     private func themeRow(_ t: (value: String, label: String, desc: String)) -> some View {
