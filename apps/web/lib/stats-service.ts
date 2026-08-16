@@ -408,8 +408,11 @@ export async function recordGameResult(
       stagesCompleted, bestCorrectLetters,
     );
     // Notify the DailyCompletionsProvider so the sweep banner updates
-    // instantly when navigating back to the home screen.
-    if (typeof window !== 'undefined') {
+    // instantly when navigating back to the home screen. ONLY when the row
+    // is for TODAY — a cross-midnight finish records onto yesterday and must
+    // not mark today's (different) puzzle complete (iOS parity; the Android
+    // twin of this gate was Doug's phantom-Deliverance fix, Aug 16).
+    if (typeof window !== 'undefined' && (getDailySeedDate(seed) ?? getTodayLocal()) === getTodayLocal()) {
       window.dispatchEvent(new CustomEvent('daily-completion', {
         detail: { gameMode, won, guesses: guessCount, timeSeconds, score: Math.round(dailyScore ?? 0) },
       }));

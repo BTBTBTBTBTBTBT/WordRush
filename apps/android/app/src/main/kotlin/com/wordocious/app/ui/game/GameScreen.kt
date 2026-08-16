@@ -338,7 +338,7 @@ private fun gauntletStageGradient(name: String): List<Color> = when (name) {
 }
 
 @Composable
-fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, onPlayAgain: (() -> Unit)? = null, onOpenDaily: ((GameMode) -> Unit)? = null, onOpenUnlimited: ((GameMode) -> Unit)? = null) {
+fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, onPlayAgain: (() -> Unit)? = null, onOpenDaily: ((GameMode) -> Unit)? = null, onOpenUnlimited: ((GameMode) -> Unit)? = null, onOpenLeaderboard: ((GameMode) -> Unit)? = null) {
     val vm: GameViewModel = viewModel(
         key = "game-$mode-$seed",
         factory = GameVMFactory(seed, mode),
@@ -647,6 +647,7 @@ fun GameScreen(mode: GameMode, title: String, seed: String, onBack: () -> Unit, 
                 onPlayAgain = onPlayAgain,
                 onOpenDaily = onOpenDaily,
                 onOpenUnlimited = onOpenUnlimited,
+                onOpenLeaderboard = onOpenLeaderboard,
             )
             xpResult?.let { XpToast(it) { xpResult = null } }
         }

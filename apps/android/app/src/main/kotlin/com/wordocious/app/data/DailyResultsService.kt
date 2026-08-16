@@ -189,8 +189,15 @@ object DailyResultsService {
         // the frozen V1 formula so a day's leaderboard never mixes formulas).
         val score = computeCompositeScore(gameModeStr, completed, guessCount, elapsedSeconds, boardsSolved, totalBoards, hintsUsed, stagesCompleted, bestCorrectLetters, day)
         // Optimistic local update FIRST so the home card flips to completed the
-        // instant the game ends (web 'daily-completion' event parity).
-        DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds, score)
+        // instant the game ends (web 'daily-completion' event parity). ONLY
+        // when the row is for TODAY: a cross-midnight finish — or a stale
+        // PendingRecords replay flushing days later — records onto the seed's
+        // day and must not mark today's (different) puzzle complete. iOS has
+        // guarded this since §205; the Android port dropped the gate, which is
+        // how Doug's home grid showed a Deliverance he never played (Aug 15).
+        if (day == todayLocalDate()) {
+            DailyCompletionsService.noteCompletion(gameModeStr, completed, guessCount, elapsedSeconds, score)
+        }
 
         try {
             // Check if a row already exists for today

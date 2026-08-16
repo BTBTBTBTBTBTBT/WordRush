@@ -50,8 +50,44 @@ export function NextDailyCta({ currentMode }: { currentMode: string }) {
           All 9 dailies done — Sweep complete! 🏆
         </div>
       )}
+      <ViewLeaderboardLink currentMode={currentMode} />
       <KeepPlayingUnlimited currentMode={currentMode} />
     </>
+  );
+}
+
+/**
+ * §214 (Lindsay): straight from the finish line to the scoreboard — a
+ * clean row linking the just-played mode's daily leaderboard.
+ */
+function ViewLeaderboardLink({ currentMode }: { currentMode: string }) {
+  const mode = PROFILE_MODES.find((m) => m.dbKey === currentMode);
+  if (!mode) return null;
+  const color = mode.accentColor;
+
+  return (
+    <Link
+      href={`/daily?mode=${currentMode}`}
+      className="w-full max-w-[400px] mx-auto mt-2 px-3 py-2.5 flex items-center justify-between transition-transform active:scale-[0.98]"
+      style={{
+        background: 'var(--color-surface)',
+        border: `1.5px solid ${color}55`,
+        borderRadius: '12px',
+      }}
+    >
+      <span className="flex items-center gap-2 min-w-0">
+        <span
+          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+          style={{ background: `${color}15` }}
+        >
+          <Trophy className="w-3.5 h-3.5" style={{ color }} />
+        </span>
+        <span className="text-xs font-black truncate" style={{ color: 'var(--color-text)' }}>
+          View {mode.title} Leaderboard
+        </span>
+      </span>
+      <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color }} />
+    </Link>
   );
 }
 

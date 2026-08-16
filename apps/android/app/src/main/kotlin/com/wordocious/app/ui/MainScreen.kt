@@ -393,6 +393,14 @@ fun MainScreen() {
             onOpenUnlimited = { m ->
                 modeCardFor(m)?.let { activeSeed = freshUnlimitedSeed(m); activeGame = it }
             },
+            // §214 (Lindsay): "View Leaderboard" from a daily result — close
+            // the game and land on the Leaderboard tab with the mode selected.
+            onOpenLeaderboard = { m ->
+                activeGame = null; activeSeed = null
+                publicProfileId = null; showFriends = false
+                LeaderboardDeepLink.pendingMode.value = m.name
+                selectedTab = 1
+            },
         )
         return
     }

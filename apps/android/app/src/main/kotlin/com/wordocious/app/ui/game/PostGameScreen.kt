@@ -95,6 +95,7 @@ fun PostGameScreen(
     onPlayAgain: (() -> Unit)? = null,
     onOpenDaily: ((GameMode) -> Unit)? = null,
     onOpenUnlimited: ((GameMode) -> Unit)? = null,
+    onOpenLeaderboard: ((GameMode) -> Unit)? = null,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val won = state.status == GameStatus.WON
@@ -180,6 +181,7 @@ fun PostGameScreen(
                 ) onPlayAgain else null,
                 onOpenDaily = onOpenDaily,
                 onOpenUnlimited = onOpenUnlimited,
+                onOpenLeaderboard = onOpenLeaderboard,
             )
             CornerHomeButton(accent, onBack)
             PostGameHelpButton(mode, accent)
@@ -349,7 +351,7 @@ fun PostGameScreen(
             // seed for this mode; unlimited seeds are "unlimited-…" and VS has
             // its own screen). Keeps the 9-mode daily loop moving.
             if (onOpenDaily != null && seed == com.wordocious.app.todayLocalSeed(mode.name)) {
-                NextDailyRow(currentMode = mode, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited)
+                NextDailyRow(currentMode = mode, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited, onOpenLeaderboard = onOpenLeaderboard)
             }
 
             // Single-board modes: word definition (with "No definition" fallback).
@@ -406,6 +408,7 @@ private fun GauntletResultsScreen(
     onHome: () -> Unit, onShare: () -> Unit,
     onPlayAgain: (() -> Unit)?, onOpenDaily: ((GameMode) -> Unit)?,
     onOpenUnlimited: ((GameMode) -> Unit)? = null,
+    onOpenLeaderboard: ((GameMode) -> Unit)? = null,
 ) {
     val cleared = g.stageResults.count { it.status == GameStatus.WON }
     val totalGuesses = g.stageResults.sumOf { it.guesses }
@@ -499,7 +502,7 @@ private fun GauntletResultsScreen(
 
         if (onOpenDaily != null && isDaily) {
             Box(Modifier.riseIn(appeared, 550)) {
-                NextDailyRow(currentMode = GameMode.GAUNTLET, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited)
+                NextDailyRow(currentMode = GameMode.GAUNTLET, onOpenDaily = onOpenDaily, onOpenUnlimited = onOpenUnlimited, onOpenLeaderboard = onOpenLeaderboard)
             }
         }
 
@@ -783,6 +786,7 @@ private fun NextDailyRow(
     currentMode: GameMode,
     onOpenDaily: (GameMode) -> Unit,
     onOpenUnlimited: ((GameMode) -> Unit)? = null,
+    onOpenLeaderboard: ((GameMode) -> Unit)? = null,
 ) {
     // Dailies only record for signed-in accounts; guests get nothing — so a
     // guest's completions map is always empty and "next" would be a lie (iOS
@@ -837,6 +841,27 @@ private fun NextDailyRow(
                 fontSize = 12.sp, fontWeight = FontWeight.Black, color = Color(0xFF7C3AED),
                 modifier = Modifier.padding(vertical = 4.dp),
             )
+        }
+
+        // §214 (Lindsay): straight from the finish line to the scoreboard — a
+        // capsule in the mode's accent that lands on this mode's daily board.
+        if (onOpenLeaderboard != null) {
+            val lbAccent = com.wordocious.app.ui.modeAccent(currentMode)
+            val lbTitle = com.wordocious.app.ModeGen.byDbKey(currentMode.name)?.title
+                ?: com.wordocious.app.ui.modeCardFor(currentMode)?.title ?: currentMode.name
+            Row(
+                modifier = Modifier.clip(RoundedCornerShape(50))
+                    .background(lbAccent.copy(alpha = 0.08f))
+                    .border(1.5.dp, lbAccent.copy(alpha = 0.5f), RoundedCornerShape(50))
+                    .clickableNoRipple { onOpenLeaderboard(currentMode) }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.EmojiEvents, null, tint = lbAccent, modifier = Modifier.size(12.dp))
+                Text("View $lbTitle Leaderboard", fontSize = 12.sp, fontWeight = FontWeight.Black, color = lbAccent)
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = lbAccent, modifier = Modifier.size(11.dp))
+            }
         }
 
         // "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited

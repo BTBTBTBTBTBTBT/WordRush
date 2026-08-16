@@ -266,6 +266,11 @@ struct NextDailyCTA: View {
     /// (like HomeView does) and presents the game from the tab root.
     static let playUnlimited = Notification.Name("wordocious.play-unlimited")
 
+    /// §214 (Lindsay): posted (object = the mode's dbKey) when the player taps
+    /// "View Leaderboard" on a finished daily. RootTabView switches to the
+    /// Leaderboard tab; LeaderboardTab preselects the mode.
+    static let openLeaderboard = Notification.Name("wordocious.open-leaderboard")
+
     /// The dbKey of the game THIS results screen belongs to. Excluded
     /// explicitly (web parity): its own recording can lag the render —
     /// Gauntlet's multi-write chain especially — so without this the CTA
@@ -316,11 +321,38 @@ struct NextDailyCTA: View {
                             .font(Brand.font(12, .black)).foregroundStyle(Color(hex: 0x7C3AED))
                             .padding(.vertical, 4)
                     }
+                    viewLeaderboard
                     keepPlayingUnlimited
                 }
             }
         }
         .task { await completions.load() }
+    }
+
+    /// §214 (Lindsay): straight from the finish line to the scoreboard — a
+    /// capsule in the mode's accent that lands on this mode's daily board.
+    @ViewBuilder private var viewLeaderboard: some View {
+        if let key = currentMode,
+           let mode = homeModes.first(where: { $0.dbKey == key }) {
+            Button {
+                dismiss()
+                // Same choreography as playNextDaily: let this cover's dismiss
+                // finish before the root switches tabs.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    NotificationCenter.default.post(name: Self.openLeaderboard, object: key)
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "trophy.fill").font(.system(size: 11, weight: .bold)).foregroundStyle(mode.accent)
+                    Text("View \(mode.title) Leaderboard").font(Brand.font(12, .black)).foregroundStyle(mode.accent)
+                    Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold)).foregroundStyle(mode.accent)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(Capsule().fill(mode.accent.opacity(0.08)))
+                .overlay(Capsule().stroke(mode.accent.opacity(0.5), lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     /// "Keep playing: Unlimited <Mode>" — Pro-only handoff into an Unlimited

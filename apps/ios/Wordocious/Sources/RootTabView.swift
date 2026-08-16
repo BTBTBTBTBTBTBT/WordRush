@@ -153,6 +153,11 @@ struct RootTabView: View {
         // unlimited seed exactly like HomeView does (and remember it as the
         // mode's current unlimited game so Home resumes it if abandoned), then
         // present the same GameScreen/ProperNoundleView the home grid uses.
+        .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { _ in
+            // §214: LeaderboardTab preselects the mode itself (same note);
+            // the root just lands the player on the Leaderboard tab.
+            tab = .leaderboard
+        }
         .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.playUnlimited)) { note in
             guard let key = note.object as? String,
                   let m = homeModes.first(where: { $0.dbKey == key }) else { return }

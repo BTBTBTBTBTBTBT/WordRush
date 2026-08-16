@@ -114,6 +114,13 @@ export default function DailyPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [limitModalOpen, setLimitModalOpen] = useState(false);
   const [selectedMode, setSelectedMode] = useState('DUEL');
+  // §214: /daily?mode=QUORDLE preselects a board — the post-game "View
+  // Leaderboard" button lands on the mode you just played. Read from
+  // window (not useSearchParams) to skip the Suspense-boundary dance.
+  useEffect(() => {
+    const m = new URLSearchParams(window.location.search).get('mode');
+    if (m && (m === 'SWEEP' || PROFILE_MODES.some((pm) => pm.dbKey === m))) setSelectedMode(m);
+  }, []);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [sweepLeaderboard, setSweepLeaderboard] = useState<SweepEntry[]>([]);
   const [userRank, setUserRank] = useState<{ rank: number; totalPlayers: number } | null>(null);

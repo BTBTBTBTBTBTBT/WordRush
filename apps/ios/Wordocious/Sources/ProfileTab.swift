@@ -1074,6 +1074,13 @@ struct LeaderboardTab: View {
                 NavigationStack { ProperNoundleView() }
             }
             .sheet(isPresented: $showFriendsSheet) { NavigationStack { FriendsScreenView() } }
+            // §214 (Lindsay): the post-game "View Leaderboard" capsule lands
+            // here with its mode preselected (root switches the tab).
+            .onReceive(NotificationCenter.default.publisher(for: NextDailyCTA.openLeaderboard)) { note in
+                guard let key = note.object as? String, let gm = GameMode(rawValue: key) else { return }
+                isSweep = false
+                mode = gm
+            }
         }
     }
 

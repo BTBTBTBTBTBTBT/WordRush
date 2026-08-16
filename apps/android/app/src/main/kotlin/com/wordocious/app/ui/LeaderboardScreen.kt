@@ -79,6 +79,12 @@ internal val MODE_OPTIONS = listOf(
 /** Synthetic picker id for the Daily Sweep leaderboard. `GameMode.valueOf(SWEEP_ID)`
  *  THROWS — every picker-reachable valueOf must short-circuit on this first. */
 internal const val SWEEP_ID = "SWEEP"
+
+/** §214 (Lindsay): the post-game "View Leaderboard" capsule lands on this
+ *  tab with its mode preselected — set before switching tabs, consumed once. */
+object LeaderboardDeepLink {
+    val pendingMode = androidx.compose.runtime.mutableStateOf<String?>(null)
+}
 /** The sweep tile's accent — the ONLY place indigo #4F46E5 is used. */
 internal val SWEEP_ACCENT = Color(0xFF4F46E5)
 
@@ -136,6 +142,13 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
     }
 
     var selectedMode by remember { mutableStateOf("DUEL") }
+    // §214: consume a post-game deep link (View Leaderboard → this mode).
+    LaunchedEffect(LeaderboardDeepLink.pendingMode.value) {
+        LeaderboardDeepLink.pendingMode.value?.let { m ->
+            selectedMode = m
+            LeaderboardDeepLink.pendingMode.value = null
+        }
+    }
     var entries by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterday by remember { mutableStateOf<List<LeaderboardService.LeaderboardEntry>>(emptyList()) }
     var yesterdaySweep by remember { mutableStateOf<List<LeaderboardService.SweepEntry>>(emptyList()) }
