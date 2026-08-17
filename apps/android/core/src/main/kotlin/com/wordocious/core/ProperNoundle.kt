@@ -108,10 +108,14 @@ object ProperNoundle {
         )
     }
 
-    /** Word lengths from the display string (for the tile-group layout). */
+    /** Word lengths from the display string (for the tile-group layout).
+     *  Counts LETTERS only (web noundle-board parity): normalize keeps
+     *  hyphens/apostrophes/digits, but answers and the keyboard are
+     *  letters-only — counting "Half-Life"'s hyphen drew a 9th tile no
+     *  guess could ever fill (PN #959 extra-box bug). */
     fun wordGroups(display: String): List<Int> {
-        val groups = display.split(" ").map { normalize(it).length }.filter { it > 0 }
-        return if (groups.isEmpty()) listOf(normalize(display).length) else groups
+        val groups = display.split(" ").map { w -> normalize(w).count { it.isLetter() } }.filter { it > 0 }
+        return if (groups.isEmpty()) listOf(normalize(display).count { it.isLetter() }) else groups
     }
 
     /** Daily puzzle — alphabetical category round-robin (epoch 2024-01-01 UTC). */

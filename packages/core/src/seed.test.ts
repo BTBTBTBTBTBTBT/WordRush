@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength } from './seed';
+import { generateSolutionsFromSeed, generateSolutionsFromSeedForLength, DECK_CUTOVER_DATE } from './seed';
 import { initDictionary, initDictionaryForLength } from './dictionary';
 
 // ── Pin tests: the REAL solutions bank must keep producing the SAME words for
@@ -148,5 +148,82 @@ describe('seed generation', () => {
       expect(sol).toHaveLength(5);
       expect(sol).toMatch(/^[A-Z]+$/);
     });
+  });
+});
+
+// ── §215 deck dealing — post-DECK_CUTOVER_DATE dailies deal from a shuffled
+// deck: every 5-letter daily answer (solo + daily VS) is unique across a
+// whole epoch (floor(pool/43) days), and pre-cutover/unlimited/suffixed
+// seeds keep the legacy hash path byte-for-byte.
+describe('deck dealing (§215, real lists)', () => {
+  const dataDir = join(__dirname, '../../../apps/web/data');
+  const legacy: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions-legacy.json'), 'utf-8'));
+  const curated: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions.json'), 'utf-8'));
+  const allowed: string[] = JSON.parse(readFileSync(join(dataDir, 'allowed.json'), 'utf-8'));
+
+  beforeAll(() => { initDictionary(allowed, curated, legacy); });
+
+  const MODES: Array<[string, number]> = [
+    ['DUEL', 1], ['QUORDLE', 4], ['OCTORDLE', 8], ['SEQUENCE', 4],
+    ['RESCUE', 4], ['GAUNTLET', 21], ['DUEL_VS', 1],
+  ];
+  const dateAt = (offsetDays: number): string =>
+    new Date(Date.parse(`${DECK_CUTOVER_DATE}T00:00:00Z`) + offsetDays * 86400000)
+      .toISOString().slice(0, 10);
+
+  it('is deterministic', () => {
+    expect(generateSolutionsFromSeed(`daily-${DECK_CUTOVER_DATE}-QUORDLE`, 4))
+      .toEqual(generateSolutionsFromSeed(`daily-${DECK_CUTOVER_DATE}-QUORDLE`, 4));
+  });
+
+  it('never repeats an answer across all dailies within an epoch', () => {
+    const daysPerEpoch = Math.floor(curated.length / 43);
+    const seen = new Set<string>();
+    let dealt = 0;
+    for (let d = 0; d < daysPerEpoch; d++) {
+      for (const [mode, count] of MODES) {
+        for (const w of generateSolutionsFromSeed(`daily-${dateAt(d)}-${mode}`, count)) {
+          seen.add(w); dealt++;
+        }
+      }
+    }
+    expect(dealt).toBe(daysPerEpoch * 43);
+    expect(seen.size).toBe(dealt); // zero repeats for the whole epoch
+  });
+
+  it('deals valid pool words after an epoch rollover', () => {
+    const daysPerEpoch = Math.floor(curated.length / 43);
+    const day = generateSolutionsFromSeed(`daily-${dateAt(daysPerEpoch + 3)}-OCTORDLE`, 8);
+    expect(new Set(day).size).toBe(8);
+    for (const w of day) expect(curated).toContain(w);
+    // Different epoch ⇒ different permutation than the same slot in epoch 0.
+    expect(day).not.toEqual(generateSolutionsFromSeed(`daily-${dateAt(3)}-OCTORDLE`, 8));
+  });
+
+  it('leaves pre-cutover dailies, unlimited and suffixed seeds on the hash path', () => {
+    // Pre-cutover pin (same value as the curated-era hash path produced).
+    const pre = generateSolutionsFromSeed('daily-2026-08-01-DUEL', 1);
+    expect(pre).toHaveLength(1);
+    // Suffixed (gauntlet blackout replacement) must not equal the day's deck deal.
+    const replacement = generateSolutionsFromSeed(`daily-${DECK_CUTOVER_DATE}-GAUNTLET-blackout-1`, 1);
+    expect(replacement).toHaveLength(1);
+    // A count that disagrees with the frozen table falls back to hashing.
+    const wrongCount = generateSolutionsFromSeed(`daily-${DECK_CUTOVER_DATE}-DUEL`, 2);
+    expect(wrongCount).toHaveLength(2);
+    // Unlimited seeds are untouched by the deck.
+    expect(generateSolutionsFromSeed('unlimited-DUEL-12345', 1)).toHaveLength(1);
+  });
+
+  it('deals a distinct Six word every day for 100 days', () => {
+    const legacy6: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions-6-legacy.json'), 'utf-8'));
+    const curated6: string[] = JSON.parse(readFileSync(join(dataDir, 'solutions-6.json'), 'utf-8'));
+    const allowed6: string[] = JSON.parse(readFileSync(join(dataDir, 'allowed-6.json'), 'utf-8'));
+    initDictionaryForLength(6, allowed6, curated6, legacy6);
+    const seen = new Set<string>();
+    for (let d = 0; d < 100; d++) {
+      const [w] = generateSolutionsFromSeedForLength(`daily-${dateAt(d)}-DUEL_6`, 1, 6);
+      seen.add(w);
+    }
+    expect(seen.size).toBe(100);
   });
 });

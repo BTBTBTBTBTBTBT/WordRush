@@ -70,8 +70,14 @@ public enum ProperNoundleCore {
     }
 
     /// Word lengths from the display string (for the tile layout gaps).
+    /// Counts LETTERS only (web noundle-board parity): `normalize` keeps
+    /// hyphens/apostrophes/digits, but the answer strings and the keyboard are
+    /// letters-only — counting "Half-Life"'s hyphen drew a 9th tile no guess
+    /// could ever fill (Doug's extra-box screenshot, PN #959).
     public static func wordGroups(_ display: String) -> [Int] {
-        let groups = display.split(separator: " ").map { normalize(String($0)).count }.filter { $0 > 0 }
-        return groups.isEmpty ? [normalize(display).count] : groups
+        let groups = display.split(separator: " ")
+            .map { normalize(String($0)).filter { $0.isLetter }.count }
+            .filter { $0 > 0 }
+        return groups.isEmpty ? [normalize(display).filter { $0.isLetter }.count] : groups
     }
 }

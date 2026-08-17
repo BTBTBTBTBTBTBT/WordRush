@@ -224,17 +224,19 @@ struct AllTimeRecordsView: View {
         let isMe = e.userId == myId
         return HStack(spacing: 12) {
             allTimeRankIcon(rank).frame(width: 22)
+            // Doug's Aug-16 feedback (leaderboard row shape): stats under the
+            // name so the name keeps the row's flexible width.
             NavigationLink(value: e.userId) {
-                (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                VStack(alignment: .leading, spacing: 1) {
+                    (Text(e.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text("\(e.flawlessCount) flawless · \(formatShortTime(e.bestSweepTime))")
+                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                }
             }.buttonStyle(.plain)
             Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
-                Text("\(e.sweepCount) sweep\(e.sweepCount == 1 ? "" : "s")").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                Text("\(e.flawlessCount) flawless · \(formatShortTime(e.bestSweepTime))")
-                    .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-            }
+            Text("\(e.sweepCount) sweep\(e.sweepCount == 1 ? "" : "s")").font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)

@@ -154,6 +154,154 @@
         "TABLE",
         "ERODE"
       ]
+    },
+    {
+      "seed": "daily-2026-08-24-DUEL",
+      "count": 1,
+      "solutions": [
+        "LINED"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-QUORDLE",
+      "count": 4,
+      "solutions": [
+        "DECAY",
+        "BRISK",
+        "CRUEL",
+        "AHEAD"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-OCTORDLE",
+      "count": 8,
+      "solutions": [
+        "BRAIN",
+        "STUDY",
+        "MOTTO",
+        "LEVEL",
+        "FLARE",
+        "AWOKE",
+        "INCUR",
+        "ARMED"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-SEQUENCE",
+      "count": 4,
+      "solutions": [
+        "TIDAL",
+        "CRISP",
+        "CIDER",
+        "USAGE"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-RESCUE",
+      "count": 4,
+      "solutions": [
+        "SHELL",
+        "HURRY",
+        "ROUND",
+        "GLOSS"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-GAUNTLET",
+      "count": 21,
+      "solutions": [
+        "SHOOT",
+        "SNOUT",
+        "QUAIL",
+        "SLICE",
+        "CYBER",
+        "QUILL",
+        "RISEN",
+        "PRINT",
+        "MANIA",
+        "WEARY",
+        "RELAX",
+        "PANIC",
+        "FAITH",
+        "CHILL",
+        "GROUP",
+        "KUDOS",
+        "PAPAL",
+        "WOMEN",
+        "WATER",
+        "ROTOR",
+        "CATER"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-DUEL_VS",
+      "count": 1,
+      "solutions": [
+        "VALID"
+      ]
+    },
+    {
+      "seed": "daily-2026-10-02-OCTORDLE",
+      "count": 8,
+      "solutions": [
+        "SAVER",
+        "SILLY",
+        "ALIEN",
+        "PADRE",
+        "PHONE",
+        "IMAGE",
+        "RETRO",
+        "NEVER"
+      ]
+    },
+    {
+      "seed": "daily-2026-10-15-DUEL",
+      "count": 1,
+      "solutions": [
+        "GREEN"
+      ]
+    },
+    {
+      "seed": "daily-2026-10-15-GAUNTLET",
+      "count": 21,
+      "solutions": [
+        "TABOO",
+        "SHOVE",
+        "MERCY",
+        "CLOAK",
+        "BOOTH",
+        "EQUAL",
+        "PUNCH",
+        "SPLIT",
+        "FAVOR",
+        "VOUCH",
+        "MOWER",
+        "SALON",
+        "BUNNY",
+        "WEDGE",
+        "GUISE",
+        "DADDY",
+        "MERIT",
+        "FLING",
+        "FOCUS",
+        "PANEL",
+        "FILLY"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-GAUNTLET-blackout-1",
+      "count": 1,
+      "solutions": [
+        "NINJA"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-DUEL",
+      "count": 2,
+      "solutions": [
+        "DIRTY",
+        "WIDEN"
+      ]
     }
   ],
   "sixLetter": [
@@ -184,6 +332,20 @@
       "solutions": [
         "RISING"
       ]
+    },
+    {
+      "seed": "daily-2026-08-24-DUEL_6",
+      "count": 1,
+      "solutions": [
+        "SERMON"
+      ]
+    },
+    {
+      "seed": "daily-2026-10-15-DUEL_6",
+      "count": 1,
+      "solutions": [
+        "EXCITE"
+      ]
     }
   ],
   "sevenLetter": [
@@ -213,6 +375,20 @@
       "count": 1,
       "solutions": [
         "ENCLOSE"
+      ]
+    },
+    {
+      "seed": "daily-2026-08-24-DUEL_7",
+      "count": 1,
+      "solutions": [
+        "HORIZON"
+      ]
+    },
+    {
+      "seed": "daily-2026-10-15-DUEL_7",
+      "count": 1,
+      "solutions": [
+        "LATTICE"
       ]
     }
   ]

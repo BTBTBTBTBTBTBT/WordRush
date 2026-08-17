@@ -823,6 +823,8 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                       }}
                     >
                       <RankIcon rank={entry.rank} />
+                      {/* Leaderboard-row shape (Doug's Aug-16 feedback): stats
+                          under the name so the name keeps the flexible width. */}
                       <div className="flex-1 min-w-0">
                         <Link
                           href={`/profile/${entry.user_id}`}
@@ -832,12 +834,12 @@ function AllTimeRecordsView({ userId }: { userId?: string }) {
                           {entry.username}
                           {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
                         </Link>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{entry.sweep_count} sweep{entry.sweep_count !== 1 ? 's' : ''}</div>
                         <div className="text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
                           {entry.flawless_count} flawless{entry.best_sweep_time ? ` · best ${formatTime(entry.best_sweep_time)}` : ''}
                         </div>
+                      </div>
+                      <div className="font-black text-xs text-right shrink-0" style={{ color: 'var(--color-text)' }}>
+                        {entry.sweep_count} sweep{entry.sweep_count !== 1 ? 's' : ''}
                       </div>
                     </div>
                   );

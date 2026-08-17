@@ -47,12 +47,24 @@ const SEED_CASES = {
     ['daily-2026-08-01-DUEL', 1], ['daily-2026-08-01-QUORDLE', 4],
     ['daily-2026-08-01-OCTORDLE', 8],
     ['gauntlet-abc-123', 21], ['match-seed-xyz', 1], ['match-seed-xyz', 2],
+    // Post-DECK_CUTOVER_DATE dailies exercise the §215 deck path (epoch 0 on
+    // the cutover day, epoch 1 at 2026-10-15, and the epoch-0 boundary day
+    // 2026-10-02); the suffixed + wrong-count cases pin the hash fallback.
+    ['daily-2026-08-24-DUEL', 1], ['daily-2026-08-24-QUORDLE', 4],
+    ['daily-2026-08-24-OCTORDLE', 8], ['daily-2026-08-24-SEQUENCE', 4],
+    ['daily-2026-08-24-RESCUE', 4], ['daily-2026-08-24-GAUNTLET', 21],
+    ['daily-2026-08-24-DUEL_VS', 1],
+    ['daily-2026-10-02-OCTORDLE', 8], ['daily-2026-10-15-DUEL', 1],
+    ['daily-2026-10-15-GAUNTLET', 21],
+    ['daily-2026-08-24-GAUNTLET-blackout-1', 1], ['daily-2026-08-24-DUEL', 2],
   ],
   sixLetter: [
     ['test', 1], ['daily-2026-01-15-DUEL_6', 1], ['match-6-abc', 1], ['daily-2026-08-01-DUEL_6', 1],
+    ['daily-2026-08-24-DUEL_6', 1], ['daily-2026-10-15-DUEL_6', 1],
   ],
   sevenLetter: [
     ['test', 1], ['daily-2026-01-15-DUEL_7', 1], ['match-7-abc', 1], ['daily-2026-08-01-DUEL_7', 1],
+    ['daily-2026-08-24-DUEL_7', 1], ['daily-2026-10-15-DUEL_7', 1],
   ],
 } as const;
 

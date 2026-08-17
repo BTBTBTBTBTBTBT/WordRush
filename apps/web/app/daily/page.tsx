@@ -350,6 +350,10 @@ export default function DailyPage() {
       >
         <RankIcon rank={rank} />
         {lbAvatar(entry.avatar_url, entry.avatar_emoji, entry.username)}
+        {/* Doug's Aug-16 feedback: the stats line lived under the SCORE, so the
+            right column's width was set by the widest stats string and names
+            truncated at ~5 chars. Name on top, stats underneath, score alone
+            on the right — the name now gets the row's flexible width. */}
         <div className="flex-1 min-w-0">
           <Link
             href={`/profile/${entry.user_id}`}
@@ -359,11 +363,8 @@ export default function DailyPage() {
             {entry.username}
             {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
           </Link>
-        </div>
-        <div className="text-right">
-          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{scoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}</div>
-          <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <span>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="truncate">
               {entry.guess_count} Guesses · {formatTime(entry.time_seconds)}
               {entry.total_boards > 1 && ` · ${entry.boards_solved}/${entry.total_boards}`}
               {(() => {
@@ -372,7 +373,7 @@ export default function DailyPage() {
               })()}
             </span>
             <span
-              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
               style={{
                 background: entry.completed ? 'var(--color-win-bg)' : 'var(--color-loss-bg)',
                 color: entry.completed ? 'var(--color-win-text)' : 'var(--color-loss-text)',
@@ -381,6 +382,9 @@ export default function DailyPage() {
               {entry.completed ? 'Win' : 'Loss'}
             </span>
           </div>
+        </div>
+        <div className="font-black text-xs text-right shrink-0" style={{ color: 'var(--color-text)' }}>
+          {scoreLabels.get(entry.composite_score) ?? formatScore(entry.composite_score)}
         </div>
         {/* Friends board: one-tap canned taunt on any friend's row (§207). */}
         {friendsOnly && user && !isCurrentUser && (
@@ -449,6 +453,8 @@ export default function DailyPage() {
       >
         <RankIcon rank={rank} />
         {lbAvatar(entry.avatar_url, null, entry.username)}
+        {/* Same shape as renderLbRow (Doug's Aug-16 feedback): stats under the
+            name so the name keeps the row's flexible width. */}
         <div className="flex-1 min-w-0">
           <Link
             href={`/profile/${entry.user_id}`}
@@ -458,18 +464,18 @@ export default function DailyPage() {
             {entry.username}
             {isCurrentUser && <span style={{ color: '#d97706' }}> (you)</span>}
           </Link>
-        </div>
-        <div className="text-right">
-          <div className="font-black text-xs" style={{ color: 'var(--color-text)' }}>{sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}</div>
-          <div className="flex items-center justify-end gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
-            <span>{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="truncate">{formatTime(entry.total_time)} · {entry.modes_won}/9</span>
             <span
-              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded"
+              className="text-[9px] font-extrabold px-1.5 py-0.5 rounded shrink-0"
               style={{ background: `${pillColor}22`, color: pillColor }}
             >
               {entry.is_flawless ? 'FLAWLESS' : 'SWEEP'}
             </span>
           </div>
+        </div>
+        <div className="font-black text-xs text-right shrink-0" style={{ color: 'var(--color-text)' }}>
+          {sweepScoreLabels.get(entry.total_score) ?? formatScore(entry.total_score)}
         </div>
       </div>
     );

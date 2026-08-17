@@ -1501,22 +1501,28 @@ struct LeaderboardTab: View {
                        size: 24, emoji: entry.profiles.avatarEmoji)
             // Only the username links to the public profile — matches the web,
             // where the leaderboard wraps just the name in <Link href=/profile/[id]>.
+            // Doug's Aug-16 feedback: the stats line lived under the SCORE, so
+            // the trailing column's width was set by the widest stats string
+            // and names truncated at ~5 chars. Name on top, stats underneath,
+            // score alone on the right.
             NavigationLink(value: entry.userId) {
-                (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                VStack(alignment: .leading, spacing: 2) {
+                    (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 5) {
+                        Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                            .lineLimit(1).minimumScaleFactor(0.8)
+                        Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
+                            .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
+                    }
+                }
             }.buttonStyle(.plain)
             Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text((scoreLabels ?? lbScoreLabels)[entry.compositeScore] ?? formatScore(entry.compositeScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                HStack(spacing: 5) {
-                    Text(detail(entry)).font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    Text(entry.completed ? "Win" : "Loss").font(Brand.font(9, .heavy))
-                        .foregroundStyle(entry.completed ? Theme.winText : Theme.lossText)
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(RoundedRectangle(cornerRadius: 4).fill(entry.completed ? Theme.winBG : Theme.lossBG))
-                }
-            }
+            Text((scoreLabels ?? lbScoreLabels)[entry.compositeScore] ?? formatScore(entry.compositeScore))
+                .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
             // Friends board: one-tap canned taunt on any friend's row (§207).
             if friendsOnly && !isMe {
                 Button {
@@ -1632,20 +1638,23 @@ struct LeaderboardTab: View {
             // §212: faces on the sweep board too (RPC has no emoji column —
             // photo → initial here).
             AvatarView(url: entry.avatarUrl, username: entry.username, size: 24)
+            // Same shape as row() (Doug's Aug-16 feedback): stats under the
+            // name so the name keeps the row's flexible width.
             NavigationLink(value: entry.userId) {
-                (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
-                    .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                VStack(alignment: .leading, spacing: 2) {
+                    (Text(entry.username) + (isMe ? Text(" (you)").foregroundColor(Color(hex: 0xD97706)) : Text("")))
+                        .font(Brand.font(13, .heavy)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    HStack(spacing: 5) {
+                        Text("\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9")
+                            .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
+                        sweepPill(isFlawless: entry.isFlawless)
+                    }
+                }
             }.buttonStyle(.plain)
             Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(sweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore)).font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
-                HStack(spacing: 5) {
-                    Text("\(formatShortTime(entry.totalTime)) · \(entry.modesWon)/9")
-                        .font(Brand.font(10, .bold)).foregroundStyle(Theme.textMuted)
-                    sweepPill(isFlawless: entry.isFlawless)
-                }
-            }
+            Text(sweepScoreLabels[entry.totalScore] ?? formatScore(entry.totalScore))
+                .font(Brand.font(13, .black)).foregroundStyle(Theme.textPrimary)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(isMe ? Theme.highlightGold : rank <= 3 ? Theme.surfaceAlt : Color.clear)

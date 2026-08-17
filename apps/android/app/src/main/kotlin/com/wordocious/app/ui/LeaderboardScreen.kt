@@ -1068,7 +1068,9 @@ internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrent
         RankIcon(rank)
         // §212: faces on the sweep boards too (RPCs have no emoji column).
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
-        Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+        // Same shape as LeaderboardRow (Doug's Aug-16 feedback): stats under
+        // the name so the name keeps the row's flexible width.
+        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
             // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
@@ -1081,14 +1083,12 @@ internal fun SweepRow(rank: Int, entry: LeaderboardService.SweepEntry, isCurrent
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("${fmtTime(entry.totalTime)} · ${entry.modesWon}/9", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 SweepPill(entry.isFlawless)
             }
         }
+        Text(scoreLabel ?: formatScore(entry.totalScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
     }
 }
 
@@ -1108,7 +1108,9 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
         RankIcon(rank)
         // §212: faces on the sweep boards too (RPCs have no emoji column).
         LbAvatar(entry.avatarUrl, null, entry.username ?: "Player")
-        Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+        // Same shape as LeaderboardRow (Doug's Aug-16 feedback): stats under
+        // the name so the name keeps the row's flexible width.
+        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
             // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
@@ -1121,15 +1123,13 @@ internal fun AllTimeSweepRow(rank: Int, entry: LeaderboardService.AllTimeSweepEn
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text("${entry.sweepCount} sweep${if (entry.sweepCount == 1) "" else "s"}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             // iOS appends the time unprefixed and always (0 renders as "0s").
             Text(
                 "${entry.flawlessCount} flawless · ${fmtTime(entry.bestSweepTime)}",
                 fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
             )
         }
+        Text("${entry.sweepCount} sweep${if (entry.sweepCount == 1) "" else "s"}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
     }
 }
 
@@ -1149,8 +1149,11 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
         // §212: photo → emoji → initial, left of every username — the boards
         // wear faces, not just names (web lbAvatar parity).
         LbAvatar(entry.profiles?.avatarUrl, entry.profiles?.avatarEmoji, entry.username ?: "Player")
-        // Username (+ " (you)" gold suffix) — taps open the public profile (web parity).
-        Row(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
+        // Doug's Aug-16 feedback: the stats line lived under the SCORE, so the
+        // right column's width was set by the widest stats string and names
+        // truncated at ~5 chars ("nanc…"). Name on top, stats underneath,
+        // score alone on the right — the name gets the row's flexible width.
+        Column(Modifier.weight(1f).clickableNoRipple { onOpenProfile(entry.userId) }) {
             // ONE Text like iOS (`Text(username) + Text(" (you)")`) — as two
             // siblings, a squeezed row wrapped " (you)" one character per line.
             Text(
@@ -1163,21 +1166,22 @@ internal fun LeaderboardRow(rank: Int, entry: LeaderboardService.LeaderboardEntr
                 fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = WTheme.text,
                 maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
             )
-        }
-        // Right column: score over detail line
-        Column(horizontalAlignment = Alignment.End) {
-            Text(scoreLabel ?: formatScore(entry.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (playType == "vs") {
                     // VS records show the head-to-head W/L tally instead of the
                     // solo guesses/time + Win/Loss pill (web records page parity).
                     Text("${entry.vsWins}W / ${entry.vsGames}G", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
                 } else {
-                    Text(rowDetail(entry, mode, showHints), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted)
+                    Text(
+                        rowDetail(entry, mode, showHints), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = WTheme.textMuted,
+                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
                     WinLossPill(entry.completed)
                 }
             }
         }
+        Text(scoreLabel ?: formatScore(entry.compositeScore), fontSize = 13.sp, fontWeight = FontWeight.Black, color = WTheme.text)
         // Friends board: one-tap canned taunt on any friend's row (§207).
         if (onTaunt != null) {
             Icon(
