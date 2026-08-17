@@ -1376,7 +1376,8 @@ struct LeaderboardTab: View {
                 } else {
                     VStack(spacing: 0) {
                         ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
-                            row(rank: idx + 1, entry: entry)
+                            // §217: exact (score, time) ties share the rank.
+                            row(rank: LeaderboardService.competitionRank(entries, idx), entry: entry)
                             if idx < entries.count - 1 { Divider().overlay(Theme.border) }
                         }
                         // "Your neighborhood" — rows around the user's rank when
@@ -1445,7 +1446,8 @@ struct LeaderboardTab: View {
                             // Full daily rows (founder ask, Aug 11): profile
                             // links, guesses + time detail, W/L pill.
                             ForEach(Array(yesterday.enumerated()), id: \.element.id) { idx, entry in
-                                row(rank: idx + 1, entry: entry, scoreLabels: yLbScoreLabels)
+                                // §217: exact (score, time) ties share the rank.
+                                row(rank: LeaderboardService.competitionRank(yesterday, idx), entry: entry, scoreLabels: yLbScoreLabels)
                                 if idx < yesterday.count - 1 { Divider().overlay(Theme.border) }
                             }
                         }
@@ -1714,9 +1716,10 @@ struct LeaderboardTab: View {
             entries = fetched
             playerCount = fetched.count
             loading = false
+            // §217: exact (score, time) ties share the rank on the friends board too.
             let rank: (rank: Int, total: Int)? = fetched
                 .firstIndex { $0.userId == uid }
-                .map { (rank: $0 + 1, total: fetched.count) }
+                .map { (rank: LeaderboardService.competitionRank(fetched, $0), total: fetched.count) }
             userRank = rank
             rankWindow = nil
             LeaderboardCache.shared[cacheKey] = .init(

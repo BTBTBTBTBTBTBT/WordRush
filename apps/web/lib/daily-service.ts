@@ -359,6 +359,10 @@ export async function fetchDailyLeaderboard(
   if (userIds && userIds.length > 0) query = query.in('user_id', userIds);
   const { data } = await query
     .order('composite_score', { ascending: false })
+    // §217: time then created_at — the same ordering the daily-medals cron
+    // uses, so tied (score, time) groups are contiguous and the live board
+    // agrees with the overnight podium.
+    .order('time_seconds', { ascending: true })
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
 
@@ -387,6 +391,23 @@ export async function fetchDailyLeaderboard(
 /**
  * Get the current user's rank for today's daily.
  */
+/**
+ * §217: competition rank for a row of a best-first leaderboard — rows tied on
+ * EXACT (composite_score, time_seconds) share the rank of the first tied row,
+ * matching the daily-medals cron (an exact tie for first is two #1s; the next
+ * player is #3). Requires the list to be sorted score desc, time asc — the
+ * order fetchDailyLeaderboard now guarantees.
+ */
+export function competitionRank(
+  list: Array<{ composite_score: number; time_seconds: number }>,
+  index: number,
+): number {
+  const me = list[index];
+  return 1 + list.findIndex(
+    (e) => e.composite_score === me.composite_score && e.time_seconds === me.time_seconds,
+  );
+}
+
 export async function getUserDailyRank(
   userId: string,
   gameMode: string,
@@ -409,10 +430,17 @@ export async function getUserDailyRank(
   if (topEntries) {
     const idx = topEntries.findIndex((e) => e.user_id === userId);
     if (idx >= 0) {
+      // §217: competition rank — rows tied on (score, time) SHARE the rank of
+      // the first tied row, exactly like the daily-medals cron. An exact tie
+      // for first shows BOTH players "#1", not a coin-flip #1/#2.
+      const me = topEntries[idx];
+      const rank = 1 + topEntries.findIndex(
+        (e) => e.composite_score === me.composite_score && e.time_seconds === me.time_seconds,
+      );
       // Under-full page → the list IS everyone; over-full needs a true total.
-      if (topEntries.length < topLimit) return { rank: idx + 1, totalPlayers: topEntries.length };
+      if (topEntries.length < topLimit) return { rank, totalPlayers: topEntries.length };
       const { count } = await totalQuery();
-      return { rank: idx + 1, totalPlayers: count ?? topEntries.length };
+      return { rank, totalPlayers: count ?? topEntries.length };
     }
     // Full board visible and the user isn't on it → they haven't played today.
     if (topEntries.length < topLimit) return null;
@@ -422,7 +450,7 @@ export async function getUserDailyRank(
   const [{ data: userResult }, { count: totalPlayers }] = await Promise.all([
     (supabase as any)
       .from('daily_results')
-      .select('composite_score')
+      .select('composite_score, time_seconds')
       .eq('user_id', userId)
       .eq('day', targetDay)
       .eq('game_mode', gameMode)
@@ -433,16 +461,29 @@ export async function getUserDailyRank(
 
   if (!userResult) return null;
 
-  const { count: higherCount } = await (supabase as any)
-    .from('daily_results')
-    .select('id', { count: 'exact', head: true })
-    .eq('day', targetDay)
-    .eq('game_mode', gameMode)
-    .eq('play_type', playType)
-    .gt('composite_score', userResult.composite_score);
+  // §217: competition rank beyond the fetched page — players strictly ahead
+  // are (higher score) OR (same score, faster time); exact (score, time)
+  // ties share the rank, matching the daily-medals cron.
+  const [{ count: higherCount }, { count: fasterTieCount }] = await Promise.all([
+    (supabase as any)
+      .from('daily_results')
+      .select('id', { count: 'exact', head: true })
+      .eq('day', targetDay)
+      .eq('game_mode', gameMode)
+      .eq('play_type', playType)
+      .gt('composite_score', userResult.composite_score),
+    (supabase as any)
+      .from('daily_results')
+      .select('id', { count: 'exact', head: true })
+      .eq('day', targetDay)
+      .eq('game_mode', gameMode)
+      .eq('play_type', playType)
+      .eq('composite_score', userResult.composite_score)
+      .lt('time_seconds', userResult.time_seconds ?? 0),
+  ]);
 
   return {
-    rank: (higherCount ?? 0) + 1,
+    rank: (higherCount ?? 0) + (fasterTieCount ?? 0) + 1,
     totalPlayers: totalPlayers ?? 0,
   };
 }

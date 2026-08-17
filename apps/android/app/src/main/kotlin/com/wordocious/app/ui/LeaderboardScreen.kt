@@ -255,7 +255,8 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
             playerCount = lbF.size
             loading = false
             val idx = lbF.indexOfFirst { it.userId == userId }
-            val rank = if (idx >= 0) LeaderboardService.RankInfo(idx + 1, lbF.size) else null
+            // §217: exact (score, time) ties share the rank on the friends board too.
+            val rank = if (idx >= 0) LeaderboardService.RankInfo(LeaderboardService.competitionRank(lbF, idx), lbF.size) else null
             userRank = rank
             rankWindow = null
             LeaderboardService.cacheBoard(key, LeaderboardService.CachedBoard(lbF, lbF.size, rank, null))
@@ -598,7 +599,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                     ) {
                         entries.forEachIndexed { index, entry ->
                             LeaderboardRow(
-                                rank = index + 1, entry = entry, mode = selectedMode,
+                                // §217: exact (score, time) ties share the rank.
+                                rank = LeaderboardService.competitionRank(entries, index),
+                                entry = entry, mode = selectedMode,
                                 isCurrentUser = entry.userId == userId,
                                 onOpenProfile = onOpenProfile,
                                 // Friends board: one-tap canned taunt (§207).
@@ -718,7 +721,9 @@ fun LeaderboardScreen(onOpenProfile: (String) -> Unit = {}, onPlay: (com.wordoci
                             // taps, guesses + time detail, W/L pill.
                             yesterday.forEachIndexed { i, e ->
                                 LeaderboardRow(
-                                    rank = i + 1, entry = e, mode = selectedMode,
+                                    // §217: exact (score, time) ties share the rank.
+                                    rank = LeaderboardService.competitionRank(yesterday, i),
+                                    entry = e, mode = selectedMode,
                                     isCurrentUser = e.userId == userId,
                                     onOpenProfile = onOpenProfile,
                                     scoreLabel = yLbScoreLabels[e.compositeScore],

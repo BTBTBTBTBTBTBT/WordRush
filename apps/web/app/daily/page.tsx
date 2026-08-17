@@ -17,6 +17,7 @@ import { RankDeltaBadge } from '@/components/ui/rank-delta';
 import {
   fetchDailyLeaderboard,
   fetchRankWindow,
+  competitionRank,
   fetchDailySweepLeaderboard,
   getUserDailyRank,
   getUserSweepRank,
@@ -253,7 +254,8 @@ export default function DailyPage() {
       setPlayerCount(lb.length);
       setLoading(false);
       const idx = lb.findIndex((e) => e.user_id === user!.id);
-      const rank = idx >= 0 ? { rank: idx + 1, totalPlayers: lb.length } : null;
+      // §217: exact (score, time) ties share the rank on the friends board too.
+      const rank = idx >= 0 ? { rank: competitionRank(lb, idx), totalPlayers: lb.length } : null;
       setUserRank(rank);
       setRankWindow(null);
       lbCache.set(cacheKey, { lb, count: lb.length, rank, win: null });
@@ -527,7 +529,7 @@ export default function DailyPage() {
         day: getTodayLocal(),
         yesterday,
         ranked: leaderboard
-          .map((entry, index) => ({ entry, rank: index + 1 }))
+          .map((entry, index) => ({ entry, rank: competitionRank(leaderboard, index) }))
           .filter(({ entry }) => !isBlocked(entry.user_id)),
         userId: user?.id ?? null,
         userRank,
@@ -548,7 +550,7 @@ export default function DailyPage() {
         playType: 'solo',
         day: yesterday,
         ranked: yesterdayLeaderboard
-          .map((entry, index) => ({ entry, rank: index + 1 }))
+          .map((entry, index) => ({ entry, rank: competitionRank(yesterdayLeaderboard, index) }))
           .filter(({ entry }) => !isBlocked(entry.user_id)),
         userId: user?.id ?? null,
         friends: friendsOnly && !!user,
@@ -785,7 +787,7 @@ export default function DailyPage() {
                   friends board is dense by construction — its fetch is
                   already restricted to friends∪me. */}
               {leaderboard
-                .map((entry, index) => ({ entry, rank: index + 1 }))
+                .map((entry, index) => ({ entry, rank: competitionRank(leaderboard, index) }))
                 .filter(({ entry }) => !isBlocked(entry.user_id))
                 .map(({ entry, rank }) => renderLbRow(entry, rank))}
               {/* Friends who haven't played this mode today. */}
@@ -897,8 +899,10 @@ export default function DailyPage() {
               <div>
                 {/* Full daily rows (founder ask, Aug 11): clickable profiles,
                     guesses + time detail, W/L pill — same renderer as today. */}
-                {yesterdayLeaderboard.filter((e) => !isBlocked(e.user_id)).map((entry, index) =>
-                  renderLbRow(entry, index + 1, yLbScoreLabels))}
+                {yesterdayLeaderboard
+                  .map((entry, index) => ({ entry, rank: competitionRank(yesterdayLeaderboard, index) }))
+                  .filter(({ entry }) => !isBlocked(entry.user_id))
+                  .map(({ entry, rank }) => renderLbRow(entry, rank, yLbScoreLabels))}
               </div>
             )}
           </div>

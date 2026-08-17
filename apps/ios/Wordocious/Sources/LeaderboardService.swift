@@ -131,12 +131,27 @@ enum LeaderboardService {
         }
         let rows: [LeaderboardEntry] = try await query
             .order("composite_score", ascending: false)
+            // §217: time then created_at — the daily-medals cron's ordering, so
+            // tied (score, time) groups are contiguous and match the podium.
+            .order("time_seconds", ascending: true)
             .order("created_at", ascending: true)
             .range(from: offset, to: offset + limit - 1)
             .execute()
             .value
         // App Review 1.2: hide players the signed-in user has blocked.
         return rows.filter { !ModerationService.isBlocked($0.userId) }
+    }
+
+    /// §217: competition rank — rows tied on EXACT (score, time) share the
+    /// rank of the first tied row, matching the daily-medals cron (an exact
+    /// tie for first is two #1s; the next player is #3). The list must be
+    /// sorted score desc, time asc — the order fetch() guarantees.
+    static func competitionRank(_ list: [LeaderboardEntry], _ index: Int) -> Int {
+        let me = list[index]
+        let first = list.firstIndex {
+            $0.compositeScore == me.compositeScore && $0.timeSeconds == me.timeSeconds
+        } ?? index
+        return first + 1
     }
 
     /// The rows AROUND the user's rank — the "your neighborhood" section shown
@@ -155,7 +170,7 @@ enum LeaderboardService {
         return (startRank, entries)
     }
 
-    private struct ScoreOnly: Decodable { let composite_score: Double }
+    private struct ScoreOnly: Decodable { let composite_score: Double; let time_seconds: Int }
 
     /// Current user's rank for a day's daily (mirrors getUserDailyRank) —
     /// defaults to today; the leaderboard share card passes yesterday for the
@@ -177,10 +192,12 @@ enum LeaderboardService {
 
         if let top = topEntries {
             if let idx = top.firstIndex(where: { $0.userId == userId }) {
+                // §217: exact (score, time) ties SHARE the first tied row's rank.
+                let rank = competitionRank(top, idx)
                 // Under-full page → the list IS everyone; over-full needs a true total.
-                if top.count < topLimit { return (idx + 1, top.count) }
+                if top.count < topLimit { return (rank, top.count) }
                 let total = (try? await totalCount()) ?? top.count
-                return (idx + 1, total)
+                return (rank, total)
             }
             // Full board visible and the user isn't on it → they haven't played today.
             if top.count < topLimit { return nil }
@@ -189,19 +206,28 @@ enum LeaderboardService {
         do {
             // Outside the fetched page: user's score + total in parallel, then players ahead.
             async let mineReq: [ScoreOnly] = client.from("daily_results")
-                .select("composite_score").eq("user_id", value: userId).eq("day", value: day)
+                .select("composite_score, time_seconds").eq("user_id", value: userId).eq("day", value: day)
                 .eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)
                 .limit(1).execute().value
             async let totalReq = totalCount()
             let (mine, total) = try await (mineReq, totalReq)
-            guard let myScore = mine.first?.composite_score else { return nil }
+            guard let my = mine.first else { return nil }
 
-            let ahead = try await client.from("daily_results")
+            // §217: strictly ahead = higher score OR same score + faster time;
+            // exact (score, time) ties share the rank (daily-medals parity).
+            async let aheadReq = client.from("daily_results")
                 .select("user_id", head: true, count: .exact)
                 .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)
-                .gt("composite_score", value: myScore)
-                .execute().count ?? 0
-            return (ahead + 1, total)
+                .gt("composite_score", value: my.composite_score)
+                .execute().count
+            async let fasterTieReq = client.from("daily_results")
+                .select("user_id", head: true, count: .exact)
+                .eq("day", value: day).eq("game_mode", value: gameMode.rawValue).eq("play_type", value: playType)
+                .eq("composite_score", value: my.composite_score)
+                .lt("time_seconds", value: my.time_seconds)
+                .execute().count
+            let (ahead, fasterTies) = try await (aheadReq ?? 0, fasterTieReq ?? 0)
+            return (ahead + fasterTies + 1, total)
         } catch { return nil }
     }
 

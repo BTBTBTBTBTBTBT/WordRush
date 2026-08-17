@@ -19,7 +19,7 @@ import kotlinx.serialization.json.put
  * and web lib/daily-service.ts getDailyLeaderboard() exactly:
  *   - day = device-LOCAL date (NOT UTC) so it matches the puzzle + web/iOS
  *   - NO `completed` filter — losers (DNF) appear too, ranked below winners
- *   - order by composite_score DESC, then created_at ASC (stable tiebreak)
+ *   - order by composite_score DESC, time_seconds ASC, created_at ASC (§217)
  *   - embeds profiles!inner(username, avatar_url)
  */
 object LeaderboardService {
@@ -234,7 +234,10 @@ object LeaderboardService {
                     if (!userIds.isNullOrEmpty()) isIn("user_id", userIds)
                 }
                 order("composite_score", Order.DESCENDING)
-                order("created_at", Order.ASCENDING)   // stable tiebreak (earlier finisher first)
+                // §217: time then created_at — the daily-medals cron's ordering,
+                // so tied (score, time) groups are contiguous and match the podium.
+                order("time_seconds", Order.ASCENDING)
+                order("created_at", Order.ASCENDING)
                 range(offset.toLong()..(offset + limit - 1).toLong())
             }
             .decodeList<LeaderboardEntry>()
@@ -274,7 +277,22 @@ object LeaderboardService {
         fetchDailyLeaderboard(gameMode, playType, day = yesterdayLocalDate(), limit = limit)
 
     @Serializable
-    private data class ScoreRow(@SerialName("composite_score") val compositeScore: Double)
+    private data class ScoreRow(
+        @SerialName("composite_score") val compositeScore: Double,
+        @SerialName("time_seconds") val timeSeconds: Int = 0,
+    )
+
+    /** §217: competition rank — rows tied on EXACT (score, time) share the
+     *  rank of the first tied row, matching the daily-medals cron (an exact
+     *  tie for first is two #1s; the next player is #3). The list must be
+     *  sorted score desc, time asc — the order fetch guarantees. */
+    fun competitionRank(list: List<LeaderboardEntry>, index: Int): Int {
+        val me = list[index]
+        val first = list.indexOfFirst {
+            it.compositeScore == me.compositeScore && it.timeSeconds == me.timeSeconds
+        }
+        return (if (first >= 0) first else index) + 1
+    }
 
     /** Exact server-side count of today's SOLO players for [gameMode] — the true
      *  "of M" once the leaderboard page is full (web totalQuery parity). */
@@ -311,10 +329,12 @@ object LeaderboardService {
         if (topEntries != null) {
             val idx = topEntries.indexOfFirst { it.userId == userId }
             if (idx >= 0) {
+                // §217: exact (score, time) ties SHARE the first tied row's rank.
+                val rank = competitionRank(topEntries, idx)
                 // Under-full page → the list IS everyone; full page needs a true total.
-                if (topEntries.size < topLimit) return@runCatching RankInfo(idx + 1, topEntries.size)
+                if (topEntries.size < topLimit) return@runCatching RankInfo(rank, topEntries.size)
                 val count = soloPlayerCount(gameMode, day, playType)
-                return@runCatching RankInfo(idx + 1, if (count > 0) count else topEntries.size)
+                return@runCatching RankInfo(rank, if (count > 0) count else topEntries.size)
             }
             // Full board visible and the user isn't on it → they haven't played today.
             if (topEntries.size < topLimit) return@runCatching null
@@ -333,13 +353,15 @@ object LeaderboardService {
                         }
                         limit(1)
                     }
-                    .decodeList<ScoreRow>().firstOrNull()?.compositeScore
+                    .decodeList<ScoreRow>().firstOrNull()
             }
             val total = async { soloPlayerCount(gameMode, day, playType) }
             score.await() to total.await()
         }
         if (userScore == null) return@runCatching null
 
+        // §217: strictly ahead = higher score OR same score + faster time;
+        // exact (score, time) ties share the rank (daily-medals parity).
         val higherCount = client.postgrest["daily_results"]
             .select(Columns.raw("id")) {
                 count(Count.EXACT)
@@ -348,12 +370,25 @@ object LeaderboardService {
                     eq("day", day)
                     eq("game_mode", gameMode)
                     eq("play_type", playType)
-                    gt("composite_score", userScore)
+                    gt("composite_score", userScore.compositeScore)
+                }
+            }
+            .countOrNull()?.toInt() ?: 0
+        val fasterTieCount = client.postgrest["daily_results"]
+            .select(Columns.raw("id")) {
+                count(Count.EXACT)
+                limit(1)
+                filter {
+                    eq("day", day)
+                    eq("game_mode", gameMode)
+                    eq("play_type", playType)
+                    eq("composite_score", userScore.compositeScore)
+                    lt("time_seconds", userScore.timeSeconds)
                 }
             }
             .countOrNull()?.toInt() ?: 0
 
-        RankInfo(higherCount + 1, totalPlayers)
+        RankInfo(higherCount + fasterTieCount + 1, totalPlayers)
     }.getOrElseNotCancelled { null }
 
     /** Total players who logged a result for today's [gameMode] (for "{n} players today").
